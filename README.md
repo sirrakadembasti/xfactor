@@ -153,6 +153,8 @@ xfactor/
 ├── TODO.md                         # Master Yol Haritası ve Test Sertifikasyonları
 ├── KULLANIM-KILAVUZU.md             # A'dan Z'ye Kapsamlı Kullanıcı ve Operasyon Kılavuzu
 ├── README.md                       # Genel Mimari ve Başlangıç Dokümantasyonu
+├── graphify-bilgi-notu.md          # Graphify ve Kısıtlı Ağlar Kullanım Notu
+├── graphify-out/                   # AST Bilgi Grafiği, Görselleştiriciler ve Mimari Raporlar
 │
 ├── backend/
 │   ├── agents/                     # Uzman Ajan Rol ve Sistem Promptları (Agency-Agents Modeli)
@@ -174,12 +176,12 @@ xfactor/
 │   │   └── index.js                # Motor İndeksi
 │   │
 │   ├── auth.js                     # Kullanıcı, Parola (Scrypt), Oturum ve RBAC
-│   │   ├── db.js                       # SQLite Veritabanı, WAL Kalıcılık & Disk Senkronizasyonu
-│   │   ├── llm.js                      # Multi-Provider LLM Yönlendirme (Gemini, OpenAI vb.)
-│   │   ├── security.js                 # Path Traversal, CORS, Rate Limit ve Sanitizasyon
-│   │   ├── observability.js            # Request ID ve Yapılandırılmış Loglama
-│   │   ├── server.js                   # Express API, Dinamik Manager Chat & WebSocket Sunucusu
-│   │   └── test_backend.js             # Kapsamlı TDD ve Güvenlik Test Süiti
+│   │   ├── db.js                   # SQLite Veritabanı, WAL Kalıcılık & Disk Senkronizasyonu
+│   │   ├── llm.js                  # Multi-Provider LLM Yönlendirme (Gemini, OpenAI vb.)
+│   │   ├── security.js             # Path Traversal, CORS, Rate Limit ve Sanitizasyon
+│   │   ├── observability.js        # Request ID ve Yapılandırılmış Loglama
+│   │   ├── server.js               # Express API, Dinamik Manager Chat & WebSocket Sunucusu
+│   │   └── test_backend.js         # Kapsamlı TDD ve Güvenlik Test Süiti
 │   │
 ├── frontend/
 │   ├── src/
@@ -194,3 +196,44 @@ xfactor/
 ├── docs/                           # Mimari Kararlar ve Ajan Rol Talimatnameleri
 └── projects/                       # Ajanlar Tarafından Üretilen Gerçek Çıktı Projeleri
 ```
+
+---
+
+## 🧠 Geliştirici Araçları & Kod Bilgi Grafiği (Graphify)
+
+XFactor projesi, kod tabanının **AST (Abstract Syntax Tree)** düzeyinde analiz edilmesini ve yapay zeka asistanının kod mimarisini ilişkisel bir grafik olarak kavramasını sağlayan **Graphify** bilgi grafiği motoru ile donatılmıştır.
+
+### 📌 Neden Graphify?
+- **%90'a Varan Token Tasarrufu:** Yapay zekanın yüzlerce kaynak dosyayı okuması yerine `graphify-out/graph.json` grafiğini sorgulaması sağlanır.
+- **Hızlı Mimari Analiz:** Sınıflar, fonksiyonlar ve modüller arası çağrı yolları ve bağımlılıklar milisaniyeler içinde çözümlenir.
+- **Yerel ve Güvenli:** Kodlarınız dış sunuculara gönderilmeden tamamen yerel makinede analiz edilir.
+
+### ⚙️ Kurulum ve Entegrasyon
+```bash
+# 1. Graphify paketini kurun (Python 3.10+)
+pip install graphify
+
+# 2. Kod grafiğini ve Gemini / Antigravity CLI entegrasyonunu oluşturun
+python -m graphify extract . --code-only
+python -m graphify gemini install
+```
+
+### ⚡ Önemli Komutlar ve Kullanım Senaryoları
+
+| Komut | Kullanım Senaryosu / Amaç |
+| :--- | :--- |
+| `python -m graphify extract . --code-only` | Kodları tarar ve `graphify-out/graph.json` grafiğini günceller. |
+| `python -m graphify query "<soru>"` | Kod tabanındaki belirli fonksiyon veya bileşen hakkında odaklı sorgu yapar. |
+| `python -m graphify explain "<kavram>"` | Projedeki bir mekanizmayı (örn: DAG motoru, RBAC) grafik üzerinden açıklar. |
+| `python -m graphify path "<A>" "<B>"` | İki bileşen arasındaki veri/çağrı akış yolunu tespit eder. |
+| `python -m graphify god-nodes` | Projenin merkezindeki en kritik (en çok referans alan) düğümleri listeler. |
+| `python -m graphify tree` | Tarayıcıda açılabilen `graphify-out/GRAPH_TREE.html` ve `graph.html` interaktif mimari haritasını üretir. |
+| `python -m graphify update .` | Kod değişikliklerinden sonra grafiği API maliyetsiz (yalnızca AST) günceller. |
+
+### 🌐 Kısıtlı Ağlarda (MEB vb.) IPv4 ile Çalıştırma
+Ağ ortamınızda IPv6 kısıtlaması veya DNS engelleri bulunuyorsa, komutları IPv4 soket zorlamasıyla çalıştırabilirsiniz:
+```bash
+python -c "import socket; orig=socket.getaddrinfo; socket.getaddrinfo=lambda h,p,f=0,t=0,pr=0,fl=0: orig(h,p,socket.AF_INET,t,pr,fl); from graphify.cli import main; import sys; sys.argv=['graphify'] + sys.argv[1:]; main()" <komut>
+```
+Detaylı bilgi için [graphify-bilgi-notu.md](file:///D:/dnm/xfactor/graphify-bilgi-notu.md) dokümanını inceleyebilirsiniz.
+

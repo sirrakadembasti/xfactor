@@ -1,0 +1,269 @@
+{
+  "communities": {
+    "0": [
+      "backend_db",
+      "backend_db_data_dir",
+      "backend_db_db",
+      "backend_db_dbevents",
+      "backend_db_dirname",
+      "backend_db_filename",
+      "backend_db_getallprojects",
+      "backend_db_getprojectlogs",
+      "backend_server",
+      "backend_server_apilimiter",
+      "backend_server_app",
+      "backend_server_execfileasync",
+      "backend_server_getfiles",
+      "backend_server_requireauth",
+      "backend_server_server",
+      "backend_server_wsclients",
+      "backend_server_wss"
+    ],
+    "1": [
+      "backend_db_getprojectstate",
+      "backend_db_saveprojectlog",
+      "backend_db_saveprojectstate",
+      "backend_llm",
+      "backend_llm_fetchwithretry",
+      "backend_llm_generatellmresponse",
+      "backend_orchestrator",
+      "backend_orchestrator_checkpause",
+      "backend_orchestrator_dirname",
+      "backend_orchestrator_executeprojecttasks",
+      "backend_orchestrator_filename",
+      "backend_orchestrator_getprojectdir",
+      "backend_orchestrator_getstatepath",
+      "backend_orchestrator_logevent",
+      "backend_orchestrator_readprojectstate",
+      "backend_orchestrator_sleep",
+      "backend_orchestrator_writeprojectstate"
+    ],
+    "2": [
+      "backend_package_dependencies",
+      "backend_package_dependencies_cors",
+      "backend_package_dependencies_dotenv",
+      "backend_package_dependencies_express",
+      "backend_package_dependencies_express_rate_limit",
+      "backend_package_dependencies_google_generative_ai",
+      "backend_package_dependencies_jsonwebtoken",
+      "backend_package_dependencies_ws",
+      "cors",
+      "dotenv",
+      "express",
+      "express_rate_limit",
+      "google_generative_ai",
+      "jsonwebtoken",
+      "ws"
+    ],
+    "3": [
+      "file_saver",
+      "frontend_package_dependencies",
+      "frontend_package_dependencies_file_saver",
+      "frontend_package_dependencies_lucide_react",
+      "frontend_package_dependencies_monaco_editor_react",
+      "frontend_package_dependencies_react",
+      "frontend_package_dependencies_react_dom",
+      "frontend_package_dependencies_reactflow",
+      "lucide_react",
+      "monaco_editor_react",
+      "react",
+      "react_dom",
+      "reactflow"
+    ],
+    "4": [
+      "autoprefixer",
+      "frontend_package_devdependencies",
+      "frontend_package_devdependencies_autoprefixer",
+      "frontend_package_devdependencies_postcss",
+      "frontend_package_devdependencies_tailwindcss",
+      "frontend_package_devdependencies_vite",
+      "frontend_package_devdependencies_vitejs_plugin_react",
+      "postcss",
+      "tailwindcss",
+      "vite",
+      "vitejs_plugin_react"
+    ],
+    "5": [
+      "backend_package",
+      "backend_package_description",
+      "backend_package_main",
+      "backend_package_name",
+      "backend_package_scripts",
+      "backend_package_scripts_dev",
+      "backend_package_scripts_start",
+      "backend_package_type",
+      "backend_package_version"
+    ],
+    "6": [
+      "frontend_package",
+      "frontend_package_name",
+      "frontend_package_private",
+      "frontend_package_scripts",
+      "frontend_package_scripts_build",
+      "frontend_package_scripts_dev",
+      "frontend_package_scripts_preview",
+      "frontend_package_type",
+      "frontend_package_version"
+    ],
+    "7": [
+      "frontend_src_pages_admin",
+      "frontend_src_pages_admin_admin",
+      "frontend_src_pages_home",
+      "frontend_src_pages_home_home",
+      "frontend_src_services_api",
+      "frontend_src_services_api_addproperty",
+      "frontend_src_services_api_deleteproperty",
+      "frontend_src_services_api_getproperties"
+    ],
+    "8": [
+      "frontend_package_dependencies_jszip",
+      "frontend_src_app",
+      "frontend_src_app_app",
+      "frontend_src_app_ws_url",
+      "frontend_src_main",
+      "jszip"
+    ],
+    "9": [
+      "backend_test_backend",
+      "backend_test_backend_runasynctest",
+      "backend_test_backend_runtest"
+    ],
+    "10": [
+      "frontend_postcss_config"
+    ],
+    "11": [
+      "frontend_tailwind_config"
+    ],
+    "12": [
+      "frontend_vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1323529411764706,
+    "1": 0.22794117647058823,
+    "2": 0.13333333333333333,
+    "3": 0.15384615384615385,
+    "4": 0.18181818181818182,
+    "5": 0.2222222222222222,
+    "6": 0.2222222222222222,
+    "7": 0.5357142857142857,
+    "8": 0.4,
+    "9": 0.6666666666666666,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_orchestrator_executeprojecttasks",
+      "label": "executeProjectTasks()",
+      "degree": 9
+    },
+    {
+      "id": "backend_llm_generatellmresponse",
+      "label": "generateLLMResponse()",
+      "degree": 6
+    },
+    {
+      "id": "backend_orchestrator_getprojectdir",
+      "label": "getProjectDir()",
+      "degree": 5
+    },
+    {
+      "id": "backend_orchestrator_readprojectstate",
+      "label": "readProjectState()",
+      "degree": 5
+    },
+    {
+      "id": "backend_orchestrator_writeprojectstate",
+      "label": "writeProjectState()",
+      "degree": 5
+    },
+    {
+      "id": "frontend_src_services_api_getproperties",
+      "label": "getProperties()",
+      "degree": 5
+    },
+    {
+      "id": "frontend_package_scripts",
+      "label": "scripts",
+      "degree": 4
+    },
+    {
+      "id": "frontend_src_pages_admin_admin",
+      "label": "Admin()",
+      "degree": 4
+    },
+    {
+      "id": "backend_db_getprojectstate",
+      "label": "getProjectState()",
+      "degree": 3
+    },
+    {
+      "id": "backend_db_saveprojectstate",
+      "label": "saveProjectState()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "generateLLMResponse()",
+      "target": "@google/generative-ai",
+      "source_files": [
+        "backend/llm.js",
+        "backend/package.json"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "Home()",
+      "target": "getProperties()",
+      "source_files": [
+        "frontend/src/pages/Home.jsx",
+        "frontend/src/services/api.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "peripheral node `Home()` unexpectedly reaches hub `getProperties()`"
+    },
+    {
+      "source": "readProjectState()",
+      "target": "getProjectState()",
+      "source_files": [
+        "backend/orchestrator.js",
+        "backend/db.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "writeProjectState()",
+      "target": "saveProjectState()",
+      "source_files": [
+        "backend/orchestrator.js",
+        "backend/db.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "logEvent()",
+      "target": "saveProjectLog()",
+      "source_files": [
+        "backend/orchestrator.js",
+        "backend/db.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

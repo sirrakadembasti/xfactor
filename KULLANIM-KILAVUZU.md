@@ -22,6 +22,7 @@ Bu kılavuz, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun çalışma ma
 7. [Üretilen Projeyi Bilgisayarınızda Çalıştırma Kılavuzu](#7-üretilen-projeyi-bilgisayarınızda-çalıştırma-kılavuzu)
 8. [Test Süiti ve Otomasyonun Çalıştırılması](#8-test-süiti-ve-otomasyonun-çalıştırılması)
 9. [Sıkça Sorulan Sorular (SSS) ve Sorun Giderme](#9-sıkça-sorulan-sorular-sss-ve-sorun-giderme)
+10. [Geliştirici Rehberi: Kod Tabanı Analizi ve Bilgi Grafiği (Graphify)](#10-geliştirici-rehberi-kod-tabanı-analizi-ve-bilgi-grafiği-graphify)
 
 ---
 
@@ -300,6 +301,67 @@ Toplam **56 adet test** çalıştırılır ve sistemin hatasızlığı onaylanı
 
 ### S: Süreci durdurup tekrar başlattığımda biten işler silinir mi?
 **C:** Kesinlikle hayır. `isTaskCompleted` ve `stateful teamleader plans` mekanizması sayesinde tamamlanmış görevler korunur ve süreç doğrudan yarım kalan görevden devam eder.
+
+---
+
+## 10. Geliştirici Rehberi: Kod Tabanı Analizi ve Bilgi Grafiği (Graphify)
+
+XFactor projesini geliştiren veya kod tabanında değişiklik yapmak isteyen geliştiriciler için projeye **Graphify** bilgi grafiği entegre edilmiştir.
+
+### 📌 Graphify Nedir?
+Graphify; projedeki tüm JavaScript, React ve dokümantasyon dosyalarını **AST (Soyut Sözdizimi Ağacı)** seviyesinde ayrıştırarak bileşenler, ajan modülleri, veri tabanı modelleri ve API uç noktaları arasındaki ilişkileri haritalandırır.
+
+### 🚀 Başlangıç ve Kurulum
+
+1. **Paketi Yükleyin:**
+   ```bash
+   pip install graphify
+   ```
+
+2. **Bilgi Grafiğini Çıkarın:**
+   ```bash
+   python -m graphify extract . --code-only
+   ```
+   Bu komut `graphify-out/` klasörü altında:
+   - `graph.json`: Tüm ilişkileri içeren makine tarafından okunabilir grafik veri tabanını,
+   - `graph.html` ve `GRAPH_TREE.html`: Tarayıcıda açılabilen görselleştirme sayfalarını,
+   - `GRAPH_REPORT.md`: Projenin mimari düğüm ve topluluk raporunu üretir.
+
+3. **Gemini / Antigravity AI Entegrasyonu:**
+   ```bash
+   python -m graphify gemini install
+   ```
+   Kurulum tamamlandığında yapay zeka asistanı kod tabanı ile ilgili sorularınızı doğrudan grafik üzerinden sorgular ve %90'a varan token tasarrufu sağlar.
+
+### 🛠️ Önemli Komutlar ve Kullanım Senaryoları
+
+- **Belirli bir bileşeni sorgulama:**
+  ```bash
+  python -m graphify query "Workflow engine checkpoint recovery nasıl çalışıyor?"
+  ```
+- **Mimari kavramı veya sınıfı açıklama:**
+  ```bash
+  python -m graphify explain "dag.js"
+  ```
+- **İki modül arasındaki bağlantı yolunu bulma:**
+  ```bash
+  python -m graphify path "server.js" "codeGenerator.js"
+  ```
+- **En kritik merkez düğümleri (God Nodes) listeleme:**
+  ```bash
+  python -m graphify god-nodes
+  ```
+- **Kod değişiklikleri sonrası grafiği tazeleme (Maliyetsiz / AST-only):**
+  ```bash
+  python -m graphify update .
+  ```
+
+### 🌐 Kısıtlı Ağlarda (MEB vb.) IPv4 ile Çalıştırma
+MEB veya IPv6 DNS kısıtlaması olan ağlarda `python -m graphify` komutları soket hatası verirse, aşağıdaki IPv4 zorlamalı şablonu kullanabilirsiniz:
+```bash
+python -c "import socket; orig=socket.getaddrinfo; socket.getaddrinfo=lambda h,p,f=0,t=0,pr=0,fl=0: orig(h,p,socket.AF_INET,t,pr,fl); from graphify.cli import main; import sys; sys.argv=['graphify'] + sys.argv[1:]; main()" <komut>
+```
+Detaylı açıklamalar için [graphify-bilgi-notu.md](file:///D:/dnm/xfactor/graphify-bilgi-notu.md) dokümanına başvurabilirsiniz.
 
 ---
 
