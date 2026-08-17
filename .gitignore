@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+dist/
+frontend/dist/
+
+# Environment files
+backend/.env
+backend/.env.local
+
+# SQLite Database WAL & SHM files
+backend/data/*.db-shm
+backend/data/*.db-wal
+
+# Log files
+*.log
+backend/out*.log
