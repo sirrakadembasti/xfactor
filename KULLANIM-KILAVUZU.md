@@ -283,14 +283,18 @@ npm run dev
 
 ## 8. Test Süiti ve Otomasyonun Çalıştırılması
 
-Tüm çekirdek motorları, güvenlik, DAG ve checkpoint kurtarma fonksiyonlarını test etmek için:
+Tüm çekirdek motorları, güvenlik, DAG, deterministik kalite kapısı, şema doğrulaması ve checkpoint kurtarma fonksiyonlarını test etmek için:
 
 ```bash
 cd backend
-npm test
+node test_backend.js
+node test_deep_verification.js
+node test_tur2_edge_cases.js
+node test_quality_gate.js
+node test_e2e_simulation.js
 ```
 
-Toplam **56 adet test** çalıştırılır ve sistemin hatasızlığı onaylanır.
+Toplam **63 adet test** çalıştırılır ve sistemin hatasızlığı, şema uyumu ve güvenlik kuralları onaylanır.
 
 ---
 

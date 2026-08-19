@@ -3,7 +3,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
 [![Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-646CFF.svg)](https://vitejs.dev/)
 [![TailwindCSS](https://img.shields.io/badge/Style-TailwindCSS-38B2AC.svg)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](file:///F:/projeler/xfactor/backend/test_backend.js)
+[![Tests](https://img.shields.io/badge/Tests-63%2F63%20Passing-brightgreen.svg)](file:///F:/projeler/xfactor/backend/test_quality_gate.js)
 [![Architecture](https://img.shields.io/badge/Architecture-Agency--Agents%20%2B%20Archon%20DAG-blueviolet.svg)](https://github.com/coleam00/Archon)
 
 **XFactor**, doğal dilde verilen kullanıcı isteklerini analiz eden, hiyerarşik çok katmanlı AI ajanları (`Manager`, `Director`, `Teamleader`, `Coder`, `Reviewer`, `Tester`) arasında görev dağılımı yapan, deterministik bir **DAG (Directed Acyclic Graph)** motoruyla bağımlılıkları çözen ve çalışan çok dosyalı yazılım projeleri üreten kurumsal bir AI Ajan Orkestrasyon Platformudur.
@@ -113,28 +113,30 @@ npm run dev
 
 ---
 
-## 🧪 Test Suite (TDD ve Güvenlik Doğrulaması)
+## 🧪 Test Suite (TDD, Güvenlik ve Deterministik Kalite Kapısı)
 
-Backend, Ajan Rolleri, JSON Şemaları, DAG Motoru, Dosya Protokolü, Checkpoint Recovery ve Güvenlik katmanlarını kapsayan **56 adet otomatik test** mevcuttur:
+Backend, Ajan Rolleri, JSON Şemaları, DAG Motoru, Dosya Protokolü, Checkpoint Recovery, Deterministik Şema Doğrulama ve Güvenlik katmanlarını kapsayan **63 adet otomatik test** mevcuttur:
 
 ```bash
 cd backend
 node test_backend.js
 node test_deep_verification.js
 node test_tur2_edge_cases.js
+node test_quality_gate.js
 node test_e2e_simulation.js
 ```
 
 ```text
-==========================================
+==================================================
 ⚡ XFactor Test Suite Sonuçları:
 - Backend & Security Tests: 31/31 BAŞARILI
 - Derin Doğrulama Tests: 16/16 BAŞARILI
 - Edge-Case & Stres Tests: 8/8 BAŞARILI
+- Kalite Kapısı & Şema Doğrulama Tests: 7/7 BAŞARILI
 - E2E Pipeline Simulation: 1/1 BAŞARILI
-==========================================
-🎉 Toplam: 56 BAŞARILI, 0 HATALI (%100 Başarı)
-==========================================
+==================================================
+🎉 Toplam: 63 BAŞARILI, 0 HATALI (%100 Başarı)
+==================================================
 ```
 
 ---
@@ -151,10 +153,11 @@ Uygulamanın A'dan Z'ye kullanım kılavuzuna, ekran görüntülü akış senary
 ```
 xfactor/
 ├── TODO.md                         # Master Yol Haritası ve Test Sertifikasyonları
+├── yenitodo.md                     # Faz Bazlı İyileştirme ve Yeniden Yapılandırma Takibi
+├── analiz.md                       # Kapsamlı Dokümantasyon vs. Gerçek Uygulama Denetim Raporu
 ├── KULLANIM-KILAVUZU.md             # A'dan Z'ye Kapsamlı Kullanıcı ve Operasyon Kılavuzu
 ├── README.md                       # Genel Mimari ve Başlangıç Dokümantasyonu
 ├── graphify-bilgi-notu.md          # Graphify ve Kısıtlı Ağlar Kullanım Notu
-├── graphify-out/                   # AST Bilgi Grafiği, Görselleştiriciler ve Mimari Raporlar
 │
 ├── backend/
 │   ├── agents/                     # Uzman Ajan Rol ve Sistem Promptları (Agency-Agents Modeli)
@@ -162,32 +165,44 @@ xfactor/
 │   │   ├── director.js             # Director Ajanı
 │   │   ├── teamleader.js           # Teamleader Ajanı
 │   │   ├── coder.js                # Coder Ajanı & Robust Parser
-│   │   ├── reviewer.js             # Reviewer Ajanı
-│   │   ├── tester.js               # Tester Ajanı
+│   │   ├── reviewer.js             # Reviewer Ajanı (Iterative Quality Gate)
+│   │   ├── tester.js               # Tester Ajanı & Deterministik Şema/Prisma Audit
 │   │   ├── schemas.js              # JSON Şema, Truncation Repair & Regex Extractor
 │   │   └── index.js                # Ajan Kayıt Defteri ve Fabrika
 │   │
 │   ├── engine/                     # Deterministik İş Akışı ve DAG Motoru (Archon Modeli)
 │   │   ├── dag.js                  # Topolojik Sıralama ve Döngü Kontrolü
-│   │   ├── fileProtocol.js         # "Agent = Klasör" Protokol Dosyaları
-│   │   ├── codeGenerator.js        # Çok Dosyalı Kod Yazıcı ve Ağaç Gezgini
-│   │   ├── selfCorrection.js       # Reviewer-Coder Düzeltme Döngüsü
+│   │   ├── fileProtocol.js         # "Agent = Klasör" Protokol Dosyaları & Checkpoint Kontrolü
+│   │   ├── codeGenerator.js        # Dinamik Scaffold Guard & Kod Yazıcı
+│   │   ├── selfCorrection.js       # Reviewer-Coder Çok Turlu Düzeltme Döngüsü
 │   │   ├── workflow.js             # Otonom Proje Yürütücüsü & Checkpoint Recovery
 │   │   └── index.js                # Motor İndeksi
 │   │
-│   ├── auth.js                     # Kullanıcı, Parola (Scrypt), Oturum ve RBAC
-│   │   ├── db.js                   # SQLite Veritabanı, WAL Kalıcılık & Disk Senkronizasyonu
-│   │   ├── llm.js                  # Multi-Provider LLM Yönlendirme (Gemini, OpenAI vb.)
-│   │   ├── security.js             # Path Traversal, CORS, Rate Limit ve Sanitizasyon
-│   │   ├── observability.js        # Request ID ve Yapılandırılmış Loglama
-│   │   ├── server.js               # Express API, Dinamik Manager Chat & WebSocket Sunucusu
-│   │   └── test_backend.js         # Kapsamlı TDD ve Güvenlik Test Süiti
+│   ├── routes/                     # Modüler API Yönlendiricileri
+│   │   ├── authRoutes.js           # Kimlik Doğrulama ve Login Uç Noktaları
+│   │   └── projectRoutes.js        # Proje CRUD, Chat, Log ve Workflow Tetikleyicileri
 │   │
+│   ├── auth.js                     # Kullanıcı, Parola (Scrypt), Oturum ve RBAC
+│   ├── db.js                       # SQLite Veritabanı, WAL Kalıcılık & workflow_state Kolonu
+│   ├── llm.js                      # Multi-Provider LLM Yönlendirme (Gemini, OpenAI vb.)
+│   ├── security.js                 # Path Traversal, CORS, Rate Limit ve Sanitizasyon
+│   ├── observability.js            # Request ID ve Yapılandırılmış Loglama
+│   ├── server.js                   # Express API & WebSocket Sunucusu
+│   ├── test_backend.js             # TDD ve Güvenlik Test Süiti
+│   └── test_quality_gate.js        # Kalite Kapısı ve Şema Doğrulama Test Süiti
+│
 ├── frontend/
 │   ├── src/
+│   │   ├── components/             # Modüler Görünüm Bileşenleri
+│   │   │   ├── LoginView.jsx       # Güvenli Giriş Ekranı
+│   │   │   ├── Sidebar.jsx         # Sol Menü, Arama ve Proje İşlemleri
+│   │   │   ├── Header.jsx          # Üst Başlık ve Süreç Kontrol Butonları
+│   │   │   ├── ChatView.jsx        # Manager Beyin Fırtınası Sohbet Paneli
+│   │   │   ├── DAGFlowView.jsx     # ReactFlow Canlı DAG ve Log Tablosu
+│   │   │   └── IDEView.jsx         # Monaco Editor Proje Dosya Gezgini
 │   │   ├── services/
 │   │   │   └── api.js              # Modüler XFactor API ve WebSocket İstemcisi
-│   │   ├── App.jsx                 # Ana Panel (Chat, ReactFlow DAG, Monaco IDE, 3-Dots Menü)
+│   │   ├── App.jsx                 # Ana Panel Koordinatörü
 │   │   ├── main.jsx                # React Giriş Noktası
 │   │   └── index.css               # Tailwind & ReactFlow Stilleri
 │   ├── package.json
