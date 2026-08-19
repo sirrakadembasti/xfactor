@@ -21,11 +21,10 @@ import {
     isFolderCompleted,
     readAltTalimatname,
 } from './fileProtocol.js';
-import { getAgent } from '../agents/index.js';
-import { generateLLMResponse } from '../llm.js';
+import { getAgent, runDeterministicProjectAudit } from '../agents/index.js';
 import { getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold } from './codeGenerator.js';
-
+import { executeCorrectionLoop } from './selfCorrection.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECTS_ROOT = process.env.PROJECTS_ROOT || path.join(__dirname, '../../projects');
@@ -258,8 +257,8 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                     const coderNodeId = `${tlId}.${taskId}`;
                     const coderDir = path.join(tlDir, taskId);
 
-                    // AKILLI DEVAM KONTROLÜ: Görev daha önce başarıyla tamamlandı mı?
-                    const alreadyCompleted = await isTaskCompleted(coderDir);
+                    // AKILLI DEVAM KONTROLÜ: Görev ve hedef dosyalar daha önce başarıyla tamamlandı mı?
+                    const alreadyCompleted = await isTaskCompleted(coderDir, projectDir, task.targetFiles);
                     if (alreadyCompleted) {
                         dag.setTaskStatus(taskId, 'completed');
                         await logEvent(
@@ -284,12 +283,50 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                         `# Atomik Görev: ${task.title}\n\nAçıklama: ${task.description}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`
                     );
 
+                    // Proje bağlamı (Önceki üretilen schema, tipler veya modeller)
+                    const contextFiles = generatedProjectFiles.filter(f => 
+                        f.path.includes('schema.prisma') || 
+                        f.path.endsWith('.d.ts') || 
+                        f.path.includes('types') || 
+                        f.path.includes('validations')
+                    );
+                    let projectContext = '';
+                    if (contextFiles.length > 0) {
+                        projectContext = contextFiles.map(f => `Dosya: ${f.path}\n\`\`\`\n${f.content.slice(0, 1500)}\n\`\`\``).join('\n\n');
+                    }
+
                     // Coder LLM çağrısı
                     const coderAgent = getAgent('coder');
-                    const coderPrompt = coderAgent.buildPrompt(taskId, task.title, task.description, task.targetFiles);
+                    const coderPrompt = coderAgent.buildPrompt(taskId, task.title, task.description, task.targetFiles, projectContext);
                     let coderOutput = await callAgentLLM('coder', coderPrompt);
 
-                    // Dosyaları hem coder klasörüne hem de proje köküne yaz
+                    await logEvent(wsClients, projectId, "Coder", "write", task.targetFiles.join(', '), `İlk kod bloğu üretildi. Reviewer denetim döngüsü başlatılıyor...`, coderNodeId, tlId);
+
+                    // 5. AŞAMA: REVIEWER & SELF-CORRECTION DÖNGÜSÜ
+                    const loopResult = await executeCorrectionLoop({
+                        taskId,
+                        taskTitle: task.title,
+                        targetFiles: task.targetFiles,
+                        initialCoderOutput: coderOutput,
+                        coderPrompt,
+                        maxRetries: 2,
+                        onFeedback: async ({ iteration, feedback, summary }) => {
+                            await logEvent(
+                                wsClients,
+                                projectId,
+                                "Reviewer",
+                                "feedback",
+                                "",
+                                `[${iteration}. Tur İnceleme] Düzeltme istendi: ${feedback || summary}. Coder yeniden kodluyor...`,
+                                coderNodeId,
+                                tlId
+                            );
+                        }
+                    });
+
+                    coderOutput = loopResult.finalOutput;
+
+                    // Nihai onaylı dosyaları hem coder klasörüne hem de proje köküne yaz
                     for (const file of coderOutput.files) {
                         const coderFilePath = path.join(coderDir, path.basename(file.path));
                         await fs.writeFile(coderFilePath, file.content, 'utf8');
@@ -298,42 +335,35 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                         await fs.mkdir(path.dirname(rootFilePath), { recursive: true });
                         await fs.writeFile(rootFilePath, file.content, 'utf8');
 
-                        generatedProjectFiles.push({ path: file.path, content: file.content });
-                    }
-
-                    await logEvent(wsClients, projectId, "Coder", "write", task.targetFiles.join(', '), `Kod başarıyla yazıldı. Reviewer inceliyor...`, coderNodeId, tlId);
-
-                    // 5. AŞAMA: REVIEWER & SELF-CORRECTION
-                    const reviewerAgent = getAgent('reviewer');
-                    const reviewPrompt = reviewerAgent.buildPrompt(task.title, task.targetFiles, coderOutput.files);
-                    const reviewResult = await callAgentLLM('reviewer', reviewPrompt);
-
-                    if (!reviewResult.approved && reviewResult.feedback) {
-                        await logEvent(wsClients, projectId, "Reviewer", "feedback", "", `Düzeltme istendi: ${reviewResult.feedback}. Coder yeniden kodluyor...`, coderNodeId, tlId);
-
-                        // 1 Tur Self-Correction
-                        const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi:\n"""\n${reviewResult.feedback}\n"""\nLütfen hataları düzelterek kodları yeniden üret.`;
-                        coderOutput = await callAgentLLM('coder', fixPrompt);
-
-                        for (const file of coderOutput.files) {
-                            const coderFilePath = path.join(coderDir, path.basename(file.path));
-                            await fs.writeFile(coderFilePath, file.content, 'utf8');
-
-                            const rootFilePath = path.join(projectDir, file.path);
-                            await fs.mkdir(path.dirname(rootFilePath), { recursive: true });
-                            await fs.writeFile(rootFilePath, file.content, 'utf8');
-
+                        // Mevcut dosyayı listede güncelle veya ekle
+                        const existingIdx = generatedProjectFiles.findIndex(f => f.path === file.path);
+                        if (existingIdx !== -1) {
+                            generatedProjectFiles[existingIdx] = { path: file.path, content: file.content };
+                        } else {
                             generatedProjectFiles.push({ path: file.path, content: file.content });
                         }
                     }
 
                     // Coder görevini tamamla
-                    await writeDurum(coderDir, 'TAMAMLANDI', `Görev başarıyla tamamlandı: ${coderOutput.summary}`);
-                    await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${coderOutput.summary}\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
+                    const statusDetail = loopResult.approved 
+                        ? `Görev başarıyla tamamlandı ve Reviewer tarafından onaylandı: ${coderOutput.summary}`
+                        : `Görev üretildi (Reviewer uyarısıyla tamamlandı): ${coderOutput.summary}`;
+
+                    await writeDurum(coderDir, 'TAMAMLANDI', statusDetail);
+                    await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ${loopResult.approved ? 'ONAYLANDI' : 'UYARI'}\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
                     await checkTodoItem(path.join(tlDir, 'TODO.md'), task.title);
 
                     dag.setTaskStatus(taskId, 'completed', coderOutput);
-                    await logEvent(wsClients, projectId, "Coder", "finish", "", `Görev "${task.title}" tamamlandı.`, coderNodeId, tlId);
+                    await logEvent(
+                        wsClients,
+                        projectId,
+                        "Coder",
+                        "finish",
+                        task.targetFiles.join(', '),
+                        `Görev "${task.title}" tamamlandı (${loopResult.approved ? 'Reviewer Onaylı' : 'Revizyonlu'}).`,
+                        coderNodeId,
+                        tlId
+                    );
                 }
 
                 // Teamleader tamamlandı
@@ -355,11 +385,18 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
         if (await checkPause(projectId) === 'running') {
             await logEvent(wsClients, projectId, "Tester", "start", "", "Tüm proje kabul kriterleri Tester ajanı tarafından doğrulanıyor...", "tester", "manager");
 
+            const deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
             const testerAgent = getAgent('tester');
             const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles);
             const testResult = await callAgentLLM('tester', testerPrompt);
-            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'UYARI'}\n- Detay: ${testResult.summary}\n\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
 
+            if (!deterministicAudit.passed) {
+                testResult.approved = false;
+                testResult.issues = [...(testResult.issues || []), ...deterministicAudit.issues];
+                testResult.summary = `[Deterministik Hatalar Tespit Edildi]: ${deterministicAudit.issues.join(' | ')}. ${testResult.summary || ''}`;
+            }
+
+            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'UYARI / HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n${testResult.issues && testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
             await writeRapor(projectDir, finalRapor);
             await writeDurum(projectDir, 'TAMAMLANDI', 'Proje üretimi ve test doğrulaması başarıyla sonuçlandı.');
 

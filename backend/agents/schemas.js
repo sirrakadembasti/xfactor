@@ -425,9 +425,14 @@ export function normalizeReviewResult(review) {
     if (!review || typeof review !== 'object') {
         review = {};
     }
-    review.approved = typeof review.approved === 'boolean'
+    const hasExplicitBool = typeof review.approved === 'boolean';
+    const isApprovedTrue = hasExplicitBool
         ? review.approved
-        : Boolean(review.approved !== false && String(review.approved).toLowerCase() !== 'false');
+        : (typeof review.approved === 'string' && ['true', 'approved', 'onaylandı', 'başarılı'].includes(review.approved.trim().toLowerCase()));
+
+    const hasIssues = (Array.isArray(review.issues) && review.issues.length > 0) || (typeof review.feedback === 'string' && review.feedback.trim().length > 0 && !isApprovedTrue);
+
+    review.approved = Boolean(isApprovedTrue && !hasIssues);
     review.summary = review.summary || review.feedback || review.message || (review.approved ? 'İnceleme başarıyla onaylandı.' : 'Düzeltme gerekli.');
     return review;
 }

@@ -104,6 +104,9 @@ if (!columnExists('projects', 'owner_id')) {
 if (!columnExists('projects', 'is_pinned')) {
     db.exec('ALTER TABLE projects ADD COLUMN is_pinned INTEGER DEFAULT 0');
 }
+if (!columnExists('projects', 'workflow_state')) {
+    db.exec('ALTER TABLE projects ADD COLUMN workflow_state TEXT');
+}
 const projectOwnersIndex = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_project_owners_user_id'").get();
 if (!projectOwnersIndex) {
     db.exec('CREATE INDEX idx_project_owners_user_id ON project_owners(user_id)');
@@ -142,25 +145,35 @@ export function getProjectState(id) {
         };
     });
     
+    let workflow = null;
+    if (project.workflow_state) {
+        try {
+            workflow = JSON.parse(project.workflow_state);
+        } catch {}
+    }
+
     return {
         id: project.id,
         title: project.title,
         status: status,
         plan: project.plan,
+        workflow,
         chatHistory
     };
 }
 
 export function saveProjectState(state) {
     const planStr = state.plan ? JSON.stringify(state.plan) : null;
+    const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
 
     const insertOrUpdateProject = db.prepare(`
-        INSERT INTO projects (id, title, status, plan) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO projects (id, title, status, plan, workflow_state) 
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET 
             title = excluded.title, 
             status = excluded.status, 
-            plan = excluded.plan
+            plan = excluded.plan,
+            workflow_state = excluded.workflow_state
     `);
 
     const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content) VALUES (?, ?, ?)');
@@ -171,7 +184,8 @@ export function saveProjectState(state) {
             state.id,
             state.title,
             state.status,
-            planStr
+            planStr,
+            workflowStr
         );
 
         const currentCount = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(state.id).count;

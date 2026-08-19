@@ -213,12 +213,30 @@ export async function readTasksFromTodoFile(todoFilePath) {
     }
 }
 
-export async function isTaskCompleted(coderDir) {
+export async function isTaskCompleted(coderDir, projectDir = null, targetFiles = []) {
     try {
         const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md')).then(() => true).catch(() => false);
-        if (raporExists) return true;
         const durum = await readDurum(coderDir);
-        return Boolean(durum && durum.includes('TAMAMLANDI'));
+        const durumCompleted = Boolean(durum && durum.includes('TAMAMLANDI'));
+
+        if (!raporExists && !durumCompleted) {
+            return false;
+        }
+
+        // Eğer projectDir ve targetFiles verilmişse, hedef dosyaların diskte gerçekten var olup olmadığını doğrula
+        if (projectDir && Array.isArray(targetFiles) && targetFiles.length > 0) {
+            for (const relPath of targetFiles) {
+                if (typeof relPath === 'string' && relPath.trim()) {
+                    const fullPath = path.join(projectDir, relPath);
+                    const fileExists = await fs.stat(fullPath).then(s => s.size > 0).catch(() => false);
+                    if (!fileExists) {
+                        return false; // Hedef dosya diskte yoksa veya 0 byte ise tamamlanmış sayılamaz
+                    }
+                }
+            }
+        }
+
+        return true;
     } catch {
         return false;
     }
