@@ -2,12 +2,12 @@ import { Router } from 'express';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir } from '../orchestrator.js';
+import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir } from '../engine/index.js';
 import { getAllProjects, getProjectLogs, updateProject, deleteProject, syncProjectsWithDisk } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath } from '../security.js';
+import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import {
-    getUserProjects,
     getProjectRole,
     canViewProject,
     canEditProject,
@@ -31,14 +31,17 @@ export function buildManagerChatSystemPrompt(state, projectDir) {
         } catch {}
 
         extraContext = `
-[GÜNCEL DURUM: PROJE TAMAMLANDI]
-- "${title}" projesinin tüm aşamaları (Frontend, Backend, Veritabanı, Testler) başarıyla tamamlandı.
-${reportContent ? `\nKABUL VE TEST RAPORU ÖZETİ:\n"""\n${reportContent}\n"""\n` : ''}
+[GÜNCEL DURUM: PROJE TAMAMLANDI / İNCELEME & REVİZYON MODU]
+- "${title}" projesi daha önce üretildi.
+${reportContent ? `\nMEVCUT PROJE RAPORU:\n"""\n${reportContent}\n"""\n` : ''}
 
-Rehberlik:
-- Boss ile doğal, zeki ve samimi bir kıdemli yazılım mimarı olarak konuş. Kalıplaşmış robotik başlıklar ("Sayın Boss", "Dürüst Bilgilendirme" vb.) kullanma.
-- Projenin bittiğini, hangi modüllerin oluşturulduğunu anlat. Boss projeyi indirmek isterse üst menüdeki "Projeyi (ZIP) İndir" butonunu, kodları görmek isterse "Kod Editörünü Aç" butonunu kullanabileceğini belirt.
-- Yerel çalıştırma adımlarını kısaca özetle (npm install -> npx prisma db push -> npm run dev).
+KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
+- Sen bir sohbet ajanısın; sohbet sırasında doğrudan diskteki dosyaları DEĞİŞTİREMEZSİN veya arka planda kod YAZAMAZSIN.
+- ASLA "Hemen düzelttim", "Dosyaları güncelledim, yeni pakette hazır", "Mekan şablonunu temizledim" gibi SAHTE / YALAN iddialarda bulunma. Bu kullanıcıyı aldatmaktır ve KESİNLİKLE YASAKTIR.
+- Eğer Boss projede bir hata, yanlış şablon veya mimari revizyon bildirirse:
+  1. Hatayı ve eksikleri dürüstçe kabul et.
+  2. İstenen yeni/düzeltilmiş mimariyi ve şartnameyi (modeller, sayfalar, rotalar) net şekilde özetle.
+  3. Yanıtının sonuna mutlaka "[PLAN_HAZIR]" etiketini ekleyerek Boss'a "Revizyon planını hazırladım. Kodların DAG motoru tarafından sıfırdan üretilmesi için lütfen aşağıdaki 'Planı Onayla ve Başlat' butonuna tıklayınız." de.
 `;
     } else if (status === 'running') {
         extraContext = `
@@ -68,10 +71,14 @@ Rehberlik:
 `;
     }
 
-    return `Sen XFactor platformunun "Manager" adlı kıdemli yazılım mimarısın. 
-Boss ile Türkçe, son derece akıcı, zeki, yapıcı ve doğrudan konuşursun. 
-Kalıp veya robotik şablonlar kullanma, doğal bir uzman gibi yanıt ver. Markdown kullan.
+    const managerDoc = loadAgentPromptFromDocs('manager', 'Sen XFactor platformunun Manager adlı kıdemli yazılım mimarısın.');
+    const orkestrasyonDoc = loadOrkestrasyonTalimatnamesi();
 
+    return `${managerDoc}
+
+${orkestrasyonDoc ? `### PLATFORM ORKESTRASYON ANAYASASI (docs/ORKESTRASYON-TALIMATNAMESI.md):\n"""\n${orkestrasyonDoc.slice(0, 3000)}\n"""\n` : ''}
+
+### GÜNCEL PROJE DURUMU VE TALİMATLAR:
 ${extraContext}`;
 }
 
@@ -218,10 +225,6 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
         if (!state) return res.status(404).json({ error: "Project not found" });
 
         const projectDir = getProjectDir(id);
-        const isCompletedOnDisk = fsSync.existsSync(path.join(projectDir, 'RAPOR.md'));
-        if (isCompletedOnDisk) {
-            state.status = 'completed';
-        }
 
         const now = new Date();
         const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -257,23 +260,27 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
                 created_at: modelNow.toISOString()
             });
 
-            if (state.status === 'planning' && !isCompletedOnDisk) {
-                const isPlanReady = responseText.toLowerCase().includes("onaylıyor") ||
-                                    responseText.toLowerCase().includes("planı onayla") ||
-                                    responseText.toLowerCase().includes("üretime başla") ||
-                                    responseText.includes("[PLAN_HAZIR]");
+            const isPlanReady = responseText.toLowerCase().includes("onaylıyor") ||
+                                responseText.toLowerCase().includes("planı onayla") ||
+                                responseText.toLowerCase().includes("üretime başla") ||
+                                responseText.toLowerCase().includes("revizyon planı") ||
+                                responseText.includes("[PLAN_HAZIR]");
 
-                if (isPlanReady) {
-                    state.status = 'pending_approval';
-                    state.plan = {
-                        summary: `Proje: ${state.title}`,
-                        talimatname: `# ${state.title}\n\n## Mimari Şartname\n\n${responseText}`,
-                        domains: [
-                            { name: "frontend", prefix: "frontend", description: "Kullanıcı arayüzü ve bileşenler" },
-                            { name: "backend", prefix: "backend", description: "REST API ve sunucu servisleri" }
-                        ]
-                    };
-                }
+            if (isPlanReady && (state.status === 'planning' || state.status === 'completed' || state.status === 'paused')) {
+                state.status = 'pending_approval';
+                state.plan = {
+                    summary: `Revizyon Planı: ${state.title}`,
+                    talimatname: `# ${state.title} (Revize Şartname)\n\n${responseText}`,
+                    domains: [
+                        { name: "backend", prefix: "backend", description: "Veritabanı şeması ve REST API servisleri" },
+                        { name: "frontend", prefix: "frontend", description: "Kullanıcı arayüzü, sayfalar ve bileşenler" }
+                    ]
+                };
+                // Eski tamamlama raporunu temizle ki yeni DAG temiz çalışsın
+                try {
+                    const oldRapor = path.join(projectDir, 'RAPOR.md');
+                    if (fsSync.existsSync(oldRapor)) fsSync.unlinkSync(oldRapor);
+                } catch {}
             }
 
             await writeProjectState(id, state);

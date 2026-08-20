@@ -1,6 +1,7 @@
 import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
+import { loadAgentPromptFromDocs } from './agentLoader.js';
 
-export const REVIEWER_SYSTEM_PROMPT = `
+const FALLBACK_REVIEWER_PROMPT = `
 Sen bir "Reviewer" (Kod İnceleme) ajanısın (reviewer.agent).
 Görevin, Coder ajanı tarafından üretilen kodları syntax, mimari standartlar, güvenlik açıkları ve eksiklikler açısından incelemektir.
 
@@ -19,6 +20,7 @@ JSON ÇIKTI ŞEMASI:
 }
 `;
 
+export const REVIEWER_SYSTEM_PROMPT = loadAgentPromptFromDocs('reviewer', FALLBACK_REVIEWER_PROMPT);
 export function buildReviewerPrompt(taskTitle, targetFiles, producedFiles) {
     return `Görev Başlığı: ${taskTitle}
 Hedef Dosyalar: ${JSON.stringify(targetFiles)}

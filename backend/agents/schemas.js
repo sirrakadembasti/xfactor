@@ -103,7 +103,7 @@ export function extractCoderFilesFromText(rawText) {
     const files = [];
     let summary = "Otomatik üretilen kod dosyaları";
 
-    // Summary extraction
+    // 1. Summary extraction
     const sumMatch = rawText.match(/"summary"\s*:\s*"([\s\S]*?)"\s*,\s*"files"/);
     if (sumMatch) {
         summary = sumMatch[1].trim();
@@ -112,20 +112,17 @@ export function extractCoderFilesFromText(rawText) {
         if (altSum) summary = altSum[1].trim();
     }
 
-    // Split on `"path"` keyword
+    // 2. Deneme: "path" ve "content" ikililerini sıra bağımsız yakala
+    // Standart format: "path" önce
     const segments = rawText.split(/"path"\s*:\s*["'`]/);
-
     for (let i = 1; i < segments.length; i++) {
         const seg = segments[i];
-        
-        // Path is until the closing quote
         const pathMatch = seg.match(/^([^"'`\n]+)["'`]/);
         if (!pathMatch) continue;
 
         const filePath = pathMatch[1].trim();
         const afterFilePath = seg.slice(pathMatch[0].length);
 
-        // Find "content" start
         const contentMatch = afterFilePath.match(/"content"\s*:\s*(["'`])/);
         if (!contentMatch) continue;
 
@@ -133,7 +130,7 @@ export function extractCoderFilesFromText(rawText) {
         const contentStartIdx = contentMatch.index + contentMatch[0].length;
         let content = afterFilePath.slice(contentStartIdx);
 
-        // Strip JSON delimiters at end of segment
+        // Strip trailing JSON delimiters accurately
         const closingPattern = new RegExp(`(?:${contentQuote}|["'\`])?\\s*\\}\\s*(?:,\\s*\\{?|\\]\\s*\\}?)?\\s*(\`\`\`.*)?$`);
         content = content.replace(closingPattern, '').trim();
 
@@ -141,7 +138,6 @@ export function extractCoderFilesFromText(rawText) {
             content = content.slice(0, -contentQuote.length).trim();
         }
 
-        // Unescape standard escapes if it was JSON-escaped
         if (content.includes('\\n') && !content.includes('\n')) {
             content = content
                 .replace(/\\n/g, '\n')
@@ -152,10 +148,30 @@ export function extractCoderFilesFromText(rawText) {
         }
 
         if (filePath && content) {
-            files.push({
-                path: filePath,
-                content
-            });
+            files.push({ path: filePath, content });
+        }
+    }
+
+    // 3. Fallback: Eğer "content" önce geldiyse ters sıra ile dene
+    if (files.length === 0) {
+        const altSegments = rawText.split(/"content"\s*:\s*(["'`])/);
+        for (let i = 1; i < altSegments.length; i += 2) {
+            const quote = altSegments[i];
+            const rest = altSegments[i + 1] || '';
+            const pathIdx = rest.indexOf('"path"');
+            if (pathIdx !== -1) {
+                let content = rest.slice(0, pathIdx).trim();
+                if (content.endsWith(quote)) content = content.slice(0, -quote.length).trim();
+                if (content.endsWith(',')) content = content.slice(0, -1).trim();
+                if (content.endsWith(quote)) content = content.slice(0, -quote.length).trim();
+
+                const pathPart = rest.slice(pathIdx);
+                const pathMatch = pathPart.match(/"path"\s*:\s*["'`]([^"'`\n]+)["'`]/);
+                if (pathMatch && pathMatch[1]) {
+                    const filePath = pathMatch[1].trim();
+                    files.push({ path: filePath, content });
+                }
+            }
         }
     }
 

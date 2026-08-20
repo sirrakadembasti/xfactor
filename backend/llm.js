@@ -22,49 +22,51 @@ export async function generateLLMResponse(messages, options = {}) {
     dotenv.config(); // Her istekte güncel .env değişkenlerini yükle
 
     const allowMockFallback = options.allowMockFallback === true || process.env.ALLOW_MOCK_FALLBACK === 'true';
-    const provider = (process.env.AI_PROVIDER || 'google').toLowerCase().trim();
+    const provider = (options.provider || process.env.AI_PROVIDER || 'google').toLowerCase().trim();
     
     // Model belirleme (Sağlayıcıya özel model veya genel AI_MODEL)
-    let aiModel = process.env[`${provider.toUpperCase()}_MODEL`]?.trim() || process.env.AI_MODEL?.trim() || 'gemini-3.6-flash';
+    let aiModel = options.model?.trim() || process.env[`${provider.toUpperCase()}_MODEL`]?.trim() || process.env.AI_MODEL?.trim() || 'gemini-3.6-flash';
     
-    let apiKey = '';
-    let baseURL = '';
+    let apiKey = options.apiKey !== undefined ? options.apiKey?.trim() : '';
+    let baseURL = options.baseURL?.trim() || '';
 
-    if (provider === 'google') {
-        apiKey = process.env.GOOGLE_API_KEY?.trim();
-    }
-    else if (provider === 'openai') {
-        apiKey = process.env.OPENAI_API_KEY?.trim();
-        baseURL = process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1/chat/completions";
-        if (!aiModel) aiModel = 'gpt-5.6-sol';
-    }
-    else if (provider === 'openrouter') {
-        apiKey = process.env.OPENROUTER_API_KEY?.trim();
-        baseURL = process.env.OPENROUTER_BASE_URL?.trim() || "https://openrouter.ai/api/v1/chat/completions";
-        if (!aiModel) aiModel = 'google/gemini-3.6-flash';
-    }
-    else if (provider === 'deepseek') {
-        apiKey = process.env.DEEPSEEK_API_KEY?.trim();
-        baseURL = process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com/chat/completions";
-        if (!aiModel) aiModel = 'deepseek-chat';
-    }
-    else if (provider === 'qwen') {
-        apiKey = process.env.QWEN_API_KEY?.trim();
-        baseURL = process.env.QWEN_BASE_URL?.trim() || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
-        if (!aiModel) aiModel = 'qwen3-max';
-    }
-    else if (provider === 'minimax') {
-        apiKey = process.env.MINIMAX_API_KEY?.trim();
-        baseURL = process.env.MINIMAX_BASE_URL?.trim() || "https://api.minimax.io/v1/chat/completions";
-        if (!aiModel) aiModel = 'abab7-chat';
-    }
-    else if (provider === 'kimi') {
-        apiKey = process.env.KIMI_API_KEY?.trim();
-        baseURL = process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1/chat/completions";
-        if (!aiModel) aiModel = 'moonshot-v1-32k';
+    if (options.apiKey === undefined) {
+        if (provider === 'google') {
+            apiKey = process.env.GOOGLE_API_KEY?.trim() || '';
+        }
+        else if (provider === 'openai') {
+            apiKey = process.env.OPENAI_API_KEY?.trim() || '';
+            baseURL = process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1/chat/completions";
+            if (!aiModel) aiModel = 'gpt-5.6-sol';
+        }
+        else if (provider === 'openrouter') {
+            apiKey = process.env.OPENROUTER_API_KEY?.trim() || '';
+            baseURL = process.env.OPENROUTER_BASE_URL?.trim() || "https://openrouter.ai/api/v1/chat/completions";
+            if (!aiModel) aiModel = 'google/gemini-3.6-flash';
+        }
+        else if (provider === 'deepseek') {
+            apiKey = process.env.DEEPSEEK_API_KEY?.trim() || '';
+            baseURL = process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com/chat/completions";
+            if (!aiModel) aiModel = 'deepseek-chat';
+        }
+        else if (provider === 'qwen') {
+            apiKey = process.env.QWEN_API_KEY?.trim() || '';
+            baseURL = process.env.QWEN_BASE_URL?.trim() || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
+            if (!aiModel) aiModel = 'qwen3-max';
+        }
+        else if (provider === 'minimax') {
+            apiKey = process.env.MINIMAX_API_KEY?.trim() || '';
+            baseURL = process.env.MINIMAX_BASE_URL?.trim() || "https://api.minimax.io/v1/chat/completions";
+            if (!aiModel) aiModel = 'abab7-chat';
+        }
+        else if (provider === 'kimi') {
+            apiKey = process.env.KIMI_API_KEY?.trim() || '';
+            baseURL = process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1/chat/completions";
+            if (!aiModel) aiModel = 'moonshot-v1-32k';
+        }
     }
 
-    if (process.env.AI_BASE_URL?.trim()) {
+    if (!baseURL && process.env.AI_BASE_URL?.trim()) {
         baseURL = process.env.AI_BASE_URL.trim();
     }
 

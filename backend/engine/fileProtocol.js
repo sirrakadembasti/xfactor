@@ -215,8 +215,13 @@ export async function readTasksFromTodoFile(todoFilePath) {
 
 export async function isTaskCompleted(coderDir, projectDir = null, targetFiles = []) {
     try {
-        const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md')).then(() => true).catch(() => false);
         const durum = await readDurum(coderDir);
+        // Eğer açık bir hata / veto durumu varsa kesinlikle tamamlanmamıştır
+        if (durum && (durum.includes('BASARISIZ') || durum.includes('REDDEDILDI'))) {
+            return false;
+        }
+
+        const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md')).then(() => true).catch(() => false);
         const durumCompleted = Boolean(durum && durum.includes('TAMAMLANDI'));
 
         if (!raporExists && !durumCompleted) {

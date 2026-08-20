@@ -1,6 +1,7 @@
 import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
+import { loadAgentPromptFromDocs } from './agentLoader.js';
 
-export const TESTER_SYSTEM_PROMPT = `
+const FALLBACK_TESTER_PROMPT = `
 Sen bir "Tester" (QA / Test) ajanısın (tester.agent).
 Görevin, üretilen projenin veya kod modülünün çalışabilirliğini, sınır durumlarını ve fonksiyonel gereksinimlerini doğrulamaktır.
 
@@ -17,8 +18,18 @@ JSON ÇIKTI ŞEMASI:
   "failedCount": 0,
   "issues": [],
   "notes": "Tüm kabul kriterleri başarıyla doğrulandı."
-}
 `;
+
+export const TESTER_SYSTEM_PROMPT = loadAgentPromptFromDocs('tester', FALLBACK_TESTER_PROMPT);
+export function stripStringsAndComments(code) {
+    if (typeof code !== 'string') return '';
+    return code
+        .replace(/\/\*[\s\S]*?\*\//g, '')       // Çok satırlı yorumlar (/* ... */)
+        .replace(/\/\/[^\n\r]*/g, '')           // Tek satırlı yorumlar (// ...)
+        .replace(/`(?:\\[\s\S]|[^\\`])*`/g, '""') // Template literals (`...`)
+        .replace(/"(?:\\[\s\S]|[^\\"])*"/g, '""') // Çift tırnak stringler ("...")
+        .replace(/'(?:\\[\s\S]|[^\\'])*'/g, "''"); // Tek tırnak stringler ('...')
+}
 
 /**
  * Üretilen projede deterministik şema, JSON ve sözdizimi denetimi yapar
@@ -71,7 +82,31 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
         if (definedModels.size > 0) passedCount++;
     }
 
-    // 3. Dosya Boyut ve İçerik Kontrolü
+    // 3. JS/TS Basit Sözdizimi ve Parantez Dengesi Kontrolü (String/Yorum Temizliği ile)
+    for (const file of generatedFiles) {
+        if (file.path && (file.path.endsWith('.js') || file.path.endsWith('.jsx') || file.path.endsWith('.ts') || file.path.endsWith('.tsx')) && typeof file.content === 'string') {
+            const cleanCode = stripStringsAndComments(file.content);
+            let braceCount = 0;
+            let parenCount = 0;
+            let bracketCount = 0;
+            for (const ch of cleanCode) {
+                if (ch === '{') braceCount++;
+                else if (ch === '}') braceCount--;
+                else if (ch === '(') parenCount++;
+                else if (ch === ')') parenCount--;
+                else if (ch === '[') bracketCount++;
+                else if (ch === ']') bracketCount--;
+            }
+            if (braceCount !== 0 || parenCount !== 0 || bracketCount !== 0) {
+                issues.push(`Kritik Sözdizimi Hatası: "${file.path}" dosyasında dengesiz parantez/süslü parantez tespit edildi (Brace: ${braceCount}, Paren: ${parenCount}, Bracket: ${bracketCount})!`);
+                failedCount++;
+            } else {
+                passedCount++;
+            }
+        }
+    }
+
+    // 4. Dosya Boyut ve İçerik Kontrolü
     for (const file of generatedFiles) {
         if (!file.content || file.content.trim().length === 0) {
             issues.push(`Boş dosya tespit edildi: "${file.path}"`);
@@ -80,7 +115,6 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
             passedCount++;
         }
     }
-
     return {
         passed: issues.length === 0,
         issues,

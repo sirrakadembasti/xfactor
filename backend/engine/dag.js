@@ -105,6 +105,64 @@ export class TaskDAG {
     }
 
     /**
+     * Bağımsız görevleri eşzamanlı/paralel dalgalar halinde gruplayıp döner
+     * @returns {Array<Array<string>>} [[taskId1, taskId2], [taskId3], ...]
+     */
+    getExecutionWaves() {
+        if (this.detectCycles()) {
+            throw new Error('DAG içinde döngüsel bağımlılık (circular dependency) tespit edildi.');
+        }
+
+        const waves = [];
+        const inDegree = new Map();
+        const dependents = new Map();
+
+        for (const [id, task] of this.tasks.entries()) {
+            inDegree.set(id, task.dependencies.size);
+            if (!dependents.has(id)) {
+                dependents.set(id, []);
+            }
+            for (const depId of task.dependencies) {
+                if (!dependents.has(depId)) {
+                    dependents.set(depId, []);
+                }
+                dependents.get(depId).push(id);
+            }
+        }
+
+        let currentWave = [];
+        for (const [id, deg] of inDegree.entries()) {
+            if (deg === 0) {
+                currentWave.push(id);
+            }
+        }
+
+        let visitedCount = 0;
+        while (currentWave.length > 0) {
+            waves.push(currentWave);
+            visitedCount += currentWave.length;
+            const nextWave = [];
+            for (const taskId of currentWave) {
+                const deps = dependents.get(taskId) || [];
+                for (const nextId of deps) {
+                    const newDeg = inDegree.get(nextId) - 1;
+                    inDegree.set(nextId, newDeg);
+                    if (newDeg === 0) {
+                        nextWave.push(nextId);
+                    }
+                }
+            }
+            currentWave = nextWave;
+        }
+
+        if (visitedCount !== this.tasks.size) {
+            throw new Error('DAG içinde çözülemeyen döngü veya eksik bağımlılık tespit edildi.');
+        }
+
+        return waves;
+    }
+
+    /**
      * Bağımlılıkları tamamlanmış ve çalıştırılmaya hazır görevleri döner
      */
     getReadyTasks() {

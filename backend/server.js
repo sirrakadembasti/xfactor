@@ -94,7 +94,18 @@ const ADMIN_USER = runtimeConfig.ADMIN_USER;
 const ADMIN_PASS = runtimeConfig.ADMIN_PASS;
 
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, path: '/ws/logs' });
+const wss = new WebSocketServer({
+    server,
+    path: '/ws/logs',
+    handleProtocols: (protocols, req) => {
+        const protoList = Array.from(protocols);
+        const authProto = protoList.find(p => p.startsWith('xfactor-auth.'));
+        if (authProto) {
+            return authProto;
+        }
+        return false;
+    }
+});
 const wsClients = new Set();
 
 // WebSocket Auth Check

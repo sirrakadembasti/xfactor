@@ -7,7 +7,7 @@
   "scripts": {
     "start": "bun server.js",
     "dev": "bun --watch server.js",
-    "test": "node test_backend.js"
+    "test": "node tests/test_runner.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.14.0",

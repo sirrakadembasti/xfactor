@@ -78,8 +78,10 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                            await fs.stat(path.join(projectDir, 'schema.prisma')).catch(() => null);
         if (prismaStat) hasPrisma = true;
     } catch {}
-
     const specText = `${state.title || ''} ${plan.summary || ''} ${plan.talimatname || ''}`.toLowerCase();
+    const hasReactKeyword = specText.includes('react') || specText.includes('frontend') || specText.includes('ui') || specText.includes('client');
+    const isExpressOnly = (specText.includes('express') || specText.includes('rest api') || specText.includes('node api') || specText.includes('backend api')) && !hasReactKeyword && !hasNextApp && !hasVite;
+    
     if (specText.includes('next.js') || specText.includes('nextjs') || specText.includes('app router')) {
         hasNextApp = true;
     } else if (specText.includes('vite') || specText.includes('react spa')) {
@@ -89,9 +91,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         hasPrisma = true;
     }
 
-    // Varsayılan: Eğer Next app router veya Next config varsa Next.js; değilse ve Vite istenmişse Vite React; varsayılan Next.js
-    const isNext = hasNextApp || !hasVite;
-
+    const isNext = hasNextApp || (!hasVite && !isExpressOnly);
     // 2. package.json Kontrolü ve Tamamlama
     const pkgPath = path.join(projectDir, 'package.json');
     let currentPkg = {};
@@ -101,35 +101,35 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {}
 
     const baseDependencies = {
-        'clsx': '^2.1.0',
-        'lucide-react': '^0.344.0',
-        'react': '^18.2.0',
-        'react-dom': '^18.2.0',
-        'tailwind-merge': '^2.2.1',
-        'zod': '^3.22.4'
+        'clsx': '^2.1.1',
+        'lucide-react': '^0.469.0',
+        'react': '^18.3.1',
+        'react-dom': '^18.3.1',
+        'tailwind-merge': '^2.5.5',
+        'zod': '^3.24.1'
     };
 
     if (hasPrisma) {
-        baseDependencies['@prisma/client'] = '^5.10.0';
+        baseDependencies['@prisma/client'] = '^5.22.0';
     }
 
     const baseDevDependencies = {
-        '@types/node': '^20.11.20',
-        '@types/react': '^18.2.58',
-        '@types/react-dom': '^18.2.19',
-        'autoprefixer': '^10.4.17',
-        'postcss': '^8.4.35',
-        'tailwindcss': '^3.4.1',
-        'typescript': '^5.3.3'
+        '@types/node': '^22.10.2',
+        '@types/react': '^18.3.18',
+        '@types/react-dom': '^18.3.5',
+        'autoprefixer': '^10.4.20',
+        'postcss': '^8.4.49',
+        'tailwindcss': '^3.4.17',
+        'typescript': '^5.7.2'
     };
 
     if (hasPrisma) {
-        baseDevDependencies['prisma'] = '^5.10.0';
+        baseDevDependencies['prisma'] = '^5.22.0';
     }
 
     let scripts = {};
     if (isNext) {
-        baseDependencies['next'] = '^14.1.0';
+        baseDependencies['next'] = '^14.2.24';
         baseDependencies['tailwindcss-animate'] = '^1.0.7';
         scripts = {
             dev: 'next dev',
@@ -138,9 +138,31 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             lint: 'next lint',
             ...(hasPrisma ? { 'prisma:generate': 'prisma generate', 'prisma:push': 'prisma db push' } : {})
         };
+    } else if (isExpressOnly) {
+        delete baseDependencies['react'];
+        delete baseDependencies['react-dom'];
+        delete baseDependencies['clsx'];
+        delete baseDependencies['lucide-react'];
+        delete baseDependencies['tailwind-merge'];
+        delete baseDevDependencies['@types/react'];
+        delete baseDevDependencies['@types/react-dom'];
+        delete baseDevDependencies['autoprefixer'];
+        delete baseDevDependencies['postcss'];
+        delete baseDevDependencies['tailwindcss'];
+
+        baseDependencies['express'] = '^4.21.2';
+        baseDependencies['cors'] = '^2.8.5';
+        baseDependencies['dotenv'] = '^16.4.7';
+        baseDevDependencies['@types/express'] = '^5.0.0';
+        baseDevDependencies['nodemon'] = '^3.1.9';
+        scripts = {
+            dev: 'node server.js',
+            start: 'node server.js',
+            ...(hasPrisma ? { 'prisma:generate': 'prisma generate', 'prisma:push': 'prisma db push' } : {})
+        };
     } else {
-        baseDevDependencies['vite'] = '^5.1.4';
-        baseDevDependencies['@vitejs/plugin-react'] = '^4.2.1';
+        baseDevDependencies['vite'] = '^5.4.14';
+        baseDevDependencies['@vitejs/plugin-react'] = '^4.3.4';
         scripts = {
             dev: 'vite',
             build: 'vite build',
@@ -266,6 +288,22 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         const postcssContent = `module.exports = {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n`;
         await fs.writeFile(postcssConfigPath, postcssContent, 'utf8');
     }
+    // 7. .env ve .env.example (Prisma / Database URL Koruması)
+    const envContent = `DATABASE_URL="file:./dev.db"\nNEXTAUTH_SECRET="super-secret-xfactor-key-2026"\nNEXTAUTH_URL="http://localhost:3000"\n`;
+    const envPath = path.join(projectDir, '.env');
+    const envExamplePath = path.join(projectDir, '.env.example');
+    
+    try {
+        await fs.stat(envPath);
+    } catch {
+        await fs.writeFile(envPath, envContent, 'utf8');
+    }
+
+    try {
+        await fs.stat(envExamplePath);
+    } catch {
+        await fs.writeFile(envExamplePath, envContent, 'utf8');
+    }
 
     return true;
 }
@@ -275,14 +313,15 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
  */
 export async function listProjectTree(projectDir) {
     const results = [];
-    const IGNORED = new Set(['node_modules', '.git', 'dist', 'build', '.env', 'manager', 'frontend.director', 'backend.director']);
-    const IGNORED_FILES = new Set(['.env', '.env.local', 'package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
+    const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
+    const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', '.DS_Store', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
 
     async function traverse(currentDir, relativeDir = '') {
         try {
             const entries = await fs.readdir(currentDir, { withFileTypes: true });
             for (const entry of entries) {
-                if (entry.name.startsWith('.') || IGNORED.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
+                if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
+                if (entry.name === '.git' || entry.name === '.DS_Store') continue;
 
                 const resPath = path.join(currentDir, entry.name);
                 const relPath = path.join(relativeDir, entry.name).replace(/\\/g, '/');

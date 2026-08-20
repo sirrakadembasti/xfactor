@@ -1,6 +1,7 @@
 import { extractAndParseJSON, validateDirectorSpec, normalizeDirectorSpec } from './schemas.js';
+import { loadAgentPromptFromDocs } from './agentLoader.js';
 
-export const DIRECTOR_SYSTEM_PROMPT = `
+const FALLBACK_DIRECTOR_PROMPT = `
 Sen bir "Director" ajanısın (director.agent).
 Belirli bir domain'in (örn: frontend, backend) teknik mimarisinden ve şartnamesinden sorumlusun.
 
@@ -24,6 +25,7 @@ JSON ÇIKTI ŞEMASI:
 }
 `;
 
+export const DIRECTOR_SYSTEM_PROMPT = loadAgentPromptFromDocs('director', FALLBACK_DIRECTOR_PROMPT);
 export function buildDirectorPrompt(domain, domainDescription, rootTalimatname) {
     return `Sorumlu Olduğun Domain: ${domain}
 Domain Açıklaması: ${domainDescription}

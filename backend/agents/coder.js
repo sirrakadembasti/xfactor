@@ -1,6 +1,7 @@
 import { extractAndParseJSON, validateCoderFiles, extractCoderFilesFromText } from './schemas.js';
+import { loadAgentPromptFromDocs } from './agentLoader.js';
 
-export const CODER_SYSTEM_PROMPT = `
+const FALLBACK_CODER_PROMPT = `
 Sen bir "Coder" ajanısın (coder.agent).
 Hiyerarşinin en alt (yaprak) seviyesindesin; doğrudan kod yazar ve üretirsin.
 
@@ -22,8 +23,9 @@ JSON ÇIKTI ŞEMASI:
       "content": "@tailwind base;\\n@tailwind components;\\n@tailwind utilities;"
     }
   ]
-}
 `;
+
+export const CODER_SYSTEM_PROMPT = loadAgentPromptFromDocs('coder', FALLBACK_CODER_PROMPT);
 
 export function buildCoderPrompt(taskId, title, description, targetFiles, projectContext = "") {
     return `Görev ID: ${taskId}
@@ -36,9 +38,9 @@ ${projectContext ? `Mevcut Proje Bağlamı / Dosyaları:\n"""\n${projectContext}
 KURALLAR:
 1. Yalnızca JSON formatında yanıt ver (\`\`\`json ... \`\`\` bloğu içinde).
 2. Kod içeriğini "content" alanı içinde geçerli JSON dizesi olarak sağla.
-3. Gereksiz yorum veya dolgu kod ekleme; temiz, modern, modüler ve çalışan kod yaz.`;
+3. BİLEŞEN KOMPOZİSYONU: Sayfa (page.tsx) veya kapsayıcı bileşen yazarken, form/tablo/modal gibi alt bileşenleri sayfa içine devasa monolitik olarak gömmek yerine, oluşturulmuş bileşenleri import ederek (@/components/...) kompoze et.
+4. Gereksiz yorum veya dolgu kod ekleme; temiz, modern, modüler ve çalışan kod yaz.`;
 }
-
 export function parseCoderResponse(rawText) {
     if (!rawText || typeof rawText !== 'string') {
         throw new Error('Geçersiz veya boş Coder çıktısı.');

@@ -111,18 +111,12 @@ export default function App() {
     }
   };
 
-  // Aktif proje değiştiğinde durumu çek ve uygun başlangıç görünümünü ayarla
+  // Aktif proje değiştiğinde durumu çek
   const fetchProjectState = async (id) => {
     try {
       const res = await authFetch(`${API_BASE}/projects/${id}`);
       const data = await res.json();
       setProjectState(data);
-
-      if (data.status === 'planning' || data.status === 'pending_approval' || data.status === 'paused') {
-        setViewMode('chat');
-      } else if (data.status === 'running' || data.status === 'completed') {
-        setViewMode('flow');
-      }
     } catch (e) {
       console.error(e);
     }
@@ -130,8 +124,8 @@ export default function App() {
 
   useEffect(() => {
     if (activeProjectId) {
+      setViewMode('chat');
       fetchProjectState(activeProjectId);
-      // Geçmiş Logları ve Grafiği Çek
       authFetch(`${API_BASE}/projects/${activeProjectId}/logs`)
         .then(res => res.json())
         .then(data => {
@@ -202,12 +196,23 @@ export default function App() {
 
     const connectWs = () => {
       if (!isSubscribed) return;
-      if (ws.current && (ws.current.readyState === 0 || ws.current.readyState === 1)) {
+      if (ws.current && (ws.current.readyState === WebSocket.CONNECTING || ws.current.readyState === WebSocket.OPEN)) {
         return;
       }
 
       const socket = new WebSocket(WS_URL, [`xfactor-auth.${token}`]);
       ws.current = socket;
+
+      socket.onopen = () => {
+        if (!isSubscribed) {
+          socket.close();
+          return;
+        }
+      };
+
+      socket.onerror = (err) => {
+        // Hata durumunda onclose zaten tetiklenir
+      };
 
       socket.onmessage = event => {
         try {
@@ -277,8 +282,15 @@ export default function App() {
     return () => {
       isSubscribed = false;
       clearTimeout(reconnectTimeout);
-      ws.current?.close();
-      ws.current = null;
+      if (ws.current) {
+        if (ws.current.readyState === WebSocket.OPEN) {
+          ws.current.close();
+        } else if (ws.current.readyState === WebSocket.CONNECTING) {
+          const socketToClose = ws.current;
+          socketToClose.onopen = () => socketToClose.close();
+        }
+        ws.current = null;
+      }
     };
   }, [token]);
 
