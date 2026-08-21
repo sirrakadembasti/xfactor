@@ -5,8 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ReportHeader } from '@/components/student/ReportHeader';
-import { ReportSummary } from '@/components/student/ReportSummary';
-import { ReportQuestionList } from '@/components/student/ReportQuestionList';
+import { ReportScoreSummary as ReportSummary } from '@/components/student/ReportScoreSummary';
+import { ReportQuestionReview as ReportQuestionList } from '@/components/student/ReportQuestionReview';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Printer, AlertCircle, RefreshCw } from 'lucide-react';
 

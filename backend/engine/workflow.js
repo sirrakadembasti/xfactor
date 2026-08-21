@@ -454,11 +454,20 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
 
         // 6. AŞAMA: TESTER AJANI VE NİHAİ KONSOLİDE RAPOR
         if (await checkPause(projectId) === 'running') {
-            await logEvent(wsClients, projectId, "Tester", "start", "", "Tüm proje kabul kriterleri Tester ajanı tarafından doğrulanıyor...", "tester", "manager");
+            // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
+            const allDiskFiles = await listProjectTree(projectDir);
+            for (const df of allDiskFiles) {
+                const idx = generatedProjectFiles.findIndex(gf => gf.path === df.path);
+                if (idx !== -1) {
+                    generatedProjectFiles[idx] = df;
+                } else {
+                    generatedProjectFiles.push(df);
+                }
+            }
 
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
 
-            // Eğer deterministik hatalar varsa (Syntax/Prisma vb.), Coder'a 1 tur otomatik onarım döngüsü uygula
+            // Eğer deterministik hatalar varsa (Syntax/Kırık Import vb.), Coder'a 1 tur otomatik onarım döngüsü uygula
             if (!deterministicAudit.passed) {
                 await logEvent(
                     wsClients,
@@ -472,7 +481,8 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                 );
 
                 const coderAgent = getAgent('coder');
-                const repairPrompt = `# PROJE GENELİ ONARIM GÖREVİ: ${state.title}\n\nTester Denetiminde Aşağıdaki Kritik Hatalar Tespit Edildi:\n"""\n${deterministicAudit.issues.map(i => `- ${i}`).join('\n')}\n"""\n\nLütfen yalnızca hatalı olan dosyaları eksiksiz ve hatasız biçimde düzelterek JSON formatında yeniden üret.`;
+                const existingFilesList = generatedProjectFiles.map(f => f.path).join(', ');
+                const repairPrompt = `# PROJE GENELİ ONARIM GÖREVİ: ${state.title}\n\nTester Denetiminde Aşağıdaki Kritik Hatalar Tespit Edildi:\n"""\n${deterministicAudit.issues.map(i => `- ${i}`).join('\n')}\n"""\n\nPROJEDE MEVCUT DOSYALAR:\n${existingFilesList}\n\nLütfen yalnızca hatalı olan dosyaları (kırık import yollarını mevcut dosyalarla eşleştirerek ve sözdizimi hatalarını kapatıp düzelterek) eksiksiz ve hatasız biçimde JSON formatında yeniden üret.`;
                 
                 try {
                     const rawRepair = await callAgentLLM('coder', repairPrompt);
@@ -513,8 +523,23 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
             if (!testResult.approved) {
                 await writeDurum(projectDir, 'BASARISIZ', `Proje kabul testlerini geçemedi: ${testResult.summary}`);
                 await logEvent(wsClients, projectId, "Tester", "error", "", `Proje kabul testlerini geçemedi: ${testResult.summary}`, "tester", "manager");
-                state.status = 'failed';
-                await writeProjectState(projectId, state);
+                
+                const failedState = await readProjectState(projectId);
+                if (failedState) {
+                    failedState.status = 'paused';
+                    const now = new Date();
+                    const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
+
+                    if (!failedState.chatHistory) failedState.chatHistory = [];
+                    failedState.chatHistory.push({
+                        role: 'model',
+                        parts: [{ text: `⚠️ **Tester Kalite Kapısı Uyarısı:**\n\nProje kabul testlerinde bazı sözdizimi veya kırık ithalat (import) hataları tespit edildi ve proje güvenli modda duraklatıldı:\n\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n\nSüreci düzeltip devam ettirmek için üst menüdeki **'Projeyi Devam Ettir (Resume)'** butonuna basabilir veya bana revizyon bildirebilirsiniz.` }],
+                        timestamp: `${formattedDate} ${formattedTime}`,
+                        created_at: now.toISOString()
+                    });
+                    await writeProjectState(projectId, failedState);
+                }
                 return;
             }
 

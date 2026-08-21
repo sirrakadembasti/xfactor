@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { QuestionBank } from '@/components/teacher/QuestionBank';
-import { QuizStudio } from '@/components/teacher/QuizStudio';
-import { ExamAnalytics } from '@/components/teacher/ExamAnalytics';
+import { QuestionBankList as QuestionBank } from '@/components/teacher/QuestionBankList';
+import { QuizStudioModal as QuizStudio } from '@/components/teacher/QuizStudioModal';
+import { ExamAnalyticsCard as ExamAnalytics } from '@/components/teacher/ExamAnalyticsCard';
 import {
   Layers,
   Sparkles,
