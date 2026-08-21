@@ -78,6 +78,10 @@ test("1.2 Geçerli Prisma ve API route uyumu başarılı geçmeli", () => {
             content: 'datasource db { provider = "sqlite" url = env("DATABASE_URL") }\nmodel Leaderboard { id String @id score Int }\nmodel Word { id String @id }'
         },
         {
+            path: 'src/lib/prisma.ts',
+            content: 'export const prisma = { leaderboard: { findMany: () => [] } };'
+        },
+        {
             path: 'src/app/api/leaderboard/route.ts',
             content: 'import { prisma } from "@/lib/prisma";\nexport async function GET() {\n  return prisma.leaderboard.findMany();\n}'
         },
@@ -100,6 +104,56 @@ test("1.3 Bozuk JSON dosyaları deterministik olarak yakalanmalı", () => {
     assert.ok(audit.issues.some(i => i.includes('Geçersiz JSON')));
 });
 
+test("1.4 Kırık yerel import (Diskte olmayan dosya) tespit edilmeli ve onay engellenmeli", () => {
+    const brokenImportFiles = [
+        {
+            path: 'src/app/api/categories/route.ts',
+            content: 'import { db } from "@/lib/non_existent_module";\nexport async function GET() { return []; }'
+        },
+        {
+            path: 'package.json',
+            content: '{"name": "app", "version": "1.0.0"}'
+        }
+    ];
+    const audit = runDeterministicProjectAudit(brokenImportFiles);
+    assert.strictEqual(audit.passed, false, "Var olmayan dosya importu reddedilmeli");
+    assert.ok(audit.issues.some(i => i.includes('Kırık Yerel İthalat')));
+});
+
+test("1.5 Eksik NPM bağımlılığı (package.json'da olmayan paket) tespit edilmeli ve onay engellenmeli", () => {
+    const missingPkgFiles = [
+        {
+            path: 'src/app/layout.tsx',
+            content: 'import { Toaster } from "sonner";\nexport default function Root() { return <Toaster />; }'
+        },
+        {
+            path: 'package.json',
+            content: '{"name": "app", "version": "1.0.0", "dependencies": { "react": "^18.0.0" }}'
+        }
+    ];
+    const audit = runDeterministicProjectAudit(missingPkgFiles);
+    assert.strictEqual(audit.passed, false, "package.json'da olmayan harici paket reddedilmeli");
+    assert.ok(audit.issues.some(i => i.includes('Eksik NPM Bağımlılığı') && i.includes('sonner')));
+});
+
+test("1.6 @/lib/prisma ve @/lib/db köprüsü doğru çözümlenmeli", () => {
+    const bridgeFiles = [
+        {
+            path: 'src/lib/prisma.ts',
+            content: 'export const prisma = {};'
+        },
+        {
+            path: 'src/app/api/categories/route.ts',
+            content: 'import { db } from "@/lib/db";\nexport async function GET() { return []; }'
+        },
+        {
+            path: 'package.json',
+            content: '{"name": "app", "version": "1.0.0"}'
+        }
+    ];
+    const audit = runDeterministicProjectAudit(bridgeFiles);
+    assert.strictEqual(audit.passed, true, "prisma/db köprüsü otomatik çözümlenmeli");
+});
 // ----------------------------------------------------
 // 2. Reviewer & Tester Fail-Closed Normalizasyonu
 // ----------------------------------------------------

@@ -84,7 +84,7 @@
 ### 2.6. Tester Agent (Seviye 5 — QA & Kabul Doğrulaması)
 * **Girdi:** Tüm üretilen proje dosyaları ve `TALIMATNAME.md`.
 * **Görevleri:**
-  1. **Deterministik Denetim:** `stripStringsAndComments` ile sözdizimi doğrulaması, `schema.prisma` modelleri ile API rotaları arasındaki model adı tutarlılığı denetimini yapar.
+  1. **Deterministik Denetim:** `stripStringsAndComments` ile sözdizimi doğrulaması, `schema.prisma` modelleri ile API rotaları arasındaki model adı tutarlılığı ve tüm yerel dosya ithalatlarının (`@/...`, `./...`) ve npm paketlerinin (`package.json`) statik çözümleme (Dead Import) denetimini yapar.
   2. **Otomatik Onarım (Auto-Repair):** Deterministik hata bulunursa Coder'a otomatik onarım görevi gönderir.
   3. **Temiz & Kapsamlı README ve Kabul Raporu:** Proje köküne nihai `RAPOR.md` raporunu yazar; `README.md` dosyasını ise iç orkestrasyon/ajan jargonu barındırmayan, son kullanıcıya yönelik profesyonel bir yazılım dokümanı olarak (özellikler, modeller, sayfalar, `.env` ve çalıştırma adımları) üretir.
 

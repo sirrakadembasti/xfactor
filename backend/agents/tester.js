@@ -1,3 +1,4 @@
+import path from 'path';
 import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
 import { loadAgentPromptFromDocs } from './agentLoader.js';
 
@@ -106,7 +107,102 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
         }
     }
 
-    // 4. Dosya Boyut ve İçerik Kontrolü
+    // 4. Statik Yerel İthalat ve Dosya Varlık Denetimi (Dead Import / Path Resolution Check)
+    const existingLookup = new Set();
+    for (const f of generatedFiles) {
+        if (!f.path) continue;
+        const norm = f.path.replace(/\\/g, '/');
+        existingLookup.add(norm);
+        const ext = path.extname(norm);
+        if (ext) {
+            existingLookup.add(norm.slice(0, -ext.length)); // uzantısız halini ekle
+        }
+        if (norm.endsWith('/index.ts') || norm.endsWith('/index.tsx') || norm.endsWith('/index.js') || norm.endsWith('/index.jsx')) {
+            existingLookup.add(path.dirname(norm)); // klasör adıyla import edilebilir
+        }
+    }
+
+    // Prisma & DB köprüsü eşleştirmesi
+    if (existingLookup.has('src/lib/prisma') || existingLookup.has('src/lib/prisma.ts')) {
+        existingLookup.add('src/lib/db');
+        existingLookup.add('src/lib/db.ts');
+    }
+    if (existingLookup.has('src/lib/db') || existingLookup.has('src/lib/db.ts')) {
+        existingLookup.add('src/lib/prisma');
+        existingLookup.add('src/lib/prisma.ts');
+    }
+
+    // 5. Harici Paket ve package.json Bağımlılık Denetimi
+    let declaredPackages = new Set();
+    const pkgFile = generatedFiles.find(f => f.path === 'package.json');
+    if (pkgFile && typeof pkgFile.content === 'string') {
+        try {
+            const parsedPkg = JSON.parse(pkgFile.content);
+            declaredPackages = new Set([
+                ...Object.keys(parsedPkg.dependencies || {}),
+                ...Object.keys(parsedPkg.devDependencies || {})
+            ]);
+        } catch {}
+    }
+
+    const NODE_BUILTIN_MODULES = new Set([
+        'fs', 'fs/promises', 'path', 'url', 'http', 'https', 'crypto',
+        'events', 'os', 'stream', 'util', 'child_process', 'assert', 'buffer',
+        'next', 'next/server', 'next/font', 'next/font/google', 'next/navigation',
+        'next/router', 'next/link', 'next/image', 'next/head', 'react', 'react-dom'
+    ]);
+
+    for (const file of generatedFiles) {
+        if (file.path && (file.path.endsWith('.js') || file.path.endsWith('.jsx') || file.path.endsWith('.ts') || file.path.endsWith('.tsx')) && typeof file.content === 'string') {
+            const importMatches = Array.from(file.content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g));
+            const currentFileDir = path.dirname(file.path).replace(/\\/g, '/');
+
+            for (const match of importMatches) {
+                const specifier = match[1];
+                if (!specifier) continue;
+
+                // A. Yerel İthalat Denetimi (@/... veya ./... veya ../...)
+                if (specifier.startsWith('@/') || specifier.startsWith('./') || specifier.startsWith('../')) {
+                    let targetPath = '';
+                    if (specifier.startsWith('@/')) {
+                        targetPath = 'src/' + specifier.slice(2);
+                    } else {
+                        targetPath = path.posix.normalize(path.posix.join(currentFileDir, specifier));
+                    }
+
+                    // CSS veya font dosyası değilse varlık kontrolü yap
+                    if (!specifier.endsWith('.css') && !specifier.endsWith('.svg') && !specifier.endsWith('.png') && !specifier.endsWith('.ico')) {
+                        if (!existingLookup.has(targetPath) && !existingLookup.has(targetPath + '.ts') && !existingLookup.has(targetPath + '.tsx') && !existingLookup.has(targetPath + '.js') && !existingLookup.has(targetPath + '.jsx')) {
+                            issues.push(`Kırık Yerel İthalat (Dosya Yok): "${file.path}" dosyasında "${specifier}" import edilmiş ancak hedef dosya (${targetPath}) diskte mevcut değil!`);
+                            failedCount++;
+                        } else {
+                            passedCount++;
+                        }
+                    }
+                }
+                // B. Harici Paket Denetimi
+                else if (!specifier.startsWith('/') && !NODE_BUILTIN_MODULES.has(specifier)) {
+                    let pkgName = specifier;
+                    if (specifier.startsWith('@')) {
+                        pkgName = specifier.split('/').slice(0, 2).join('/');
+                    } else {
+                        pkgName = specifier.split('/')[0];
+                    }
+
+                    if (pkgName && !NODE_BUILTIN_MODULES.has(pkgName) && declaredPackages.size > 0) {
+                        if (!declaredPackages.has(pkgName)) {
+                            issues.push(`Eksik NPM Bağımlılığı: "${file.path}" dosyasında "${pkgName}" paketi kullanılmış ancak package.json içinde tanımlı değil!`);
+                            failedCount++;
+                        } else {
+                            passedCount++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 6. Dosya Boyut ve İçerik Kontrolü
     for (const file of generatedFiles) {
         if (!file.content || file.content.trim().length === 0) {
             issues.push(`Boş dosya tespit edildi: "${file.path}"`);
@@ -115,6 +211,7 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
             passedCount++;
         }
     }
+
     return {
         passed: issues.length === 0,
         issues,

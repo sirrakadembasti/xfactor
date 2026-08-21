@@ -7,6 +7,80 @@ import fs from 'fs/promises';
 import path from 'path';
 import { isSafeProjectPath } from '../security.js';
 
+const KNOWN_PACKAGE_VERSIONS = {
+    'sonner': '^1.7.4',
+    'axios': '^1.7.9',
+    'swr': '^2.3.0',
+    '@tanstack/react-query': '^5.62.11',
+    'date-fns': '^4.1.0',
+    'dayjs': '^1.11.13',
+    'framer-motion': '^11.15.0',
+    'canvas-confetti': '^1.9.3',
+    '@types/canvas-confetti': '^1.9.0',
+    'recharts': '^2.15.0',
+    'zustand': '^5.0.2',
+    'react-hook-form': '^7.54.2',
+    '@hookform/resolvers': '^3.9.1',
+    'bcryptjs': '^2.4.3',
+    '@types/bcryptjs': '^2.4.6',
+    'jsonwebtoken': '^9.0.2',
+    '@types/jsonwebtoken': '^9.0.7',
+    'next-auth': '^4.24.11',
+    'uuid': '^11.0.4',
+    '@types/uuid': '^10.0.0'
+};
+
+const NODE_BUILTINS = new Set([
+    'fs', 'fs/promises', 'path', 'url', 'http', 'https', 'crypto',
+    'events', 'os', 'stream', 'util', 'child_process', 'assert', 'buffer',
+    'next', 'next/server', 'next/font', 'next/font/google', 'next/navigation',
+    'next/router', 'next/link', 'next/image', 'next/head', 'react', 'react-dom'
+]);
+
+/**
+ * Üretilen dosyalardaki tüm harici paket importlarını otomatik tarar.
+ */
+export async function scanUsedNpmPackages(projectDir) {
+    const usedPackages = new Set();
+    const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx']);
+
+    async function scanDir(currentDir) {
+        try {
+            const entries = await fs.readdir(currentDir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'manager') continue;
+                const resPath = path.join(currentDir, entry.name);
+                if (entry.isDirectory()) {
+                    await scanDir(resPath);
+                } else if (sourceExtensions.has(path.extname(entry.name).toLowerCase())) {
+                    const content = await fs.readFile(resPath, 'utf8');
+                    const importMatches = content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g);
+                    for (const match of importMatches) {
+                        const specifier = match[1];
+                        if (specifier.startsWith('.') || specifier.startsWith('@/') || specifier.startsWith('/')) continue;
+                        if (NODE_BUILTINS.has(specifier)) continue;
+
+                        // Paket adını ayrıştır (örn: @prisma/client veya sonner veya lucide-react/dist/...)
+                        let pkgName = specifier;
+                        if (specifier.startsWith('@')) {
+                            const parts = specifier.split('/');
+                            pkgName = parts.slice(0, 2).join('/');
+                        } else {
+                            pkgName = specifier.split('/')[0];
+                        }
+
+                        if (pkgName && !NODE_BUILTINS.has(pkgName)) {
+                            usedPackages.add(pkgName);
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    await scanDir(projectDir);
+    return Array.from(usedPackages);
+}
 /**
  * Coder tarafından üretilen dosyaları doğrular ve hem ajanın kendi klasörüne
  * hem de projenin kaynak dizinine güvenle yazar.
@@ -171,6 +245,19 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         };
     }
 
+    // Otomatik İthalat Taraması: Dosyalarda kullanılan harici paketleri bul ve ekle
+    const scannedPackages = await scanUsedNpmPackages(projectDir);
+    for (const pkg of scannedPackages) {
+        if (!baseDependencies[pkg] && !baseDevDependencies[pkg] && !currentPkg.dependencies?.[pkg] && !currentPkg.devDependencies?.[pkg]) {
+            const version = KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
+            if (pkg.startsWith('@types/')) {
+                baseDevDependencies[pkg] = version;
+            } else {
+                baseDependencies[pkg] = version;
+            }
+        }
+    }
+
     const finalPkg = {
         name: currentPkg.name || safeName,
         version: currentPkg.version || '1.0.0',
@@ -190,7 +277,6 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     };
 
     await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
-
     // 3. tsconfig.json Kontrolü (@/* Path Alias Çözümü)
     const tsconfigPath = path.join(projectDir, 'tsconfig.json');
     try {
@@ -303,6 +389,30 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         await fs.stat(envExamplePath);
     } catch {
         await fs.writeFile(envExamplePath, envContent, 'utf8');
+    }
+    // 8. Prisma ve DB İstemcisi Çift Köprü Garantisi (src/lib/prisma.ts <-> src/lib/db.ts)
+    if (hasPrisma) {
+        const libDir = path.join(projectDir, 'src', 'lib');
+        const prismaPath = path.join(libDir, 'prisma.ts');
+        const dbPath = path.join(libDir, 'db.ts');
+
+        try {
+            await fs.mkdir(libDir, { recursive: true });
+            const prismaExists = await fs.stat(prismaPath).then(() => true).catch(() => false);
+            const dbExists = await fs.stat(dbPath).then(() => true).catch(() => false);
+
+            if (!prismaExists && !dbExists) {
+                const defaultPrismaClient = `import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined;\n};\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient();\nexport const db = prisma;\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;\n\nexport default prisma;\n`;
+                await fs.writeFile(prismaPath, defaultPrismaClient, 'utf8');
+                await fs.writeFile(dbPath, `import { prisma, db } from './prisma';\nexport * from './prisma';\nexport { prisma, db };\nexport default prisma;\n`, 'utf8');
+            } else if (prismaExists && !dbExists) {
+                const dbBridgeContent = `import { prisma } from './prisma';\nexport * from './prisma';\nexport const db = prisma;\nexport default prisma;\n`;
+                await fs.writeFile(dbPath, dbBridgeContent, 'utf8');
+            } else if (dbExists && !prismaExists) {
+                const prismaBridgeContent = `import { db } from './db';\nexport * from './db';\nexport const prisma = db;\nexport default db;\n`;
+                await fs.writeFile(prismaPath, prismaBridgeContent, 'utf8');
+            }
+        } catch {}
     }
 
     return true;
