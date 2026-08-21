@@ -54,30 +54,37 @@
   4. Her domain için `<domain>.director/` klasörü açar ve `GOREV.md` yazar.
   5. **Telemetri, İç Muhakeme & Canlı Bildirim:** Canlı logları, DAG grafiğini ve alt ajanların `RAPOR.md` veto/hata kayıtlarını tam yetkiyle analiz eder; proje tamamlandığında veya duraklatıldığında sohbet kanalına otomatik resmi bildirim bırakır.
 * **Kısıt:** Asla doğrudan kod yazmaz.
+
+### 2.2. Director Agent (Seviye 1 — Domain Mimarisi & Standartlar)
+* **Konum:** `projects/<id>/manager/<domain>.director/`
 * **Girdi:** `manager/TALIMATNAME.md` ve domain `GOREV.md`.
 * **Görevleri:**
-  1. Domain mimarisini, kütüphane tercihlerini (Zod, Prisma, Tailwind vb.) belirler ve `ALT-TALIMATNAME.md` üretir.
-  2. Altındaki Teamleader'ı tanımlar ve `manager/<domain>.director/<tl>/` klasörünü açar.
+  1. Domain mimarisini, onaylı teknoloji yığınını (`react-hook-form`, `sonner`, `zod`, `prisma` vb.) ve ortak sözleşme yollarını (`@/lib/prisma`, `@/lib/validations`) belirleyerek `ALT-TALIMATNAME.md` üretir.
+  2. Kodlama başlamadan önce `package.json`, `tsconfig.json` ve `.env` dosyalarının diske kilitlenmesini sağlar.
+  3. Altındaki Teamleader'ı tanımlar ve `manager/<domain>.director/<tl>/` klasörünü açar.
 * **Kısıt:** Doğrudan coder görevi açmaz; teamleader katmanını yönetir.
 
 ### 2.3. Teamleader Agent (Seviye 2 — DAG Görev Bölümü & Koordinasyon)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/`
 * **Girdi:** `ALT-TALIMATNAME.md` ve `GOREV.md`.
+* **Görevleri:**
   1. Şartnameyi Coder ajanlarının tek seferde bitirebileceği **atomik parçalara (DAG)** ayırır.
   2. **KRİTİK ATOMİK LİMİT:** LLM çıktı token sınırına takılmamak için her bir görevin `targetFiles` listesinde **EN FAZLA 1 veya 2 dosya** tanımlar.
   3. **Bileşen Ayrıştırma Zorunluluğu:** `page.tsx` gibi büyük UI sayfalarını tek blok yapmak yerine, önce form/kart/filtre alt bileşenlerini ayrı görevler olarak dağıtır; ardından `page.tsx` sarmalayıcısını kodlatır.
-  4. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve DAG önkoşullarını `TODO.md`'ye yazar.
+  4. **Görev Sözleşmesi (Task Contract):** Her görevin açıklamasında kullanılması gereken onaylı kütüphaneleri ve import yollarını şart koşar.
+  5. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve DAG önkoşullarını `TODO.md`'ye yazar.
 ### 2.4. Coder Agent (Seviye 3 — Yaprak Geliştirici)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/<task_id>/`
 * **Girdi:** Görev tanımı `GOREV.md` ve paylaşılan `projectContext` (şemalar, tipler, route tanımları).
   1. Hedef dosyaları eksiksiz, TypeScript uyumlu ve modern standartlara göre kodlar.
   2. **BİLEŞEN KOMPOZİSYONU:** Sayfa (`page.tsx`) yazarken form/tablo/modal gibi alt bileşenleri sayfa içine monolitik gömmek yerine, önceden oluşturulmuş bileşenleri `@/components/...` üzerinden `import` ederek kompoze eder.
-  3. **EKSİKSİZ KOD ÜRETİMİ:** Kodları yarım kesmeden, tüm import ve JSX kapanışlarıyla baştan sona eksiksiz üretir.
-  4. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi klasörüne yazar.
+  3. **DOĞRULANMIŞ İTHALAT:** Yalnızca sözleşmede tanımlanmış ve diskte mevcut dosyaları import eder; uydurma paket veya kırık yol kullanamaz.
+  4. **EKSİKSİZ KOD ÜRETİMİ:** Kodları yarım kesmeden, tüm import ve JSX kapanışlarıyla baştan sona eksiksiz üretir.
+  5. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi klasörüne yazar.
 ### 2.5. Reviewer Agent (Seviye 4 — Iterative Quality Gate & Veto)
 * **Girdi:** Coder'ın ürettiği dosyalar ve görev kabul kriterleri.
 * **Görevleri:**
-  1. Kodları syntax, eksik importlar, kapanmamış etiketler ve güvenlik açısından satır satır denetler.
+  1. Kodları syntax, eksik importlar, kapanmamış etiketler, onaylanmamış paketler ve güvenlik açısından satır satır denetler.
   2. Hata varsa somut düzeltme talimatı (`feedback`) vererek Coder'a yeniden kodlatır (Maksimum 2 tur).
   3. **Fail-Closed Veto:** 2 turun sonunda kod standartlara uymazsa görevi veto eder (`approved: false`); süreç kontrollü durdurulur (`paused`), bozuk proje tamamlandı sayılmaz.
 
@@ -87,6 +94,8 @@
   1. **Deterministik Denetim:** `stripStringsAndComments` ile sözdizimi doğrulaması, `schema.prisma` modelleri ile API rotaları arasındaki model adı tutarlılığı ve tüm yerel dosya ithalatlarının (`@/...`, `./...`) ve npm paketlerinin (`package.json`) statik çözümleme (Dead Import) denetimini yapar.
   2. **Otomatik Onarım (Auto-Repair):** Deterministik hata bulunursa Coder'a otomatik onarım görevi gönderir.
   3. **Temiz & Kapsamlı README ve Kabul Raporu:** Proje köküne nihai `RAPOR.md` raporunu yazar; `README.md` dosyasını ise iç orkestrasyon/ajan jargonu barındırmayan, son kullanıcıya yönelik profesyonel bir yazılım dokümanı olarak (özellikler, modeller, sayfalar, `.env` ve çalıştırma adımları) üretir.
+
+---
 
 ## 3. Güncel Dizin ve Dosya Mimarisi
 

@@ -147,11 +147,14 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
         await setupRootProtocol(projectDir, plan.talimatname, domainList);
         await logEvent(wsClients, projectId, "Manager", "write", "TALIMATNAME.md", "Ana şartname ve kök TODO.md protokolü oluşturuldu.", "manager");
 
+        // Architecture-First (Önce Mimari Sözleşme): Kodlama başlamadan önce onaylı paketler, .env ve köprüler kilitlenir!
+        await ensureProjectScaffold(projectDir, state, plan);
+        await logEvent(wsClients, projectId, "Manager", "write", "package.json, tsconfig.json, .env", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env) önceden diske kilitlendi.", "manager");
+
         const generatedProjectFiles = [];
 
         const managerDir = path.join(projectDir, 'manager');
         await ensureDir(managerDir);
-
         // 2. AŞAMA: DİREKTÖRLER (DIRECTORS - manager/ altında yuvalanır)
         for (const domain of domainList) {
             if (await checkPause(projectId) !== 'running') return;
