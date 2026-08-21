@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         String       @default("STUDENT") // "STUDENT", "TEACHER", "ADMIN"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  coursesTaught Course[]     @relation("TeacherCourses")
+  enrollments   Enrollment[]
+  submissions   Submission[]
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  code        String       @unique
+  teacherId   String
+  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  exams       Exam[]
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model Exam {
+  id              String       @id @default(cuid())
+  title           String
+  description     String?
+  durationMinutes Int          @default(60)
+  startTime       DateTime?
+  endTime         DateTime?
+  isPublished     Boolean      @default(false)
+  courseId        String
+  course          Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  questions       Question[]
+  submissions     Submission[]
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  examId        String
+  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  text          String
+  type          String   @default("MULTIPLE_CHOICE") // "MULTIPLE_CHOICE", "TRUE_FALSE", "OPEN_ENDED"
+  options       String?  // JSON serialized options string for multiple choice: ["A", "B", "C", "D"]
+  correctAnswer String
+  points        Int      @default(10)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  answers       Answer[]
+}
+
+model Submission {
+  id          String    @id @default(cuid())
+  examId      String
+  exam        Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status      String    @default("IN_PROGRESS") // "IN_PROGRESS", "SUBMITTED", "GRADED"
+  totalScore  Float?    @default(0)
+  feedback    String?
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  answers     Answer[]
+
+  @@unique([examId, studentId])
+}
+
+model Answer {
+  id             String     @id @default(cuid())
+  submissionId   String
+  submission     Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  studentAnswer  String
+  isCorrect      Boolean?   @default(false)
+  pointsAwarded  Float?     @default(0)
+  feedback       String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([submissionId, questionId])
+}

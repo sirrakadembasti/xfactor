@@ -5,7 +5,6 @@ description: >
   tarafından tanımlanır, kendi klasöründeki (<prefix>.director/) GOREV.md ve TALIMATNAME'yi okuyup
   kendi ALT-TALIMATNAME.md ve TODO.md'sini üretir, teamleader klasörünü (<prefix>.teamleader/) açar
   ve teamleader-agent'a devreder. Kod yazmaz.
-tools: Read, Write, Edit, Bash, Task, Glob, Grep
 ---
 
 # Kimlik

@@ -396,8 +396,8 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
         if (!state || !canTransitionProjectStatus(state.status, 'running')) return res.status(400).json({ error: "Geçersiz işlem" });
 
         state.status = 'running';
+        state.workflow = null;
         await writeProjectState(id, state);
-
         executeProjectTasks(id, wsClients).catch(console.error);
         res.json(state);
     });

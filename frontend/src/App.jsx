@@ -93,6 +93,9 @@ export default function App() {
 
   useEffect(() => {
     fetchProjects();
+    if (!token) return;
+    const interval = setInterval(fetchProjects, 4000);
+    return () => clearInterval(interval);
   }, [token]);
 
   // Disk Senkronizasyonu
@@ -202,7 +205,7 @@ export default function App() {
             setEdges(computedEdges);
             return newLogs;
           });
-          if (data.action === 'finish' && data.agent === 'Manager') {
+          if (data.action === 'finish' || data.action === 'error' || data.action === 'start') {
             if (activeProjectRef.current) fetchProjectState(activeProjectRef.current);
             fetchProjects();
           }
@@ -450,6 +453,7 @@ export default function App() {
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
             <AlertCircle size={12} /> Onay Bekliyor
           </span>
+        );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">

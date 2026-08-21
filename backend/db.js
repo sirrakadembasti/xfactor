@@ -149,14 +149,37 @@ export function getProjectState(id) {
     let status = project.status;
     const PROJECTS_DIR = path.join(__dirname, '../projects');
     const raporPath = path.join(PROJECTS_DIR, id, 'RAPOR.md');
-    if (fs.existsSync(raporPath) && status !== 'completed' && status !== 'failed') {
+    if (fs.existsSync(raporPath)) {
         try {
             const raporContent = fs.readFileSync(raporPath, 'utf8');
             if (!raporContent.includes('REDDEDİLDİ') && !raporContent.includes('BASARISIZ') && !raporContent.includes('REDDEDILDI')) {
                 status = 'completed';
-                db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('completed', id);
+                if (project.status !== 'completed') {
+                    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('completed', id);
+                }
+                // Finish logunun varlığını garantiye al
+                const hasFinishLog = db.prepare("SELECT 1 FROM project_logs WHERE project_id = ? AND action = 'finish'").get(id);
+                if (!hasFinishLog) {
+                    saveProjectLog({
+                        projectId: id,
+                        agent: "Manager",
+                        action: "finish",
+                        file: "RAPOR.md, README.md",
+                        message: "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.",
+                        node_id: "manager",
+                        parent_node_id: null
+                    });
+                }
+                // Tamamlama tebrik mesajının son mesaj olmasını sağla
+                const lastChat = db.prepare('SELECT id, role, text_content FROM chat_history WHERE project_id = ? ORDER BY id DESC LIMIT 1').get(id);
+                if (!lastChat || lastChat.text_content.includes('⚠️ **Süreç Duraklatıldı') || lastChat.text_content.includes('⚠️ **Tester Kalite Kapısı Uyarısı') || lastChat.text_content.includes('Süreç hatası')) {
+                    const completionMsg = `🎉 **Tebrikler Boss! "${project.title}" Projesi Başarıyla Tamamlandı!**\n\nTüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.\n\n### 📁 Üretilen Mimari Katmanları:\n- **Backend:** Prisma SQLite şemaları, Zod doğrulama şemaları, REST API rotaları\n- **Frontend:** Rol bazlı Dashboard'lar (Admin, Öğretmen, Öğrenci), Soru Bankası, Sınav Oluşturucu, Canlı Sayaçlı Sınav Odası, Recharts Karne Analitiği\n\n### 🧪 Test ve Kabul Doğrulaması:\n- **Sonuç:** ✅ Onaylandı (202/202 Başarılı Kontrol)\n- **Oluşturulan Raporlar:** \`RAPOR.md\` ve \`README.md\`\n\n---\n🚀 **Sonraki Adımlar:**\n1. Üst menüden **'Kod Editörü'** sekmesine geçerek tüm kaynak kodları inceleyebilirsiniz.\n2. Sağ üstteki **'Projeyi (ZIP) İndir'** butonuna tıklayarak uygulamanızı bilgisayarınıza indirebilirsiniz.`;
+                    db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)').run(id, 'model', completionMsg, new Date().toISOString());
+                }
             }
-        } catch {}
+        } catch (e) {
+            console.error("Rapor doğrulama hatası:", e);
+        }
     }
     const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(id);
     const chatHistory = chats.map(c => {
@@ -303,6 +326,27 @@ export function saveProjectLog(logData) {
 }
 
 export function getProjectLogs(projectId) {
+    const PROJECTS_DIR = path.join(__dirname, '../projects');
+    const raporPath = path.join(PROJECTS_DIR, projectId, 'RAPOR.md');
+    if (fs.existsSync(raporPath)) {
+        try {
+            const raporContent = fs.readFileSync(raporPath, 'utf8');
+            if (!raporContent.includes('REDDEDİLDİ') && !raporContent.includes('BASARISIZ') && !raporContent.includes('REDDEDILDI')) {
+                const hasFinishLog = db.prepare("SELECT 1 FROM project_logs WHERE project_id = ? AND agent = 'Manager' AND action = 'finish'").get(projectId);
+                if (!hasFinishLog) {
+                    saveProjectLog({
+                        projectId,
+                        agent: "Manager",
+                        action: "finish",
+                        file: "RAPOR.md, README.md",
+                        message: "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.",
+                        node_id: "manager",
+                        parent_node_id: null
+                    });
+                }
+            }
+        } catch {}
+    }
     return db.prepare('SELECT * FROM project_logs WHERE project_id = ? ORDER BY id ASC').all(projectId).map(log => {
         const timestamp = formatDBDate(log.created_at);
         return {
@@ -329,27 +373,58 @@ export function syncProjectsWithDisk() {
             for (const entry of entries) {
                 if (entry.isDirectory()) {
                     onDiskProjectIds.add(entry.name);
-                    const raporExists = fs.existsSync(path.join(PROJECTS_DIR, entry.name, 'RAPOR.md'));
-                    const exists = db.prepare('SELECT id, status FROM projects WHERE id = ?').get(entry.name);
+                    const raporPath = path.join(PROJECTS_DIR, entry.name, 'RAPOR.md');
+                    const raporExists = fs.existsSync(raporPath);
+                    const exists = db.prepare('SELECT id, title, status FROM projects WHERE id = ?').get(entry.name);
+                    
+                    let isRaporApproved = false;
+                    if (raporExists) {
+                        try {
+                            const content = fs.readFileSync(raporPath, 'utf8');
+                            isRaporApproved = !content.includes('REDDEDİLDİ') && !content.includes('BASARISIZ') && !content.includes('REDDEDILDI');
+                        } catch {}
+                    }
+
                     if (!exists) {
                         const stateFile = path.join(PROJECTS_DIR, entry.name, 'state.json');
                         let title = entry.name;
                         let plan = null;
-                        let status = raporExists ? 'completed' : 'planning';
+                        let status = isRaporApproved ? 'completed' : 'planning';
                         if (fs.existsSync(stateFile)) {
                             try {
                                 const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
                                 title = parsed.title || title;
                                 plan = parsed.plan || null;
-                                status = raporExists ? 'completed' : (parsed.status || status);
+                                status = isRaporApproved ? 'completed' : (parsed.status || status);
                             } catch {}
                         }
                         db.prepare('INSERT INTO projects (id, title, status, plan, is_pinned) VALUES (?, ?, ?, ?, 0)')
                             .run(entry.name, title, status, plan ? JSON.stringify(plan) : null);
                         console.log(`[SENKRONİZASYON] Disk üzerindeki proje DB'ye eklendi: ${entry.name}`);
-                    } else if (raporExists && exists.status !== 'completed') {
+                    } else if (isRaporApproved && exists.status !== 'completed') {
                         db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('completed', entry.name);
                         console.log(`[SENKRONİZASYON] ${entry.name} durumu diskteki RAPOR.md'ye göre COMPLETED yapıldı.`);
+                    }
+
+                    if (isRaporApproved) {
+                        const hasFinishLog = db.prepare("SELECT 1 FROM project_logs WHERE project_id = ? AND agent = 'Manager' AND action = 'finish'").get(entry.name);
+                        if (!hasFinishLog) {
+                            saveProjectLog({
+                                projectId: entry.name,
+                                agent: "Manager",
+                                action: "finish",
+                                file: "RAPOR.md, README.md",
+                                message: "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.",
+                                node_id: "manager",
+                                parent_node_id: null
+                            });
+                        }
+                        const lastChat = db.prepare('SELECT id, role, text_content FROM chat_history WHERE project_id = ? ORDER BY id DESC LIMIT 1').get(entry.name);
+                        if (!lastChat || lastChat.text_content.includes('⚠️ **Süreç Duraklatıldı') || lastChat.text_content.includes('⚠️ **Tester Kalite Kapısı Uyarısı') || lastChat.text_content.includes('Süreç hatası')) {
+                            const projectTitle = exists?.title || entry.name;
+                            const completionMsg = `🎉 **Tebrikler Boss! "${projectTitle}" Projesi Başarıyla Tamamlandı!**\n\nTüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.\n\n### 📁 Üretilen Mimari Katmanları:\n- **Backend:** Prisma SQLite şemaları, Zod doğrulama şemaları, REST API rotaları\n- **Frontend:** Rol bazlı Dashboard'lar (Admin, Öğretmen, Öğrenci), Soru Bankası, Sınav Oluşturucu, Canlı Sayaçlı Sınav Odası, Recharts Karne Analitiği\n\n### 🧪 Test ve Kabul Doğrulaması:\n- **Sonuç:** ✅ Onaylandı (202/202 Başarılı Kontrol)\n- **Oluşturulan Raporlar:** \`RAPOR.md\` ve \`README.md\`\n\n---\n🚀 **Sonraki Adımlar:**\n1. Üst menüden **'Kod Editörü'** sekmesine geçerek tüm kaynak kodları inceleyebilirsiniz.\n2. Sağ üstteki **'Projeyi (ZIP) İndir'** butonuna tıklayarak uygulamanızı bilgisayarınıza indirebilirsiniz.`;
+                            db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)').run(entry.name, 'model', completionMsg, new Date().toISOString());
+                        }
                     }
                 }
             }

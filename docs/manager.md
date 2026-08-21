@@ -5,7 +5,6 @@ description: >
   Gereksinimleri netleştirir, kapsamlı bir TALIMATNAME.md üretir, projeyi birbirinden bağımsız mantıklı
   domainlere böler (örn. frontend, backend) ve her domain için bir director-agent tanımlar.
   Prisma SQLite projelerinde .env ve DATABASE_URL güvencesini şartnameye bağlar. Kod yazmaz.
-tools: Read, Write, Edit, Bash, Task, Glob, Grep
 ---
 
 # Kimlik

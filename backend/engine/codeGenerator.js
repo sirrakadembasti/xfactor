@@ -128,34 +128,37 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = []) {
  * Üretilen projenin bağımsız olarak hemen çalıştırılabilir olmasını garanti eder (Scaffold Guard).
  * package.json, tsconfig.json, globals.css, tailwind.config vb. eksikse otomatik üretir.
  */
-export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
-    const title = state.title || 'xfactor-app';
-    const safeName = title.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'app';
-
-    // 1. Proje Türü / Framework Algılama
+export async function detectProjectStack(projectDir, state = {}, plan = {}) {
     let hasNextApp = false;
     let hasVite = false;
     let hasPrisma = false;
-    let hasExpress = false;
+    let hasTypeScript = false;
 
     try {
         const appStat = await fs.stat(path.join(projectDir, 'src', 'app')).catch(() => null);
         if (appStat && appStat.isDirectory()) hasNextApp = true;
-        const nextCfgStat = await fs.stat(path.join(projectDir, 'next.config.js')).catch(() => null);
+        const nextCfgStat = await fs.stat(path.join(projectDir, 'next.config.js')).catch(() => null) ||
+                            await fs.stat(path.join(projectDir, 'next.config.mjs')).catch(() => null) ||
+                            await fs.stat(path.join(projectDir, 'next.config.ts')).catch(() => null);
         if (nextCfgStat) hasNextApp = true;
 
         const viteCfgStat = await fs.stat(path.join(projectDir, 'vite.config.js')).catch(() => null) ||
-                            await fs.stat(path.join(projectDir, 'vite.config.ts')).catch(() => null);
+                            await fs.stat(path.join(projectDir, 'vite.config.ts')).catch(() => null) ||
+                            await fs.stat(path.join(projectDir, 'vite.config.mjs')).catch(() => null);
         if (viteCfgStat) hasVite = true;
 
         const prismaStat = await fs.stat(path.join(projectDir, 'prisma', 'schema.prisma')).catch(() => null) ||
                            await fs.stat(path.join(projectDir, 'schema.prisma')).catch(() => null);
         if (prismaStat) hasPrisma = true;
+
+        const tsconfigStat = await fs.stat(path.join(projectDir, 'tsconfig.json')).catch(() => null);
+        if (tsconfigStat) hasTypeScript = true;
     } catch {}
+
     const specText = `${state.title || ''} ${plan.summary || ''} ${plan.talimatname || ''}`.toLowerCase();
     const hasReactKeyword = specText.includes('react') || specText.includes('frontend') || specText.includes('ui') || specText.includes('client');
     const isExpressOnly = (specText.includes('express') || specText.includes('rest api') || specText.includes('node api') || specText.includes('backend api')) && !hasReactKeyword && !hasNextApp && !hasVite;
-    
+
     if (specText.includes('next.js') || specText.includes('nextjs') || specText.includes('app router')) {
         hasNextApp = true;
     } else if (specText.includes('vite') || specText.includes('react spa')) {
@@ -164,9 +167,31 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     if (specText.includes('prisma') || specText.includes('sqlite') || specText.includes('database')) {
         hasPrisma = true;
     }
+    if (specText.includes('typescript') || specText.includes('ts') || specText.includes('tsx')) {
+        hasTypeScript = true;
+    }
 
     const isNext = hasNextApp || (!hasVite && !isExpressOnly);
-    // 2. package.json Kontrolü ve Tamamlama
+    const framework = isNext ? 'nextjs' : (hasVite ? 'vite' : (isExpressOnly ? 'express' : 'node'));
+
+    return {
+        framework,
+        isNext,
+        hasNextApp,
+        hasVite,
+        isExpressOnly,
+        hasPrisma,
+        hasTypeScript
+    };
+}
+
+export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
+    const title = state.title || 'xfactor-app';
+    const safeName = title.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'app';
+
+    // 1. Proje Türü / Framework Algılama
+    const stack = await detectProjectStack(projectDir, state, plan);
+    const { isNext, hasPrisma, isExpressOnly } = stack;
     const pkgPath = path.join(projectDir, 'package.json');
     let currentPkg = {};
     try {

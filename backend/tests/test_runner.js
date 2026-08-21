@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename);
 
 const testFiles = [
     'test_backend.js',
+    'test_concurrency_pool.js',
+    'test_build_validator.js',
     'test_quality_gate.js',
     'test_deep_verification.js',
     'test_tur2_edge_cases.js',

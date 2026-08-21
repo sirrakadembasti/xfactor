@@ -259,20 +259,19 @@ npm run dev
 
 ## 8. Test Süiti ve Otomasyonun Çalıştırılması (`npm test`)
 
-Tüm çekirdek motorları, güvenlik, DAG dalga motoru, deterministik kalite kapısı, docs canlı bağlantısı ve checkpoint kurtarma fonksiyonlarını test etmek için:
+Tüm çekirdek motorları, güvenlik, DAG dalga motoru, concurrency havuzu, gerçek derleyici doğrulaması (`tsc`, `prisma`), deterministik kalite kapısı ve checkpoint kurtarma fonksiyonlarını test etmek için:
 
 ```bash
 cd backend
 npm test
 ```
 
-Tüm 71 test merkezi **`backend/tests/`** altındaki koşucu ile saniyeler içinde doğrulanır:
+Tüm 85 test merkezi **`backend/tests/`** altındaki master koşucu ile doğrulanır:
 ```text
 ==================================================
-📊 Test Özeti: 6 Süit Başarılı, 0 Süit Hatalı (71/71 Test %100 Başarı)
+📊 Test Özeti: 8 Süit Başarılı, 0 Süit Hatalı (85/85 Test %100 Başarı)
 ==================================================
 ```
-
 ---
 
 ## 9. Sıkça Sorulan Sorular (SSS) ve Sorun Giderme

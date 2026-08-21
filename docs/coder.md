@@ -5,7 +5,6 @@ description: >
   tarafından tanımlanan atomik görevi alır ve hedef dosyaları eksiksiz kodlar.
   Bileşen kompozisyonu kuralını uygular; sayfaları monolitik şişirmek yerine
   önceden oluşturulmuş bileşenleri import ederek kullanır.
-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Kimlik

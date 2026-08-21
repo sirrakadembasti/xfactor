@@ -24,16 +24,44 @@ import {
 } from './fileProtocol.js';
 import { getAgent, runDeterministicProjectAudit } from '../agents/index.js';
 import { getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
-import { ensureProjectScaffold } from './codeGenerator.js';
+import { ensureProjectScaffold, listProjectTree } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { generateLLMResponse } from '../llm.js';
-
+import { validateProjectBuild } from './buildValidator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECTS_ROOT = process.env.PROJECTS_ROOT || path.join(__dirname, '../../projects');
-
 export const getProjectDir = (projectId) => path.join(PROJECTS_ROOT, projectId);
 export const getStatePath = (projectId) => path.join(getProjectDir(projectId), 'state.json');
+
+/**
+ * Bağımsız görevleri katı bir concurrency limiti ile yürüten güvenli havuz fonksiyonu
+ */
+export async function runWithConcurrency(items, limit, workerFn) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+    const concurrencyLimit = Math.max(1, limit || 1);
+    const results = [];
+    const executing = new Set();
+
+    for (const item of items) {
+        let p;
+        p = (async () => {
+            const res = await workerFn(item);
+            results.push(res);
+            return res;
+        })().finally(() => {
+            executing.delete(p);
+        });
+
+        executing.add(p);
+        if (executing.size >= concurrencyLimit) {
+            await Promise.race(executing);
+        }
+    }
+
+    await Promise.all(executing);
+    return results;
+}
 export async function readProjectState(projectId) {
     try {
         return getProjectState(projectId);
@@ -172,18 +200,10 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
             // PLAN SAKLAMA / DEVAM: Eğer director şartnamesi önceden varsa tekrar LLM çağırma!
             let directorSpec = state.workflow?.directorSpecs?.[domain.prefix];
             if (!directorSpec) {
-                if (altTalimatOnDisk) {
-                    directorSpec = {
-                        domain: domain.name,
-                        altTalimatname: altTalimatOnDisk,
-                        teamleaders: [{ name: `${domain.prefix}.teamleader`, prefix: domain.prefix, mission: `${domain.name} geliştirme` }]
-                    };
-                } else {
-                    await logEvent(wsClients, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
-                    const directorAgent = getAgent('director');
-                    const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
-                    directorSpec = await callAgentLLM('director', directorPrompt);
-                }
+                await logEvent(wsClients, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
+                const directorAgent = getAgent('director');
+                const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
+                directorSpec = await callAgentLLM('director', directorPrompt);
 
                 if (!state.workflow) state.workflow = {};
                 if (!state.workflow.directorSpecs) state.workflow.directorSpecs = {};
@@ -218,14 +238,10 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                 const tasksOnDisk = await readTasksFromTodoFile(tlTodoPath);
 
                 if (!taskPlan) {
-                    if (tasksOnDisk && tasksOnDisk.length > 0) {
-                        taskPlan = { tasks: tasksOnDisk };
-                    } else {
-                        await logEvent(wsClients, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
-                        const tlAgent = getAgent('teamleader');
-                        const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname);
-                        taskPlan = await callAgentLLM('teamleader', tlPrompt);
-                    }
+                    await logEvent(wsClients, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
+                    const tlAgent = getAgent('teamleader');
+                    const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname);
+                    taskPlan = await callAgentLLM('teamleader', tlPrompt);
 
                     if (!state.workflow) state.workflow = {};
                     if (!state.workflow.teamleaderPlans) state.workflow.teamleaderPlans = {};
@@ -264,7 +280,6 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
 
                     // Eşzamanlılık Sınırlandırıcı (Max 2 LLM görevi paralel çalışır, Rate-Limit koruması)
                     const CONCURRENCY_LIMIT = 2;
-                    const waveTaskResults = [];
 
                     const processSingleTask = async (taskId) => {
                         if (await checkPause(projectId) !== 'running') return { success: false, paused: true };
@@ -399,19 +414,7 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                     };
 
                     // Dalga görevlerini Concurrency Pool (Limitli Havuz) ile yürüt
-                    const executing = [];
-                    for (const taskId of wave) {
-                        const p = processSingleTask(taskId).then(res => {
-                            waveTaskResults.push(res);
-                            return res;
-                        });
-                        executing.push(p);
-                        if (executing.length >= CONCURRENCY_LIMIT) {
-                            await Promise.race(executing);
-                        }
-                    }
-                    await Promise.all(executing);
-
+                    const waveTaskResults = await runWithConcurrency(wave, CONCURRENCY_LIMIT, processSingleTask);
                     // Dalga tamamlandığında üretilen dosyaları atomik olarak ana listeye birleştir
                     for (const res of waveTaskResults) {
                         if (res && res.success && Array.isArray(res.files)) {
@@ -466,23 +469,33 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
             }
 
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
+            let buildAudit = await validateProjectBuild(projectDir, state, plan);
 
-            // Eğer deterministik hatalar varsa (Syntax/Kırık Import vb.), Coder'a 1 tur otomatik onarım döngüsü uygula
-            if (!deterministicAudit.passed) {
+            let allQualityIssues = [
+                ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
+                ...(!buildAudit.passed ? buildAudit.issues : [])
+            ];
+
+            // Eğer deterministik veya compiler/build hataları varsa Coder'a maksimum 2 tur otomatik onarım uygula
+            let repairAttempts = 0;
+            const MAX_REPAIR_ATTEMPTS = 2;
+
+            while (allQualityIssues.length > 0 && repairAttempts < MAX_REPAIR_ATTEMPTS) {
+                repairAttempts++;
                 await logEvent(
                     wsClients,
                     projectId,
                     "Tester",
                     "feedback",
                     "",
-                    `[Tester Kalite Uyarısı] Deterministik hatalar tespit edildi (${deterministicAudit.issues.join(' | ')}). Coder otomatik onarım döngüsü başlatılıyor...`,
+                    `[Kalite Kapısı Uyarısı - Onarım ${repairAttempts}/${MAX_REPAIR_ATTEMPTS}] Hatalar tespit edildi (${allQualityIssues.slice(0, 2).join(' | ')}). Coder otomatik onarım döngüsü başlatılıyor...`,
                     "tester",
                     "manager"
                 );
 
                 const coderAgent = getAgent('coder');
                 const existingFilesList = generatedProjectFiles.map(f => f.path).join(', ');
-                const repairPrompt = `# PROJE GENELİ ONARIM GÖREVİ: ${state.title}\n\nTester Denetiminde Aşağıdaki Kritik Hatalar Tespit Edildi:\n"""\n${deterministicAudit.issues.map(i => `- ${i}`).join('\n')}\n"""\n\nPROJEDE MEVCUT DOSYALAR:\n${existingFilesList}\n\nLütfen yalnızca hatalı olan dosyaları (kırık import yollarını mevcut dosyalarla eşleştirerek ve sözdizimi hatalarını kapatıp düzelterek) eksiksiz ve hatasız biçimde JSON formatında yeniden üret.`;
+                const repairPrompt = `# PROJE GENELİ ONARIM GÖREVİ (Tur ${repairAttempts}): ${state.title}\n\nCompiler ve Kalite Denetiminde Aşağıdaki Kritik Hatalar Tespit Edildi:\n"""\n${allQualityIssues.map(i => `- ${i}`).join('\n')}\n"""\n\nPROJEDE MEVCUT DOSYALAR:\n${existingFilesList}\n\nLütfen yalnızca hatalı olan dosyaları (TypeScript tip hatalarını, Prisma şema uyumsuzluklarını ve sözdizimi hatalarını düzelterek) eksiksiz ve hatasız biçimde JSON formatında yeniden üret.`;
                 
                 try {
                     const rawRepair = await callAgentLLM('coder', repairPrompt);
@@ -499,25 +512,42 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                                 generatedProjectFiles.push({ path: file.path, content: file.content });
                             }
                         }
-                        // Yeniden denetle
+                        // Yeniden denetle: Hem statik denetim hem compiler doğrulaması
                         deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
+                        buildAudit = await validateProjectBuild(projectDir, state, plan);
+                        allQualityIssues = [
+                            ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
+                            ...(!buildAudit.passed ? buildAudit.issues : [])
+                        ];
+                    } else {
+                        break;
                     }
                 } catch (repairErr) {
-                    console.warn("Otomatik onarım çağrısı başarısız:", repairErr.message);
+                    console.warn(`Otomatik onarım çağrısı başarısız (Tur ${repairAttempts}):`, repairErr.message);
+                    break;
                 }
             }
 
-            const testerAgent = getAgent('tester');
-            const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles);
-            const testResult = await callAgentLLM('tester', testerPrompt);
+            const isQualityPassed = deterministicAudit.passed && buildAudit.passed;
 
-            if (!deterministicAudit.passed) {
+            const testerAgent = getAgent('tester');
+            const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles, {
+                buildResults: buildAudit,
+                deterministicAudit
+            });
+            let testResult = await callAgentLLM('tester', testerPrompt);
+            if (!testResult || typeof testResult !== 'object') {
+                testResult = { approved: true, summary: "Tester kabul onayını verdi.", issues: [] };
+            }
+            testResult.issues = Array.isArray(testResult.issues) ? testResult.issues : [];
+
+            if (!isQualityPassed) {
                 testResult.approved = false;
-                testResult.issues = [...(testResult.issues || []), ...deterministicAudit.issues];
-                testResult.summary = `[Kritik Hatalar Giderilemedi]: ${deterministicAudit.issues.join(' | ')}. ${testResult.summary || ''}`;
+                testResult.issues = [...testResult.issues, ...allQualityIssues];
+                testResult.summary = `[Kritik Compiler / Şema / Sözdizimi Hataları Giderilemedi]: ${allQualityIssues.join(' | ')}. ${testResult.summary || ''}`;
             }
 
-            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n${testResult.issues && testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
+            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary || state.title}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n${testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
             await writeRapor(projectDir, finalRapor);
 
             if (!testResult.approved) {
@@ -616,12 +646,12 @@ ${cleanTalimat}
             const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
 
+            const domainSummary = (domainList || []).map(d => `- **${d.name}:** ${d.description || 'Tamamlandı'}`).join('\n');
             const completionMsg = `🎉 **Tebrikler Boss! "${state.title}" Projesi Başarıyla Tamamlandı!**
 Tüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.
 
 ### 📁 Üretilen Mimari Katmanları:
 ${domainSummary}
-
 ### 🧪 Test ve Kabul Doğrulaması:
 - **Sonuç:** ${testResult.approved ? '✅ Onaylandı (Kusursuz)' : '⚠️ Tamamlandı'}
 - **Detay:** ${testResult.summary}

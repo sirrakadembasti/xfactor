@@ -155,7 +155,7 @@ export async function generateLLMResponse(messages, options = {}) {
                 const errText = await response.text();
                 throw new Error(`Google API Hatası [${response.status}]: ${errText}`);
             }
-
+            const data = await response.json();
             const candidate = data.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
                 console.warn("[LLM UYARI - TOKEN SINIRI]: Yanıt Google REST API tarafından MAX_TOKENS sınırına ulaştığı için kesildi. Kod blokları yarım kalmış olabilir.");

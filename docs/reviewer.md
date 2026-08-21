@@ -5,7 +5,6 @@ description: >
   kod bloklarını sözdizimi, mimari uyum, eksik importlar ve güvenlik açısından denetler.
   Hatalı kodlarda Coder'a düzeltme geri bildirimi verir; 2 tur sonunda onay alamazsa
   görevi fail-closed olarak veto eder.
-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Kimlik

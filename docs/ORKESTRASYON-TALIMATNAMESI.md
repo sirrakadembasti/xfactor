@@ -1,175 +1,143 @@
-# 📜 Dosya-Bazlı Çok Katmanlı Ajan Orkestrasyonu — Master Talimatname (v3)
+# 📜 Dosya-Bazlı Çok Katmanlı Ajan Orkestrasyonu — Master Talimatname (v4)
 
-> Bu doküman, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun (`msitarzewski/agency-agents` + `coleam00/Archon DAG`) çalışma prensiplerini, ajan hiyerarşisini, dosya-bazlı koordinasyon protokolünü ve deterministik kalite kapısını tanımlayan ana şartnamedir.
+> Bu doküman, **XFactor Otonom AI Kod Üretim ve Yazılım Orkestrasyon Platformu**'nun çalışma prensiplerini, rol hiyerarşisini, dosya-bazlı koordinasyon protokolünü, deterministik DAG dalga motorunu ve çok katmanlı derleme/kalite kapılarını tanımlayan ana şartnamedir.
 >
-> **v3 Güncellemeleri:** 6 Katmanlı tam ajan hiyerarşisi (`Manager → Director → Teamleader → Coder → Reviewer → Tester`), paralel DAG dalga yürütme motoru (`Execution Waves`), Reviewer fail-closed veto kapısı, Tester deterministik şema doğrulaması ve otomatik `.env` (`DATABASE_URL`) Scaffold Guard entegre edilmiştir.
+> **v4 Güncellemeleri:** 6 Katmanlı rol hiyerarşisi (`Manager → Director → Teamleader → Coder → Reviewer → Tester`), `Set` tabanlı katı eşzamanlılık havuzu (`runWithConcurrency`, limit: 2), fail-closed Reviewer veto kapısı, gerçek derleyici doğrulayıcısı (`buildValidator.js: tsc --noEmit, prisma validate, npm run build`), Coder 2 turlu otomatik onarım döngüsü ve tam bağlamlı **Project Manifest** QA mimarisi entegre edilmiştir.
 
 ---
 
-## 0. Orkestrasyon Senaryosu (Özet Akış)
+## 0. Orkestrasyon Senaryosu ve Gerçek İş Akışı
 
 ```text
 [Boss / Kullanıcı]
-       │ Doğal Dilde İstek & Beyin Fırtınası
+       │ Doğal Dilde İstek & Beyin Fırtınası (HTTP POST /api/projects/:id/chat)
        ▼
-[Manager Agent] ───► manager/TALIMATNAME.md & Kök TODO.md (Domain Bölünmesi)
+[Manager Rolü] ──────► manager/TALIMATNAME.md & Kök TODO.md (Domain Bölünmesi)
        │
-       ▼ Domain Görevi Devri
-[Director Agent] ──► <domain>.director/ALT-TALIMATNAME.md & Director TODO.md
+       ▼ Kullanıcı Onayı (pending_approval -> running)
+[Merkezi Orkestratör (workflow.js)]
        │
-       ▼ Alt Şartname Devri
-[Teamleader Agent] ► <tl>/TODO.md & Görev DAG'ı (Atomik 1-2 Dosya Kuralı)
+       ├─► [1. Director Katmanı] ──► <domain>.director/ALT-TALIMATNAME.md & GOREV.md
        │
-       ▼ DAG Dalga İcrası (Execution Waves - Paralel Havuz)
-[Coder Agent] ──────► Çok Dosyalı Kod Üretimi & Bileşen Kompozisyonu
+       ├─► [2. Teamleader Katmanı] ► <tl>/TODO.md & Görev DAG'ı (Maks 1-2 Dosya Kuralı)
        │
-       ▼ Kod İnceleme & Geri Bildirim Döngüsü (Max 2 Tur)
-[Reviewer Agent] ───► Kalite Kapısı Onayı / Fail-Closed VETO
+       ├─► [3. DAG Dalga Yürütücüsü (Execution Waves - Concurrency: 2)]
+       │     │
+       │     ├──► [Coder] ──────► Modüler TypeScript/React/Express Kod Üretimi
+       │     │
+       │     └──► [Reviewer] ────► İteratif Kalite Kapısı (Maksimum 2 Tur Düzeltme)
+       │                             ├── Red ──► Coder'a Hata Geri Bildirimiyle Tekrar
+       │                             └── Veto ──► DURUM.md = BASARISIZ & Süreç Paused
        │
-       ▼ Tüm Görevler Tamamlandığında Konsolide Kabul
-[Tester Agent] ─────► Deterministik Şema/Sentaks Denetimi, RAPOR.md & README.md
+       ├─► [4. Çok Katmanlı Derleyici & Kalite Kapıları (Quality Gates)]
+       │     ├── A. Deterministik Statik Denetim (JSON, Parantez Dengesi, Dosya Varlığı)
+       │     ├── B. TypeScript Tip/Derleme Denetimi (npx tsc --noEmit / Semantic Type Check)
+       │     ├── C. Prisma Şema Doğrulaması (npx prisma validate / Schema Linter)
+       │     ├── D. Framework Sandbox Build (npm run build - node_modules varsa)
+       │     │
+       │     └── Hata Varsa ──► Coder Otomatik Onarım Döngüsü (Maksimum 2 Tur) ──► Revalidate
        │
-       ▼ Scaffold Guard
-[Proje İskeleti] ───► Güncel Bağımlılıklar (Next.js, Prisma, Tailwind) & .env Dosyası
+       ├─► [5. Tester Manifest QA Kabulü]
+       │     ├── Proje Manifestosu (Routes, Models, Schemas, Shared Types, Env Vars, Graph)
+       │     └── Derleyici Sonuçları Karşılaştırması ──► RAPOR.md & README.md Üretimi
+       │
+       └─► [6. Tamamlanma & Yayın (status = 'completed')]
 ```
 
 ---
 
 ## 1. Temel İlke: "Agent = Klasör" Protokolü
 
-1. **İzole Çalışma Alanı:** Her ajan kendi klasöründe yaşar (`manager/`, `<domain>.director/`, `<tl>.teamleader/`, `<task_id>/`).
-2. **Dosya-Bazlı Ortak Hafıza:** Ajanlar birbirleriyle doğal dil konuşma geçmişiyle değil; diske yazılan standart Markdown dosyaları (`GOREV.md`, `DURUM.md`, `TODO.md`, `RAPOR.md`, `TALIMATNAME.md`) üzerinden haberleşir.
-3. **Yetki Sınırı:** Bir ajan yalnızca kendi klasörüne ve üst klasördeki kendi takip satırına yazabilir. Üst ajan görev tanımını (`GOREV.md`) alt klasöre bırakır.
+1. **İzole Çalışma Alanı:** Her rol kendi klasöründe çalışır (`manager/`, `<domain>.director/`, `<tl>/`, `<task_id>/`).
+2. **Dosya-Bazlı Ortak Hafıza:** Roller birbirleriyle kontrolsüz serbest metinle değil; diske yazılan standart Markdown protokol dosyaları (`GOREV.md`, `DURUM.md`, `TODO.md`, `RAPOR.md`, `TALIMATNAME.md`) üzerinden koordinasyon sağlar.
+3. **Yetki Sınırı:** Bir rol yalnızca kendi klasörüne ve üst klasördeki kendi takip satırına yazabilir. Üst rol görev tanımını (`GOREV.md`) alt klasöre bırakır.
 
 ---
 
-## 2. Ajan Hiyerarşisi ve Uzmanlaşmış Roller (6 Seviye)
+## 2. Rol Hiyerarşisi ve Sorumluluklar (6 Seviye)
 
-### 2.1. Manager Agent (Seviye 0 — Proje Mimarisi & Yönetim)
+### 2.1. Manager Rolü (Seviye 0 — Proje Mimarisi & Yönetim)
 * **Konum:** `projects/<id>/manager/`
-* **Girdi:** Boss'un doğal dildeki istekleri ve sohbet geçmişi.
-  1. İstek analizi yapar, varsayımları belirler ve `manager/TALIMATNAME.md` şartnamesini üretir.
+* **Girdi:** Kullanıcının doğal dildeki istekleri ve sohbet geçmişi.
+* **Görevleri:**
+  1. İstek analizi yapar, mimari şartnameyi (`manager/TALIMATNAME.md`) üretir.
   2. Projeyi bağımsız domainlere (`frontend`, `backend` vb.) ayırır.
   3. Prisma/SQLite projelerinde `.env` dosyasında `DATABASE_URL="file:./dev.db"` tanımının yer alacağını şartnameye bağlar.
   4. Her domain için `<domain>.director/` klasörü açar ve `GOREV.md` yazar.
-  5. **Telemetri, İç Muhakeme & Canlı Bildirim:** Canlı logları, DAG grafiğini ve alt ajanların `RAPOR.md` veto/hata kayıtlarını tam yetkiyle analiz eder; proje tamamlandığında veya duraklatıldığında sohbet kanalına otomatik resmi bildirim bırakır.
-* **Kısıt:** Asla doğrudan kod yazmaz.
+  5. Canlı telemetriyi (`getProjectLogs`, `findFailedReports`) analiz ederek kullanıcıya durum bildirir.
 
-### 2.2. Director Agent (Seviye 1 — Domain Mimarisi & Standartlar)
+### 2.2. Director Rolü (Seviye 1 — Domain Mimarisi & Standartlar)
 * **Konum:** `projects/<id>/manager/<domain>.director/`
 * **Girdi:** `manager/TALIMATNAME.md` ve domain `GOREV.md`.
 * **Görevleri:**
   1. Domain mimarisini, onaylı teknoloji yığınını (`react-hook-form`, `sonner`, `zod`, `prisma` vb.) ve ortak sözleşme yollarını (`@/lib/prisma`, `@/lib/validations`) belirleyerek `ALT-TALIMATNAME.md` üretir.
   2. Kodlama başlamadan önce `package.json`, `tsconfig.json` ve `.env` dosyalarının diske kilitlenmesini sağlar.
-  3. Altındaki Teamleader'ı tanımlar ve `manager/<domain>.director/<tl>/` klasörünü açar.
-* **Kısıt:** Doğrudan coder görevi açmaz; teamleader katmanını yönetir.
+  3. Altındaki Takım Liderlerini tanımlar ve klasörlerini açar.
 
-### 2.3. Teamleader Agent (Seviye 2 — DAG Görev Bölümü & Koordinasyon)
+### 2.3. Teamleader Rolü (Seviye 2 — DAG Görev Bölümü & Koordinasyon)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/`
 * **Girdi:** `ALT-TALIMATNAME.md` ve `GOREV.md`.
 * **Görevleri:**
-  1. Şartnameyi Coder ajanlarının tek seferde bitirebileceği **atomik parçalara (DAG)** ayırır.
+  1. Şartnameyi Coder'ın tek seferde bitirebileceği **atomik parçalara (DAG)** ayırır.
   2. **KRİTİK ATOMİK LİMİT:** LLM çıktı token sınırına takılmamak için her bir görevin `targetFiles` listesinde **EN FAZLA 1 veya 2 dosya** tanımlar.
-  3. **Bileşen Ayrıştırma Zorunluluğu:** `page.tsx` gibi büyük UI sayfalarını tek blok yapmak yerine, önce form/kart/filtre alt bileşenlerini ayrı görevler olarak dağıtır; ardından `page.tsx` sarmalayıcısını kodlatır.
-  4. **Görev Sözleşmesi (Task Contract):** Her görevin açıklamasında kullanılması gereken onaylı kütüphaneleri ve import yollarını şart koşar.
-  5. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve DAG önkoşullarını `TODO.md`'ye yazar.
-### 2.4. Coder Agent (Seviye 3 — Yaprak Geliştirici)
+  3. **Bileşen Ayrıştırma Zorunluluğu:** Büyük sayfaları tek blok yapmak yerine önce form/kart/filtre alt bileşenlerini ayrı görevlere böler; ardından ana sayfa sarmalayıcısını kodlatır.
+  4. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve bağımlılıkları `TODO.md`'ye yazar.
+
+### 2.4. Coder Rolü (Seviye 3 — Yaprak Geliştirici)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/<task_id>/`
 * **Girdi:** Görev tanımı `GOREV.md` ve paylaşılan `projectContext` (şemalar, tipler, route tanımları).
+* **Görevleri:**
   1. Hedef dosyaları eksiksiz, TypeScript uyumlu ve modern standartlara göre kodlar.
-  2. **BİLEŞEN KOMPOZİSYONU:** Sayfa (`page.tsx`) yazarken form/tablo/modal gibi alt bileşenleri sayfa içine monolitik gömmek yerine, önceden oluşturulmuş bileşenleri `@/components/...` üzerinden `import` ederek kompoze eder.
-  3. **DOĞRULANMIŞ İTHALAT:** Yalnızca sözleşmede tanımlanmış ve diskte mevcut dosyaları import eder; uydurma paket veya kırık yol kullanamaz.
-  4. **EKSİKSİZ KOD ÜRETİMİ:** Kodları yarım kesmeden, tüm import ve JSX kapanışlarıyla baştan sona eksiksiz üretir.
-  5. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi klasörüne yazar.
-### 2.5. Reviewer Agent (Seviye 4 — Iterative Quality Gate & Veto)
+  2. **Bileşen Kompozisyonu:** Önceden oluşturulmuş bileşenleri `@/components/...` üzerinden `import` ederek sayfayı kompoze eder.
+  3. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi görev klasörüne yazar.
+
+### 2.5. Reviewer Rolü (Seviye 4 — Iterative Quality Gate & Veto)
 * **Girdi:** Coder'ın ürettiği dosyalar ve görev kabul kriterleri.
 * **Görevleri:**
-  1. Kodları syntax, eksik importlar, kapanmamış etiketler, onaylanmamış paketler ve güvenlik açısından satır satır denetler.
+  1. Kodları syntax, eksik importlar, kapanmamış etiketler ve güvenlik açısından satır satır denetler.
   2. Hata varsa somut düzeltme talimatı (`feedback`) vererek Coder'a yeniden kodlatır (Maksimum 2 tur).
-  3. **Fail-Closed Veto:** 2 turun sonunda kod standartlara uymazsa görevi veto eder (`approved: false`); süreç kontrollü durdurulur (`paused`), bozuk proje tamamlandı sayılmaz.
+  3. **Fail-Closed Veto:** 2 turun sonunda kod standartlara uymazsa görevi veto eder (`approved: false`); süreç kontrollü durdurulur (`paused`).
 
-### 2.6. Tester Agent (Seviye 5 — QA & Kabul Doğrulaması)
-* **Girdi:** Tüm üretilen proje dosyaları ve `TALIMATNAME.md`.
+### 2.6. Tester Rolü (Seviye 5 — QA & Kabul Doğrulaması)
+* **Girdi:** Project Spec + Project Manifest + Statik Denetim + Compiler/Build Sonuçları.
 * **Görevleri:**
-  1. **Deterministik Denetim:** `stripStringsAndComments` ile sözdizimi doğrulaması, `schema.prisma` modelleri ile API rotaları arasındaki model adı tutarlılığı ve tüm yerel dosya ithalatlarının (`@/...`, `./...`) ve npm paketlerinin (`package.json`) statik çözümleme (Dead Import) denetimini yapar.
-  2. **Otomatik Onarım (Auto-Repair):** Deterministik hata bulunursa Coder'a otomatik onarım görevi gönderir.
-  3. **Temiz & Kapsamlı README ve Kabul Raporu:** Proje köküne nihai `RAPOR.md` raporunu yazar; `README.md` dosyasını ise iç orkestrasyon/ajan jargonu barındırmayan, son kullanıcıya yönelik profesyonel bir yazılım dokümanı olarak (özellikler, modeller, sayfalar, `.env` ve çalıştırma adımları) üretir.
+  1. Proje manifestosunu (rotalar, modeller, şemalar, tipler, ortam değişkenleri, bağımlılık grafiği) kabul kriterleriyle karşılaştırır.
+  2. Compiler ve tip denetimi sonuçlarını değerlendirerek nihai `RAPOR.md` ve son kullanıcıya yönelik temiz `README.md` dosyasını üretir.
 
 ---
 
-## 3. Güncel Dizin ve Dosya Mimarisi
+## 3. Çok Katmanlı Kalite Kapıları ve Derleme Denetimi
 
 ```text
-xfactor/
-├── docs/                                  # 📚 CANLI AJAN BEYİNLERİ & TALİMATNAMELER
-│   ├── ORKESTRASYON-TALIMATNAMESI.md      # Ana Orkestrasyon Master Kılavuzu
-│   ├── KULLANIM-KILAVUZU.md               # A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu
-│   ├── manager.md                         # Manager Ajan Promptu & Kuralları
-│   ├── director.md                        # Director Ajan Promptu & Kuralları
-│   ├── teamleader.md                      # Teamleader Ajan Promptu & Kuralları
-│   ├── coder.md                           # Coder Ajan Promptu & Kuralları
-│   ├── reviewer.md                        # Reviewer Kalite Kapısı Promptu
-│   └── tester.md                          # Tester Deterministik QA Promptu
-│
-├── backend/
-│   ├── agents/                            # Ajan Fabrikası ve Şema Ayrıştırıcılar
-│   │   ├── agentLoader.js                 # docs/*.md dosyalarını canlı yükleyen köprü
-│   │   ├── schemas.js                     # JSON Truncation Repair & Validatörler
-│   │   └── index.js                       # Merkezi Ajan Kayıt Defteri (Registry)
-│   ├── engine/                            # Orkestrasyon Çekirdeği
-│   │   ├── dag.js                         # Topolojik Sıralama & Execution Waves (Dalgalar)
-│   │   ├── workflow.js                    # Concurrency Pool (Max 2) & Veto Kontrolcüsü
-│   │   ├── fileProtocol.js                # Agent=Klasör & Checkpoint Dosya Denetimi
-│   │   ├── codeGenerator.js               # Dinamik Scaffold Guard (.env, Next, Vite, Express)
-│   │   └── selfCorrection.js              # Reviewer-Coder 2 Turlu Döngü Motoru
-│   ├── routes/                            # Modüler Express Rotaları (auth, projects)
-│   ├── tests/                             # 📁 TÜM TEST SÜİTLERİ (70 Test)
-│   │   ├── test_runner.js                 # Master Test Koşucusu (npm test)
-│   │   ├── test_backend.js                # Güvenlik, Scrypt, JWT, RateLimit
-│   │   ├── test_quality_gate.js           # Prisma & Kalite Kapısı Testleri
-│   │   ├── test_deep_verification.js      # DAG & Execution Waves Testleri
-│   │   ├── test_tur2_edge_cases.js        # Döngü Stresi & RBAC Testleri
-│   │   ├── test_runtime_verification.js   # Sentaks & Checkpoint Testleri
-│   │   └── test_e2e_simulation.js         # Uçtan Uca Otonom Pipeline Testi
-│   ├── server.js                          # Express & WebSocket Sunucusu
-│   └── package.json
-│
-├── frontend/                              # React 18 + Vite + Tailwind Panel
-│   ├── src/
-│   │   ├── components/                    # Sidebar, Header, ChatView, DAGFlowView, IDEView
-│   │   └── App.jsx                        # Ana Koordinatör & WebSocket Canlı İstemcisi
-│   └── package.json
-│
-└── projects/                              # 📁 ÜRETİLEN GERÇEK PROJELER
-    └── <proje_id>/
-        ├── manager/                       # Canlı Protokol Dosyaları
-        ├── src/                           # Üretilen Temiz Kaynak Kodlar
-        ├── prisma/                        # schema.prisma & seed.ts
-        ├── .env & .env.example            # Otomatik DATABASE_URL="file:./dev.db"
-        ├── package.json                   # Modern Bağımlılıklar (Next 14.2+, React 18.3+, Prisma 5.22+)
-        ├── RAPOR.md                       # Tester Nihai Kabul Raporu
-        └── README.md                      # Kurulum ve Çalıştırma Kılavuzu
+[Coder Görev Tamamlandı]
+          ↓
+[Reviewer İteratif Kalite Kapısı] ──(Red / Düzeltme)──► Coder Tekrar Kodlar (Maks 2 Tur)
+          ↓ (Onaylandı)
+[1. Statik Deterministik Denetim] (JSON Parse, Parantez Dengesi, Dosya Varlığı)
+          ↓
+[2. TypeScript Derleyici Kapısı] (npx tsc --noEmit / Semantic Type Validator)
+          ↓
+[3. Prisma Şema Kapısı] (npx prisma validate / Schema Linter)
+          ↓
+[4. Framework Build Kapısı] (npm run build - node_modules varsa)
+          ↓
+[Hata Varsa] ──────────────────────────► Coder Otomatik Onarım Çağrısı (Maks 2 Tur)
+          ↓                                       ↓
+[Hata Giderilemediyse]                   [Hata Giderildiyse]
+          ↓                                       ↓
+[DURUM.md = BASARISIZ]                   [Tester Manifest QA Kabulü]
+[status = paused (Kilit)]                         ↓
+                                         [RAPOR.md & README.md Üretimi]
+                                                  ↓
+                                         [status = completed]
 ```
 
 ---
 
-## 4. Eşzamanlılık ve DAG Dalga Motoru (Execution Waves)
+## 4. Duraklatma, Devam Etme ve Hata Kurtarma (Recovery)
 
-* **Seviyelendirme:** Bağımsız görevler `TaskDAG.getExecutionWaves()` ile seviyelere ayrılır (Dalga 0, Dalga 1, Dalga n).
-* **Worker Pool:** Her dalga içindeki görevler `CONCURRENCY_LIMIT = 2` havuzunda paralel çalıştırılır; LLM 429 rate-limit hataları engellenir.
-* **Atomik Dosya Birleştirme (Wave Reduce):** Görev çıktıları dalga sonunda `generatedProjectFiles` listesine atomik olarak birleştirilir; yarış durumları (race condition) engellenir.
-
----
-
-## 5. Checkpoint & Stateful Recovery Kuralları
-
-1. **Çift Katmanlı Doğrulama:** Bir görevin `[SKIP]` edilmesi için hem `RAPOR.md` varlığı, hem `DURUM.md`'nin `TAMAMLANDI` olması, hem de `targetFiles` dosyalarının diskte fiziksel olarak **`size > 0` byte** olması şarttır.
-2. **Hata İzolasyonu:** `DURUM.md` dosyasında `BASARISIZ` veya `REDDEDILDI` kaydı olan görevler asla atlanmaz; tekrar çalıştırılır.
-3. **SQLite State Kalıcılığı:** Sunucu kapansa dahi hafıza durumu `workflow_state` sütunundan eksiksiz geri yüklenir.
-
----
-
-## 6. Proje Dışa Aktarma & ZIP Paketleme Kuralları
-
-1. **İç Yönetim Klasörlerinin Elenmesi:** ZIP paketinde iç ajan yönetim klasörleri (`manager/`, `*.director/`, `DURUM.md`, `TODO.md`, `GOREV.md`, `ALT-TALIMATNAME.md`) elenerek temiz kaynak kod paketi oluşturulur.
-2. **Çalıştırılabilirlik Güvencesi (.env Kuralı):** `.env` (`DATABASE_URL="file:./dev.db"`), `.env.example` ve `.gitignore` dosyaları asla filtrelenemez; ZIP paketine ve IDE dosya ağacına eksiksiz dahil edilir. Böylece indirilen proje `npx prisma db push` ve `npm run dev` ile sıfır kurulum maliyetiyle anında çalışır.
+1. **Duraklatma (`Pause`):** Kullanıcı arayüzdeki `Duraklat` butonuna bastığında orkestratör aktif dalganın tamamlanmasını bekler ve süreci güvenli bir checkpoint anında dondurur.
+2. **Kaldığı Yerden Devam (`Resume`):** Proje devam ettirildiğinde:
+   * `isTaskCompleted()` kontrolü daha önce tamamlanmış ve Reviewer onayı almış görevleri diskten tanır ve atlar (`skip`).
+   * Yalnızca eksik, yarım kalmış veya hata almış görevler yeniden yürütülür.
+3. **Sunucu Yeniden Başlatma (Crash Recovery):** Backend yeniden başlatılsa dahi SQLite `workflow_state` ve diskteki `TODO.md` / `DURUM.md` dosyaları senkronize kalır; veri kaybı yaşanmaz.

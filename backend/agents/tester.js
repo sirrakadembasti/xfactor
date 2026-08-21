@@ -220,30 +220,176 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
     };
 }
 
-export function buildTesterPrompt(projectTitle, acceptanceCriteria, generatedFiles) {
-    const audit = runDeterministicProjectAudit(generatedFiles);
-    
-    const filesSummary = generatedFiles.map(f => ({
-        path: f.path,
-        size: f.content ? f.content.length : 0,
-        preview: f.content ? f.content.slice(0, 500) : ""
-    }));
+/**
+ * Üretilen dosyalardan yapılandırılmış zengin Proje Manifestosu (Project Manifest) çıkarır.
+ */
+export function extractProjectManifest(generatedFiles = [], projectSpec = '') {
+    const manifest = {
+        routes: [],
+        schemas: [],
+        models: [],
+        sharedTypes: [],
+        envVars: { declared: [], used: [] },
+        dependencyGraph: { packages: [], internalLinks: [] }
+    };
 
-    return `Proje Başlığı: ${projectTitle}
-Kabul Kriterleri: ${acceptanceCriteria}
+    const declaredEnvSet = new Set();
+    const usedEnvSet = new Set();
+    const declaredPkgSet = new Set();
+    const internalLinksSet = new Set();
 
-Deterministik Ön Doğrulama Sonuçları:
+    for (const file of generatedFiles) {
+        if (!file || !file.path) continue;
+        const normPath = file.path.replace(/\\/g, '/');
+        const content = typeof file.content === 'string' ? file.content : '';
+
+        // 1. Rotalar (Routes)
+        if (normPath.startsWith('src/app/') || normPath.startsWith('app/') || normPath.startsWith('src/pages/') || normPath.startsWith('pages/')) {
+            if (normPath.endsWith('/page.tsx') || normPath.endsWith('/page.jsx') || normPath.endsWith('/page.js') || normPath.endsWith('/page.ts') || normPath === 'src/app/page.tsx' || normPath === 'src/app/page.jsx') {
+                let routeUrl = normPath
+                    .replace(/^(src\/)?(app|pages)/, '')
+                    .replace(/\/page\.(tsx|jsx|js|ts)$/, '')
+                    .replace(/\/index\.(tsx|jsx|js|ts)$/, '');
+                if (!routeUrl || routeUrl === '') routeUrl = '/';
+                manifest.routes.push({ type: 'PAGE', path: routeUrl, file: normPath });
+            } else if (normPath.endsWith('/route.ts') || normPath.endsWith('/route.js')) {
+                let apiRouteUrl = normPath
+                    .replace(/^(src\/)?(app|pages)/, '')
+                    .replace(/\/route\.(ts|js)$/, '');
+                if (!apiRouteUrl.startsWith('/')) apiRouteUrl = '/' + apiRouteUrl;
+                
+                // HTTP Metotlarını ayıkla (GET, POST, PUT, DELETE, PATCH)
+                const methods = [];
+                if (/export\s+(?:async\s+)?function\s+GET\b/.test(content)) methods.push('GET');
+                if (/export\s+(?:async\s+)?function\s+POST\b/.test(content)) methods.push('POST');
+                if (/export\s+(?:async\s+)?function\s+PUT\b/.test(content)) methods.push('PUT');
+                if (/export\s+(?:async\s+)?function\s+DELETE\b/.test(content)) methods.push('DELETE');
+                if (/export\s+(?:async\s+)?function\s+PATCH\b/.test(content)) methods.push('PATCH');
+
+                manifest.routes.push({ type: 'API', path: apiRouteUrl, methods, file: normPath });
+            }
+        }
+
+        // 2. Prisma Modelleri (Models)
+        if (normPath.endsWith('schema.prisma')) {
+            const modelMatches = Array.from(content.matchAll(/model\s+([A-Za-z0-9_]+)\s*\{([\s\S]*?)\}/g));
+            for (const [_, modelName, modelBody] of modelMatches) {
+                const fields = [];
+                const lines = modelBody.split('\n');
+                for (const l of lines) {
+                    const clean = l.trim();
+                    if (!clean || clean.startsWith('//') || clean.startsWith('@@')) continue;
+                    const tokens = clean.split(/\s+/);
+                    if (tokens.length >= 2) {
+                        fields.push(`${tokens[0]}: ${tokens[1]}`);
+                    }
+                }
+                manifest.models.push({ name: modelName, fields });
+            }
+        }
+
+        // 3. Validasyon Şemaları (Schemas)
+        if (normPath.includes('validation') || normPath.includes('schema') || content.includes('z.object')) {
+            const zodMatches = Array.from(content.matchAll(/(?:export\s+)?const\s+([A-Za-z0-9_]+Schema|[A-Za-z0-9_]+Input)\s*=\s*z\.object/g));
+            for (const m of zodMatches) {
+                manifest.schemas.push({ name: m[1], file: normPath });
+            }
+        }
+
+        // 4. Paylaşılan Tipler (Shared Types)
+        if (normPath.includes('types') || normPath.endsWith('.d.ts')) {
+            const typeMatches = Array.from(content.matchAll(/export\s+(?:interface|type)\s+([A-Za-z0-9_]+)/g));
+            for (const tm of typeMatches) {
+                manifest.sharedTypes.push({ name: tm[1], file: normPath });
+            }
+        }
+
+        // 5. Ortam Değişkenleri (Env Vars)
+        if (normPath === '.env' || normPath === '.env.example') {
+            const envLines = content.split('\n');
+            for (const el of envLines) {
+                const match = el.match(/^\s*([A-Za-z0-9_]+)\s*=/);
+                if (match) declaredEnvSet.add(match[1]);
+            }
+        }
+        const envCalls = Array.from(content.matchAll(/process\.env\.([A-Za-z0-9_]+)/g));
+        for (const ec of envCalls) {
+            usedEnvSet.add(ec[1]);
+        }
+
+        // 6. Bağımlılık Grafiği (Dependency Graph)
+        if (normPath === 'package.json') {
+            try {
+                const pkg = JSON.parse(content);
+                Object.keys(pkg.dependencies || {}).forEach(p => declaredPkgSet.add(p));
+                Object.keys(pkg.devDependencies || {}).forEach(p => declaredPkgSet.add(p));
+            } catch {}
+        }
+
+        const importMatches = Array.from(content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g));
+        for (const im of importMatches) {
+            const spec = im[1];
+            if (spec.startsWith('@/') || spec.startsWith('./') || spec.startsWith('../')) {
+                internalLinksSet.add(`${path.basename(normPath)} -> ${spec}`);
+            }
+        }
+    }
+
+    manifest.envVars.declared = Array.from(declaredEnvSet);
+    manifest.envVars.used = Array.from(usedEnvSet);
+    manifest.dependencyGraph.packages = Array.from(declaredPkgSet);
+    manifest.dependencyGraph.internalLinks = Array.from(internalLinksSet);
+
+    return manifest;
+}
+
+export function buildTesterPrompt(projectTitle, acceptanceCriteria, generatedFiles, options = {}) {
+    const audit = options.deterministicAudit || runDeterministicProjectAudit(generatedFiles);
+    const buildResults = options.buildResults || null;
+    const manifest = options.manifest || extractProjectManifest(generatedFiles, acceptanceCriteria);
+
+    return `PROJE DOĞRULAMA & KABUL TESTİ (QA AUDIT)
+==================================================
+Proje Başlığı: ${projectTitle}
+
+1. MİMARİ VE KABUL KRİTERLERİ (Project Spec):
+"""
+${acceptanceCriteria}
+"""
+
+2. PROJE MANİFESTOSU (Project Manifest):
+--------------------------------------------------
+A. Rotalar ve API Uç Noktaları (Routes):
+${manifest.routes.length > 0 ? manifest.routes.map(r => `- [${r.type}] ${r.path} ${r.methods && r.methods.length > 0 ? `(Metotlar: ${r.methods.join(', ')})` : ''}`).join('\n') : '- Rota bulunamadı.'}
+
+B. Veritabanı Modelleri (Prisma Models):
+${manifest.models.length > 0 ? manifest.models.map(m => `- ${m.name} [Alanlar: ${m.fields.slice(0, 8).join(', ')}${m.fields.length > 8 ? ' ...' : ''}]`).join('\n') : '- Prisma modeli tanımlı değil.'}
+
+C. Doğrulama Şemaları (Validation Schemas):
+${manifest.schemas.length > 0 ? manifest.schemas.map(s => `- ${s.name} (${s.file})`).join('\n') : '- Özel validasyon şeması bulunamadı.'}
+
+D. Paylaşılan Tipler & Arayüzler (Shared Types):
+${manifest.sharedTypes.length > 0 ? manifest.sharedTypes.map(t => `- ${t.name} (${t.file})`).join('\n') : '- Özel tip dosyası bulunamadı.'}
+
+E. Ortam Değişkenleri (Environment Variables):
+- Tanımlı Değişkenler: ${manifest.envVars.declared.length > 0 ? manifest.envVars.declared.join(', ') : 'Yok'}
+- Kodda Kullanılanlar: ${manifest.envVars.used.length > 0 ? manifest.envVars.used.join(', ') : 'Yok'}
+
+F. Bağımlılık ve Paket Grafiği (Dependency Graph):
+- Paketler: ${manifest.dependencyGraph.packages.join(', ') || 'Yok'}
+- Kritik Modül Köprüleri: ${manifest.dependencyGraph.internalLinks.length > 0 ? manifest.dependencyGraph.internalLinks.slice(0, 15).join('; ') : 'Yok'}
+
+3. DETERMINISTIK STATIK DENETİM SONUÇLARI:
+--------------------------------------------------
 - Durum: ${audit.passed ? 'BAŞARILI' : 'HATALAR TESPİT EDİLDİ'}
-- Başarılı Kontroller: ${audit.passedCount}
-- Başarısız Kontroller: ${audit.failedCount}
-${audit.issues.length > 0 ? `Tespit Edilen Kritik Sorunlar:\n${audit.issues.map(i => `- ${i}`).join('\n')}` : '- Kritik şema/JSON hatası tespit edilmedi.'}
+- Başarılı Kontroller: ${audit.passedCount}, Başarısız Kontroller: ${audit.failedCount}
+${audit.issues.length > 0 ? `Tespit Edilen Kritik Sorunlar:\n${audit.issues.map(i => `- ${i}`).join('\n')}` : '- Kritik şema/JSON/import hatası tespit edilmedi.'}
 
-Oluşturulan Proje Dosyaları Özeti:
-"""
-${JSON.stringify(filesSummary, null, 2)}
-"""
+4. COMPILER / BUILD DOĞRULAMA SONUÇLARI:
+--------------------------------------------------
+${buildResults ? (buildResults.passed ? '- Derleyici / Tip Denetimi: BAŞARILI (TypeScript/Prisma/Build hatasız).' : `- Derleyici / Tip Denetimi Hataları:\n${buildResults.issues.map(i => `- ${i}`).join('\n')}`) : '- Derleyici ve sözdizimi denetimi tamamlandı.'}
 
-Lütfen test ve kabul doğrulamasını gerçekleştirip yukarıdaki tespitleri de dikkate alarak JSON formatında nihai QA kararını raporla.`;
+Lütfen yukarıdaki kapsamlı Proje Manifestosu, Derleyici Sonuçları ve Kabul Kriterlerini karşılaştırarak projenin fonksiyonel bütünlüğünü, semantik uyumunu ve çalışabilirliğini JSON formatında nihai QA kararı olarak raporla.`;
 }
 
 export function parseTesterResponse(rawText, deterministicAudit = null) {
