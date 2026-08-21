@@ -12,14 +12,14 @@ import {
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { buildAuthHeaders, buildWebSocketUrl, getStoredToken } from './services/api';
-
+import { computeHierarchicalDAG, getAgentVisualTheme } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ChatView from './components/ChatView';
 import DAGFlowView from './components/DAGFlowView';
+import LogsView from './components/LogsView';
 import IDEView from './components/IDEView';
-
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat'), ReactFlow DAG view, Monaco Editor, and JSZip export.
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
 const WS_URL = buildWebSocketUrl(API_BASE);
@@ -42,14 +42,12 @@ export default function App() {
 
   const [projectState, setProjectState] = useState(null);
   const [chatInput, setChatInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
   const [activeMenuProjectId, setActiveMenuProjectId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  // React Flow state
-  const [nodes, setNodes] = useState([
-    { id: 'manager', position: { x: 400, y: 50 }, data: { label: 'Manager' }, style: { background: '#2563eb', color: 'white', borderRadius: '8px', padding: '10px' } }
-  ]);
-  const [edges, setEdges] = useState([]);
+  // React Flow state (Algoritmik hiyerarşik başlangıç)
+  const [nodes, setNodes] = useState(computeHierarchicalDAG([]).nodes);
+  const [edges, setEdges] = useState(computeHierarchicalDAG([]).edges);
   const [logs, setLogs] = useState([]);
   const ws = useRef(null);
 
@@ -130,46 +128,19 @@ export default function App() {
         .then(res => res.json())
         .then(data => {
           if (!Array.isArray(data)) return;
-          setLogs(data.slice().reverse());
-
-          const newNodes = [
-            { id: 'manager', position: { x: 400, y: 50 }, data: { label: 'Manager' }, style: { background: '#2563eb', color: 'white', borderRadius: '8px', padding: '10px' } }
-          ];
-          const newEdges = [];
-
-          data.forEach(log => {
-            if (log.node_id && !newNodes.find(n => n.id === log.node_id)) {
-              const yPos = log.agent === 'Director' ? 150 : log.agent === 'Teamleader' ? 250 : 350;
-              const xOffset = Math.random() * 200 - 100;
-              newNodes.push({
-                id: log.node_id,
-                position: { x: 400 + xOffset, y: yPos },
-                data: { label: `${log.agent}: ${log.node_id}` },
-                style: {
-                  background:
-                    log.agent === 'Director' ? '#10b981' : log.agent === 'Teamleader' ? '#f59e0b' : log.agent === 'System' ? '#ef4444' : '#8b5cf6',
-                  color: 'white',
-                  borderRadius: '8px',
-                  padding: '10px'
-                }
-              });
-            }
-            if (log.parent_node_id && log.node_id) {
-              const edgeId = `${log.parent_node_id}-${log.node_id}`;
-              if (!newEdges.find(e => e.id === edgeId)) {
-                newEdges.push({ id: edgeId, source: log.parent_node_id, target: log.node_id, animated: true, markerEnd: { type: MarkerType.ArrowClosed } });
-              }
-            }
-          });
-          setNodes(newNodes);
-          setEdges(newEdges);
+          const sortedLogs = data.slice().reverse();
+          setLogs(sortedLogs);
+          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs);
+          setNodes(computedNodes);
+          setEdges(computedEdges);
         })
         .catch(e => console.error('Logs error:', e));
     } else {
       setProjectState(null);
       setLogs([]);
-      setNodes([{ id: 'manager', position: { x: 400, y: 50 }, data: { label: 'Manager' }, style: { background: '#2563eb', color: 'white', borderRadius: '8px', padding: '10px' } }]);
-      setEdges([]);
+      const { nodes: initNodes, edges: initEdges } = computeHierarchicalDAG([]);
+      setNodes(initNodes);
+      setEdges(initEdges);
     }
   }, [activeProjectId]);
 
@@ -225,42 +196,12 @@ export default function App() {
                 (l.timestamp === data.timestamp && l.agent === data.agent && l.action === data.action && l.node_id === data.node_id && l.message === data.message)
             );
             if (isDup) return prev;
-            return [data, ...prev];
+            const newLogs = [data, ...prev];
+            const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs);
+            setNodes(computedNodes);
+            setEdges(computedEdges);
+            return newLogs;
           });
-
-          if (data.node_id) {
-            setNodes(nds => {
-              if (!nds.find(n => n.id === data.node_id)) {
-                const yPos = data.agent === 'Director' ? 150 : data.agent === 'Teamleader' ? 250 : 350;
-                const xOffset = Math.random() * 200 - 100;
-                return [
-                  ...nds,
-                  {
-                    id: data.node_id,
-                    position: { x: 400 + xOffset, y: yPos },
-                    data: { label: `${data.agent}: ${data.node_id}` },
-                    style: {
-                      background:
-                        data.agent === 'Director' ? '#10b981' : data.agent === 'Teamleader' ? '#f59e0b' : data.agent === 'System' ? '#ef4444' : '#8b5cf6',
-                      color: 'white',
-                      borderRadius: '8px',
-                      padding: '10px'
-                    }
-                  }
-                ];
-              }
-              return nds;
-            });
-            if (data.parent_node_id) {
-              setEdges(eds => {
-                const edgeId = `${data.parent_node_id}-${data.node_id}`;
-                if (!eds.find(e => e.id === edgeId)) {
-                  return [...eds, { id: edgeId, source: data.parent_node_id, target: data.node_id, animated: true, markerEnd: { type: MarkerType.ArrowClosed } }];
-                }
-                return eds;
-              });
-            }
-          }
           if (data.action === 'finish' && data.agent === 'Manager') {
             if (activeProjectRef.current) fetchProjectState(activeProjectRef.current);
             fetchProjects();
@@ -411,9 +352,10 @@ export default function App() {
   };
 
   const handleSendMessage = async () => {
-    if (!chatInput.trim() || !activeProjectId) return;
+    if (!chatInput.trim() || !activeProjectId || isThinking) return;
     const message = chatInput;
     setChatInput('');
+    setIsThinking(true);
     setProjectState(prev => ({
       ...prev,
       chatHistory: [...(prev?.chatHistory || []), { role: 'user', parts: [{ text: message }] }]
@@ -434,14 +376,17 @@ export default function App() {
         newHistory.push({ role: 'model', isError: true, parts: [{ text: `⚠️ Mesaj iletilemedi, lütfen tekrar deneyin.` }] });
         return { ...prev, chatHistory: newHistory };
       });
+    } finally {
+      setIsThinking(false);
+      fetchProjects();
     }
-    fetchProjects();
   };
 
   const handleApprove = async () => {
     if (!activeProjectId) return;
-    setNodes([{ id: 'manager', position: { x: 400, y: 50 }, data: { label: 'Manager' }, style: { background: '#2563eb', color: 'white', borderRadius: '8px', padding: '10px' } }]);
-    setEdges([]);
+    const { nodes: resetNodes, edges: resetEdges } = computeHierarchicalDAG([]);
+    setNodes(resetNodes);
+    setEdges(resetEdges);
     setLogs([]);
     setViewMode('flow');
 
@@ -530,10 +475,11 @@ export default function App() {
         return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-100 text-sky-700 border border-sky-200">SKIP</span>;
       case 'finish':
         return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-green-100 text-green-700 border border-green-200">FINISH</span>;
+      case 'veto':
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300">VETO</span>;
       case 'error':
         return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 border border-red-200">ERROR</span>;
       default:
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-200">{action || 'INFO'}</span>;
     }
   };
 
@@ -604,7 +550,7 @@ export default function App() {
             />
 
             {/* Content Area */}
-            <div className="flex-1 overflow-hidden flex relative">
+            <div className="flex-1 overflow-hidden flex flex-col relative">
               {viewMode === 'chat' && (
                 <ChatView
                   projectState={projectState}
@@ -614,6 +560,7 @@ export default function App() {
                   handleApprove={handleApprove}
                   handleResume={handleResume}
                   setViewMode={setViewMode}
+                  isThinking={isThinking}
                 />
               )}
 
@@ -623,6 +570,11 @@ export default function App() {
                   edges={edges}
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
+                />
+              )}
+
+              {viewMode === 'logs' && (
+                <LogsView
                   logs={logs}
                   projectState={projectState}
                   handleResume={handleResume}
@@ -630,7 +582,6 @@ export default function App() {
                   getActionBadge={getActionBadge}
                 />
               )}
-
               {viewMode === 'ide' && (
                 <IDEView
                   projectFiles={projectFiles}

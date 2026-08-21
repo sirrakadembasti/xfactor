@@ -34,6 +34,47 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 1. **`msitarzewski/agency-agents` (Uzmanlaşmış Rol Kütüphanesi & Living Docs):** Her ajan sadece kendi uzmanlık alanındaki işi yapar. Sistem kuralları `docs/*.md` dosyalarından dinamik yüklenir.
 2. **`coleam00/Archon` (Deterministik DAG Dalga Motoru & Dark Factory):** Tüm görevler matematiksel bir **Yönlü Döngüsüz Çizge (DAG)** yapısında dalgalar (`Execution Waves`) halinde çözülür. Bağımsız görevler paralel çalışırken bağımlı görevler önkoşulları bekler.
 
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                      KULLANICI (BOSS)                           │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │ Doğal Dilde İstekler & Revizyonlar
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       MANAGER AGENT                             │
+│     - manager/TALIMATNAME.md, TODO.md, .env & Domain Dağılımı   │
+└──────────────┬───────────────────────────────────┬──────────────┘
+               │                                   │
+               ▼ Frontend Domain                   ▼ Backend Domain
+┌──────────────────────────────┐   ┌──────────────────────────────┐
+│       DIRECTOR AGENT         │   │       DIRECTOR AGENT         │
+│   - ALT-TALIMATNAME.md       │   │   - ALT-TALIMATNAME.md       │
+└──────────────┬───────────────┘   └──────────────┬───────────────┘
+               │                                   │
+               ▼                                   ▼
+┌──────────────────────────────┐   ┌──────────────────────────────┐
+│     TEAMLEADER AGENT         │   │     TEAMLEADER AGENT         │
+│   - Atomik Görev DAG'ı       │   │   - Atomik Görev DAG'ı       │
+│   - (Maks 1-2 Dosya Limiti)  │   │   - (Maks 1-2 Dosya Limiti)  │
+└──────────────┬───────────────┘   └──────────────┬───────────────┘
+               │                                   │
+               ▼                                   ▼
+┌──────────────────────────────┐   ┌──────────────────────────────┐
+│        CODER AGENT           │   │        CODER AGENT           │
+│   - Çok Dosyalı Kod Üretimi  │   │   - Çok Dosyalı Kod Üretimi  │
+│   - (Bileşen Kompozisyonu)   │   │   - (Bileşen Kompozisyonu)   │
+└──────────────┬───────────────┘   └──────────────┬───────────────┘
+               │                                   │
+               ▼                                   ▼
+┌──────────────────────────────┐   ┌──────────────────────────────┐
+│   REVIEWER & TESTER AGENTS   │   │   REVIEWER & TESTER AGENTS   │
+│ - 2 Turlu Quality Gate Veto  │   │ - 2 Turlu Quality Gate Veto  │
+│ - Deterministik Sentaks QA   │   │ - Deterministik Sentaks QA   │
+│ - Otomatik Onarım Döngüsü    │   │ - Otomatik Onarım Döngüsü    │
+│ - Final RAPOR.md & README.md │   │ - Final RAPOR.md & README.md │
+└──────────────────────────────┘   └──────────────────────────────┘
+```
+
 ---
 
 ## 2. Sistem Gereksinimleri ve İlk Kurulum
@@ -117,29 +158,30 @@ npm run dev
 2. Manager'a geliştirmek istediğiniz uygulamayı doğal dilde anlatın:
    > *"Bana modern TailwindCSS kullanan, Next.js 14 App Router ve Prisma SQLite destekli bir Araba Kiralama ve Rezervasyon Sistemi oluştur."*
 3. Manager projenin kapsamını, kullanılacak modelleri (Car, Reservation, User) ve mimariyi sizinle olgunlaştırır.
+4. **Canlı Telemetri ve Hata Teşhis Yeteneği:** Süreç sırasında duraklatılan (`paused`) veya hata alan bir projede Manager'a *"Neden durdu? Hata ne anlama geliyor?"* diye sorduğunuzda; Manager veritabanındaki canlı `project_logs` ve alt ajan `RAPOR.md` dosyalarını okuyarak hatanın hangi dosyada, hangi fonksiyon/satırda ve ne sebeple (Reviewer vetosu, kesik kod, eksik import vb.) olduğunu somut kanıtlarla şeffafça açıklar ve çözüm önerir.
 
 ### Adım 4: Mimari Planı Onaylama ve Canlı Revizyon (`pending_approval`)
-1. Manager mimari şartnameyi tamamladığında sistem otomatik olarak `pending_approval` durumuna geçer.
+1. Manager mimari şartnameyi tamamladığında veya Boss *"başla"* dediğinde sistem otomatik olarak `pending_approval` durumuna geçer.
 2. Sohbet panelinin hemen altında yeşil renkli **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** onay kartı belirir.
 3. **"Planı Onayla ve Başlat"** butonuna tıkladığınızda otonom DAG motoru devreye girer ve proje durumu `RUNNING` olur.
 4. **Sohbetten Canlı Revizyon Yeteneği:** Tamamlanmış veya durdurulmuş bir projede sohbete girip *"Şu sayfayı veya şu modeli yeniden yapılandır"* dediğinizde Manager revizyon şartnamesini hazırlar ve onay butonunu tekrar açarak gerçek DAG üretimini baştan tetikler.
-
-### Adım 5: Canlı ReactFlow DAG Akışını ve Log Tablosunu İzleme
-1. Proje başladığında üst menüdeki sekme düğmeleriyle (`💬 Sohbet & Mimari` / `📊 Canlı DAG Grafiği` / `💻 Kod Editörü`) serbestçe gezinebilirsiniz.
-2. Alt kısımdaki **Canlı Süreç Logları Tablosu**'nda `START`, `WRITE`, `DELEGATE`, `FEEDBACK`, `VETO`, `SKIP`, `FINISH` olayları anlık akar.
+### Adım 5: Canlı ReactFlow DAG Akışını ve Süreç Loglarını İzleme (4 Ayrı Sekme)
+1. Proje başladığında üst menüdeki 4 bağımsız sekme arasında serbestçe gezinebilirsiniz:
+   - **💬 Sohbet & Mimari (`chat`):** Manager ile konuşma, canlı düşünce animasyonu (`Sparkles & Bouncing Dots`) ve otomatik bitiş/müdahale bildirimleri.
+   - **📊 Canlı DAG Grafiği (`flow`):** Ekranın tamamını kaplayan, çakışmasız ve kompakt 2 sütunlu hiyerarşik ağaç grafiği.
+   - **📜 Canlı Süreç Logları (`logs`):** Arama kutusu, `ERROR` / `VETO` / `FEEDBACK` filtreleri ve anlık bağlantı durumu içeren tam sayfa log izleme ekranı.
+   - **💻 Kod Editörü (`ide`):** Proje tamamlandığında açılan tam teşekküllü Monaco Editor arayüzü.
 
 ### Adım 6: Canlı Müdahale, Duraklatma ve Kaldığı Yerden Devam Etme (`Pause / Resume`)
-1. Süreç devam ederken üst barda bulunan **"⏸️ Süreci Durdur"** butonuna tıklayabilirsiniz.
-2. Projeyi tekrar başlatmak için üst bardaki veya sohbet altındaki yeşil **"▶️ Projeyi Devam Ettir (Resume)"** butonuna basmanız yeterlidir.
+1. Süreç devam ederken üst barda bulunan **"⏸️ Süreci Duraklat"** butonuna tıklayabilirsiniz.
+2. Projeyi tekrar başlatmak için üst bardaki veya bildirim şeridindeki yeşil **"▶️ Projeyi Devam Ettir (Resume)"** butonuna basmanız yeterlidir.
 3. **Çift Katmanlı Checkpoint Koruması:** Motor, daha önce tamamlanmış görevleri diskteki `RAPOR.md`, `DURUM.md` ve fiziksel dosya boyutu (`size > 0` byte) üzerinden doğrular; reddedilmiş (`BASARISIZ`) görevleri asla atlamaz.
 
 ### Adım 7: Monaco Editor'de Kodları İnceleme ve ZIP Olarak İndirme
-1. Tüm ajanlar görevlerini bitirip Tester onay verdiğinde proje durumu `COMPLETED` olur.
+1. Tüm ajanlar görevlerini bitirip Tester onay verdiğinde proje durumu `COMPLETED` olur ve Manager sohbete tebrik/özet mesajı bırakır.
 2. Üst barda iki buton belirir:
    - **💻 Kod Editörünü Aç:** Monaco Editor IDE modunda dosyaları inceler.
-   - **📥 Projeyi (ZIP) İndir:** `.env` (`DATABASE_URL="file:./dev.db"`) dahil tüm kaynak kodları temiz paket halinde bilgisayarınıza indirir.
-
----
+   - **📥 Projeyi (ZIP) İndir:** `.env` (`DATABASE_URL="file:./dev.db"`), `.env.example` ve `.gitignore` dahil tüm kaynak kodları temiz paket halinde bilgisayarınıza indirir.
 
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
@@ -238,12 +280,9 @@ Tüm 71 test merkezi **`backend/tests/`** altındaki koşucu ile saniyeler için
 ### S: `error: Environment variable not found: DATABASE_URL` hatası alırsam ne yapmalıyım?
 **C:** XFactor'ın güncel sürümünde `.env` ve `.env.example` dosyaları otomatik üretilmekte ve ZIP paketine dahil edilmektedir. Proje kök dizininde `.env` dosyasının bulunduğundan ve içinde `DATABASE_URL="file:./dev.db"` yazdığından emin olun.
 
-### S: LLM çıktısı token sınırına takılırsa ne olur?
-**C:** Teamleader'a eklenen "Görev başına en fazla 1-2 dosya" kuralı ve Coder'a eklenen "Bileşen Kompozisyonu (`@/components` import etme)" kuralı sayesinde dosyalar bölünerek üretilir ve yarım kesilme (truncation) engellenir.
+### S: LLM çıktısı token sınırına takılırsa veya Reviewer veto ederse ne olur?
+**C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Eğer bir görev 2 tur sonunda tamamlanamazsa Reviewer güvenli modda **VETO** verir ve projeyi `PAUSED` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuna basarak orkestrasyonu güvenle sürdürebilirsiniz.
 
 ### S: Tamamlanmış bir projeyi sohbetten değiştirebilir miyim?
 **C:** Evet. Tamamlanmış bir projede sohbet paneline girip revizyon istediğinizde Manager yeni planı oluşturur ve onay butonunu açar; onayladığınızda gerçek DAG motoru projeyi sıfırdan revize eder.
-
----
-
 🎉 **XFactor ile otonom, güvenli ve hatasız yazılım geliştirmenin keyfini çıkarın!**

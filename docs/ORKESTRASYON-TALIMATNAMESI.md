@@ -48,15 +48,12 @@
 ### 2.1. Manager Agent (Seviye 0 — Proje Mimarisi & Yönetim)
 * **Konum:** `projects/<id>/manager/`
 * **Girdi:** Boss'un doğal dildeki istekleri ve sohbet geçmişi.
-* **Görevleri:**
   1. İstek analizi yapar, varsayımları belirler ve `manager/TALIMATNAME.md` şartnamesini üretir.
   2. Projeyi bağımsız domainlere (`frontend`, `backend` vb.) ayırır.
   3. Prisma/SQLite projelerinde `.env` dosyasında `DATABASE_URL="file:./dev.db"` tanımının yer alacağını şartnameye bağlar.
   4. Her domain için `<domain>.director/` klasörü açar ve `GOREV.md` yazar.
+  5. **Telemetri, İç Muhakeme & Canlı Bildirim:** Canlı logları, DAG grafiğini ve alt ajanların `RAPOR.md` veto/hata kayıtlarını tam yetkiyle analiz eder; proje tamamlandığında veya duraklatıldığında sohbet kanalına otomatik resmi bildirim bırakır.
 * **Kısıt:** Asla doğrudan kod yazmaz.
-
-### 2.2. Director Agent (Seviye 1 — Domain Mimarisi & Standartlar)
-* **Konum:** `projects/<id>/manager/<domain>.director/`
 * **Girdi:** `manager/TALIMATNAME.md` ve domain `GOREV.md`.
 * **Görevleri:**
   1. Domain mimarisini, kütüphane tercihlerini (Zod, Prisma, Tailwind vb.) belirler ve `ALT-TALIMATNAME.md` üretir.
@@ -66,19 +63,17 @@
 ### 2.3. Teamleader Agent (Seviye 2 — DAG Görev Bölümü & Koordinasyon)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/`
 * **Girdi:** `ALT-TALIMATNAME.md` ve `GOREV.md`.
-* **Görevleri:**
   1. Şartnameyi Coder ajanlarının tek seferde bitirebileceği **atomik parçalara (DAG)** ayırır.
   2. **KRİTİK ATOMİK LİMİT:** LLM çıktı token sınırına takılmamak için her bir görevin `targetFiles` listesinde **EN FAZLA 1 veya 2 dosya** tanımlar.
-  3. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve DAG önkoşullarını `TODO.md`'ye yazar.
-
+  3. **Bileşen Ayrıştırma Zorunluluğu:** `page.tsx` gibi büyük UI sayfalarını tek blok yapmak yerine, önce form/kart/filtre alt bileşenlerini ayrı görevler olarak dağıtır; ardından `page.tsx` sarmalayıcısını kodlatır.
+  4. Her görev için `<task_id>/` klasörü açar, `GOREV.md` bırakır ve DAG önkoşullarını `TODO.md`'ye yazar.
 ### 2.4. Coder Agent (Seviye 3 — Yaprak Geliştirici)
 * **Konum:** `projects/<id>/manager/<domain>.director/<tl>/<task_id>/`
 * **Girdi:** Görev tanımı `GOREV.md` ve paylaşılan `projectContext` (şemalar, tipler, route tanımları).
-* **Görevleri:**
   1. Hedef dosyaları eksiksiz, TypeScript uyumlu ve modern standartlara göre kodlar.
   2. **BİLEŞEN KOMPOZİSYONU:** Sayfa (`page.tsx`) yazarken form/tablo/modal gibi alt bileşenleri sayfa içine monolitik gömmek yerine, önceden oluşturulmuş bileşenleri `@/components/...` üzerinden `import` ederek kompoze eder.
-  3. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi klasörüne yazar.
-
+  3. **EKSİKSİZ KOD ÜRETİMİ:** Kodları yarım kesmeden, tüm import ve JSX kapanışlarıyla baştan sona eksiksiz üretir.
+  4. Kodları proje kök dizinine (`src/...`, `prisma/...`) ve kendi klasörüne yazar.
 ### 2.5. Reviewer Agent (Seviye 4 — Iterative Quality Gate & Veto)
 * **Girdi:** Coder'ın ürettiği dosyalar ve görev kabul kriterleri.
 * **Görevleri:**
@@ -164,3 +159,10 @@ xfactor/
 1. **Çift Katmanlı Doğrulama:** Bir görevin `[SKIP]` edilmesi için hem `RAPOR.md` varlığı, hem `DURUM.md`'nin `TAMAMLANDI` olması, hem de `targetFiles` dosyalarının diskte fiziksel olarak **`size > 0` byte** olması şarttır.
 2. **Hata İzolasyonu:** `DURUM.md` dosyasında `BASARISIZ` veya `REDDEDILDI` kaydı olan görevler asla atlanmaz; tekrar çalıştırılır.
 3. **SQLite State Kalıcılığı:** Sunucu kapansa dahi hafıza durumu `workflow_state` sütunundan eksiksiz geri yüklenir.
+
+---
+
+## 6. Proje Dışa Aktarma & ZIP Paketleme Kuralları
+
+1. **İç Yönetim Klasörlerinin Elenmesi:** ZIP paketinde iç ajan yönetim klasörleri (`manager/`, `*.director/`, `DURUM.md`, `TODO.md`, `GOREV.md`, `ALT-TALIMATNAME.md`) elenerek temiz kaynak kod paketi oluşturulur.
+2. **Çalıştırılabilirlik Güvencesi (.env Kuralı):** `.env` (`DATABASE_URL="file:./dev.db"`), `.env.example` ve `.gitignore` dosyaları asla filtrelenemez; ZIP paketine ve IDE dosya ağacına eksiksiz dahil edilir. Böylece indirilen proje `npx prisma db push` ve `npm run dev` ile sıfır kurulum maliyetiyle anında çalışır.

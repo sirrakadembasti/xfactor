@@ -32,9 +32,9 @@
 - 🔄 **Stateful Checkpoint Recovery (Kaldığı Yerden Akıllı Devam Etme):**
   - Duraklatılan veya kesintiye uğrayan projeler devam ettirildiğinde (`Resume`), tamamlanmış görevler (`[SKIP]`) hem rapor hem durum hem de fiziksel dosya boyutu (`size > 0` byte) denetlenerek atlanır ve süreç **doğrudan yarım kalan görevden** devam eder.
   - `DURUM.md` dosyasında `BASARISIZ` / `REDDEDILDI` olan görevler asla atlanmaz.
-- 💬 **Sohbet Üzerinden Canlı Revizyon ve Gerçek DAG Tetikleyicisi:**
-  - Tamamlanmış veya durdurulmuş bir projede sohbetten hata veya revizyon bildirildiğinde, Manager `[PLAN_HAZIR]` etiketiyle onay kartını açar.
-  - Onay verildiğinde **gerçek DAG motoru, Coder, Reviewer ve Tester ajanları sıfırdan çalışarak** gerçek dosyaları üretir.
+- 💬 **Sohbet Üzerinden Canlı Telemetri, Hata Teşhisi ve Gerçek DAG Tetikleyicisi:**
+  - Manager ajanı projenin canlı loglarını (`project_logs`) ve alt ajan hata raporlarını (`RAPOR.md`) anlık olarak izler. Kullanıcı hata veya duraklama sorduğunda, hatanın dosya/satır konumunu ve nedenini (Reviewer vetosu, kesik kod vb.) somut kanıtlarla şeffafça açıklar.
+  - Tamamlanmış veya durdurulmuş bir projede sohbetten revizyon istendiğinde, Manager `[PLAN_HAZIR]` etiketiyle onay kartını açar. Onay verildiğinde **gerçek DAG motoru, Coder, Reviewer ve Tester ajanları sıfırdan çalışarak** gerçek dosyaları üretir.
 - 📦 **Otomatik Proje İskeleti ve Çalıştırılabilirlik Koruması (`Scaffold Guard`):**
   - Üretilen her projede güncel ve güvenli bağımlılıklar (`Next.js ^14.2.24`, `React ^18.3.1`, `Prisma ^5.22.0`, `TypeScript ^5.7.2`, `Tailwind ^3.4.17`), `tsconfig.json` (`@/*` alias), `.env` ve `.env.example` (`DATABASE_URL="file:./dev.db"`) otomatik oluşturulur.
   - Saf Express REST API projelerinde React/Tailwind temizlenerek hafif (~50 paket) iskelet üretilir.
@@ -51,11 +51,11 @@
 
 ```text
 Kullanıcı (Boss)
-  └── React 18 + Vite UI (Frontend)
-        ├── 💬 İnteraktif Chat (Zaman Damgalı & Revizyon Tetikleyicili)
-        ├── 📊 Canlı ReactFlow DAG Akış Görselleştirmesi
-        └── 💻 Monaco Editor IDE & ZIP Dışa Aktarma
-             │
+  └── React 18 + Vite UI (Frontend - 4 Bağımsız Sekme)
+        ├── 💬 1. İnteraktif Chat (Zaman Damgalı, Gemini/ChatGPT Stili Düşünme Göstergeli)
+        ├── 📊 2. Canlı DAG Grafiği (Çakışmasız 2 Sütunlu Hiyerarşik ReactFlow Ağacı)
+        ├── 📜 3. Canlı Süreç Logları (Tam Sayfa Log Tablosu, Arama & Aksiyon Filtreleri)
+        └── 💻 4. Monaco Editor IDE & ZIP Dışa Aktarma (.env Dahil)
              ▼ Bearer JWT / Sec-WebSocket-Protocol (xfactor-auth)
   Express REST API & WebSocket Sunucusu (Backend)
         ├── 🔒 Güvenlik, CORS, Rate Limit & RBAC (Owner, Editor, Viewer)

@@ -658,30 +658,45 @@ await runAsyncTest("21. Self-correction module should handle iterative review lo
 // 22. Chat Plan Hazırlığı & Structured Onay Tetikleme Testi
 // ----------------------------------------------------
 await runAsyncTest("22. Chat approval should dynamically configure domains and trigger pending_approval", async () => {
-    const isPlanReady = (text) => text.toLowerCase().includes("onaylıyor") ||
-                                 text.toLowerCase().includes("planı onayla") ||
-                                 text.toLowerCase().includes("üretime başla") ||
-                                 text.includes("[PLAN_HAZIR]");
+    const isPlanReady = (text, userMsg = '', parsedPlan = null) => {
+        const userTrimmed = (userMsg || '').toLowerCase().trim();
+        const isUserStarting = ['başla', 'basla', 'başlayalım', 'baslayalim', 'onay', 'onayla', 'onaylıyorum', 'onayliyorum', 'tamam', 'tamamdır', 'tamamdir', 'olur', 'inşa et', 'insa et', 'üret', 'uret', 'başlat', 'baslat', 'projeyi başlat', 'projeyi baslat', 'üretime geç', 'uretime gec', 'yap', 'yapalım', 'hadi'].some(kw => userTrimmed === kw || userTrimmed.startsWith(kw + ' ') || userTrimmed.endsWith(' ' + kw));
+        return !!parsedPlan ||
+               text.includes("[PLAN_HAZIR]") ||
+               text.toLowerCase().includes("onaylıyor") ||
+               text.toLowerCase().includes("planı onayla") ||
+               text.toLowerCase().includes("üretime başla") ||
+               text.toLowerCase().includes("revizyon planı") ||
+               text.toLowerCase().includes("onayınız bekleniyor") ||
+               text.toLowerCase().includes("onayınıza sunuldu") ||
+               text.toLowerCase().includes("başlatabilirsiniz") ||
+               text.toLowerCase().includes("başlatabilirsin") ||
+               text.toLowerCase().includes("onaylayabilirsiniz") ||
+               text.toLowerCase().includes("onaylayabilirsin") ||
+               isUserStarting;
+    };
 
     assert.strictEqual(isPlanReady("Planı onaylıyorsanız butona basın."), true, "Approval keyword should trigger");
     assert.strictEqual(isPlanReady("Üretime başla butonuna tıklayın."), true, "Production start keyword should trigger");
     assert.strictEqual(isPlanReady("[PLAN_HAZIR] Mimari hazır."), true, "Marker keyword should trigger");
-    assert.strictEqual(isPlanReady("Hangi özellikleri eklemek istersiniz?"), false, "Regular chat should not trigger approval");
+    assert.strictEqual(isPlanReady("Mimari plan hazırlandı.", "başla"), true, "User start intent should trigger approval");
+    assert.strictEqual(isPlanReady("Mimari plan hazırlandı.", "", { summary: "Ok", talimatname: "Spec", domains: [] }), true, "Parsed JSON plan should trigger approval");
+    assert.strictEqual(isPlanReady("Hangi özellikleri eklemek istersiniz?", "merhaba"), false, "Regular chat should not trigger approval");
 });
-
 // ----------------------------------------------------
 // 23. Frontend IDE Dosya Ağacı ve Dışa Aktarım Uyumluluğu
 // ----------------------------------------------------
 await runAsyncTest("23. Frontend App component should render approval card and Monaco IDE view", async () => {
     const appSource = fs.readFileSync(path.join(projectRoot, 'frontend', 'src', 'App.jsx'), 'utf8');
+    const routesSource = fs.readFileSync(path.join(projectRoot, 'backend', 'routes', 'projectRoutes.js'), 'utf8');
 
     assert.ok(appSource.includes("pending_approval"), "App should handle pending_approval state");
     assert.ok(appSource.includes("Planı Onayla ve Başlat"), "App should display approval button");
     assert.ok(appSource.includes("ReactFlow"), "App should render ReactFlow for DAG visualization");
     assert.ok(appSource.includes("Editor"), "App should render Monaco Editor for IDE view");
     assert.ok(appSource.includes("JSZip"), "App should support ZIP download via JSZip");
+    assert.ok(routesSource.includes(".env"), "projectRoutes must allow .env file in exported files");
 });
-
 console.log("\n==========================================");
 console.log(`🎉 Testler Tamamlandı: ${passedTests} BAŞARILI, ${failedTests} HATALI`);
 console.log("==========================================");

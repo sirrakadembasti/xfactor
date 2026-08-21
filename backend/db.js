@@ -107,10 +107,33 @@ if (!columnExists('projects', 'is_pinned')) {
 if (!columnExists('projects', 'workflow_state')) {
     db.exec('ALTER TABLE projects ADD COLUMN workflow_state TEXT');
 }
-const projectOwnersIndex = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_project_owners_user_id'").get();
-if (!projectOwnersIndex) {
-    db.exec('CREATE INDEX idx_project_owners_user_id ON project_owners(user_id)');
+
+export function formatDBDate(dateVal) {
+    if (!dateVal) return '';
+    try {
+        let d;
+        if (typeof dateVal === 'string') {
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(dateVal)) {
+                d = new Date(dateVal.replace(' ', 'T') + 'Z');
+            } else {
+                d = new Date(dateVal);
+            }
+        } else if (dateVal instanceof Date) {
+            d = dateVal;
+        } else {
+            d = new Date(dateVal);
+        }
+
+        if (isNaN(d.getTime())) return String(dateVal);
+
+        const formattedDate = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const formattedTime = d.toLocaleTimeString('tr-TR', { hour12: false });
+        return `${formattedDate} ${formattedTime}`;
+    } catch {
+        return String(dateVal);
+    }
 }
+db.exec('CREATE INDEX IF NOT EXISTS idx_project_owners_user_id ON project_owners(user_id)');
 
 export function getProjectState(id) {
     const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
@@ -133,14 +156,12 @@ export function getProjectState(id) {
     
     const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(id);
     const chatHistory = chats.map(c => {
-        const d = new Date(c.created_at || Date.now());
-        const formattedDate = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const formattedTime = d.toLocaleTimeString('tr-TR', { hour12: false });
+        const timestamp = formatDBDate(c.created_at);
         return {
             id: c.id,
             role: c.role,
             parts: [{ text: c.text_content }],
-            timestamp: `${formattedDate} ${formattedTime}`,
+            timestamp: timestamp,
             created_at: c.created_at
         };
     });
@@ -176,8 +197,7 @@ export function saveProjectState(state) {
             workflow_state = excluded.workflow_state
     `);
 
-    const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content) VALUES (?, ?, ?)');
-
+    const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
     try {
         db.exec('BEGIN');
         insertOrUpdateProject.run(
@@ -193,9 +213,9 @@ export function saveProjectState(state) {
 
         for (let i = currentCount; i < chatsToSave.length; i++) {
             const chat = chatsToSave[i];
-            insertChat.run(state.id, chat.role, chat.parts[0].text);
+            const createdAt = chat.created_at || new Date().toISOString();
+            insertChat.run(state.id, chat.role, chat.parts[0].text, createdAt);
         }
-
         db.exec('COMMIT');
     } catch (error) {
         db.exec('ROLLBACK');
@@ -262,8 +282,8 @@ export function deleteProject(id) {
 
 export function saveProjectLog(logData) {
     const insertLog = db.prepare(`
-        INSERT INTO project_logs (project_id, agent, action, file, message, node_id, parent_node_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO project_logs (project_id, agent, action, file, message, node_id, parent_node_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     insertLog.run(
@@ -273,19 +293,18 @@ export function saveProjectLog(logData) {
         logData.file,
         logData.message,
         logData.node_id,
-        logData.parent_node_id
+        logData.parent_node_id,
+        logData.created_at || new Date().toISOString()
     );
 }
 
 export function getProjectLogs(projectId) {
     return db.prepare('SELECT * FROM project_logs WHERE project_id = ? ORDER BY id ASC').all(projectId).map(log => {
-        const d = new Date(log.created_at || Date.now());
-        const formattedDate = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const formattedTime = d.toLocaleTimeString('tr-TR', { hour12: false });
+        const timestamp = formatDBDate(log.created_at);
         return {
             id: log.id,
             projectId: log.project_id,
-            timestamp: `${formattedDate} ${formattedTime}`,
+            timestamp: timestamp,
             created_at: log.created_at,
             agent: log.agent,
             action: log.action,

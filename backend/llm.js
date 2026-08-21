@@ -101,14 +101,16 @@ export async function generateLLMResponse(messages, options = {}) {
                     role: m.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: m.content }]
                 }));
-
             const result = await model.generateContent({ contents });
+            const candidate = result.response.candidates?.[0];
+            if (candidate?.finishReason === 'MAX_TOKENS') {
+                console.warn("[LLM UYARI - TOKEN SINIRI]: Yanıt Google SDK tarafından MAX_TOKENS (8192 token) sınırına ulaştığı için kesildi. Kod blokları yarım kalmış olabilir.");
+            }
             const responseText = result.response.text();
             if (responseText) return responseText;
         } catch (sdkError) {
             console.warn("Google SDK çağrısı başarısız oldu, yerel REST API fallback deneniyor:", sdkError.message);
         }
-
         // SDK Başarısız olursa Doğrudan Google Native REST API Fallback
         try {
             const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
@@ -139,8 +141,11 @@ export async function generateLLMResponse(messages, options = {}) {
                 throw new Error(`Google API Hatası [${response.status}]: ${errText}`);
             }
 
-            const data = await response.json();
-            const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            const candidate = data.candidates?.[0];
+            if (candidate?.finishReason === 'MAX_TOKENS') {
+                console.warn("[LLM UYARI - TOKEN SINIRI]: Yanıt Google REST API tarafından MAX_TOKENS sınırına ulaştığı için kesildi. Kod blokları yarım kalmış olabilir.");
+            }
+            const textPart = candidate?.content?.parts?.[0]?.text;
             if (textPart) return textPart;
 
             throw new Error("Google REST API boş yanıt döndürdü.");
@@ -196,5 +201,14 @@ export async function generateLLMResponse(messages, options = {}) {
         throw new Error(`${provider.toUpperCase()} API Hatası: ${data.error.message || JSON.stringify(data.error)}`);
     }
 
-    return data.choices[0].message.content;
+    const choice = data.choices?.[0];
+    if (choice?.finish_reason === 'length') {
+        console.warn(`[LLM UYARI - TOKEN SINIRI]: Yanıt ${provider.toUpperCase()} tarafından 'length' (token sınırı) nedeniyle kesildi. Kod blokları yarım kalmış olabilir.`);
+    }
+
+    const content = choice?.message?.content;
+    if (!content) {
+        throw new Error(`${provider.toUpperCase()} API boş içerik döndürdü.`);
+    }
+    return content;
 }

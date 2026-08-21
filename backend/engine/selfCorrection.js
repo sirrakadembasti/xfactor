@@ -65,10 +65,9 @@ export async function executeCorrectionLoop({
             });
         }
 
-        const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi (${iterations}. Tur):\n"""\n${reviewResult.feedback || reviewResult.summary}\n"""\nLütfen belirtilen eksiklikleri/hataları düzelterek kodları JSON formatında yeniden üret.`;
+        const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi (${iterations}. Tur):\n"""\n${reviewResult.feedback || reviewResult.summary}\n"""\nKRİTİK TALİMAT: Lütfen belirtilen eksiklikleri ve kapanmamış/kesik JSX etiketlerini düzelterek kodları eksiksiz üretin. Birden fazla dosya varsa gereksiz devasa inline kodlardan kaçının ve her bir dosyayı tam olarak kapatın.`;
         const coderMessages = [
             { role: 'system', content: coder.systemPrompt },
-            { role: 'user', content: fixPrompt }
         ];
 
         const rawCoder = await generateLLMResponse(coderMessages);

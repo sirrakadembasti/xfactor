@@ -3,11 +3,11 @@ import {
   MessageSquare,
   Layers,
   FileCode,
+  ScrollText,
   Play,
   Pause,
   Download
 } from 'lucide-react';
-
 export default function Header({
   projectState,
   activeProjectId,
@@ -31,14 +31,14 @@ export default function Header({
 
       {/* Action Buttons in Header */}
       <div className="flex items-center gap-2">
-        {/* View Mode Switcher (Sohbet / DAG Grafiği / IDE) */}
+        {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar / IDE) */}
         <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200 mr-2">
           <button
             onClick={() => {
               setViewMode('chat');
               if (activeProjectId) fetchProjectState(activeProjectId);
             }}
-            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
               viewMode === 'chat' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -46,16 +46,24 @@ export default function Header({
           </button>
           <button
             onClick={() => setViewMode('flow')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
               viewMode === 'flow' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <Layers size={14} /> Canlı DAG Grafiği
           </button>
+          <button
+            onClick={() => setViewMode('logs')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
+              viewMode === 'logs' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <ScrollText size={14} /> Canlı Süreç Logları
+          </button>
           {projectState.status === 'completed' && (
             <button
               onClick={() => setViewMode('ide')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition ${
+              className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
                 viewMode === 'ide' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -63,7 +71,6 @@ export default function Header({
             </button>
           )}
         </div>
-
         {/* Pending Approval Button */}
         {projectState.status === 'pending_approval' && (
           <button

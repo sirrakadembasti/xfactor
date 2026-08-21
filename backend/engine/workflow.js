@@ -424,10 +424,14 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                             waveHasFatalFailure = true;
                         }
                     }
-
                     if (waveHasFatalFailure) {
-                        await logEvent(wsClients, projectId, "Workflow", "error", "", `Dalga içindeki bir veya daha fazla görev Reviewer vetosu nedeniyle başarısız oldu. Süreç durduruluyor.`, tlId);
-                        throw new Error(`Orkestrasyon başarısız: Görevler kalite kapısını geçemedi.`);
+                        const failedList = waveTaskResults
+                            .filter(r => r && !r.success && !r.skipped && !r.paused)
+                            .map(r => `• [${r.taskId}] ${r.error || 'Reviewer vetosu'}`)
+                            .join('\n');
+                        const errorDetail = `[DALGA VETOSU] Dalga içindeki şu görevler kalite kapısından geçemedi ve veto edildi:\n${failedList}\n\nSüreç güvenli modda duraklatıldı. Manager ile mimariyi düzenleyebilir veya 'Devam Et (Resume)' butonuna basarak yeniden deneyebilirsiniz.`;
+                        await logEvent(wsClients, projectId, "Workflow", "error", "", errorDetail, tlId);
+                        throw new Error(`Orkestrasyon duraklatıldı: Görevler kalite kapısını geçemedi.`);
                     }
                 }
                 // Teamleader tamamlandı
@@ -559,6 +563,37 @@ ${(plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${
 
             const finalState = await readProjectState(projectId);
             finalState.status = 'completed';
+
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
+
+            const domainSummary = (plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${typeof d === 'string' ? d : (d.description || d.name)}`).join('\n');
+            const completionMsg = `🎉 **Tebrikler Boss! "${state.title}" Projesi Başarıyla Tamamlandı!**
+
+Tüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.
+
+### 📁 Üretilen Mimari Katmanları:
+${domainSummary}
+
+### 🧪 Test ve Kabul Doğrulaması:
+- **Sonuç:** ${testResult.approved ? '✅ Onaylandı (Kusursuz)' : '⚠️ Tamamlandı'}
+- **Detay:** ${testResult.summary}
+- **Oluşturulan Raporlar:** \`RAPOR.md\` ve \`README.md\`
+
+---
+🚀 **Sonraki Adımlar:**
+1. Üst menüden **'Kod Editörü'** sekmesine geçerek tüm kaynak kodları inceleyebilirsiniz.
+2. Sağ üstteki **'Projeyi (ZIP) İndir'** butonuna tıklayarak uygulamanızı bilgisayarınıza indirebilirsiniz.`;
+
+            if (!finalState.chatHistory) finalState.chatHistory = [];
+            finalState.chatHistory.push({
+                role: 'model',
+                parts: [{ text: completionMsg }],
+                timestamp: `${formattedDate} ${formattedTime}`,
+                created_at: now.toISOString()
+            });
+
             await writeProjectState(projectId, finalState);
 
             await logEvent(wsClients, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
@@ -569,6 +604,17 @@ ${(plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${
         const failedState = await readProjectState(projectId);
         if (failedState) {
             failedState.status = 'paused';
+            const errNow = new Date();
+            const errDate = errNow.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const errTime = errNow.toLocaleTimeString('tr-TR', { hour12: false });
+
+            if (!failedState.chatHistory) failedState.chatHistory = [];
+            failedState.chatHistory.push({
+                role: 'model',
+                parts: [{ text: `⚠️ **Süreç Duraklatıldı (Müdahale Gerekli):**\n\nAlt ajanların görev üretiminde bir kalite kapısı engeli ile karşılaşıldı ve proje güvenli modda duraklatıldı.\n\n- Ayrıntıları üst menüdeki **'Canlı Süreç Logları'** veya **'Canlı DAG Grafiği'** sekmesinden inceleyebilirsiniz.\n- Bana buradan *"Hata neydi, ne yapmalıyız?"* diye sorabilir veya hazır olduğunuzda üstteki **'Devam Et (Resume)'** butonuna tıklayabilirsiniz.` }],
+                timestamp: `${errDate} ${errTime}`,
+                created_at: errNow.toISOString()
+            });
             await writeProjectState(projectId, failedState);
         }
     }

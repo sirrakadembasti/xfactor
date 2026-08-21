@@ -1,88 +1,43 @@
 import React from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Terminal, Play } from 'lucide-react';
 
 export default function DAGFlowView({
   nodes,
   edges,
   onNodesChange,
-  onEdgesChange,
-  logs,
-  projectState,
-  handleResume,
-  wsReady,
-  getActionBadge
+  onEdgesChange
 }) {
   return (
-    <div className="flex-1 flex flex-col">
-      {/* React Flow Grafiği */}
-      <div className="flex-1 relative bg-gray-100">
-        <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} fitView>
-          <Background color="#bbb" gap={16} />
-          <Controls />
-        </ReactFlow>
+    <div className="flex-1 flex flex-col h-full relative bg-slate-900/95 overflow-hidden">
+      {/* Ajan Renk ve Rol Açıklama Göstergesi (Visual Legend) */}
+      <div className="absolute top-4 right-4 z-10 bg-slate-800/90 backdrop-blur border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] text-gray-300 flex flex-wrap items-center gap-3.5 shadow-lg pointer-events-none">
+        <span className="font-semibold text-white">Roller:</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-[0_0_8px_#3b82f6]"></span> 🏛️ Manager</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-[0_0_8px_#10b981]"></span> 📁 Director</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-[0_0_8px_#f59e0b]"></span> 📋 Teamleader</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block shadow-[0_0_8px_#0ea5e9]"></span> 💻 Coder</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-[0_0_8px_#8b5cf6]"></span> 🔍 Reviewer</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block shadow-[0_0_8px_#14b8a6]"></span> 🧪 Tester</span>
       </div>
 
-      {/* Gelişmiş Canlı Süreç Log Tablosu */}
-      <div className="h-72 bg-white border-t overflow-hidden flex flex-col shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <div className="bg-gray-900 px-4 py-2.5 text-xs font-semibold text-gray-200 flex justify-between items-center shrink-0">
-          <span className="flex items-center gap-2">
-            <Terminal size={15} className="text-indigo-400" /> CANLI SÜREÇ İZLEME LOGLARI ({logs.length} Kayıt)
-          </span>
-          <div className="flex items-center gap-3">
-            {projectState?.status === 'paused' && (
-              <button
-                onClick={handleResume}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-sm"
-              >
-                <Play size={12} /> Süreci Devam Ettir
-              </button>
-            )}
-            <span className="text-[11px]">{wsReady ? '🟢 Canlı Akış Aktif' : '🔴 Bağlantı Yok'}</span>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-gray-800 text-gray-300 uppercase text-[11px] sticky top-0 z-10">
-              <tr>
-                <th className="py-2 px-3 w-40 font-semibold border-b border-gray-700">Tarih & Saat (created_at)</th>
-                <th className="py-2 px-3 w-28 font-semibold border-b border-gray-700">Ajan (agent)</th>
-                <th className="py-2 px-3 w-24 font-semibold border-b border-gray-700">Eylem (action)</th>
-                <th className="py-2 px-3 w-48 font-semibold border-b border-gray-700">Hedef Dosya (file)</th>
-                <th className="py-2 px-3 w-36 font-semibold border-b border-gray-700">Düğüm ID (node_id)</th>
-                <th className="py-2 px-3 font-semibold border-b border-gray-700">İşlem Mesajı (message)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-mono">
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-gray-400 p-8 text-center font-sans">
-                    Henüz log kaydı bulunmuyor.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="py-1.5 px-3 whitespace-nowrap text-gray-500 text-[11px]">
-                      {log.timestamp || log.created_at || '—'}
-                    </td>
-                    <td className="py-1.5 px-3 font-semibold text-gray-800">{log.agent || '—'}</td>
-                    <td className="py-1.5 px-3">{getActionBadge(log.action)}</td>
-                    <td className="py-1.5 px-3 text-gray-600 text-[11px] truncate max-w-xs" title={log.file}>
-                      {log.file || '—'}
-                    </td>
-                    <td className="py-1.5 px-3 text-gray-400 text-[10px] truncate max-w-[120px]" title={log.node_id}>
-                      {log.node_id || '—'}
-                    </td>
-                    <td className="py-1.5 px-3 text-gray-900 font-sans text-xs">{log.message}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* React Flow Grafiği */}
+      <div className="flex-1 w-full h-full">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+          fitViewOptions={{ padding: 0.25 }}
+          minZoom={0.2}
+          maxZoom={1.5}
+          nodesDraggable={true}
+          nodesConnectable={false}
+        >
+          <Background color="#334155" gap={18} size={1.2} />
+          <Controls className="bg-slate-800 border-slate-700 fill-white text-white shadow-md" />
+        </ReactFlow>
       </div>
     </div>
   );

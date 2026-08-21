@@ -7,6 +7,7 @@ import { getAllProjects, getProjectLogs, updateProject, deleteProject, syncProje
 import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
+import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
 import {
     getProjectRole,
     canViewProject,
@@ -14,6 +15,27 @@ import {
     canDeleteProject,
     canTransitionProjectStatus
 } from '../auth.js';
+
+function findFailedReports(dir, projectDir) {
+    const reports = [];
+    try {
+        if (!fsSync.existsSync(dir)) return reports;
+        const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                reports.push(...findFailedReports(fullPath, projectDir));
+            } else if (entry.name === 'RAPOR.md') {
+                const content = fsSync.readFileSync(fullPath, 'utf8');
+                if (content.includes('REDDEDILDI') || content.includes('Reviewer Reddi') || content.includes('Hata')) {
+                    const relPath = path.relative(projectDir, fullPath);
+                    reports.push({ file: relPath, content });
+                }
+            }
+        }
+    } catch {}
+    return reports;
+}
 
 export function buildManagerChatSystemPrompt(state, projectDir) {
     const status = state?.status || 'planning';
@@ -71,6 +93,31 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
 `;
     }
 
+    // Canlı Telemetri, Son Loglar ve Alt Ajan Raporları
+    const logs = state?.id ? getProjectLogs(state.id) : [];
+    const failedReports = findFailedReports(projectDir, projectDir);
+    let telemetrySection = '';
+    if (logs.length > 0 || failedReports.length > 0) {
+        const recentLogs = logs.slice(0, 15);
+        telemetrySection = `
+### 📡 CANLI PROJE TELEMETRİSİ VE HATA GÖZLEMİ (GERÇEK VERİLER):
+${recentLogs.length > 0 ? `**Son Ajan ve Sistem Logları:**\n${recentLogs.map(l => `- [${l.agent}] [${(l.action || '').toUpperCase()}] ${l.file ? `(${l.file}) ` : ''}${l.message}`).join('\n')}` : ''}
+${failedReports.length > 0 ? `\n**Alt Ajan Hata / Veto Raporları:**\n${failedReports.map(r => `--- ${r.file} ---\n${r.content}`).join('\n')}` : ''}
+
+### 🧠 İÇ MUHAKEME VE ALT AJAN TEŞHİS PROTOKOLÜ (ÇOK ÖNEMLİ):
+Boss süreçteki bir duraklama, hata, veto veya log kaydı hakkında soru sorduğunda; Manager KESİNLİKLE genel-geçer ezbere varsayımlar söylemez veya "arka planda yapılıyor" gibi yanıltıcı iddialarda bulunmaz.
+Aşağıdaki 4 adımlı yapılandırılmış iç muhakeme zincirini işleterek Boss'a net bir rapor sunar:
+
+1. 🎯 **Mevcut Durum ve Ajan Teşhisi:** Hangi domain (Frontend/Backend), hangi takım lideri ve hangi atomik görevde durulduğu, sorunlu hedef dosyalar.
+2. 🧠 **Alt Ajanların Durumu (İç Sorgulama):**
+   - *Teamleader:* Bu göreve hangi dosyalar atanmış?
+   - *Coder:* Kod üretimi nerede ve hangi satırda/fonksiyonda kesilmiş?
+   - *Reviewer:* Reviewer incelemesinde hangi sözdizimi, eksik JSX veya import hatasını yakalayıp veto vermiş?
+3. 🔍 **Gerçek Kök Neden:** Sorunun gerçek teknik sebebi (örneğin: tek bir göreve birden fazla devasa sayfa atanması sonucu LLM'in token sınırına takılması, sözdizimi hatası, vb.).
+4. 🚀 **Bundan Sonra Ne Yapılmalı (Çözüm ve Seçenekler):** Boss'a somut bir eylem planı sun (örneğin: "Görevi iki ayrı atomik göreve bölmek", "sayfayı alt bileşenlere dağıtmak" veya "'Devam Et (Resume)' butonuna basarak süreci sürdürmek").
+`;
+    }
+
     const managerDoc = loadAgentPromptFromDocs('manager', 'Sen XFactor platformunun Manager adlı kıdemli yazılım mimarısın.');
     const orkestrasyonDoc = loadOrkestrasyonTalimatnamesi();
 
@@ -79,7 +126,21 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
 ${orkestrasyonDoc ? `### PLATFORM ORKESTRASYON ANAYASASI (docs/ORKESTRASYON-TALIMATNAMESI.md):\n"""\n${orkestrasyonDoc.slice(0, 3000)}\n"""\n` : ''}
 
 ### GÜNCEL PROJE DURUMU VE TALİMATLAR:
-${extraContext}`;
+${extraContext}
+${telemetrySection}
+
+### 💬 MANAGER SOHBET VE İLETİŞİM PROTOKOLÜ:
+1. **İletişim Şekli:**
+   - Boss ile samimi, zeki, vizyoner bir kıdemli yazılım mimarı olarak Türkçe doğal dilde ve Markdown formatında konuş.
+   - SOHBET PENCERESİNE KESİNLİKLE ÇIPLAK/HAM JSON KOD BLOKLARI (örn: \`\`\`json { ... } \`\`\`) BASMA. Mimariyi başlıklar, listeler ve maddeler halinde doğal Türkçe ile anlat.
+2. **Plan Hazırlandığında ve Onay Aşamasında:**
+   - Boss bir proje kapsamı belirttiğinde veya "başla", "tamamdır", "onaylıyorum", "inşa et" vb. dediğinde:
+     a) Mimariyi (sayfalar, bileşenler, API rotaları, veritabanı modelleri, kullanılacak teknolojiler: Next.js/React, Tailwind, Prisma SQLite) net bir şekilde özetle.
+     b) Yanıtının EN SONUNA mutlaka "[PLAN_HAZIR]" etiketini ekle.
+     c) Boss'a: "Mimari planı ve şartnameyi hazırladım. Üretimi otonom olarak başlatmak için lütfen aşağıdaki **'Planı Onayla ve Başlat'** butonuna tıklayınız." de.
+3. **Dürüstlük ve Gerçek Zaman Kuralı (ASLA YALAN SÖYLEME):**
+   - Boss arayüzdeki yeşil "Planı Onayla ve Başlat" butonuna basmadan önce ASLA "Ekipler kodlamaya başladı", "Backend ve frontend çalışıyor", "İşler bittiğinde haber vereceğim" gibi GERÇEK DIŞI iddialarda BULUNMA.
+   - Üretimin sadece Boss butona bastığında başlayacağını belirt ve Boss'u butona yönlendir.`;
 }
 
 export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADMIN_USER }) {
@@ -157,17 +218,18 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
             const ALLOWED_EXTENSIONS = new Set([
                 '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',
                 '.prisma', '.sql', '.svg', '.ico', '.png', '.jpg', '.jpeg', '.webp',
-                '.txt', '.yaml', '.yml', '.graphql', '.gql', '.env.example'
+                '.txt', '.yaml', '.yml', '.graphql', '.gql'
             ]);
+            const ALLOWED_DOT_FILES = new Set(['.env', '.env.example', '.gitignore']);
             const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
-            const IGNORED_FILES = new Set(['.env', '.env.local', 'package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
+            const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
 
             async function getFiles(targetDir, relativePath = '') {
                 let results = [];
                 try {
                     const list = await fs.readdir(targetDir, { withFileTypes: true });
                     for (const file of list) {
-                        if (file.name.startsWith('.')) continue;
+                        if (file.name.startsWith('.') && !ALLOWED_DOT_FILES.has(file.name)) continue;
                         const resPath = path.join(targetDir, file.name);
                         const relPath = path.join(relativePath, file.name).replace(/\\/g, '/');
                         if (!isSafeProjectPath(relPath, dir)) continue;
@@ -179,8 +241,7 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
                         } else {
                             if (IGNORED_FILES.has(file.name)) continue;
                             const ext = path.extname(file.name).toLowerCase();
-                            if (!ALLOWED_EXTENSIONS.has(ext) && ext !== '') continue;
-
+                            if (!ALLOWED_EXTENSIONS.has(ext) && !ALLOWED_DOT_FILES.has(file.name) && ext !== '') continue;
                             try {
                                 const stat = await fs.stat(resPath);
                                 if (stat.size > MAX_FILE_SIZE) continue;
@@ -247,7 +308,23 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
             });
             messages.push({ role: 'user', content: message });
 
-            const responseText = await generateLLMResponse(messages);
+            let responseText = await generateLLMResponse(messages);
+
+            // 1. Gelen yanıtta JSON planı var mı ayrıştır ve kurtar
+            let parsedPlan = null;
+            try {
+                const extracted = extractAndParseJSON(responseText);
+                if (extracted && typeof extracted === 'object' && (extracted.talimatname || extracted.domains || extracted.summary)) {
+                    parsedPlan = normalizeManagerPlan(extracted);
+                }
+            } catch {}
+
+            // Eğer LLM doğrudan ham JSON bastıysa, sohbet balonunda çirkin JSON yerine şık Türkçe özet göster
+            const trimmedResp = responseText.trim();
+            if (parsedPlan && (trimmedResp.startsWith('{') || trimmedResp.startsWith('```json') || trimmedResp.startsWith('```\n{'))) {
+                const domainsText = (parsedPlan.domains || []).map(d => `- **${d.name}**: ${d.description || d.name}`).join('\n');
+                responseText = `📋 **Mimari Plan ve Şartname Hazırlandı!**\n\n**Özet:**\n${parsedPlan.summary}\n\n**Domainler:**\n${domainsText}\n\n---\nMimari plan hazırlandı. Otonom ajanların kod üretimine başlaması için lütfen aşağıdaki **"Planı Onayla ve Başlat"** butonuna tıklayınız.\n\n[PLAN_HAZIR]`;
+            }
 
             const modelNow = new Date();
             const modelDate = modelNow.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -260,22 +337,37 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
                 created_at: modelNow.toISOString()
             });
 
-            const isPlanReady = responseText.toLowerCase().includes("onaylıyor") ||
+            const userTrimmed = (message || '').toLowerCase().trim();
+            const isUserStarting = ['başla', 'basla', 'başlayalım', 'baslayalim', 'onay', 'onayla', 'onaylıyorum', 'onayliyorum', 'tamam', 'tamamdır', 'tamamdir', 'olur', 'inşa et', 'insa et', 'üret', 'uret', 'başlat', 'baslat', 'projeyi başlat', 'projeyi baslat', 'üretime geç', 'uretime gec', 'yap', 'yapalım', 'hadi'].some(kw => userTrimmed === kw || userTrimmed.startsWith(kw + ' ') || userTrimmed.endsWith(' ' + kw));
+
+            const isPlanReady = !!parsedPlan ||
+                                responseText.includes("[PLAN_HAZIR]") ||
+                                responseText.toLowerCase().includes("onaylıyor") ||
                                 responseText.toLowerCase().includes("planı onayla") ||
                                 responseText.toLowerCase().includes("üretime başla") ||
                                 responseText.toLowerCase().includes("revizyon planı") ||
-                                responseText.includes("[PLAN_HAZIR]");
+                                responseText.toLowerCase().includes("onayınız bekleniyor") ||
+                                responseText.toLowerCase().includes("onayınıza sunuldu") ||
+                                responseText.toLowerCase().includes("başlatabilirsiniz") ||
+                                responseText.toLowerCase().includes("başlatabilirsin") ||
+                                responseText.toLowerCase().includes("onaylayabilirsiniz") ||
+                                responseText.toLowerCase().includes("onaylayabilirsin") ||
+                                (isUserStarting && (state.status === 'planning' || state.status === 'completed' || state.status === 'paused'));
 
             if (isPlanReady && (state.status === 'planning' || state.status === 'completed' || state.status === 'paused')) {
                 state.status = 'pending_approval';
-                state.plan = {
-                    summary: `Revizyon Planı: ${state.title}`,
-                    talimatname: `# ${state.title} (Revize Şartname)\n\n${responseText}`,
-                    domains: [
-                        { name: "backend", prefix: "backend", description: "Veritabanı şeması ve REST API servisleri" },
-                        { name: "frontend", prefix: "frontend", description: "Kullanıcı arayüzü, sayfalar ve bileşenler" }
-                    ]
-                };
+                if (parsedPlan) {
+                    state.plan = parsedPlan;
+                } else {
+                    state.plan = {
+                        summary: `Mimari Plan: ${state.title}`,
+                        talimatname: `# ${state.title} (Mimari Şartname)\n\n${responseText.replace(/\[PLAN_HAZIR\]/g, '').trim()}`,
+                        domains: [
+                            { name: "backend", prefix: "backend", description: "Veritabanı şeması, Prisma SQLite ve REST API servisleri" },
+                            { name: "frontend", prefix: "frontend", description: "Kullanıcı arayüzü, sayfalar, bileşenler ve Tailwind stilleri" }
+                        ]
+                    };
+                }
                 // Eski tamamlama raporunu temizle ki yeni DAG temiz çalışsın
                 try {
                     const oldRapor = path.join(projectDir, 'RAPOR.md');

@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  order       Int        @default(0)
+  properties  Property[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("categories")
+}
+
+model Property {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String
+  price       Float
+  currency    String    @default("TRY")
+  type        String    @default("SALE") // SALE, RENT
+  status      String    @default("AVAILABLE") // AVAILABLE, SOLD, RENTED, PENDING
+  location    String
+  address     String?
+  bedrooms    Int?
+  bathrooms   Int?
+  area        Float?
+  images      String    @default("[]") // JSON array of image URLs
+  features    String    @default("[]") // JSON array of feature strings
+  featured    Boolean   @default(false)
+  isPublished Boolean   @default(true)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  inquiries   Inquiry[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@index([type])
+  @@map("properties")
+}
+
+model Inquiry {
+  id         String    @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  message    String
+  status     String    @default("PENDING") // PENDING, CONTACTED, CLOSED
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([propertyId])
+  @@index([status])
+  @@map("inquiries")
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string") // string, number, boolean, json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
