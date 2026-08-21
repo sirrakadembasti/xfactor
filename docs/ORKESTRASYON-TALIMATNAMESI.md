@@ -86,8 +86,7 @@
 * **Görevleri:**
   1. **Deterministik Denetim:** `stripStringsAndComments` ile sözdizimi doğrulaması, `schema.prisma` modelleri ile API rotaları arasındaki model adı tutarlılığı denetimini yapar.
   2. **Otomatik Onarım (Auto-Repair):** Deterministik hata bulunursa Coder'a otomatik onarım görevi gönderir.
-  3. **Kabul Raporu:** Proje köküne nihai `RAPOR.md` ve kurulum/çalıştırma rehberi `README.md` yazar.
-
+  3. **Kapsamlı README ve Kabul Raporu:** Proje köküne nihai `RAPOR.md` raporunu ve Manager'ın `TALIMATNAME.md` şartnamesindeki tüm mimari kararları, sayfaları, modelleri ve kurulum adımlarını içeren kapsamlı `README.md` dosyasını yazar.
 ---
 
 ## 3. Güncel Dizin ve Dosya Mimarisi

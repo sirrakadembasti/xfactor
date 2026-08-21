@@ -519,45 +519,68 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
             // Otomatik Proje İskeleti ve Çalıştırılabilirlik Koruması (Scaffold Guard)
             await ensureProjectScaffold(projectDir, state, plan);
 
-            // Otomatik Çalıştırma ve Kurulum Kılavuzu (README.md)
+            // Otomatik Çalıştırma ve Kurulum Kılavuzu (Kapsamlı README.md)
+            let managerTalimat = plan.talimatname || '';
+            if (!managerTalimat) {
+                try {
+                    const talimatPath = path.join(projectDir, 'manager', 'TALIMATNAME.md');
+                    if (fsSync.existsSync(talimatPath)) {
+                        managerTalimat = fsSync.readFileSync(talimatPath, 'utf8');
+                    }
+                } catch {}
+            }
+
+            const cleanTalimat = managerTalimat.replace(/^#\s+[^\n]+\n/, '').trim();
+            const domainSummary = (plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${typeof d === 'string' ? d : (d.description || d.name)}`).join('\n');
+
             const readmeContent = `# 🚀 ${state.title}
 
-${plan.summary || 'XFactor Otonom Ajan Platformu tarafından üretilmiştir.'}
+> ${plan.summary || 'XFactor Otonom AI Ajan Orkestrasyon Platformu tarafından üretilmiştir.'}
 
 ---
 
 ## 🛠️ Kurulum ve Çalıştırma Rehberi
 
-Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları uygulayın:
+Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları sırasıyla uygulayın:
 
-### 1. Bağımlılıkları Yükleyin
+### 1. Adım: Bağımlılıkları Yükleyin
 \`\`\`bash
 npm install
 \`\`\`
 
-### 2. Veritabanı Şemasını Hazırlayın (Prisma / SQLite)
+### 2. Adım: Veritabanı ve Şemayı Hazırlayın (Prisma / SQLite)
+> **Not:** Projede \`.env\` dosyası hazır olarak \`DATABASE_URL="file:./dev.db"\` şeklinde tanımlıdır.
 \`\`\`bash
 npx prisma generate
 npx prisma db push
 \`\`\`
 
-### 3. Geliştirme Sunucusunu Başlatın
+### 3. Adım: (Varsa) Tohum / Örnek Verileri Yükleyin
+\`\`\`bash
+npx prisma db seed
+\`\`\`
+
+### 4. Adım: Uygulamayı Başlatın
 \`\`\`bash
 npm run dev
 \`\`\`
-Uygulamanız \`http://localhost:3000\` adresinde hazır olacaktır.
+Uygulamanız varsayılan olarak \`http://localhost:3000\` adresinde çalışacaktır.
 
 ---
 
-## 📁 Mimari ve Domain Yapısı
-${(plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${typeof d === 'string' ? d : (d.description || d.name)}`).join('\n')}
+## 📋 Proje Şartnamesi ve Mimari Detaylar (Manager TALIMATNAME)
 
-## 📑 Test ve Kabul Doğrulaması
-- **Sonuç:** ${testResult.approved ? '✅ BAŞARILI' : '⚠️ UYARI'}
-- **Detay:** ${testResult.summary}
+${cleanTalimat || `### Mimari ve Domain Dağılımı\n${domainSummary}`}
 
 ---
-*XFactor Otonom AI Ajan Orkestrasyon Platformu tarafından üretilmiştir.*
+
+## 🧪 Test ve Kalite Kapısı Doğrulaması
+- **Kabul Durumu:** ${testResult.approved ? '✅ Onaylandı (Kusursuz)' : '⚠️ Uyarılar ile Tamamlandı'}
+- **Test Özeti:** ${testResult.summary}
+- **Rapor Dosyası:** \`RAPOR.md\`
+
+---
+*Bu proje **XFactor Otonom AI Ajan Orkestrasyon Platformu** tarafından uçtan uca otonom olarak inşa edilmiştir.*
 `;
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
