@@ -95,12 +95,20 @@ export async function generateLLMResponse(messages, options = {}) {
                 generationConfig: { maxOutputTokens: 8192 }
             });
 
-            const contents = messages
+            let contents = messages
                 .filter(m => m.role !== 'system')
                 .map(m => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
+                    parts: [{ text: (m.content || '').trim() || 'Lütfen göreve devam ediniz.' }]
                 }));
+
+            if (contents.length === 0) {
+                const sys = messages.find(m => m.role === 'system');
+                contents = [{
+                    role: 'user',
+                    parts: [{ text: sys?.content || 'Lütfen görevi tamamlayınız.' }]
+                }];
+            }
             const result = await model.generateContent({ contents });
             const candidate = result.response.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
@@ -116,13 +124,20 @@ export async function generateLLMResponse(messages, options = {}) {
             const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
             
             const systemMsg = messages.find(m => m.role === 'system');
-            const contents = messages
+            let contents = messages
                 .filter(m => m.role !== 'system')
                 .map(m => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
+                    parts: [{ text: (m.content || '').trim() || 'Lütfen göreve devam ediniz.' }]
                 }));
 
+            if (contents.length === 0) {
+                const sys = messages.find(m => m.role === 'system');
+                contents = [{
+                    role: 'user',
+                    parts: [{ text: sys?.content || 'Lütfen görevi tamamlayınız.' }]
+                }];
+            }
             const payload = {
                 contents,
                 generationConfig: { maxOutputTokens: 8192 }

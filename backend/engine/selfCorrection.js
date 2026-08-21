@@ -65,13 +65,21 @@ export async function executeCorrectionLoop({
             });
         }
 
-        const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi (${iterations}. Tur):\n"""\n${reviewResult.feedback || reviewResult.summary}\n"""\nKRİTİK TALİMAT: Lütfen belirtilen eksiklikleri ve kapanmamış/kesik JSX etiketlerini düzelterek kodları eksiksiz üretin. Birden fazla dosya varsa gereksiz devasa inline kodlardan kaçının ve her bir dosyayı tam olarak kapatın.`;
+        const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi (${iterations}. Tur):\n"""\n${reviewResult.feedback || reviewResult.summary}\n"""\n\nKRİTİK VE ZORUNLU TALİMAT:\n1. Belirtilen eksiklikleri, kapanmamış JSX etiketlerini ve sözdizimi hatalarını düzelterek hedef dosyaları (${JSON.stringify(targetFiles)}) eksiksiz kodla.\n2. Yanıtını KESİNLİKLE \`\`\`json { "summary": "...", "files": [ { "path": "...", "content": "..." } ] } \`\`\` formatında döndür. Asla boş "files": [] döndürme!`;
         const coderMessages = [
             { role: 'system', content: coder.systemPrompt },
+            { role: 'user', content: fixPrompt }
         ];
 
-        const rawCoder = await generateLLMResponse(coderMessages);
-        currentOutput = coder.parseResponse(rawCoder);
+        try {
+            const rawCoder = await generateLLMResponse(coderMessages);
+            const newOutput = coder.parseResponse(rawCoder);
+            if (newOutput && Array.isArray(newOutput.files) && newOutput.files.length > 0) {
+                currentOutput = newOutput;
+            }
+        } catch (parseErr) {
+            console.warn(`Coder düzeltme çıktısı ayrıştırılamadı (Tur ${iterations}):`, parseErr.message);
+        }
     }
 
     return {

@@ -1,53 +1,36 @@
 # emlak (Mimari Şartname)
 
-Harika bir proje vizyonu Boss! Hem son kullanıcılar için akıcı, modern ve hızlı bir emlak vitrini, hem de yöneticiler için ilanları ve site içeriklerini tam kontrolle yönetebilecekleri kapsamlı bir **Emlak & CMS Yönetim Platformu** kuralım.
+Boss, hatanın kök nedeni çok net:
 
-Mimariyi ve kapsamı senin için detaylıca tasarladım:
+### 🔍 Hatanın Nedeni
+API rotalarında (`src/app/api/categories/route.ts` vb.) Prisma veritabanı istemcisi `@/lib/db` yolundan import edilmeye çalışılmış, ancak projenin scaffold kurulumunda Prisma istemcisi `src/lib/prisma.ts` olarak (`prisma` adıyla) tanımlanmış. Yani dosya yolu uyuşmazlığı (`@/lib/db` vs `@/lib/prisma`) söz konusu.
 
----
-
-### 🏗️ 1. Mimari & Teknoloji Yığını
-* **Çatı (Framework):** **Next.js (App Router)** & **React** (Hem dinamik public sayfalar hem de admin paneli için tam entegre mimari)
-* **Stil & Arayüz:** **Tailwind CSS**, modern kart tasarımları, filtreleme çubukları, responsive dashboard bileşenleri ve **Lucide Icons**
-* **Veritabanı & ORM:** **Prisma ORM** + **SQLite** (`file:./dev.db`), ilişkisel veri modelleri ve hazır zengin seed (örnek) verileri
-* **API Mimarisi:** RESTful Next.js API rotaları (`/api/properties`, `/api/categories`, `/api/settings`, `/api/analytics`)
+Ben bir sohbet ajanı olduğum için şu anda doğrudan diskteki dosyaları arka planda değiştiremem. Bu sorunu çözmek için iki pratik yolumuz var:
 
 ---
 
-### 🌐 2. Ön Yüz (Public Portal) Özellikleri
-1. **Anasayfa & Vitrin:**
-   * Dinamik Hero Banner (Arama motoru: Satılık/Kiralık, Şehir/İlçe, Kategori, Fiyat aralığı)
-   * Öne Çıkan & Fırsat İlanlar vitrini
-   * Kategorilere göre hızlı erişim (Daire, Villa, Ticari, Arsa vb.)
-   * Neden Biz / Müşteri Yorumları & İletişim blokları
-2. **İlan Listeleme & Gelişmiş Filtreleme:**
-   * Çok kriterli filtreleme (Satılık/Kiralık, Fiyat Min-Max, m², Oda Sayısı, Isıtma, Balkon, Otopark vb.)
-   * Harita / Liste görünümü desteği, sıralama (Fiyata göre artan/azalan, en yeni)
-3. **İlan Detay Sayfası:**
-   * Çoklu fotoğraf galerisi / slider
-   * Konum bilgileri, detaylı bina özellikleri listesi
-   * Danışman iletişim formu & WhatsApp hızlı erişim butonu
-4. **Kurumsal Sayfalar:** Hakkımızda, İletişim ve İletişim Formu.
+### 🛠️ Seçenek 1: Yerelinde Tek Satırlık Hızlı Köprü (Önerilen)
+
+Terminalinde veya kod editöründe `src/lib/` klasörü altına `db.ts` adında bir dosya oluşturup içine `prisma` istemcisini export etmen yeterlidir:
+
+**`src/lib/db.ts`** dosyasını oluştur ve içine şunu yaz:
+```typescript
+import { prisma } from './prisma';
+
+export const db = prisma;
+export default prisma;
+```
+
+Bunu yaptığın anda hem `@/lib/db` hem de `@/lib/prisma` kullanan tüm API rotaları anında çalışır hale gelecektir.
 
 ---
 
-### 🛠️ 3. Arka Yüz (Admin Yönetim Paneli - `/admin`)
-1. **Dashboard (Genel Bakış):**
-   * Toplam ilan, satılık/kiralık dağılımı, toplam vitrin ilanı ve potansiyel müşteri mesaj istatistikleri.
-2. **İlan Yönetimi (CRUD):**
-   * Yeni ilan oluşturma (Çoklu görsel URL'leri, oda sayısı, m², fiyat, kat, tapu durumu, harita koordinatı vb.)
-   * İlan listesi, arama, aktif/pasif yapma, öne çıkarılanlara ekleme ve silme.
-3. **Ön Yüz CMS & Site Ayarları:**
-   * Site başlığı, logo, iletişim numaraları, sosyal medya linkleri, hero banner metinlerinin panelden güncellenmesi.
-4. **Gelen Mesajlar / Talepler:**
-   * İlan detayından veya iletişimden gelen müşteri teklif ve mesajlarının listelenmesi.
+### 🔄 Seçenek 2: Otonom DAG Motoru ile Baştan Temiz Üretim
 
----
+Eğer tüm import yollarını, `sonner` bağımlılığını ve Prisma istemci referanslarını standartlaştırarak projenin sıfırdan ve hatasız derlenecek şekilde baştan üretilmesini istersen:
 
-### 📦 4. Domain & Ajan Bölünmesi
-* **`backend.director`:** Prisma modelleri (`Property`, `Category`, `Setting`, `Inquiry`), API endpoint'leri, filtreleme motoru ve gerçekçi emlak seed verisi.
-* **`frontend.director`:** Public Portal sayfaları, ilan detay galerisi, filtreleme UI ve `/admin` yönetim paneli arayüzü.
+1. **Bağımlılıklar:** `sonner`, `lucide-react`, `prisma`, `@prisma/client`, `zod` paketleri `package.json` içine eksiksiz eklenecek.
+2. **Veritabanı İstemcisi:** Tüm backend ve API rotalarında tek bir standart export (`@/lib/prisma` ve `@/lib/db`) sağlanacak.
+3. **Admin & Vitrin:** Tüm CRUD ve filtreleme sayfaları eksiksiz oluşturulacak.
 
----
-
-Mimari planı ve şartnameyi hazırladım. Üretimi otonom olarak başlatmak için lütfen aşağıdaki **'Planı Onayla ve Başlat'** butonuna tıklayınız.
+Revizyon planını hazırladım. Kodların DAG motoru tarafından sıfırdan üretilmesi için lütfen aşağıdaki **'Planı Onayla ve Başlat'** butonuna tıklayınız.

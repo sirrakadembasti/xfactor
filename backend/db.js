@@ -149,11 +149,15 @@ export function getProjectState(id) {
     let status = project.status;
     const PROJECTS_DIR = path.join(__dirname, '../projects');
     const raporPath = path.join(PROJECTS_DIR, id, 'RAPOR.md');
-    if (fs.existsSync(raporPath) && status !== 'completed') {
-        status = 'completed';
-        db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('completed', id);
+    if (fs.existsSync(raporPath) && status !== 'completed' && status !== 'failed') {
+        try {
+            const raporContent = fs.readFileSync(raporPath, 'utf8');
+            if (!raporContent.includes('REDDEDİLDİ') && !raporContent.includes('BASARISIZ') && !raporContent.includes('REDDEDILDI')) {
+                status = 'completed';
+                db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('completed', id);
+            }
+        } catch {}
     }
-    
     const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(id);
     const chatHistory = chats.map(c => {
         const timestamp = formatDBDate(c.created_at);
