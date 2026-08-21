@@ -34,7 +34,7 @@ Admin paneline **`http://localhost:3000/admin`** adresinden erişebilirsiniz.
 
 ---
 
-## 📋 Proje Şartnamesi ve Mimari Detaylar (Manager TALIMATNAME)
+## 📋 Proje Özellikleri ve Mimari Yapı
 
 ### 🏗️ 1. Mimari & Teknoloji Yığını
 * **Çatı (Framework):** **Next.js (App Router)** & **React 18** (Dinamik public sayfalar ve admin paneli için tam entegre mimari)
@@ -71,18 +71,3 @@ Admin paneline **`http://localhost:3000/admin`** adresinden erişebilirsiniz.
    * Site başlığı, logo, iletişim numaraları, sosyal medya linkleri, hero banner metinlerinin panelden güncellenmesi.
 4. **Gelen Mesajlar / Talepler:**
    * İlan detayından veya iletişimden gelen müşteri teklif ve mesajlarının listelenmesi.
-
----
-
-### 📦 4. Domain & Ajan Bölünmesi
-* **`backend.director`:** Prisma modelleri (`Property`, `Category`, `Setting`, `Inquiry`), API endpoint'leri, filtreleme motoru ve gerçekçi emlak seed verisi.
-* **`frontend.director`:** Public Portal sayfaları, ilan detay galerisi, filtreleme UI ve `/admin` yönetim paneli arayüzü.
-
----
-
-## 🧪 Test ve Kalite Kapısı Doğrulaması
-- **Kabul Durumu:** ✅ Onaylandı (Kusursuz)
-- **Rapor Dosyası:** `RAPOR.md`
-
----
-*Bu proje **XFactor Otonom AI Ajan Orkestrasyon Platformu** tarafından uçtan uca otonom olarak inşa edilmiştir.*

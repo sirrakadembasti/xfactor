@@ -530,12 +530,19 @@ export async function executeProjectTasks(projectId, wsClients = new Set()) {
                 } catch {}
             }
 
-            const cleanTalimat = managerTalimat.replace(/^#\s+[^\n]+\n/, '').trim();
-            const domainSummary = (plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${typeof d === 'string' ? d : (d.description || d.name)}`).join('\n');
+            let cleanTalimat = managerTalimat.replace(/^#\s+[^\n]+\n/, '').trim();
+            // İç ajan, orkestrasyon jargonu ve onay buton yönlendirmelerini temizle
+            cleanTalimat = cleanTalimat
+                .replace(/###\s*(?:📦\s*)?(?:\d+\.\s*)?Domain\s*(&|ve)\s*Ajan\s*Bölünmesi[\s\S]*?(?=(?:###|##|---|$))/gi, '')
+                .replace(/\*?\*?`?(?:backend|frontend|database)\.director`?\*?:[^\n]*/gi, '')
+                .replace(/Mimari planı ve şartnameyi hazırladım[\s\S]*$/gi, '')
+                .replace(/\[PLAN_HAZIR\]/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
 
             const readmeContent = `# 🚀 ${state.title}
 
-> ${plan.summary || 'XFactor Otonom AI Ajan Orkestrasyon Platformu tarafından üretilmiştir.'}
+> ${plan.summary || 'Modern web ve API uygulaması.'}
 
 ---
 
@@ -568,19 +575,9 @@ Uygulamanız varsayılan olarak \`http://localhost:3000\` adresinde çalışacak
 
 ---
 
-## 📋 Proje Şartnamesi ve Mimari Detaylar (Manager TALIMATNAME)
+## 📋 Proje Özellikleri ve Mimari Yapı
 
-${cleanTalimat || `### Mimari ve Domain Dağılımı\n${domainSummary}`}
-
----
-
-## 🧪 Test ve Kalite Kapısı Doğrulaması
-- **Kabul Durumu:** ${testResult.approved ? '✅ Onaylandı (Kusursuz)' : '⚠️ Uyarılar ile Tamamlandı'}
-- **Test Özeti:** ${testResult.summary}
-- **Rapor Dosyası:** \`RAPOR.md\`
-
----
-*Bu proje **XFactor Otonom AI Ajan Orkestrasyon Platformu** tarafından uçtan uca otonom olarak inşa edilmiştir.*
+${cleanTalimat}
 `;
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
