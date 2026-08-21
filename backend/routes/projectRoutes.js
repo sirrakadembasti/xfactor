@@ -2,7 +2,7 @@ import { Router } from 'express';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir } from '../engine/index.js';
+import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, ensureProjectScaffold } from '../engine/index.js';
 import { getAllProjects, getProjectLogs, updateProject, deleteProject, syncProjectsWithDisk } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath } from '../security.js';
@@ -214,6 +214,12 @@ export function createProjectRouter({ requireAuth, projectAccess, wsClients, ADM
     router.get('/:id/files', requireAuth, projectAccess('viewer'), async (req, res) => {
         try {
             const dir = getProjectDir(req.params.id);
+            const state = await readProjectState(req.params.id);
+            if (state) {
+                try {
+                    await ensureProjectScaffold(dir, state, state.plan || {});
+                } catch {}
+            }
             const MAX_FILE_SIZE = 2 * 1024 * 1024;
             const ALLOWED_EXTENSIONS = new Set([
                 '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',

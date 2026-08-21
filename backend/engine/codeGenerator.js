@@ -8,6 +8,8 @@ import path from 'path';
 import { isSafeProjectPath } from '../security.js';
 
 const KNOWN_PACKAGE_VERSIONS = {
+    'react-hook-form': '^7.54.2',
+    '@hookform/resolvers': '^3.9.1',
     'sonner': '^1.7.4',
     'axios': '^1.7.9',
     'swr': '^2.3.0',
@@ -19,8 +21,6 @@ const KNOWN_PACKAGE_VERSIONS = {
     '@types/canvas-confetti': '^1.9.0',
     'recharts': '^2.15.0',
     'zustand': '^5.0.2',
-    'react-hook-form': '^7.54.2',
-    '@hookform/resolvers': '^3.9.1',
     'bcryptjs': '^2.4.3',
     '@types/bcryptjs': '^2.4.6',
     'jsonwebtoken': '^9.0.2',
@@ -180,7 +180,10 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         'react': '^18.3.1',
         'react-dom': '^18.3.1',
         'tailwind-merge': '^2.5.5',
-        'zod': '^3.24.1'
+        'zod': '^3.24.1',
+        'react-hook-form': '^7.54.2',
+        '@hookform/resolvers': '^3.9.1',
+        'sonner': '^1.7.4'
     };
 
     if (hasPrisma) {
