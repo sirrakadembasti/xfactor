@@ -591,9 +591,7 @@ ${cleanTalimat || `### Mimari ve Domain Dağılımı\n${domainSummary}`}
             const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
 
-            const domainSummary = (plan.domains || []).map(d => `- **${typeof d === 'string' ? d : d.name}**: ${typeof d === 'string' ? d : (d.description || d.name)}`).join('\n');
             const completionMsg = `🎉 **Tebrikler Boss! "${state.title}" Projesi Başarıyla Tamamlandı!**
-
 Tüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.
 
 ### 📁 Üretilen Mimari Katmanları:
