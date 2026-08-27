@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>XFactor — Hiyerarşik Modül Ağacı</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 30px;
+      margin: 0;
+    }
+    h1 {
+      color: #38bdf8;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .tree-container {
+      max-width: 900px;
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    ul {
+      list-style-type: none;
+      padding-left: 20px;
+    }
+    li {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+    .folder {
+      font-weight: 700;
+      color: #60a5fa;
+    }
+    .file {
+      color: #cbd5e1;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+    .tag-doc { background: #9333ea; color: white; }
+    .tag-agent { background: #7c3aed; color: white; }
+    .tag-engine { background: #2563eb; color: white; }
+    .tag-backend { background: #059669; color: white; }
+    .tag-ui { background: #d97706; color: white; }
+    .tag-test { background: #dc2626; color: white; }
+  </style>
+</head>
+<body>
+  <div class="tree-container">
+    <h1>🌲 XFactor Hiyerarşik Modül ve Anayasa Ağacı</h1>
+    <ul>
+      <li><span class="file">📄 kullanici-kilavuzu.md</span> <span class="tag tag-doc">Kullanıcı Kılavuzu</span></li>
+      <li><span class="folder">📁 docs/</span> (Platform Anayasası & Canlı Ajan Kuralları)
+        <ul>
+          <li><span class="file">📄 ORKESTRASYON-TALIMATNAMESI.md</span> <span class="tag tag-doc">Ana Anayasa v3</span></li>
+          <li><span class="file">📄 manager.md</span> <span class="tag tag-doc">Manager Kuralı</span></li>
+          <li><span class="file">📄 director.md</span> <span class="tag tag-doc">Director Kuralı</span></li>
+          <li><span class="file">📄 teamleader.md</span> <span class="tag tag-doc">Teamleader Kuralı</span></li>
+          <li><span class="file">📄 coder.md</span> <span class="tag tag-doc">Coder Kuralı</span></li>
+          <li><span class="file">📄 reviewer.md</span> <span class="tag tag-doc">Reviewer Veto Kuralı</span></li>
+          <li><span class="file">📄 tester.md</span> <span class="tag tag-doc">Tester QA Kuralı</span></li>
+        </ul>
+      </li>
+      <li><span class="folder">📁 backend/</span>
+        <ul>
+          <li><span class="folder">📁 agents/</span>
+            <ul>
+              <li><span class="file">📄 agentLoader.js</span> <span class="tag tag-agent">Living Docs Köprüsü</span></li>
+              <li><span class="file">📄 index.js</span> <span class="tag tag-agent">Ajan Fabrikası</span></li>
+              <li><span class="file">📄 schemas.js</span> <span class="tag tag-agent">JSON Parser & Repair</span></li>
+              <li><span class="file">📄 manager.js</span> <span class="tag tag-agent">Manager Motoru</span></li>
+              <li><span class="file">📄 director.js</span> <span class="tag tag-agent">Director Motoru</span></li>
+              <li><span class="file">📄 teamleader.js</span> <span class="tag tag-agent">Teamleader Motoru</span></li>
+              <li><span class="file">📄 coder.js</span> <span class="tag tag-agent">Coder Motoru</span></li>
+              <li><span class="file">📄 reviewer.js</span> <span class="tag tag-agent">Reviewer Motoru</span></li>
+              <li><span class="file">📄 tester.js</span> <span class="tag tag-agent">Tester Motoru</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 engine/</span>
+            <ul>
+              <li><span class="file">📄 workflow.js</span> <span class="tag tag-engine">Master Orchestrator</span></li>
+              <li><span class="file">📄 dag.js</span> <span class="tag tag-engine">DAG & Waves</span></li>
+              <li><span class="file">📄 fileProtocol.js</span> <span class="tag tag-engine">Agent=Klasör</span></li>
+              <li><span class="file">📄 codeGenerator.js</span> <span class="tag tag-engine">Scaffold Guard (.env)</span></li>
+              <li><span class="file">📄 selfCorrection.js</span> <span class="tag tag-engine">2 Turlu Veto Döngüsü</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 routes/</span>
+            <ul>
+              <li><span class="file">📄 projectRoutes.js</span> <span class="tag tag-backend">CRUD, Chat & Revizyon</span></li>
+              <li><span class="file">📄 authRoutes.js</span> <span class="tag tag-backend">Login & Session</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 tests/</span>
+            <ul>
+              <li><span class="file">📄 test_runner.js</span> <span class="tag tag-test">Master Koşucu (npm test)</span></li>
+              <li><span class="file">📄 test_test_harness.js</span> <span class="tag tag-test">Asenkron Test Koşucu</span></li>
+              <li><span class="file">📄 test_http_integration.js</span> <span class="tag tag-test">HTTP REST, Cookie & Session</span></li>
+              <li><span class="file">📄 test_websocket_integration.js</span> <span class="tag tag-test">WebSocket Telemetri</span></li>
+              <li><span class="file">📄 test_backend.js</span> <span class="tag tag-test">Scrypt, Session & RBAC</span></li>
+              <li><span class="file">📄 test_admin_cli.js</span> <span class="tag tag-test">Admin CLI & Parola</span></li>
+              <li><span class="file">📄 test_project_repository.js</span> <span class="tag tag-test">Kanonik Proje Deposu</span></li>
+              <li><span class="file">📄 test_workflow_attempts.js</span> <span class="tag tag-test">Lease Recovery & Kilit</span></li>
+              <li><span class="file">📄 test_cancellation_and_deadlines.js</span> <span class="tag tag-test">İptal & Deadlines</span></li>
+              <li><span class="file">📄 test_generation_isolation.js</span> <span class="tag tag-test">Kota & Metadata Guard</span></li>
+              <li><span class="file">📄 test_subprocess_sandbox.js</span> <span class="tag tag-test">Alt Süreç Sandbox</span></li>
+              <li><span class="file">📄 test_agent_contract_schemas.js</span> <span class="tag tag-test">Sözleşme Şemaları</span></li>
+              <li><span class="file">📄 test_database_migrations.js</span> <span class="tag tag-test">SQLite Migration Motoru</span></li>
+              <li><span class="file">📄 test_health_and_lifecycle.js</span> <span class="tag tag-test">Healthz / Readyz Probları</span></li>
+              <li><span class="file">📄 test_concurrency_pool.js</span> <span class="tag tag-test">LLM Eşzamanlılık Havuzu</span></li>
+              <li><span class="file">📄 test_build_validator.js</span> <span class="tag tag-test">tsc & prisma Derleyici</span></li>
+              <li><span class="file">📄 test_quality_gate.js</span> <span class="tag tag-test">40 Testlik Kalite Kapısı</span></li>
+              <li><span class="file">📄 test_docs_agent_sync.js</span> <span class="tag tag-test">Canlı Docs Senkronizasyonu</span></li>
+              <li><span class="file">📄 test_deep_verification.js</span> <span class="tag tag-test">17 Testlik DAG & JSON Onarım</span></li>
+              <li><span class="file">📄 test_tur2_edge_cases.js</span> <span class="tag tag-test">8 Testlik Edge-Case Stresi</span></li>
+              <li><span class="file">📄 test_runtime_verification.js</span> <span class="tag tag-test">6 Testlik Çalışma Zamanı</span></li>
+              <li><span class="file">📄 test_e2e_simulation.js</span> <span class="tag tag-test">Uçtan Uca Otonom Pipeline</span></li>
+              <li><span class="file">📄 test_disk_sync_and_isolation.js</span> <span class="tag tag-test">Disk Senkronizasyonu & İzolasyon</span></li>
+            </ul>
+          </li>
+          <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>
+          <li><span class="file">📄 db.js</span> <span class="tag tag-backend">SQLite WAL</span></li>
+          <li><span class="file">📄 auth.js</span> <span class="tag tag-backend">Scrypt & RBAC</span></li>
+          <li><span class="file">📄 security.js</span> <span class="tag tag-backend">Security Guard</span></li>
+          <li><span class="file">📄 llm.js</span> <span class="tag tag-backend">Gemini 3.7 Flash</span></li>
+        </ul>
+      </li>
+      <li><span class="folder">📁 frontend/src/</span>
+        <ul>
+          <li><span class="file">📄 App.jsx</span> <span class="tag tag-ui">Ana Koordinatör & WS</span></li>
+          <li><span class="file">📄 components/Sidebar.jsx</span> <span class="tag tag-ui">Sol Menü & Pin</span></li>
+          <li><span class="file">📄 components/Header.jsx</span> <span class="tag tag-ui">Üst Menü & Sekmeler</span></li>
+          <li><span class="file">📄 components/ChatView.jsx</span> <span class="tag tag-ui">Sohbet & Revizyon</span></li>
+          <li><span class="file">📄 components/DAGFlowView.jsx</span> <span class="tag tag-ui">Canlı ReactFlow DAG</span></li>
+          <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
+          <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>

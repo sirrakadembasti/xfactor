@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+dist
+projects/*
+!projects/.gitkeep
+*.log
+*.sqlite
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
+Thumbs.db

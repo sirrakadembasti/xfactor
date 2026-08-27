@@ -1,0 +1,182 @@
+{
+  "backend/db.js": {
+    "mtime": 1785851125.7611103,
+    "ast_hash": "f0d9a4199f60e4b2d17ea0fa7a7a17db",
+    "semantic_hash": "f0d9a4199f60e4b2d17ea0fa7a7a17db"
+  },
+  "backend/llm.js": {
+    "mtime": 1786107477.1778255,
+    "ast_hash": "5419594f97269bcf5b49d404d434a3dd",
+    "semantic_hash": ""
+  },
+  "backend/orchestrator.js": {
+    "mtime": 1785851146.115544,
+    "ast_hash": "6ee048d2a69e7ad8546cb9fd12f50b58",
+    "semantic_hash": "6ee048d2a69e7ad8546cb9fd12f50b58"
+  },
+  "backend/package.json": {
+    "mtime": 1785852069.886094,
+    "ast_hash": "b7e29fdbe3beef696b500aae87cbdba1",
+    "semantic_hash": "b7e29fdbe3beef696b500aae87cbdba1"
+  },
+  "backend/server.js": {
+    "mtime": 1786022151.2399049,
+    "ast_hash": "1ac97e276b3da153624d9d5e64ecfa93",
+    "semantic_hash": "1ac97e276b3da153624d9d5e64ecfa93"
+  },
+  "backend/test_backend.js": {
+    "mtime": 1786025041.81272,
+    "ast_hash": "064c51c6ba9fc44b9e4c519b5918bd14",
+    "semantic_hash": "064c51c6ba9fc44b9e4c519b5918bd14"
+  },
+  "frontend/package.json": {
+    "mtime": 1785841627.2527397,
+    "ast_hash": "074f008edb9d3a057f3c860b08bf0740",
+    "semantic_hash": "074f008edb9d3a057f3c860b08bf0740"
+  },
+  "frontend/postcss.config.js": {
+    "mtime": 1785752447.6953194,
+    "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
+    "semantic_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "frontend/src/App.jsx": {
+    "mtime": 1786107033.550805,
+    "ast_hash": "4de4bb09e119e019c71832d8f4c8284d",
+    "semantic_hash": ""
+  },
+  "frontend/src/main.jsx": {
+    "mtime": 1785752429.7819376,
+    "ast_hash": "54a301507dcdfccf4e5565754374b5dc",
+    "semantic_hash": "54a301507dcdfccf4e5565754374b5dc"
+  },
+  "frontend/src/pages/Admin.jsx": {
+    "mtime": 1785751150.3887656,
+    "ast_hash": "9a65f5564271a0e1a6391f72ca35f6a0",
+    "semantic_hash": "9a65f5564271a0e1a6391f72ca35f6a0"
+  },
+  "frontend/src/pages/Home.jsx": {
+    "mtime": 1785751138.5805824,
+    "ast_hash": "a6414c77005e85d9410e928dd992ae3e",
+    "semantic_hash": "a6414c77005e85d9410e928dd992ae3e"
+  },
+  "frontend/src/services/api.js": {
+    "mtime": 1785851688.0666382,
+    "ast_hash": "b8382aaa80f4c4710068afede5978f6f",
+    "semantic_hash": "b8382aaa80f4c4710068afede5978f6f"
+  },
+  "frontend/tailwind.config.js": {
+    "mtime": 1785752447.6526706,
+    "ast_hash": "3346df3fd0a1ea3f84440703bf8fd2cb",
+    "semantic_hash": "3346df3fd0a1ea3f84440703bf8fd2cb"
+  },
+  "frontend/vite.config.js": {
+    "mtime": 1785761561.5962474,
+    "ast_hash": "6fbbdd2ac6a6359916905351f11633e2",
+    "semantic_hash": "6fbbdd2ac6a6359916905351f11633e2"
+  },
+  "projects/project-1785762137419/state.json": {
+    "mtime": 1785829671.257458,
+    "ast_hash": "4598028708c242109503675ceabe84e2",
+    "semantic_hash": "4598028708c242109503675ceabe84e2"
+  },
+  "projects/project-1785764441669/state.json": {
+    "mtime": 1785768292.4204154,
+    "ast_hash": "747d77b24d4bf92100d80e76ff626442",
+    "semantic_hash": "747d77b24d4bf92100d80e76ff626442"
+  },
+  "projects/project-1785766099875/state.json": {
+    "mtime": 1785768813.8103044,
+    "ast_hash": "1df7aa1f4bcd72843f6cbbcae2aa98bd",
+    "semantic_hash": "1df7aa1f4bcd72843f6cbbcae2aa98bd"
+  },
+  "ANALIZTODO.md": {
+    "mtime": 1786024732.3932805,
+    "ast_hash": "3d1985f72813325a4701817cbc11c69f",
+    "semantic_hash": ""
+  },
+  "GEMINI.md": {
+    "mtime": 1786107767.9515574,
+    "ast_hash": "8728c588f239130d37e30082d689481f",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1785939573.9762025,
+    "ast_hash": "600051df208c02ff05ae38415db0ffc6",
+    "semantic_hash": ""
+  },
+  "Yeni Metin Belgesi.txt": {
+    "mtime": 1786008450.969549,
+    "ast_hash": "55ec5da2c50ea0d8a3f6146bf0f653be",
+    "semantic_hash": ""
+  },
+  "docs/ALT-TALIMATNAME.md": {
+    "mtime": 1785749518.7026136,
+    "ast_hash": "c13c4ce5c44f1abda0bcb2e075de9ba2",
+    "semantic_hash": ""
+  },
+  "docs/CLAUDE.md": {
+    "mtime": 1785749518.5662305,
+    "ast_hash": "f0d4bf2f31bba39e4b9808611a35c301",
+    "semantic_hash": ""
+  },
+  "docs/DURUM.md": {
+    "mtime": 1785749518.7479198,
+    "ast_hash": "ed839a783509b4b349035f98599d88ed",
+    "semantic_hash": ""
+  },
+  "docs/GOREV.md": {
+    "mtime": 1785749518.6804454,
+    "ast_hash": "22f4881ce6dcbcc213a62b1032538686",
+    "semantic_hash": ""
+  },
+  "docs/ORKESTRASYON-TALIMATNAMESI.md": {
+    "mtime": 1785749518.5399466,
+    "ast_hash": "ff6e712bc1cfd8360e56effd93004136",
+    "semantic_hash": ""
+  },
+  "docs/RAPOR.md": {
+    "mtime": 1785749518.7704713,
+    "ast_hash": "070eafc0d504cb81538573efacc66950",
+    "semantic_hash": ""
+  },
+  "docs/TODO.md": {
+    "mtime": 1785749518.7278495,
+    "ast_hash": "b83d8828ca441064cbfda02d8f9db934",
+    "semantic_hash": ""
+  },
+  "docs/coder.md": {
+    "mtime": 1785749518.6551163,
+    "ast_hash": "e6ffe7dab4335d8231d080a625e44671",
+    "semantic_hash": ""
+  },
+  "docs/director.md": {
+    "mtime": 1785749518.607189,
+    "ast_hash": "f88ff2b66c47a6f3495005b7a5b2601e",
+    "semantic_hash": ""
+  },
+  "docs/manager.md": {
+    "mtime": 1785749518.5863693,
+    "ast_hash": "aff7afe6052cbec4ed698684853fa36d",
+    "semantic_hash": ""
+  },
+  "docs/teamleader.md": {
+    "mtime": 1785749518.6308763,
+    "ast_hash": "bec1d659cfd55be6b997e9bc8f37eede",
+    "semantic_hash": ""
+  },
+  "frontend/index.html": {
+    "mtime": 1785752429.5733094,
+    "ast_hash": "63df0f545eed7582f2ca4efff4ba65af",
+    "semantic_hash": ""
+  },
+  "graphify-bilgi-notu.md": {
+    "mtime": 1786102487.106761,
+    "ast_hash": "1d690ff6960cd3f4081c053a5f1a856b",
+    "semantic_hash": ""
+  },
+  "projects/project-1785762137419/TALIMATNAME.md": {
+    "mtime": 1785829657.5944655,
+    "ast_hash": "1b431f551c5c967f577cb68bb2e67072",
+    "semantic_hash": ""
+  }
+}
