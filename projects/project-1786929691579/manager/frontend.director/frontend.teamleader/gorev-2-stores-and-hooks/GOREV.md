@@ -1,4 +1,0 @@
-# Atomik Görev: Global State, Özel Hook'lar ve Layout Bileşenleri
-
-Açıklama: Tema ve Ses ayarları için Zustand store'ları (useSettingsStore, useLeaderboardStore), custom hook'lar (useAudio, useKeyPress, useWindowSize) ve Header/Navbar bileşenlerinin geliştirilmesi.
-Hedef Dosyalar: ["src/store/useSettingsStore.ts","src/store/useLeaderboardStore.ts","src/hooks/useAudio.ts","src/hooks/useKeyPress.ts","src/hooks/useWindowSize.ts","src/components/layout/Header.tsx","src/components/layout/Navbar.tsx","src/components/layout/Footer.tsx","src/components/common/ThemeToggle.tsx","src/components/common/AudioPlayer.tsx"]

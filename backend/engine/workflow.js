@@ -288,18 +288,19 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
 
             let directorSpec = state.workflow.directorSpecs[domain.prefix];
-            if (!directorSpec) {
+            if (!directorSpec || Array.isArray(directorSpec) || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0)) {
                 await logEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
                 const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
-                directorSpec = await callAgentLLM('director', directorPrompt, { signal: abortController.signal });
+                const rawSpec = await callAgentLLM('director', directorPrompt, { signal: abortController.signal });
+                directorSpec = normalizeDirectorSpec(rawSpec, domain.prefix);
 
                 state.workflow.directorSpecs[domain.prefix] = directorSpec;
                 await writeProjectState(projectId, state);
+            } else {
+                directorSpec = normalizeDirectorSpec(directorSpec, domain.prefix);
             }
-            directorSpec = normalizeDirectorSpec(directorSpec, domain.prefix);
             validateDirectorSpec(directorSpec);
-
             const teamleaders = directorSpec.teamleaders && directorSpec.teamleaders.length > 0
                 ? directorSpec.teamleaders
                 : [{ name: `${domain.prefix}.teamleader`, prefix: domain.prefix, mission: `${domain.name} geliştirme` }];

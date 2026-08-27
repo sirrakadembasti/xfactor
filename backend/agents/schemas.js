@@ -309,7 +309,7 @@ export function validateManagerPlan(plan) {
  * Director Ajanı Çıktı Şeması Doğrulaması ve Otomatik Normalizasyon
  */
 export function normalizeDirectorSpec(spec, fallbackDomain = 'domain') {
-    if (!spec || typeof spec !== 'object') {
+    if (!spec || typeof spec !== 'object' || Array.isArray(spec)) {
         spec = {};
     }
 
@@ -317,6 +317,8 @@ export function normalizeDirectorSpec(spec, fallbackDomain = 'domain') {
     spec.domain = typeof domain === 'string' ? domain.trim() : fallbackDomain;
 
     const altTalimat = spec.altTalimatname || spec.alt_talimatname || spec.altTalimat || spec.spec || spec.talimatname || spec.description || `# ${spec.domain} Alt Şartnamesi`;
+    spec.altTalimatname = typeof altTalimat === 'string' ? altTalimat : `# ${spec.domain} Alt Şartnamesi`;
+
     let rawTL = spec.teamleaders || spec.team_leaders || spec.teamLeaders || spec.teams || spec.leaders || spec.teamleader;
     if (!rawTL || !Array.isArray(rawTL) || rawTL.length === 0) {
         spec.teamleaders = [{
