@@ -103,9 +103,9 @@ PORT=8000
 # Kimlik doğrulama anahtarı veya yönetici parolası .env içinde tutulmaz.
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 AI_PROVIDER=google
-AI_MODEL=gemini-3.5-flash
+AI_MODEL=gemini-3.7-flash
 ALLOW_MOCK_FALLBACK=false
-GOOGLE_API_KEY=AIzaSy...SizinGoogleGeminiAnahtariniz...
+GOOGLE_API_KEY=...GeminiAnahtariniz...
 ```
 
 ### 2. Adım: Yönetici Hesabını Oluşturup Backend'i Başlatma
