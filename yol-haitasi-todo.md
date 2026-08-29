@@ -23,6 +23,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | Alan | Değer |
 | --- | --- |
 | Pre-ledger commit | `4164592f6a633f6094ff7fe45b4662c6bdbd835e` |
+| Planning checkpoint commit | `42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5` |
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |

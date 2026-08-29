@@ -11,7 +11,7 @@ status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
+last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-A.md
 blocked_by: []
 next_action: Read P0-A Task 1, write the failing isolated migration test, and run the RED command
@@ -69,6 +69,7 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - Implementation plan architecture reviewer: APPROVE.
 - Implementation plan mechanical validator: APPROVE.
 - `node scripts/validate-continuity.mjs`: PASS before planning checkpoint commit.
+- Planning checkpoint commit: `42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5`.
 
 ## Known Failures
 
@@ -77,7 +78,7 @@ Implement the approved project-quality pipeline redesign without relying on chat
 
 ## Dirty Worktree
 
-Expected planning/continuity files are uncommitted until the checkpoint commit. No pipeline source implementation has started.
+Clean.
 
 ## Exact Next Action
 
@@ -85,7 +86,6 @@ Read P0-A Task 1, write the failing isolated migration test, and run the RED com
 
 ## Do Not Do
 
-- Do not start P0-A source changes during planning checkpoint.
 - Do not edit the audited Todo artifact.
 - Do not mark roadmap units complete without `status: verified` evidence.
 - Do not use prior conversation as authoritative state.
