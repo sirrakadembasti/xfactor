@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P1-C
-current_plan: implementation-plans/06-P1-C-artifact-validation.md
-current_task: P1-C Task 6 - Frontend Evidence Display and Download Integration
+current_unit: P2
+current_plan: implementation-plans/07-P2-quality-hardening.md
+current_task: P2 Task 1 - Domain/Entity/Use Verification (Step P2.1.1: Verify Entity Schema Presence)
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: 1516cd155742b2b78e73f3343506a3b0b1e14731
-evidence_file: implementation-evidence/P1-C.md
+last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
+evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P1-C Task 6, write the failing isolated frontend evidence display test, and run the RED command
-updated_at: 2026-08-30T17:57:08Z
+next_action: Read P2 Task 1, write the failing isolated schema presence test, and run the RED command: node backend/tests/test_p2_domain_policy.js --test=schema-presence
+updated_at: 2026-08-30T18:00:58Z
 ---
 
 # Project Continuity
@@ -56,16 +56,17 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 3 - Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks).
 - P1-C Task 4 - Sandboxed Clean-Room Verification Pipeline (`artifactVerifier`).
 - P1-C Task 5 - State Transition, Invalidation Policy, and Clean Cutover.
+- P1-C Task 6 - Frontend Evidence Display and Download Integration.
 
 ## In Progress
 
-- P1-C Task 6 - Frontend Evidence Display and Download Integration
+- P2 Task 1 - Domain/Entity/Use Verification (Step P2.1.1: Verify Entity Schema Presence)
 
 ## Pending
 
-1. Read P1-C Task 6 and write the isolated frontend evidence display RED test.
-2. Implement Task 6 only after RED is observed.
-3. Complete remaining P1-C tasks in plan order.
+1. Read P2 Task 1 and write the isolated schema presence RED test.
+2. Implement Step P2.1.1 only after RED is observed.
+3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
 
@@ -135,9 +136,13 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 5 review: APPROVE; specification PASS, quality PASS.
 - P1-C Task 5 independent acceptance test: PASS (`4` passed, `0` failed).
 - P1-C Task 5 continuity validation: PASS.
+- P1-C Task 6 review: APPROVE; specification PASS, quality PASS.
+- P1-C Task 6 independent acceptance test: PASS (`2` Task 6 and `7` P2 frontend tests passed, `0` failed).
+- P1-C Unit verification: `23/23` isolated unit tests PASS, `25/25` integration suites PASS.
+- P1-C continuity validation: PASS.
 ## Known Failures
 
-- Exact-hash artifact verification and verified-only download remain incomplete until P1-C is implemented.
+- Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
 - Todo artifact remains intentionally unfixed.
 ## Dirty Worktree
 
@@ -147,7 +152,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-C Task 6, write the failing isolated frontend evidence display test, and run the RED command.
+Read P2 Task 1, write the failing isolated schema presence test, and run the RED command: node backend/tests/test_p2_domain_policy.js --test=schema-presence
 
 ## Do Not Do
 

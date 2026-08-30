@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P1-C -->
+<!-- continuity:current_unit=P2 -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P1-C` |
+| Aktif birim | `P2` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -57,7 +57,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Plan: `implementation-plans/05-P1-B-runtime-verifier.md`
   - Evidence: `implementation-evidence/P1-B.md`
   - Bağımlılık: P0-B ve P1-A verified.
-- [ ] **P1-C — ZIP artifact clean-room validation**
+- [x] **P1-C — ZIP artifact clean-room validation**
   - Plan: `implementation-plans/06-P1-C-artifact-validation.md`
   - Evidence: `implementation-evidence/P1-C.md`
   - Bağımlılık: P0-B, P0-C ve P1-B verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-C Task 5 (State Transition, Invalidation Policy, and Clean Cutover) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 6 Frontend Evidence Display and Download Integration.
+P1-C Tasks 1–6 tamamlandı; bağımsız review/test, `23/23` unit acceptance ve `25/25` backend regresyonuyla doğrulandı. Aktif birim P2.
 
 Sonraki görev:
 
 ```text
-P1-C Task 6 — Frontend Evidence Display and Download Integration
-RED: isolated frontend evidence display and download integration failing testi
+P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.1: Verify Entity Schema Presence)
+RED: node backend/tests/test_p2_domain_policy.js --test=schema-presence
 ```
 
 ## Yeni Sohbet İçin Başlangıç

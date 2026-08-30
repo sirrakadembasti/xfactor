@@ -426,6 +426,13 @@ export default function App() {
     e?.stopPropagation();
     setActiveMenuProjectId(null);
     try {
+      const targetState = id === activeProjectId ? projectState : await api.getProject(id);
+      const latestArtifact = targetState?.latestArtifact;
+      const contractId = targetState?.contractId || targetState?.contract_id || targetState?.plan?.contractId || 'current';
+      if (latestArtifact && latestArtifact.id && latestArtifact.status === 'verified') {
+        window.location.href = `/api/projects/${id}/contracts/${contractId}/artifacts/${latestArtifact.id}/download`;
+        return;
+      }
       const files = await api.getProjectFiles(id);
       if (!Array.isArray(files) || files.length === 0) {
         setUiError('İndirilecek kaynak dosyası bulunamadı.');

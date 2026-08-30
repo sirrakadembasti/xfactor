@@ -1,13 +1,13 @@
 ---
 unit: P1-C
-status: pending
+status: verified
 plan: implementation-plans/06-P1-C-artifact-validation.md
-verified_commit: null
-updated_at: 2026-08-30T17:57:08Z
+verified_commit: SELF
+updated_at: 2026-08-30T18:00:58Z
 ---
 
 # P1-C Evidence — Artifact and ZIP Clean-Room Validation
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+Unit verified. All six tasks, independent review/testing, unit acceptance, regression, and continuity checks passed.
 
 ## Task 1 Receipt — Artifact Repository CRUD
 
@@ -56,6 +56,22 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Observed coverage: negative rejection on mismatched contract/stale status/draft artifact/unlinked mandatory requirements/open repairs, atomic CAS transition to completed with revision increment, active artifact supersession, 200 OK verified download, and 409 rejection on unverified download requests.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+
+## Task 6 Receipt — Frontend Evidence Display and Download Integration
+
+- RED: `node backend/tests/test_p1_c_frontend.js` — exit `1`; expected missing `latestArtifact.sha256` badge and unrouted download call.
+- GREEN: `node backend/tests/test_p1_c_frontend.js` — exit `0`; `2` passed, `0` failed.
+- Independent review (`P1CTask6Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`; Header.jsx verification badge rendering with SHA-256 slice, App.jsx verified artifact server download routing `/api/projects/${id}/contracts/${contractId}/artifacts/${latestArtifact.id}/download`, and dynamic import hygiene verified.
+- Independent test (`P1CTask6IndependentTester`): fresh-process `node backend/tests/test_p1_c_frontend.js` — exit `0`, `2` passed, `0` failed; `node backend/tests/test_p2_frontend.js` — exit `0`, `7` passed, `0` failed; `UNIT TEST PASS`.
+- Observed coverage: Header verified artifact badge display with SHA-256 slice, no static JSZip import in App.jsx, direct browser redirect to verified download endpoint, and dynamic import compatibility.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 6 source and tests).
+
+## P1-C Unit Acceptance
+
+- Isolated P1-C acceptance: all six `backend/tests/test_p1_c_*.js` files — exit `0`; `23` passed, `0` failed.
+- Full backend regression: `node backend/tests/test_runner.js` — exit `0`; `25` suites passed, `0` failed.
+- Continuity validation before ledger transition: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`, current `P1-C/pending`.
+- Continuity validation after ledger transition: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`, current `P2/pending`.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 ## Required Receipt
 
