@@ -4,7 +4,7 @@ import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
 import { createProject, deleteProject } from '../projectRepository.js';
-import { acquireWorkflowLease } from '../workflowAttempts.js';
+import { acquireWorkflowLease, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { getAllProjects, getProjectLogs, updateProject, syncProjectsWithDisk } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
@@ -20,6 +20,7 @@ import {
     canTransitionProjectStatus,
     getUserProjects
 } from '../auth.js';
+import { PROJECT_STATUS } from '../engine/stateMachine.js';
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -40,6 +41,25 @@ function findFailedReports(dir, projectDir) {
         }
     } catch {}
     return reports;
+}
+
+function normalizeManagerPlanFromText(title, responseText) {
+    return {
+        summary: `Mimari Plan: ${title}`,
+        talimatname: `# ${title} (Mimari Şartname)\n\n${responseText.replace(/\[PLAN_HAZIR\]/g, '').trim()}`,
+        domains: [
+            {
+                name: 'backend',
+                prefix: 'backend',
+                description: 'Veritabanı şeması, Prisma SQLite ve REST API servisleri'
+            },
+            {
+                name: 'frontend',
+                prefix: 'frontend',
+                description: 'Kullanıcı arayüzü, sayfalar, bileşenler ve Tailwind stilleri'
+            }
+        ]
+    };
 }
 
 export function buildManagerChatSystemPrompt(state, projectDir) {
@@ -313,6 +333,11 @@ export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
 
             const userTrimmed = (message || '').toLowerCase().trim();
             const isUserStarting = ['başla', 'basla', 'başlayalım', 'baslayalim', 'onay', 'onayla', 'onaylıyorum', 'onayliyorum', 'tamam', 'tamamdır', 'tamamdir', 'olur', 'inşa et', 'insa et', 'üret', 'uret', 'başlat', 'baslat', 'projeyi başlat', 'projeyi baslat', 'üretime geç', 'uretime gec', 'yap', 'yapalım', 'hadi'].some(kw => userTrimmed === kw || userTrimmed.startsWith(kw + ' ') || userTrimmed.endsWith(' ' + kw));
+            const revisableStatuses = new Set([
+                PROJECT_STATUS.PLANNING,
+                PROJECT_STATUS.PENDING_APPROVAL,
+                PROJECT_STATUS.CAPABILITY_BLOCKED
+            ]);
 
             const isPlanReady = !!parsedPlan ||
                                 responseText.includes("[PLAN_HAZIR]") ||
@@ -326,22 +351,18 @@ export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
                                 responseText.toLowerCase().includes("başlatabilirsin") ||
                                 responseText.toLowerCase().includes("onaylayabilirsiniz") ||
                                 responseText.toLowerCase().includes("onaylayabilirsin") ||
-                                (isUserStarting && (freshState.status === 'planning' || freshState.status === 'completed' || freshState.status === 'paused'));
+                                (isUserStarting && revisableStatuses.has(freshState.status));
 
-            if (isPlanReady && (freshState.status === 'planning' || freshState.status === 'completed' || freshState.status === 'paused')) {
-                freshState.status = 'pending_approval';
-                if (parsedPlan) {
-                    freshState.plan = parsedPlan;
-                } else {
-                    freshState.plan = {
-                        summary: `Mimari Plan: ${freshState.title}`,
-                        talimatname: `# ${freshState.title} (Mimari Şartname)\n\n${responseText.replace(/\[PLAN_HAZIR\]/g, '').trim()}`,
-                        domains: [
-                            { name: "backend", prefix: "backend", description: "Veritabanı şeması, Prisma SQLite ve REST API servisleri" },
-                            { name: "frontend", prefix: "frontend", description: "Kullanıcı arayüzü, sayfalar, bileşenler ve Tailwind stilleri" }
-                        ]
-                    };
-                }
+            if (isPlanReady && revisableStatuses.has(freshState.status)) {
+                const draftPlan = parsedPlan || normalizeManagerPlanFromText(
+                    freshState.title,
+                    responseText
+                );
+                const { createContractRevision } = await import('../contracts/projectContract.js');
+                createContractRevision(id, draftPlan, modelMsg.id);
+
+                freshState.status = PROJECT_STATUS.PENDING_APPROVAL;
+                freshState.plan = draftPlan;
                 try {
                     const oldRapor = path.join(projectDir, 'RAPOR.md');
                     if (fsSync.existsSync(oldRapor)) fsSync.unlinkSync(oldRapor);
@@ -358,20 +379,58 @@ export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
         const { id } = req.params;
         try {
             const state = await readProjectState(id);
-            if (!state || !canTransitionProjectStatus(state.status, 'running')) {
+            if (!state || !canTransitionProjectStatus(
+                state.status,
+                PROJECT_STATUS.CONTRACT_APPROVED
+            )) {
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
 
-            const lease = acquireWorkflowLease(id, `http-approve-${req.user.id}`);
-            if (!lease.acquired) {
-                return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
+            const {
+                approveContractRevision,
+                getLatestRevision
+            } = await import('../contracts/projectContract.js');
+            const latestRevision = getLatestRevision(id);
+            if (!latestRevision || latestRevision.status !== 'pending_approval') {
+                return res.status(400).json({
+                    error: "Onaylanacak bekleyen bir plan bulunamadı."
+                });
             }
 
-            state.status = 'running';
-            state.workflow = normalizeWorkflowState(null);
+            approveContractRevision(id, latestRevision.revision);
+            state.status = PROJECT_STATUS.CONTRACT_APPROVED;
             await writeProjectState(id, state);
+
+            const lease = acquireWorkflowLease(id, `http-approve-${req.user.id}`);
+            if (!lease.acquired) {
+                return res.json({
+                    ...state,
+                    attemptId: lease.attempt.id,
+                    idempotent: true
+                });
+            }
+
+            const approvedState = await readProjectState(id);
+            if (!canTransitionProjectStatus(
+                approvedState.status,
+                PROJECT_STATUS.IMPLEMENTING
+            )) {
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: 'Invalid implementing transition'
+                });
+                return res.status(409).json({
+                    error: 'Proje uygulama durumuna geçirilemedi.'
+                });
+            }
+            approvedState.status = PROJECT_STATUS.IMPLEMENTING;
+            approvedState.workflow = normalizeWorkflowState(null);
+            await writeProjectState(id, approvedState);
+
             executeProjectTasks(id, wsHub, lease.attempt.id).catch(error => {
-                logError('workflow.background_execution_failed', error, { projectId: id, attemptId: lease.attempt.id });
+                logError('workflow.background_execution_failed', error, {
+                    projectId: id,
+                    attemptId: lease.attempt.id
+                });
             });
             res.json({ ...state, attemptId: lease.attempt.id });
         } catch (err) {
