@@ -11,6 +11,7 @@ import { isSafeProjectPath } from '../security.js';
 import { detectProjectStack } from './codeGenerator.js';
 
 import { executeInSandbox } from '../verification/sandboxRunner.js';
+import { verifyBuild } from '../verification/buildVerifier.js';
 // Güvenli ve izin verilen komut whitelist'i
 const ALLOWED_EXECUTABLES = new Set([
     'npx',
@@ -77,6 +78,7 @@ export function killProcessTree(proc) {
 
 /**
  * Güvenli ve sınırlandırılmış alt süreç (process) çalıştırır.
+ */
 export async function executeSafeCommand(executable, args = [], options = {}) {
     const {
         cwd = process.cwd(),
@@ -426,7 +428,7 @@ export function resolveBuildSandboxMode() {
 export async function validateProjectBuild(projectDir, state = {}, plan = {}, options = {}) {
     const checks = [];
     const issues = [];
-    const timeoutMs = options.timeoutMs || 5000; // 5 saniye hızlı timeout
+    const timeoutMs = options.timeoutMs || 5000;
 
     if (!fsSync.existsSync(projectDir)) {
         return {
@@ -437,7 +439,38 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
     }
 
     const stack = await detectProjectStack(projectDir, state, plan);
+    const sandboxMode = resolveBuildSandboxMode();
 
+    // Sandboxed mod: verifyBuild üzerinden aktif compiler ve sandbox kapılarına delege et
+    if (sandboxMode === 'sandboxed') {
+        const contract = plan || {};
+        const buildResult = await verifyBuild(projectDir, contract, {
+            timeoutMs: options.timeoutMs || 60000,
+            adapter: options.adapter
+        });
+
+        for (const check of buildResult.checks) {
+            checks.push({
+                name: check.name,
+                status: check.status,
+                command: check.command || 'none',
+                exitCode: check.exitCode ?? 0,
+                stdout: check.stdout || '',
+                stderr: check.stderr || (check.reason || ''),
+                timedOut: check.status === 'blocked' && check.reason?.includes('timeout')
+            });
+            if (check.status === 'failed' || check.status === 'blocked') {
+                issues.push(`[${check.name}] ${check.reason || check.stderr || 'Kapı doğrulaması başarısız oldu'}`);
+            }
+        }
+
+        return {
+            passed: buildResult.passed,
+            stack,
+            checks,
+            issues
+        };
+    }
     // 1. PRISMA DOĞRULAMASI (Eğer schema.prisma varsa)
     const prismaSchemaPath = path.join(projectDir, 'prisma', 'schema.prisma');
     const rootSchemaPath = path.join(projectDir, 'schema.prisma');

@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P0-B
 current_plan: implementation-plans/02-P0-B-sandbox-verification.md
-current_task: P0-B Task 4 - Real Compiler, Typecheck, and Build Gates
+current_task: P0-B Task 5 - Aggregate Quality Policy and Workflow Integration
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-B.md
 blocked_by: []
-next_action: Read P0-B Task 4, write the failing isolated build verifier test, and run the RED command
-updated_at: 2026-08-30T09:50:44.822Z
+next_action: Read P0-B Task 5, write the failing isolated quality policy test, and run the RED command
+updated_at: 2026-08-30T09:55:30.586Z
 ---
 
 # Project Continuity
@@ -52,14 +52,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 1 - OS Sandbox Boundary Interface and Adapter Registry.
 - P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository.
 - P0-B Task 3 - AST Dependency Inventory and Package Verifier.
+- P0-B Task 4 - Real Compiler, Typecheck, and Build Gates.
 ## In Progress
 
-- P0-B Task 4 - Real Compiler, Typecheck, and Build Gates
+- P0-B Task 5 - Aggregate Quality Policy and Workflow Integration
 
 ## Pending
 
-1. Read P0-B Task 4 and write the isolated build verifier RED test.
-2. Implement Task 4 only after RED is observed.
+1. Read P0-B Task 5 and write the isolated quality policy RED test.
+2. Implement Task 5 only after RED is observed.
 3. Complete remaining P0-B tasks in plan order.
 
 ## Decisions
@@ -113,6 +114,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 3 review: APPROVE; specification PASS, quality PASS.
 - P0-B Task 3 independent package verifier test: PASS (`3` passed, `0` failed).
 - P0-B Task 3 continuity validation: PASS.
+- P0-B Task 4 review: APPROVE; specification PASS, quality PASS.
+- P0-B Task 4 independent build verifier test: PASS (`3` passed, `0` failed).
+- P0-B Task 4 continuity validation: PASS.
 
 ## Known Failures
 
@@ -127,7 +131,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-B Task 4, write the failing isolated build verifier test, and run the RED command.
+Read P0-B Task 5, write the failing isolated quality policy test, and run the RED command.
 
 ## Do Not Do
 

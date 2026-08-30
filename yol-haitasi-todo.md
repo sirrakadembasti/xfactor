@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-B Task 3 (AST Dependency Inventory and Package Verifier) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 4 Real Compiler, Typecheck, and Build Gates.
+P0-B Task 4 (Real Compiler, Typecheck, and Build Gates) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 5 Aggregate Quality Policy and Workflow Integration.
 
 Sonraki görev:
 
 ```text
-P0-B Task 4 — Real Compiler, Typecheck, and Build Gates
-RED: isolated build verifier failing testi
+P0-B Task 5 — Aggregate Quality Policy and Workflow Integration
+RED: isolated quality policy aggregate ve LLM-override rejection failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
