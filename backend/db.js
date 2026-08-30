@@ -394,6 +394,74 @@ export const MIGRATIONS = [
                 CREATE INDEX IF NOT EXISTS idx_verification_checks_run ON verification_checks(contract_id, run_id);
             `);
         }
+    },
+    {
+        version: 9,
+        name: '009_contract_traceability_artifacts',
+        up: (database) => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS artifacts (
+                    id TEXT NOT NULL,
+                    project_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    sha256 TEXT NOT NULL,
+                    size INTEGER NOT NULL,
+                    manifest_json TEXT,
+                    status TEXT NOT NULL CHECK(status IN ('draft', 'built', 'verification_pending', 'verified', 'rejected', 'superseded')),
+                    verification_run_id TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (contract_id, id),
+                    FOREIGN KEY (project_id, contract_id) REFERENCES project_contracts (project_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, verification_run_id) REFERENCES verification_runs (contract_id, id)
+                );
+
+                CREATE TABLE IF NOT EXISTS artifact_files (
+                    contract_id TEXT NOT NULL,
+                    artifact_id TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    sha256 TEXT NOT NULL,
+                    size INTEGER NOT NULL,
+                    PRIMARY KEY (contract_id, artifact_id, path),
+                    FOREIGN KEY (contract_id, artifact_id) REFERENCES artifacts (contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirement_file_links (
+                    contract_id TEXT NOT NULL,
+                    requirement_id TEXT NOT NULL,
+                    artifact_id TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    PRIMARY KEY (contract_id, requirement_id, artifact_id, path),
+                    FOREIGN KEY (contract_id, requirement_id) REFERENCES requirements (contract_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, artifact_id, path) REFERENCES artifact_files (contract_id, artifact_id, path) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirement_check_links (
+                    contract_id TEXT NOT NULL,
+                    requirement_id TEXT NOT NULL,
+                    verification_check_id TEXT NOT NULL,
+                    PRIMARY KEY (contract_id, requirement_id, verification_check_id),
+                    FOREIGN KEY (contract_id, requirement_id) REFERENCES requirements (contract_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, verification_check_id) REFERENCES verification_checks (contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirement_artifact_links (
+                    contract_id TEXT NOT NULL,
+                    requirement_id TEXT NOT NULL,
+                    artifact_id TEXT NOT NULL,
+                    PRIMARY KEY (contract_id, requirement_id, artifact_id),
+                    FOREIGN KEY (contract_id, requirement_id) REFERENCES requirements (contract_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, artifact_id) REFERENCES artifacts (contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_artifacts_project ON artifacts(project_id, status);
+                CREATE INDEX IF NOT EXISTS idx_artifact_files_artifact ON artifact_files(contract_id, artifact_id);
+                CREATE INDEX IF NOT EXISTS idx_req_file_links ON requirement_file_links(contract_id, requirement_id);
+                CREATE INDEX IF NOT EXISTS idx_req_check_links ON requirement_check_links(contract_id, requirement_id);
+                CREATE INDEX IF NOT EXISTS idx_req_artifact_links ON requirement_artifact_links(contract_id, requirement_id);
+            `);
+        }
     }
 ];
 export function runMigrations(targetDb = db) {

@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-C Selective checkpoint safety birimi (Tasks 1–4) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P1-A Contract ve requirement traceability.
+P1-A Task 1 (Migration 9 Schema for Typed Traceability and Artifacts) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 2 Extend Capability Registry.
 
 Sonraki görev:
 
 ```text
-P1-A Task 1 — Migration 9 Schema for Typed Traceability and Artifacts
-RED: isolated migration 9 ve traceability repository failing testi
+P1-A Task 2 — Extend Capability Registry (No Duplicate Registry)
+RED: isolated capability extension ve unsupported framework rejection failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
