@@ -3,7 +3,7 @@ unit: P0-C
 status: pending
 plan: implementation-plans/03-P0-C-checkpoint-safety.md
 verified_commit: null
-updated_at: 2026-08-30T10:25:06.867Z
+updated_at: 2026-08-30T11:55:14.970Z
 ---
 
 # P0-C Evidence — Selective Checkpoint Safety
@@ -20,6 +20,16 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 1 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+## Task 2 Receipt — Cryptographic Hashing and CAS Validation
+
+- RED: `node backend/tests/test_p0_c_cas_invalidation.js` — exit `1`; expected missing `backend/engine/checkpointHelper.js`.
+- GREEN: `node backend/tests/test_p0_c_cas_invalidation.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P0CTask2Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, deterministic SHA-256 computation, alphabetical file sorting, missing/empty file markers, complete CAS verification rules, and test coverage verified.
+- Independent test (`P0CTask2IndependentTester`): fresh-process `node backend/tests/test_p0_c_cas_invalidation.js` — exit `0`; `3` passed, `0` failed.
+- Observed coverage: `computeTaskSpecHash` SHA-256 stability, `computeInputHash` dependency change detection, `computeOutputHash` disk edit/delete/empty detection, and `verifyTaskCheckpoint` CAS invalidation across spec/plan/gateVersion/tampered outputs.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 2 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
 
 ## Required Receipt
 

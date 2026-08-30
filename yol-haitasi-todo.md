@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-C Task 1 (Checkpoint Database Integration and CRUD APIs) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 2 Cryptographic Hashing and CAS Validation.
+P0-C Task 2 (Cryptographic Hashing and CAS Validation) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 3 Workflow Runner Integration and FS Reconciliation.
 
 Sonraki görev:
 
 ```text
-P0-C Task 2 — Cryptographic Hashing and CAS Validation
-RED: isolated CAS validation ve SHA-256 hash failing testi
+P0-C Task 3 — Workflow Runner Integration and FS Reconciliation
+RED: isolated workflow runner checkpoint skip ve FS reconciliation failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
