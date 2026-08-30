@@ -3,7 +3,7 @@ unit: P1-A
 status: pending
 plan: implementation-plans/04-P1-A-contract-traceability.md
 verified_commit: null
-updated_at: 2026-08-30T13:58:54.553Z
+updated_at: 2026-08-30T14:01:20.106Z
 ---
 
 # P1-A Evidence — Contract and Requirement Traceability
@@ -40,6 +40,16 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Observed coverage: `TraceabilityMatrix` construction, `buildMatrix()` cell statuses (`codeCell`, `apiCell`, `uiCell`, `testCell`, `artifactCell`), `verifyCoveragePolicy()`, typed link helpers, and cross-contract link foreign key rejection.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 4 Receipt — Domain Element Policy (Extraction, Contamination & Stubs)
+
+- RED: `node backend/tests/test_domain_policy.js` — exit `1`; expected missing `backend/contracts/domainPolicy.js`.
+- GREEN: `node backend/tests/test_domain_policy.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P1ATask4Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, domain models/endpoints extraction, vocabulary allowlist checking, brand name scanning, and stub/placeholder detection algorithms verified.
+- Independent test (`P1ATask4IndependentTester`): fresh-process `node backend/tests/test_domain_policy.js` — exit `0`; `3` passed, `0` failed.
+- Observed coverage: `extractDomainElements` domain models/endpoints resolution, `checkTemplateContamination` unauthorized scaffold/brand keyword detection, and `isStubOrSkeleton` unimplemented placeholder pattern matching.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 

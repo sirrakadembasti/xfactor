@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-A Task 3 (Traceability Graph and Matrix Builder) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 4 Domain Element Policy (Extraction, Contamination & Stubs).
+P1-A Task 4 (Domain Element Policy) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 5 Requirement-Aware Agent Schemas & Normalizers.
 
 Sonraki görev:
 
 ```text
-P1-A Task 4 — Domain Element Policy (Extraction, Contamination & Stubs)
-RED: isolated domain element extraction, template contamination, ve stub detector failing testi
+P1-A Task 5 — Requirement-Aware Agent Schemas & Normalizers
+RED: isolated agent schema validation, requirementIds, ve target allowlist failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
