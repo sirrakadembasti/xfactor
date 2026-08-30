@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-B
 current_plan: implementation-plans/05-P1-B-runtime-verifier.md
-current_task: P1-B Task 6 - Headless Browser User Journey and Persistence Verifier
+current_task: P1-B Task 7 - Test Infrastructure and Suite Execution Gate
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P1-B.md
 blocked_by: []
-next_action: Read P1-B Task 6, write the failing isolated browser journey verifier test, and run the RED command
-updated_at: 2026-08-30T14:39:30.988Z
+next_action: Read P1-B Task 7, write the failing isolated test infra verifier test, and run the RED command
+updated_at: 2026-08-30T14:43:02.178Z
 ---
 
 # Project Continuity
@@ -47,14 +47,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 4 - Database Lifecycle & Schema Verifier.
 - P1-B Task 3 - Liveness & Readiness Prober.
 - P1-B Task 5 - API Contract and Database State Verifier.
+- P1-B Task 6 - Headless Browser User Journey and Persistence Verifier.
 ## In Progress
 
-- P1-B Task 6 - Headless Browser User Journey and Persistence Verifier
+- P1-B Task 7 - Test Infrastructure and Suite Execution Gate
 
 ## Pending
 
-1. Read P1-B Task 6 and write the isolated browser journey verifier RED test.
-2. Implement Task 6 only after RED is observed.
+1. Read P1-B Task 7 and write the isolated test infra verifier RED test.
+2. Implement Task 7 only after RED is observed.
 3. Complete remaining P1-B tasks in plan order.
 
 ## Decisions
@@ -96,6 +97,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 5 review: APPROVE; specification PASS, quality PASS.
 - P1-B Task 5 independent API verifier test: PASS (`2` passed, `0` failed).
 - P1-B Task 5 continuity validation: PASS.
+- P1-B Task 6 review: APPROVE; specification PASS, quality PASS.
+- P1-B Task 6 independent browser verifier test: PASS (`2` passed, `0` failed).
+- P1-B Task 6 continuity validation: PASS.
 - P1-B Task 3 continuity validation: PASS.
 ## Known Failures
 
@@ -109,7 +113,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-B Task 6, write the failing isolated browser journey verifier test, and run the RED command.
+Read P1-B Task 7, write the failing isolated test infra verifier test, and run the RED command.
 
 ## Do Not Do
 
