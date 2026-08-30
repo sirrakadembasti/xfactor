@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P1-B -->
+<!-- continuity:current_unit=P1-C -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P1-B` |
+| Aktif birim | `P1-C` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -53,7 +53,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Plan: `implementation-plans/04-P1-A-contract-traceability.md`
   - Evidence: `implementation-evidence/P1-A.md`
   - Bağımlılık: P0-A ve P0-B verified.
-- [ ] **P1-B — Runtime/API/browser verifier**
+- [x] **P1-B — Runtime/API/browser verifier**
   - Plan: `implementation-plans/05-P1-B-runtime-verifier.md`
   - Evidence: `implementation-evidence/P1-B.md`
   - Bağımlılık: P0-B ve P1-A verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 8 (Unified Smoke Gate & Service Runner) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 9 Quality Policy and Evidence Aggregator.
+P1-B Tasks 1–9 tamamlandı; bağımsız review/test, `29/29` unit acceptance ve `25/25` backend regresyonuyla doğrulandı. Aktif birim P1-C.
 
 Sonraki görev:
 
 ```text
-P1-B Task 9 — Quality Policy and Evidence Aggregator
-RED: isolated quality policy runtime aggregation ve verification evidence recording failing testi
+P1-C Task 1 — Artifact Repository CRUD
+RED: isolated artifact repository CRUD failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

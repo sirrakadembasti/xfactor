@@ -1,14 +1,14 @@
 ---
 unit: P1-B
-status: pending
+status: verified
 plan: implementation-plans/05-P1-B-runtime-verifier.md
-verified_commit: null
-updated_at: 2026-08-30T14:50:24.665Z
+verified_commit: SELF
+updated_at: 2026-08-30T16:34:39Z
 ---
 
 # P1-B Evidence — Runtime, API, Browser, and Smoke Verifier
 
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+Unit verified. All nine tasks, independent review/testing, unit acceptance, regression, and continuity checks passed.
 
 ## Task 1 Receipt — Service Manifest and Configuration Validator
 
@@ -94,6 +94,26 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 8 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 9 Receipt — Quality Policy and Evidence Aggregator
+
+- RED baseline: `node backend/tests/test_p1_b_quality_policy_evidence.js` against Task 8 HEAD — exit `1`; expected missing `recordVerificationEvidence` export.
+- RED specification expansion: `node backend/tests/test_p1_b_quality_policy_evidence.js` — exit `1`; `2` passed, `5` failed for mandatory `NOT_APPLICABLE`, missing `aggregateVerificationRun`, missing atomic persistence/state behavior, and absent owner verifier route.
+- GREEN: `node backend/tests/test_p1_b_quality_policy_evidence.js` — exit `0`; `10` passed, `0` failed.
+- Policy regression: `node backend/tests/test_quality_policy_integration.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P1BTask9Reviewer`, `P1BTask9ReReviewer`, `P1BTask9ReReviewTwo`, `P1BTask9FinalReviewer`): final `APPROVE`; specification `PASS`, quality `PASS`; mandatory requirement traceability, atomic run/check/link/checkpoint/state persistence, fail-closed aggregation, owner-only machine verifier trigger, and canonical Node integration runtime verified.
+- Independent test (`P1BTask9IndependentTester`): fresh-process Task 9 test — exit `0`, `10` passed, `0` failed; policy integration — exit `0`, `3` passed, `0` failed; `UNIT TEST PASS`.
+- Observed coverage: duplicate gate preservation and worst-status aggregation; mandatory missing/FAIL/BLOCKED/SKIPPED/NOT_APPLICABLE rejection; caller traceability spoof resistance; immutable finalized runs; transaction rollback; requirement-check links; coarse contract checkpoint invalidation; legal staged project transitions; server-only verifier triggering.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 9 source and tests).
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+
+## P1-B Unit Acceptance
+
+- Isolated P1-B acceptance: all nine `backend/tests/test_p1_b_*.js` files — exit `0`; `29` passed, `0` failed.
+- Full backend regression: initial `24/25` suites exposed `test_http_integration.js` hard-coded Bun runtime incompatibility with canonical `node:sqlite`; test process launch was corrected to `process.execPath`.
+- Full backend regression after correction: `node backend/tests/test_runner.js` — exit `0`; `25` suites passed, `0` failed.
+- Continuity validation before ledger transition: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`, current `P1-B/pending`.
+- Continuity validation after ledger transition: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`, current `P1-C/pending`.
 
 
 ## Required Receipt

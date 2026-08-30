@@ -175,14 +175,14 @@ try {
     promoteUserToAdmin('integration-admin', 'IntegrationAdmin!2026');
 `;
 
-    const seeded = spawnSync('bun', ['--eval', seedSource], {
+    const seeded = spawnSync(process.execPath, ['--input-type=module', '--eval', seedSource], {
         cwd: backendDir,
         env,
         encoding: 'utf8'
     });
     assert.strictEqual(seeded.status, 0, seeded.stderr);
 
-    child = spawn('bun', ['server.js'], {
+    child = spawn(process.execPath, ['server.js'], {
         cwd: backendDir,
         env,
         stdio: ['ignore', 'pipe', 'pipe']

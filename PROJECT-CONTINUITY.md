@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P1-B
-current_plan: implementation-plans/05-P1-B-runtime-verifier.md
-current_task: P1-B Task 9 - Quality Policy and Evidence Aggregator
+current_unit: P1-C
+current_plan: implementation-plans/06-P1-C-artifact-validation.md
+current_task: P1-C Task 1 - Artifact Repository CRUD
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
-evidence_file: implementation-evidence/P1-B.md
+last_verified_commit: 1516cd155742b2b78e73f3343506a3b0b1e14731
+evidence_file: implementation-evidence/P1-C.md
 blocked_by: []
-next_action: Read P1-B Task 9, write the failing isolated quality policy evidence test, and run the RED command
-updated_at: 2026-08-30T14:50:24.665Z
+next_action: Read P1-C Task 1, write the failing isolated artifact repository CRUD test, and run the RED command
+updated_at: 2026-08-30T16:34:39Z
 ---
 
 # Project Continuity
@@ -50,15 +50,17 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 6 - Headless Browser User Journey and Persistence Verifier.
 - P1-B Task 7 - Test Infrastructure and Suite Execution Gate.
 - P1-B Task 8 - Unified Smoke Gate & Service Runner.
+- P1-B Task 9 - Quality Policy and Evidence Aggregator.
+
 ## In Progress
 
-- P1-B Task 9 - Quality Policy and Evidence Aggregator
+- P1-C Task 1 - Artifact Repository CRUD
 
 ## Pending
 
-1. Read P1-B Task 9 and write the isolated quality policy evidence RED test.
-2. Implement Task 9 only after RED is observed.
-3. Complete remaining P1-B tasks in plan order.
+1. Read P1-C Task 1 and write the isolated artifact repository CRUD RED test.
+2. Implement Task 1 only after RED is observed.
+3. Complete remaining P1-C tasks in plan order.
 
 ## Decisions
 
@@ -109,9 +111,13 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 8 independent smoke verifier test: PASS (`2` passed, `0` failed).
 - P1-B Task 8 continuity validation: PASS.
 - P1-B Task 3 continuity validation: PASS.
+- P1-B Task 9 review: APPROVE; specification PASS, quality PASS.
+- P1-B Task 9 independent acceptance: PASS (`10` Task 9 and `3` policy tests passed, `0` failed).
+- P1-B Unit verification: `29/29` isolated unit tests PASS, `25/25` integration suites PASS.
+- P1-B continuity validation: PASS.
 ## Known Failures
 
-- Current generated-project quality pipeline remains unchanged and unsafe until implementation units are completed.
+- Exact-hash artifact verification and verified-only download remain incomplete until P1-C is implemented.
 - Todo artifact remains intentionally unfixed.
 ## Dirty Worktree
 
@@ -121,7 +127,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-B Task 9, write the failing isolated quality policy evidence test, and run the RED command.
+Read P1-C Task 1, write the failing isolated artifact repository CRUD test, and run the RED command.
 
 ## Do Not Do
 

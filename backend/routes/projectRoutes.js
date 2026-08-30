@@ -21,6 +21,7 @@ import {
     getUserProjects
 } from '../auth.js';
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
+import { runProjectVerification } from '../verification/qualityPolicy.js';
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -168,7 +169,12 @@ ${telemetrySection}
    - Üretimin sadece Boss butona bastığında başlayacağını belirt ve Boss'u butona yönlendir.`;
 }
 
-export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
+export function createProjectRouter({
+    requireAuth,
+    projectAccess,
+    wsHub,
+    verificationRunner = runProjectVerification
+}) {
     const router = Router();
 
     // 1. Projeleri Listele (Korumalı - Saf GET, yan etki yok)
@@ -456,6 +462,25 @@ export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
             next(err);
         }
     });
+
+    router.post('/:id/verify', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const state = await readProjectState(id);
+        if (!state) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+        if (![PROJECT_STATUS.IMPLEMENTATION_FINISHED, PROJECT_STATUS.VERIFICATION_PENDING].includes(state.status)) {
+            return res.status(409).json({
+                error: `Verification cannot start from project state ${state.status}.`
+            });
+        }
+
+        const result = await verificationRunner({
+            projectId: id,
+            projectDir: getProjectDir(id)
+        });
+        res.json(result);
+    }));
 
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;

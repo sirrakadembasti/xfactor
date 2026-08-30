@@ -110,6 +110,63 @@ export function getProject(projectId) {
     };
 }
 
+export function projectStateTransitionInTransaction({
+    projectId,
+    expectedRevision,
+    statuses
+}) {
+    if (!isValidProjectId(projectId)) {
+        throw new Error(`Invalid project ID: "${projectId}"`);
+    }
+    if (!Array.isArray(statuses) || statuses.length === 0) {
+        throw new Error('At least one project status transition is required.');
+    }
+
+    const persisted = db.prepare(
+        'SELECT status, revision FROM projects WHERE id = ?'
+    ).get(projectId);
+    if (!persisted) {
+        throw new Error(`Project ${projectId} does not exist`);
+    }
+    if (persisted.revision !== expectedRevision) {
+        throw new Error(`CAS Revision conflict on project ${projectId}`);
+    }
+
+    let currentStatus = persisted.status;
+    for (const nextStatus of statuses) {
+        if (!isValidProjectStatus(nextStatus)) {
+            throw new Error(`Unknown project status: ${nextStatus}`);
+        }
+        if (nextStatus === PROJECT_STATUS.COMPLETED) {
+            throw new Error(
+                'Cannot transition project to completed: required verified lifecycle evidence is missing'
+            );
+        }
+        if (!canTransitionProject(currentStatus, nextStatus)) {
+            throw new Error(`Illegal project transition: ${currentStatus} -> ${nextStatus}`);
+        }
+        currentStatus = nextStatus;
+    }
+
+    const nextRevision = expectedRevision + statuses.length;
+    const result = db.prepare(`
+        UPDATE projects
+        SET status = ?, revision = ?
+        WHERE id = ? AND revision = ? AND status = ?
+    `).run(
+        currentStatus,
+        nextRevision,
+        projectId,
+        expectedRevision,
+        persisted.status
+    );
+    if (result.changes !== 1) {
+        throw new Error(`CAS Revision conflict on project ${projectId}`);
+    }
+
+    return { status: currentStatus, revision: nextRevision };
+}
+
 /**
  * Atomik tekil sohbet mesajı ekleme (Bütün state dizisini ezmeden güvenli append)
  */

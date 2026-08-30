@@ -99,7 +99,7 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–9. 
 | 2 | P0-B | `02-P0-B-sandbox-verification.md` | `../implementation-evidence/P0-B.md` | P0-A | verified |
 | 3 | P0-C | `03-P0-C-checkpoint-safety.md` | `../implementation-evidence/P0-C.md` | P0-A | verified |
 | 4 | P1-A | `04-P1-A-contract-traceability.md` | `../implementation-evidence/P1-A.md` | P0-A, P0-B | verified |
-| 5 | P1-B | `05-P1-B-runtime-verifier.md` | `../implementation-evidence/P1-B.md` | P0-B, P1-A | pending |
+| 5 | P1-B | `05-P1-B-runtime-verifier.md` | `../implementation-evidence/P1-B.md` | P0-B, P1-A | verified |
 | 6 | P1-C | `06-P1-C-artifact-validation.md` | `../implementation-evidence/P1-C.md` | P0-B, P0-C, P1-B | pending |
 | 7 | P2 | `07-P2-quality-hardening.md` | `../implementation-evidence/P2.md` | P1-A, P1-B, P1-C | pending |
 | 8 | P3 | `08-P3-observability-metrics.md` | `../implementation-evidence/P3.md` | P2 | pending |
