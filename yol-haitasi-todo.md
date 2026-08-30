@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-C Task 3 (Safe Extraction) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 4 Sandboxed Clean-Room Verification Pipeline.
+P1-C Task 4 (Sandboxed Clean-Room Verification Pipeline) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 5 State Transition, Invalidation Policy, and Clean Cutover.
 
 Sonraki görev:
 
 ```text
-P1-C Task 4 — Sandboxed Clean-Room Verification Pipeline
-RED: isolated clean-room verification pipeline failing testi
+P1-C Task 5 — State Transition, Invalidation Policy, and Clean Cutover
+RED: isolated state invalidation and completion projector failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

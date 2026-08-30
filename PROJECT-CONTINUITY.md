@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-C
 current_plan: implementation-plans/06-P1-C-artifact-validation.md
-current_task: P1-C Task 4 - Sandboxed Clean-Room Verification Pipeline
+current_task: P1-C Task 5 - State Transition, Invalidation Policy, and Clean Cutover
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 1516cd155742b2b78e73f3343506a3b0b1e14731
 evidence_file: implementation-evidence/P1-C.md
 blocked_by: []
-next_action: Read P1-C Task 4, write the failing isolated clean-room verification pipeline test, and run the RED command
-updated_at: 2026-08-30T17:46:35Z
+next_action: Read P1-C Task 5, write the failing isolated state invalidation and completion projector test, and run the RED command
+updated_at: 2026-08-30T17:52:17Z
 ---
 
 # Project Continuity
@@ -54,15 +54,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 1 - Artifact Repository CRUD.
 - P1-C Task 2 - Server-Side ZIP Generation and Hashing.
 - P1-C Task 3 - Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks).
+- P1-C Task 4 - Sandboxed Clean-Room Verification Pipeline (`artifactVerifier`).
 
 ## In Progress
 
-- P1-C Task 4 - Sandboxed Clean-Room Verification Pipeline
+- P1-C Task 5 - State Transition, Invalidation Policy, and Clean Cutover
 
 ## Pending
 
-1. Read P1-C Task 4 and write the isolated clean-room verification pipeline RED test.
-2. Implement Task 4 only after RED is observed.
+1. Read P1-C Task 5 and write the isolated state invalidation and completion projector RED test.
+2. Implement Task 5 only after RED is observed.
 3. Complete remaining P1-C tasks in plan order.
 
 ## Decisions
@@ -127,6 +128,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 3 review: APPROVE; specification PASS, quality PASS.
 - P1-C Task 3 independent acceptance test: PASS (`8` passed, `0` failed).
 - P1-C Task 3 continuity validation: PASS.
+- P1-C Task 4 review: APPROVE; specification PASS, quality PASS.
+- P1-C Task 4 independent acceptance test: PASS (`4` passed, `0` failed).
+- P1-C Task 4 continuity validation: PASS.
 ## Known Failures
 
 - Exact-hash artifact verification and verified-only download remain incomplete until P1-C is implemented.
@@ -139,7 +143,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-C Task 4, write the failing isolated clean-room verification pipeline test, and run the RED command.
+Read P1-C Task 5, write the failing isolated state invalidation and completion projector test, and run the RED command.
 
 ## Do Not Do
 

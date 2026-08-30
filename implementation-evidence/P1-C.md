@@ -3,7 +3,7 @@ unit: P1-C
 status: pending
 plan: implementation-plans/06-P1-C-artifact-validation.md
 verified_commit: null
-updated_at: 2026-08-30T17:46:35Z
+updated_at: 2026-08-30T17:52:17Z
 ---
 
 # P1-C Evidence — Artifact and ZIP Clean-Room Validation
@@ -37,6 +37,16 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Independent test (`P1CTask3IndependentTester`): fresh-process `node backend/tests/test_p1_c_safe_extraction.js` — exit `0`; `8` passed, `0` failed.
 - Observed coverage: directory traversal rejection, mixed path separator rejection, null byte rejection, symlink rejection, maxTotalBytes breach rejection, maxRatio decompression bomb rejection, explicit 0 file quota enforcement, and clean extraction to disk from file paths, Buffers, and JSZip instances.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
+
+## Task 4 Receipt — Sandboxed Clean-Room Verification Pipeline (`artifactVerifier`)
+
+- RED: `node backend/tests/test_p1_c_artifact_verifier.js` — exit `1`; expected `ERR_MODULE_NOT_FOUND` on missing `backend/verification/artifactVerifier.js`.
+- GREEN: `node backend/tests/test_p1_c_artifact_verifier.js` — exit `0`; `4` passed, `0` failed.
+- Independent review (`P1CTask4Reviewer`, `P1CTask4ReReviewer`): `APPROVE`; specification `PASS`, quality `PASS`; verification_runs initialization on attempt start, verificationRunId binding across verification_pending and failure/success transitions, updateRunStatus on catch to prevent dangling running runs, consistent return schema `{ status, passed, runId, error }`, clean-room workspace extraction and teardown in finally block verified.
+- Independent test (`P1CTask4IndependentTester`): fresh-process `node backend/tests/test_p1_c_artifact_verifier.js` — exit `0`; `4` passed, `0` failed.
+- Observed coverage: clean-room safe extraction, fail-closed rejection on missing package lockfile, artifact state verification with verified machine evidence link, symlink extraction rejection with linked failed run, and missing artifact database lookup error handling.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 ## Required Receipt
 
 - Server artifact manifest/hash results
