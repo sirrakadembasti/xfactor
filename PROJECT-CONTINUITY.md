@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.1: Verify README Scripts Exist in package.json)
+current_task: P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.2: Verify README Port Declarations Match Code)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.5.1, write the failing isolated README script existence test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-scripts
-updated_at: 2026-08-30T21:28:48Z
+next_action: Read P2 Step P2.5.2, write the failing isolated README port consistency test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-ports
+updated_at: 2026-08-30T21:42:08Z
 ---
 
 # Project Continuity
@@ -70,15 +70,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.4.3 - Validate Mandatory Endpoint Authentication.
 - P2 Step P2.4.4 - Detect Unsolicited Authentication Modules.
 - P2 Step P2.4.5 - Audit SQL Injection Vulnerabilities.
+- P2 Step P2.5.1 - Verify README Scripts Exist in package.json.
 
 ## In Progress
 
-- P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.1: Verify README Scripts Exist in package.json)
+- P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.2: Verify README Port Declarations Match Code)
 
 ## Pending
 
-1. Read P2 Step P2.5.1 and write the isolated README script existence RED test.
-2. Implement Step P2.5.1 only after RED is observed.
+1. Read P2 Step P2.5.2 and write the isolated README port consistency RED test.
+2. Implement Step P2.5.2 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -147,6 +148,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.4.5 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.4.5 independent acceptance test: PASS (`2` sql-injection, `12` full suite passed, `0` failed).
 - P2 Step P2.4.5 continuity validation: PASS.
+- P2 Step P2.5.1 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.5.1 independent acceptance test: PASS (`3` passed, `0` failed).
+- P2 Step P2.5.1 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -159,7 +163,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.5.1, write the failing isolated README script existence test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-scripts
+Read P2 Step P2.5.2, write the failing isolated README port consistency test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-ports
 
 ## Do Not Do
 
