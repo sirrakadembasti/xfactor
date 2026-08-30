@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.2: Detect Committed Credentials and API Secrets)
+current_task: P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.3: Validate Mandatory Endpoint Authentication)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.4.2, write the failing isolated committed credentials test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=secret-keys
-updated_at: 2026-08-30T18:37:00Z
+next_action: Read P2 Step P2.4.3, write the failing isolated mandatory endpoint auth test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=missing-auth
+updated_at: 2026-08-30T18:40:52Z
 ---
 
 # Project Continuity
@@ -66,15 +66,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.3.1 - Scan for Template Domain Out-of-Domain Contamination.
 - P2 Step P2.3.2 - Allow Explicit Out-of-Domain Vocabulary.
 - P2 Step P2.4.1 - Audit Permissive CORS Settings.
+- P2 Step P2.4.2 - Detect Committed Credentials and API Secrets.
 
 ## In Progress
 
-- P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.2: Detect Committed Credentials and API Secrets)
+- P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.3: Validate Mandatory Endpoint Authentication)
 
 ## Pending
 
-1. Read P2 Step P2.4.2 and write the isolated committed credentials RED test.
-2. Implement Step P2.4.2 only after RED is observed.
+1. Read P2 Step P2.4.3 and write the isolated mandatory endpoint auth RED test.
+2. Implement Step P2.4.3 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -102,53 +103,8 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-A Tasks 1–7 tests: PASS (23/23 isolated tests passed).
 - P1-A Unit verification: 23/23 isolated unit tests PASS, 25/25 integration suites PASS.
 - P1-A Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
-- P1-B Task 1 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 1 independent manifest test: PASS (`3` passed, `0` failed).
-- P1-B Task 1 continuity validation: PASS.
-- P1-B Task 2 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 2 independent process manager test: PASS (`2` passed, `0` failed).
-- P1-B Task 2 continuity validation: PASS.
-- P1-B Task 3 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 3 independent health prober test: PASS (`3` passed, `0` failed).
-- P1-B Task 4 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 4 independent database verifier test: PASS (`2` passed, `0` failed).
-- P1-B Task 4 continuity validation: PASS.
-- P1-B Task 5 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 5 independent API verifier test: PASS (`2` passed, `0` failed).
-- P1-B Task 5 continuity validation: PASS.
-- P1-B Task 6 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 6 independent browser verifier test: PASS (`2` passed, `0` failed).
-- P1-B Task 6 continuity validation: PASS.
-- P1-B Task 7 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 7 independent test infra test: PASS (`3` passed, `0` failed).
-- P1-B Task 7 continuity validation: PASS.
-- P1-B Task 8 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 8 independent smoke verifier test: PASS (`2` passed, `0` failed).
-- P1-B Task 8 continuity validation: PASS.
-- P1-B Task 3 continuity validation: PASS.
-- P1-B Task 9 review: APPROVE; specification PASS, quality PASS.
-- P1-B Task 9 independent acceptance: PASS (`10` Task 9 and `3` policy tests passed, `0` failed).
-- P1-B Unit verification: `29/29` isolated unit tests PASS, `25/25` integration suites PASS.
-- P1-B continuity validation: PASS.
-- P1-C Task 1 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 1 independent acceptance test: PASS (`3` passed, `0` failed).
-- P1-C Task 1 continuity validation: PASS.
-- P1-C Task 2 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 2 independent acceptance test: PASS (`2` passed, `0` failed).
-- P1-C Task 2 continuity validation: PASS.
-- P1-C Task 3 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 3 independent acceptance test: PASS (`8` passed, `0` failed).
-- P1-C Task 3 continuity validation: PASS.
-- P1-C Task 4 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 4 independent acceptance test: PASS (`4` passed, `0` failed).
-- P1-C Task 4 continuity validation: PASS.
-- P1-C Task 5 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 5 independent acceptance test: PASS (`4` passed, `0` failed).
-- P1-C Task 5 continuity validation: PASS.
-- P1-C Task 6 review: APPROVE; specification PASS, quality PASS.
-- P1-C Task 6 independent acceptance test: PASS (`2` Task 6 and `7` P2 frontend tests passed, `0` failed).
-- P1-C Unit verification: `23/23` isolated unit tests PASS, `25/25` integration suites PASS.
-- P1-C continuity validation: PASS.
+- P1-B Tasks 1–9 verified: APPROVE, independent acceptance PASS, `29/29` isolated tests PASS, `25/25` integration suites PASS, continuity validation PASS.
+- P1-C Tasks 1–6 verified: APPROVE, independent acceptance PASS, `23/23` isolated tests PASS, `25/25` integration suites PASS, continuity validation PASS.
 - P2 Step P2.1.1 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.1.1 independent acceptance test: PASS (`2` passed, `0` failed).
 - P2 Step P2.1.1 continuity validation: PASS.
@@ -176,6 +132,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.4.1 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.4.1 independent acceptance test: PASS (`2` passed, `0` failed).
 - P2 Step P2.4.1 continuity validation: PASS.
+- P2 Step P2.4.2 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.4.2 independent acceptance test: PASS (`3` secret-keys, `5` full suite passed, `0` failed).
+- P2 Step P2.4.2 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -188,7 +147,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.4.2, write the failing isolated committed credentials test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=secret-keys
+Read P2 Step P2.4.3, write the failing isolated mandatory endpoint auth test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=missing-auth
 
 ## Do Not Do
 

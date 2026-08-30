@@ -100,5 +100,80 @@ if (!filteredTest || filteredTest === 'cors-wildcard') {
         assert.strictEqual(res.issues.length, 0);
     });
 }
+if (!filteredTest || filteredTest === 'secret-keys') {
+    await runAsyncTest('P2.4.2: verifySecurityBaseline rejects committed .env file', async () => {
+        const contract = { name: 'Todo App' };
+        const files = [
+            {
+                path: '.env',
+                content: 'DATABASE_URL=file:./dev.db\nJWT_SECRET=super_secret_production_key_123'
+            },
+            {
+                path: 'src/index.js',
+                content: 'console.log("Starting");'
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(
+            res.passed,
+            false,
+            'Expected security baseline check to fail on committed .env file'
+        );
+        assert.ok(
+            res.issues.some(i => i.includes('.env')),
+            'Issues must identify committed .env file'
+        );
+    });
+
+    await runAsyncTest('P2.4.2: verifySecurityBaseline rejects hardcoded secret keys in source files', async () => {
+        const contract = { name: 'Todo App' };
+        const files = [
+            {
+                path: 'src/lib/auth.js',
+                content: `
+                    const JWT_SECRET = "hardcoded_super_secret_jwt_key_2026";
+                    const API_KEY = "sk_live_1234567890abcdef1234567890abcdef";
+                    export function signToken(user) {
+                        return jwt.sign(user, JWT_SECRET);
+                    }
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(
+            res.passed,
+            false,
+            'Expected security baseline check to fail on hardcoded secret key'
+        );
+        assert.strictEqual(res.issues.length, 2);
+    });
+
+    await runAsyncTest('P2.4.2: verifySecurityBaseline passes safe environment variable reads and .env.example', async () => {
+        const contract = { name: 'Todo App' };
+        const files = [
+            {
+                path: '.env.example',
+                content: 'DATABASE_URL=file:./dev.db\nJWT_SECRET=your_jwt_secret_here'
+            },
+            {
+                path: 'src/lib/auth.js',
+                content: `
+                    const JWT_SECRET = process.env.JWT_SECRET;
+                    const API_KEY = process.env.API_KEY;
+                    export function signToken(user) {
+                        if (!JWT_SECRET) throw new Error("JWT_SECRET missing");
+                        return jwt.sign(user, JWT_SECRET);
+                    }
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.issues.length, 0);
+    });
+}
 
 finish();

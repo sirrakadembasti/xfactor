@@ -1,7 +1,18 @@
 import { parse } from '@babel/parser';
 
+const SECRET_NAME_PATTERN = /(?:JWT_SECRET|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_PASSWORD|AUTH_SECRET|ACCESS_TOKEN_SECRET|REFRESH_TOKEN_SECRET)/i;
+
 export function verifySecurityBaseline(contract = {}, files = [], sandbox = null) {
     const issues = [];
+
+    // Check for committed .env files
+    for (const file of files) {
+        const filePath = file.path || '';
+        if (filePath === '.env' || filePath.endsWith('/.env') || filePath.endsWith('\\.env') || (filePath.includes('.env') && !filePath.includes('.env.example'))) {
+            issues.push(`Committed .env file detected in repository: ${filePath}`);
+        }
+    }
+
     const scriptFiles = files.filter(f => f.path && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
 
     for (const file of scriptFiles) {
@@ -66,6 +77,14 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
                             }
                         }
                     }
+                }
+            }
+
+            // 3. Check hardcoded secret variables
+            if (node.type === 'VariableDeclarator' && node.id && node.id.name) {
+                const varName = node.id.name;
+                if (SECRET_NAME_PATTERN.test(varName) && node.init && (node.init.type === 'StringLiteral' || node.init.type === 'Literal')) {
+                    issues.push(`Hardcoded secret key detected: ${varName} in ${file.path}`);
                 }
             }
 
