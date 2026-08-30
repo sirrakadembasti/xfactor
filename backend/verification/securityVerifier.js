@@ -48,6 +48,40 @@ function hasAuthMiddleware(args) {
     return middlewareArgs.some(checkAuthNode);
 }
 
+function containsNodeType(node, predicate) {
+    if (!node || typeof node !== 'object') return false;
+    if (predicate(node)) return true;
+    for (const value of Object.values(node)) {
+        if (Array.isArray(value) && value.some(item => containsNodeType(item, predicate))) {
+            return true;
+        }
+        if (value && typeof value === 'object' && containsNodeType(value, predicate)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isUnsafeRawSqlArgument(node) {
+    if (!node || node.type !== 'BinaryExpression' || node.operator !== '+') return false;
+    const hasVariable = containsNodeType(node, child => child.type === 'Identifier');
+    const hasSqlFragment = containsNodeType(
+        node,
+        child => (child.type === 'StringLiteral' || child.type === 'Literal') && typeof child.value === 'string'
+    );
+    return hasVariable && hasSqlFragment;
+}
+
+function isPrismaReceiver(node) {
+    if (!node) return false;
+    if (node.type === 'Identifier') return node.name === 'prisma';
+    if (node.type === 'MemberExpression') {
+        const propertyName = node.property?.name || node.property?.value;
+        return propertyName === 'prisma' || isPrismaReceiver(node.object);
+    }
+    return false;
+}
+
 export function verifySecurityBaseline(contract = {}, files = [], sandbox = null) {
     const issues = [];
     const isAuthRequired = Boolean(
@@ -160,6 +194,18 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
                     if (!hasAuthMiddleware(node.arguments)) {
                         issues.push(`Mandatory authentication missing on mutate route ${propLower.toUpperCase()} ${routePath || 'unknown'} in ${file.path}`);
                     }
+                }
+            }
+
+            // 5. Check dynamic string concatenation in raw Prisma SQL calls
+            if (node.type === 'CallExpression' && node.callee?.type === 'MemberExpression') {
+                const rawMethod = node.callee.property?.name || node.callee.property?.value;
+                if (
+                    (rawMethod === '$queryRaw' || rawMethod === '$executeRaw') &&
+                    isPrismaReceiver(node.callee.object) &&
+                    isUnsafeRawSqlArgument(node.arguments?.[0])
+                ) {
+                    issues.push(`SQL injection vulnerability: concatenated variable in prisma.${rawMethod} call in ${file.path}`);
                 }
             }
 

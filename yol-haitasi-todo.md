@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.4.4 (Detect Unsolicited Authentication Modules) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.4.5 (Audit SQL Injection Vulnerabilities).
+P2 Task 4 (Contract-Aware Security Baseline Gate - Steps P2.4.1–P2.4.5) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.5.1 (Verify README Scripts Exist in package.json).
 
 Sonraki görev:
 
 ```text
-P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.5: Audit SQL Injection Vulnerabilities)
-RED: node backend/tests/test_p2_security_baseline.js --test=sql-injection
+P2 Task 5 — README Command Parser and Sandboxed Runner (Step P2.5.1: Verify README Scripts Exist in package.json)
+RED: node backend/tests/test_p2_readme.js --test=readme-scripts
 ```
 
 ## Yeni Sohbet İçin Başlangıç

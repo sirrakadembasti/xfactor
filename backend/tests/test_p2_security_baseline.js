@@ -351,4 +351,55 @@ if (!filteredTest || filteredTest === 'unsolicited-auth') {
     });
 }
 
+if (!filteredTest || filteredTest === 'sql-injection') {
+    await runAsyncTest('P2.4.5: verifySecurityBaseline rejects concatenated raw SQL variables', async () => {
+        const contract = { name: 'Todo App' };
+        const files = [
+            {
+                path: 'src/repositories/todos.js',
+                content: `
+                    export async function findTodo(prisma, todoId) {
+                        return prisma.$queryRaw("SELECT * FROM Todo WHERE id = " + todoId);
+                    }
+
+                    export async function renameCategory(prisma, name, categoryId) {
+                        return prisma.$executeRaw(
+                            "UPDATE Category SET name = '" + name + "' WHERE id = " + categoryId
+                        );
+                    }
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(
+            res.passed,
+            false,
+            'Expected security check to fail on SQL string concatenation'
+        );
+        assert.strictEqual(res.issues.length, 2);
+        assert.ok(res.issues.every(issue => issue.toLowerCase().includes('sql injection')));
+    });
+
+    await runAsyncTest('P2.4.5: verifySecurityBaseline permits parameterized Prisma raw queries', async () => {
+        const contract = { name: 'Todo App' };
+        const files = [
+            {
+                path: 'src/repositories/todos.js',
+                content: `
+                    export async function findTodo(prisma, todoId) {
+                        const todo = await prisma.$queryRaw\`SELECT * FROM Todo WHERE id = \${todoId}\`;
+                        const label = analytics.$queryRaw("metric = " + todoId);
+                        return { todo, label };
+                    }
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.issues.length, 0);
+    });
+}
+
 finish();
