@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Task 3 (Template Contamination Scanner - Steps P2.3.1, P2.3.2) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 4 Step P2.4.1 (Audit Permissive CORS Settings).
+P2 Step P2.4.1 (Audit Permissive CORS Settings) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.4.2 (Detect Committed Credentials and API Secrets).
 
 Sonraki görev:
 
 ```text
-P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.1: Audit Permissive CORS Settings)
-RED: node backend/tests/test_p2_security_baseline.js --test=cors-wildcard
+P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.2: Detect Committed Credentials and API Secrets)
+RED: node backend/tests/test_p2_security_baseline.js --test=secret-keys
 ```
 
 ## Yeni Sohbet İçin Başlangıç
