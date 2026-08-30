@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-B OS sandbox ve fail-closed verification birimi (Tasks 1–5) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P0-C Selective checkpoint safety.
+P0-C Task 1 (Checkpoint Database Integration and CRUD APIs) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 2 Cryptographic Hashing and CAS Validation.
 
 Sonraki görev:
 
 ```text
-P0-C Task 1 — Selective Checkpoint Store and SHA-256 Hashing
-RED: isolated fine-grained checkpoint store ve SHA-256 input/output hash failing testi
+P0-C Task 2 — Cryptographic Hashing and CAS Validation
+RED: isolated CAS validation ve SHA-256 hash failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

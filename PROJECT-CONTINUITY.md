@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P0-C
 current_plan: implementation-plans/03-P0-C-checkpoint-safety.md
-current_task: P0-C Task 1 - Selective Checkpoint Store and SHA-256 Hashing
+current_task: P0-C Task 2 - Cryptographic Hashing and CAS Validation
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-C.md
 blocked_by: []
-next_action: Read P0-C Task 1, write the failing isolated checkpoint test, and run the RED command
-updated_at: 2026-08-30T10:12:15.899Z
+next_action: Read P0-C Task 2, write the failing isolated CAS validation test, and run the RED command
+updated_at: 2026-08-30T10:25:06.867Z
 ---
 
 # Project Continuity
@@ -55,15 +55,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 4 - Real Compiler, Typecheck, and Build Gates.
 - P0-B Task 5 - Aggregate Quality Policy and Workflow Integration.
 - P0-B — OS Sandbox and Fail-Closed Verification complete and verified (Tasks 1–5).
+- P0-C Task 1 - Checkpoint Database Integration and CRUD APIs.
 ## In Progress
 
-- P0-C Task 1 - Selective Checkpoint Store and SHA-256 Hashing
+- P0-C Task 2 - Cryptographic Hashing and CAS Validation
 
 ## Pending
 
-1. Read P0-C Task 1 and write the isolated checkpoint RED test.
-2. Implement P0-C tasks in plan order.
-3. Complete remaining units according to master execution plan.
+1. Read P0-C Task 2 and write the isolated CAS validation RED test.
+2. Implement Task 2 only after RED is observed.
+3. Complete remaining P0-C tasks in plan order.
 
 ## Decisions
 
@@ -125,6 +126,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Unit verification: 15/15 isolated unit tests PASS, 25/25 integration suites PASS.
 - P0-B Final review: APPROVE; specification PASS, quality PASS.
 - P0-B Independent acceptance: UNIT TEST PASS.
+- P0-C Task 1 review: APPROVE; specification PASS, quality PASS.
+- P0-C Task 1 independent checkpoint test: PASS (`1` passed, `0` failed).
+- P0-C Task 1 continuity validation: PASS.
 
 ## Known Failures
 
@@ -139,7 +143,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-C Task 1, write the failing isolated checkpoint test, and run the RED command.
+Read P0-C Task 2, write the failing isolated CAS validation test, and run the RED command.
 
 ## Do Not Do
 
