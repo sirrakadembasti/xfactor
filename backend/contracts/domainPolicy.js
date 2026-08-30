@@ -70,3 +70,34 @@ export function isStubOrSkeleton(content, extension = '') {
         reasons
     };
 }
+
+export function verifyDomainCompliance(contract = {}, files = []) {
+    const issues = [];
+    const domainEntities = Array.isArray(contract.domainEntities)
+        ? contract.domainEntities
+        : (Array.isArray(contract.entities) ? contract.entities : []);
+
+    if (domainEntities.length > 0) {
+        const prismaFile = files.find(f => f.path && (f.path.endsWith('schema.prisma') || f.path.includes('schema.prisma')));
+        const prismaContent = prismaFile ? prismaFile.content : '';
+
+        const modelRegex = /model\s+([A-Za-z0-9_]+)\s*\{/g;
+        const declaredModels = new Set();
+        let match;
+        while ((match = modelRegex.exec(prismaContent)) !== null) {
+            declaredModels.add(match[1].toLowerCase());
+        }
+
+        for (const entity of domainEntities) {
+            const entityName = typeof entity === 'string' ? entity : (entity.name || String(entity));
+            if (!declaredModels.has(entityName.toLowerCase())) {
+                issues.push(`Missing database model: ${entityName}`);
+            }
+        }
+    }
+
+    return {
+        passed: issues.length === 0,
+        issues
+    };
+}

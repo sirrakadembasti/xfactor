@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-C Tasks 1–6 tamamlandı; bağımsız review/test, `23/23` unit acceptance ve `25/25` backend regresyonuyla doğrulandı. Aktif birim P2.
+P2 Step P2.1.1 (Verify Entity Schema Presence) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.1.2 (Verify Entity Queries in Source Code).
 
 Sonraki görev:
 
 ```text
-P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.1: Verify Entity Schema Presence)
-RED: node backend/tests/test_p2_domain_policy.js --test=schema-presence
+P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.2: Verify Entity Queries in Source Code)
+RED: node backend/tests/test_p2_domain_policy.js --test=entity-query
 ```
 
 ## Yeni Sohbet İçin Başlangıç
