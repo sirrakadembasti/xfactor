@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-B
 current_plan: implementation-plans/05-P1-B-runtime-verifier.md
-current_task: P1-B Task 2 - Sandbox Process Spawner and Lifecycle Manager
+current_task: P1-B Task 3 - Liveness & Readiness Prober
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P1-B.md
 blocked_by: []
-next_action: Read P1-B Task 2, write the failing isolated process spawner test, and run the RED command
-updated_at: 2026-08-30T14:26:02.544Z
+next_action: Read P1-B Task 3, write the failing isolated health prober test, and run the RED command
+updated_at: 2026-08-30T14:29:02.623Z
 ---
 
 # Project Continuity
@@ -42,15 +42,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B — OS Sandbox and Fail-Closed Verification complete and verified (Tasks 1–5).
 - P0-C — Selective Checkpoint Safety complete and verified (Tasks 1–4).
 - P1-A — Contract and Requirement Traceability complete and verified (Tasks 1–7).
+- P1-B Task 2 - Sandbox Process Spawner and Lifecycle Manager.
 - P1-B Task 1 - Service Manifest and Configuration Validator.
 ## In Progress
 
-- P1-B Task 2 - Sandbox Process Spawner and Lifecycle Manager
+- P1-B Task 3 - Liveness & Readiness Prober
 
 ## Pending
 
-1. Read P1-B Task 2 and write the isolated process spawner RED test.
-2. Implement Task 2 only after RED is observed.
+1. Read P1-B Task 3 and write the isolated health prober RED test.
+2. Implement Task 3 only after RED is observed.
 3. Complete remaining P1-B tasks in plan order.
 
 ## Decisions
@@ -81,6 +82,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 1 review: APPROVE; specification PASS, quality PASS.
 - P1-B Task 1 independent manifest test: PASS (`3` passed, `0` failed).
 - P1-B Task 1 continuity validation: PASS.
+- P1-B Task 2 review: APPROVE; specification PASS, quality PASS.
+- P1-B Task 2 independent process manager test: PASS (`2` passed, `0` failed).
+- P1-B Task 2 continuity validation: PASS.
 ## Known Failures
 
 - Current generated-project quality pipeline remains unchanged and unsafe until implementation units are completed.
@@ -93,7 +97,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-B Task 2, write the failing isolated process spawner test, and run the RED command.
+Read P1-B Task 3, write the failing isolated health prober test, and run the RED command.
 
 ## Do Not Do
 

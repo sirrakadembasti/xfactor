@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 1 (Service Manifest & Configuration Validator) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 2 Sandbox Process Spawner and Lifecycle Manager.
+P1-B Task 2 (Sandbox Process Spawner and Lifecycle Manager) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 3 Liveness & Readiness Prober.
 
 Sonraki görev:
 
 ```text
-P1-B Task 2 — Sandbox Process Spawner and Lifecycle Manager
-RED: isolated process spawn, sandbox environment, ve lifecycle termination failing testi
+P1-B Task 3 — Liveness & Readiness Prober
+RED: isolated HTTP health probe, exponential backoff, ve responsiveness failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
