@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-A
 current_plan: implementation-plans/04-P1-A-contract-traceability.md
-current_task: P1-A Task 3 - Traceability Graph and Matrix Builder
+current_task: P1-A Task 4 - Domain Element Policy
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P1-A.md
 blocked_by: []
-next_action: Read P1-A Task 3, write the failing isolated traceability matrix test, and run the RED command
-updated_at: 2026-08-30T13:56:14.945Z
+next_action: Read P1-A Task 4, write the failing isolated domain policy test, and run the RED command
+updated_at: 2026-08-30T13:58:54.553Z
 ---
 
 # Project Continuity
@@ -62,14 +62,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-C — Selective Checkpoint Safety complete and verified (Tasks 1–4).
 - P1-A Task 1 - Migration 9 Schema for Typed Traceability and Artifacts.
 - P1-A Task 2 - Extend Capability Registry (No Duplicate Registry).
+- P1-A Task 3 - Traceability Graph and Matrix Builder.
 ## In Progress
 
-- P1-A Task 3 - Traceability Graph and Matrix Builder
+- P1-A Task 4 - Domain Element Policy
 
 ## Pending
 
-1. Read P1-A Task 3 and write the isolated traceability matrix RED test.
-2. Implement Task 3 only after RED is observed.
+1. Read P1-A Task 4 and write the isolated domain policy RED test.
+2. Implement Task 4 only after RED is observed.
 3. Complete remaining P1-A tasks in plan order.
 
 ## Decisions
@@ -151,6 +152,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-A Task 2 review: APPROVE; specification PASS, quality PASS.
 - P1-A Task 2 independent capability registry test: PASS (`2` passed, `0` failed).
 - P1-A Task 2 continuity validation: PASS.
+- P1-A Task 3 review: APPROVE; specification PASS, quality PASS.
+- P1-A Task 3 independent traceability matrix test: PASS (`2` passed, `0` failed).
+- P1-A Task 3 continuity validation: PASS.
 - P0-C Final review: APPROVE; specification PASS, quality PASS.
 - P0-C Independent acceptance: UNIT TEST PASS.
 
@@ -167,7 +171,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-A Task 3, write the failing isolated traceability matrix test, and run the RED command.
+Read P1-A Task 4, write the failing isolated domain policy test, and run the RED command.
 
 ## Do Not Do
 
