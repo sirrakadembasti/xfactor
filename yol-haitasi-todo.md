@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-B Task 2 (Schema Migration 8 ve Verification Repository) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 3 AST Dependency Inventory and Package Verifier.
+P0-B Task 3 (AST Dependency Inventory and Package Verifier) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 4 Real Compiler, Typecheck, and Build Gates.
 
 Sonraki görev:
 
 ```text
-P0-B Task 3 — AST Dependency Inventory and Package Verifier
-RED: isolated package verifier ve AST import scanner failing testi
+P0-B Task 4 — Real Compiler, Typecheck, and Build Gates
+RED: isolated build verifier failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
