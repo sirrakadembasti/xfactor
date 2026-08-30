@@ -46,6 +46,9 @@ async function runE2E() {
         domains: [
             { name: "Frontend", prefix: "frontend", description: "React Kanban Arayüzü" },
             { name: "Backend", prefix: "backend", description: "Express REST API" }
+        ],
+        requirements: [
+            { id: "REQ-1", statement: "Kanban UI ve REST API gereksinimi", mandatory: true }
         ]
     };
 
@@ -86,14 +89,16 @@ async function runE2E() {
                     title: `${domain.name} Model Tanımı`,
                     description: "Veri modellerini tanımla",
                     dependencies: [],
-                    targetFiles: [`${domain.prefix}/models.js`]
+                    targetFiles: [`${domain.prefix}/models.js`],
+                    requirementIds: ["REQ-1"]
                 },
                 {
                     id: `${tl.prefix}-task-2`,
                     title: `${domain.name} Controller / View`,
                     description: "İş mantığını uygula",
                     dependencies: [`${tl.prefix}-task-1`],
-                    targetFiles: [`${domain.prefix}/app.js`]
+                    targetFiles: [`${domain.prefix}/app.js`],
+                    requirementIds: ["REQ-1"]
                 }
             ];
 

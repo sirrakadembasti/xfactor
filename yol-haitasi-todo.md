@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P1-A -->
+<!-- continuity:current_unit=P1-B -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P1-A` |
+| Aktif birim | `P1-B` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -49,7 +49,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 
 ### P1 — Contract, runtime ve artifact doğrulaması
 
-- [ ] **P1-A — Contract ve requirement traceability**
+- [x] **P1-A — Contract ve requirement traceability**
   - Plan: `implementation-plans/04-P1-A-contract-traceability.md`
   - Evidence: `implementation-evidence/P1-A.md`
   - Bağımlılık: P0-A ve P0-B verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-A Task 6 (Requirement-Aware System Prompts) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 7 Orchestrator Pipeline & writeGeneratedFiles Enforcement.
+P1-A Contract ve requirement traceability birimi (Tasks 1–7) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P1-B Runtime/API/browser verifier.
 
 Sonraki görev:
 
 ```text
-P1-A Task 7 — Orchestrator Pipeline & writeGeneratedFiles Enforcement
-RED: isolated core-first ordering ve writeGeneratedFiles target allowlist failing testi
+P1-B Task 1 — Dynamic Runtime & Port Reservation Isolation
+RED: isolated port reservation, runtime health check, ve process lifecycle failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

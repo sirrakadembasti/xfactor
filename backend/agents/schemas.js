@@ -281,8 +281,8 @@ export function normalizeManagerPlan(plan) {
     });
 
     let rawReqs = plan.requirements || plan.requirementIds || [];
-    if (!Array.isArray(rawReqs)) {
-        rawReqs = [];
+    if (!Array.isArray(rawReqs) || rawReqs.length === 0) {
+        rawReqs = [{ id: 'REQ-1', statement: 'Temel mimari ve modül gereksinimi', mandatory: true }];
     }
     plan.requirements = rawReqs.map((r, idx) => {
         if (typeof r === 'string') {

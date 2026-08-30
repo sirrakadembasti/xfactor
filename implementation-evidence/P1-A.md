@@ -1,14 +1,14 @@
 ---
 unit: P1-A
-status: pending
+status: verified
 plan: implementation-plans/04-P1-A-contract-traceability.md
-verified_commit: null
-updated_at: 2026-08-30T14:13:22.291Z
+verified_commit: SELF
+updated_at: 2026-08-30T14:21:55.944Z
 ---
 
 # P1-A Evidence — Contract and Requirement Traceability
 
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+All tasks and unit acceptance criteria for P1-A are complete and verified. Verified receipts are recorded below.
 
 ## Task 1 Receipt — Migration 9 Schema Setup
 
@@ -74,11 +74,21 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Checkpoint commit: `SELF` (this receipt is committed with Task 6 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
-## Required Receipt
+## Task 7 Receipt — Orchestrator Pipeline & writeGeneratedFiles Enforcement
 
-- Agent schema and docs-sync results
-- Mandatory requirement coverage results
-- Contract-scoped typed link/FK results
-- Domain and core-first planning results
-- Independent reviewer and tester decisions
-- Continuity validator result
+- RED: `node backend/tests/test_p1_a_pipeline_allowlist.js` — exit `1`; expected missing `orderDomainsCoreFirst`.
+- GREEN: `node backend/tests/test_p1_a_pipeline_allowlist.js` — exit `0`; `2` passed, `0` failed.
+- Independent review (`P1ATask7Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, core-first execution queue ordering, targetFiles allowlist validation in writeGeneratedFiles, and workflow integration verified.
+- Independent test (`P1ATask7IndependentTester`): fresh-process `node backend/tests/test_p1_a_pipeline_allowlist.js` — exit `0`; `2` passed, `0` failed.
+- Observed coverage: `orderDomainsCoreFirst` domain prioritization (database -> core -> backend -> api -> auth -> frontend), `writeGeneratedFiles` targetFiles allowlist enforcement rejecting out-of-scope files, and orchestrator execution integration.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 7 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## P1-A Unit Verification & Independent Acceptance Receipt
+
+- Unit tests: `node backend/tests/test_p1_a_migrations.js && node backend/tests/test_traceability_capabilities.js && node backend/tests/test_traceability_matrix.js && node backend/tests/test_domain_policy.js && node backend/tests/test_agent_contract_schemas.js && node backend/tests/test_docs_agent_sync.js && node backend/tests/test_p1_a_pipeline_allowlist.js` — exit `0`; `23/23` passed, `0` failed across 7 test files.
+- Integration test suite: `node backend/tests/test_runner.js` — exit `0`; `25/25` test suites passed, `0` failed.
+- Independent final unit review (`P1AFinalUnitReviewer`): `APPROVE`; Specification Verdict `PASS`, Quality Verdict `PASS`, all 7 tasks verified against traceability, capability registry, and target allowlist constraints.
+- Independent acceptance tester (`P1AIndependentAcceptanceTester`): `UNIT TEST PASS`; all isolated unit suites and full backend integration suites passed cleanly in fresh processes.
+- Verification commit: `SELF`

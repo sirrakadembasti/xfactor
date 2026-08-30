@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P1-A
-current_plan: implementation-plans/04-P1-A-contract-traceability.md
-current_task: P1-A Task 7 - Orchestrator Pipeline & writeGeneratedFiles Enforcement
+current_unit: P1-B
+current_plan: implementation-plans/05-P1-B-runtime-verifier.md
+current_task: P1-B Task 1 - Dynamic Runtime & Port Reservation Isolation
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
-evidence_file: implementation-evidence/P1-A.md
+evidence_file: implementation-evidence/P1-B.md
 blocked_by: []
-next_action: Read P1-A Task 7, write the failing isolated e2e simulation test, and run the RED command
-updated_at: 2026-08-30T14:13:22.291Z
+next_action: Read P1-B Task 1, write the failing isolated port reservation test, and run the RED command
+updated_at: 2026-08-30T14:21:55.944Z
 ---
 
 # Project Continuity
@@ -35,46 +35,22 @@ Implement the approved project-quality pipeline redesign without relying on chat
 
 ## Completed
 
-- Quality audit and runtime validation of Todo artifact.
-- Root-cause diagnosis of false completion.
-- Approved quality improvement architecture plan.
+- Quality audit, root-cause diagnosis, and architecture plan.
 - Pre-ledger snapshot commit `4164592f6a633f6094ff7fe45b4662c6bdbd835e`.
 - Approved repository-native Continuity Ledger design.
-
-- P0-A Task 1 - Database Schema Migration Version 7.
-- P0-A Task 2 - Separated State Machine, CAS Projector, and Status Transitions.
-- P0-A Task 3 - Versioned Contract Revision Persistence and Approval Flow.
-- P0-A Task 4 - Stack Capability Verification and capability_blocked State.
-- P0-A Task 5 - Rejection Recording, Durable Repair Issues and Checkpoint Invalidation.
-
-- P0-A Task 6 - Cutover and Compatibility Cleanup.
 - P0-A — State and Contract Safety complete and verified (Tasks 1–6).
-- P0-B Task 1 - OS Sandbox Boundary Interface and Adapter Registry.
-- P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository.
-- P0-B Task 3 - AST Dependency Inventory and Package Verifier.
-- P0-B Task 4 - Real Compiler, Typecheck, and Build Gates.
-- P0-B Task 5 - Aggregate Quality Policy and Workflow Integration.
 - P0-B — OS Sandbox and Fail-Closed Verification complete and verified (Tasks 1–5).
-- P0-C Task 1 - Checkpoint Database Integration and CRUD APIs.
-- P0-C Task 2 - Cryptographic Hashing and CAS Validation.
-- P0-C Task 3 - Workflow Runner Integration and FS Reconciliation.
-- P0-C Task 4 - Selective Rejection and Cascading Checkpoint Invalidation.
 - P0-C — Selective Checkpoint Safety complete and verified (Tasks 1–4).
-- P1-A Task 1 - Migration 9 Schema for Typed Traceability and Artifacts.
-- P1-A Task 2 - Extend Capability Registry (No Duplicate Registry).
-- P1-A Task 3 - Traceability Graph and Matrix Builder.
-- P1-A Task 4 - Domain Element Policy (Extraction, Contamination & Stubs).
-- P1-A Task 5 - Requirement-Aware Agent Schemas and Normalizers.
-- P1-A Task 6 - Requirement-Aware System Prompts.
+- P1-A — Contract and Requirement Traceability complete and verified (Tasks 1–7).
 ## In Progress
 
-- P1-A Task 7 - Orchestrator Pipeline & writeGeneratedFiles Enforcement
+- P1-B Task 1 - Dynamic Runtime & Port Reservation Isolation
 
 ## Pending
 
-1. Read P1-A Task 7 and write the isolated e2e simulation RED test.
-2. Implement Task 7 only after RED is observed.
-3. Complete remaining P1-A tasks in plan order.
+1. Read P1-B Task 1 and write the isolated port reservation RED test.
+2. Implement P1-B tasks in plan order.
+3. Complete remaining units according to master execution plan.
 
 ## Decisions
 
@@ -89,87 +65,18 @@ Implement the approved project-quality pipeline redesign without relying on chat
 
 ## Verification
 
-- Improvement plan architecture review: APPROVE.
-- Improvement instruction coverage: 30/30 PASS.
-- Continuity design approved by user.
-- Pre-ledger commit succeeded: `4164592f6a633f6094ff7fe45b4662c6bdbd835e`.
-- Implementation plan architecture reviewer: APPROVE.
-- Implementation plan mechanical validator: APPROVE.
-- `node scripts/validate-continuity.mjs`: PASS before planning checkpoint commit.
-- Planning checkpoint commit: `42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5`.
-- P0-A Task 1 review: APPROVE; specification PASS, quality PASS.
-- P0-A Task 1 independent migration test: PASS (`1` passed, `0` failed).
-- P0-A Task 1 continuity validation: PASS.
-- P0-A Task 2 review: APPROVE; specification compliant, quality approved.
-- P0-A Task 2 independent state-transition test: PASS (`1` passed, `0` failed).
-- P0-A Task 2 continuity validation: PASS.
-- P0-A Task 3 review: APPROVE; specification compliant, quality approved.
-- P0-A Task 3 independent contract-flow test: PASS (`1` passed, `0` failed).
-- P0-A Task 3 continuity validation: PASS.
-- P0-A Task 4 review: APPROVE; specification PASS, quality PASS.
-- P0-A Task 4 independent capability test: PASS (`1` passed, `0` failed).
-- P0-A Task 4 continuity validation: PASS.
-- P0-A Task 5 review: APPROVE; specification and quality criteria met.
-- P0-A Task 5 independent rejection test: PASS (`1` passed, `0` failed).
-- P0-A Task 5 continuity validation: PASS.
-- P0-A Task 6 review: APPROVE; specification PASS, quality PASS.
-- P0-A Task 6 independent cutover test: PASS (`1` passed, `0` failed).
-- P0-A Task 6 continuity validation: PASS.
+- Improvement plan architecture review & instruction coverage: APPROVE (30/30 PASS).
+- Continuity design approved; planning checkpoint commit: `42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5`.
 - P0-A Unit verification: 6/6 isolated unit tests PASS, 25/25 integration suites PASS.
-- P0-A Final review: APPROVE; specification PASS, quality PASS.
-- P0-A Independent acceptance: UNIT TEST PASS.
-- P0-B Task 1 review: APPROVE; specification PASS, quality PASS.
-- P0-B Task 1 independent sandbox tests: PASS (`5` passed, `0` failed).
-- P0-B Task 1 continuity validation: PASS.
-- P0-B Task 2 review: APPROVE; specification PASS, quality PASS.
-- P0-B Task 2 independent migration test: PASS (`1` passed, `0` failed).
-- P0-B Task 2 continuity validation: PASS.
-- P0-B Task 3 review: APPROVE; specification PASS, quality PASS.
-- P0-B Task 3 independent package verifier test: PASS (`3` passed, `0` failed).
-- P0-B Task 3 continuity validation: PASS.
-- P0-B Task 4 review: APPROVE; specification PASS, quality PASS.
-- P0-B Task 4 independent build verifier test: PASS (`3` passed, `0` failed).
-- P0-B Task 4 continuity validation: PASS.
-- P0-B Task 5 review: APPROVE; specification PASS, quality PASS.
-- P0-B Task 5 independent quality policy test: PASS (`3` passed, `0` failed).
-- P0-B Task 5 continuity validation: PASS.
+- P0-A Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
 - P0-B Unit verification: 15/15 isolated unit tests PASS, 25/25 integration suites PASS.
-- P0-B Final review: APPROVE; specification PASS, quality PASS.
-- P0-B Independent acceptance: UNIT TEST PASS.
-- P0-C Task 1 review: APPROVE; specification PASS, quality PASS.
-- P0-C Task 1 independent checkpoint test: PASS (`1` passed, `0` failed).
-- P0-C Task 1 continuity validation: PASS.
-- P0-C Task 2 review: APPROVE; specification PASS, quality PASS.
-- P0-C Task 2 independent CAS validation test: PASS (`3` passed, `0` failed).
-- P0-C Task 2 continuity validation: PASS.
-- P0-C Task 3 review: APPROVE; specification PASS, quality PASS.
-- P0-C Task 3 independent workflow integration test: PASS (`3` passed, `0` failed).
-- P0-C Task 3 continuity validation: PASS.
-- P0-C Task 4 review: APPROVE; specification PASS, quality PASS.
-- P0-C Task 4 independent selective rejection test: PASS (`2` passed, `0` failed).
-- P0-C Task 4 continuity validation: PASS.
+- P0-B Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
 - P0-C Unit verification: 9/9 isolated unit tests PASS, 25/25 integration suites PASS.
-- P1-A Task 1 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 1 independent migration test: PASS (`1` passed, `0` failed).
-- P1-A Task 1 continuity validation: PASS.
-- P1-A Task 2 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 2 independent capability registry test: PASS (`2` passed, `0` failed).
-- P1-A Task 2 continuity validation: PASS.
-- P1-A Task 3 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 3 independent traceability matrix test: PASS (`2` passed, `0` failed).
-- P1-A Task 3 continuity validation: PASS.
-- P1-A Task 4 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 4 independent domain policy test: PASS (`3` passed, `0` failed).
-- P1-A Task 4 continuity validation: PASS.
-- P1-A Task 5 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 5 independent agent schemas test: PASS (`4` passed, `0` failed).
-- P1-A Task 5 continuity validation: PASS.
-- P1-A Task 6 review: APPROVE; specification PASS, quality PASS.
-- P1-A Task 6 independent docs-sync test: PASS (`9` passed, `0` failed).
-- P1-A Task 6 continuity validation: PASS.
-- P0-C Final review: APPROVE; specification PASS, quality PASS.
-- P0-C Independent acceptance: UNIT TEST PASS.
-
+- P0-C Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
+- P1-A Tasks 1–7 reviews: APPROVE (Tasks 1–7 spec/quality passed).
+- P1-A Tasks 1–7 tests: PASS (23/23 isolated tests passed).
+- P1-A Unit verification: 23/23 isolated unit tests PASS, 25/25 integration suites PASS.
+- P1-A Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
 ## Known Failures
 
 - Current generated-project quality pipeline remains unchanged and unsafe until implementation units are completed.
@@ -183,7 +90,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-A Task 7, write the failing isolated e2e simulation test, and run the RED command.
+Read P1-B Task 1, write the failing isolated port reservation test, and run the RED command.
 
 ## Do Not Do
 

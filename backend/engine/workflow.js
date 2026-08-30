@@ -69,6 +69,32 @@ export function computePlanHash(plan) {
     return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex').slice(0, 16);
 }
 
+export function orderDomainsCoreFirst(domains = []) {
+    if (!Array.isArray(domains)) return [];
+
+    const CORE_PRIORITIES = {
+        'database': 1,
+        'db': 1,
+        'core': 2,
+        'backend': 3,
+        'api': 4,
+        'auth': 5,
+        'frontend': 6,
+        'ui': 7,
+        'analytics': 8
+    };
+
+    return [...domains].sort((a, b) => {
+        const nameA = String(typeof a === 'string' ? a : (a.name || a.prefix || '')).toLowerCase();
+        const nameB = String(typeof b === 'string' ? b : (b.name || b.prefix || '')).toLowerCase();
+
+        const prioA = CORE_PRIORITIES[nameA] ?? 50;
+        const prioB = CORE_PRIORITIES[nameB] ?? 50;
+
+        return prioA - prioB;
+    });
+}
+
 export function normalizeWorkflowState(value) {
     const workflow = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     const directorSpecs = workflow.directorSpecs && typeof workflow.directorSpecs === 'object' && !Array.isArray(workflow.directorSpecs) ? workflow.directorSpecs : {};
@@ -264,7 +290,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         state.workflow.planHash = planHash;
         await writeProjectState(projectId, state);
 
-        const domainList = plan.domains.map(d => ({
+        const sortedRawDomains = orderDomainsCoreFirst(plan.domains);
+        const domainList = sortedRawDomains.map(d => ({
             name: typeof d === 'string' ? d : d.name,
             prefix: typeof d === 'string' ? d : (d.prefix || d.name),
             description: typeof d === 'string' ? `${d} domaini` : (d.description || `${d.name} domaini`)
@@ -510,7 +537,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         }
 
                         // Nihai onaylı dosyaları güvenli path guard üzerinden yaz.
-                        const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files);
+                        const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files, task.targetFiles);
                         const writtenPathSet = new Set(writtenMeta.map(file => file.path));
                         const writtenFiles = coderOutput.files
                             .filter(file => writtenPathSet.has(file.path))

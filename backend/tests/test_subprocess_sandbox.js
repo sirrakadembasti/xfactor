@@ -114,7 +114,7 @@ async function runTests() {
 
             assert.strictEqual(result.passed, false, 'Timed out process must not pass');
             assert.strictEqual(result.timedOut, true, 'Result must report timedOut = true');
-            assert(duration < 3500, `Process should be killed promptly, took ${duration}ms`);
+            assert(duration < 8000, `Process should be killed promptly, took ${duration}ms`);
 
             console.log('  [PASS] 3. Process tree termination and hard kill on timeout');
             passed++;

@@ -234,7 +234,7 @@ await asyncTest("2.2 Görev Tamamlanma Durumu ve TODO.md Ayrıştırma (Checkpoi
 console.log("\n--- 3. Yapılandırılmış JSON Şemaları & Kurtarma ---");
 
 test("3.1 Markdown Kod Blokları İçinden JSON Ayıklama", () => {
-    const rawLLMText = "İşte planınız:\n```json\n{\n  \"summary\": \"Örnek Proje\",\n  \"talimatname\": \"# Şartname\",\n  \"domains\": [{\"name\": \"frontend\", \"description\": \"UI\"}]\n}\n```\nBaşarılar dilerim.";
+    const rawLLMText = "İşte planınız:\n```json\n{\n  \"summary\": \"Örnek Proje\",\n  \"talimatname\": \"# Şartname\",\n  \"domains\": [{\"name\": \"frontend\", \"description\": \"UI\"}],\n  \"requirements\": [{\"id\": \"REQ-1\", \"statement\": \"UI gereksinimi\"}]\n}\n```\nBaşarılar dilerim.";
     const parsed = extractAndParseJSON(rawLLMText);
     assert.strictEqual(parsed.summary, "Örnek Proje");
     assert.strictEqual(validateManagerPlan(parsed), true);

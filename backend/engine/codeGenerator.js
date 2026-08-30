@@ -206,9 +206,22 @@ export { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
  * Coder tarafından üretilen dosyaları doğrular ve hem ajanın kendi klasörüne
  * hem de projenin kaynak dizinine güvenle yazar.
  */
-export async function writeGeneratedFiles(projectDir, coderDir, files = []) {
+export async function writeGeneratedFiles(projectDir, coderDir, files = [], allowedTargetFiles = null) {
     if (!Array.isArray(files) || files.length === 0) {
         throw new Error('Yazılacak geçerli dosya bulunamadı.');
+    }
+
+    // Target Allowlist Enforce (P1-A Contract)
+    if (Array.isArray(allowedTargetFiles) && allowedTargetFiles.length > 0) {
+        const allowedSet = new Set(allowedTargetFiles.map(p => path.normalize(p).replace(/\\/g, '/')));
+        for (const file of files) {
+            if (file && file.path) {
+                const norm = path.normalize(file.path).replace(/\\/g, '/');
+                if (!allowedSet.has(norm)) {
+                    throw new Error(`Coder çıktısındaki "${file.path}" dosyası görevin hedef dosya sözleşmesinde (allowlist: ${allowedTargetFiles.join(', ')}) yer almıyor.`);
+                }
+            }
+        }
     }
 
     // 1. Yazma sınırı değişmezi (Write Boundary Invariant): Kota ve limit denetimi
@@ -216,7 +229,6 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = []) {
     if (!quotaCheck.valid) {
         throw new Error(`Üretim kotası aşıldı: ${quotaCheck.error}`);
     }
-
     // Güvenlik: coderDir yalnızca proje kök dizini içinde olabilir (lexical containment).
     // Proje root'u dışına veya aynı root'a işaret eden coderDir fail-closed reddedilir.
     // Bu kontrolden ÖNCE hiçbir dosya yazılmaz.
