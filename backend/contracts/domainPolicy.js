@@ -77,6 +77,12 @@ export function verifyDomainCompliance(contract = {}, files = []) {
         ? contract.domainEntities
         : (Array.isArray(contract.entities) ? contract.entities : []);
 
+    const requiredEndpoints = Array.isArray(contract.requiredEndpoints)
+        ? contract.requiredEndpoints
+        : (Array.isArray(contract.endpoints) ? contract.endpoints : []);
+
+    const scriptFiles = files.filter(f => f.path && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
+
     if (domainEntities.length > 0) {
         const prismaFile = files.find(f => f.path && (f.path.endsWith('schema.prisma') || f.path.includes('schema.prisma')));
         const prismaContent = prismaFile ? prismaFile.content : '';
@@ -96,7 +102,6 @@ export function verifyDomainCompliance(contract = {}, files = []) {
         }
 
         // Verify entity queries in script files
-        const scriptFiles = files.filter(f => f.path && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
         const queriedModels = new Set();
         const prismaQueryRegex = /prisma\s*\.\s*([a-zA-Z0-9_]+)/g;
 
@@ -113,6 +118,41 @@ export function verifyDomainCompliance(contract = {}, files = []) {
             const lowerName = entityName.toLowerCase();
             if (declaredModels.has(lowerName) && !queriedModels.has(lowerName)) {
                 issues.push(`Entity ${entityName} is declared but never queried in source code`);
+            }
+        }
+    }
+
+    if (requiredEndpoints.length > 0) {
+        const implementedRoutes = new Set();
+        const routeRegex = /(?:router|app)\s*\.\s*(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
+
+        for (const script of scriptFiles) {
+            const content = script.content || '';
+            let routeMatch;
+            while ((routeMatch = routeRegex.exec(content)) !== null) {
+                const method = routeMatch[1].toUpperCase();
+                const routePath = routeMatch[2].trim();
+                implementedRoutes.add(`${method} ${routePath}`);
+            }
+        }
+
+        for (const reqEndpoint of requiredEndpoints) {
+            let endpointStr = '';
+            if (typeof reqEndpoint === 'string') {
+                const parts = reqEndpoint.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    endpointStr = `${parts[0].toUpperCase()} ${parts.slice(1).join(' ').trim()}`;
+                } else {
+                    endpointStr = `GET ${parts[0] || ''}`.trim();
+                }
+            } else if (reqEndpoint && typeof reqEndpoint === 'object') {
+                const method = (reqEndpoint.method || 'GET').toUpperCase();
+                const routePath = (reqEndpoint.path || reqEndpoint.url || '').trim();
+                endpointStr = `${method} ${routePath}`;
+            }
+
+            if (endpointStr && !implementedRoutes.has(endpointStr)) {
+                issues.push(`Required endpoint ${endpointStr} has no implementation route`);
             }
         }
     }

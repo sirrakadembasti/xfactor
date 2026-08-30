@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 1 - Domain/Entity/Use Verification (Step P2.1.3: Verify Endpoint Implementation Routes)
+current_task: P2 Task 2 - Placeholder, Stub, and Dead-Flow Detection (Step P2.2.1: Detect Static Mock/Dummy Route Handlers)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.1.3, write the failing isolated endpoint routes test, and run the RED command: node backend/tests/test_p2_domain_policy.js --test=endpoint-routes
-updated_at: 2026-08-30T18:07:47Z
+next_action: Read P2 Step P2.2.1, write the failing isolated static mock handler test, and run the RED command: node backend/tests/test_p2_placeholder.js --test=mock-handlers
+updated_at: 2026-08-30T18:11:39Z
 ---
 
 # Project Continuity
@@ -59,15 +59,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 6 - Frontend Evidence Display and Download Integration.
 - P2 Step P2.1.1 - Verify Entity Schema Presence.
 - P2 Step P2.1.2 - Verify Entity Queries in Source Code.
+- P2 Step P2.1.3 - Verify Endpoint Implementation Routes.
 
 ## In Progress
 
-- P2 Task 1 - Domain/Entity/Use Verification (Step P2.1.3: Verify Endpoint Implementation Routes)
+- P2 Task 2 - Placeholder, Stub, and Dead-Flow Detection (Step P2.2.1: Detect Static Mock/Dummy Route Handlers)
 
 ## Pending
 
-1. Read P2 Step P2.1.3 and write the isolated endpoint routes RED test.
-2. Implement Step P2.1.3 only after RED is observed.
+1. Read P2 Step P2.2.1 and write the isolated static mock handler RED test.
+2. Implement Step P2.2.1 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -148,6 +149,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.1.2 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.1.2 independent acceptance test: PASS (`2` passed, `0` failed).
 - P2 Step P2.1.2 continuity validation: PASS.
+- P2 Step P2.1.3 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.1.3 independent acceptance test: PASS (`3` endpoint-routes, `7` full suite passed, `0` failed).
+- P2 Step P2.1.3 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -160,7 +164,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.1.3, write the failing isolated endpoint routes test, and run the RED command: node backend/tests/test_p2_domain_policy.js --test=endpoint-routes
+Read P2 Step P2.2.1, write the failing isolated static mock handler test, and run the RED command: node backend/tests/test_p2_placeholder.js --test=mock-handlers
 
 ## Do Not Do
 

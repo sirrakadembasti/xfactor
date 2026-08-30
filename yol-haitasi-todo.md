@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.1.2 (Verify Entity Queries in Source Code) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.1.3 (Verify Endpoint Implementation Routes).
+P2 Task 1 (Domain/Entity/Use Verification - Steps P2.1.1, P2.1.2, P2.1.3) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 2 Step P2.2.1 (Detect Static Mock/Dummy Route Handlers).
 
 Sonraki görev:
 
 ```text
-P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.3: Verify Endpoint Implementation Routes)
-RED: node backend/tests/test_p2_domain_policy.js --test=endpoint-routes
+P2 Task 2 — Placeholder, Stub, and Dead-Flow Detection (Step P2.2.1: Detect Static Mock/Dummy Route Handlers)
+RED: node backend/tests/test_p2_placeholder.js --test=mock-handlers
 ```
 
 ## Yeni Sohbet İçin Başlangıç

@@ -163,5 +163,118 @@ if (!filteredTest || filteredTest === 'entity-query') {
         assert.strictEqual(result.issues.length, 0);
     });
 }
+if (!filteredTest || filteredTest === 'endpoint-routes') {
+    await runAsyncTest('P2.1.3: verifyDomainCompliance rejects missing endpoint routes', async () => {
+        const contract = {
+            domainEntities: ['Todo'],
+            requiredEndpoints: ['GET /api/todos', 'GET /api/categories', 'POST /api/todos']
+        };
+
+        const files = [
+            {
+                path: 'prisma/schema.prisma',
+                content: 'model Todo { id String @id }'
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import { prisma } from '../lib/prisma.js';
+                    const router = express.Router();
+                    router.get('/api/todos', async (req, res) => {
+                        const todos = await prisma.todo.findMany();
+                        res.json(todos);
+                    });
+                    router.post('/api/todos', async (req, res) => {
+                        const created = await prisma.todo.create({ data: req.body });
+                        res.json(created);
+                    });
+                    export default router;
+                `
+            }
+        ];
+
+        const result = verifyDomainCompliance(contract, files);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected compliance failure for missing route GET /api/categories'
+        );
+        assert.ok(
+            result.issues.some(issue => issue.includes('GET /api/categories')),
+            'Issues list must note missing route GET /api/categories'
+        );
+    });
+
+    await runAsyncTest('P2.1.3: verifyDomainCompliance passes when all required endpoints are implemented', async () => {
+        const contract = {
+            domainEntities: ['Todo'],
+            requiredEndpoints: ['GET /api/todos', 'POST /api/todos']
+        };
+
+        const files = [
+            {
+                path: 'prisma/schema.prisma',
+                content: 'model Todo { id String @id }'
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import { prisma } from '../lib/prisma.js';
+                    const router = express.Router();
+                    router.get('/api/todos', async (req, res) => {
+                        const todos = await prisma.todo.findMany();
+                        res.json(todos);
+                    });
+                    router.post('/api/todos', async (req, res) => {
+                        const created = await prisma.todo.create({ data: req.body });
+                        res.json(created);
+                    });
+                    export default router;
+                `
+            }
+        ];
+
+        const result = verifyDomainCompliance(contract, files);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+
+    await runAsyncTest('P2.1.3: verifyDomainCompliance normalizes method casing and whitespace for endpoint matching', async () => {
+        const contract = {
+            domainEntities: ['Todo'],
+            requiredEndpoints: ['get   /api/todos', { method: 'post', path: '/api/todos' }]
+        };
+
+        const files = [
+            {
+                path: 'prisma/schema.prisma',
+                content: 'model Todo { id String @id }'
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import { prisma } from '../lib/prisma.js';
+                    const router = express.Router();
+                    router.get('/api/todos', async (req, res) => {
+                        const todos = await prisma.todo.findMany();
+                        res.json(todos);
+                    });
+                    router.post('/api/todos', async (req, res) => {
+                        const created = await prisma.todo.create({ data: req.body });
+                        res.json(created);
+                    });
+                    export default router;
+                `
+            }
+        ];
+
+        const result = verifyDomainCompliance(contract, files);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
 
 finish();
