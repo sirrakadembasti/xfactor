@@ -47,6 +47,8 @@ import {
     getProject as readProjectState,
     saveProjectState as writeProjectState
 } from '../projectRepository.js';
+import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
+import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -627,17 +629,26 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 buildResults: buildAudit,
                 deterministicAudit
             });
-            let testResult = await callAgentLLM('tester', testerPrompt, { signal: abortController.signal });
-            if (!testResult || typeof testResult !== 'object') {
-                testResult = { approved: true, summary: "Tester kabul onayını verdi.", issues: [] };
+            let testerAdvisory = await callAgentLLM('tester', testerPrompt, { signal: abortController.signal });
+            if (!testerAdvisory || typeof testerAdvisory !== 'object') {
+                testerAdvisory = { approved: false, summary: "Tester geri bildirimi alınamadı.", issues: [] };
             }
-            testResult.issues = Array.isArray(testResult.issues) ? testResult.issues : [];
+            testerAdvisory.issues = Array.isArray(testerAdvisory.issues) ? testerAdvisory.issues : [];
 
-            if (!isQualityPassed) {
-                testResult.approved = false;
-                testResult.issues = [...testResult.issues, ...allQualityIssues];
-                testResult.summary = `[Kritik Compiler / Şema / Sözdizimi Hataları Giderilemedi]: ${allQualityIssues.join(' | ')}. ${testResult.summary || ''}`;
-            }
+            const verificationEvaluation = evaluateVerificationRun({
+                checks: [
+                    ...(deterministicAudit?.checks || []),
+                    ...(buildAudit?.checks || [])
+                ],
+                agentApproved: testerAdvisory.approved,
+                agentSummary: testerAdvisory.summary
+            });
+
+            const testResult = {
+                approved: isQualityPassed && verificationEvaluation.passed,
+                summary: isQualityPassed ? (testerAdvisory.summary || 'Tüm kalite denetimleri başarıyla tamamlandı.') : `[Kritik Kalite Hataları]: ${allQualityIssues.join(' | ')}`,
+                issues: isQualityPassed ? testerAdvisory.issues : [...testerAdvisory.issues, ...allQualityIssues]
+            };
 
             const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary || state.title}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n${testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
             await writeRapor(projectDir, finalRapor);
@@ -685,6 +696,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         );
                     }
                 }
+                invalidateProjectCheckpoints(projectId);
 
                 terminalStatus = 'rejected';
                 executionError = `Proje kabul testlerini geçemedi: ${testResult.summary}`;

@@ -1,14 +1,14 @@
 ---
 unit: P0-B
-status: pending
+status: verified
 plan: implementation-plans/02-P0-B-sandbox-verification.md
-verified_commit: null
-updated_at: 2026-08-30T09:55:30.586Z
+verified_commit: SELF
+updated_at: 2026-08-30T10:12:15.899Z
 ---
 
 # P0-B Evidence — Sandbox and Fail-Closed Verification
 
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+All tasks and unit acceptance criteria for P0-B are complete and verified. Verified receipts are recorded below.
 
 ## Task 1 Receipt — OS Sandbox Boundary Interface and Adapter Registry
 
@@ -51,11 +51,21 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
-## Required Receipt
+## Task 5 Receipt — Aggregate Quality Policy and Workflow Integration
 
-- OS isolation escape/secret/mount/network/resource tests
-- Package/lock/clean-install results
-- Real typecheck/build results
-- Mandatory gate aggregate results
-- Independent reviewer and tester decisions
-- Continuity validator result
+- RED: `node backend/tests/test_quality_policy_integration.js` — exit `1`; expected missing `backend/verification/qualityPolicy.js`.
+- GREEN: `node backend/tests/test_quality_policy_integration.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P0BTask5Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, deterministic gate evaluation without LLM override, missing-gate `BLOCKED` fail-closed status, rejected attempt handling, and P0-A coarse invalidation verified.
+- Independent test (`P0BTask5IndependentTester`): fresh-process `node backend/tests/test_quality_policy_integration.js` — exit `0`; `3` passed, `0` failed.
+- Observed coverage: mandatory gate aggregation (`package_json`, `lockfile`, `ast_import_inventory`, `clean_install`, `typecheck`, `framework_build`), LLM tester override elimination, `BLOCKED` status when mandatory checks are missing, and workflow integration with checkpoint invalidation.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## P0-B Unit Verification & Independent Acceptance Receipt
+
+- Unit tests: `node backend/tests/test_sandbox_adapters.js && node backend/tests/test_sandbox_security.js && node backend/tests/test_p0_b_migrations.js && node backend/tests/test_package_verifier.js && node backend/tests/test_build_verifier.js && node backend/tests/test_quality_policy_integration.js` — exit `0`; `15/15` passed, `0` failed across 6 test files.
+- Integration test suite: `node backend/tests/test_runner.js` — exit `0`; `25/25` test suites passed, `0` failed.
+- Independent final unit review (`P0BFinalUnitReviewer`): `APPROVE`; Specification Verdict `PASS`, Quality Verdict `PASS`, all 5 tasks verified against fail-closed sandbox and compiler constraints.
+- Independent acceptance tester (`P0BIndependentAcceptanceTester`): `UNIT TEST PASS`; all isolated unit suites and full backend integration suites passed cleanly in fresh processes.
+- Verification commit: `SELF`

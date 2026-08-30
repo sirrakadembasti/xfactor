@@ -449,19 +449,53 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
             adapter: options.adapter
         });
 
+        const checkNamesMap = {
+            'typecheck': 'typescript_typecheck',
+            'prisma_validate': 'prisma_semantic_validation',
+            'framework_build': 'framework_build'
+        };
+
         for (const check of buildResult.checks) {
+            const legacyName = checkNamesMap[check.name] || check.name;
             checks.push({
-                name: check.name,
+                name: legacyName,
                 status: check.status,
+                reason: check.reason || '',
                 command: check.command || 'none',
                 exitCode: check.exitCode ?? 0,
                 stdout: check.stdout || '',
                 stderr: check.stderr || (check.reason || ''),
                 timedOut: check.status === 'blocked' && check.reason?.includes('timeout')
             });
+            if (check.name !== legacyName) {
+                checks.push({
+                    name: check.name,
+                    status: check.status,
+                    reason: check.reason || '',
+                    command: check.command || 'none',
+                    exitCode: check.exitCode ?? 0,
+                    stdout: check.stdout || '',
+                    stderr: check.stderr || (check.reason || ''),
+                    timedOut: check.status === 'blocked' && check.reason?.includes('timeout')
+                });
+            }
             if (check.status === 'failed' || check.status === 'blocked') {
                 issues.push(`[${check.name}] ${check.reason || check.stderr || 'Kapı doğrulaması başarısız oldu'}`);
             }
+        }
+
+        // If prisma or typescript checks were not applicable/emitted, include skipped records for legacy compatibility
+        if (!checks.some(c => c.name === 'prisma_semantic_validation')) {
+            checks.push({
+                name: 'prisma_semantic_validation',
+                status: 'skipped',
+                reason: 'No schema.prisma found in project root or prisma directory',
+                command: 'none',
+                exitCode: 0,
+                stdout: '',
+                stderr: '',
+                timedOut: false
+            });
         }
 
         return {

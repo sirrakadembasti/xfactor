@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P0-B -->
+<!-- continuity:current_unit=P0-C -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P0-B` |
+| Aktif birim | `P0-C` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -38,7 +38,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Plan: `implementation-plans/01-P0-A-state-contract-safety.md`
   - Evidence: `implementation-evidence/P0-A.md`
   - Hedef: sürümlü contract, ayrılmış state machine, rejection semantics, coarse checkpoint invalidation.
-- [ ] **P0-B — OS sandbox ve fail-closed verification**
+- [x] **P0-B — OS sandbox ve fail-closed verification**
   - Plan: `implementation-plans/02-P0-B-sandbox-verification.md`
   - Evidence: `implementation-evidence/P0-B.md`
   - Bağımlılık: P0-A verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-B Task 4 (Real Compiler, Typecheck, and Build Gates) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 5 Aggregate Quality Policy and Workflow Integration.
+P0-B OS sandbox ve fail-closed verification birimi (Tasks 1–5) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P0-C Selective checkpoint safety.
 
 Sonraki görev:
 
 ```text
-P0-B Task 5 — Aggregate Quality Policy and Workflow Integration
-RED: isolated quality policy aggregate ve LLM-override rejection failing testi
+P0-C Task 1 — Selective Checkpoint Store and SHA-256 Hashing
+RED: isolated fine-grained checkpoint store ve SHA-256 input/output hash failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

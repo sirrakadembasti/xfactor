@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P0-B
-current_plan: implementation-plans/02-P0-B-sandbox-verification.md
-current_task: P0-B Task 5 - Aggregate Quality Policy and Workflow Integration
+current_unit: P0-C
+current_plan: implementation-plans/03-P0-C-checkpoint-safety.md
+current_task: P0-C Task 1 - Selective Checkpoint Store and SHA-256 Hashing
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
-evidence_file: implementation-evidence/P0-B.md
+evidence_file: implementation-evidence/P0-C.md
 blocked_by: []
-next_action: Read P0-B Task 5, write the failing isolated quality policy test, and run the RED command
-updated_at: 2026-08-30T09:55:30.586Z
+next_action: Read P0-C Task 1, write the failing isolated checkpoint test, and run the RED command
+updated_at: 2026-08-30T10:12:15.899Z
 ---
 
 # Project Continuity
@@ -53,15 +53,17 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository.
 - P0-B Task 3 - AST Dependency Inventory and Package Verifier.
 - P0-B Task 4 - Real Compiler, Typecheck, and Build Gates.
+- P0-B Task 5 - Aggregate Quality Policy and Workflow Integration.
+- P0-B — OS Sandbox and Fail-Closed Verification complete and verified (Tasks 1–5).
 ## In Progress
 
-- P0-B Task 5 - Aggregate Quality Policy and Workflow Integration
+- P0-C Task 1 - Selective Checkpoint Store and SHA-256 Hashing
 
 ## Pending
 
-1. Read P0-B Task 5 and write the isolated quality policy RED test.
-2. Implement Task 5 only after RED is observed.
-3. Complete remaining P0-B tasks in plan order.
+1. Read P0-C Task 1 and write the isolated checkpoint RED test.
+2. Implement P0-C tasks in plan order.
+3. Complete remaining units according to master execution plan.
 
 ## Decisions
 
@@ -117,6 +119,12 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 4 review: APPROVE; specification PASS, quality PASS.
 - P0-B Task 4 independent build verifier test: PASS (`3` passed, `0` failed).
 - P0-B Task 4 continuity validation: PASS.
+- P0-B Task 5 review: APPROVE; specification PASS, quality PASS.
+- P0-B Task 5 independent quality policy test: PASS (`3` passed, `0` failed).
+- P0-B Task 5 continuity validation: PASS.
+- P0-B Unit verification: 15/15 isolated unit tests PASS, 25/25 integration suites PASS.
+- P0-B Final review: APPROVE; specification PASS, quality PASS.
+- P0-B Independent acceptance: UNIT TEST PASS.
 
 ## Known Failures
 
@@ -131,7 +139,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-B Task 5, write the failing isolated quality policy test, and run the RED command.
+Read P0-C Task 1, write the failing isolated checkpoint test, and run the RED command.
 
 ## Do Not Do
 
