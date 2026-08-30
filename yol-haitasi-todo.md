@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-A Contract ve requirement traceability birimi (Tasks 1–7) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P1-B Runtime/API/browser verifier.
+P1-B Task 1 (Service Manifest & Configuration Validator) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 2 Sandbox Process Spawner and Lifecycle Manager.
 
 Sonraki görev:
 
 ```text
-P1-B Task 1 — Dynamic Runtime & Port Reservation Isolation
-RED: isolated port reservation, runtime health check, ve process lifecycle failing testi
+P1-B Task 2 — Sandbox Process Spawner and Lifecycle Manager
+RED: isolated process spawn, sandbox environment, ve lifecycle termination failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
