@@ -88,3 +88,19 @@ export function getLatestVerifiedArtifact({ projectId, contractId }) {
         LIMIT 1
     `).get(projectId, contractId);
 }
+
+export function supersedeArtifacts({ projectId, contractId, exceptArtifactId = null }) {
+    if (exceptArtifactId) {
+        return db.prepare(`
+            UPDATE artifacts
+            SET status = 'superseded'
+            WHERE project_id = ? AND contract_id = ? AND id != ? AND status IN ('draft', 'built', 'verification_pending', 'verified')
+        `).run(projectId, contractId, exceptArtifactId);
+    }
+
+    return db.prepare(`
+        UPDATE artifacts
+        SET status = 'superseded'
+        WHERE project_id = ? AND contract_id = ? AND status IN ('draft', 'built', 'verification_pending', 'verified')
+    `).run(projectId, contractId);
+}

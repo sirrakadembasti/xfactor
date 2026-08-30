@@ -167,6 +167,115 @@ export function projectStateTransitionInTransaction({
     return { status: currentStatus, revision: nextRevision };
 }
 
+export function completeVerifiedProject({
+    projectId,
+    contractId,
+    artifactId,
+    expectedRevision
+}) {
+    if (!isValidProjectId(projectId)) {
+        throw new Error(`Invalid project ID: "${projectId}"`);
+    }
+
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+        const persisted = db.prepare(
+            'SELECT status, revision FROM projects WHERE id = ?'
+        ).get(projectId);
+        if (!persisted) {
+            throw new Error(`Project ${projectId} does not exist.`);
+        }
+        if (persisted.revision !== Number(expectedRevision || 1)) {
+            throw new Error(`CAS Revision conflict on project ${projectId}.`);
+        }
+        if (persisted.status !== PROJECT_STATUS.ARTIFACT_VERIFIED) {
+            throw new Error(`Project ${projectId} status must be artifact_verified (was ${persisted.status}).`);
+        }
+
+        // Validate contract is the latest approved contract
+        const latestContract = db.prepare(`
+            SELECT id FROM project_contracts
+            WHERE project_id = ? AND status = 'approved'
+            ORDER BY revision DESC LIMIT 1
+        `).get(projectId);
+        if (!latestContract || latestContract.id !== contractId) {
+            throw new Error(`Contract ${contractId} is not the latest approved contract for project ${projectId}.`);
+        }
+
+        // Validate artifact exists and is verified
+        const artifact = db.prepare(`
+            SELECT * FROM artifacts
+            WHERE project_id = ? AND contract_id = ? AND id = ?
+        `).get(projectId, contractId, artifactId);
+        if (!artifact || artifact.status !== 'verified' || !artifact.verification_run_id) {
+            throw new Error(`Artifact ${artifactId} is not in verified state or lacks verification_run_id.`);
+        }
+
+        // Validate verification run is verified
+        const run = db.prepare(`
+            SELECT * FROM verification_runs
+            WHERE id = ? AND project_id = ? AND contract_id = ?
+        `).get(artifact.verification_run_id, projectId, contractId);
+        if (!run || run.status !== 'verified') {
+            throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
+        }
+
+        // Validate all mandatory gate checks are PASS
+        const failingChecks = db.prepare(`
+            SELECT COUNT(*) AS count
+            FROM verification_checks
+            WHERE contract_id = ? AND run_id = ? AND applicability = 'MANDATORY' AND status != 'PASS'
+        `).get(contractId, run.id).count;
+        if (failingChecks > 0) {
+            throw new Error(`Verification run ${run.id} has failing or non-PASS mandatory checks.`);
+        }
+
+        // Validate all mandatory requirements are linked in requirement_check_links
+        const unlinkedMandatoryCount = db.prepare(`
+            SELECT COUNT(*) AS count
+            FROM requirements r
+            WHERE r.contract_id = ? AND r.mandatory = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM requirement_check_links l
+                  WHERE l.contract_id = r.contract_id AND l.requirement_id = r.id
+              )
+        `).get(contractId).count;
+
+        if (unlinkedMandatoryCount > 0) {
+            throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId} (${unlinkedMandatoryCount} unlinked mandatory requirements).`);
+        }
+
+        // Validate no open repair issues
+        const openRepairs = db.prepare(`
+            SELECT COUNT(*) AS count
+            FROM repair_issues
+            WHERE project_id = ? AND contract_id = ? AND status = 'open'
+        `).get(projectId, contractId).count;
+        if (openRepairs > 0) {
+            throw new Error(`Project ${projectId} has open repair issues.`);
+        }
+
+        const nextRevision = persisted.revision + 1;
+        const updateResult = db.prepare(`
+            UPDATE projects
+            SET status = 'completed', revision = ?
+            WHERE id = ? AND revision = ? AND status = 'artifact_verified'
+        `).run(nextRevision, projectId, persisted.revision);
+
+        if (updateResult.changes !== 1) {
+            throw new Error(`CAS Revision conflict on project ${projectId}.`);
+        }
+
+        db.exec('COMMIT;');
+        dbEvents.emit(`stateChange:${projectId}`, 'completed');
+
+        return getProject(projectId);
+    } catch (error) {
+        db.exec('ROLLBACK;');
+        throw error;
+    }
+}
+
 /**
  * Atomik tekil sohbet mesajı ekleme (Bütün state dizisini ezmeden güvenli append)
  */

@@ -6,7 +6,7 @@ import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir
 import { createProject, deleteProject } from '../projectRepository.js';
 import { acquireWorkflowLease, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
-import { getAllProjects, getProjectLogs, updateProject, syncProjectsWithDisk } from '../db.js';
+import { db, getAllProjects, getProjectLogs, updateProject, syncProjectsWithDisk } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
@@ -480,6 +480,32 @@ export function createProjectRouter({
             projectDir: getProjectDir(id)
         });
         res.json(result);
+    }));
+
+    // 8b. Verified Artifact İndir
+    router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const { id, contractId, artifactId } = req.params;
+        const { getArtifact } = await import('../repositories/artifactRepository.js');
+        const artifact = getArtifact({ projectId: id, contractId, artifactId });
+        if (!artifact) {
+            return res.status(404).json({ error: 'Artifact not found' });
+        }
+
+        const latestApprovedContract = db.prepare(`
+            SELECT id FROM project_contracts
+            WHERE project_id = ? AND status = 'approved'
+            ORDER BY revision DESC LIMIT 1
+        `).get(id);
+
+        if (!latestApprovedContract || latestApprovedContract.id !== contractId) {
+            return res.status(404).json({ error: 'Artifact contract is not the latest approved contract' });
+        }
+
+        if (artifact.status !== 'verified' || !artifact.verification_run_id) {
+            return res.status(409).json({ error: 'Artifact is not verified for download' });
+        }
+
+        res.download(artifact.path, path.basename(artifact.path));
     }));
 
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {

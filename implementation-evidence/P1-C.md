@@ -3,7 +3,7 @@ unit: P1-C
 status: pending
 plan: implementation-plans/06-P1-C-artifact-validation.md
 verified_commit: null
-updated_at: 2026-08-30T17:52:17Z
+updated_at: 2026-08-30T17:57:08Z
 ---
 
 # P1-C Evidence — Artifact and ZIP Clean-Room Validation
@@ -46,6 +46,16 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Independent test (`P1CTask4IndependentTester`): fresh-process `node backend/tests/test_p1_c_artifact_verifier.js` — exit `0`; `4` passed, `0` failed.
 - Observed coverage: clean-room safe extraction, fail-closed rejection on missing package lockfile, artifact state verification with verified machine evidence link, symlink extraction rejection with linked failed run, and missing artifact database lookup error handling.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
+
+## Task 5 Receipt — State Transition, Invalidation Policy, and Clean Cutover
+
+- RED: `node backend/tests/test_p1_c_state_invalidation.js` — exit `1`; expected missing `completeVerifiedProject` and unmapped download route.
+- GREEN: `node backend/tests/test_p1_c_state_invalidation.js` — exit `0`; `4` passed, `0` failed.
+- Independent review (`P1CTask5Reviewer`, `P1CTask5ReReviewer`): `APPROVE`; specification `PASS`, quality `PASS`; `completeVerifiedProject` atomic transaction, latest approved contract verification, verified artifact status and verification_run_id check, mandatory requirement `NOT EXISTS` traceability coverage verification, zero open repair issues check, CAS completed update, `supersedeArtifacts` repository helper, and auth-protected verified-only download route verified.
+- Independent test (`P1CTask5IndependentTester`): fresh-process `node backend/tests/test_p1_c_state_invalidation.js` — exit `0`; `4` passed, `0` failed.
+- Observed coverage: negative rejection on mismatched contract/stale status/draft artifact/unlinked mandatory requirements/open repairs, atomic CAS transition to completed with revision increment, active artifact supersession, 200 OK verified download, and 409 rejection on unverified download requests.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 ## Required Receipt
 
