@@ -4,6 +4,8 @@ import fsSync from 'fs';
 import path from 'path';
 import { db, dbEvents, formatDBDate } from './db.js';
 import { validateProjectTitle } from './security.js';
+import { isValidProjectStatus } from './auth.js';
+import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
@@ -116,7 +118,6 @@ export function appendProjectChatMessage(projectId, role, textContent, createdAt
 
 export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
-    const env = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrEnv : maybeEnv;
 
     if (!state || !isValidProjectId(state.id)) {
         throw new Error(`Invalid project state or project ID: ${state?.id}`);
@@ -124,27 +125,57 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
 
     const planStr = state.plan ? JSON.stringify(state.plan) : null;
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
-    const currentRevision = Number(state.revision || 1);
-    const nextRevision = currentRevision + 1;
-
-    const upsertProjectStmt = db.prepare(`
-        INSERT INTO projects (id, title, status, plan, workflow_state, revision)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            title = excluded.title,
-            status = excluded.status,
-            plan = excluded.plan,
-            workflow_state = excluded.workflow_state,
-            revision = excluded.revision
-    `);
-    const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
+    const expectedRevision = Number(state.revision || 1);
+    const nextRevision = expectedRevision + 1;
+    const insertChat = db.prepare(
+        'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
+    );
 
     db.exec('BEGIN IMMEDIATE;');
     try {
-        upsertProjectStmt.run(state.id, state.title, state.status, planStr, workflowStr, nextRevision);
+        const persisted = db.prepare(
+            'SELECT status, revision FROM projects WHERE id = ?'
+        ).get(state.id);
+        if (!persisted) {
+            throw new Error(`Project ${state.id} does not exist`);
+        }
+        if (persisted.revision !== expectedRevision) {
+            throw new Error(`CAS Revision conflict on project ${state.id}`);
+        }
+        if (!isValidProjectStatus(state.status)) {
+            throw new Error(`Unknown project status: ${state.status}`);
+        }
+        if (state.status === PROJECT_STATUS.COMPLETED) {
+            throw new Error(
+                'Cannot transition project to completed: required verified lifecycle evidence is missing'
+            );
+        }
+        if (!canTransitionProject(persisted.status, state.status)) {
+            throw new Error(`Illegal project transition: ${persisted.status} -> ${state.status}`);
+        }
+
+        const result = db.prepare(`
+            UPDATE projects
+            SET title = ?, status = ?, plan = ?, workflow_state = ?, revision = ?
+            WHERE id = ? AND revision = ? AND status = ?
+        `).run(
+            state.title,
+            state.status,
+            planStr,
+            workflowStr,
+            nextRevision,
+            state.id,
+            expectedRevision,
+            persisted.status
+        );
+        if (result.changes !== 1) {
+            throw new Error(`CAS Revision conflict on project ${state.id}`);
+        }
         state.revision = nextRevision;
 
-        const existingCount = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(state.id).count;
+        const existingCount = db.prepare(
+            'SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?'
+        ).get(state.id).count;
         const chatsToSave = state.chatHistory || [];
         for (let i = existingCount; i < chatsToSave.length; i++) {
             const chat = chatsToSave[i];

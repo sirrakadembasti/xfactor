@@ -3,12 +3,12 @@ unit: P0-A
 status: pending
 plan: implementation-plans/01-P0-A-state-contract-safety.md
 verified_commit: null
-updated_at: 2026-08-30T07:00:36.001Z
+updated_at: 2026-08-30T07:30:08.482Z
 ---
 
 # P0-A Evidence — State and Contract Safety
 
-Unit implementation is in progress. Task 1 migration checkpoint is verified below.
+Unit implementation is in progress. Verified task checkpoints are recorded below.
 
 ## Task 1 Receipt — Database Schema Migration Version 7
 
@@ -19,6 +19,17 @@ Unit implementation is in progress. Task 1 migration checkpoint is verified belo
 - Observed coverage: schema version 7, eight required tables, unique contract index, composite project/contract ownership rejection, isolated DB cleanup.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 1 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 2 Receipt — State Machine and CAS Projector
+
+- RED: `node backend/tests/test_p0_a_state_transitions.js` — exit `1`; expected missing `backend/engine/stateMachine.js`.
+- GREEN: `node backend/tests/test_p0_a_state_transitions.js` — exit `0`; `1` passed, `0` failed.
+- Independent review: `APPROVE`; specification compliant, quality approved, no findings.
+- Independent test: fresh-process `node backend/tests/test_p0_a_state_transitions.js` — exit `0`; `1` passed, `0` failed.
+- Observed coverage: lifecycle transition matrix, terminal completed/artifact states, completed-write guard, persisted-row revision CAS, illegal-transition rejection, rollback path, isolated DB cleanup.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 2 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 ## Required Receipt

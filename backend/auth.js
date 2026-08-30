@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { db } from './db.js';
+import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 
 function normalizeUsername(username) {
     return String(username ?? '').trim();
@@ -212,26 +213,14 @@ export function promoteUserToAdmin(username, password) {
     return toPublicUser({ ...user, isAdmin: true });
 }
 
-export const PROJECT_LIFECYCLE = ['planning', 'pending_approval', 'running', 'paused', 'completed'];
+export const PROJECT_LIFECYCLE = Object.values(PROJECT_STATUS);
 
 export function isValidProjectStatus(status) {
     return typeof status === 'string' && PROJECT_LIFECYCLE.includes(status);
 }
 
 export function canTransitionProjectStatus(fromStatus, toStatus) {
-    if (!isValidProjectStatus(fromStatus) || !isValidProjectStatus(toStatus)) {
-        return false;
-    }
-
-    const allowed = {
-        planning: ['pending_approval', 'running', 'completed'],
-        pending_approval: ['running', 'completed'],
-        running: ['paused', 'completed'],
-        paused: ['running', 'completed', 'planning'],
-        completed: []
-    };
-
-    return allowed[fromStatus]?.includes(toStatus) === true;
+    return canTransitionProject(fromStatus, toStatus);
 }
 
 export function getProjectRole(userId, projectId) {
