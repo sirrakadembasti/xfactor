@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 6 (Headless Browser User Journey and Persistence Verifier) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 7 Test Infrastructure and Suite Execution Gate.
+P1-B Task 7 (Test Infrastructure and Suite Execution Gate) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 8 Unified Smoke Gate & Service Runner.
 
 Sonraki görev:
 
 ```text
-P1-B Task 7 — Test Infrastructure and Suite Execution Gate
-RED: isolated test script verification, sandbox test execution, ve coverage failing testi
+P1-B Task 8 — Unified Smoke Gate & Service Runner
+RED: isolated unified smoke verification ve service runner failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
