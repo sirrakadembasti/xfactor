@@ -3,7 +3,7 @@ unit: P1-B
 status: pending
 plan: implementation-plans/05-P1-B-runtime-verifier.md
 verified_commit: null
-updated_at: 2026-08-30T14:46:17.627Z
+updated_at: 2026-08-30T14:50:24.665Z
 ---
 
 # P1-B Evidence — Runtime, API, Browser, and Smoke Verifier
@@ -82,6 +82,17 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Observed coverage: missing test script fail-closed check, sandboxed test suite execution (`npm test`), exit code and stdout/stderr digest recording, and failure diagnostics.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 7 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 8 Receipt — Unified Smoke Gate & Service Runner
+
+- RED: `node backend/tests/test_p1_b_smoke.js` — exit `1`; expected missing `backend/verification/smokeVerifier.js`.
+- GREEN: `node backend/tests/test_p1_b_smoke.js` — exit `0`; `2` passed, `0` failed.
+- Independent review (`P1BTask8Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, unified smoke gate orchestration, manifest validation, database verification, process lifecycle and liveness probing, API contract mutation checks, browser journey validation, test infrastructure execution, and process cleanup verified.
+- Independent test (`P1BTask8IndependentTester`): fresh-process `node backend/tests/test_p1_b_smoke.js` — exit `0`; `2` passed, `0` failed.
+- Observed coverage: full runtime smoke pipeline execution, live mock server coordination, database mutations, DOM journey checks, test infrastructure integration, and fail-closed gate aggregation.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 8 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 

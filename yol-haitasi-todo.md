@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 7 (Test Infrastructure and Suite Execution Gate) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 8 Unified Smoke Gate & Service Runner.
+P1-B Task 8 (Unified Smoke Gate & Service Runner) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 9 Quality Policy and Evidence Aggregator.
 
 Sonraki görev:
 
 ```text
-P1-B Task 8 — Unified Smoke Gate & Service Runner
-RED: isolated unified smoke verification ve service runner failing testi
+P1-B Task 9 — Quality Policy and Evidence Aggregator
+RED: isolated quality policy runtime aggregation ve verification evidence recording failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
