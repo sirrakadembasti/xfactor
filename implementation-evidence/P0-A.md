@@ -3,7 +3,7 @@ unit: P0-A
 status: pending
 plan: implementation-plans/01-P0-A-state-contract-safety.md
 verified_commit: null
-updated_at: 2026-08-30T07:50:03.011Z
+updated_at: 2026-08-30T08:10:31.951Z
 ---
 
 # P0-A Evidence — State and Contract Safety
@@ -42,6 +42,17 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Decision: Task 2 transition matrix remains canonical; chat revisions are accepted only from `planning`, `pending_approval`, and `capability_blocked`.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 4 Receipt — Stack Capability Verification
+
+- RED: `node backend/tests/test_p0_a_capability_check.js` — exit `1`; expected missing `validateContractCapabilities`.
+- GREEN: `node backend/tests/test_p0_a_capability_check.js` — exit `0`; `1` passed, `0` failed.
+- Independent review: `APPROVE`; specification `PASS`, quality `PASS`, no findings.
+- Independent test: fresh-process `node backend/tests/test_p0_a_capability_check.js` — exit `0`; `1` passed, `0` failed.
+- Observed coverage: supported stack acceptance, unsupported framework rejection, atomic pending-contract rejection, project revision CAS, `capability_blocked` transition, explanatory chat persistence, isolated DB cleanup.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 ## Required Receipt

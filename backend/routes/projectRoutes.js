@@ -388,12 +388,31 @@ export function createProjectRouter({ requireAuth, projectAccess, wsHub }) {
 
             const {
                 approveContractRevision,
-                getLatestRevision
+                getLatestRevision,
+                rejectContractForCapabilities,
+                validateContractCapabilities
             } = await import('../contracts/projectContract.js');
             const latestRevision = getLatestRevision(id);
             if (!latestRevision || latestRevision.status !== 'pending_approval') {
                 return res.status(400).json({
                     error: "Onaylanacak bekleyen bir plan bulunamadı."
+                });
+            }
+
+            const capabilityCheck = validateContractCapabilities(
+                latestRevision.contract_json
+            );
+            if (!capabilityCheck.valid) {
+                const blocked = rejectContractForCapabilities({
+                    projectId: id,
+                    revision: latestRevision.revision,
+                    expectedProjectRevision: state.revision,
+                    errors: capabilityCheck.errors
+                });
+                return res.status(400).json({
+                    error: 'Unsupported architecture stack',
+                    status: blocked.status,
+                    details: capabilityCheck.errors
                 });
             }
 
