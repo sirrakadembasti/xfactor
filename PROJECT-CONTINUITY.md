@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-A
 current_plan: implementation-plans/04-P1-A-contract-traceability.md
-current_task: P1-A Task 6 - Requirement-Aware System Prompts
+current_task: P1-A Task 7 - Orchestrator Pipeline & writeGeneratedFiles Enforcement
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P1-A.md
 blocked_by: []
-next_action: Read P1-A Task 6, write the failing isolated docs agent sync test, and run the RED command
-updated_at: 2026-08-30T14:08:21.318Z
+next_action: Read P1-A Task 7, write the failing isolated e2e simulation test, and run the RED command
+updated_at: 2026-08-30T14:13:22.291Z
 ---
 
 # Project Continuity
@@ -65,14 +65,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-A Task 3 - Traceability Graph and Matrix Builder.
 - P1-A Task 4 - Domain Element Policy (Extraction, Contamination & Stubs).
 - P1-A Task 5 - Requirement-Aware Agent Schemas and Normalizers.
+- P1-A Task 6 - Requirement-Aware System Prompts.
 ## In Progress
 
-- P1-A Task 6 - Requirement-Aware System Prompts
+- P1-A Task 7 - Orchestrator Pipeline & writeGeneratedFiles Enforcement
 
 ## Pending
 
-1. Read P1-A Task 6 and write the isolated docs agent sync RED test.
-2. Implement Task 6 only after RED is observed.
+1. Read P1-A Task 7 and write the isolated e2e simulation RED test.
+2. Implement Task 7 only after RED is observed.
 3. Complete remaining P1-A tasks in plan order.
 
 ## Decisions
@@ -163,6 +164,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-A Task 5 review: APPROVE; specification PASS, quality PASS.
 - P1-A Task 5 independent agent schemas test: PASS (`4` passed, `0` failed).
 - P1-A Task 5 continuity validation: PASS.
+- P1-A Task 6 review: APPROVE; specification PASS, quality PASS.
+- P1-A Task 6 independent docs-sync test: PASS (`9` passed, `0` failed).
+- P1-A Task 6 continuity validation: PASS.
 - P0-C Final review: APPROVE; specification PASS, quality PASS.
 - P0-C Independent acceptance: UNIT TEST PASS.
 
@@ -179,7 +183,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-A Task 6, write the failing isolated docs agent sync test, and run the RED command.
+Read P1-A Task 7, write the failing isolated e2e simulation test, and run the RED command.
 
 ## Do Not Do
 

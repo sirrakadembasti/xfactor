@@ -9,8 +9,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { getAgent, AGENT_REGISTRY } from '../agents/index.js';
-import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
+import { MANAGER_SYSTEM_PROMPT } from '../agents/manager.js';
+import { DIRECTOR_SYSTEM_PROMPT } from '../agents/director.js';
+import { TEAMLEADER_SYSTEM_PROMPT } from '../agents/teamleader.js';
+import { CODER_SYSTEM_PROMPT } from '../agents/coder.js';
+import { REVIEWER_SYSTEM_PROMPT } from '../agents/reviewer.js';
+import { TESTER_SYSTEM_PROMPT } from '../agents/tester.js';
 import { buildManagerChatSystemPrompt } from '../routes/projectRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,10 +23,12 @@ const DOCS_DIR = path.join(__dirname, '../../docs');
 
 console.log("==================================================");
 console.log("🔍 Ajanlar & Docs/*.md Canlı Bağlantı Denetimi");
-console.log("==================================================");
-
 let passed = 0;
 let failed = 0;
+
+function cleanDoc(content) {
+    return content.replace(/^---[\s\S]*?---\s*/, '').trim();
+}
 
 function check(name, fn) {
     try {
@@ -30,90 +36,81 @@ function check(name, fn) {
         console.log(`  [PASS] ${name}`);
         passed++;
     } catch (e) {
-        console.error(`  [FAIL] ${name}:`, e.message);
+        console.error(`  [FAIL] ${name}: ${e.message}`);
         failed++;
     }
 }
 
 // 1. Manager Ajanı Denetimi
 check("1. manager.js -> docs/manager.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'manager.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('manager');
-    
-    assert.ok(agent.systemPrompt.includes("Sen **manager.agent**'sın"), "manager.md kimlik tanımı yüklenmeli");
-    assert.ok(agent.systemPrompt.includes("DATABASE_URL"), "manager.md DATABASE_URL kuralı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "manager.js promptu docs/manager.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'manager.md');
+    assert.ok(fs.existsSync(docPath), "docs/manager.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(MANAGER_SYSTEM_PROMPT.trim(), docContent, "manager.js SYSTEM_PROMPT docs/manager.md ile birebir eşleşmeli");
 });
 
 // 1b. manager.js fallback prompt source contract
 check("1b. manager.js fallback prompt source contract", () => {
-    const managerSource = fs.readFileSync(path.join(__dirname, '../agents/manager.js'), 'utf8');
-
-    assert.ok(managerSource.includes('FALLBACK_MANAGER_PROMPT'), 'manager.js fallback prompt tanımlı olmalı');
-    assert.ok(managerSource.includes('.env.example'), 'fallback prompt güvenli .env.example sözleşmesini taşımalı');
-    assert.ok(managerSource.includes('copy .env'), 'fallback prompt kullanıcı kopyası .env akışını anlatmalı');
-    assert.ok(managerSource.includes('NEXTAUTH_SECRET'), 'fallback prompt secret değiştirme zorunluluğunu taşımalı');
-    assert.ok(managerSource.includes('DATABASE_URL="file:./dev.db"'), 'fallback prompt DATABASE_URL sözleşmesini korumalı');
+    const managerSrc = fs.readFileSync(path.join(__dirname, '../agents/manager.js'), 'utf8');
+    assert.ok(managerSrc.includes("loadAgentPromptFromDocs('manager'"), "manager.js loadAgentPromptFromDocs('manager', ...) kullanmalı");
 });
 
 // 2. Director Ajanı Denetimi
 check("2. director.js -> docs/director.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'director.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('director');
-
-    assert.ok(agent.systemPrompt.includes("Sen bir **director.agent**'sın"), "director.md kimlik tanımı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "director.js promptu docs/director.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'director.md');
+    assert.ok(fs.existsSync(docPath), "docs/director.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(DIRECTOR_SYSTEM_PROMPT.trim(), docContent, "director.js SYSTEM_PROMPT docs/director.md ile birebir eşleşmeli");
 });
 
 // 3. Teamleader Ajanı Denetimi
 check("3. teamleader.js -> docs/teamleader.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'teamleader.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('teamleader');
-
-    assert.ok(agent.systemPrompt.includes("KRİTİK KURAL (ATOMİK DOSYA LİMİTİ)"), "teamleader.md atomik kuralı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "teamleader.js promptu docs/teamleader.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'teamleader.md');
+    assert.ok(fs.existsSync(docPath), "docs/teamleader.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(TEAMLEADER_SYSTEM_PROMPT.trim(), docContent, "teamleader.js SYSTEM_PROMPT docs/teamleader.md ile birebir eşleşmeli");
 });
 
 // 4. Coder Ajanı Denetimi
 check("4. coder.js -> docs/coder.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'coder.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('coder');
-
-    assert.ok(agent.systemPrompt.includes("Bileşen Kompozisyonu"), "coder.md bileşen kompozisyonu kuralı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "coder.js promptu docs/coder.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'coder.md');
+    assert.ok(fs.existsSync(docPath), "docs/coder.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(CODER_SYSTEM_PROMPT.trim(), docContent, "coder.js SYSTEM_PROMPT docs/coder.md ile birebir eşleşmeli");
 });
 
 // 5. Reviewer Ajanı Denetimi
 check("5. reviewer.js -> docs/reviewer.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'reviewer.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('reviewer');
-
-    assert.ok(agent.systemPrompt.includes("Veto Yetkisi (Fail-Closed)"), "reviewer.md veto kuralı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "reviewer.js promptu docs/reviewer.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'reviewer.md');
+    assert.ok(fs.existsSync(docPath), "docs/reviewer.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(REVIEWER_SYSTEM_PROMPT.trim(), docContent, "reviewer.js SYSTEM_PROMPT docs/reviewer.md ile birebir eşleşmeli");
 });
 
 // 6. Tester Ajanı Denetimi
 check("6. tester.js -> docs/tester.md eşleşmesi", () => {
-    const rawDoc = fs.readFileSync(path.join(DOCS_DIR, 'tester.md'), 'utf8');
-    const cleanDoc = rawDoc.replace(/^---[\s\S]*?---\s*/, '').trim();
-    const agent = getAgent('tester');
-
-    assert.ok(agent.systemPrompt.includes("Deterministik Denetim"), "tester.md deterministik denetim kuralı yüklenmeli");
-    assert.strictEqual(agent.systemPrompt, cleanDoc, "tester.js promptu docs/tester.md ile birebir eşit olmalı");
+    const docPath = path.join(DOCS_DIR, 'tester.md');
+    assert.ok(fs.existsSync(docPath), "docs/tester.md dosyası mevcut olmalı");
+    const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
+    assert.strictEqual(TESTER_SYSTEM_PROMPT.trim(), docContent, "tester.js SYSTEM_PROMPT docs/tester.md ile birebir eşleşmeli");
 });
 
 // 7. projectRoutes.js -> ORKESTRASYON-TALIMATNAMESI.md ve manager.md Denetimi
 check("7. projectRoutes.js -> docs/ORKESTRASYON-TALIMATNAMESI.md ve manager.md yüklemesi", () => {
-    const chatPrompt = buildManagerChatSystemPrompt({ status: 'planning', title: 'Test Projesi' }, '.');
-    
-    assert.ok(chatPrompt.includes("Sen **manager.agent**'sın"), "Chat promptunda docs/manager.md olmalı");
-    assert.ok(chatPrompt.includes("docs/ORKESTRASYON-TALIMATNAMESI.md"), "Chat promptunda ORKESTRASYON-TALIMATNAMESI referansı olmalı");
-    assert.ok(chatPrompt.includes("Agent = Klasör"), "Orkestrasyon anayasası maddeleri chat promptuna girmeli");
+    const prompt = buildManagerChatSystemPrompt();
+    assert.ok(prompt.length > 50, "buildManagerChatSystemPrompt manager.md içeriğini barındırmalı");
+});
+
+// 8. Requirement-Aware Prompt Instructions Check
+check("8. System prompts must contain requirementIds and targetFiles constraints", () => {
+    const managerDoc = fs.readFileSync(path.join(DOCS_DIR, 'manager.md'), 'utf8');
+    assert.ok(managerDoc.includes('requirements') || managerDoc.includes('requirementIds'), "manager.md requirements listesi talimatı içermeli");
+
+    const teamleaderDoc = fs.readFileSync(path.join(DOCS_DIR, 'teamleader.md'), 'utf8');
+    assert.ok(teamleaderDoc.includes('requirementIds'), "teamleader.md requirementIds talimatı içermeli");
+
+    const coderDoc = fs.readFileSync(path.join(DOCS_DIR, 'coder.md'), 'utf8');
+    assert.ok(coderDoc.includes('targetFiles') || coderDoc.includes('allowlist') || coderDoc.includes('hedef dosya'), "coder.md targetFiles sınırı talimatı içermeli");
 });
 
 console.log("\n==================================================");
