@@ -15,6 +15,7 @@ if (!DatabaseCtor) {
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { logError, writeStructuredLog } from './observability.js';
 
@@ -189,6 +190,164 @@ export const MIGRATIONS = [
             }
             if (!columnExists(database, 'users', 'mfa_enabled')) {
                 database.exec('ALTER TABLE users ADD COLUMN mfa_enabled INTEGER NOT NULL DEFAULT 0');
+            }
+        }
+    },
+    {
+        version: 7,
+        name: '007_state_contract_safety',
+        up: (database) => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS project_contracts (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    revision INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    contract_json TEXT NOT NULL,
+                    contract_hash TEXT NOT NULL,
+                    source_message_id INTEGER,
+                    supersedes_revision INTEGER,
+                    approved_at DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(project_id, revision),
+                    UNIQUE(project_id, id),
+                    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirements (
+                    id TEXT PRIMARY KEY,
+                    contract_id TEXT NOT NULL,
+                    stable_key TEXT NOT NULL,
+                    statement TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    priority TEXT NOT NULL,
+                    mandatory INTEGER DEFAULT 1,
+                    source_message_id INTEGER,
+                    status TEXT NOT NULL,
+                    supersedes_requirement_id TEXT,
+                    UNIQUE(contract_id, stable_key),
+                    UNIQUE(contract_id, id),
+                    FOREIGN KEY(contract_id) REFERENCES project_contracts(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS contract_elements (
+                    id TEXT PRIMARY KEY,
+                    contract_id TEXT NOT NULL,
+                    element_type TEXT NOT NULL,
+                    stable_key TEXT NOT NULL,
+                    spec_json TEXT NOT NULL,
+                    UNIQUE(contract_id, stable_key),
+                    UNIQUE(contract_id, id),
+                    FOREIGN KEY(contract_id) REFERENCES project_contracts(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS contract_tasks (
+                    id TEXT PRIMARY KEY,
+                    contract_id TEXT NOT NULL,
+                    stable_key TEXT NOT NULL,
+                    task_spec_json TEXT NOT NULL,
+                    UNIQUE(contract_id, stable_key),
+                    UNIQUE(contract_id, id),
+                    FOREIGN KEY(contract_id) REFERENCES project_contracts(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirement_task_links (
+                    contract_id TEXT NOT NULL,
+                    requirement_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    PRIMARY KEY (contract_id, requirement_id, task_id),
+                    FOREIGN KEY (contract_id, requirement_id)
+                      REFERENCES requirements (contract_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, task_id)
+                      REFERENCES contract_tasks (contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS requirement_element_links (
+                    contract_id TEXT NOT NULL,
+                    requirement_id TEXT NOT NULL,
+                    element_id TEXT NOT NULL,
+                    PRIMARY KEY (contract_id, requirement_id, element_id),
+                    FOREIGN KEY (contract_id, requirement_id)
+                      REFERENCES requirements (contract_id, id) ON DELETE CASCADE,
+                    FOREIGN KEY (contract_id, element_id)
+                      REFERENCES contract_elements (contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS repair_issues (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL,
+                    run_id TEXT,
+                    requirement_id TEXT,
+                    fingerprint TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    detail_json TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    resolved_at DATETIME,
+                    FOREIGN KEY(project_id, contract_id)
+                      REFERENCES project_contracts(project_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS task_checkpoints (
+                    project_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL,
+                    plan_hash TEXT NOT NULL,
+                    task_spec_hash TEXT NOT NULL,
+                    input_hash TEXT NOT NULL,
+                    output_hash TEXT NOT NULL,
+                    gate_version TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK(status IN ('completed', 'invalidated')),
+                    requirement_ids TEXT NOT NULL DEFAULT '[]',
+                    invalidation_reason TEXT,
+                    revision INTEGER NOT NULL DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    invalidated_at DATETIME,
+                    PRIMARY KEY(
+                        project_id, task_id, contract_id,
+                        plan_hash, task_spec_hash, input_hash,
+                        output_hash, gate_version
+                    ),
+                    FOREIGN KEY(project_id, contract_id)
+                      REFERENCES project_contracts(project_id, id) ON DELETE CASCADE
+                );
+            `);
+
+            database.exec('CREATE INDEX IF NOT EXISTS idx_project_contracts_project ON project_contracts(project_id, status)');
+            database.exec('CREATE INDEX IF NOT EXISTS idx_repair_issues_project ON repair_issues(project_id, status)');
+            database.exec('CREATE INDEX IF NOT EXISTS idx_task_checkpoints_project ON task_checkpoints(project_id, invalidated_at)');
+
+            const projects = database.prepare(
+                'SELECT id, plan, status, created_at FROM projects WHERE plan IS NOT NULL'
+            ).all();
+            for (const project of projects) {
+                const contractExists = database.prepare(
+                    'SELECT 1 FROM project_contracts WHERE project_id = ?'
+                ).get(project.id);
+                if (contractExists) continue;
+
+                const parsedPlan = JSON.parse(project.plan);
+                const canonicalPlan = JSON.stringify(parsedPlan);
+                const hash = crypto.createHash('sha256').update(canonicalPlan).digest('hex');
+                const contractId = `contract-${crypto.randomUUID()}`;
+                const approvedStatuses = new Set(['pending_approval', 'running', 'paused', 'completed']);
+                const contractStatus = approvedStatuses.has(project.status) ? 'approved' : 'draft';
+                const approvedAt = contractStatus === 'approved' ? project.created_at : null;
+                database.prepare(`
+                    INSERT INTO project_contracts (
+                        id, project_id, revision, status, contract_json,
+                        contract_hash, approved_at, created_at
+                    ) VALUES (?, ?, 1, ?, ?, ?, ?, ?)
+                `).run(
+                    contractId,
+                    project.id,
+                    contractStatus,
+                    canonicalPlan,
+                    hash,
+                    approvedAt,
+                    project.created_at
+                );
             }
         }
     }
