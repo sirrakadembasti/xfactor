@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 3 (Liveness & Readiness Prober) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 4 Database Lifecycle & Schema Verifier.
+P1-B Task 4 (Database Lifecycle & Schema Verifier) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 5 API Contract and Database State Verifier.
 
 Sonraki görev:
 
 ```text
-P1-B Task 4 — Database Lifecycle & Schema Verifier
-RED: isolated database verification, schema check, ve write capability failing testi
+P1-B Task 5 — API Contract and Database State Verifier
+RED: isolated API endpoint validation ve physical DB side-effect mutation failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
