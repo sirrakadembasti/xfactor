@@ -523,11 +523,13 @@ await runAsyncTest("10. Project lifecycle should enforce safe statuses and trans
     const { PROJECT_LIFECYCLE, isValidProjectStatus, canTransitionProjectStatus, getProjectRole } = authModule;
     assert.ok(Array.isArray(PROJECT_LIFECYCLE), 'Lifecycle must be defined');
     assert.ok(PROJECT_LIFECYCLE.includes('planning'), 'Planning state should exist');
+    assert.ok(PROJECT_LIFECYCLE.includes('contract_approved'), 'Contract-approved state should exist');
     assert.strictEqual(isValidProjectStatus('planning'), true, 'Planning should be accepted');
     assert.strictEqual(isValidProjectStatus('unknown_state'), false, 'Unknown states must be rejected');
-    assert.strictEqual(canTransitionProjectStatus('planning', 'running'), true, 'Planning can transition to running');
-    assert.strictEqual(canTransitionProjectStatus('running', 'planning'), false, 'Running cannot revert to planning');
-    assert.strictEqual(canTransitionProjectStatus('completed', 'running'), false, 'Completed cannot go back to running');
+    assert.strictEqual(canTransitionProjectStatus('planning', 'pending_approval'), true, 'Planning can transition to pending approval');
+    assert.strictEqual(canTransitionProjectStatus('pending_approval', 'contract_approved'), true, 'Pending approval can transition to contract approved');
+    assert.strictEqual(canTransitionProjectStatus('contract_approved', 'implementing'), true, 'Approved contract can transition to implementing');
+    assert.strictEqual(canTransitionProjectStatus('completed', 'implementing'), false, 'Completed cannot go back to implementing');
 
     const owner = authModule.createUser(`stateowner${Date.now()}`, 'StrongPassword!2028');
     const project = authModule.createProjectForUser(owner.id, 'Lifecycle Project');
@@ -753,21 +755,31 @@ await runAsyncTest("18. File-based protocol should create TALIMATNAME, ALT-TALIM
 // ----------------------------------------------------
 await runAsyncTest("19. Workflow state and pause/resume mechanisms should be reliable", async () => {
     const orchestrator = await import('../engine/index.js');
-    const { readProjectState, writeProjectState, getProjectDir } = orchestrator;
-    const testId = `test-pause-${Date.now()}`;
-    const testState = { id: testId, title: "Pause Test Project", status: "running", plan: { domains: [] } };
-    await writeProjectState(testId, testState);
+    const { readProjectState, writeProjectState } = orchestrator;
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const testState = await createProject({ title: "Pause Test Project" });
 
-    const retrieved = await readProjectState(testId);
-    assert.strictEqual(retrieved.status, "running", "Project state should be running");
+    try {
+        for (const status of ['pending_approval', 'contract_approved', 'implementing']) {
+            testState.status = status;
+            await writeProjectState(testState.id, testState);
+        }
 
-    testState.status = "paused";
-    await writeProjectState(testId, testState);
-    const pausedState = await readProjectState(testId);
-    assert.strictEqual(pausedState.status, "paused", "Project state should transition to paused");
+        const retrieved = await readProjectState(testState.id);
+        assert.strictEqual(retrieved.status, "implementing", "Project state should be implementing");
 
-    // Temizlik
-    await fs.promises.rm(getProjectDir(testId), { recursive: true, force: true }).catch(() => {});
+        testState.status = "paused";
+        await writeProjectState(testState.id, testState);
+        const pausedState = await readProjectState(testState.id);
+        assert.strictEqual(pausedState.status, "paused", "Project state should transition to paused");
+
+        testState.status = "implementing";
+        await writeProjectState(testState.id, testState);
+        const resumedState = await readProjectState(testState.id);
+        assert.strictEqual(resumedState.status, "implementing", "Paused project should resume implementing");
+    } finally {
+        await deleteProject(testState.id);
+    }
 });
 
 // ----------------------------------------------------

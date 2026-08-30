@@ -142,10 +142,11 @@ test("2.4a Owner, Editor ve Viewer Yetki Ayrımı", () => {
 
     // Yaşam Döngüsü Durum Geçişleri (canTransitionProjectStatus)
     assert.strictEqual(canTransitionProjectStatus('planning', 'pending_approval'), true, "planning -> pending_approval geçerli olmalı");
-    assert.strictEqual(canTransitionProjectStatus('pending_approval', 'running'), true, "pending_approval -> running geçerli olmalı");
-    assert.strictEqual(canTransitionProjectStatus('running', 'paused'), true, "running -> paused geçerli olmalı");
-    assert.strictEqual(canTransitionProjectStatus('paused', 'running'), true, "paused -> running geçerli olmalı");
-    assert.strictEqual(canTransitionProjectStatus('completed', 'running'), false, "completed -> running yasak olmalı");
+    assert.strictEqual(canTransitionProjectStatus('pending_approval', 'contract_approved'), true, "pending_approval -> contract_approved geçerli olmalı");
+    assert.strictEqual(canTransitionProjectStatus('contract_approved', 'implementing'), true, "contract_approved -> implementing geçerli olmalı");
+    assert.strictEqual(canTransitionProjectStatus('implementing', 'paused'), true, "implementing -> paused geçerli olmalı");
+    assert.strictEqual(canTransitionProjectStatus('paused', 'implementing'), true, "paused -> implementing geçerli olmalı");
+    assert.strictEqual(canTransitionProjectStatus('completed', 'implementing'), false, "completed -> implementing yasak olmalı");
 });
 
 console.log("\n==================================================");

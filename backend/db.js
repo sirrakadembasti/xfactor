@@ -437,13 +437,24 @@ export function formatDBDate(dateVal) {
 db.exec('CREATE INDEX IF NOT EXISTS idx_project_owners_user_id ON project_owners(user_id)');
 
 export function getProjectState(id) {
-    const project = db.prepare('SELECT id, title, status, plan, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?').get(id);
+    const project = db.prepare(
+        'SELECT id, title, status, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?'
+    ).get(id);
     if (!project) return null;
 
+    const contractRow = db.prepare(`
+        SELECT contract_json FROM project_contracts
+        WHERE project_id = ?
+        ORDER BY
+            CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
+            revision DESC
+        LIMIT 1
+    `).get(id);
+
     let plan = null;
-    if (project.plan) {
+    if (contractRow?.contract_json) {
         try {
-            plan = JSON.parse(project.plan);
+            plan = JSON.parse(contractRow.contract_json);
         } catch {}
     }
 
@@ -480,18 +491,17 @@ export function getProjectState(id) {
 }
 
 export function saveProjectState(state) {
-    const planStr = state.plan ? JSON.stringify(state.plan) : null;
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
     const currentRevision = Number(state.revision || 1);
     const nextRevision = currentRevision + 1;
 
     const upsertProjectStmt = db.prepare(`
         INSERT INTO projects (id, title, status, plan, workflow_state, revision)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, NULL, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             title = excluded.title,
             status = excluded.status,
-            plan = excluded.plan,
+            plan = NULL,
             workflow_state = excluded.workflow_state,
             revision = excluded.revision
     `);
@@ -503,7 +513,6 @@ export function saveProjectState(state) {
             state.id,
             state.title,
             state.status,
-            planStr,
             workflowStr,
             nextRevision
         );

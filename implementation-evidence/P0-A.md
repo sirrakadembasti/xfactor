@@ -1,14 +1,14 @@
 ---
 unit: P0-A
-status: pending
+status: verified
 plan: implementation-plans/01-P0-A-state-contract-safety.md
-verified_commit: null
-updated_at: 2026-08-30T08:29:52.356Z
+verified_commit: SELF
+updated_at: 2026-08-30T09:09:34.239Z
 ---
 
 # P0-A Evidence — State and Contract Safety
 
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+All tasks and unit acceptance criteria for P0-A are complete and verified. Verified receipts are recorded below.
 
 ## Task 1 Receipt — Database Schema Migration Version 7
 
@@ -67,12 +67,21 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
-## Required Receipt
+## Task 6 Receipt — Cutover and Compatibility Cleanup
 
-- Contract revision/pending-approval integration results
-- State transition and rejection transaction results
-- Coarse checkpoint invalidation result
-- Migration/backfill result
-- Independent reviewer decision
-- Independent tester decision
-- Continuity validator result
+- RED: `node backend/tests/test_p0_a_cutover.js` — exit `1`; expected `plan` column to be `null`, got legacy plan object.
+- GREEN: `node backend/tests/test_p0_a_cutover.js` — exit `0`; `1` passed, `0` failed.
+- Independent review: `APPROVE`; specification `PASS`, quality `PASS`, clean cutover verified.
+- Independent test: fresh-process `node backend/tests/test_p0_a_cutover.js` — exit `0`; `1` passed, `0` failed.
+- Observed coverage: legacy `projects.plan` column bypassed on read/write, contract-json-backed project plan retrieval, approved contract prioritized, clean cutover without compatibility regressions.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 6 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## P0-A Unit Verification & Independent Acceptance Receipt
+
+- Unit tests: `node backend/tests/test_p0_a_migrations.js && node backend/tests/test_p0_a_state_transitions.js && node backend/tests/test_p0_a_contract_flow.js && node backend/tests/test_p0_a_capability_check.js && node backend/tests/test_p0_a_rejections.js && node backend/tests/test_p0_a_cutover.js` — exit `0`; `6/6` passed, `0` failed.
+- Integration test suite: `node backend/tests/test_runner.js` — exit `0`; `25/25` test suites passed, `0` failed.
+- Independent final review (`P0AFinalReviewer`): `APPROVE`; specification `PASS`, quality `PASS`, all 6 tasks verified against contract safety constraints.
+- Independent acceptance tester (`P0AIndependentTester`): `UNIT TEST PASS`; all isolated unit suites and full backend integration suites passed cleanly.
+- Verification commit: `SELF`

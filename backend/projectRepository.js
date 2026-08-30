@@ -61,8 +61,19 @@ export async function createProject({ title, ownerUserId = null, env = process.e
 export function getProject(projectId) {
     if (!isValidProjectId(projectId)) return null;
 
-    const project = db.prepare('SELECT id, title, status, plan, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?').get(projectId);
+    const project = db.prepare(
+        'SELECT id, title, status, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?'
+    ).get(projectId);
     if (!project) return null;
+
+    const contractRow = db.prepare(`
+        SELECT contract_json FROM project_contracts
+        WHERE project_id = ?
+        ORDER BY
+            CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
+            revision DESC
+        LIMIT 1
+    `).get(projectId);
 
     const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
     const chatHistory = chats.map(c => {
@@ -77,8 +88,8 @@ export function getProject(projectId) {
     });
 
     let plan = null;
-    if (project.plan) {
-        try { plan = JSON.parse(project.plan); } catch {}
+    if (contractRow?.contract_json) {
+        try { plan = JSON.parse(contractRow.contract_json); } catch {}
     }
 
     let workflow = null;
@@ -123,7 +134,6 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         throw new Error(`Invalid project state or project ID: ${state?.id}`);
     }
 
-    const planStr = state.plan ? JSON.stringify(state.plan) : null;
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
     const expectedRevision = Number(state.revision || 1);
     const nextRevision = expectedRevision + 1;
@@ -156,12 +166,11 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
 
         const result = db.prepare(`
             UPDATE projects
-            SET title = ?, status = ?, plan = ?, workflow_state = ?, revision = ?
+            SET title = ?, status = ?, plan = NULL, workflow_state = ?, revision = ?
             WHERE id = ? AND revision = ? AND status = ?
         `).run(
             state.title,
             state.status,
-            planStr,
             workflowStr,
             nextRevision,
             state.id,

@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P0-A
-current_plan: implementation-plans/01-P0-A-state-contract-safety.md
-current_task: P0-A Task 6 - Cutover and Compatibility Cleanup
+current_unit: P0-B
+current_plan: implementation-plans/02-P0-B-sandbox-verification.md
+current_task: P0-B Task 1 - OS Sandbox and Process Isolation Enforcement
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
-evidence_file: implementation-evidence/P0-A.md
+evidence_file: implementation-evidence/P0-B.md
 blocked_by: []
-next_action: Read P0-A Task 6, write the failing isolated cutover test, and run the RED command
-updated_at: 2026-08-30T08:29:52.356Z
+next_action: Read P0-B Task 1, write the failing isolated sandbox test, and run the RED command
+updated_at: 2026-08-30T09:09:34.239Z
 ---
 
 # Project Continuity
@@ -47,15 +47,17 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-A Task 4 - Stack Capability Verification and capability_blocked State.
 - P0-A Task 5 - Rejection Recording, Durable Repair Issues and Checkpoint Invalidation.
 
+- P0-A Task 6 - Cutover and Compatibility Cleanup.
+- P0-A — State and Contract Safety complete and verified (Tasks 1–6).
 ## In Progress
 
-- P0-A Task 6 - Cutover and Compatibility Cleanup
+- P0-B Task 1 - OS Sandbox and Process Isolation Enforcement
 
 ## Pending
 
-1. Write the isolated P0-A cutover RED test.
-2. Implement Task 6 only after RED is observed.
-3. Complete remaining P0-A tasks in plan order.
+1. Read P0-B Task 1 and write the isolated sandbox RED test.
+2. Implement P0-B tasks in plan order.
+3. Complete remaining units according to master execution plan.
 
 ## Decisions
 
@@ -93,6 +95,12 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-A Task 5 review: APPROVE; specification and quality criteria met.
 - P0-A Task 5 independent rejection test: PASS (`1` passed, `0` failed).
 - P0-A Task 5 continuity validation: PASS.
+- P0-A Task 6 review: APPROVE; specification PASS, quality PASS.
+- P0-A Task 6 independent cutover test: PASS (`1` passed, `0` failed).
+- P0-A Task 6 continuity validation: PASS.
+- P0-A Unit verification: 6/6 isolated unit tests PASS, 25/25 integration suites PASS.
+- P0-A Final review: APPROVE; specification PASS, quality PASS.
+- P0-A Independent acceptance: UNIT TEST PASS.
 
 ## Known Failures
 
@@ -107,7 +115,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-A Task 6, write the failing isolated cutover test, and run the RED command.
+Read P0-B Task 1, write the failing isolated sandbox test, and run the RED command.
 
 ## Do Not Do
 

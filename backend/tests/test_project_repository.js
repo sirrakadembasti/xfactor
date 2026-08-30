@@ -72,6 +72,7 @@ await runAsyncTest('4. State persistence and safe delete should cleanly synchron
     const repo = await import('../projectRepository.js');
     const { createProject, getProject, saveProjectState, deleteProject, getProjectDir } = repo;
     const { createUser } = await import('../auth.js');
+    const { createContractRevision } = await import('../contracts/projectContract.js');
     const customRoot = await import('fs/promises').then(fs => fs.mkdtemp(path.join(os.tmpdir(), 'delete-test-')));
     const env = { PROJECTS_ROOT: customRoot };
 
@@ -80,7 +81,10 @@ await runAsyncTest('4. State persistence and safe delete should cleanly synchron
     const projectDir = getProjectDir(project.id, env);
 
     project.status = 'pending_approval';
-    project.plan = { summary: 'Plan özeti', domains: [{ name: 'backend' }] };
+    createContractRevision(project.id, {
+        summary: 'Plan özeti',
+        domains: [{ name: 'backend' }]
+    }, null);
     project.chatHistory.push({ role: 'user', parts: [{ text: 'Onay veriyorum' }] });
     await saveProjectState(project, env);
 

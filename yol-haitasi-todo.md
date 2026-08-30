@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P0-A -->
+<!-- continuity:current_unit=P0-B -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,14 +27,14 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P0-A` |
+| Aktif birim | `P0-B` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
 
 ### P0 — Yanlış completion üretimini durdur
 
-- [ ] **P0-A — State ve contract safety**
+- [x] **P0-A — State ve contract safety**
   - Plan: `implementation-plans/01-P0-A-state-contract-safety.md`
   - Evidence: `implementation-evidence/P0-A.md`
   - Hedef: sürümlü contract, ayrılmış state machine, rejection semantics, coarse checkpoint invalidation.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-Continuity Ledger, sekiz uygulama planı ve evidence makbuzları hazırlandı. Yerel validator PASS; bağımsız mimari reviewer ve mekanik plan validator APPROVE verdi. Kaynak implementasyonu henüz başlamadı.
+P0-A State ve contract safety birimi (Tasks 1–6) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P0-B OS sandbox ve fail-closed verification.
 
 Sonraki görev:
 
 ```text
-P0-A Task 1 — Database Schema Migration (Version 7)
-RED: isolated DB fixture ve failing migration testi
+P0-B Task 1 — OS Sandbox and Process Isolation Enforcement
+RED: isolated sandbox execution ve resource-limit failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

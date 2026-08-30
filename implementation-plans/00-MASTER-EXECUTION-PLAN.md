@@ -95,7 +95,7 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–9. 
 
 | Order | Unit | Plan | Evidence | Depends on | Status |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | P0-A | `01-P0-A-state-contract-safety.md` | `../implementation-evidence/P0-A.md` | — | pending |
+| 1 | P0-A | `01-P0-A-state-contract-safety.md` | `../implementation-evidence/P0-A.md` | — | verified |
 | 2 | P0-B | `02-P0-B-sandbox-verification.md` | `../implementation-evidence/P0-B.md` | P0-A | pending |
 | 3 | P0-C | `03-P0-C-checkpoint-safety.md` | `../implementation-evidence/P0-C.md` | P0-A | pending |
 | 4 | P1-A | `04-P1-A-contract-traceability.md` | `../implementation-evidence/P1-A.md` | P0-A, P0-B | pending |
