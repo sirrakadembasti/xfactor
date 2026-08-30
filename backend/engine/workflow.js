@@ -749,6 +749,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     }
                 }
                 invalidateProjectCheckpoints(projectId);
+                if (typeof dag?.getAllTasks === 'function') {
+                    for (const t of dag.getAllTasks()) {
+                        await reconcileTaskCache(projectDir, t.id, t);
+                    }
+                }
 
                 terminalStatus = 'rejected';
                 executionError = `Proje kabul testlerini geçemedi: ${testResult.summary}`;

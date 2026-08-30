@@ -1,14 +1,14 @@
 ---
 unit: P0-C
-status: pending
+status: verified
 plan: implementation-plans/03-P0-C-checkpoint-safety.md
-verified_commit: null
-updated_at: 2026-08-30T12:23:06.158Z
+verified_commit: SELF
+updated_at: 2026-08-30T13:29:05.896Z
 ---
 
 # P0-C Evidence — Selective Checkpoint Safety
 
-Unit implementation is in progress. Verified task checkpoints are recorded below.
+All tasks and unit acceptance criteria for P0-C are complete and verified. Verified receipts are recorded below.
 
 ## Task 1 Receipt — Checkpoint Database Integration and CRUD APIs
 
@@ -41,12 +41,22 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+## Task 4 Receipt — Selective Rejection and Cascading Checkpoint Invalidation
 
-## Required Receipt
+- RED: `node backend/tests/test_p0_c_selective_rejection.js` — exit `1`; expected `invalidateCheckpointsByRequirements is not a function`.
+- GREEN: `node backend/tests/test_p0_c_selective_rejection.js` — exit `0`; `2` passed, `0` failed.
+- Independent review (`P0CTask4Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`, requirement-to-task mapping, recursive downstream DAG invalidation via BFS, database transaction serialization (`BEGIN IMMEDIATE`), filesystem cache reconciliation, and coarse fallback preservation verified.
+- Independent test (`P0CTask4IndependentTester`): fresh-process `node backend/tests/test_p0_c_selective_rejection.js` — exit `0`; `2` passed, `0` failed.
+- Observed coverage: requirement-based selective checkpoint invalidation, transitive dependency propagation in DAG, unaffected task preservation, and project-level coarse contract invalidation fallback.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
-- Composite checkpoint identity and uniqueness results
-- Contract/task/input/output/gate hash invalidation results
-- Rejection/resume selective rebuild results
-- CAS/concurrency results
-- Independent reviewer and tester decisions
-- Continuity validator result
+
+## P0-C Unit Verification & Independent Acceptance Receipt
+
+- Unit tests: `node backend/tests/test_p0_c_checkpoint_repository.js && node backend/tests/test_p0_c_cas_invalidation.js && node backend/tests/test_p0_c_workflow_integration.js && node backend/tests/test_p0_c_selective_rejection.js` — exit `0`; `9/9` passed, `0` failed across 4 test files.
+- Integration test suite: `node backend/tests/test_runner.js` — exit `0`; `25/25` test suites passed, `0` failed.
+- Independent final unit review (`P0CFinalUnitReviewer`): `APPROVE`; Specification Verdict `PASS`, Quality Verdict `PASS`, all 4 tasks verified against CAS and selective invalidation constraints.
+- Independent acceptance tester (`P0CIndependentAcceptanceTester`): `UNIT TEST PASS`; all isolated unit suites and full backend integration suites passed cleanly in fresh processes.
+- Verification commit: `SELF`

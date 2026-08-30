@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P0-C -->
+<!-- continuity:current_unit=P1-A -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P0-C` |
+| Aktif birim | `P1-A` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -42,7 +42,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Plan: `implementation-plans/02-P0-B-sandbox-verification.md`
   - Evidence: `implementation-evidence/P0-B.md`
   - Bağımlılık: P0-A verified.
-- [ ] **P0-C — Selective checkpoint safety**
+- [x] **P0-C — Selective checkpoint safety**
   - Plan: `implementation-plans/03-P0-C-checkpoint-safety.md`
   - Evidence: `implementation-evidence/P0-C.md`
   - Bağımlılık: P0-A verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-C Task 3 (Workflow Runner Integration and FS Reconciliation) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 4 Selective Rejection and Cascading Checkpoint Invalidation.
+P0-C Selective checkpoint safety birimi (Tasks 1–4) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P1-A Contract ve requirement traceability.
 
 Sonraki görev:
 
 ```text
-P0-C Task 4 — Selective Rejection and Cascading Checkpoint Invalidation
-RED: isolated selective rejection ve cascading DAG invalidation failing testi
+P1-A Task 1 — Migration 9 Schema for Typed Traceability and Artifacts
+RED: isolated migration 9 ve traceability repository failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

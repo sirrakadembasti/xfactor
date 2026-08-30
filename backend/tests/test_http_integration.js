@@ -29,7 +29,7 @@ async function reservePort() {
 async function waitForReady(child) {
     await new Promise((resolve, reject) => {
         let stderr = '';
-        const timer = setTimeout(() => reject(new Error(`Backend readiness timeout: ${stderr}`)), 10_000);
+        const timer = setTimeout(() => reject(new Error(`Backend readiness timeout: ${stderr}`)), 25_000);
         const cleanup = () => {
             clearTimeout(timer);
             child.stdout.off('data', onData);

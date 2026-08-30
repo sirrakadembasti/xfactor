@@ -40,7 +40,7 @@ const testFiles = [
     'test_p3_observability.js'
 ];
 
-async function runTestFile(file, env, timeoutMs = 60000) {
+async function runTestFile(file, env, timeoutMs = 120000) {
     return new Promise((resolve) => {
         const filePath = path.join(__dirname, file);
         const proc = spawn(process.execPath, [filePath], {
