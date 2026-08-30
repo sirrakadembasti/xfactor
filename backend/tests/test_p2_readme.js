@@ -102,4 +102,110 @@ npm run build#docs
     });
 }
 
+
+if (!filteredTest || filteredTest === 'readme-ports') {
+    await runAsyncTest('P2.5.2: verifyReadmeCommands rejects README port mismatches', async () => {
+        const files = [
+            {
+                path: 'README.md',
+                content: 'Open the application at http://localhost:8080 after startup.'
+            },
+            {
+                path: 'src/server.js',
+                content: `
+                    const port = process.env.PORT || 3000;
+                    app.listen(port);
+                `
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, null);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected README validation to fail on port mismatch'
+        );
+        assert.deepStrictEqual(result.issues, [
+            'Documented port 8080 does not match application port 3000'
+        ]);
+    });
+
+    await runAsyncTest('P2.5.2: verifyReadmeCommands passes matching backend and frontend ports', async () => {
+        const files = [
+            {
+                path: 'README.md',
+                content: 'Backend runs on port 3000. Frontend: http://localhost:5173.'
+            },
+            {
+                path: 'src/server.js',
+                content: 'const port = process.env.PORT || 3000; app.listen(port);'
+            },
+            {
+                path: 'vite.config.js',
+                content: 'export default { server: { port: 5173 } };'
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, null);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+
+    await runAsyncTest('P2.5.2: verifyReadmeCommands ignores port-like source comments', async () => {
+        const files = [
+            {
+                path: 'README.md',
+                content: 'Open http://localhost:3000.'
+            },
+            {
+                path: 'src/server.js',
+                content: `
+                    // Legacy port: 3000
+                    const port = process.env.PORT || 5173;
+                    app.listen(port);
+                `
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, null);
+        assert.deepStrictEqual(result.issues, [
+            'Documented port 3000 does not match application port 5173'
+        ]);
+    });
+
+    await runAsyncTest('P2.5.2: verifyReadmeCommands validates one-digit ports', async () => {
+        const files = [
+            {
+                path: 'README.md',
+                content: 'Development endpoint: http://localhost:1.'
+            },
+            {
+                path: 'src/server.js',
+                content: 'const port = process.env.PORT || 2; app.listen(port);'
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, null);
+        assert.deepStrictEqual(result.issues, [
+            'Documented port 1 does not match application port 2'
+        ]);
+    });
+
+    await runAsyncTest('P2.5.2: verifyReadmeCommands ignores invalid overlong port numbers', async () => {
+        const files = [
+            {
+                path: 'README.md',
+                content: 'Invalid example URL: http://localhost:300000.'
+            },
+            {
+                path: 'src/server.js',
+                content: 'const port = process.env.PORT || 3000; app.listen(port);'
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, null);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
 finish();

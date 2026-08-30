@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.5.1 (Verify README Scripts Exist in package.json) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.5.2 (Verify README Port Declarations Match Code).
+P2 Step P2.5.2 (Verify README Port Declarations Match Code) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.5.3 (Run README Setup/Build Commands in Sandbox).
 
 Sonraki görev:
 
 ```text
-P2 Task 5 — README Command Parser and Sandboxed Runner (Step P2.5.2: Verify README Port Declarations Match Code)
-RED: node backend/tests/test_p2_readme.js --test=readme-ports
+P2 Task 5 — README Command Parser and Sandboxed Runner (Step P2.5.3: Run README Setup/Build Commands in Sandbox)
+RED: node backend/tests/test_p2_readme.js --test=readme-sandboxed-commands
 ```
 
 ## Yeni Sohbet İçin Başlangıç
