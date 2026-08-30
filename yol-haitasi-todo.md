@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-A Task 1 (Migration 9 Schema for Typed Traceability and Artifacts) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 2 Extend Capability Registry.
+P1-A Task 2 (Extend Capability Registry) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 3 Traceability Graph and Matrix Builder.
 
 Sonraki görev:
 
 ```text
-P1-A Task 2 — Extend Capability Registry (No Duplicate Registry)
-RED: isolated capability extension ve unsupported framework rejection failing testi
+P1-A Task 3 — Traceability Graph and Matrix Builder
+RED: isolated traceability matrix builder ve coverage policy failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

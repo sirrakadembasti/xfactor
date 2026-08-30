@@ -10,6 +10,44 @@ export const SUPPORTED_STACKS = {
     databases: ['sqlite']
 };
 
+export function extendSupportedStacks({ frontends = [], backends = [], databases = [], frontend = null, backend = null, database = null } = {}) {
+    const normalize = (val) => String(val).toLowerCase().trim();
+
+    if (frontend) {
+        const f = normalize(frontend);
+        if (!SUPPORTED_STACKS.frontends.includes(f)) SUPPORTED_STACKS.frontends.push(f);
+    }
+    if (backend) {
+        const b = normalize(backend);
+        if (!SUPPORTED_STACKS.backends.includes(b)) SUPPORTED_STACKS.backends.push(b);
+    }
+    if (database) {
+        const d = normalize(database);
+        if (!SUPPORTED_STACKS.databases.includes(d)) SUPPORTED_STACKS.databases.push(d);
+    }
+
+    for (const f of frontends) {
+        if (f) {
+            const n = normalize(f);
+            if (!SUPPORTED_STACKS.frontends.includes(n)) SUPPORTED_STACKS.frontends.push(n);
+        }
+    }
+    for (const b of backends) {
+        if (b) {
+            const n = normalize(b);
+            if (!SUPPORTED_STACKS.backends.includes(n)) SUPPORTED_STACKS.backends.push(n);
+        }
+    }
+    for (const d of databases) {
+        if (d) {
+            const n = normalize(d);
+            if (!SUPPORTED_STACKS.databases.includes(n)) SUPPORTED_STACKS.databases.push(n);
+        }
+    }
+
+    return SUPPORTED_STACKS;
+}
+
 export function validateContractCapabilities(contractJson) {
     const contract = typeof contractJson === 'string'
         ? JSON.parse(contractJson)
