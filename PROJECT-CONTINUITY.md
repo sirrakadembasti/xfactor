@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P0-B
 current_plan: implementation-plans/02-P0-B-sandbox-verification.md
-current_task: P0-B Task 1 - OS Sandbox and Process Isolation Enforcement
+current_task: P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-B.md
 blocked_by: []
-next_action: Read P0-B Task 1, write the failing isolated sandbox test, and run the RED command
-updated_at: 2026-08-30T09:09:34.239Z
+next_action: Read P0-B Task 2, write the failing isolated migration test, and run the RED command
+updated_at: 2026-08-30T09:26:40.733Z
 ---
 
 # Project Continuity
@@ -49,15 +49,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 
 - P0-A Task 6 - Cutover and Compatibility Cleanup.
 - P0-A — State and Contract Safety complete and verified (Tasks 1–6).
+- P0-B Task 1 - OS Sandbox Boundary Interface and Adapter Registry.
 ## In Progress
 
-- P0-B Task 1 - OS Sandbox and Process Isolation Enforcement
+- P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository
 
 ## Pending
 
-1. Read P0-B Task 1 and write the isolated sandbox RED test.
-2. Implement P0-B tasks in plan order.
-3. Complete remaining units according to master execution plan.
+1. Read P0-B Task 2 and write the isolated migration RED test.
+2. Implement Task 2 only after RED is observed.
+3. Complete remaining P0-B tasks in plan order.
 
 ## Decisions
 
@@ -101,6 +102,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-A Unit verification: 6/6 isolated unit tests PASS, 25/25 integration suites PASS.
 - P0-A Final review: APPROVE; specification PASS, quality PASS.
 - P0-A Independent acceptance: UNIT TEST PASS.
+- P0-B Task 1 review: APPROVE; specification PASS, quality PASS.
+- P0-B Task 1 independent sandbox tests: PASS (`5` passed, `0` failed).
+- P0-B Task 1 continuity validation: PASS.
 
 ## Known Failures
 
@@ -115,7 +119,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-B Task 1, write the failing isolated sandbox test, and run the RED command.
+Read P0-B Task 2, write the failing isolated migration test, and run the RED command.
 
 ## Do Not Do
 

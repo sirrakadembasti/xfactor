@@ -10,6 +10,7 @@ import fsSync from 'fs';
 import { isSafeProjectPath } from '../security.js';
 import { detectProjectStack } from './codeGenerator.js';
 
+import { executeInSandbox } from '../verification/sandboxRunner.js';
 // Güvenli ve izin verilen komut whitelist'i
 const ALLOWED_EXECUTABLES = new Set([
     'npx',
@@ -76,14 +77,14 @@ export function killProcessTree(proc) {
 
 /**
  * Güvenli ve sınırlandırılmış alt süreç (process) çalıştırır.
- */
 export async function executeSafeCommand(executable, args = [], options = {}) {
     const {
         cwd = process.cwd(),
         timeoutMs = DEFAULT_TIMEOUT_MS,
         maxBufferSize = MAX_BUFFER_SIZE,
         env = process.env,
-        signal = null
+        signal = null,
+        sandboxMode = resolveBuildSandboxMode()
     } = options;
 
     // 1. Güvenlik & Whitelist Kontrolü
@@ -97,7 +98,46 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
         throw new Error(`Geçersiz çalışma dizini: "${cwd}" mevcut değil.`);
     }
 
-    // 3. Platform uyumlu komut çözümleme (Windows cmd.exe / POSIX uyumu)
+    // 3. Sandbox Redirection Hook
+    if (sandboxMode === 'sandboxed') {
+        const commandStr = `${executable} ${args.join(' ')}`.trim();
+        try {
+            const sandboxRes = await executeInSandbox(executable, args, {
+                workspace: cwd,
+                timeoutMs,
+                env: getSanitizedSubprocessEnv(env)
+            });
+            const passed = Boolean(sandboxRes.passed);
+            return {
+                passed,
+                success: passed,
+                status: passed ? 'passed' : (sandboxRes.timedOut ? 'timeout' : 'failed'),
+                exitCode: sandboxRes.exitCode,
+                stdout: sandboxRes.stdout || '',
+                stderr: sandboxRes.stderr || '',
+                timedOut: Boolean(sandboxRes.timedOut),
+                aborted: Boolean(sandboxRes.aborted),
+                command: commandStr
+            };
+        } catch (err) {
+            if (err.code === 'SANDBOX_UNAVAILABLE') {
+                throw err;
+            }
+            return {
+                passed: false,
+                success: false,
+                status: 'failed',
+                exitCode: -1,
+                stdout: '',
+                stderr: err.message,
+                timedOut: false,
+                aborted: false,
+                command: commandStr
+            };
+        }
+    }
+
+    // 4. Platform uyumlu komut çözümleme (Host fallback mode)
     let runExecutable = executable;
     let runArgs = args;
 
@@ -113,7 +153,6 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
     }
 
     const cleanEnv = getSanitizedSubprocessEnv(env);
-
     return new Promise((resolve) => {
         let stdout = '';
         let stderr = '';

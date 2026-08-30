@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-A State ve contract safety birimi (Tasks 1–6) tüm birim ve entegrasyon testlerinden geçerek tamamlandı ve verified olarak mühürlendi. Sıradaki birim P0-B OS sandbox ve fail-closed verification.
+P0-B Task 1 (OS Sandbox Boundary ve Adapter Registry) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 2 Schema Migration 8.
 
 Sonraki görev:
 
 ```text
-P0-B Task 1 — OS Sandbox and Process Isolation Enforcement
-RED: isolated sandbox execution ve resource-limit failing testi
+P0-B Task 2 — Schema Migration 8 for Verification Runs/Checks and Repository
+RED: isolated DB fixture ve failing migration 8 testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
