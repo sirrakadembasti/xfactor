@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P1-C
 current_plan: implementation-plans/06-P1-C-artifact-validation.md
-current_task: P1-C Task 1 - Artifact Repository CRUD
+current_task: P1-C Task 2 - Server-Side ZIP Generation and Hashing
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 1516cd155742b2b78e73f3343506a3b0b1e14731
 evidence_file: implementation-evidence/P1-C.md
 blocked_by: []
-next_action: Read P1-C Task 1, write the failing isolated artifact repository CRUD test, and run the RED command
-updated_at: 2026-08-30T16:34:39Z
+next_action: Read P1-C Task 2, write the failing isolated server-side ZIP generation test, and run the RED command
+updated_at: 2026-08-30T17:27:11Z
 ---
 
 # Project Continuity
@@ -51,15 +51,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 7 - Test Infrastructure and Suite Execution Gate.
 - P1-B Task 8 - Unified Smoke Gate & Service Runner.
 - P1-B Task 9 - Quality Policy and Evidence Aggregator.
+- P1-C Task 1 - Artifact Repository CRUD.
 
 ## In Progress
 
-- P1-C Task 1 - Artifact Repository CRUD
+- P1-C Task 2 - Server-Side ZIP Generation and Hashing
 
 ## Pending
 
-1. Read P1-C Task 1 and write the isolated artifact repository CRUD RED test.
-2. Implement Task 1 only after RED is observed.
+1. Read P1-C Task 2 and write the isolated server-side ZIP generation RED test.
+2. Implement Task 2 only after RED is observed.
 3. Complete remaining P1-C tasks in plan order.
 
 ## Decisions
@@ -115,6 +116,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-B Task 9 independent acceptance: PASS (`10` Task 9 and `3` policy tests passed, `0` failed).
 - P1-B Unit verification: `29/29` isolated unit tests PASS, `25/25` integration suites PASS.
 - P1-B continuity validation: PASS.
+- P1-C Task 1 review: APPROVE; specification PASS, quality PASS.
+- P1-C Task 1 independent acceptance test: PASS (`3` passed, `0` failed).
+- P1-C Task 1 continuity validation: PASS.
 ## Known Failures
 
 - Exact-hash artifact verification and verified-only download remain incomplete until P1-C is implemented.
@@ -127,7 +131,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P1-C Task 1, write the failing isolated artifact repository CRUD test, and run the RED command.
+Read P1-C Task 2, write the failing isolated server-side ZIP generation test, and run the RED command.
 
 ## Do Not Do
 

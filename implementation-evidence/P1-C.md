@@ -3,13 +3,21 @@ unit: P1-C
 status: pending
 plan: implementation-plans/06-P1-C-artifact-validation.md
 verified_commit: null
-updated_at: 2026-08-27T00:00:00Z
+updated_at: 2026-08-30T17:27:11Z
 ---
 
 # P1-C Evidence — Artifact and ZIP Clean-Room Validation
+Unit implementation is in progress. Verified task checkpoints are recorded below.
 
-No implementation evidence exists. Unit has not started.
+## Task 1 Receipt — Artifact Repository CRUD
 
+- RED: `node backend/tests/test_p1_c_repository.js` — exit `1`; expected `ERR_MODULE_NOT_FOUND` on missing `backend/repositories/artifactRepository.js`.
+- GREEN: `node backend/tests/test_p1_c_repository.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P1CTask1Reviewer`): `APPROVE`; specification `PASS`, quality `PASS`; composite ownership scoping (`project_id`, `contract_id`, `artifact_id`), prepared statements, `result.changes` mutation assertions, query determinism (`path ASC`, `created_at DESC, id DESC`), and isolated database cleanup verified.
+- Independent test (`P1CTask1IndependentTester`): fresh-process `node backend/tests/test_p1_c_repository.js` — exit `0`; `3` passed, `0` failed.
+- Observed coverage: project/contract scoped artifact creation and retrieval, composite foreign key violation rejection on unlinked files, artifact file enumeration, and latest verified artifact lookup.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 1 source and tests).
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 ## Required Receipt
 
 - Server artifact manifest/hash results

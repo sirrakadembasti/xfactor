@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Tasks 1–9 tamamlandı; bağımsız review/test, `29/29` unit acceptance ve `25/25` backend regresyonuyla doğrulandı. Aktif birim P1-C.
+P1-C Task 1 (Artifact Repository CRUD) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 2 Server-Side ZIP Generation and Hashing.
 
 Sonraki görev:
 
 ```text
-P1-C Task 1 — Artifact Repository CRUD
-RED: isolated artifact repository CRUD failing testi
+P1-C Task 2 — Server-Side ZIP Generation and Hashing
+RED: isolated server-side ZIP generation failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
