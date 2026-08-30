@@ -33,7 +33,7 @@ import {
     normalizeDirectorSpec,
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
-import { getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
+import { db, getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { generateLLMResponse } from '../llm.js';
@@ -382,7 +382,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const coderDir = path.join(tlDir, taskId);
 
                         // AKILLI DEVAM KONTROLÜ: Görev ve hedef dosyalar daha önce başarıyla tamamlandı mı?
-                        const alreadyCompleted = await isTaskCompleted(coderDir, projectDir, task.targetFiles);
+                        const alreadyCompleted = await isTaskCompleted(
+                            coderDir,
+                            projectDir,
+                            task.targetFiles,
+                            { projectId, taskId }
+                        );
                         if (alreadyCompleted) {
                             dag.setTaskStatus(taskId, 'completed');
                             await logEvent(
@@ -638,20 +643,95 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await writeRapor(projectDir, finalRapor);
 
             if (!testResult.approved) {
-                await writeDurum(projectDir, 'BASARISIZ', `Proje kabul testlerini geçemedi: ${testResult.summary}`);
-                await logEvent(wsHub, projectId, "Tester", "error", "", `Proje kabul testlerini geçemedi: ${testResult.summary}`, "tester", "manager");
-                
+                await writeDurum(
+                    projectDir,
+                    'BASARISIZ',
+                    `Proje kabul testlerini geçemedi: ${testResult.summary}`
+                );
+                await logEvent(
+                    wsHub,
+                    projectId,
+                    "Tester",
+                    "error",
+                    "",
+                    `Proje kabul testlerini geçemedi: ${testResult.summary}`,
+                    "tester",
+                    "manager"
+                );
+
+                const latestContract = db.prepare(`
+                    SELECT id FROM project_contracts
+                    WHERE project_id = ? AND status = 'approved'
+                `).get(projectId);
+                if (latestContract) {
+                    for (const issue of testResult.issues) {
+                        const issueText = String(issue);
+                        const issueId = `repair-${crypto.randomUUID()}`;
+                        const fingerprint = crypto.createHash('md5')
+                            .update(issueText)
+                            .digest('hex');
+                        db.prepare(`
+                            INSERT INTO repair_issues (
+                                id, project_id, contract_id, run_id,
+                                fingerprint, severity, status, detail_json
+                            ) VALUES (?, ?, ?, ?, ?, 'critical', 'open', ?)
+                        `).run(
+                            issueId,
+                            projectId,
+                            latestContract.id,
+                            attemptId,
+                            fingerprint,
+                            JSON.stringify({ issue: issueText })
+                        );
+                    }
+                }
+
+                terminalStatus = 'rejected';
+                executionError = `Proje kabul testlerini geçemedi: ${testResult.summary}`;
+
                 const failedState = await readProjectState(projectId);
                 if (failedState) {
-                    failedState.status = 'paused';
+                    const failurePaths = {
+                        implementing: [
+                            'implementation_finished',
+                            'verification_pending',
+                            'verification_running',
+                            'verification_failed'
+                        ],
+                        implementation_finished: [
+                            'verification_pending',
+                            'verification_running',
+                            'verification_failed'
+                        ],
+                        verification_pending: [
+                            'verification_running',
+                            'verification_failed'
+                        ],
+                        verification_running: ['verification_failed']
+                    };
+                    const failurePath = failurePaths[failedState.status] || ['verification_failed'];
+                    for (const status of failurePath.slice(0, -1)) {
+                        failedState.status = status;
+                        await writeProjectState(projectId, failedState);
+                    }
+
+                    failedState.status = failurePath.at(-1);
                     const now = new Date();
-                    const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
+                    const formattedDate = now.toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    const formattedTime = now.toLocaleTimeString('tr-TR', {
+                        hour12: false
+                    });
 
                     if (!failedState.chatHistory) failedState.chatHistory = [];
                     failedState.chatHistory.push({
                         role: 'model',
-                        parts: [{ text: `⚠️ **Tester Kalite Kapısı Uyarısı:**\n\nProje kabul testlerinde bazı sözdizimi veya kırık ithalat (import) hataları tespit edildi ve proje güvenli modda duraklatıldı:\n\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n\nSüreci düzeltip devam ettirmek için üst menüdeki **'Projeyi Devam Ettir (Resume)'** butonuna basabilir veya bana revizyon bildirebilirsiniz.` }],
+                        parts: [{
+                            text: `⚠️ **Tester Kalite Kapısı Uyarısı:**\n\nProje kabul testlerinde bazı sözdizimi veya kırık ithalat (import) hataları tespit edildi ve proje güvenli modda duraklatıldı:\n\n${testResult.issues.map(issue => `- ${issue}`).join('\n')}\n\nSüreci düzeltip devam ettirmek için üst menüdeki **'Projeyi Devam Ettir (Resume)'** butonuna basabilir veya bana revizyon bildirebilirsiniz.`
+                        }],
                         timestamp: `${formattedDate} ${formattedTime}`,
                         created_at: now.toISOString()
                     });

@@ -3,7 +3,7 @@ unit: P0-A
 status: pending
 plan: implementation-plans/01-P0-A-state-contract-safety.md
 verified_commit: null
-updated_at: 2026-08-30T08:10:31.951Z
+updated_at: 2026-08-30T08:29:52.356Z
 ---
 
 # P0-A Evidence — State and Contract Safety
@@ -53,6 +53,18 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Observed coverage: supported stack acceptance, unsupported framework rejection, atomic pending-contract rejection, project revision CAS, `capability_blocked` transition, explanatory chat persistence, isolated DB cleanup.
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
+
+## Task 5 Receipt — Rejection Recording and Checkpoint Invalidation
+
+- RED: `node backend/tests/test_p0_a_rejections.js` — exit `1`; expected missing `invalidateProjectCheckpoints`.
+- GREEN: `node backend/tests/test_p0_a_rejections.js` — exit `0`; `1` passed, `0` failed.
+- Independent review: `APPROVE`; specification and quality criteria met, no findings.
+- Independent test: fresh-process `node backend/tests/test_p0_a_rejections.js` — exit `0`; `1` passed, `0` failed.
+- Observed coverage: rejected attempt/error persistence, durable repair issue FK storage, contract-approval checkpoint invalidation, invalidated checkpoint reuse rejection, isolated DB cleanup.
+- Decision: rejection flow preserves Task 2 matrix through staged transitions ending at `verification_failed`.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 ## Required Receipt

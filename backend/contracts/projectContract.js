@@ -76,6 +76,14 @@ export function createContractRevision(projectId, plan, sourceMessageId) {
     }
 }
 
+export function invalidateProjectCheckpoints(projectId) {
+    db.prepare(`
+        UPDATE task_checkpoints
+        SET invalidated_at = ?
+        WHERE project_id = ? AND invalidated_at IS NULL
+    `).run(new Date().toISOString(), projectId);
+}
+
 export function approveContractRevision(projectId, revision) {
     db.exec('BEGIN IMMEDIATE;');
     try {
@@ -94,6 +102,7 @@ export function approveContractRevision(projectId, revision) {
         if (result.changes === 0) {
             throw new Error(`Revision ${revision} is not pending approval or does not exist.`);
         }
+        invalidateProjectCheckpoints(projectId);
         db.exec('COMMIT;');
     } catch (error) {
         db.exec('ROLLBACK;');

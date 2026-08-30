@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { logWarning } from '../observability.js';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
+import { db } from '../db.js';
 /**
  * Belirtilen dizinin varlığını garanti eder
  */
@@ -215,29 +216,50 @@ export async function readTasksFromTodoFile(todoFilePath) {
     }
 }
 
-export async function isTaskCompleted(coderDir, projectDir = null, targetFiles = []) {
+export async function isTaskCompleted(
+    coderDir,
+    projectDir = null,
+    targetFiles = [],
+    options = {}
+) {
     try {
+        const { projectId, taskId } = options;
+        if (projectId && taskId) {
+            const checkpoint = db.prepare(`
+                SELECT invalidated_at FROM task_checkpoints
+                WHERE project_id = ? AND task_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+            `).get(projectId, taskId);
+
+            if (checkpoint && checkpoint.invalidated_at !== null) {
+                return false;
+            }
+        }
+
         const durum = await readDurum(coderDir);
-        // Eğer açık bir hata / veto durumu varsa kesinlikle tamamlanmamıştır
         if (durum && (durum.includes('BASARISIZ') || durum.includes('REDDEDILDI'))) {
             return false;
         }
 
-        const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md')).then(() => true).catch(() => false);
+        const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md'))
+            .then(() => true)
+            .catch(() => false);
         const durumCompleted = Boolean(durum && durum.includes('TAMAMLANDI'));
 
         if (!raporExists && !durumCompleted) {
             return false;
         }
 
-        // Eğer projectDir ve targetFiles verilmişse, hedef dosyaların diskte gerçekten var olup olmadığını doğrula
         if (projectDir && Array.isArray(targetFiles) && targetFiles.length > 0) {
             for (const relPath of targetFiles) {
                 if (typeof relPath === 'string' && relPath.trim()) {
                     const fullPath = path.join(projectDir, relPath);
-                    const fileExists = await fs.stat(fullPath).then(s => s.size > 0).catch(() => false);
+                    const fileExists = await fs.stat(fullPath)
+                        .then(stat => stat.size > 0)
+                        .catch(() => false);
                     if (!fileExists) {
-                        return false; // Hedef dosya diskte yoksa veya 0 byte ise tamamlanmış sayılamaz
+                        return false;
                     }
                 }
             }
