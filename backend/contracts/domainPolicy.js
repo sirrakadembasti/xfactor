@@ -94,6 +94,27 @@ export function verifyDomainCompliance(contract = {}, files = []) {
                 issues.push(`Missing database model: ${entityName}`);
             }
         }
+
+        // Verify entity queries in script files
+        const scriptFiles = files.filter(f => f.path && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
+        const queriedModels = new Set();
+        const prismaQueryRegex = /prisma\s*\.\s*([a-zA-Z0-9_]+)/g;
+
+        for (const script of scriptFiles) {
+            const content = script.content || '';
+            let queryMatch;
+            while ((queryMatch = prismaQueryRegex.exec(content)) !== null) {
+                queriedModels.add(queryMatch[1].toLowerCase());
+            }
+        }
+
+        for (const entity of domainEntities) {
+            const entityName = typeof entity === 'string' ? entity : (entity.name || String(entity));
+            const lowerName = entityName.toLowerCase();
+            if (declaredModels.has(lowerName) && !queriedModels.has(lowerName)) {
+                issues.push(`Entity ${entityName} is declared but never queried in source code`);
+            }
+        }
     }
 
     return {

@@ -65,6 +65,96 @@ if (!filteredTest || filteredTest === 'schema-presence') {
                       name String
                     }
                 `
+            },
+            {
+                path: 'src/index.js',
+                content: `
+                    import { prisma } from './lib/prisma.js';
+                    await prisma.todo.findMany();
+                    await prisma.category.findMany();
+                `
+            }
+        ];
+
+        const result = verifyDomainCompliance(contract, files);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
+
+if (!filteredTest || filteredTest === 'entity-query') {
+    await runAsyncTest('P2.1.2: verifyDomainCompliance rejects models that are declared but never queried in source code', async () => {
+        const contract = {
+            domainEntities: ['Todo', 'Category']
+        };
+
+        const files = [
+            {
+                path: 'prisma/schema.prisma',
+                content: `
+                    model Todo {
+                      id    String @id
+                      title String
+                    }
+                    model Category {
+                      id   String @id
+                      name String
+                    }
+                `
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import { prisma } from '../lib/prisma.js';
+                    export async function getTodos(req, res) {
+                        const todos = await prisma.todo.findMany();
+                        res.json(todos);
+                    }
+                `
+            }
+        ];
+
+        const result = verifyDomainCompliance(contract, files);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected compliance failure for unused entity Category'
+        );
+        assert.ok(
+            result.issues.some(issue => issue.includes('Category') && issue.includes('queried')),
+            'Issues list must note unqueried Category entity'
+        );
+    });
+
+    await runAsyncTest('P2.1.2: verifyDomainCompliance passes when all models are queried in source code', async () => {
+        const contract = {
+            domainEntities: ['Todo', 'Category']
+        };
+
+        const files = [
+            {
+                path: 'prisma/schema.prisma',
+                content: `
+                    model Todo {
+                      id    String @id
+                      title String
+                    }
+                    model Category {
+                      id   String @id
+                      name String
+                    }
+                `
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import { prisma } from '../lib/prisma.js';
+                    export async function getTodos(req, res) {
+                        const todos = await prisma.todo.findMany();
+                        const categories = await prisma.category.findMany();
+                        res.json({ todos, categories });
+                    }
+                `
             }
         ];
 

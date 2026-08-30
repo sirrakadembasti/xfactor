@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.1.1 (Verify Entity Schema Presence) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.1.2 (Verify Entity Queries in Source Code).
+P2 Step P2.1.2 (Verify Entity Queries in Source Code) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.1.3 (Verify Endpoint Implementation Routes).
 
 Sonraki görev:
 
 ```text
-P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.2: Verify Entity Queries in Source Code)
-RED: node backend/tests/test_p2_domain_policy.js --test=entity-query
+P2 Task 1 — Domain/Entity/Use Verification (Step P2.1.3: Verify Endpoint Implementation Routes)
+RED: node backend/tests/test_p2_domain_policy.js --test=endpoint-routes
 ```
 
 ## Yeni Sohbet İçin Başlangıç
