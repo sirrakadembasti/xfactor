@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-B Task 2 (Sandbox Process Spawner and Lifecycle Manager) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 3 Liveness & Readiness Prober.
+P1-B Task 3 (Liveness & Readiness Prober) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-B Task 4 Database Lifecycle & Schema Verifier.
 
 Sonraki görev:
 
 ```text
-P1-B Task 3 — Liveness & Readiness Prober
-RED: isolated HTTP health probe, exponential backoff, ve responsiveness failing testi
+P1-B Task 4 — Database Lifecycle & Schema Verifier
+RED: isolated database verification, schema check, ve write capability failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
