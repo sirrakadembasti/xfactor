@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.4.3 (Validate Mandatory Endpoint Authentication) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.4.4 (Detect Unsolicited Authentication Modules).
+P2 Step P2.4.4 (Detect Unsolicited Authentication Modules) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.4.5 (Audit SQL Injection Vulnerabilities).
 
 Sonraki görev:
 
 ```text
-P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.4: Detect Unsolicited Authentication Modules)
-RED: node backend/tests/test_p2_security_baseline.js --test=unsolicited-auth
+P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.5: Audit SQL Injection Vulnerabilities)
+RED: node backend/tests/test_p2_security_baseline.js --test=sql-injection
 ```
 
 ## Yeni Sohbet İçin Başlangıç

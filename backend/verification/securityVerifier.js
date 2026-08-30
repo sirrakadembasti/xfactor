@@ -3,6 +3,24 @@ import { parse } from '@babel/parser';
 const SECRET_NAME_PATTERN = /(?:JWT_SECRET|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_PASSWORD|AUTH_SECRET|ACCESS_TOKEN_SECRET|REFRESH_TOKEN_SECRET)/i;
 const MUTATION_METHODS = new Set(['post', 'put', 'delete', 'patch']);
 const AUTH_MIDDLEWARE_PATTERN = /(?:auth|jwt|protect|token|user|session|guard)/i;
+const AUTH_FILE_TOKENS = new Set(['auth', 'authentication', 'login', 'jwt']);
+const AUTH_LOGIC_PATTERN = /(?:from\s+['"]jsonwebtoken['"]|require\s*\(\s*['"]jsonwebtoken['"]\s*\)|['"`]\/(?:api\/)?(?:auth|login|logout|register|session)\b|type\s*=\s*['"]password['"]|\b(?:jwt|jsonwebtoken)\s*\.|\b(?:signIn|logIn|authenticateUser)\s*\()/i;
+
+function hasAuthFileToken(filePath) {
+    const basename = filePath.split(/[\\/]/).pop() || '';
+    const stem = basename.replace(/\.[^.]+$/, '');
+    const tokens = stem
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean);
+    return tokens.some(token => (
+        AUTH_FILE_TOKENS.has(token) ||
+        token === 'oauth' ||
+        /^auth(?!or)/.test(token) ||
+        /auth$/.test(token)
+    ));
+}
 
 function checkAuthNode(node) {
     if (!node) return false;
@@ -37,6 +55,11 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
         contract.auth?.required ||
         contract.requiresAuth
     );
+    const isAuthExplicitlyDisabled = (
+        contract.authentication?.required === false ||
+        contract.auth?.required === false ||
+        contract.requiresAuth === false
+    );
 
     // Check for committed .env files
     for (const file of files) {
@@ -50,6 +73,12 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
 
     for (const file of scriptFiles) {
         const content = file.content || '';
+        if (
+            isAuthExplicitlyDisabled &&
+            (hasAuthFileToken(file.path) || (typeof content === 'string' && AUTH_LOGIC_PATTERN.test(content)))
+        ) {
+            issues.push(`Unsolicited authentication module or login logic detected in ${file.path}`);
+        }
         if (!content || typeof content !== 'string') continue;
 
         let ast;

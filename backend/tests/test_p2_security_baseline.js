@@ -268,4 +268,87 @@ if (!filteredTest || filteredTest === 'missing-auth') {
     });
 }
 
+if (!filteredTest || filteredTest === 'unsolicited-auth') {
+    await runAsyncTest('P2.4.4: verifySecurityBaseline rejects unsolicited auth modules when contract disables auth', async () => {
+        const contract = {
+            name: 'Public Todo App',
+            authentication: { required: false }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/auth.js',
+                content: `
+                    import express from 'express';
+                    const router = express.Router();
+                    router.post('/login', (req, res) => res.json({ token: 'fake' }));
+                    export default router;
+                `
+            },
+            {
+                path: 'src/components/LoginForm.jsx',
+                content: `
+                    export default function LoginForm() {
+                        return <form action="/login"><input type="password" /></form>;
+                    }
+                `
+            },
+            {
+                path: 'src/auth.js',
+                content: ''
+            },
+            {
+                path: 'src/security/authenticator.js',
+                content: 'export function authenticate() {}'
+            },
+            {
+                path: 'src/lib/credentials.js',
+                content: `
+                    import { verify } from 'jsonwebtoken';
+                    export const validateCredential = (token, key) => verify(token, key);
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(
+            res.passed,
+            false,
+            'Expected security check to fail on unsolicited auth module'
+        );
+        assert.ok(res.issues.some(issue => issue.includes('src/routes/auth.js')));
+        assert.ok(res.issues.some(issue => issue.includes('src/components/LoginForm.jsx')));
+        assert.ok(res.issues.some(issue => issue.includes('src/auth.js')));
+        assert.ok(res.issues.some(issue => issue.includes('src/security/authenticator.js')));
+        assert.ok(res.issues.some(issue => issue.includes('src/lib/credentials.js')));
+    });
+
+    await runAsyncTest('P2.4.4: verifySecurityBaseline permits non-auth public application files', async () => {
+        const contract = {
+            name: 'Public Todo App',
+            authentication: { required: false }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    const router = express.Router();
+                    router.get('/api/todos', (req, res) => res.json([]));
+                    export default router;
+                `
+            },
+            {
+                path: 'src/components/TodoForm.jsx',
+                content: 'export default function TodoForm() { return <form><input name="title" /></form>; }'
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.issues.length, 0);
+    });
+}
+
 finish();
