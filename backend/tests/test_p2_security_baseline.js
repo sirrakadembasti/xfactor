@@ -176,4 +176,96 @@ if (!filteredTest || filteredTest === 'secret-keys') {
     });
 }
 
+if (!filteredTest || filteredTest === 'missing-auth') {
+    await runAsyncTest('P2.4.3: verifySecurityBaseline rejects unprotected mutate routes when contract requires auth', async () => {
+        const contract = {
+            name: 'Protected Todo App',
+            authentication: { required: true }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    const router = express.Router();
+
+                    router.get('/api/todos', (req, res) => res.json([]));
+                    router.post('/api/todos', (req, res) => res.json({ created: true }));
+                    router.delete('/api/todos/:id', (req, res) => res.json({ deleted: true }));
+
+                    export default router;
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(
+            res.passed,
+            false,
+            'Expected security check to fail on unprotected mutate endpoint'
+        );
+        assert.strictEqual(res.issues.length, 2);
+        assert.ok(res.issues.some(i => i.includes('POST /api/todos') && i.toLowerCase().includes('auth')));
+        assert.ok(res.issues.some(i => i.includes('DELETE /api/todos/:id') && i.toLowerCase().includes('auth')));
+    });
+
+    await runAsyncTest('P2.4.3: verifySecurityBaseline passes protected mutate routes with auth middleware', async () => {
+        const contract = {
+            name: 'Protected Todo App',
+            authentication: { required: true }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import { requireAuth } from '../middleware/auth.js';
+                    const router = express.Router();
+
+                    router.get('/api/todos', (req, res) => res.json([]));
+                    router.post('/api/todos', requireAuth, (req, res) => res.json({ created: true }));
+                    router.delete('/api/todos/:id', requireAuth, (req, res) => res.json({ deleted: true }));
+
+                    export default router;
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.issues.length, 0);
+    });
+
+    await runAsyncTest('P2.4.3: verifySecurityBaseline supports MemberExpression and ArrayExpression auth middlewares', async () => {
+        const contract = {
+            name: 'Protected Todo App',
+            authentication: { required: true }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import authService from '../services/auth.js';
+                    import { requireUser } from '../middleware/auth.js';
+                    const router = express.Router();
+
+                    router.post('/api/todos', authService.authenticateJWT, (req, res) => res.json({ created: true }));
+                    router.put('/api/todos/:id', [requireUser], (req, res) => res.json({ updated: true }));
+                    router.delete('/api/todos/:id', [authService.protectRoute], (req, res) => res.json({ deleted: true }));
+
+                    export default router;
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.issues.length, 0);
+    });
+}
+
 finish();

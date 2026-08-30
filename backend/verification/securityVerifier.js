@@ -1,9 +1,42 @@
 import { parse } from '@babel/parser';
 
 const SECRET_NAME_PATTERN = /(?:JWT_SECRET|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_PASSWORD|AUTH_SECRET|ACCESS_TOKEN_SECRET|REFRESH_TOKEN_SECRET)/i;
+const MUTATION_METHODS = new Set(['post', 'put', 'delete', 'patch']);
+const AUTH_MIDDLEWARE_PATTERN = /(?:auth|jwt|protect|token|user|session|guard)/i;
+
+function checkAuthNode(node) {
+    if (!node) return false;
+    if (node.type === 'Identifier') {
+        return AUTH_MIDDLEWARE_PATTERN.test(node.name);
+    }
+    if (node.type === 'MemberExpression') {
+        const prop = node.property?.name;
+        const obj = node.object?.name;
+        return AUTH_MIDDLEWARE_PATTERN.test(prop || '') || AUTH_MIDDLEWARE_PATTERN.test(obj || '');
+    }
+    if (node.type === 'CallExpression') {
+        return checkAuthNode(node.callee);
+    }
+    if (node.type === 'ArrayExpression') {
+        const elements = node.elements || [];
+        return elements.some(checkAuthNode);
+    }
+    return false;
+}
+
+function hasAuthMiddleware(args) {
+    if (!Array.isArray(args) || args.length < 2) return false;
+    const middlewareArgs = args.slice(1, args.length - 1);
+    return middlewareArgs.some(checkAuthNode);
+}
 
 export function verifySecurityBaseline(contract = {}, files = [], sandbox = null) {
     const issues = [];
+    const isAuthRequired = Boolean(
+        contract.authentication?.required ||
+        contract.auth?.required ||
+        contract.requiresAuth
+    );
 
     // Check for committed .env files
     for (const file of files) {
@@ -85,6 +118,19 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
                 const varName = node.id.name;
                 if (SECRET_NAME_PATTERN.test(varName) && node.init && (node.init.type === 'StringLiteral' || node.init.type === 'Literal')) {
                     issues.push(`Hardcoded secret key detected: ${varName} in ${file.path}`);
+                }
+            }
+
+            // 4. Check mandatory authentication on mutation routes
+            if (isAuthRequired && node.type === 'CallExpression' && node.callee && node.callee.type === 'MemberExpression') {
+                const prop = node.callee.property?.name;
+                const propLower = prop ? prop.toLowerCase() : '';
+                if (MUTATION_METHODS.has(propLower) && Array.isArray(node.arguments) && node.arguments.length >= 2) {
+                    const firstArg = node.arguments[0];
+                    const routePath = (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') ? firstArg.value : '';
+                    if (!hasAuthMiddleware(node.arguments)) {
+                        issues.push(`Mandatory authentication missing on mutate route ${propLower.toUpperCase()} ${routePath || 'unknown'} in ${file.path}`);
+                    }
                 }
             }
 
