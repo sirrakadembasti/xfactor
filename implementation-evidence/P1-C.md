@@ -3,7 +3,7 @@ unit: P1-C
 status: pending
 plan: implementation-plans/06-P1-C-artifact-validation.md
 verified_commit: null
-updated_at: 2026-08-30T17:35:12Z
+updated_at: 2026-08-30T17:46:35Z
 ---
 
 # P1-C Evidence — Artifact and ZIP Clean-Room Validation
@@ -28,6 +28,15 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Observed coverage: valid ZIP archive generation, SHA-256 hash digests matching archive buffer, disk write persistence, extraction verification, artifact database registration with draft status, and artifact_files table rows.
 - Checkpoint commit: `SELF` (this receipt is committed with Task 2 source and tests).
 - Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+
+## Task 3 Receipt — Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks)
+
+- RED: `node backend/tests/test_p1_c_safe_extraction.js` — exit `1`; expected `ERR_MODULE_NOT_FOUND` on missing `backend/verification/safeExtractor.js`.
+- GREEN: `node backend/tests/test_p1_c_safe_extraction.js` — exit `0`; `8` passed, `0` failed.
+- Independent review (`P1CTask3Reviewer`, `P1CTask3ReReviewer`): `APPROVE`; specification `PASS`, quality `PASS`; segment-based directory traversal prevention, mixed path separator normalization (`\../`, `/..\`), null byte rejection, symbolic link exclusion (`0xA000` UNIX mode check), byte/ratio decompression bomb safeguards, and nullish coalescing limit defaults verified.
+- Independent test (`P1CTask3IndependentTester`): fresh-process `node backend/tests/test_p1_c_safe_extraction.js` — exit `0`; `8` passed, `0` failed.
+- Observed coverage: directory traversal rejection, mixed path separator rejection, null byte rejection, symlink rejection, maxTotalBytes breach rejection, maxRatio decompression bomb rejection, explicit 0 file quota enforcement, and clean extraction to disk from file paths, Buffers, and JSZip instances.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
 ## Required Receipt
 
 - Server artifact manifest/hash results

@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-C Task 2 (Server-Side ZIP Generation and Hashing) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 3 Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks).
+P1-C Task 3 (Safe Extraction) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 4 Sandboxed Clean-Room Verification Pipeline.
 
 Sonraki görev:
 
 ```text
-P1-C Task 3 — Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks)
-RED: isolated safe extraction failing testi
+P1-C Task 4 — Sandboxed Clean-Room Verification Pipeline
+RED: isolated clean-room verification pipeline failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
