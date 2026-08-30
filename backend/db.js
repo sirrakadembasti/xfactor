@@ -350,6 +350,50 @@ export const MIGRATIONS = [
                 );
             }
         }
+    },
+    {
+        version: 8,
+        name: '008_verification_evidence',
+        up: (database) => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS verification_runs (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK(status IN ('queued', 'running', 'failed', 'verified', 'rejected', 'blocked')),
+                    policy_version TEXT NOT NULL,
+                    started_at DATETIME NOT NULL,
+                    ended_at DATETIME,
+                    UNIQUE(contract_id, id),
+                    FOREIGN KEY(project_id, contract_id)
+                      REFERENCES project_contracts(project_id, id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS verification_checks (
+                    id TEXT PRIMARY KEY,
+                    contract_id TEXT NOT NULL,
+                    run_id TEXT NOT NULL,
+                    gate_name TEXT NOT NULL,
+                    applicability TEXT NOT NULL CHECK(applicability IN ('MANDATORY', 'OPTIONAL', 'NOT_APPLICABLE')),
+                    status TEXT NOT NULL CHECK(status IN ('PASS', 'FAIL', 'BLOCKED', 'NOT_APPLICABLE')),
+                    command TEXT,
+                    cwd TEXT,
+                    exit_code INTEGER,
+                    started_at DATETIME NOT NULL,
+                    ended_at DATETIME,
+                    timed_out INTEGER NOT NULL DEFAULT 0 CHECK(timed_out IN (0, 1)),
+                    stdout_digest TEXT,
+                    stderr_digest TEXT,
+                    evidence_json TEXT,
+                    UNIQUE(contract_id, id),
+                    FOREIGN KEY(contract_id, run_id)
+                      REFERENCES verification_runs(contract_id, id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_verification_runs_project ON verification_runs(project_id, status);
+                CREATE INDEX IF NOT EXISTS idx_verification_checks_run ON verification_checks(contract_id, run_id);
+            `);
+        }
     }
 ];
 export function runMigrations(targetDb = db) {

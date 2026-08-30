@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-B Task 1 (OS Sandbox Boundary ve Adapter Registry) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 2 Schema Migration 8.
+P0-B Task 2 (Schema Migration 8 ve Verification Repository) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-B Task 3 AST Dependency Inventory and Package Verifier.
 
 Sonraki görev:
 
 ```text
-P0-B Task 2 — Schema Migration 8 for Verification Runs/Checks and Repository
-RED: isolated DB fixture ve failing migration 8 testi
+P0-B Task 3 — AST Dependency Inventory and Package Verifier
+RED: isolated package verifier ve AST import scanner failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

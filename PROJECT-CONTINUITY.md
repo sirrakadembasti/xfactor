@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P0-B
 current_plan: implementation-plans/02-P0-B-sandbox-verification.md
-current_task: P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository
+current_task: P0-B Task 3 - AST Dependency Inventory and Package Verifier
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-B.md
 blocked_by: []
-next_action: Read P0-B Task 2, write the failing isolated migration test, and run the RED command
-updated_at: 2026-08-30T09:26:40.733Z
+next_action: Read P0-B Task 3, write the failing isolated package verifier test, and run the RED command
+updated_at: 2026-08-30T09:43:00.867Z
 ---
 
 # Project Continuity
@@ -50,14 +50,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-A Task 6 - Cutover and Compatibility Cleanup.
 - P0-A — State and Contract Safety complete and verified (Tasks 1–6).
 - P0-B Task 1 - OS Sandbox Boundary Interface and Adapter Registry.
+- P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository.
 ## In Progress
 
-- P0-B Task 2 - Migration 8 for Verification Runs/Checks Schema and Repository
+- P0-B Task 3 - AST Dependency Inventory and Package Verifier
 
 ## Pending
 
-1. Read P0-B Task 2 and write the isolated migration RED test.
-2. Implement Task 2 only after RED is observed.
+1. Read P0-B Task 3 and write the isolated package verifier RED test.
+2. Implement Task 3 only after RED is observed.
 3. Complete remaining P0-B tasks in plan order.
 
 ## Decisions
@@ -105,6 +106,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B Task 1 review: APPROVE; specification PASS, quality PASS.
 - P0-B Task 1 independent sandbox tests: PASS (`5` passed, `0` failed).
 - P0-B Task 1 continuity validation: PASS.
+- P0-B Task 2 review: APPROVE; specification PASS, quality PASS.
+- P0-B Task 2 independent migration test: PASS (`1` passed, `0` failed).
+- P0-B Task 2 continuity validation: PASS.
 
 ## Known Failures
 
@@ -119,7 +123,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-B Task 2, write the failing isolated migration test, and run the RED command.
+Read P0-B Task 3, write the failing isolated package verifier test, and run the RED command.
 
 ## Do Not Do
 
