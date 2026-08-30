@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Task 2 (Placeholder, Stub, and Dead-Flow Detection) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 3 Step P2.3.1 (Scan for Template Domain Out-of-Domain Contamination).
+P2 Step P2.3.1 (Scan for Template Domain Out-of-Domain Contamination) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.3.2 (Allow Explicit Out-of-Domain Vocabulary).
 
 Sonraki görev:
 
 ```text
-P2 Task 3 — Template Contamination Scanner (Step P2.3.1: Scan for Template Domain Out-of-Domain Contamination)
-RED: node backend/tests/test_p2_contamination.js --test=out-of-domain
+P2 Task 3 — Template Contamination Scanner (Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary)
+RED: node backend/tests/test_p2_contamination.js --test=allowed-vocabulary
 ```
 
 ## Yeni Sohbet İçin Başlangıç
