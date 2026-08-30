@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P0-C
 current_plan: implementation-plans/03-P0-C-checkpoint-safety.md
-current_task: P0-C Task 3 - Workflow Runner Integration and FS Reconciliation
+current_task: P0-C Task 4 - Selective Rejection and Cascading Checkpoint Invalidation
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 42a3eae0c7e8ae9291380c95dfa0c8e2a6af5fd5
 evidence_file: implementation-evidence/P0-C.md
 blocked_by: []
-next_action: Read P0-C Task 3, write the failing isolated workflow integration test, and run the RED command
-updated_at: 2026-08-30T11:55:14.970Z
+next_action: Read P0-C Task 4, write the failing isolated selective rejection test, and run the RED command
+updated_at: 2026-08-30T12:23:06.158Z
 ---
 
 # Project Continuity
@@ -57,14 +57,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-B — OS Sandbox and Fail-Closed Verification complete and verified (Tasks 1–5).
 - P0-C Task 1 - Checkpoint Database Integration and CRUD APIs.
 - P0-C Task 2 - Cryptographic Hashing and CAS Validation.
+- P0-C Task 3 - Workflow Runner Integration and FS Reconciliation.
 ## In Progress
 
-- P0-C Task 3 - Workflow Runner Integration and FS Reconciliation
+- P0-C Task 4 - Selective Rejection and Cascading Checkpoint Invalidation
 
 ## Pending
 
-1. Read P0-C Task 3 and write the isolated workflow integration RED test.
-2. Implement Task 3 only after RED is observed.
+1. Read P0-C Task 4 and write the isolated selective rejection RED test.
+2. Implement Task 4 only after RED is observed.
 3. Complete remaining P0-C tasks in plan order.
 
 ## Decisions
@@ -133,6 +134,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P0-C Task 2 review: APPROVE; specification PASS, quality PASS.
 - P0-C Task 2 independent CAS validation test: PASS (`3` passed, `0` failed).
 - P0-C Task 2 continuity validation: PASS.
+- P0-C Task 3 review: APPROVE; specification PASS, quality PASS.
+- P0-C Task 3 independent workflow integration test: PASS (`3` passed, `0` failed).
+- P0-C Task 3 continuity validation: PASS.
 
 ## Known Failures
 
@@ -147,7 +151,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P0-C Task 3, write the failing isolated workflow integration test, and run the RED command.
+Read P0-C Task 4, write the failing isolated selective rejection test, and run the RED command.
 
 ## Do Not Do
 

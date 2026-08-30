@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P0-C Task 2 (Cryptographic Hashing and CAS Validation) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 3 Workflow Runner Integration and FS Reconciliation.
+P0-C Task 3 (Workflow Runner Integration and FS Reconciliation) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P0-C Task 4 Selective Rejection and Cascading Checkpoint Invalidation.
 
 Sonraki görev:
 
 ```text
-P0-C Task 3 — Workflow Runner Integration and FS Reconciliation
-RED: isolated workflow runner checkpoint skip ve FS reconciliation failing testi
+P0-C Task 4 — Selective Rejection and Cascading Checkpoint Invalidation
+RED: isolated selective rejection ve cascading DAG invalidation failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

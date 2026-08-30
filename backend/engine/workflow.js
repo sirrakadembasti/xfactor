@@ -18,10 +18,13 @@ import {
     writeDurum,
     writeRapor,
     checkTodoItem,
+    uncheckTodoItem,
     isTaskCompleted,
     isFolderCompleted,
     readAltTalimatname,
-    readTasksFromTodoFile
+    readTasksFromTodoFile,
+    reconcileTaskCache,
+    isTaskCheckpointValid
 } from './fileProtocol.js';
 import { getAgent, runDeterministicProjectAudit } from '../agents/index.js';
 import {
@@ -49,6 +52,8 @@ import {
 } from '../projectRepository.js';
 import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
+import { saveCheckpoint } from './checkpointRepository.js';
+import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -383,14 +388,33 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const coderNodeId = `${tlId}.${taskId}`;
                         const coderDir = path.join(tlDir, taskId);
 
-                        // AKILLI DEVAM KONTROLÜ: Görev ve hedef dosyalar daha önce başarıyla tamamlandı mı?
-                        const alreadyCompleted = await isTaskCompleted(
-                            coderDir,
+                        // Bağımlı görevlerin hedef dosyalarını topla
+                        const depTargetFiles = [];
+                        if (Array.isArray(task.dependencies)) {
+                            for (const depId of task.dependencies) {
+                                const depTask = dag.getTask(depId);
+                                if (depTask && Array.isArray(depTask.targetFiles)) {
+                                    depTargetFiles.push(...depTask.targetFiles);
+                                }
+                            }
+                        }
+
+                        const latestContract = db.prepare(`
+                            SELECT id, contract_hash FROM project_contracts
+                            WHERE project_id = ? AND status = 'approved'
+                            ORDER BY revision DESC LIMIT 1
+                        `).get(projectId);
+                        const currentPlanHash = latestContract?.contract_hash || null;
+
+                        // CAS CHECKPOINT DOĞRULAMASI
+                        const checkpointValid = await isTaskCheckpointValid(
                             projectDir,
-                            task.targetFiles,
-                            { projectId, taskId }
+                            projectId,
+                            task,
+                            { planHash: currentPlanHash, dependencyTargetFiles: depTargetFiles, gateVersion: '1.0.0' }
                         );
-                        if (alreadyCompleted) {
+
+                        if (checkpointValid) {
                             dag.setTaskStatus(taskId, 'completed');
                             await logEvent(
                                 wsHub,
@@ -398,12 +422,15 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                                 "Coder",
                                 "skip",
                                 task.targetFiles ? task.targetFiles.join(', ') : '',
-                                `Görev "${task.title}" önceden tamamlanmış, atlanıyor.`,
+                                `Görev "${task.title}" CAS checkpoint doğrulamasıyla geçerli, atlanıyor.`,
                                 coderNodeId,
                                 tlId
                             );
                             return { success: true, taskId, skipped: true };
                         }
+
+                        // Checkpoint geçersizse dosya sistemi önbelleğini ve TODO durumunu sıfırla
+                        await reconcileTaskCache(projectDir, taskId, task);
 
                         await logEvent(wsHub, projectId, "Teamleader", "delegate", "", `Görev "${task.title}" Coder'a iletildi. Kod üretiliyor...`, coderNodeId, tlId);
 
@@ -494,6 +521,31 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ONAYLANDI\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
                         await checkTodoItem(path.join(tlDir, 'TODO.md'), task.title);
 
+                        try {
+                            const latestContract = db.prepare(`
+                                SELECT id, contract_hash FROM project_contracts
+                                WHERE project_id = ? AND status = 'approved'
+                                ORDER BY revision DESC LIMIT 1
+                            `).get(projectId);
+                            if (latestContract) {
+                                const specHash = computeTaskSpecHash(task);
+                                const inHash = await computeInputHash(projectDir, depTargetFiles);
+                                const outHash = await computeOutputHash(projectDir, task.targetFiles || []);
+                                saveCheckpoint({
+                                    projectId,
+                                    taskId,
+                                    contractId: latestContract.id,
+                                    planHash: latestContract.contract_hash,
+                                    taskSpecHash: specHash,
+                                    inputHash: inHash,
+                                    outputHash: outHash,
+                                    gateVersion: '1.0.0',
+                                    status: 'completed'
+                                });
+                            }
+                        } catch (cpErr) {
+                            logWarning('workflow.checkpoint_save_failed', cpErr, { projectId, taskId });
+                        }
                         dag.setTaskStatus(taskId, 'completed', coderOutput);
                         await logEvent(
                             wsHub,

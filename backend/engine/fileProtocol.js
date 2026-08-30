@@ -8,6 +8,8 @@ import path from 'path';
 import { logWarning } from '../observability.js';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
 import { db } from '../db.js';
+import { getLatestCheckpoint } from './checkpointRepository.js';
+import { verifyTaskCheckpoint } from './checkpointHelper.js';
 /**
  * Belirtilen dizinin varlığını garanti eder
  */
@@ -309,5 +311,80 @@ export async function checkTodoItem(todoFilePath, taskIdOrName) {
         await fs.writeFile(todoFilePath, content, 'utf8');
     } catch (error) {
         logWarning('protocol.todo_update_failed', error, { file: path.basename(todoFilePath) });
+    }
+}
+
+/**
+ * TODO.md içerisindeki tamamlanmış görevin işaretini kaldırır ([- [ ]])
+ */
+export async function uncheckTodoItem(todoFilePath, taskIdOrName) {
+    try {
+        let content = await fs.readFile(todoFilePath, 'utf8');
+        const escaped = taskIdOrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`- \\[x\\] (.*${escaped}.*)`, 'gi');
+        content = content.replace(regex, '- [ ] $1');
+        await fs.writeFile(todoFilePath, content, 'utf8');
+    } catch (error) {
+        logWarning('protocol.todo_uncheck_failed', error, { file: path.basename(todoFilePath) });
+    }
+}
+
+/**
+ * Bir görevin geçersiz kılınan dosya sistemi önbelleğini (DURUM.md ve TODO.md) senkronize eder.
+ */
+export async function reconcileTaskCache(projectDir, taskId, task = {}) {
+    try {
+        const domain = task.domain || 'core';
+        const coderFolder = normalizeGeneratedIdentifier(taskId, 'coder_task');
+        const candidateDirs = [
+            path.join(projectDir, domain, coderFolder),
+            path.join(projectDir, coderFolder),
+            path.join(projectDir, domain, `coder_${taskId}`),
+            path.join(projectDir, `coder_${taskId}`)
+        ];
+
+        for (const dir of candidateDirs) {
+            try {
+                await fs.access(dir);
+                await writeDurum(dir, 'YENIDEN_BASLATILDI', 'Checkpoint gecersiz kilindi veya degistirildi; gorev yeniden calistirilacak.');
+            } catch {}
+        }
+
+        // Root TODO.md, domain TODO.md, manager TODO.md dosyalarını tara ve uncheck yap
+        const candidateTodos = [
+            path.join(projectDir, 'TODO.md'),
+            path.join(projectDir, domain, 'TODO.md'),
+            path.join(projectDir, 'manager', 'TODO.md')
+        ];
+
+        for (const todoPath of candidateTodos) {
+            try {
+                await fs.access(todoPath);
+                await uncheckTodoItem(todoPath, taskId);
+            } catch {}
+        }
+    } catch (error) {
+        logWarning('protocol.reconcile_cache_failed', error, { taskId });
+    }
+}
+
+/**
+ * Görevin CAS kontrolüyle veritabanındaki geçerli checkpoint ile eşleşip eşleşmediğini doğrular.
+ */
+export async function isTaskCheckpointValid(projectDir, projectId, task, options = {}) {
+    try {
+        const checkpoint = getLatestCheckpoint(projectId, task.id);
+        if (!checkpoint) return false;
+
+        return await verifyTaskCheckpoint({
+            projectDir,
+            checkpoint,
+            task,
+            planHash: options.planHash,
+            dependencyTargetFiles: options.dependencyTargetFiles || [],
+            gateVersion: options.gateVersion || '1.0.0'
+        });
+    } catch {
+        return false;
     }
 }

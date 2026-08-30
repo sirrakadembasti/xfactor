@@ -3,7 +3,7 @@ unit: P0-C
 status: pending
 plan: implementation-plans/03-P0-C-checkpoint-safety.md
 verified_commit: null
-updated_at: 2026-08-30T11:55:14.970Z
+updated_at: 2026-08-30T12:23:06.158Z
 ---
 
 # P0-C Evidence — Selective Checkpoint Safety
@@ -30,6 +30,17 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Checkpoint commit: `SELF` (this receipt is committed with Task 2 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
+
+## Task 3 Receipt — Workflow Runner Integration and FS Reconciliation
+
+- RED: `node backend/tests/test_p0_c_workflow_integration.js` — exit `1`; expected missing `reconcileTaskCache`.
+- GREEN: `node backend/tests/test_p0_c_workflow_integration.js` — exit `0`; `3` passed, `0` failed.
+- Independent review (`P0CTask3FinalReviewer`): `APPROVE`; specification `PASS`, quality `PASS`, CAS checkpoint skip evaluation, `reconcileTaskCache` DURUM.md reset / TODO.md unchecking, dependency target files input hashing, output hashing, and `saveCheckpoint` integration verified.
+- Independent test (`P0CTask3IndependentTester`): fresh-process `node backend/tests/test_p0_c_workflow_integration.js` — exit `0`; `3` passed, `0` failed.
+- Observed coverage: `uncheckTodoItem` regex unchecking, `reconcileTaskCache` filesystem reset, CAS-based task skip decision, invalid checkpoint re-execution trigger, and automated checkpoint persistence upon task completion.
+- Non-blocking runtime notice: Node emitted its `node:sqlite` experimental warning.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 3 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 ## Required Receipt
 
