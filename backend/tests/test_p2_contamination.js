@@ -56,4 +56,51 @@ if (!filteredTest || filteredTest === 'out-of-domain') {
     });
 }
 
+if (!filteredTest || filteredTest === 'allowed-vocabulary') {
+    await runAsyncTest('P2.3.2: verifyContamination respects allowedVocabulary from contract allowlist', async () => {
+        const contract = {
+            domainEntities: ['Todo', 'MaintenanceItem'],
+            allowedVocabulary: ['car rental', 'fleet management']
+        };
+
+        const files = [
+            {
+                path: 'README.md',
+                content: '# Fleet and Car Rental Maintenance Todo Tracker\n\nManage maintenance tasks for car rental operations.'
+            },
+            {
+                path: 'src/App.jsx',
+                content: 'export default function App() { return <div>Fleet management todo list</div>; }'
+            }
+        ];
+
+        const result = verifyContamination(contract, files);
+        assert.strictEqual(
+            result.passed,
+            true,
+            'Expected contamination scanner to accept allowed word car rental'
+        );
+        assert.strictEqual(result.issues.length, 0);
+    });
+
+    await runAsyncTest('P2.3.2: verifyContamination rejects un-allowed contaminant even if other words are allowlisted', async () => {
+        const contract = {
+            domainEntities: ['Todo'],
+            allowedVocabulary: ['fleet management']
+        };
+
+        const files = [
+            {
+                path: 'README.md',
+                content: '# Fleet management with unapproved rent-a-car templates'
+            }
+        ];
+
+        const result = verifyContamination(contract, files);
+        assert.strictEqual(result.passed, false);
+        assert.strictEqual(result.issues.length, 1);
+        assert.ok(result.issues[0].includes('rent-a-car'));
+    });
+}
+
 finish();

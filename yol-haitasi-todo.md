@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.3.1 (Scan for Template Domain Out-of-Domain Contamination) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.3.2 (Allow Explicit Out-of-Domain Vocabulary).
+P2 Task 3 (Template Contamination Scanner - Steps P2.3.1, P2.3.2) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 4 Step P2.4.1 (Audit Permissive CORS Settings).
 
 Sonraki görev:
 
 ```text
-P2 Task 3 — Template Contamination Scanner (Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary)
-RED: node backend/tests/test_p2_contamination.js --test=allowed-vocabulary
+P2 Task 4 — Contract-Aware Security Baseline Gate (Step P2.4.1: Audit Permissive CORS Settings)
+RED: node backend/tests/test_p2_security_baseline.js --test=cors-wildcard
 ```
 
 ## Yeni Sohbet İçin Başlangıç

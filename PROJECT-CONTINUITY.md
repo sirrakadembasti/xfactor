@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 3 - Template Contamination Scanner (Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary)
+current_task: P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.1: Audit Permissive CORS Settings)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.3.2, write the failing isolated allowed vocabulary test, and run the RED command: node backend/tests/test_p2_contamination.js --test=allowed-vocabulary
-updated_at: 2026-08-30T18:26:51Z
+next_action: Read P2 Step P2.4.1, write the failing isolated permissive CORS audit test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=cors-wildcard
+updated_at: 2026-08-30T18:31:44Z
 ---
 
 # Project Continuity
@@ -64,15 +64,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.2.2 - Detect Dead UI Forms and Form Submit Handlers.
 - P2 Step P2.2.3 - Detect Placeholder Comments and Bypasses.
 - P2 Step P2.3.1 - Scan for Template Domain Out-of-Domain Contamination.
+- P2 Step P2.3.2 - Allow Explicit Out-of-Domain Vocabulary.
 
 ## In Progress
 
-- P2 Task 3 - Template Contamination Scanner (Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary)
+- P2 Task 4 - Contract-Aware Security Baseline Gate (Step P2.4.1: Audit Permissive CORS Settings)
 
 ## Pending
 
-1. Read P2 Step P2.3.2 and write the isolated allowed vocabulary RED test.
-2. Implement Step P2.3.2 only after RED is observed.
+1. Read P2 Step P2.4.1 and write the isolated permissive CORS audit RED test.
+2. Implement Step P2.4.1 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -168,6 +169,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.3.1 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.3.1 independent acceptance test: PASS (`2` passed, `0` failed).
 - P2 Step P2.3.1 continuity validation: PASS.
+- P2 Step P2.3.2 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.3.2 independent acceptance test: PASS (`2` allowed-vocabulary, `4` full suite passed, `0` failed).
+- P2 Step P2.3.2 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -180,7 +184,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.3.2, write the failing isolated allowed vocabulary test, and run the RED command: node backend/tests/test_p2_contamination.js --test=allowed-vocabulary
+Read P2 Step P2.4.1, write the failing isolated permissive CORS audit test, and run the RED command: node backend/tests/test_p2_security_baseline.js --test=cors-wildcard
 
 ## Do Not Do
 
