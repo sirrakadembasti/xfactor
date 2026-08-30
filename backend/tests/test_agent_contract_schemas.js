@@ -1,5 +1,5 @@
 /**
- * Sub-project 3.3: Strict Agent Contract Schemas & Prompt Isolation
+ * Sub-project 3.3 & P1-A: Strict Agent Contract Schemas & Prompt Isolation
  * Test Suite
  */
 
@@ -20,7 +20,7 @@ import {
 
 function runTests() {
     console.log('==================================================');
-    console.log('⚡ Sub-project 3.3: Agent Contracts & Prompt Isolation');
+    console.log('⚡ Sub-project 3.3 & P1-A: Agent Contracts & Schemas');
     console.log('==================================================');
 
     let passed = 0;
@@ -31,11 +31,13 @@ function runTests() {
         // 1a. Manager Plan Validation
         assert.throws(() => validateManagerPlan(null), /Manager planı bir nesne olmalıdır/);
         assert.throws(() => validateManagerPlan({ summary: '' }), /summary/);
-        assert.throws(() => validateManagerPlan({ summary: 'Plan', talimatname: 'Spec', domains: [] }), /en az 1 domain/);
+        assert.throws(() => validateManagerPlan({ summary: 'Plan', talimatname: 'Spec', domains: [], requirements: [{ id: 'REQ-1' }] }), /en az 1 domain/);
+        assert.throws(() => validateManagerPlan({ summary: 'Plan', talimatname: 'Spec', domains: [{ name: 'frontend' }] }), /requirements/);
         assert.strictEqual(validateManagerPlan({
             summary: 'E-commerce System',
             talimatname: '# Talimatname',
-            domains: [{ name: 'frontend', prefix: 'frontend' }, { name: 'backend', prefix: 'backend' }]
+            domains: [{ name: 'frontend', prefix: 'frontend' }, { name: 'backend', prefix: 'backend' }],
+            requirements: [{ id: 'REQ-1', statement: 'Auth requirement' }]
         }), true);
 
         // 1b. Director Spec Validation
@@ -49,19 +51,34 @@ function runTests() {
         }), true);
 
         // 1c. Teamleader Tasks Validation
-        assert.throws(() => validateTeamleaderTasks(null), /Teamleader görev listesi bir nesne olmalıdır/);
+        assert.throws(() => validateTeamleaderTasks(null), /Teamleader görev listesi bir nesne/);
         assert.throws(() => validateTeamleaderTasks({ tasks: [] }), /en az bir atomik coder görevi/);
+        assert.throws(() => validateTeamleaderTasks({ tasks: [{ id: 't1', title: 'No reqs' }] }), /requirementIds/);
         assert.strictEqual(validateTeamleaderTasks({
-            tasks: [{ id: 'task-1', title: 'Setup DB', description: 'Setup', dependencies: [] }]
+            tasks: [{ id: 'task-1', title: 'Setup DB', description: 'Setup', dependencies: [], requirementIds: ['REQ-1'] }]
         }), true);
 
-        // 1d. Coder Output Validation
-        assert.throws(() => validateCoderFiles(null), /Coder çıktısı bir nesne olmalıdır/);
+        // 1d. Coder Output Validation & Target Allowlist
+        assert.throws(() => validateCoderFiles(null), /Coder en az bir dosya/);
         assert.throws(() => validateCoderFiles({ files: [] }), /en az bir dosya/);
         assert.throws(() => validateCoderFiles({ files: [{ path: '', content: 'hello' }] }), /geçerli bir "path"/);
         assert.strictEqual(validateCoderFiles({
             files: [{ path: 'src/App.jsx', content: 'export default function App() {}' }]
         }), true);
+
+        // Coder allowlist rejection
+        const allowedTargets = ['src/components/Header.jsx', 'src/components/Header.css'];
+        const validCoderFiles = [
+            { path: 'src/components/Header.jsx', content: 'export default function Header() {}' },
+            { path: 'src/components/Header.css', content: '.header { color: red; }' }
+        ];
+        assert.strictEqual(validateCoderFiles(validCoderFiles, allowedTargets), true);
+
+        const outsideCoderFiles = [
+            { path: 'src/components/Header.jsx', content: 'export default function Header() {}' },
+            { path: 'src/outside/Unauthorized.js', content: 'malicious write' }
+        ];
+        assert.throws(() => validateCoderFiles(outsideCoderFiles, allowedTargets), /sözleşmesinde|allowlist/);
 
         // 1e. Reviewer / Tester Validation
         assert.throws(() => validateReviewResult(null), /İnceleme çıktısı bir nesne olmalıdır/);
@@ -149,7 +166,6 @@ function runTests() {
     }
 
     // Test 4: normalize* fonksiyonları kötü niyetli LLM tanımlayıcılarını sanitize etmeli
-    // (path ayracı / parent segment taşıyamaz; display metinleri korunur; dependency normalize id ile eşleşir)
     try {
         // 4a. Manager plan domain prefix sanitize edilmeli; display name/description korunmalı
         const managerPlan = normalizeManagerPlan({
@@ -158,7 +174,8 @@ function runTests() {
             domains: [
                 { name: '../../outside-domain', prefix: '..\\outside-prefix' },
                 { name: 'Frontend', prefix: 'frontend' }
-            ]
+            ],
+            requirements: ['REQ-1']
         });
         const maliciousDomain = managerPlan.domains[0];
         assert(!maliciousDomain.prefix.includes('/'), 'Manager domain prefix must not contain "/"');
@@ -167,6 +184,7 @@ function runTests() {
         assert.strictEqual(maliciousDomain.name, '../../outside-domain', 'Manager domain display name must be preserved');
         assert.strictEqual(maliciousDomain.prefix, 'outside-prefix', 'Manager domain prefix should normalize deterministically');
         assert.strictEqual(managerPlan.domains[1].prefix, 'frontend', 'Safe domain prefix must be preserved');
+        assert.strictEqual(managerPlan.requirements[0].id, 'REQ-1');
 
         // 4b. Director spec teamleader prefix sanitize edilmeli; display name/mission korunmalı
         const directorSpec = normalizeDirectorSpec({
@@ -184,12 +202,11 @@ function runTests() {
         assert.strictEqual(tl.mission, 'do evil', 'Teamleader mission must be preserved');
         assert.strictEqual(tl.prefix, 'evil-prefix', 'Teamleader prefix should normalize deterministically');
 
-        // 4c. Teamleader tasks: task id + dependency id normalize; dependency matches normalized id;
-        //     title/description/targetFiles korunmalı
+        // 4c. Teamleader tasks: task id + dependency id normalize; requirementIds normalize
         const tlTasks = normalizeTeamleaderTasks({
             tasks: [
-                { id: '../../task-a', title: 'Setup', description: 'Setup desc', dependencies: ['../../task-a'], targetFiles: ['src/a.js'] },
-                { id: 'task-b', title: 'Build', description: 'Build desc', dependencies: ['../../task-a'], targetFiles: ['src/b.js'] }
+                { id: '../../task-a', title: 'Setup', description: 'Setup desc', dependencies: ['../../task-a'], targetFiles: ['src/a.js'], requirementIds: ['REQ-1'] },
+                { id: 'task-b', title: 'Build', description: 'Build desc', dependencies: ['../../task-a'], targetFiles: ['src/b.js'], requirementIds: ['REQ-2'] }
             ]
         });
         const t0 = tlTasks.tasks[0];
@@ -200,6 +217,7 @@ function runTests() {
         assert.strictEqual(t0.description, 'Setup desc', 'Task description must be preserved');
         assert.deepStrictEqual(t0.targetFiles, ['src/a.js'], 'Task targetFiles must be preserved');
         assert.deepStrictEqual(t0.dependencies, ['task-a'], 'Self dependency must normalize to canonical task id');
+        assert.deepStrictEqual(t0.requirementIds, ['REQ-1']);
         assert.deepStrictEqual(t1.dependencies, ['task-a'], 'Cross dependency must match normalized task id');
 
         console.log('  [PASS] 4. Schema normalization sanitizes malicious LLM identifiers');

@@ -280,6 +280,29 @@ export function normalizeManagerPlan(plan) {
         };
     });
 
+    let rawReqs = plan.requirements || plan.requirementIds || [];
+    if (!Array.isArray(rawReqs)) {
+        rawReqs = [];
+    }
+    plan.requirements = rawReqs.map((r, idx) => {
+        if (typeof r === 'string') {
+            return {
+                id: r.trim() || `REQ-${idx + 1}`,
+                statement: r.trim() || `Gereksinim ${idx + 1}`,
+                mandatory: true,
+                kind: 'functional',
+                priority: 'high'
+            };
+        }
+        return {
+            id: r.id || `REQ-${idx + 1}`,
+            statement: r.statement || r.title || r.description || `Gereksinim ${idx + 1}`,
+            mandatory: r.mandatory !== undefined ? Boolean(r.mandatory) : true,
+            kind: r.kind || 'functional',
+            priority: r.priority || 'high'
+        };
+    });
+
     return plan;
 }
 
@@ -301,6 +324,10 @@ export function validateManagerPlan(plan) {
         if (!name || typeof name !== 'string') {
             throw new Error('Her domain için geçerli bir "name" belirtilmelidir.');
         }
+    }
+    const reqs = plan.requirements || plan.requirementIds;
+    if (!Array.isArray(reqs) || reqs.length === 0) {
+        throw new Error('Manager planında en az bir gereksinim ("requirements" veya "requirementIds") tanımlanmalıdır.');
     }
     return true;
 }
@@ -372,8 +399,11 @@ export function validateDirectorSpec(spec) {
  * Teamleader Görev Ayrıştırma (Task Decomposition) Şeması Doğrulaması ve Normalizasyon
  */
 export function normalizeTeamleaderTasks(taskList) {
-    if (!taskList || typeof taskList !== 'object') {
+    const rawInput = Array.isArray(taskList) ? { tasks: taskList } : taskList;
+    if (!rawInput || typeof rawInput !== 'object') {
         taskList = { tasks: [] };
+    } else {
+        taskList = rawInput;
     }
 
     let rawTasks = taskList.tasks || taskList.taskList || taskList.subtasks || taskList.items || [];
@@ -383,7 +413,8 @@ export function normalizeTeamleaderTasks(taskList) {
             title: 'Temel Modül ve Bileşen Kurulumu',
             description: 'Gereksinimlere uygun temel bileşenleri ve modelleri oluştur.',
             dependencies: [],
-            targetFiles: ['src/App.jsx']
+            targetFiles: ['src/App.jsx'],
+            requirementIds: ['REQ-1']
         }];
     }
     taskList.tasks = rawTasks.map((t, idx) => {
@@ -394,19 +425,24 @@ export function normalizeTeamleaderTasks(taskList) {
                 title: t,
                 description: t,
                 dependencies: idx > 0 ? [normalizeGeneratedIdentifier(`task-${idx}`)] : [],
-                targetFiles: []
+                targetFiles: [],
+                requirementIds: [`REQ-${idx + 1}`]
             };
         }
         const id = normalizeGeneratedIdentifier(t.id || `task-${idx + 1}`);
         const dependencies = Array.isArray(t.dependencies)
             ? t.dependencies.map((dep) => normalizeGeneratedIdentifier(dep))
             : [];
+        const reqIds = Array.isArray(t.requirementIds)
+            ? t.requirementIds
+            : (Array.isArray(t.requirements) ? t.requirements : (t.requirementId ? [t.requirementId] : []));
         return {
             id,
             title: t.title || t.name || `Görev ${idx + 1}`,
             description: t.description || t.title || `Görev ${idx + 1} geliştirme`,
             dependencies,
-            targetFiles: Array.isArray(t.targetFiles) ? t.targetFiles : (t.target_files || [])
+            targetFiles: Array.isArray(t.targetFiles) ? t.targetFiles : (t.target_files || []),
+            requirementIds: reqIds.length > 0 ? reqIds : [`REQ-${idx + 1}`]
         };
     });
 
@@ -414,11 +450,19 @@ export function normalizeTeamleaderTasks(taskList) {
 }
 
 export function validateTeamleaderTasks(taskList) {
-    if (!taskList || typeof taskList !== 'object') {
-        throw new Error('Teamleader görev listesi bir nesne olmalıdır.');
+    const rawInput = Array.isArray(taskList) ? { tasks: taskList } : taskList;
+    if (!rawInput || typeof rawInput !== 'object') {
+        throw new Error('Teamleader görev listesi bir nesne veya dizi olmalıdır.');
     }
-    if (!Array.isArray(taskList.tasks) || taskList.tasks.length === 0) {
+    const tasks = rawInput.tasks;
+    if (!Array.isArray(tasks) || tasks.length === 0) {
         throw new Error('Teamleader en az bir atomik coder görevi üretmelidir.');
+    }
+    for (const task of tasks) {
+        const reqIds = task.requirementIds || task.requirements;
+        if (!Array.isArray(reqIds) || reqIds.length === 0) {
+            throw new Error(`Görev "${task.id || task.title}" için en az bir "requirementIds" belirtilmelidir.`);
+        }
     }
     return true;
 }
@@ -426,10 +470,11 @@ export function validateTeamleaderTasks(taskList) {
  * Coder Ajanı Çok Dosyalı Kod Üretim Çıktısı Doğrulaması
  */
 export function validateCoderFiles(codeOutput, allowedTargetFiles = null) {
-    if (!codeOutput || typeof codeOutput !== 'object') {
-        throw new Error('Coder çıktısı bir nesne olmalıdır.');
-    }
-    if (!Array.isArray(codeOutput.files) || codeOutput.files.length === 0) {
+    const files = Array.isArray(codeOutput)
+        ? codeOutput
+        : (codeOutput && Array.isArray(codeOutput.files) ? codeOutput.files : null);
+
+    if (!files || files.length === 0) {
         throw new Error('Coder en az bir dosya ("files" dizisi) üretmelidir.');
     }
     const seenPaths = new Set();
@@ -437,8 +482,8 @@ export function validateCoderFiles(codeOutput, allowedTargetFiles = null) {
         ? new Set(allowedTargetFiles.map(p => path.normalize(p).replace(/\\/g, '/')))
         : null;
 
-    for (const f of codeOutput.files) {
-        if (!f.path || typeof f.path !== 'string') {
+    for (const f of files) {
+        if (!f || !f.path || typeof f.path !== 'string') {
             throw new Error('Her dosya için geçerli bir "path" (dosya yolu) zorunludur.');
         }
         const normPath = path.normalize(f.path).replace(/\\/g, '/');
@@ -448,7 +493,7 @@ export function validateCoderFiles(codeOutput, allowedTargetFiles = null) {
         seenPaths.add(normPath);
 
         if (allowedSet && !allowedSet.has(normPath)) {
-            throw new Error(`Coder çıktısındaki "${f.path}" dosyası görevin hedef dosya sözleşmesinde (${allowedTargetFiles.join(', ')}) yer almıyor.`);
+            throw new Error(`Coder çıktısındaki "${f.path}" dosyası görevin hedef dosya sözleşmesinde (allowlist: ${allowedTargetFiles.join(', ')}) yer almıyor.`);
         }
 
         if (typeof f.content !== 'string') {

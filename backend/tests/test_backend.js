@@ -650,7 +650,7 @@ await runAsyncTest("16. Structured JSON schema parsers should strictly validate 
     const schemas = await import('../agents/schemas.js');
     const { extractAndParseJSON, validateManagerPlan, validateDirectorSpec, validateTeamleaderTasks, validateCoderFiles, validateReviewResult } = schemas;
     // Markdown fence içinden JSON çıkarma testi
-    const sampleMarkdown = "```json\n{\n  \"summary\": \"Test summary\",\n  \"talimatname\": \"# Plan\",\n  \"domains\": [{\"name\": \"frontend\", \"prefix\": \"frontend\", \"description\": \"UI\"}]\n}\n```";
+    const sampleMarkdown = "```json\n{\n  \"summary\": \"Test summary\",\n  \"talimatname\": \"# Plan\",\n  \"domains\": [{\"name\": \"frontend\", \"prefix\": \"frontend\", \"description\": \"UI\"}],\n  \"requirements\": [{\"id\": \"REQ-1\", \"statement\": \"UI requirement\", \"mandatory\": true}]\n}\n```";
     const parsed = extractAndParseJSON(sampleMarkdown);
     assert.strictEqual(parsed.summary, "Test summary");
     assert.strictEqual(validateManagerPlan(parsed), true, "Valid manager plan must pass validation");
@@ -663,7 +663,7 @@ await runAsyncTest("16. Structured JSON schema parsers should strictly validate 
     assert.strictEqual(validateDirectorSpec(directorData), true, "Valid director spec must pass");
 
     // Teamleader görev ayrıştırma testi
-    const tlData = { tasks: [{ id: "task-1", title: "Setup", description: "Config", dependencies: [], targetFiles: ["package.json"] }] };
+    const tlData = { tasks: [{ id: "task-1", title: "Setup", description: "Config", dependencies: [], targetFiles: ["package.json"], requirementIds: ["REQ-1"] }] };
     assert.strictEqual(validateTeamleaderTasks(tlData), true, "Valid teamleader task list must pass");
 
     // Coder çoklu dosya çıktısı testi

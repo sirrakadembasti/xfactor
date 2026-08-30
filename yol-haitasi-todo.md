@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-A Task 4 (Domain Element Policy) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 5 Requirement-Aware Agent Schemas & Normalizers.
+P1-A Task 5 (Requirement-Aware Agent Schemas & Normalizers) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-A Task 6 Requirement-Aware System Prompts.
 
 Sonraki görev:
 
 ```text
-P1-A Task 5 — Requirement-Aware Agent Schemas & Normalizers
-RED: isolated agent schema validation, requirementIds, ve target allowlist failing testi
+P1-A Task 6 — Requirement-Aware System Prompts
+RED: isolated docs agent prompt sync failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç

@@ -3,7 +3,7 @@ unit: P1-A
 status: pending
 plan: implementation-plans/04-P1-A-contract-traceability.md
 verified_commit: null
-updated_at: 2026-08-30T14:01:20.106Z
+updated_at: 2026-08-30T14:08:21.318Z
 ---
 
 # P1-A Evidence — Contract and Requirement Traceability
@@ -52,6 +52,16 @@ Unit implementation is in progress. Verified task checkpoints are recorded below
 - Checkpoint commit: `SELF` (this receipt is committed with Task 4 source and tests).
 - Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
+
+## Task 5 Receipt — Requirement-Aware Agent Schemas & Normalizers
+
+- RED: `node backend/tests/test_agent_contract_schemas.js` — exit `1`; expected missing requirementIds and allowlist validations.
+- GREEN: `node backend/tests/test_agent_contract_schemas.js` — exit `0`; `4` passed, `0` failed.
+- Independent review (`P1ATask5ReReviewer`): `APPROVE`; specification `PASS`, quality `PASS`, requirementIds validation across plans and tasks, validateCoderFiles allowlist enforcement, backward compatibility, and comprehensive DAG/schema testing verified.
+- Independent test (`P1ATask5IndependentTester`): fresh-process `node backend/tests/test_agent_contract_schemas.js` — exit `0`; `4` passed, `0` failed.
+- Observed coverage: `validateManagerPlan` requirementIds enforcement, `validateTeamleaderTasks` task requirement mapping, `validateCoderFiles` targetFiles allowlist boundary check, DAG cycle validation, prompt delimiter escaping, and malicious identifier sanitization.
+- Checkpoint commit: `SELF` (this receipt is committed with Task 5 source and tests).
+- Continuity validation: `node scripts/validate-continuity.mjs` — exit `0`; `CONTINUITY PASS`.
 
 ## Required Receipt
 
