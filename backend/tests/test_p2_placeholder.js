@@ -95,4 +95,123 @@ if (!filteredTest || filteredTest === 'mock-handlers') {
     });
 }
 
+if (!filteredTest || filteredTest === 'dead-forms') {
+    await runAsyncTest('P2.2.2: verifyPlaceholders rejects dead React forms with no network/API calls', async () => {
+        const files = [
+            {
+                path: 'src/components/DeadTodoForm.jsx',
+                content: `
+                    import React from 'react';
+
+                    export default function DeadTodoForm() {
+                        const handleSubmit = (e) => {
+                            e.preventDefault();
+                        };
+
+                        return (
+                            <form onSubmit={handleSubmit}>
+                                <input type="text" placeholder="Todo item" />
+                                <button type="submit">Submit</button>
+                            </form>
+                        );
+                    }
+                `
+            },
+            {
+                path: 'src/components/InlineDeadForm.jsx',
+                content: `
+                    import React from 'react';
+
+                    export default function InlineDeadForm() {
+                        return (
+                            <form onSubmit={e => e.preventDefault()}>
+                                <button type="submit">Do Nothing</button>
+                            </form>
+                        );
+                    }
+                `
+            },
+            {
+                path: 'src/components/ConsoleLogDeadForm.jsx',
+                content: `
+                    import React from 'react';
+
+                    export default function ConsoleLogDeadForm() {
+                        const handleSubmit = (e) => {
+                            e.preventDefault();
+                            console.log("Just logging, not calling API");
+                            alert("Form clicked");
+                        };
+
+                        return (
+                            <form onSubmit={handleSubmit}>
+                                <button type="submit">Log only</button>
+                            </form>
+                        );
+                    }
+                `
+            },
+            {
+                path: 'src/components/CallbackDeadForm.jsx',
+                content: `
+                    import React, { useCallback } from 'react';
+
+                    export default function CallbackDeadForm() {
+                        const handleSubmit = useCallback((e) => {
+                            e.preventDefault();
+                        }, []);
+
+                        return (
+                            <form onSubmit={handleSubmit}>
+                                <button type="submit">Submit</button>
+                            </form>
+                        );
+                    }
+                `
+            }
+        ];
+
+        const result = verifyPlaceholders(files);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected placeholder check to fail on dead React forms'
+        );
+        assert.strictEqual(result.issues.length, 4);
+    });
+
+    await runAsyncTest('P2.2.2: verifyPlaceholders passes when form submit handlers call API client or trigger actions', async () => {
+        const files = [
+            {
+                path: 'src/components/ValidTodoForm.jsx',
+                content: `
+                    import React, { useState, useCallback } from 'react';
+                    import { api } from '../services/api';
+
+                    export default function ValidTodoForm({ onCreated }) {
+                        const [text, setText] = useState('');
+
+                        const handleSubmit = useCallback(async (e) => {
+                            e.preventDefault();
+                            const created = await api.post('/api/todos', { title: text });
+                            if (onCreated) onCreated(created);
+                        }, [text, onCreated]);
+
+                        return (
+                            <form onSubmit={handleSubmit}>
+                                <input value={text} onChange={e => setText(e.target.value)} />
+                                <button type="submit">Add Todo</button>
+                            </form>
+                        );
+                    }
+                `
+            }
+        ];
+
+        const result = verifyPlaceholders(files);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
+
 finish();
