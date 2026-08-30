@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.2.2 (Detect Dead UI Forms and Form Submit Handlers) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.2.3 (Detect Placeholder Comments and Bypasses).
+P2 Task 2 (Placeholder, Stub, and Dead-Flow Detection) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 3 Step P2.3.1 (Scan for Template Domain Out-of-Domain Contamination).
 
 Sonraki görev:
 
 ```text
-P2 Task 2 — Placeholder, Stub, and Dead-Flow Detection (Step P2.2.3: Detect Placeholder Comments and Bypasses)
-RED: node backend/tests/test_p2_placeholder.js --test=comments-bypasses
+P2 Task 3 — Template Contamination Scanner (Step P2.3.1: Scan for Template Domain Out-of-Domain Contamination)
+RED: node backend/tests/test_p2_contamination.js --test=out-of-domain
 ```
 
 ## Yeni Sohbet İçin Başlangıç

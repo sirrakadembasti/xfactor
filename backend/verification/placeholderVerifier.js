@@ -5,6 +5,9 @@ const DYNAMIC_IDENTIFIER_PATTERN = /(^|_|\b)(prisma|db|database|service|fetch|ax
 const ACTIVE_ACTION_PATTERN = /(^|_|\b)(api|fetch|axios|dispatch|post|put|delete|patch|send|submit|create|update|mutate|save|set[A-Z][a-zA-Z0-9_]*|on[A-Z][a-zA-Z0-9_]*|handle[A-Z][a-zA-Z0-9_]*)(\b|_|$)/i;
 const NON_ACTION_CALLS = new Set(['preventdefault', 'stoppropagation', 'log', 'warn', 'error', 'info', 'debug', 'alert']);
 
+const LINE_COMMENT_PLACEHOLDER_PATTERN = /(?:\/\/|\/\*|\*)\s*(?:TODO|TO-DO|FIXME)\b/i;
+const NOT_IMPLEMENTED_PATTERN = /throw\s+(?:new\s+)?(?:[A-Za-z0-9_$]*Error)?\s*\(\s*['"`](?:not implemented|todo|fixme)[^'"`]*['"`]\s*\)/i;
+
 function isStaticLiteralExpression(node) {
     if (!node) return false;
     return (
@@ -139,6 +142,19 @@ export function verifyPlaceholders(files = []) {
 
     for (const file of scriptFiles) {
         const content = file.content || '';
+        const lines = content.split(/\r?\n/);
+
+        // Check line-by-line for placeholder comments and "Not implemented" throw bypasses
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (LINE_COMMENT_PLACEHOLDER_PATTERN.test(line)) {
+                issues.push(`Placeholder comment detected in ${file.path}:${i + 1}: ${line.trim()}`);
+            }
+            if (NOT_IMPLEMENTED_PATTERN.test(line)) {
+                issues.push(`"Not implemented" error bypass detected in ${file.path}:${i + 1}: ${line.trim()}`);
+            }
+        }
+
         let ast;
         try {
             ast = parse(content, {

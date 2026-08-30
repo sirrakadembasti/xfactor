@@ -214,4 +214,70 @@ if (!filteredTest || filteredTest === 'dead-forms') {
     });
 }
 
+if (!filteredTest || filteredTest === 'comments-bypasses') {
+    await runAsyncTest('P2.2.3: verifyPlaceholders rejects placeholder comments and not-implemented bypasses', async () => {
+        const files = [
+            {
+                path: 'src/services/auth.js',
+                content: `
+                    export function login(user) {
+                        /*
+                         * TODO: implement real authentication in multi-line block
+                         */
+                        throw Error("Not implemented");
+                    }
+                `
+            },
+            {
+                path: 'src/utils/helpers.js',
+                content: `
+                    export function formatData(d) {
+                        // FIXME: add edge case handling
+                        return d;
+                    }
+                `
+            }
+        ];
+
+        const result = verifyPlaceholders(files);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected placeholder check to fail on comment-based placeholder bypasses'
+        );
+        assert.strictEqual(result.issues.length, 3);
+        assert.ok(
+            result.issues.some(issue => issue.includes('TODO: implement') && issue.includes('auth.js:')),
+            'Issues must identify multi-line TODO comment with line number'
+        );
+        assert.ok(
+            result.issues.some(issue => issue.includes('Not implemented') && issue.includes('auth.js:')),
+            'Issues must identify Not implemented throw without new with line number'
+        );
+        assert.ok(
+            result.issues.some(issue => issue.includes('FIXME') && issue.includes('helpers.js:')),
+            'Issues must identify FIXME comment with line number'
+        );
+    });
+
+    await runAsyncTest('P2.2.3: verifyPlaceholders passes when source code contains no placeholder comments or bypasses', async () => {
+        const files = [
+            {
+                path: 'src/services/auth.js',
+                content: `
+                    import { db } from '../db.js';
+                    export async function login(username, password) {
+                        const user = await db.user.findUnique({ where: { username } });
+                        return user;
+                    }
+                `
+            }
+        ];
+
+        const result = verifyPlaceholders(files);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
+
 finish();
