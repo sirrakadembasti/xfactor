@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P1-C Task 1 (Artifact Repository CRUD) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 2 Server-Side ZIP Generation and Hashing.
+P1-C Task 2 (Server-Side ZIP Generation and Hashing) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P1-C Task 3 Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks).
 
 Sonraki görev:
 
 ```text
-P1-C Task 2 — Server-Side ZIP Generation and Hashing
-RED: isolated server-side ZIP generation failing testi
+P1-C Task 3 — Safe Extraction (Path, Symlink, Zip Bomb, Quota Checks)
+RED: isolated safe extraction failing testi
 ```
 
 ## Yeni Sohbet İçin Başlangıç
