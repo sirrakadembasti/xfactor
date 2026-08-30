@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Task 1 (Domain/Entity/Use Verification - Steps P2.1.1, P2.1.2, P2.1.3) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Task 2 Step P2.2.1 (Detect Static Mock/Dummy Route Handlers).
+P2 Step P2.2.1 (Detect Static Mock/Dummy Route Handlers) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.2.2 (Detect Dead UI Forms and Form Submit Handlers).
 
 Sonraki görev:
 
 ```text
-P2 Task 2 — Placeholder, Stub, and Dead-Flow Detection (Step P2.2.1: Detect Static Mock/Dummy Route Handlers)
-RED: node backend/tests/test_p2_placeholder.js --test=mock-handlers
+P2 Task 2 — Placeholder, Stub, and Dead-Flow Detection (Step P2.2.2: Detect Dead UI Forms and Form Submit Handlers)
+RED: node backend/tests/test_p2_placeholder.js --test=dead-forms
 ```
 
 ## Yeni Sohbet İçin Başlangıç
