@@ -951,6 +951,63 @@ await runAsyncTest('P3.3 derived checkpointId stable helper parity', async () =>
   assert.strictEqual(deriveCheckpointId(row), expected);
   assert.strictEqual(deriveCheckpointId(row), deriveCheckpointId(row));
 });
+// Fix round 1/5 seeding: unlinked-invalid, null-deps, and overflow helpers
+const unlinkedInvalidProj = 'p3-graph-unlinked-invalid';
+const nullDepsProj = 'p3-graph-nulldeps';
+for (const pid of [unlinkedInvalidProj, nullDepsProj]) {
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'running')").run(pid, pid);
+  db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pid, ownerUserId);
+}
+const unlinkedInvalidContract = 'p3-graph-unlinked-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(unlinkedInvalidContract, unlinkedInvalidProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-UNLINKED', 'unlinked','functional','high',1,'approved')").run('p3-unlinked-req', unlinkedInvalidContract);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-OTHER2', 'other','functional','high',1,'approved')").run('p3-unlinked-req2', unlinkedInvalidContract);
+// linked requirement has no direct task links, but graph contains malformed task elsewhere
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-GOOD', ?)").run('p3-unlinked-good', unlinkedInvalidContract, JSON.stringify({ title:'good', dependencies:[] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-BAD', ?)").run('p3-unlinked-bad', unlinkedInvalidContract, '{bad json');
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(unlinkedInvalidContract, 'p3-unlinked-req2', 'p3-unlinked-good');
+const nullDepsContract = 'p3-graph-nulldeps-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(nullDepsContract, nullDepsProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-X', 'x','functional','high',1,'approved')").run('p3-null-req', nullDepsContract);
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-X', ?)").run('p3-null-task', nullDepsContract, JSON.stringify({ title:'t', dependencies: null }));
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(nullDepsContract, 'p3-null-req', 'p3-null-task');
+await runAsyncTest('P3.3 fix: unlinked requirement still validates whole graph =>409', async () => {
+  const before = snapshotDbState();
+  const { status } = await requestWithBody(`/api/projects/${unlinkedInvalidProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-UNLINKED'] } });
+  assert.strictEqual(status, 409);
+  assert.strictEqual(snapshotDbState(), before, 'must not mutate on 409');
+});
+await runAsyncTest('P3.3 fix: explicit null dependencies =>409', async () => {
+  const { status } = await requestWithBody(`/api/projects/${nullDepsProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-X'] } });
+  assert.strictEqual(status, 409);
+});
+await runAsyncTest('P3.3 fix: BFS bound overflow throws 409 via helper', async () => {
+  const { collectDownstreamTaskIds } = await import('../observability.js');
+  const rows = [];
+  const rootId = 'root';
+  rows.push({ id: rootId, task_spec_json: JSON.stringify({ title:'root', dependencies:[] }) });
+  for (let i=0;i<10001;i++) {
+    rows.push({ id:`t${i}`, task_spec_json: JSON.stringify({ title:`t${i}`, dependencies:[rootId] }) });
+  }
+  let threw = false;
+  try { collectDownstreamTaskIds(rows, [rootId]); } catch (e) { threw = e.code==='BOUND_EXCEEDED'; assert.strictEqual(e.message, 'Bound overflow'); }
+  assert.ok(threw, 'bound overflow must throw');
+  const smallRows = rows.slice(0, 100);
+  const smallRes = collectDownstreamTaskIds(smallRows, [rootId]);
+  assert.ok(smallRes.includes(rootId) && smallRes.length===100);
+});
+await runAsyncTest('P3.3 fix: transaction rolls back and proves no mutation on success path', async () => {
+  const before = snapshotDbState();
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'] } });
+  assert.strictEqual(status, 200);
+  assert.deepStrictEqual(body.tasksToReRun, ['p3-task-a','p3-task-c','p3-task-d']);
+  assert.strictEqual(snapshotDbState(), before);
+  // after rollback on 409 also no mutation
+  const before2 = snapshotDbState();
+  const { status: s2 } = await requestWithBody(`/api/projects/${unlinkedInvalidProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-UNLINKED'] } });
+  assert.strictEqual(s2, 409);
+  assert.strictEqual(snapshotDbState(), before2);
+});
 
 
 

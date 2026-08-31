@@ -801,51 +801,72 @@ export function createProjectRouter({
         }
         if (new Set(trimmed).size !== trimmed.length) return res.status(400).json({ error: 'Duplicate requirement keys' });
         // resolve latest approved contract revision DESC, id ASC tie-break
-        const latest = db.prepare(`
-            SELECT id FROM project_contracts WHERE project_id = ? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1
-        `).get(projectId);
-        if (!latest) return res.status(404).json({ error: 'No approved contract' });
-        const contractId = latest.id;
-        if (trimmed.length===0) {
-            return res.json({ willRebuild:false, invalidatedCheckpointIds:[], tasksToReRun:[] });
-        }
-        // unknown stable keys check
-        const placeholders = trimmed.map(()=>'?').join(',');
-        const reqRows = db.prepare(`
-            SELECT id, stable_key FROM requirements WHERE contract_id = ? AND stable_key IN (${placeholders})
-        `).all(contractId, ...trimmed);
-        const foundKeys = new Set(reqRows.map(r=> r.stable_key));
-        for (const k of trimmed) if (!foundKeys.has(k)) return res.status(400).json({ error: `Unknown requirement key ${k}` });
-        const requirementIds = reqRows.map(r=> r.id);
-        // direct task roots
-        let directTaskIds = [];
-        if (requirementIds.length>0) {
-            const reqPlace = requirementIds.map(()=>'?').join(',');
-            const rows = db.prepare(`
-                SELECT DISTINCT task_id FROM requirement_task_links WHERE contract_id = ? AND requirement_id IN (${reqPlace})
-            `).all(contractId, ...requirementIds);
-            directTaskIds = rows.map(r=> r.task_id);
-        }
-        // load all tasks for graph validation and downstream
-        const allTasks = db.prepare(`SELECT id, task_spec_json FROM contract_tasks WHERE contract_id = ?`).all(contractId);
-        let tasksToReRun;
+        // Execute dependent reads in one synchronous SQLite read transaction with guaranteed COMMIT/ROLLBACK
+        let latest, contractId, reqRows, directTaskIds, allTasks, tasksToReRun, invalidatedCheckpointIds;
+        let inTx = false;
         try {
-            if (directTaskIds.length===0) tasksToReRun = [];
-            else tasksToReRun = collectDownstreamTaskIds(allTasks, directTaskIds);
+            db.exec('BEGIN IMMEDIATE');
+            inTx = true;
+            latest = db.prepare(`
+                SELECT id FROM project_contracts WHERE project_id = ? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1
+            `).get(projectId);
+            if (!latest) {
+                db.exec('ROLLBACK');
+                inTx = false;
+                return res.status(404).json({ error: 'No approved contract' });
+            }
+            contractId = latest.id;
+            if (trimmed.length===0) {
+                db.exec('COMMIT');
+                inTx = false;
+                return res.json({ willRebuild:false, invalidatedCheckpointIds:[], tasksToReRun:[] });
+            }
+            const placeholders = trimmed.map(()=>'?').join(',');
+            reqRows = db.prepare(`
+                SELECT id, stable_key FROM requirements WHERE contract_id = ? AND stable_key IN (${placeholders})
+            `).all(contractId, ...trimmed);
+            const foundKeys = new Set(reqRows.map(r=> r.stable_key));
+            for (const k of trimmed) if (!foundKeys.has(k)) {
+                db.exec('ROLLBACK');
+                inTx = false;
+                return res.status(400).json({ error: `Unknown requirement key ${k}` });
+            }
+            const requirementIds = reqRows.map(r=> r.id);
+            let directIds = [];
+            if (requirementIds.length>0) {
+                const reqPlace = requirementIds.map(()=>'?').join(',');
+                const rows = db.prepare(`
+                    SELECT DISTINCT task_id FROM requirement_task_links WHERE contract_id = ? AND requirement_id IN (${reqPlace})
+                `).all(contractId, ...requirementIds);
+                directIds = rows.map(r=> r.task_id);
+            }
+            directTaskIds = directIds;
+            allTasks = db.prepare(`SELECT id, task_spec_json FROM contract_tasks WHERE contract_id = ?`).all(contractId);
+            try {
+                tasksToReRun = collectDownstreamTaskIds(allTasks, directTaskIds);
+            } catch (e) {
+                try { db.exec('ROLLBACK'); } catch {}
+                inTx = false;
+                return res.status(409).json({ error: e.message || 'Graph validation failed' });
+            }
+            invalidatedCheckpointIds = [];
+            if (tasksToReRun.length>0) {
+                const tp = tasksToReRun.map(()=>'?').join(',');
+                const cpRows = db.prepare(`
+                    SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
+                    FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND task_id IN (${tp})
+                `).all(projectId, contractId, ...tasksToReRun);
+                const idSet = new Set();
+                for (const r of cpRows) idSet.add(deriveCheckpointId(r));
+                invalidatedCheckpointIds = Array.from(idSet).sort();
+            }
+            db.exec('COMMIT');
+            inTx = false;
         } catch (e) {
-            return res.status(409).json({ error: e.message || 'Graph validation failed' });
-        }
-        // invalidated checkpoints for those tasks
-        let invalidatedCheckpointIds = [];
-        if (tasksToReRun.length>0) {
-            const tp = tasksToReRun.map(()=>'?').join(',');
-            const cpRows = db.prepare(`
-                SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
-                FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND task_id IN (${tp})
-            `).all(projectId, contractId, ...tasksToReRun);
-            const idSet = new Set();
-            for (const r of cpRows) idSet.add(deriveCheckpointId(r));
-            invalidatedCheckpointIds = Array.from(idSet).sort();
+            if (inTx) try { db.exec('ROLLBACK'); } catch {}
+            throw e;
+        } finally {
+            if (inTx) try { db.exec('ROLLBACK'); } catch {}
         }
         const willRebuild = tasksToReRun.length>0;
         res.json({ willRebuild, invalidatedCheckpointIds, tasksToReRun });

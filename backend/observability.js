@@ -431,7 +431,11 @@ export function collectDownstreamTaskIds(allTaskRows, rootTaskIds) {
       if (!impacted.has(dep)) {
         impacted.add(dep);
         queue.push(dep);
-        if (queue.length > 10000) break; // bounded
+        if (queue.length > 10000) {
+          const e = new Error('Bound overflow');
+          e.code = 'BOUND_EXCEEDED';
+          throw e;
+        }
       }
     }
   }
