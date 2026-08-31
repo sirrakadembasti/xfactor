@@ -527,19 +527,74 @@ export function createProjectRouter({
         res.json(result);
     }));
     router.get('/:id/verification-runs', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
-        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
-        const cursor = req.query.cursor ? String(req.query.cursor) : null;
-        const rows = db.prepare(`
-            SELECT id, contract_id, status, policy_version, started_at, ended_at
-            FROM verification_runs WHERE project_id = ? ORDER BY started_at DESC, id ASC
-        `).all(req.params.id);
-        let startIdx = 0;
-        if (cursor) {
-            const idx = rows.findIndex(r => r.id === cursor);
-            startIdx = idx >= 0 ? idx + 1 : 0;
+        // Validate limit: scalar, integer 1..100, duplicate handling: take first value
+        let rawLimit = req.query.limit;
+        if (Array.isArray(rawLimit)) rawLimit = rawLimit[0];
+        let limit = 20;
+        if (rawLimit !== undefined) {
+            const parsed = parseInt(String(rawLimit), 10);
+            if (!Number.isFinite(parsed) || String(parsed) !== String(rawLimit).trim() && !/^\d+$/.test(String(rawLimit).trim())) {
+                // allow numeric string, else 400
+                if (isNaN(parsed)) return res.status(400).json({ error: 'Invalid limit' });
+            }
+            if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+                return res.status(400).json({ error: 'Invalid limit' });
+            }
+            limit = parsed;
         }
-        const slice = rows.slice(startIdx, startIdx + limit);
-        const nextCursor = (startIdx + limit) < rows.length ? slice[slice.length - 1].id : null;
+        let rawCursor = req.query.cursor;
+        if (Array.isArray(rawCursor)) rawCursor = rawCursor[0];
+        let cursorStartedAt = null;
+        let cursorId = null;
+        if (rawCursor !== undefined && rawCursor !== null && String(rawCursor).length > 0) {
+            const cursorStr = String(rawCursor);
+            // cursor is base64url encoded JSON { id, started_at }
+            let decoded;
+            try {
+                const json = Buffer.from(cursorStr, 'base64url').toString('utf8');
+                decoded = JSON.parse(json);
+            } catch {
+                return res.status(400).json({ error: 'Invalid cursor' });
+            }
+            if (!decoded || typeof decoded.id !== 'string' || typeof decoded.started_at !== 'string') {
+                return res.status(400).json({ error: 'Invalid cursor' });
+            }
+            // verify cursor belongs to this project and exists
+            const cursorRow = db.prepare(`
+                SELECT started_at FROM verification_runs WHERE id = ? AND project_id = ?
+            `).get(decoded.id, req.params.id);
+            if (!cursorRow || cursorRow.started_at !== decoded.started_at) {
+                return res.status(400).json({ error: 'Invalid cursor' });
+            }
+            cursorStartedAt = decoded.started_at;
+            cursorId = decoded.id;
+        }
+        let rows;
+        if (cursorStartedAt !== null) {
+            rows = db.prepare(`
+                SELECT id, contract_id, status, policy_version, started_at, ended_at
+                FROM verification_runs
+                WHERE project_id = ?
+                  AND (started_at < ? OR (started_at = ? AND id > ?))
+                ORDER BY started_at DESC, id ASC
+                LIMIT ?
+            `).all(req.params.id, cursorStartedAt, cursorStartedAt, cursorId, limit + 1);
+        } else {
+            rows = db.prepare(`
+                SELECT id, contract_id, status, policy_version, started_at, ended_at
+                FROM verification_runs
+                WHERE project_id = ?
+                ORDER BY started_at DESC, id ASC
+                LIMIT ?
+            `).all(req.params.id, limit + 1);
+        }
+        const hasMore = rows.length > limit;
+        const slice = hasMore ? rows.slice(0, limit) : rows;
+        let nextCursor = null;
+        if (hasMore) {
+            const last = slice[slice.length - 1];
+            nextCursor = Buffer.from(JSON.stringify({ id: last.id, started_at: last.started_at })).toString('base64url');
+        }
         const runs = slice.map(r => ({
             id: r.id,
             contract_id: r.contract_id,
@@ -558,7 +613,7 @@ export function createProjectRouter({
         if (!run) return res.status(404).json({ error: 'Verification run not found' });
         const checks = db.prepare(`
             SELECT id, gate_name, applicability, status, exit_code, stdout_digest, stderr_digest, started_at, ended_at, timed_out
-            FROM verification_checks WHERE run_id = ? AND contract_id = ? ORDER BY started_at ASC
+            FROM verification_checks WHERE run_id = ? AND contract_id = ? ORDER BY started_at ASC, id ASC
         `).all(run.id, run.contract_id);
         const mappedChecks = checks.map(c => ({
             id: c.id,
@@ -587,10 +642,17 @@ export function createProjectRouter({
         let stderr = '';
         try {
             const ev = check.evidence_json ? JSON.parse(check.evidence_json) : {};
-            stdout = typeof ev.stdout === 'string' ? ev.stdout : (typeof ev.stdout_text === 'string' ? ev.stdout_text : '');
-            stderr = typeof ev.stderr === 'string' ? ev.stderr : (typeof ev.stderr_text === 'string' ? ev.stderr_text : '');
-            if (!stdout && ev.stdout_digest) stdout = '';
-            if (!stderr && ev.stderr_digest) stderr = '';
+            // documented schema: { reason, requirementIds, evidence: { stdout, stderr, ... } }
+            if (ev.evidence && typeof ev.evidence === 'object') {
+                stdout = typeof ev.evidence.stdout === 'string' ? ev.evidence.stdout : '';
+                stderr = typeof ev.evidence.stderr === 'string' ? ev.evidence.stderr : '';
+                // fallback if evidence holds value wrapper
+                if (!stdout && typeof ev.stdout === 'string') stdout = ev.stdout;
+                if (!stderr && typeof ev.stderr === 'string') stderr = ev.stderr;
+            } else {
+                stdout = typeof ev.stdout === 'string' ? ev.stdout : '';
+                stderr = typeof ev.stderr === 'string' ? ev.stderr : '';
+            }
         } catch { stdout = ''; stderr = ''; }
         res.json({ id: check.id, gate_name: check.gate_name, stdout: redactSensitiveText(stdout), stderr: redactSensitiveText(stderr) });
     }));

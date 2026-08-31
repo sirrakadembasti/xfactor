@@ -404,7 +404,15 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
                 JSON.stringify({
                     reason: check.reason,
                     requirementIds: check.requirementIds,
-                    evidence: check.evidence || null
+                    evidence: (() => {
+                        const base = check.evidence && typeof check.evidence === 'object' && !Array.isArray(check.evidence) ? { ...check.evidence } : {};
+                        base.stdout = check.stdout || '';
+                        base.stderr = check.stderr || '';
+                        if (check.evidence !== undefined && check.evidence !== null && typeof check.evidence !== 'object') {
+                            base.value = check.evidence;
+                        }
+                        return base;
+                    })()
                 })
             );
             for (const requirementId of check.requirementIds) {
