@@ -6,16 +6,16 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P3
 current_plan: implementation-plans/08-P3-observability-metrics.md
-current_task: P3 Task P3.2 - Longitudinal Metrics & Failure Fingerprinting APIs
+current_task: P3 Task P3.3 - Requirement-Impact & Selective Rebuild Preview API
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: fc21ef118719daa9489e06ef5275b7b419629485
+last_verified_commit: c1d7e0ef8f6ca05c2087f36d4a0f17acdd283979
 evidence_file: implementation-evidence/P3.md
 blocked_by: []
-next_action: Read P3 Task P3.2, write failing metrics and fingerprinting tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
-updated_at: 2026-08-31T21:10:46Z
+next_action: Read P3 Task P3.3, write failing requirement-impact and rebuild-preview tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
+updated_at: 2026-08-31T21:33:08Z
 ---
 
 # Project Continuity
@@ -59,13 +59,14 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 6 - Frontend Evidence Display and Download Integration.
 - P2 — Quality Hardening complete and verified (Tasks P2.1–P2.8; 22 steps).
 - P3 Task P3.1 - Authorized Read-Only Evidence and Contract APIs.
+- P3 Task P3.2 - Longitudinal Metrics & Failure Fingerprinting APIs.
 ## In Progress
 
-- P3 Task P3.2 - Longitudinal Metrics & Failure Fingerprinting APIs.
+- P3 Task P3.3 - Requirement-Impact & Selective Rebuild Preview API.
 ## Pending
 
-1. Read P3 Task P3.2 and write isolated metrics/fingerprinting RED tests.
-2. Implement P3 Task P3.2 only after RED is observed.
+1. Read P3 Task P3.3 and write isolated requirement-impact/rebuild-preview RED tests.
+2. Implement P3 Task P3.3 only after RED is observed.
 3. Complete remaining P3 tasks in plan order.
 ## Decisions
 
@@ -102,6 +103,10 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.1 independent acceptance: PASS (`15/15` P3 tests, `10/10` quality-policy tests).
 - P3 Task P3.1 exact plan runner: PASS (`25/25` suites).
 - P3 Task P3.1 continuity validation: PASS (`8` units; current `P3/pending`).
+- P3 Task P3.2 review: specification PASS, quality APPROVE after one fix round.
+- P3 Task P3.2 independent acceptance: PASS (`30/30` P3 tests).
+- P3 Task P3.2 exact plan runner: PASS (`25/25` suites).
+- P3 Task P3.2 continuity validation: PASS (`8` units; current `P3/pending`).
 ## Known Failures
 
 - P3 observability and metrics remain pending.
@@ -114,7 +119,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P3 Task P3.2, write failing metrics and fingerprinting tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
+Read P3 Task P3.3, write failing requirement-impact and rebuild-preview tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
 
 ## Do Not Do
 

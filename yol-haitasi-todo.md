@@ -91,12 +91,12 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P3 Task P3.1 yetkili salt-okunur evidence API’leri, bağımsız review ve testlerle doğrulandı. Sıradaki görev P3 Task P3.2 metrics ve failure fingerprinting API’leri.
+P3 Task P3.2 metrics ve failure fingerprinting API’leri bağımsız review/test ile doğrulandı. Sıradaki görev P3 Task P3.3 requirement-impact ve rebuild-preview API’leri.
 
 Sonraki görev:
 
 ```text
-P3 Task P3.2 — Longitudinal Metrics & Failure Fingerprinting APIs
+P3 Task P3.3 — Requirement-Impact & Selective Rebuild Preview API
 RED: node backend/tests/test_runner.js test_p3_observability.js
 ```
 

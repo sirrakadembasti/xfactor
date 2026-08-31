@@ -94,7 +94,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ---
 
-### [ ] Task P3.2: Longitudinal Metrics & Failure Fingerprinting APIs
+### [x] Task P3.2: Longitudinal Metrics & Failure Fingerprinting APIs
 - **Goal:** Implement aggregation query helpers and APIs for gates, stacks, failures, and trends.
 - **Exact Paths/Interfaces:**
   - `GET /api/projects/:id/metrics/gates` (`Array<{ gate_name, total_runs, pass_count, fail_count, blocked_count, avg_duration_ms }>`)
