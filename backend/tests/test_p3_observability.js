@@ -1008,6 +1008,31 @@ await runAsyncTest('P3.3 fix: transaction rolls back and proves no mutation on s
   assert.strictEqual(s2, 409);
   assert.strictEqual(snapshotDbState(), before2);
 });
+await runAsyncTest('P3.3 fix: preview uses deferred BEGIN no writer lock (regression)', async () => {
+  const fs = await import('fs/promises');
+  const content = await fs.readFile('backend/routes/projectRoutes.js', 'utf8');
+  assert.ok(content.includes("db.exec('BEGIN')"), 'must use deferred BEGIN');
+  assert.ok(!content.includes('BEGIN IMMEDIATE'), 'must not use BEGIN IMMEDIATE');
+  // observable lock check via second connection: deferred SHARED does not block writer
+  const { DatabaseSync } = await import('node:sqlite');
+  const db2 = new DatabaseSync(isolated.dbPath);
+  // open read transaction on primary
+  db.exec('BEGIN');
+  let writerOk = false;
+  try {
+    db2.prepare("INSERT INTO projects (id, title, status) VALUES ('p3-lock-probe-2','probe2','running')").run();
+    writerOk = true;
+    db2.prepare("DELETE FROM projects WHERE id='p3-lock-probe-2'").run();
+  } catch { writerOk = false; }
+  try { db.exec('ROLLBACK'); } catch {}
+  db2.close();
+  assert.ok(writerOk, 'deferred BEGIN must not reserve writer lock');
+  // still preserves snapshot/no-mutation
+  const before = snapshotDbState();
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'] } });
+  assert.strictEqual(status, 200);
+  assert.strictEqual(snapshotDbState(), before);
+});
 
 
 

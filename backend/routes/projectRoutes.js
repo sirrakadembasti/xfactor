@@ -805,7 +805,7 @@ export function createProjectRouter({
         let latest, contractId, reqRows, directTaskIds, allTasks, tasksToReRun, invalidatedCheckpointIds;
         let inTx = false;
         try {
-            db.exec('BEGIN IMMEDIATE');
+            db.exec('BEGIN');
             inTx = true;
             latest = db.prepare(`
                 SELECT id FROM project_contracts WHERE project_id = ? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1
