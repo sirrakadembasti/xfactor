@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.6.2 (Reject Unsolicited Features from Planner) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.7.1 (Enforce Task Repair Allowlist).
+P2 Step P2.7.1 (Enforce Task Repair Allowlist) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.7.2 (Prevent Unapproved Config Mutations).
 
 Sonraki görev:
 
 ```text
-P2 Task 7 — Repair Target Allowlist Policy (Step P2.7.1: Enforce Task Repair Allowlist)
-RED: node backend/tests/test_p2_repair_allowlist.js --test=repair-write
+P2 Task 7 — Repair Target Allowlist Policy (Step P2.7.2: Prevent Unapproved Config Mutations)
+RED: node backend/tests/test_p2_repair_allowlist.js --test=config-mutation
 ```
 
 ## Yeni Sohbet İçin Başlangıç

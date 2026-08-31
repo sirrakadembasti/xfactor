@@ -10,6 +10,7 @@ import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
 import { db } from '../db.js';
 import { getLatestCheckpoint } from './checkpointRepository.js';
 import { verifyTaskCheckpoint } from './checkpointHelper.js';
+import { writeGeneratedFiles as writeProjectFiles } from './codeGenerator.js';
 /**
  * Belirtilen dizinin varlığını garanti eder
  */
@@ -387,4 +388,45 @@ export async function isTaskCheckpointValid(projectDir, projectId, task, options
     } catch {
         return false;
     }
+}
+
+export async function writeGeneratedFiles(taskContext = {}, files = []) {
+    function outOfScope(target = 'unknown') {
+        const error = new Error(
+            `OUT_OF_SCOPE_MUTATION: Repair target "${target}" is not in the active task allowlist`
+        );
+        error.code = 'OUT_OF_SCOPE_MUTATION';
+        return error;
+    }
+
+    if (!taskContext || typeof taskContext !== 'object') {
+        throw outOfScope();
+    }
+
+    const allowedFiles = Array.isArray(taskContext.allowedFiles)
+        ? taskContext.allowedFiles
+        : (Array.isArray(taskContext.targetFiles) ? taskContext.targetFiles : []);
+    if (allowedFiles.some(filePath => typeof filePath !== 'string' || filePath.length === 0)) {
+        throw outOfScope();
+    }
+
+    const allowedSet = new Set(
+        allowedFiles.map(filePath => path.normalize(filePath).replace(/\\/g, '/'))
+    );
+
+    for (const file of files) {
+        const normalizedPath = typeof file?.path === 'string'
+            ? path.normalize(file.path).replace(/\\/g, '/')
+            : '';
+        if (!normalizedPath || !allowedSet.has(normalizedPath)) {
+            throw outOfScope(file?.path);
+        }
+    }
+
+    return writeProjectFiles(
+        taskContext.projectDir,
+        taskContext.coderDir || null,
+        files,
+        allowedFiles
+    );
 }

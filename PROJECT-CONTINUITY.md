@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 7 - Repair Target Allowlist Policy (Step P2.7.1: Enforce Task Repair Allowlist)
+current_task: P2 Task 7 - Repair Target Allowlist Policy (Step P2.7.2: Prevent Unapproved Config Mutations)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.7.1, write the failing isolated repair write allowlist test, and run the RED command: node backend/tests/test_p2_repair_allowlist.js --test=repair-write
-updated_at: 2026-08-31T03:43:02Z
+next_action: Read P2 Step P2.7.2, write the failing isolated config mutation test, and run the RED command: node backend/tests/test_p2_repair_allowlist.js --test=config-mutation
+updated_at: 2026-08-31T03:55:16Z
 ---
 
 # Project Continuity
@@ -75,15 +75,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.5.3 - Run README Setup/Build Commands in Sandbox.
 - P2 Step P2.6.1 - Enforce Core Requirement Priority in DAG.
 - P2 Step P2.6.2 - Reject Unsolicited Features from Planner.
+- P2 Step P2.7.1 - Enforce Task Repair Allowlist.
 
 ## In Progress
 
-- P2 Task 7 - Repair Target Allowlist Policy (Step P2.7.1: Enforce Task Repair Allowlist)
+- P2 Task 7 - Repair Target Allowlist Policy (Step P2.7.2: Prevent Unapproved Config Mutations)
 
 ## Pending
 
-1. Read P2 Step P2.7.1 and write the isolated repair write allowlist RED test.
-2. Implement Step P2.7.1 only after RED is observed.
+1. Read P2 Step P2.7.2 and write the isolated config mutation RED test.
+2. Implement Step P2.7.2 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -167,6 +168,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.6.2 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.6.2 independent acceptance test: PASS (`4` unsolicited-features, `11` full scope, `30` backend regression tests passed, `0` failed).
 - P2 Step P2.6.2 continuity validation: PASS.
+- P2 Step P2.7.1 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.7.1 independent acceptance test: PASS (`3` repair-write, `30` backend regression tests passed, `0` failed).
+- P2 Step P2.7.1 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -179,7 +183,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.7.1, write the failing isolated repair write allowlist test, and run the RED command: node backend/tests/test_p2_repair_allowlist.js --test=repair-write
+Read P2 Step P2.7.2, write the failing isolated config mutation test, and run the RED command: node backend/tests/test_p2_repair_allowlist.js --test=config-mutation
 
 ## Do Not Do
 

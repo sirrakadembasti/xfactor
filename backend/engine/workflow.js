@@ -24,7 +24,8 @@ import {
     readAltTalimatname,
     readTasksFromTodoFile,
     reconcileTaskCache,
-    isTaskCheckpointValid
+    isTaskCheckpointValid,
+    writeGeneratedFiles as writeRepairFiles
 } from './fileProtocol.js';
 import { getAgent, runDeterministicProjectAudit } from '../agents/index.js';
 import {
@@ -305,6 +306,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         await logEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env.example) önceden diske kilitlendi.", "manager");
 
         const generatedProjectFiles = [];
+        const repairTargetFiles = new Set();
 
         const managerDir = path.join(projectDir, 'manager');
         await ensureDir(managerDir);
@@ -381,6 +383,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     throw new Error(
                         `Geçersiz görev kapsamı (${tl.name}): ${scopeValidation.issues.join(', ')}`
                     );
+                }
+                for (const task of taskPlan.tasks) {
+                    for (const targetFile of task.targetFiles || []) {
+                        repairTargetFiles.add(targetFile);
+                    }
                 }
 
                 if (!tasksOnDisk || tasksOnDisk.length === 0) {
@@ -682,7 +689,13 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 try {
                     const rawRepair = await callAgentLLM('coder', repairPrompt, { signal: abortController.signal });
                     if (rawRepair && Array.isArray(rawRepair.files) && rawRepair.files.length > 0) {
-                        const repairMeta = await writeGeneratedFiles(projectDir, null, rawRepair.files);
+                        const repairMeta = await writeRepairFiles(
+                            {
+                                projectDir,
+                                allowedFiles: [...repairTargetFiles]
+                            },
+                            rawRepair.files
+                        );
                         const repairPathSet = new Set(repairMeta.map(file => file.path));
                         for (const file of rawRepair.files.filter(file => repairPathSet.has(file.path))) {
                             const existingIdx = generatedProjectFiles.findIndex(f => f.path === file.path);
