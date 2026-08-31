@@ -11,7 +11,7 @@ import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
-import { logError, logWarning, redactSensitiveText } from '../observability.js';
+import { logError, logWarning, redactSensitiveText, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics } from '../observability.js';
 import {
     getProjectRole,
     canViewProject,
@@ -687,7 +687,41 @@ export function createProjectRouter({
         }));
         res.json(result);
     }));
-    // 8b. Verified Artifact İndir
+    // P3.2 Metrics APIs - read-only, scoped, finite
+    function rejectRepeatedQuery(req, res) {
+        for (const v of Object.values(req.query || {})) {
+            if (Array.isArray(v)) return true;
+        }
+        // also detect raw query string containing duplicate keys (e.g., ?foo=1&foo=2 where express collapses to last string but url still has duplicates)
+        const rawUrl = req.originalUrl || req.url || '';
+        const qIdx = rawUrl.indexOf('?');
+        if (qIdx !== -1) {
+            const qs = rawUrl.slice(qIdx+1);
+            const keys = qs.split('&').map(p=> decodeURIComponent(p.split('=')[0]));
+            if (new Set(keys).size !== keys.length) return true;
+        }
+        return false;
+    }
+    router.get('/:id/metrics/gates', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        if (rejectRepeatedQuery(req,res)) return res.status(400).json({ error: 'Repeated query parameters' });
+        const result = getGateMetrics(req.params.id, db);
+        res.json(result);
+    }));
+    router.get('/:id/metrics/stacks', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        if (rejectRepeatedQuery(req,res)) return res.status(400).json({ error: 'Repeated query parameters' });
+        const result = getStackMetrics(req.params.id, db);
+        res.json(result);
+    }));
+    router.get('/:id/metrics/trends', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        if (rejectRepeatedQuery(req,res)) return res.status(400).json({ error: 'Repeated query parameters' });
+        const result = getTrendMetrics(req.params.id, db);
+        res.json(result);
+    }));
+    router.get('/:id/metrics/failures', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        if (rejectRepeatedQuery(req,res)) return res.status(400).json({ error: 'Repeated query parameters' });
+        const result = getFailureMetrics(req.params.id, db);
+        res.json(result);
+    }));
     router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
         const { id, contractId, artifactId } = req.params;
         const { getArtifact } = await import('../repositories/artifactRepository.js');
