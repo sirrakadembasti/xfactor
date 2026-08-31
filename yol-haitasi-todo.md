@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.5.2 (Verify README Port Declarations Match Code) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.5.3 (Run README Setup/Build Commands in Sandbox).
+P2 Step P2.5.3 (Run README Setup/Build Commands in Sandbox) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.6.1 (Enforce Core Requirement Priority in DAG).
 
 Sonraki görev:
 
 ```text
-P2 Task 5 — README Command Parser and Sandboxed Runner (Step P2.5.3: Run README Setup/Build Commands in Sandbox)
-RED: node backend/tests/test_p2_readme.js --test=readme-sandboxed-commands
+P2 Task 6 — Core-over-Optional Scope Planner and DAG Policy (Step P2.6.1: Enforce Core Requirement Priority in DAG)
+RED: node backend/tests/test_p2_scope_priority.js --test=dag-priority
 ```
 
 ## Yeni Sohbet İçin Başlangıç

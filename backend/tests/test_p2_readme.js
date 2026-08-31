@@ -208,4 +208,130 @@ if (!filteredTest || filteredTest === 'readme-ports') {
         assert.strictEqual(result.issues.length, 0);
     });
 }
+
+if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
+    await runAsyncTest('P2.5.3: verifyReadmeCommands rejects a failed sandboxed build command', async () => {
+        const calls = [];
+        const sandbox = {
+            id: 'fixture',
+            isAvailable() { return true; },
+            async execute(request) {
+                calls.push(request);
+                return {
+                    exitCode: 1,
+                    timedOut: false,
+                    stdout: '',
+                    stderr: 'Build failed'
+                };
+            }
+        };
+        const files = [
+            {
+                path: 'README.md',
+                content: '```sh\nnpm run build\n```'
+            },
+            {
+                path: 'package.json',
+                content: JSON.stringify({ scripts: { build: 'vite build' } })
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, sandbox);
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected README validation to fail on sandboxed build command exit code'
+        );
+        assert.deepStrictEqual(result.issues, [
+            'Documented build command failed to execute'
+        ]);
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].command, process.platform === 'win32' ? 'npm.cmd' : 'npm');
+        assert.deepStrictEqual(calls[0].args, ['run', 'build']);
+    });
+
+    await runAsyncTest('P2.5.3: verifyReadmeCommands rejects a timed-out sandboxed build command', async () => {
+        const sandbox = {
+            id: 'fixture',
+            isAvailable() { return true; },
+            async execute() {
+                return {
+                    exitCode: null,
+                    timedOut: true,
+                    stdout: '',
+                    stderr: 'Timed out'
+                };
+            }
+        };
+        const files = [
+            {
+                path: 'README.md',
+                content: '```bash\nnpm run build\n```'
+            },
+            {
+                path: 'package.json',
+                content: JSON.stringify({ scripts: { build: 'vite build' } })
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, sandbox);
+        assert.deepStrictEqual(result.issues, [
+            'Documented build command failed to execute'
+        ]);
+    });
+
+    await runAsyncTest('P2.5.3: verifyReadmeCommands rejects sandbox execution errors', async () => {
+        const sandbox = {
+            id: 'fixture',
+            isAvailable() { return true; },
+            async execute() {
+                throw new Error('Sandbox unavailable');
+            }
+        };
+        const files = [
+            {
+                path: 'README.md',
+                content: '```sh\nnpm run build\n```'
+            },
+            {
+                path: 'package.json',
+                content: JSON.stringify({ scripts: { build: 'vite build' } })
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, sandbox);
+        assert.deepStrictEqual(result.issues, [
+            'Documented build command failed to execute'
+        ]);
+    });
+
+    await runAsyncTest('P2.5.3: verifyReadmeCommands passes a successful sandboxed build command', async () => {
+        const sandbox = {
+            id: 'fixture',
+            isAvailable() { return true; },
+            async execute() {
+                return {
+                    exitCode: 0,
+                    timedOut: false,
+                    stdout: 'Built',
+                    stderr: ''
+                };
+            }
+        };
+        const files = [
+            {
+                path: 'README.md',
+                content: '```zsh\nnpm run build -- --mode production\n```'
+            },
+            {
+                path: 'package.json',
+                content: JSON.stringify({ scripts: { build: 'vite build' } })
+            }
+        ];
+
+        const result = await verifyReadmeCommands({}, files, sandbox);
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+}
 finish();

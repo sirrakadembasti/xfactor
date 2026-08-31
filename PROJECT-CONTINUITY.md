@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.3: Run README Setup/Build Commands in Sandbox)
+current_task: P2 Task 6 - Core-over-Optional Scope Planner and DAG Policy (Step P2.6.1: Enforce Core Requirement Priority in DAG)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.5.3, write the failing isolated sandboxed README command test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-sandboxed-commands
-updated_at: 2026-08-30T21:57:01Z
+next_action: Read P2 Step P2.6.1, write the failing isolated core DAG priority test, and run the RED command: node backend/tests/test_p2_scope_priority.js --test=dag-priority
+updated_at: 2026-08-31T03:21:36Z
 ---
 
 # Project Continuity
@@ -72,15 +72,16 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.4.5 - Audit SQL Injection Vulnerabilities.
 - P2 Step P2.5.1 - Verify README Scripts Exist in package.json.
 - P2 Step P2.5.2 - Verify README Port Declarations Match Code.
+- P2 Step P2.5.3 - Run README Setup/Build Commands in Sandbox.
 
 ## In Progress
 
-- P2 Task 5 - README Command Parser and Sandboxed Runner (Step P2.5.3: Run README Setup/Build Commands in Sandbox)
+- P2 Task 6 - Core-over-Optional Scope Planner and DAG Policy (Step P2.6.1: Enforce Core Requirement Priority in DAG)
 
 ## Pending
 
-1. Read P2 Step P2.5.3 and write the isolated sandboxed README command RED test.
-2. Implement Step P2.5.3 only after RED is observed.
+1. Read P2 Step P2.6.1 and write the isolated core DAG priority RED test.
+2. Implement Step P2.6.1 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
 
 ## Decisions
@@ -155,6 +156,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.5.2 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.5.2 independent acceptance test: PASS (`5` readme-ports, `8` full suite passed, `0` failed).
 - P2 Step P2.5.2 continuity validation: PASS.
+- P2 Step P2.5.3 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.5.3 independent acceptance test: PASS (`4` readme-sandboxed-commands, `12` full suite passed, `0` failed).
+- P2 Step P2.5.3 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -167,7 +171,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.5.3, write the failing isolated sandboxed README command test, and run the RED command: node backend/tests/test_p2_readme.js --test=readme-sandboxed-commands
+Read P2 Step P2.6.1, write the failing isolated core DAG priority test, and run the RED command: node backend/tests/test_p2_scope_priority.js --test=dag-priority
 
 ## Do Not Do
 

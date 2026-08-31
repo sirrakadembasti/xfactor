@@ -1,4 +1,5 @@
 import { parse } from '@babel/parser';
+import { executeInSandbox } from './sandboxRunner.js';
 
 function findFile(files, name) {
     const lowerName = name.toLowerCase();
@@ -116,6 +117,26 @@ export async function verifyReadmeCommands(contract = {}, files = [], sandbox = 
         }
     }
 
+
+    if (
+        sandbox &&
+        documentedScripts.includes('build') &&
+        Object.prototype.hasOwnProperty.call(packageScripts, 'build')
+    ) {
+        const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        try {
+            const result = await executeInSandbox(npmCommand, ['run', 'build'], {
+                adapter: sandbox,
+                workspace: sandbox.workspace,
+                timeoutMs: sandbox.timeoutMs ?? 120000
+            });
+            if (result.exitCode !== 0 || result.timedOut) {
+                issues.push('Documented build command failed to execute');
+            }
+        } catch {
+            issues.push('Documented build command failed to execute');
+        }
+    }
     return {
         passed: issues.length === 0,
         issues
