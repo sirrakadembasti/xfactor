@@ -37,6 +37,7 @@ export function redactSensitiveText(value) {
             /(\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|jwt|authorization|cookie|password|passwd|secret|client[_-]?secret|private[_-]?key|access[_-]?key|credential|database[_-]?url|connection[_-]?string)\b\s*(?:=|:)\s*)(?:"[^"]*"|'[^']*'|[^\s&,;]+)/gi,
             '$1[REDACTED]'
         )
+        .replace(/\b((?:api\s*key)|password|passwd|pwd|token|secret|client[_-]?secret|private[_-]?key|access[_-]?key|credential)\s+is\s+(?:"[^"]*"|'[^']*'|[^\s&,;]+)/gi, '$1 is [REDACTED]')
         .replace(/(https?:\/\/[^:\s/@]+:)[^@\s/]+@/gi, '$1[REDACTED]@')
         .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, REDACTED)
         .replace(/\bAIza[A-Za-z0-9_-]{10,}\b/g, REDACTED)
@@ -152,6 +153,13 @@ export function normalizeFailurePattern(message) {
     // timestamps ISO
     s = s.replace(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?/gi, '<TIMESTAMP>');
     s = s.replace(/\b\d{4}-\d{2}-\d{2}\b/g, '<TIMESTAMP>');
+    // Windows absolute paths C:\...
+    s = s.replace(/[A-Za-z]:\\[^\s"']+/g, '<PATH>');
+    // POSIX absolute paths /...
+    s = s.replace(/(?:\/[A-Za-z0-9._@\-+]+)+(?:\/)?/g, (m) => {
+        if (m.length < 4) return m;
+        return '<PATH>';
+    });
     // UUID
     s = s.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '<UUID>');
     // long hex hashes 7+ hex chars (pure hex)
@@ -229,7 +237,7 @@ export function getStackMetrics(projectId, targetDb) {
             COUNT(*) as total_runs,
             SUM(CASE WHEN vr.status='verified' THEN 1 ELSE 0 END) as verified_runs,
             AVG(CASE
-                WHEN vr.started_at IS NOT NULL AND vr.ended_at IS NOT NULL
+                WHEN vr.started_at IS NOT NULL AND vr.ended_at IS NOT NULL AND (julianday(vr.ended_at) - julianday(vr.started_at)) * 86400000 >= 0
                 THEN (julianday(vr.ended_at) - julianday(vr.started_at)) * 86400000
                 ELSE NULL
             END) as avg_duration
@@ -264,7 +272,7 @@ export function getTrendMetrics(projectId, targetDb) {
             COUNT(*) as total_runs,
             SUM(CASE WHEN vr.status='verified' THEN 1 ELSE 0 END) as verified_runs,
             AVG(CASE
-                WHEN vr.started_at IS NOT NULL AND COALESCE(vr.ended_at, vr.started_at) IS NOT NULL
+                WHEN vr.started_at IS NOT NULL AND COALESCE(vr.ended_at, vr.started_at) IS NOT NULL AND (julianday(COALESCE(vr.ended_at, vr.started_at)) - julianday(vr.started_at)) * 86400000 >= 0
                 THEN (julianday(COALESCE(vr.ended_at, vr.started_at)) - julianday(vr.started_at)) * 86400000
                 ELSE NULL
             END) as avg_duration

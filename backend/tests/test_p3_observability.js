@@ -597,6 +597,109 @@ await runAsyncTest('PASS: P3.2 Metrics & Fingerprinting APIs', async () => {
   assert.ok(true);
 });
 
+// =========================================================================
+// P3.2 Review fixes seeding
+// =========================================================================
+const stackNegProj = 'p3-metrics-stack-neg';
+const trendNegProj = 'p3-metrics-trend-neg';
+const failSecretProj = 'p3-metrics-fail-secret';
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Stack Neg', 'running')").run(stackNegProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Trend Neg', 'running')").run(trendNegProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Fail Secret', 'running')").run(failSecretProj);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(stackNegProj, ownerUserId);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(trendNegProj, ownerUserId);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(failSecretProj, ownerUserId);
+const stackNegContract = 'p3-m-stack-neg-c1';
+const trendNegContract = 'p3-m-trend-neg-c1';
+const failSecretContract = 'p3-m-fail-secret-c1';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-sn1', ?, ?)").run(stackNegContract, stackNegProj, JSON.stringify({ frontend:{framework:'react'}, backend:{language:'node'}, database:{engine:'postgres'}}), now, now);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-tn1', ?, ?)").run(trendNegContract, trendNegProj, JSON.stringify({ frontend:{framework:'react'}, backend:{language:'node'}, database:{engine:'postgres'}}), now, now);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-fs1', ?, ?)").run(failSecretContract, failSecretProj, JSON.stringify({}), now, now);
+// stack neg: +10s and -20s same stack, both terminal (verified/failed)
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'verified', '1.0', ?, ?)").run('p3-stack-neg-r1', stackNegProj, stackNegContract, '2025-01-10T10:00:00.000Z', '2025-01-10T10:00:10.000Z');
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-stack-neg-r2', stackNegProj, stackNegContract, '2025-01-10T10:00:00.000Z', '2025-01-09T23:59:40.000Z'); // ended before started => -20s? Actually started 10:00:00 ended 09:59:40 => -20s
+// trend neg: same date 2025-01-11 two runs +10s and -20s
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'verified', '1.0', ?, ?)").run('p3-trend-neg-r1', trendNegProj, trendNegContract, '2025-01-11T10:00:00.000Z', '2025-01-11T10:00:10.000Z');
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-trend-neg-r2', trendNegProj, trendNegContract, '2025-01-11T12:00:00.000Z', '2025-01-11T11:59:40.000Z');
+// fail secret: free-form password is supersecret
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-fail-sec-r1', failSecretProj, failSecretContract, '2025-01-12T10:00:00.000Z', '2025-01-12T10:00:02.000Z');
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-fail-sec-r2', failSecretProj, failSecretContract, '2025-01-12T10:00:00.000Z', '2025-01-12T10:00:02.000Z');
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-fail-sec-c1', failSecretContract, 'p3-fail-sec-r1', '2025-01-12T10:00:00.000Z','2025-01-12T10:00:02.000Z', JSON.stringify({reason:'connection failed: password is supersecret', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-fail-sec-c2', failSecretContract, 'p3-fail-sec-r2', '2025-01-12T10:00:00.000Z','2025-01-12T10:00:02.000Z', JSON.stringify({reason:'connection failed: password is anotherSecret123', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+// path normalization seeds - separate project
+const pathProj = 'p3-metrics-path';
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Path Proj', 'running')").run(pathProj);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pathProj, ownerUserId);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-path1', ?, ?)").run('p3-path-c1', pathProj, JSON.stringify({}), now, now);
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-path-r1', pathProj, 'p3-path-c1', '2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z');
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-path-r2', pathProj, 'p3-path-c1', '2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z');
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-path-c-a', 'p3-path-c1','p3-path-r1','2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z', JSON.stringify({reason:'Error: ENOENT /tmp/build-a/node_modules/x not found', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-path-c-b', 'p3-path-c1','p3-path-r2','2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z', JSON.stringify({reason:'Error: ENOENT /tmp/build-b/node_modules/x not found', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-path-r3', pathProj, 'p3-path-c1', '2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z');
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-path-c-c', 'p3-path-c1','p3-path-r3','2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z', JSON.stringify({reason:'Error: ENOENT C:\\tmp\\build-a\\node_modules\\y not found', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-path-r4', pathProj, 'p3-path-c1', '2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z');
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-path-c-d', 'p3-path-c1','p3-path-r4','2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z', JSON.stringify({reason:'Error: ENOENT C:\\tmp\\build-b\\node_modules\\y not found', requirementIds:[], evidence:{stdout:'',stderr:''}}));
+
+await runAsyncTest('P3.2 fix: free-form secret is redacted before pattern/hash', async () => {
+  const { status, body } = await requestWithMocks(`/api/projects/${failSecretProj}/metrics/failures`, { authed: true, userId: ownerUserId });
+  assert.strictEqual(status, 200);
+  assert.ok(Array.isArray(body));
+  // both password is ... should collapse to one fingerprint with count 2 and no secret value
+  const grouped = body.find(f=> f.occurrence_count===2);
+  assert.ok(grouped, 'free-form secret collapsed');
+  assert.ok(!grouped.error_message_pattern.includes('supersecret'), 'leaked supersecret');
+  assert.ok(!grouped.error_message_pattern.includes('anothersecret'), 'leaked anothersecret');
+  const { getFingerprint } = await import('../observability.js');
+  const fp1 = getFingerprint('connection failed: password is supersecret');
+  const fp2 = getFingerprint('connection failed: password is anotherSecret123');
+  assert.strictEqual(fp1, fp2, 'free-form is normalization same');
+  assert.strictEqual(grouped.fingerprint, fp1);
+});
+await runAsyncTest('P3.2 fix: POSIX and Windows volatile paths collapse', async () => {
+  const { getFingerprint } = await import('../observability.js');
+  const posixA = getFingerprint('Error: ENOENT /tmp/build-a/node_modules/x not found');
+  const posixB = getFingerprint('Error: ENOENT /tmp/build-b/node_modules/x not found');
+  assert.strictEqual(posixA, posixB, 'POSIX paths should collapse');
+  const winA = getFingerprint('Error: ENOENT C:\\tmp\\build-a\\node_modules\\y not found');
+  const winB = getFingerprint('Error: ENOENT C:\\tmp\\build-b\\node_modules\\y not found');
+  assert.strictEqual(winA, winB, 'Windows paths should collapse');
+  // meaningful non-path text should not collapse: different messages remain distinct
+  const diff1 = getFingerprint('Error: something else failed');
+  const diff2 = getFingerprint('Error: another thing failed');
+  assert.notStrictEqual(diff1, diff2);
+  const { status, body } = await requestWithMocks(`/api/projects/${pathProj}/metrics/failures`, { authed: true, userId: ownerUserId });
+  assert.strictEqual(status, 200);
+  // volatile paths should collapse - at least one group with count >=2 and no volatile segment leaked
+  assert.ok(body.some(f=> f.occurrence_count>=2), 'path groups collapsed');
+  for (const f of body) assert.ok(!f.error_message_pattern.includes('build-a') && !f.error_message_pattern.includes('build-b'), 'volatile path leaked');
+});
+await runAsyncTest('P3.2 fix: stack AVG discards negative per-row durations', async () => {
+  const { status, body } = await requestWithMocks(`/api/projects/${stackNegProj}/metrics/stacks`, { authed: true, userId: ownerUserId });
+  assert.strictEqual(status, 200);
+  assert.ok(body.length===1);
+  const s = body[0];
+  assert.strictEqual(s.avg_duration_ms, 10000, 'should discard -20s and avg only +10s');
+  assert.strictEqual(s.success_rate, 0.5);
+});
+await runAsyncTest('P3.2 fix: stack AVG only invalid => 0', async () => {
+  const onlyNegProj = 'p3-metrics-stack-onlyneg';
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'OnlyNeg', 'running')").run(onlyNegProj);
+  db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(onlyNegProj, ownerUserId);
+  db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-on1', ?, ?)").run('p3-onlyneg-c1', onlyNegProj, JSON.stringify({frontend:{framework:'react'},backend:{language:'node'},database:{engine:'postgres'}}), now, now);
+  db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-onlyneg-r1', onlyNegProj, 'p3-onlyneg-c1', '2025-01-10T10:00:00.000Z', '2025-01-09T23:59:40.000Z');
+  const { body } = await requestWithMocks(`/api/projects/${onlyNegProj}/metrics/stacks`, { authed: true, userId: ownerUserId });
+  assert.strictEqual(body[0].avg_duration_ms, 0);
+});
+await runAsyncTest('P3.2 fix: trend AVG discards negative per-row durations', async () => {
+  const { status, body } = await requestWithMocks(`/api/projects/${trendNegProj}/metrics/trends`, { authed: true, userId: ownerUserId });
+  assert.strictEqual(status, 200);
+  const t = body.find(x=> x.date==='2025-01-11');
+  assert.ok(t);
+  assert.strictEqual(t.average_duration_ms, 10000, 'trend should discard -20s');
+  assert.strictEqual(t.total_runs, 2);
+});
+
+
  // =========================================================================
  // P3.3: Observability & Log Retention (retain original)
  // =========================================================================
