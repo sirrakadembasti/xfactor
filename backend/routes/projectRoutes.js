@@ -11,7 +11,7 @@ import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
-import { logError, logWarning } from '../observability.js';
+import { logError, logWarning, redactSensitiveText } from '../observability.js';
 import {
     getProjectRole,
     canViewProject,
@@ -509,6 +509,121 @@ export function createProjectRouter({
             }
             throw error;
         }
+    }));
+    // P3.1 Observability read-only endpoints
+    router.get('/:id/contracts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const rows = db.prepare(`
+            SELECT id, revision, status, contract_hash, approved_at, created_at
+            FROM project_contracts WHERE project_id = ? ORDER BY revision ASC
+        `).all(req.params.id);
+        const result = rows.map(r => ({
+            id: r.id,
+            revision: r.revision,
+            status: r.status,
+            contract_hash: r.contract_hash,
+            approved_at: r.approved_at,
+            created_at: r.created_at
+        }));
+        res.json(result);
+    }));
+    router.get('/:id/verification-runs', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+        const cursor = req.query.cursor ? String(req.query.cursor) : null;
+        const rows = db.prepare(`
+            SELECT id, contract_id, status, policy_version, started_at, ended_at
+            FROM verification_runs WHERE project_id = ? ORDER BY started_at DESC, id ASC
+        `).all(req.params.id);
+        let startIdx = 0;
+        if (cursor) {
+            const idx = rows.findIndex(r => r.id === cursor);
+            startIdx = idx >= 0 ? idx + 1 : 0;
+        }
+        const slice = rows.slice(startIdx, startIdx + limit);
+        const nextCursor = (startIdx + limit) < rows.length ? slice[slice.length - 1].id : null;
+        const runs = slice.map(r => ({
+            id: r.id,
+            contract_id: r.contract_id,
+            status: r.status,
+            policy_version: r.policy_version,
+            started_at: r.started_at,
+            ended_at: r.ended_at
+        }));
+        res.json({ runs, nextCursor });
+    }));
+    router.get('/:id/verification-runs/:runId', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const run = db.prepare(`
+            SELECT id, contract_id, status, policy_version, started_at, ended_at
+            FROM verification_runs WHERE id = ? AND project_id = ?
+        `).get(req.params.runId, req.params.id);
+        if (!run) return res.status(404).json({ error: 'Verification run not found' });
+        const checks = db.prepare(`
+            SELECT id, gate_name, applicability, status, exit_code, stdout_digest, stderr_digest, started_at, ended_at, timed_out
+            FROM verification_checks WHERE run_id = ? AND contract_id = ? ORDER BY started_at ASC
+        `).all(run.id, run.contract_id);
+        const mappedChecks = checks.map(c => ({
+            id: c.id,
+            gate_name: c.gate_name,
+            applicability: c.applicability,
+            status: c.status,
+            exit_code: c.exit_code,
+            stdout_digest: c.stdout_digest,
+            stderr_digest: c.stderr_digest,
+            started_at: c.started_at,
+            ended_at: c.ended_at,
+            timed_out: c.timed_out
+        }));
+        res.json({ run: { id: run.id, contract_id: run.contract_id, status: run.status, policy_version: run.policy_version, started_at: run.started_at, ended_at: run.ended_at }, checks: mappedChecks });
+    }));
+    router.get('/:id/verification-runs/:runId/checks/:checkId/log', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const run = db.prepare(`
+            SELECT id, contract_id FROM verification_runs WHERE id = ? AND project_id = ?
+        `).get(req.params.runId, req.params.id);
+        if (!run) return res.status(404).json({ error: 'Verification run not found' });
+        const check = db.prepare(`
+            SELECT id, gate_name, evidence_json FROM verification_checks WHERE id = ? AND run_id = ? AND contract_id = ?
+        `).get(req.params.checkId, run.id, run.contract_id);
+        if (!check) return res.status(404).json({ error: 'Check not found' });
+        let stdout = '';
+        let stderr = '';
+        try {
+            const ev = check.evidence_json ? JSON.parse(check.evidence_json) : {};
+            stdout = typeof ev.stdout === 'string' ? ev.stdout : (typeof ev.stdout_text === 'string' ? ev.stdout_text : '');
+            stderr = typeof ev.stderr === 'string' ? ev.stderr : (typeof ev.stderr_text === 'string' ? ev.stderr_text : '');
+            if (!stdout && ev.stdout_digest) stdout = '';
+            if (!stderr && ev.stderr_digest) stderr = '';
+        } catch { stdout = ''; stderr = ''; }
+        res.json({ id: check.id, gate_name: check.gate_name, stdout: redactSensitiveText(stdout), stderr: redactSensitiveText(stderr) });
+    }));
+    router.get('/:id/repair-issues', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const rows = db.prepare(`
+            SELECT id, contract_id, requirement_id, severity, status, resolved_at
+            FROM repair_issues WHERE project_id = ? ORDER BY created_at DESC
+        `).all(req.params.id);
+        const result = rows.map(r => ({
+            id: r.id,
+            contract_id: r.contract_id,
+            requirement_id: r.requirement_id,
+            severity: r.severity,
+            status: r.status,
+            resolved_at: r.resolved_at
+        }));
+        res.json(result);
+    }));
+    router.get('/:id/artifacts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const rows = db.prepare(`
+            SELECT id, kind, path, sha256, size, status, verification_run_id
+            FROM artifacts WHERE project_id = ? ORDER BY created_at DESC
+        `).all(req.params.id);
+        const result = rows.map(r => ({
+            id: r.id,
+            kind: r.kind,
+            path: r.path,
+            sha256: r.sha256,
+            size: r.size,
+            status: r.status,
+            verification_run_id: r.verification_run_id
+        }));
+        res.json(result);
     }));
     // 8b. Verified Artifact İndir
     router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
