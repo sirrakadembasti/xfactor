@@ -22,6 +22,7 @@ import {
 } from '../auth.js';
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
+import { generateCompletionReport } from '../verification/reportGenerator.js';
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -482,6 +483,33 @@ export function createProjectRouter({
         res.json(result);
     }));
 
+
+    router.get('/:id/verification-summary', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const { contractId, runId } = req.query || {};
+        if (
+            typeof contractId !== 'string' ||
+            contractId.trim().length === 0 ||
+            typeof runId !== 'string' ||
+            runId.trim().length === 0
+        ) {
+            return res.status(400).json({
+                error: 'contractId and runId query parameters are required'
+            });
+        }
+        try {
+            const report = await generateCompletionReport({
+                projectId: req.params.id,
+                contractId,
+                runId
+            });
+            res.json(report);
+        } catch (error) {
+            if (error.code === 'VERIFICATION_RUN_NOT_FOUND') {
+                return res.status(404).json({ error: error.message });
+            }
+            throw error;
+        }
+    }));
     // 8b. Verified Artifact İndir
     router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
         const { id, contractId, artifactId } = req.params;

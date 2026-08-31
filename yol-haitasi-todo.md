@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.7.2 (Prevent Unapproved Config Mutations) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.8.1 (Render Evidence Without Completion Authority).
+P2 Step P2.8.1 (Render Evidence Without Completion Authority) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.8.2 (Overwrite Manual DoD Markdown Edits).
 
 Sonraki görev:
 
 ```text
-P2 Task 8 — Evidence-Derived Definition of Done and Completion Report (Step P2.8.1: Render Evidence Without Completion Authority)
-RED: node backend/tests/test_p2_completion_report.js --test=evidence-query
+P2 Task 8 — Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
+RED: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
 ```
 
 ## Yeni Sohbet İçin Başlangıç

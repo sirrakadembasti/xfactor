@@ -6,7 +6,7 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P2
 current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.1: Render Evidence Without Completion Authority)
+current_task: P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
 status: pending
 branch: master
 head_commit: SELF
@@ -14,8 +14,8 @@ baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
 evidence_file: implementation-evidence/P2.md
 blocked_by: []
-next_action: Read P2 Step P2.8.1, write the failing isolated evidence-query report test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=evidence-query
-updated_at: 2026-08-31T04:02:42Z
+next_action: Read P2 Step P2.8.2, write the failing isolated DoD overwrite test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
+updated_at: 2026-08-31T15:55:14Z
 ---
 
 # Project Continuity
@@ -77,17 +77,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.6.2 - Reject Unsolicited Features from Planner.
 - P2 Step P2.7.1 - Enforce Task Repair Allowlist.
 - P2 Step P2.7.2 - Prevent Unapproved Config Mutations.
-
+- P2 Step P2.8.1 - Render Evidence Without Completion Authority.
 ## In Progress
 
-- P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.1: Render Evidence Without Completion Authority)
-
+- P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
 ## Pending
 
-1. Read P2 Step P2.8.1 and write the isolated evidence-query report RED test.
-2. Implement Step P2.8.1 only after RED is observed.
+1. Read P2 Step P2.8.2 and write the isolated DoD overwrite RED test.
+2. Implement Step P2.8.2 only after RED is observed.
 3. Complete remaining P2 tasks in plan order.
-
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -175,6 +173,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P2 Step P2.7.2 review: APPROVE; specification PASS, quality PASS.
 - P2 Step P2.7.2 independent acceptance test: PASS (`3` config-mutation, `6` full repair, `30` backend regression tests passed, `0` failed).
 - P2 Step P2.7.2 continuity validation: PASS.
+- P2 Step P2.8.1 review: APPROVE; specification PASS, quality PASS.
+- P2 Step P2.8.1 independent acceptance test: PASS (`3` evidence-query, `10` quality-policy evidence, `30` backend regression tests passed, `0` failed).
+- P2 Step P2.8.1 continuity validation: PASS.
 ## Known Failures
 
 - Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
@@ -187,7 +188,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.8.1, write the failing isolated evidence-query report test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=evidence-query
+Read P2 Step P2.8.2, write the failing isolated DoD overwrite test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
 
 ## Do Not Do
 
