@@ -11,7 +11,7 @@ import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
-import { logError, logWarning, redactSensitiveText, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics } from '../observability.js';
+import { logError, logWarning, redactSensitiveText, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     getProjectRole,
     canViewProject,
@@ -721,6 +721,134 @@ export function createProjectRouter({
         if (rejectRepeatedQuery(req,res)) return res.status(400).json({ error: 'Repeated query parameters' });
         const result = getFailureMetrics(req.params.id, db);
         res.json(result);
+    }));
+    router.get('/:id/requirements/:reqId/impact', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const projectId = req.params.id;
+        const reqId = req.params.reqId;
+        const row = db.prepare(`
+            SELECT r.id as reqId, r.contract_id as contractId
+            FROM requirements r
+            JOIN project_contracts pc ON pc.id = r.contract_id
+            WHERE r.id = ? AND pc.project_id = ?
+        `).get(reqId, projectId);
+        if (!row) return res.status(404).json({ error: 'Requirement not found' });
+        const contractId = row.contractId;
+        // impacted tasks direct
+        const taskRows = db.prepare(`
+            SELECT ct.id as taskId, ct.stable_key as stableKey, ct.task_spec_json as taskSpecJson
+            FROM contract_tasks ct
+            JOIN requirement_task_links rtl ON rtl.task_id = ct.id AND rtl.contract_id = ct.contract_id
+            WHERE rtl.contract_id = ? AND rtl.requirement_id = ?
+        `).all(contractId, reqId);
+        const taskMap = new Map();
+        for (const tr of taskRows) {
+            if (taskMap.has(tr.taskId)) continue;
+            let title = null;
+            try {
+                const spec = JSON.parse(tr.taskSpecJson);
+                if (typeof spec.title === 'string' && spec.title.trim().length>0) title = spec.title.trim();
+            } catch {}
+            if (!title) title = tr.stableKey;
+            taskMap.set(tr.taskId, { taskId: tr.taskId, taskTitle: title });
+        }
+        const impactedTasks = Array.from(taskMap.values()).sort((a,b)=> a.taskId.localeCompare(b.taskId));
+        // impacted files direct
+        const fileRows = db.prepare(`
+            SELECT DISTINCT path FROM requirement_file_links WHERE contract_id = ? AND requirement_id = ?
+        `).all(contractId, reqId);
+        const fileSet = new Set();
+        for (const fr of fileRows) fileSet.add(fr.path);
+        const impactedFiles = Array.from(fileSet).sort().map(p=> ({ path: p }));
+        // impacted checkpoints for directly linked tasks
+        const taskIds = impactedTasks.map(t=> t.taskId);
+        let impactedCheckpoints = [];
+        if (taskIds.length>0) {
+            const placeholders = taskIds.map(()=>'?').join(',');
+            const cpRows = db.prepare(`
+                SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
+                FROM task_checkpoints
+                WHERE project_id = ? AND contract_id = ? AND status = 'completed' AND task_id IN (${placeholders})
+            `).all(projectId, contractId, ...taskIds);
+            const cpSet = new Set();
+            for (const r of cpRows) {
+                const id = deriveCheckpointId(r);
+                cpSet.add(id);
+            }
+            impactedCheckpoints = Array.from(cpSet).sort().map(id=> ({ checkpointId: id }));
+        }
+        res.json({ requirementId: reqId, impactedTasks, impactedCheckpoints, impactedFiles });
+    }));
+    router.post('/:id/rebuild-preview', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const projectId = req.params.id;
+        const body = req.body;
+        // strict body validation
+        if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+            return res.status(400).json({ error: 'Invalid body' });
+        }
+        const keys = Object.keys(body);
+        if (keys.length !== 1 || keys[0] !== 'changedRequirementKeys') {
+            return res.status(400).json({ error: 'Invalid body' });
+        }
+        const val = body.changedRequirementKeys;
+        if (!Array.isArray(val)) return res.status(400).json({ error: 'Invalid changedRequirementKeys' });
+        // validate elements trimmed unique nonempty strings
+        const trimmed = [];
+        for (const el of val) {
+            if (typeof el !== 'string') return res.status(400).json({ error: 'Invalid requirement key' });
+            const t = el.trim();
+            if (t.length===0) return res.status(400).json({ error: 'Empty requirement key' });
+            trimmed.push(t);
+        }
+        if (new Set(trimmed).size !== trimmed.length) return res.status(400).json({ error: 'Duplicate requirement keys' });
+        // resolve latest approved contract revision DESC, id ASC tie-break
+        const latest = db.prepare(`
+            SELECT id FROM project_contracts WHERE project_id = ? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1
+        `).get(projectId);
+        if (!latest) return res.status(404).json({ error: 'No approved contract' });
+        const contractId = latest.id;
+        if (trimmed.length===0) {
+            return res.json({ willRebuild:false, invalidatedCheckpointIds:[], tasksToReRun:[] });
+        }
+        // unknown stable keys check
+        const placeholders = trimmed.map(()=>'?').join(',');
+        const reqRows = db.prepare(`
+            SELECT id, stable_key FROM requirements WHERE contract_id = ? AND stable_key IN (${placeholders})
+        `).all(contractId, ...trimmed);
+        const foundKeys = new Set(reqRows.map(r=> r.stable_key));
+        for (const k of trimmed) if (!foundKeys.has(k)) return res.status(400).json({ error: `Unknown requirement key ${k}` });
+        const requirementIds = reqRows.map(r=> r.id);
+        // direct task roots
+        let directTaskIds = [];
+        if (requirementIds.length>0) {
+            const reqPlace = requirementIds.map(()=>'?').join(',');
+            const rows = db.prepare(`
+                SELECT DISTINCT task_id FROM requirement_task_links WHERE contract_id = ? AND requirement_id IN (${reqPlace})
+            `).all(contractId, ...requirementIds);
+            directTaskIds = rows.map(r=> r.task_id);
+        }
+        // load all tasks for graph validation and downstream
+        const allTasks = db.prepare(`SELECT id, task_spec_json FROM contract_tasks WHERE contract_id = ?`).all(contractId);
+        let tasksToReRun;
+        try {
+            if (directTaskIds.length===0) tasksToReRun = [];
+            else tasksToReRun = collectDownstreamTaskIds(allTasks, directTaskIds);
+        } catch (e) {
+            return res.status(409).json({ error: e.message || 'Graph validation failed' });
+        }
+        // invalidated checkpoints for those tasks
+        let invalidatedCheckpointIds = [];
+        if (tasksToReRun.length>0) {
+            const tp = tasksToReRun.map(()=>'?').join(',');
+            const cpRows = db.prepare(`
+                SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
+                FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND task_id IN (${tp})
+            `).all(projectId, contractId, ...tasksToReRun);
+            const idSet = new Set();
+            for (const r of cpRows) idSet.add(deriveCheckpointId(r));
+            invalidatedCheckpointIds = Array.from(idSet).sort();
+        }
+        const willRebuild = tasksToReRun.length>0;
+        res.json({ willRebuild, invalidatedCheckpointIds, tasksToReRun });
     }));
     router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
         const { id, contractId, artifactId } = req.params;

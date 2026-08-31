@@ -1,4 +1,5 @@
 import assert from 'assert';
+import crypto from 'crypto';
 import express from 'express';
 import http from 'http';
 import { setupIsolatedTestDb } from './isolatedDb.js';
@@ -698,6 +699,259 @@ await runAsyncTest('P3.2 fix: trend AVG discards negative per-row durations', as
   assert.strictEqual(t.average_duration_ms, 10000, 'trend should discard -20s');
   assert.strictEqual(t.total_runs, 2);
 });
+// =========================================================================
+// P3.3 Requirement-Impact & Rebuild Preview - seeding
+// =========================================================================
+function deriveExpectedCheckpointId(row) {
+  const arr = [row.project_id, row.task_id, row.contract_id, row.plan_hash, row.task_spec_hash, row.input_hash, row.output_hash, row.gate_version];
+  return crypto.createHash('sha256').update(JSON.stringify(arr)).digest('hex');
+}
+async function requestWithBody(pathname, { authed = true, userId = ownerUserId, method = 'GET', body = undefined } = {}) {
+  const requireAuth = (req, res, next) => {
+    if (!authed) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = { id: userId, isAdmin: false };
+    next();
+  };
+  const projectAccess = createRealProjectAccess();
+  const app = express();
+  app.use(express.json());
+  app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub: { broadcast() {} } }));
+  const server = http.createServer(app);
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  const url = `http://127.0.0.1:${port}${pathname}`;
+  const opts = { method, headers: { 'x-forwarded-proto': 'https' } };
+  if (body !== undefined) {
+    opts.headers['content-type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  let b = null;
+  const text = await res.text();
+  try { b = text ? JSON.parse(text) : null; } catch { b = text; }
+  await new Promise(r => server.close(r));
+  return { status: res.status, body: b, text };
+}
+function snapshotDbState() {
+  const tables = ['project_contracts','requirements','contract_tasks','requirement_task_links','requirement_file_links','artifact_files','artifacts','task_checkpoints'];
+  const snap = {};
+  for (const t of tables) {
+    try { snap[t] = db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all(); } catch { snap[t] = []; }
+  }
+  return JSON.stringify(snap);
+}
+const impactProj = 'p3-impact-main';
+const impactOtherProj = 'p3-impact-other';
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Main', 'running')").run(impactProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Other', 'running')").run(impactOtherProj);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(impactProj, ownerUserId);
+db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(impactOtherProj, otherUserId);
+const impactContractOld = 'p3-impact-c-old';
+const impactContractNew = 'p3-impact-c-new';
+const impactOtherContract = 'p3-impact-c-other';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'hash-old', ?, ?)").run(impactContractOld, impactProj, now, now);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 2, 'approved', '{}', 'hash-new', ?, ?)").run(impactContractNew, impactProj, now, now);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'hash-other', ?, ?)").run(impactOtherContract, impactOtherProj, now, now);
+// requirements for new contract
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-IMPACT-A', 'req a','functional','high',1,'approved')").run('p3-imp-req-a', impactContractNew);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-IMPACT-B', 'req b','functional','high',1,'approved')").run('p3-imp-req-b', impactContractNew);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-UNRELATED', 'req unrelated','functional','high',1,'approved')").run('p3-imp-req-unrelated', impactContractNew);
+// old contract req
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-OLD', 'req old','functional','high',1,'approved')").run('p3-imp-req-old', impactContractOld);
+// other proj req
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-OTHER', 'req other','functional','high',1,'approved')").run('p3-imp-req-other', impactOtherContract);
+// contract tasks for new contract
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-A', ?)").run('p3-task-a', impactContractNew, JSON.stringify({ title:'Task Alpha', dependencies:[] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-B', ?)").run('p3-task-b', impactContractNew, JSON.stringify({ dependencies:[] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-C', ?)").run('p3-task-c', impactContractNew, JSON.stringify({ title:'Task Gamma', dependencies:['p3-task-a'] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-D', ?)").run('p3-task-d', impactContractNew, JSON.stringify({ title:'Task Delta', dependencies:['p3-task-c'] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-E', ?)").run('p3-task-e', impactContractNew, JSON.stringify({ title:'Task Epsilon', dependencies:[] }));
+// tasks for old contract
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-OLD', ?)").run('p3-task-old', impactContractOld, JSON.stringify({ title:'Old Task', dependencies:[] }));
+// tasks for other proj
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-OTHER', ?)").run('p3-task-other', impactOtherContract, JSON.stringify({ title:'Other Task', dependencies:[] }));
+// requirement_task_links for new contract
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', 'p3-task-a');
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(impactContractNew, 'p3-imp-req-b', 'p3-task-b');
+// old contract link
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(impactContractOld, 'p3-imp-req-old', 'p3-task-old');
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(impactOtherContract, 'p3-imp-req-other', 'p3-task-other');
+// artifact and file links for impactedFiles
+db.prepare("INSERT INTO artifacts (id, project_id, contract_id, kind, path, sha256, size, status) VALUES (?, ?, ?, 'zip', 'artifacts/imp.zip', ?, 100, 'verified')").run('p3-imp-art-1', impactProj, impactContractNew, 'a'.repeat(64));
+db.prepare("INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, size) VALUES (?, ?, ?, ?, ?)").run(impactContractNew, 'p3-imp-art-1', 'src/alpha.js', 'a'.repeat(64), 10);
+db.prepare("INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, size) VALUES (?, ?, ?, ?, ?)").run(impactContractNew, 'p3-imp-art-1', 'src/beta.js', 'b'.repeat(64), 20);
+db.prepare("INSERT INTO requirement_file_links (contract_id, requirement_id, artifact_id, path) VALUES (?, ?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', 'p3-imp-art-1', 'src/alpha.js');
+db.prepare("INSERT INTO requirement_file_links (contract_id, requirement_id, artifact_id, path) VALUES (?, ?, ?, ?)").run(impactContractNew, 'p3-imp-req-b', 'p3-imp-art-1', 'src/beta.js');
+// task checkpoints for new contract: active completed for a,c,d ; invalidated for b ; completed for e ; old and other
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph1','sh1','ih1','oh1','v1','completed','[]',1)").run(impactProj, 'p3-task-a', impactContractNew);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph2','sh2','ih2','oh2','v1','completed','[]',1)").run(impactProj, 'p3-task-c', impactContractNew);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph3','sh3','ih3','oh3','v1','completed','[]',1)").run(impactProj, 'p3-task-d', impactContractNew);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision, invalidated_at) VALUES (?, ?, ?, 'ph4','sh4','ih4','oh4','v1','invalidated','[]',1, ?)").run(impactProj, 'p3-task-b', impactContractNew, now);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph5','sh5','ih5','oh5','v1','completed','[]',1)").run(impactProj, 'p3-task-e', impactContractNew);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'phOld','shOld','ihOld','ohOld','v1','completed','[]',1)").run(impactProj, 'p3-task-old', impactContractOld);
+db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'phO','shO','ihO','ohO','v1','completed','[]',1)").run(impactOtherProj, 'p3-task-other', impactOtherContract);
+// graph validation projects
+const malformedProj = 'p3-graph-malformed';
+const badDepTypeProj = 'p3-graph-baddeptype';
+const unknownDepProj = 'p3-graph-unknowndep';
+const cycleProj = 'p3-graph-cycle';
+for (const pid of [malformedProj, badDepTypeProj, unknownDepProj, cycleProj]) {
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'running')").run(pid, pid);
+  db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pid, ownerUserId);
+}
+const malformedContract = 'p3-graph-mal-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(malformedContract, malformedProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-X', 'x','functional','high',1,'approved')").run('p3-mal-req', malformedContract);
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-X', ?)").run('p3-mal-task', malformedContract, '{bad json');
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(malformedContract, 'p3-mal-req', 'p3-mal-task');
+const badDepContract = 'p3-graph-baddep-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(badDepContract, badDepTypeProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-X', 'x','functional','high',1,'approved')").run('p3-baddep-req', badDepContract);
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-X', ?)").run('p3-baddep-task', badDepContract, JSON.stringify({ title:'t', dependencies:'not-array' }));
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(badDepContract, 'p3-baddep-req', 'p3-baddep-task');
+const unknownDepContract = 'p3-graph-unk-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(unknownDepContract, unknownDepProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-X', 'x','functional','high',1,'approved')").run('p3-unk-req', unknownDepContract);
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-X', ?)").run('p3-unk-task', unknownDepContract, JSON.stringify({ title:'t', dependencies:['nonexistent-task'] }));
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(unknownDepContract, 'p3-unk-req', 'p3-unk-task');
+const cycleContract = 'p3-graph-cycle-c';
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', '{}', 'h1', ?, ?)").run(cycleContract, cycleProj, now, now);
+db.prepare("INSERT INTO requirements (id, contract_id, stable_key, statement, kind, priority, mandatory, status) VALUES (?, ?, 'REQ-X', 'x','functional','high',1,'approved')").run('p3-cycle-req', cycleContract);
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-A', ?)").run('p3-cycle-a', cycleContract, JSON.stringify({ title:'A', dependencies:['p3-cycle-b'] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-B', ?)").run('p3-cycle-b', cycleContract, JSON.stringify({ title:'B', dependencies:['p3-cycle-a'] }));
+db.prepare("INSERT INTO requirement_task_links (contract_id, requirement_id, task_id) VALUES (?, ?, ?)").run(cycleContract, 'p3-cycle-req', 'p3-cycle-a');
+// =========================================================================
+// P3.3 impact / preview tests
+// =========================================================================
+await runAsyncTest('P3.3 GET impact 401 without auth', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-a/impact`, { authed:false });
+  assert.strictEqual(status, 401);
+});
+await runAsyncTest('P3.3 GET impact 403 for non-owned project', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactOtherProj}/requirements/p3-imp-req-other/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(status, 403);
+});
+await runAsyncTest('P3.3 GET impact 404 cross-project requirement', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-other/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(status, 404);
+});
+await runAsyncTest('P3.3 GET impact 404 unknown requirement', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/requirements/not-exist/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(status, 404);
+});
+await runAsyncTest('P3.3 GET impact 200 exact keys/order and derived checkpointId', async () => {
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-a/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(status, 200);
+  assertExactKeys(body, ['requirementId','impactedTasks','impactedCheckpoints','impactedFiles'], 'GET impact');
+  assert.strictEqual(body.requirementId, 'p3-imp-req-a');
+  assert.deepStrictEqual(body.impactedTasks, [{ taskId:'p3-task-a', taskTitle:'Task Alpha' }]);
+  assert.deepStrictEqual(body.impactedFiles, [{ path:'src/alpha.js' }]);
+  const expectedId = deriveExpectedCheckpointId({ project_id: impactProj, task_id:'p3-task-a', contract_id: impactContractNew, plan_hash:'ph1', task_spec_hash:'sh1', input_hash:'ih1', output_hash:'oh1', gate_version:'v1' });
+  assert.deepStrictEqual(body.impactedCheckpoints, [{ checkpointId: expectedId }]);
+});
+await runAsyncTest('P3.3 GET impact title fallback to stable_key and old revision', async () => {
+  const { status: s1, body: b1 } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-b/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(s1, 200);
+  assert.deepStrictEqual(b1.impactedTasks, [{ taskId:'p3-task-b', taskTitle:'TASK-B' }]);
+  assert.deepStrictEqual(b1.impactedCheckpoints, []);
+  assert.deepStrictEqual(b1.impactedFiles, [{ path:'src/beta.js' }]);
+  const { status: s2, body: b2 } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-old/impact`, { authed:true, userId:ownerUserId });
+  assert.strictEqual(s2, 200);
+  assert.strictEqual(b2.requirementId, 'p3-imp-req-old');
+  assert.deepStrictEqual(b2.impactedTasks, [{ taskId:'p3-task-old', taskTitle:'Old Task' }]);
+  const expectedOld = deriveExpectedCheckpointId({ project_id: impactProj, task_id:'p3-task-old', contract_id: impactContractOld, plan_hash:'phOld', task_spec_hash:'shOld', input_hash:'ihOld', output_hash:'ohOld', gate_version:'v1' });
+  assert.deepStrictEqual(b2.impactedCheckpoints, [{ checkpointId: expectedOld }]);
+});
+await runAsyncTest('P3.3 GET impact deterministic ordering no duplicates', async () => {
+  const { body } = await requestWithBody(`/api/projects/${impactProj}/requirements/p3-imp-req-a/impact`, { authed:true, userId:ownerUserId });
+  const tasksSorted = [...body.impactedTasks].sort((a,b)=> a.taskId.localeCompare(b.taskId));
+  assert.deepStrictEqual(body.impactedTasks, tasksSorted);
+  const filesSorted = [...body.impactedFiles].sort((a,b)=> a.path.localeCompare(b.path));
+  assert.deepStrictEqual(body.impactedFiles, filesSorted);
+  const cpsSorted = [...body.impactedCheckpoints].sort((a,b)=> a.checkpointId.localeCompare(b.checkpointId));
+  assert.deepStrictEqual(body.impactedCheckpoints, cpsSorted);
+});
+await runAsyncTest('P3.3 POST preview 401 without auth', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:false, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'] } });
+  assert.strictEqual(status, 401);
+});
+await runAsyncTest('P3.3 POST preview 403 for non-owned project', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactOtherProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-OTHER'] } });
+  assert.strictEqual(status, 403);
+});
+await runAsyncTest('P3.3 POST preview pure simulation no mutation', async () => {
+  const before = snapshotDbState();
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'] } });
+  assert.strictEqual(status, 200);
+  const after = snapshotDbState();
+  assert.strictEqual(before, after, 'POST must not mutate DB');
+  assertExactKeys(body, ['willRebuild','invalidatedCheckpointIds','tasksToReRun'], 'POST preview');
+});
+await runAsyncTest('P3.3 POST preview downstream rebuild simulation exact deterministic', async () => {
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'] } });
+  assert.strictEqual(status, 200);
+  assert.strictEqual(body.willRebuild, true);
+  assert.deepStrictEqual(body.tasksToReRun, ['p3-task-a','p3-task-c','p3-task-d']);
+  const ids = ['p3-task-a','p3-task-c','p3-task-d'].map(tid => {
+    const map = { 'p3-task-a':{plan_hash:'ph1',task_spec_hash:'sh1',input_hash:'ih1',output_hash:'oh1'}, 'p3-task-c':{plan_hash:'ph2',task_spec_hash:'sh2',input_hash:'ih2',output_hash:'oh2'}, 'p3-task-d':{plan_hash:'ph3',task_spec_hash:'sh3',input_hash:'ih3',output_hash:'oh3'}};
+    const m = map[tid];
+    return deriveExpectedCheckpointId({ project_id:impactProj, task_id:tid, contract_id: impactContractNew, plan_hash:m.plan_hash, task_spec_hash:m.task_spec_hash, input_hash:m.input_hash, output_hash:m.output_hash, gate_version:'v1' });
+  }).sort();
+  assert.deepStrictEqual(body.invalidatedCheckpointIds, ids);
+});
+await runAsyncTest('P3.3 POST preview empty array willRebuild false', async () => {
+  const before = snapshotDbState();
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:[] } });
+  assert.strictEqual(status, 200);
+  assert.deepStrictEqual(body, { willRebuild:false, invalidatedCheckpointIds:[], tasksToReRun:[] });
+  assert.strictEqual(snapshotDbState(), before);
+});
+await runAsyncTest('P3.3 POST preview unknown stable key 400', async () => {
+  const { status } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['UNKNOWN-REQ'] } });
+  assert.strictEqual(status, 400);
+});
+await runAsyncTest('P3.3 POST preview duplicate keys 400 and extra/strict body 400', async () => {
+  const { status: s1 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A','REQ-IMPACT-A'] } });
+  assert.strictEqual(s1, 400);
+  const { status: s2 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:[' REQ-IMPACT-A ', 'REQ-IMPACT-A'] } });
+  assert.strictEqual(s2, 400);
+  const { status: s3 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-IMPACT-A'], extra:'x' } });
+  assert.strictEqual(s3, 400);
+  const { status: s4 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:'REQ-IMPACT-A' } });
+  assert.strictEqual(s4, 400);
+  const { status: s5 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{} });
+  assert.strictEqual(s5, 400);
+  const { status: s6 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:[''] } });
+  assert.strictEqual(s6, 400);
+  const { status: s7 } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['   '] } });
+  assert.strictEqual(s7, 400);
+});
+await runAsyncTest('P3.3 POST preview trimmed and lexically sorted tasks', async () => {
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:[' REQ-IMPACT-B '] } });
+  assert.strictEqual(status, 200);
+  assert.deepStrictEqual(body.tasksToReRun, ['p3-task-b']);
+  assert.deepStrictEqual(body.invalidatedCheckpointIds, []);
+  assert.strictEqual(body.willRebuild, true);
+});
+await runAsyncTest('P3.3 POST preview fail-closed malformed graph 409', async () => {
+  for (const pid of [malformedProj, badDepTypeProj, unknownDepProj, cycleProj]) {
+    const { status } = await requestWithBody(`/api/projects/${pid}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-X'] } });
+    assert.strictEqual(status, 409, `expected 409 for ${pid}`);
+  }
+});
+await runAsyncTest('P3.3 POST preview uses latest approved contract', async () => {
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-OLD'] } });
+  assert.strictEqual(status, 400);
+  void body;
+});
+await runAsyncTest('P3.3 derived checkpointId stable helper parity', async () => {
+  const { deriveCheckpointId } = await import('../observability.js');
+  const row = { project_id: impactProj, task_id:'p3-task-a', contract_id: impactContractNew, plan_hash:'ph1', task_spec_hash:'sh1', input_hash:'ih1', output_hash:'oh1', gate_version:'v1' };
+  const expected = deriveExpectedCheckpointId(row);
+  assert.strictEqual(deriveCheckpointId(row), expected);
+  assert.strictEqual(deriveCheckpointId(row), deriveCheckpointId(row));
+});
+
 
 
  // =========================================================================

@@ -347,4 +347,95 @@ export function getFailureMetrics(projectId, targetDb) {
         last_occurred_at: r.last_occurred_at
     }));
 }
+export function deriveCheckpointId({ project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version }) {
+  const arr = [project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version];
+  return crypto.createHash('sha256').update(JSON.stringify(arr)).digest('hex');
+}
+export function collectDownstreamTaskIds(allTaskRows, rootTaskIds) {
+  // allTaskRows: [{id, task_spec_json}]
+  // returns sorted lexically array of transitive downstream including roots, or throws with code property
+  const taskMap = new Map();
+  const dependents = new Map(); // depId -> [dependentIds]
+  for (const row of allTaskRows) {
+    let spec;
+    try {
+      spec = typeof row.task_spec_json === 'string' ? JSON.parse(row.task_spec_json) : row.task_spec_json;
+    } catch {
+      const e = new Error('Malformed task spec JSON');
+      e.code = 'MALFORMED_JSON';
+      throw e;
+    }
+    const deps = spec.dependencies;
+    if (deps === undefined) {
+      // missing deps treat as empty? but spec says non-array should 409, so undefined -> empty?
+      // we'll treat undefined as empty array to avoid false 409 for tasks without deps key
+      // but if explicit, we've handled.
+    } else if (!Array.isArray(deps)) {
+      const e = new Error('Dependencies is not an array');
+      e.code = 'NON_ARRAY_DEPS';
+      throw e;
+    }
+    const depArray = Array.isArray(deps) ? deps : [];
+    // unknown dependency references detection: if dep not in task set
+    taskMap.set(row.id, depArray);
+    if (!dependents.has(row.id)) dependents.set(row.id, []);
+  }
+  // check unknown refs
+  for (const [id, deps] of taskMap.entries()) {
+    for (const dep of deps) {
+      if (!taskMap.has(dep)) {
+        const e = new Error(`Unknown dependency ${dep} for task ${id}`);
+        e.code = 'UNKNOWN_DEP';
+        throw e;
+      }
+      if (!dependents.has(dep)) dependents.set(dep, []);
+      dependents.get(dep).push(id);
+    }
+  }
+  // cycle detection via DFS from each node
+  const visited = new Set();
+  const visiting = new Set();
+  function hasCycle(node) {
+    if (visiting.has(node)) return true;
+    if (visited.has(node)) return false;
+    visiting.add(node);
+    const deps = taskMap.get(node) || [];
+    for (const dep of deps) {
+      if (hasCycle(dep)) return true;
+    }
+    visiting.delete(node);
+    visited.add(node);
+    return false;
+  }
+  for (const id of taskMap.keys()) {
+    if (hasCycle(id)) {
+      const e = new Error('Cycle detected');
+      e.code = 'CYCLE';
+      throw e;
+    }
+  }
+  // BFS downstream from roots
+  const impacted = new Set();
+  const queue = [];
+  for (const rid of rootTaskIds) {
+    if (taskMap.has(rid) && !impacted.has(rid)) {
+      impacted.add(rid);
+      queue.push(rid);
+    }
+  }
+  let idx = 0;
+  while (idx < queue.length) {
+    const cur = queue[idx++];
+    const deps = dependents.get(cur) || [];
+    for (const dep of deps) {
+      if (!impacted.has(dep)) {
+        impacted.add(dep);
+        queue.push(dep);
+        if (queue.length > 10000) break; // bounded
+      }
+    }
+  }
+  return Array.from(impacted).sort();
+}
+
 
