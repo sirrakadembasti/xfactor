@@ -47,3 +47,38 @@ export function parseDirectorResponse(rawText, domain = 'domain') {
     }
     return normalizeDirectorSpec(data, domain);
 }
+
+export function validatePlanTasks(planTasks = [], contract = {}) {
+    const issues = [];
+    const contractRequirements = [
+        ...(Array.isArray(contract.requirements) ? contract.requirements : []),
+        ...(Array.isArray(contract.requirementIds) ? contract.requirementIds : [])
+    ];
+    const approvedRequirementIds = new Set(
+        contractRequirements
+            .map(requirement => (
+                typeof requirement === 'string' ? requirement : requirement?.id
+            ))
+            .filter(requirementId => typeof requirementId === 'string' && requirementId.length > 0)
+    );
+
+    for (const task of planTasks) {
+        const taskId = task?.id || task?.title || 'unknown';
+        if (!Array.isArray(task?.requirementIds) || task.requirementIds.length === 0) {
+            issues.push(`UNSOLICITED_FEATURE: Task "${taskId}" has no requirementIds`);
+            continue;
+        }
+        for (const requirementId of task.requirementIds) {
+            if (!approvedRequirementIds.has(requirementId)) {
+                issues.push(
+                    `UNSOLICITED_FEATURE: Task "${taskId}" references unknown requirement "${requirementId}"`
+                );
+            }
+        }
+    }
+
+    return {
+        passed: issues.length === 0,
+        issues
+    };
+}

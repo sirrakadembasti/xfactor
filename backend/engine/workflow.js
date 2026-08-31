@@ -36,6 +36,7 @@ import {
     normalizeDirectorSpec,
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
+import { validatePlanTasks } from '../agents/director.js';
 import { db, getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
@@ -374,6 +375,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 const depCheck = validateTaskDependencies(taskPlan.tasks);
                 if (!depCheck.valid) {
                     throw new Error(`Geçersiz görev bağımlılıkları (${tl.name}): ${depCheck.errors.join(', ')}`);
+                }
+                const scopeValidation = validatePlanTasks(taskPlan.tasks, plan);
+                if (!scopeValidation.passed) {
+                    throw new Error(
+                        `Geçersiz görev kapsamı (${tl.name}): ${scopeValidation.issues.join(', ')}`
+                    );
                 }
 
                 if (!tasksOnDisk || tasksOnDisk.length === 0) {

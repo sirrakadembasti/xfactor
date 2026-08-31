@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.6.1 (Enforce Core Requirement Priority in DAG) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.6.2 (Reject Unsolicited Features from Planner).
+P2 Step P2.6.2 (Reject Unsolicited Features from Planner) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.7.1 (Enforce Task Repair Allowlist).
 
 Sonraki görev:
 
 ```text
-P2 Task 6 — Core-over-Optional Scope Planner and DAG Policy (Step P2.6.2: Reject Unsolicited Features from Planner)
-RED: node backend/tests/test_p2_scope_priority.js --test=unsolicited-features
+P2 Task 7 — Repair Target Allowlist Policy (Step P2.7.1: Enforce Task Repair Allowlist)
+RED: node backend/tests/test_p2_repair_allowlist.js --test=repair-write
 ```
 
 ## Yeni Sohbet İçin Başlangıç

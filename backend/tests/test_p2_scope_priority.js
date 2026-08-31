@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
 import * as dagModule from '../engine/dag.js';
+import * as directorModule from '../agents/director.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 const filteredTest = process.argv.find(arg => arg.startsWith('--test='))?.split('=')[1];
@@ -155,4 +156,78 @@ if (!filteredTest || filteredTest === 'dag-priority') {
     });
 }
 
+
+if (!filteredTest || filteredTest === 'unsolicited-features') {
+    await runAsyncTest('P2.6.2: validatePlanTasks rejects tasks linked to unknown requirements', async () => {
+        const contract = {
+            requirements: [
+                { id: 'REQ-TODO', statement: 'Todo CRUD' },
+                { id: 'REQ-DATABASE', statement: 'Persist todos' }
+            ]
+        };
+        const planTasks = [
+            { id: 'todo-routes', requirementIds: ['REQ-TODO'] },
+            { id: 'billing-module', requirementIds: ['REQ-BILLING'] }
+        ];
+
+        const result = typeof directorModule.validatePlanTasks === 'function'
+            ? directorModule.validatePlanTasks(planTasks, contract)
+            : { passed: true, issues: [] };
+
+        assert.strictEqual(
+            result.passed,
+            false,
+            'Expected plan validation to reject unsolicited billing task'
+        );
+        assert.deepStrictEqual(result.issues, [
+            'UNSOLICITED_FEATURE: Task "billing-module" references unknown requirement "REQ-BILLING"'
+        ]);
+    });
+
+    await runAsyncTest('P2.6.2: validatePlanTasks rejects tasks without requirement links', async () => {
+        const result = typeof directorModule.validatePlanTasks === 'function'
+            ? directorModule.validatePlanTasks(
+                [{ id: 'analytics-dashboard', requirementIds: [] }],
+                { requirements: [{ id: 'REQ-TODO' }] }
+            )
+            : { passed: true, issues: [] };
+
+        assert.strictEqual(result.passed, false);
+        assert.deepStrictEqual(result.issues, [
+            'UNSOLICITED_FEATURE: Task "analytics-dashboard" has no requirementIds'
+        ]);
+    });
+
+    await runAsyncTest('P2.6.2: validatePlanTasks passes tasks linked only to contract requirements', async () => {
+        const result = typeof directorModule.validatePlanTasks === 'function'
+            ? directorModule.validatePlanTasks(
+                [
+                    { id: 'todo-model', requirementIds: ['REQ-DATABASE'] },
+                    { id: 'todo-routes', requirementIds: ['REQ-TODO', 'REQ-DATABASE'] }
+                ],
+                {
+                    requirements: [
+                        { id: 'REQ-TODO' },
+                        { id: 'REQ-DATABASE' }
+                    ]
+                }
+            )
+            : { passed: false, issues: ['validatePlanTasks is missing'] };
+
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(result.issues.length, 0);
+    });
+
+    await runAsyncTest('P2.6.2: validatePlanTasks rejects malformed task entries', async () => {
+        const result = directorModule.validatePlanTasks(
+            [null],
+            { requirements: [{ id: 'REQ-TODO' }] }
+        );
+
+        assert.strictEqual(result.passed, false);
+        assert.deepStrictEqual(result.issues, [
+            'UNSOLICITED_FEATURE: Task "unknown" has no requirementIds'
+        ]);
+    });
+}
 finish();
