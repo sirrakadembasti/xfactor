@@ -270,6 +270,7 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
         projectId: seeded.projectId,
         projectDir: 'unused-with-injected-verifiers',
         options: {
+            files: [],
             verifiers: {
                 dependencies: async () => ({
                     passed: true,
@@ -297,7 +298,12 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
                         { name: 'smoke_gate', status: 'passed' },
                         { name: 'test_script_presence', status: 'passed' }
                     ]
-                })
+                }),
+                domain: async () => ({ passed: true, issues: [] }),
+                placeholders: async () => ({ passed: true, issues: [] }),
+                contamination: async () => ({ passed: true, issues: [] }),
+                security: async () => ({ passed: true, issues: [] }),
+                readme: async () => ({ passed: true, issues: [] }),
             }
         }
     });

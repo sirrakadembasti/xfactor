@@ -624,39 +624,68 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
 /**
  * Dosya ağacındaki dosyaları listeler (IDE ve ZIP için)
  */
-export async function listProjectTree(projectDir, { maxFiles = 500, maxTotalBytes = 20 * 1024 * 1024, maxDepth = 10 } = {}) {
+export async function listProjectTree(projectDir, {
+    maxFiles = 500,
+    maxTotalBytes = 20 * 1024 * 1024,
+    maxDepth = 10,
+    strict = false
+} = {}) {
     const results = [];
     let totalBytes = 0;
     const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
     const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', '.DS_Store', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
+    const incompleteTree = message => {
+        const error = new Error(message);
+        error.code = 'PROJECT_TREE_INCOMPLETE';
+        return error;
+    };
 
     async function traverse(currentDir, relativeDir = '', depth = 0) {
         if (depth > maxDepth || results.length >= maxFiles || totalBytes >= maxTotalBytes) {
+            if (strict) throw incompleteTree(`Project tree evidence limit reached at ${relativeDir || '.'}`);
             return;
         }
         try {
             const entries = await fs.readdir(currentDir, { withFileTypes: true });
             for (const entry of entries) {
-                if (results.length >= maxFiles || totalBytes >= maxTotalBytes) break;
+                if (results.length >= maxFiles || totalBytes >= maxTotalBytes) {
+                    if (strict) throw incompleteTree(`Project tree evidence limit reached at ${relativeDir || '.'}`);
+                    break;
+                }
                 if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
                 if (entry.name === '.git' || entry.name === '.DS_Store') continue;
 
                 const resPath = path.join(currentDir, entry.name);
                 const relPath = path.join(relativeDir, entry.name).replace(/\\/g, '/');
+                if (strict && entry.isSymbolicLink()) {
+                    throw incompleteTree(`Symbolic link cannot be verified safely: ${relPath}`);
+                }
 
                 if (entry.isDirectory()) {
                     await traverse(resPath, relPath, depth + 1);
                 } else {
                     const stat = await fs.stat(resPath).catch(() => null);
-                    if (stat && stat.size <= GENERATION_LIMITS.MAX_FILE_SIZE_BYTES) {
-                        const content = await fs.readFile(resPath, 'utf8');
-                        totalBytes += stat.size;
-                        results.push({ path: relPath, content });
+                    if (!stat) {
+                        if (strict) throw incompleteTree(`Unable to stat project evidence: ${relPath}`);
+                        continue;
                     }
+                    if (stat.size > GENERATION_LIMITS.MAX_FILE_SIZE_BYTES) {
+                        if (strict) throw incompleteTree(`Project evidence file exceeds size limit: ${relPath}`);
+                        continue;
+                    }
+                    if (strict && totalBytes + stat.size > maxTotalBytes) {
+                        throw incompleteTree(`Project tree evidence byte limit reached at ${relPath}`);
+                    }
+                    const content = await fs.readFile(resPath, 'utf8');
+                    totalBytes += stat.size;
+                    results.push({ path: relPath, content });
                 }
             }
-        } catch {
-            // Klasör yoksa sessizce devam et
+        } catch (error) {
+            if (strict) {
+                if (error?.code === 'PROJECT_TREE_INCOMPLETE') throw error;
+                throw incompleteTree(`Unable to read complete project evidence at ${relativeDir || '.'}: ${error.message}`);
+            }
         }
     }
 

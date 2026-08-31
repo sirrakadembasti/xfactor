@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
+import { listProjectTree } from '../engine/codeGenerator.js';
 import { db, dbEvents } from '../db.js';
 import {
     getProject,
@@ -10,6 +12,10 @@ import { createRun } from '../repositories/verificationRepository.js';
 import { verifyDependencies } from './packageVerifier.js';
 import { verifyBuild } from './buildVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
+import { verifyContamination } from './contaminationVerifier.js';
+import { verifyPlaceholders } from './placeholderVerifier.js';
+import { verifyReadmeCommands } from './readmeVerifier.js';
+import { verifySecurityBaseline } from './securityVerifier.js';
 
 export const MANDATORY_GATES = [
     'package_json',
@@ -24,7 +30,12 @@ export const MANDATORY_GATES = [
     'api_contract',
     'browser_journey',
     'smoke_gate',
-    'test_infrastructure'
+    'test_infrastructure',
+    'domain_entity_check',
+    'placeholder_check',
+    'contamination_check',
+    'security_baseline',
+    'readme_check'
 ];
 
 export const OPTIONAL_GATES = [
@@ -496,6 +507,28 @@ async function captureVerifier(run, fallbackGate) {
     }
 }
 
+async function captureHardeningGate(name, run) {
+    try {
+        const result = await run();
+        const issues = Array.isArray(result?.issues) ? result.issues : [];
+        return {
+            gateName: name,
+            applicability: 'MANDATORY',
+            status: result?.passed === true ? 'PASS' : 'FAIL',
+            reason: issues.join('; '),
+            evidence: { issues }
+        };
+    } catch (error) {
+        return {
+            gateName: name,
+            applicability: 'MANDATORY',
+            status: error?.code === 'SANDBOX_UNAVAILABLE' ? 'BLOCKED' : 'FAIL',
+            reason: error?.message || String(error),
+            evidence: { error: error?.message || String(error) }
+        };
+    }
+}
+
 function stageVerificationRunning(project) {
     const paths = {
         implementation_finished: ['verification_pending', 'verification_running'],
@@ -546,6 +579,11 @@ export async function runProjectVerification({
     const dependencyVerifier = injectedVerifiers.dependencies || verifyDependencies;
     const buildVerifier = injectedVerifiers.build || verifyBuild;
     const smokeVerifier = injectedVerifiers.smoke || verifyProjectSmoke;
+    const domainVerifier = injectedVerifiers.domain || verifyDomainCompliance;
+    const placeholderVerifier = injectedVerifiers.placeholders || verifyPlaceholders;
+    const contaminationVerifier = injectedVerifiers.contamination || verifyContamination;
+    const securityVerifier = injectedVerifiers.security || verifySecurityBaseline;
+    const readmeVerifier = injectedVerifiers.readme || verifyReadmeCommands;
     const verifierOptions = { ...options };
     delete verifierOptions.verifiers;
 
@@ -560,6 +598,30 @@ export async function runProjectVerification({
     });
 
     const workspace = projectDir || getProjectDir(projectId);
+    let projectFiles;
+    let projectFilesError = null;
+    try {
+        projectFiles = Array.isArray(options.files)
+            ? options.files
+            : await listProjectTree(workspace, { strict: true });
+    } catch (error) {
+        projectFiles = [];
+        projectFilesError = error;
+    }
+    const sandboxAdapter = verifierOptions.adapter ?? null;
+    const hardeningRuns = [
+        ['domain_entity_check', () => domainVerifier(contract, projectFiles)],
+        ['placeholder_check', () => placeholderVerifier(projectFiles)],
+        ['contamination_check', () => contaminationVerifier(contract, projectFiles)],
+        ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)],
+        ['readme_check', () => readmeVerifier(contract, projectFiles, sandboxAdapter)]
+    ];
+    const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) =>
+        captureHardeningGate(name, () => {
+            if (projectFilesError) throw projectFilesError;
+            return run();
+        })
+    ));
     const dependencyResult = await captureVerifier(
         () => dependencyVerifier(workspace, contract, verifierOptions),
         'package_json'
@@ -585,6 +647,7 @@ export async function runProjectVerification({
     const policyChecks = [
         ...dependencyChecks,
         ...buildChecks,
+        ...hardeningChecks,
         ...Object.keys(RUNTIME_GATE_MEMBERS).map(gateName => (
             combineRuntimeGate(
                 gateName,

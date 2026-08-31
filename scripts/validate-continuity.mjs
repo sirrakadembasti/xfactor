@@ -101,8 +101,8 @@ for (const unitId of UNIT_IDS) {
     [/(?:\*\*Architecture:\*\*|^## Architecture$)/m, 'architecture'],
     [/(?:\*\*Tech Stack:\*\*|^## Tech Stack$)/m, 'tech stack'],
     [/^## Global Constraints$/m, 'global constraints'],
-    [/^### (?:\[ \] )?Task(?:\s|\.)/m, 'task headings'],
-    [/- \[ \]|^### \[ \] Task/m, 'trackable checklist'],
+    [/^### (?:\[[ xX~!]\] )?Task(?:\s|\.)/m, 'task headings'],
+    [/- \[[ xX~!]\]|^### \[[ xX~!]\] Task/m, 'trackable checklist'],
     [/^## .*Exit Gate.*$/m, 'unit exit gate'],
     [/commit/i, 'commit boundary']
   ];
@@ -115,10 +115,10 @@ for (const unitId of UNIT_IDS) {
     fail(`${planByUnit[unitId]} contains placeholder language`);
   }
 
-  const taskSections = plan.split(/(?=^### (?:\[ \] )?Task(?:\s|\.))/m).slice(1);
+  const taskSections = plan.split(/(?=^### (?:\[[ xX~!]\] )?Task(?:\s|\.))/m).slice(1);
   for (const [taskIndex, taskSection] of taskSections.entries()) {
     const taskLabel = `${unitId} task ${taskIndex + 1}`;
-    if (!/- \[ \]|^### \[ \] Task/m.test(taskSection)) fail(`${taskLabel} lacks trackable TDD steps`);
+    if (!/- \[[ xX~!]\]|^### \[[ xX~!]\] Task/m.test(taskSection)) fail(`${taskLabel} lacks trackable TDD steps`);
     if (!/(?:\bRED\b|verify it fails|Expected:\s*FAIL)/i.test(taskSection)) fail(`${taskLabel} missing RED state`);
     if (!/(?:\bGREEN\b|verify it passes|Expected:\s*PASS)/i.test(taskSection)) fail(`${taskLabel} missing GREEN state`);
     if (!/(?:\bRun\s+`|\b(?:Run|(?:RED|GREEN)\s+Exact\s+Command|Command)(?:\s*\([^)]*\))?\s*:)/i.test(taskSection)) fail(`${taskLabel} missing executable command`);

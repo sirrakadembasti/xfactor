@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P2
-current_plan: implementation-plans/07-P2-quality-hardening.md
-current_task: P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
+current_unit: P3
+current_plan: implementation-plans/08-P3-observability-metrics.md
+current_task: P3 Task P3.1 - Authorized Read-Only Evidence and Contract APIs
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: 97c63bb4e52bf4b72f0a51d8bfe181d4baa93afe
-evidence_file: implementation-evidence/P2.md
+last_verified_commit: 857af06086ff5b2482a1c526c595b9e6d5ddee82
+evidence_file: implementation-evidence/P3.md
 blocked_by: []
-next_action: Read P2 Step P2.8.2, write the failing isolated DoD overwrite test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
-updated_at: 2026-08-31T15:55:14Z
+next_action: Read P3 Task P3.1, write the failing authorization and response-shape tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
+updated_at: 2026-08-31T16:27:31Z
 ---
 
 # Project Continuity
@@ -57,35 +57,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-C Task 4 - Sandboxed Clean-Room Verification Pipeline (`artifactVerifier`).
 - P1-C Task 5 - State Transition, Invalidation Policy, and Clean Cutover.
 - P1-C Task 6 - Frontend Evidence Display and Download Integration.
-- P2 Step P2.1.1 - Verify Entity Schema Presence.
-- P2 Step P2.1.2 - Verify Entity Queries in Source Code.
-- P2 Step P2.1.3 - Verify Endpoint Implementation Routes.
-- P2 Step P2.2.1 - Detect Static Mock/Dummy Route Handlers.
-- P2 Step P2.2.2 - Detect Dead UI Forms and Form Submit Handlers.
-- P2 Step P2.2.3 - Detect Placeholder Comments and Bypasses.
-- P2 Step P2.3.1 - Scan for Template Domain Out-of-Domain Contamination.
-- P2 Step P2.3.2 - Allow Explicit Out-of-Domain Vocabulary.
-- P2 Step P2.4.1 - Audit Permissive CORS Settings.
-- P2 Step P2.4.2 - Detect Committed Credentials and API Secrets.
-- P2 Step P2.4.3 - Validate Mandatory Endpoint Authentication.
-- P2 Step P2.4.4 - Detect Unsolicited Authentication Modules.
-- P2 Step P2.4.5 - Audit SQL Injection Vulnerabilities.
-- P2 Step P2.5.1 - Verify README Scripts Exist in package.json.
-- P2 Step P2.5.2 - Verify README Port Declarations Match Code.
-- P2 Step P2.5.3 - Run README Setup/Build Commands in Sandbox.
-- P2 Step P2.6.1 - Enforce Core Requirement Priority in DAG.
-- P2 Step P2.6.2 - Reject Unsolicited Features from Planner.
-- P2 Step P2.7.1 - Enforce Task Repair Allowlist.
-- P2 Step P2.7.2 - Prevent Unapproved Config Mutations.
-- P2 Step P2.8.1 - Render Evidence Without Completion Authority.
+- P2 — Quality Hardening complete and verified (Tasks P2.1–P2.8; 22 steps).
 ## In Progress
 
-- P2 Task 8 - Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
+- P3 Task P3.1 - Authorized Read-Only Evidence and Contract APIs.
 ## Pending
 
-1. Read P2 Step P2.8.2 and write the isolated DoD overwrite RED test.
-2. Implement Step P2.8.2 only after RED is observed.
-3. Complete remaining P2 tasks in plan order.
+1. Read P3 Task P3.1 and write the isolated authorization/response-shape RED tests.
+2. Implement P3 Task P3.1 only after RED is observed.
+3. Complete remaining P3 tasks in plan order.
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -113,72 +93,13 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P1-A Final review: APPROVE; Independent acceptance: UNIT TEST PASS.
 - P1-B Tasks 1–9 verified: APPROVE, independent acceptance PASS, `29/29` isolated tests PASS, `25/25` integration suites PASS, continuity validation PASS.
 - P1-C Tasks 1–6 verified: APPROVE, independent acceptance PASS, `23/23` isolated tests PASS, `25/25` integration suites PASS, continuity validation PASS.
-- P2 Step P2.1.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.1.1 independent acceptance test: PASS (`2` passed, `0` failed).
-- P2 Step P2.1.1 continuity validation: PASS.
-- P2 Step P2.1.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.1.2 independent acceptance test: PASS (`2` passed, `0` failed).
-- P2 Step P2.1.2 continuity validation: PASS.
-- P2 Step P2.1.3 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.1.3 independent acceptance test: PASS (`3` endpoint-routes, `7` full suite passed, `0` failed).
-- P2 Step P2.1.3 continuity validation: PASS.
-- P2 Step P2.2.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.2.1 independent acceptance test: PASS (`3` passed, `0` failed).
-- P2 Step P2.2.1 continuity validation: PASS.
-- P2 Step P2.2.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.2.2 independent acceptance test: PASS (`2` dead-forms, `5` full suite passed, `0` failed).
-- P2 Step P2.2.2 continuity validation: PASS.
-- P2 Step P2.2.3 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.2.3 independent acceptance test: PASS (`2` comments-bypasses, `7` full suite passed, `0` failed).
-- P2 Step P2.2.3 continuity validation: PASS.
-- P2 Step P2.3.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.3.1 independent acceptance test: PASS (`2` passed, `0` failed).
-- P2 Step P2.3.1 continuity validation: PASS.
-- P2 Step P2.3.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.3.2 independent acceptance test: PASS (`2` allowed-vocabulary, `4` full suite passed, `0` failed).
-- P2 Step P2.3.2 continuity validation: PASS.
-- P2 Step P2.4.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.4.1 independent acceptance test: PASS (`2` passed, `0` failed).
-- P2 Step P2.4.1 continuity validation: PASS.
-- P2 Step P2.4.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.4.2 independent acceptance test: PASS (`3` secret-keys, `5` full suite passed, `0` failed).
-- P2 Step P2.4.2 continuity validation: PASS.
-- P2 Step P2.4.3 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.4.3 independent acceptance test: PASS (`3` missing-auth, `8` full suite passed, `0` failed).
-- P2 Step P2.4.3 continuity validation: PASS.
-- P2 Step P2.4.4 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.4.4 independent acceptance test: PASS (`2` unsolicited-auth, `10` full suite passed, `0` failed).
-- P2 Step P2.4.4 continuity validation: PASS.
-- P2 Step P2.4.5 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.4.5 independent acceptance test: PASS (`2` sql-injection, `12` full suite passed, `0` failed).
-- P2 Step P2.4.5 continuity validation: PASS.
-- P2 Step P2.5.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.5.1 independent acceptance test: PASS (`3` passed, `0` failed).
-- P2 Step P2.5.1 continuity validation: PASS.
-- P2 Step P2.5.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.5.2 independent acceptance test: PASS (`5` readme-ports, `8` full suite passed, `0` failed).
-- P2 Step P2.5.2 continuity validation: PASS.
-- P2 Step P2.5.3 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.5.3 independent acceptance test: PASS (`4` readme-sandboxed-commands, `12` full suite passed, `0` failed).
-- P2 Step P2.5.3 continuity validation: PASS.
-- P2 Step P2.6.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.6.1 independent acceptance test: PASS (`7` dag-priority, `30` backend regression tests passed, `0` failed).
-- P2 Step P2.6.1 continuity validation: PASS.
-- P2 Step P2.6.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.6.2 independent acceptance test: PASS (`4` unsolicited-features, `11` full scope, `30` backend regression tests passed, `0` failed).
-- P2 Step P2.6.2 continuity validation: PASS.
-- P2 Step P2.7.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.7.1 independent acceptance test: PASS (`3` repair-write, `30` backend regression tests passed, `0` failed).
-- P2 Step P2.7.1 continuity validation: PASS.
-- P2 Step P2.7.2 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.7.2 independent acceptance test: PASS (`3` config-mutation, `6` full repair, `30` backend regression tests passed, `0` failed).
-- P2 Step P2.7.2 continuity validation: PASS.
-- P2 Step P2.8.1 review: APPROVE; specification PASS, quality PASS.
-- P2 Step P2.8.1 independent acceptance test: PASS (`3` evidence-query, `10` quality-policy evidence, `30` backend regression tests passed, `0` failed).
-- P2 Step P2.8.1 continuity validation: PASS.
+- P2 Steps P2.1.1–P2.8.2 reviews: APPROVE; specification PASS, quality PASS.
+- P2 unit verification: all ten P2 suites PASS (`81/81` tests); independent acceptance PASS.
+- P2 regression: `npm test --prefix backend` PASS (`25/25` suites).
+- P2 continuity validation: PASS (`8` units; current `P3/pending`).
 ## Known Failures
 
-- Quality hardening and anti-contamination filters remain incomplete until P2 is implemented.
+- P3 observability and metrics remain pending.
 - Todo artifact remains intentionally unfixed.
 ## Dirty Worktree
 
@@ -188,7 +109,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P2 Step P2.8.2, write the failing isolated DoD overwrite test, and run the RED command: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
+Read P3 Task P3.1, write the failing authorization and response-shape tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
 
 ## Do Not Do
 

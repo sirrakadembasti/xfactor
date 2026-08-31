@@ -1,4 +1,8 @@
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
 import { db } from '../db.js';
+import { getProjectDir } from '../projectRepository.js';
 import { MANDATORY_GATES } from './qualityPolicy.js';
 
 const STATUS_PRIORITY = {
@@ -75,7 +79,70 @@ function reportStatus(checks) {
     return 'PASS';
 }
 
-export async function generateCompletionReport({ projectId, contractId, runId }) {
+function renderDefinitionOfDone(report) {
+    const lines = [
+        '# Definition of Done',
+        '',
+        '> Generated from immutable verification evidence. Manual checkbox edits are overwritten.',
+        '',
+        `Overall evidence status: **${report.status}**`,
+        '',
+        '## Mandatory Verification Gates',
+        ''
+    ];
+    for (const check of report.checks.filter(item => item.applicability === 'MANDATORY')) {
+        lines.push(`- [${check.status === 'PASS' ? 'x' : ' '}] \`${check.gateName}\` — ${check.status}`);
+    }
+
+    lines.push('', '## Requirements', '');
+    for (const requirement of report.requirements) {
+        const statement = String(requirement.statement || '').replace(/\s+/g, ' ').trim();
+        lines.push(
+            `- [${requirement.evidenceStatus === 'PASS' ? 'x' : ' '}] \`${requirement.stableKey}\` — ${requirement.evidenceStatus} — ${statement}`
+        );
+    }
+
+    lines.push('', '## Artifacts', '');
+    for (const artifact of report.artifacts) {
+        lines.push(
+            `- [${artifact.status === 'verified' ? 'x' : ' '}] \`${artifact.path}\` — ${artifact.status}`
+        );
+    }
+    return `${lines.join('\n')}\n`;
+}
+
+async function overwriteDefinitionOfDone(report, projectDir) {
+    const outputDir = projectDir || getProjectDir(report.projectId);
+    try {
+        const directory = await fs.lstat(outputDir);
+        if (!directory.isDirectory() || directory.isSymbolicLink()) {
+            const error = new Error('Definition of Done output directory is unsafe');
+            error.code = 'UNSAFE_DOD_TARGET';
+            throw error;
+        }
+    } catch (error) {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+    }
+
+    const outputPath = path.join(outputDir, 'DEFINITION_OF_DONE.md');
+    const temporaryPath = path.join(
+        outputDir,
+        `.DEFINITION_OF_DONE.${crypto.randomUUID()}.tmp`
+    );
+    try {
+        await fs.writeFile(temporaryPath, renderDefinitionOfDone(report), {
+            encoding: 'utf8',
+            flag: 'wx'
+        });
+        await fs.rename(temporaryPath, outputPath);
+    } finally {
+        await fs.rm(temporaryPath, { force: true });
+    }
+    return outputPath;
+}
+
+export async function generateCompletionReport({ projectId, contractId, runId, projectDir = null }) {
     const run = db.prepare(`
         SELECT id, project_id, contract_id, status, policy_version, started_at, ended_at
         FROM verification_runs
@@ -167,7 +234,7 @@ export async function generateCompletionReport({ projectId, contractId, runId })
         };
     });
 
-    return {
+    const report = {
         projectId,
         contractId,
         runId,
@@ -178,4 +245,6 @@ export async function generateCompletionReport({ projectId, contractId, runId })
         requirements,
         artifacts
     };
+    report.definitionOfDonePath = await overwriteDefinitionOfDone(report, projectDir);
+    return report;
 }

@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P2 -->
+<!-- continuity:current_unit=P3 -->
 <!-- continuity:status=pending -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P2` |
+| Aktif birim | `P3` |
 | Genel durum | `pending` |
 
 ## Teslim Birimleri
@@ -64,7 +64,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 
 ### P2 — Kalite hardening
 
-- [ ] **P2 — Domain/skeleton/template/security/README/scope hardening**
+- [x] **P2 — Domain/skeleton/template/security/README/scope hardening**
   - Plan: `implementation-plans/07-P2-quality-hardening.md`
   - Evidence: `implementation-evidence/P2.md`
   - Bağımlılık: P1-A, P1-B ve P1-C verified.
@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.8.1 (Render Evidence Without Completion Authority) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.8.2 (Overwrite Manual DoD Markdown Edits).
+P2 kalite hardening birimi 22 adım, bağımsız review/test ve regresyon kanıtlarıyla doğrulandı. Aktif birim P3; sıradaki görev yetkili salt-okunur evidence ve contract API’leri.
 
 Sonraki görev:
 
 ```text
-P2 Task 8 — Evidence-Derived Definition of Done and Completion Report (Step P2.8.2: Overwrite Manual DoD Markdown Edits)
-RED: node backend/tests/test_p2_completion_report.js --test=overwrite-dod
+P3 Task P3.1 — Authorized Read-Only Evidence and Contract APIs
+RED: node backend/tests/test_runner.js test_p3_observability.js
 ```
 
 ## Yeni Sohbet İçin Başlangıç

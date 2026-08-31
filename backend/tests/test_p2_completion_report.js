@@ -1,8 +1,13 @@
 import assert from 'assert';
 import crypto from 'crypto';
 import express from 'express';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 import { db } from '../db.js';
+import { listProjectTree } from '../engine/codeGenerator.js';
 import { createProjectRouter } from '../routes/projectRoutes.js';
+import { runProjectVerification } from '../verification/qualityPolicy.js';
 import { createTestHarness } from './testHarness.js';
 
 const { runAsyncTest, finish } = createTestHarness();
@@ -154,4 +159,155 @@ if (!filteredTest || filteredTest === 'evidence-query') {
     });
 }
 
+
+if (!filteredTest || filteredTest === 'overwrite-dod') {
+    await runAsyncTest('P2.8.2: completion report overwrites manual DoD markers from database evidence', async () => {
+        const fixture = seedEvidenceFixture();
+        const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-dod-report-'));
+        const dodPath = path.join(projectDir, 'DEFINITION_OF_DONE.md');
+        try {
+            await fs.writeFile(
+                dodPath,
+                '# Definition of Done\n\n- [x] MANUAL OVERRIDE: everything passes\n',
+                'utf8'
+            );
+
+            await reportModule.generateCompletionReport({ ...fixture, projectDir });
+            const rendered = await fs.readFile(dodPath, 'utf8');
+
+            assert.ok(
+                !rendered.includes('MANUAL OVERRIDE'),
+                'Expected manually edited DoD markers to be overwritten by database evidence'
+            );
+            assert.match(rendered, /- \[x\] `package_json` — PASS/);
+            assert.match(rendered, /- \[ \] `api_contract` — FAIL/);
+            assert.match(rendered, /- \[ \] `lockfile` — BLOCKED/);
+            assert.match(rendered, /- \[ \] `REQ-CORE` — FAIL — Core Todo behavior/);
+            assert.ok(rendered.includes('- [ ] `artifacts/app.zip` — rejected'));
+        } finally {
+            db.prepare('DELETE FROM projects WHERE id = ?').run(fixture.projectId);
+            await fs.rm(projectDir, { recursive: true, force: true });
+        }
+    });
+
+    await runAsyncTest('P2.8.2: completion report replaces linked DoD targets without modifying external files', async () => {
+        const fixture = seedEvidenceFixture();
+        const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-dod-link-'));
+        const projectDir = path.join(baseDir, 'project');
+        const externalPath = path.join(baseDir, 'external.md');
+        const dodPath = path.join(projectDir, 'DEFINITION_OF_DONE.md');
+        try {
+            await fs.mkdir(projectDir);
+            await fs.writeFile(externalPath, 'EXTERNAL SENTINEL', 'utf8');
+            await fs.link(externalPath, dodPath);
+
+            await reportModule.generateCompletionReport({ ...fixture, projectDir });
+
+            assert.strictEqual(
+                await fs.readFile(externalPath, 'utf8'),
+                'EXTERNAL SENTINEL',
+                'Expected DoD replacement not to follow a linked target outside the project'
+            );
+            assert.match(
+                await fs.readFile(dodPath, 'utf8'),
+                /Generated from immutable verification evidence/
+            );
+        } finally {
+            db.prepare('DELETE FROM projects WHERE id = ?').run(fixture.projectId);
+            await fs.rm(baseDir, { recursive: true, force: true });
+        }
+    });
+}
+
+if (!filteredTest || filteredTest === 'hardening-integration') {
+    await runAsyncTest('P2 unit: production verification persists mandatory hardening gate failures', async () => {
+        const fixture = seedEvidenceFixture();
+        try {
+            const passing = checks => async () => ({ passed: true, checks });
+            const result = await runProjectVerification({
+                projectId: fixture.projectId,
+                projectDir: 'unused-with-injected-verifiers',
+                options: {
+                    files: [],
+                    verifiers: {
+                        dependencies: passing([
+                            { name: 'package_json', status: 'passed' },
+                            { name: 'lockfile', status: 'passed' },
+                            { name: 'ast_import_inventory', status: 'passed' },
+                            { name: 'clean_install', status: 'passed' }
+                        ]),
+                        build: passing([
+                            { name: 'typecheck', status: 'passed' },
+                            { name: 'framework_build', status: 'passed' }
+                        ]),
+                        smoke: passing([
+                            { name: 'manifest_presence', status: 'passed' },
+                            { name: 'database_connectivity', status: 'passed' },
+                            { name: 'api_status_check', status: 'passed' },
+                            { name: 'browser_page_load', status: 'passed' },
+                            { name: 'smoke_gate', status: 'passed' },
+                            { name: 'test_script_presence', status: 'passed' }
+                        ]),
+                        domain: async () => ({
+                            passed: false,
+                            issues: ['Required entity Todo is missing']
+                        }),
+                        placeholders: async files => {
+                            assert.ok(Array.isArray(files));
+                            return { passed: true, issues: [] };
+                        },
+                        contamination: async () => ({ passed: true, issues: [] }),
+                        security: async () => ({ passed: true, issues: [] }),
+                        readme: async () => ({ passed: true, issues: [] })
+                    }
+                }
+            });
+
+            assert.strictEqual(
+                result.passed,
+                false,
+                'Expected production verification to persist failing P2 hardening gate'
+            );
+            const checks = db.prepare(`
+                SELECT gate_name, applicability, status
+                FROM verification_checks
+                WHERE run_id = ?
+                  AND gate_name IN (
+                    'domain_entity_check',
+                    'placeholder_check',
+                    'contamination_check',
+                    'security_baseline',
+                    'readme_check'
+                  )
+                ORDER BY gate_name
+            `).all(result.runId);
+            assert.strictEqual(checks.length, 5);
+            assert.ok(checks.every(check => check.applicability === 'MANDATORY'));
+            assert.strictEqual(
+                checks.find(check => check.gate_name === 'domain_entity_check').status,
+                'FAIL'
+            );
+            assert.strictEqual(
+                checks.find(check => check.gate_name === 'placeholder_check').status,
+                'PASS'
+            );
+        } finally {
+            db.prepare('DELETE FROM projects WHERE id = ?').run(fixture.projectId);
+        }
+    });
+
+    await runAsyncTest('P2 unit: strict hardening tree collection rejects incomplete evidence', async () => {
+        const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-hardening-tree-'));
+        try {
+            await fs.writeFile(path.join(projectDir, 'first.js'), 'export const first = true;\n');
+            await fs.writeFile(path.join(projectDir, 'second.js'), 'export const second = true;\n');
+            await assert.rejects(
+                listProjectTree(projectDir, { maxFiles: 1, strict: true }),
+                error => error?.code === 'PROJECT_TREE_INCOMPLETE'
+            );
+        } finally {
+            await fs.rm(projectDir, { recursive: true, force: true });
+        }
+    });
+}
 finish();

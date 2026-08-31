@@ -50,7 +50,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.1: Domain/Entity/Use Verification
 
-- [ ] **Step P2.1.1: Verify Entity Schema Presence**
+- [x] **Step P2.1.1: Verify Entity Schema Presence**
   - **Failing Scenario:** A contract specifies `Todo` and `Category` entities, but `schema.prisma` in `generatedFiles` lacks `model Category`.
   - **Paths/Interfaces:** `backend/contracts/domainPolicy.js` -> `verifyDomainCompliance(contract, files)`
   - **RED command:** `node backend/tests/test_p2_domain_policy.js --test=schema-presence`
@@ -61,7 +61,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.1.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/contracts/domainPolicy.js`, `backend/tests/test_p2_domain_policy.js`; message: `test(p2-1): add schema presence TDD step`
 
-- [ ] **Step P2.1.2: Verify Entity Queries in Source Code**
+- [x] **Step P2.1.2: Verify Entity Queries in Source Code**
   - **Failing Scenario:** Both `Todo` and `Category` models are defined in `schema.prisma`, but `Category` is never referenced as a property of `prisma` (e.g. `prisma.category`) in any JS/TS source file.
   - **Paths/Interfaces:** `backend/contracts/domainPolicy.js` -> `verifyDomainCompliance(contract, files)`
   - **RED command:** `node backend/tests/test_p2_domain_policy.js --test=entity-query`
@@ -72,7 +72,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.1.2`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/contracts/domainPolicy.js`, `backend/tests/test_p2_domain_policy.js`; message: `test(p2-1): add entity query validation TDD step`
 
-- [ ] **Step P2.1.3: Verify Endpoint Implementation Routes**
+- [x] **Step P2.1.3: Verify Endpoint Implementation Routes**
   - **Failing Scenario:** Contract lists required endpoint `GET /api/categories` but no router definition in JS/TS files matches this pattern.
   - **Paths/Interfaces:** `backend/contracts/domainPolicy.js` -> `verifyDomainCompliance(contract, files)`
   - **RED command:** `node backend/tests/test_p2_domain_policy.js --test=endpoint-routes`
@@ -87,7 +87,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.2: Placeholder, Stub, and Dead-Flow Detection
 
-- [ ] **Step P2.2.1: Detect Static Mock/Dummy Route Handlers**
+- [x] **Step P2.2.1: Detect Static Mock/Dummy Route Handlers**
   - **Failing Scenario:** A route handler matches a contract endpoint but immediately returns a hardcoded mock JSON array or literal value without referencing any database or service variables.
   - **Paths/Interfaces:** `backend/verification/placeholderVerifier.js` -> `verifyPlaceholders(files)`
   - **RED command:** `node backend/tests/test_p2_placeholder.js --test=mock-handlers`
@@ -98,7 +98,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.2.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/placeholderVerifier.js`, `backend/tests/test_p2_placeholder.js`; message: `test(p2-2): add mock handler detection TDD step`
 
-- [ ] **Step P2.2.2: Detect Dead UI Forms and Form Submit Handlers**
+- [x] **Step P2.2.2: Detect Dead UI Forms and Form Submit Handlers**
   - **Failing Scenario:** A React component contains a form with an empty `onSubmit` or `onSubmit={e => e.preventDefault()}` with no network/API client calls.
   - **Paths/Interfaces:** `backend/verification/placeholderVerifier.js` -> `verifyPlaceholders(files)`
   - **RED command:** `node backend/tests/test_p2_placeholder.js --test=dead-forms`
@@ -109,7 +109,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.2.2`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/placeholderVerifier.js`, `backend/tests/test_p2_placeholder.js`; message: `test(p2-2): add dead form detection TDD step`
 
-- [ ] **Step P2.2.3: Detect Placeholder Comments and Bypasses**
+- [x] **Step P2.2.3: Detect Placeholder Comments and Bypasses**
   - **Failing Scenario:** A source file contains comments like `// TO-DO: implement later` or `throw new Error("Not implemented")` (note: TO-DO is written as standard test fixture string patterns in mock files, not as a plan TODO).
   - **Paths/Interfaces:** `backend/verification/placeholderVerifier.js` -> `verifyPlaceholders(files)`
   - **RED command:** `node backend/tests/test_p2_placeholder.js --test=comments-bypasses`
@@ -124,7 +124,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.3: Template Contamination Scanner
 
-- [ ] **Step P2.3.1: Scan for Template Domain Out-of-Domain Contamination**
+- [x] **Step P2.3.1: Scan for Template Domain Out-of-Domain Contamination**
   - **Failing Scenario:** A Todo application project contains vocabulary references from other templates such as "car rental", "fleet", or "rent-a-car".
   - **Paths/Interfaces:** `backend/verification/contaminationVerifier.js` -> `verifyContamination(contract, files)`
   - **RED command:** `node backend/tests/test_p2_contamination.js --test=out-of-domain`
@@ -135,7 +135,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.3.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/contaminationVerifier.js`, `backend/tests/test_p2_contamination.js`; message: `test(p2-3): add template contamination scanner TDD step`
 
-- [ ] **Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary**
+- [x] **Step P2.3.2: Allow Explicit Out-of-Domain Vocabulary**
   - **Failing Scenario:** A project requires a domain-overlap word (e.g. `car` in a todo category for car maintenance), but it gets flagged by the contamination scanner because the contract allowlist parser is missing.
   - **Paths/Interfaces:** `backend/verification/contaminationVerifier.js` -> `verifyContamination(contract, files)`
   - **RED command:** `node backend/tests/test_p2_contamination.js --test=allowed-vocabulary`
@@ -150,7 +150,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.4: Contract-Aware Security Baseline Gate
 
-- [ ] **Step P2.4.1: Audit Permissive CORS Settings**
+- [x] **Step P2.4.1: Audit Permissive CORS Settings**
   - **Failing Scenario:** An API endpoint contains `app.use(cors())` or wildcard response headers (`Access-Control-Allow-Origin: *`).
   - **Paths/Interfaces:** `backend/verification/securityVerifier.js` -> `verifySecurityBaseline(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_security_baseline.js --test=cors-wildcard`
@@ -161,7 +161,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.4.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/securityVerifier.js`, `backend/tests/test_p2_security_baseline.js`; message: `test(p2-4): add permissive CORS audit TDD step`
 
-- [ ] **Step P2.4.2: Detect Committed Credentials and API Secrets**
+- [x] **Step P2.4.2: Detect Committed Credentials and API Secrets**
   - **Failing Scenario:** A source code file has a hardcoded API key or private key string, or a `.env` file is present in the files array.
   - **Paths/Interfaces:** `backend/verification/securityVerifier.js` -> `verifySecurityBaseline(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_security_baseline.js --test=secret-keys`
@@ -172,7 +172,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.4.2`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/securityVerifier.js`, `backend/tests/test_p2_security_baseline.js`; message: `test(p2-4): add committed secrets audit TDD step`
 
-- [ ] **Step P2.4.3: Validate Mandatory Endpoint Authentication**
+- [x] **Step P2.4.3: Validate Mandatory Endpoint Authentication**
   - **Failing Scenario:** `authentication.required` is set to `true` in the contract, but API routes handling database mutations (POST/PUT/DELETE) lack authentication middleware in their definition.
   - **Paths/Interfaces:** `backend/verification/securityVerifier.js` -> `verifySecurityBaseline(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_security_baseline.js --test=missing-auth`
@@ -183,7 +183,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.4.3`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/securityVerifier.js`, `backend/tests/test_p2_security_baseline.js`; message: `test(p2-4): add auth middleware validator TDD step`
 
-- [ ] **Step P2.4.4: Detect Unsolicited Authentication Modules**
+- [x] **Step P2.4.4: Detect Unsolicited Authentication Modules**
   - **Failing Scenario:** `authentication.required` is `false` in the contract, but login routes, forms, or JWT validation helper files are generated.
   - **Paths/Interfaces:** `backend/verification/securityVerifier.js` -> `verifySecurityBaseline(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_security_baseline.js --test=unsolicited-auth`
@@ -194,7 +194,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.4.4`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/securityVerifier.js`, `backend/tests/test_p2_security_baseline.js`; message: `test(p2-4): add unsolicited auth auditor TDD step`
 
-- [ ] **Step P2.4.5: Audit SQL Injection Vulnerabilities**
+- [x] **Step P2.4.5: Audit SQL Injection Vulnerabilities**
   - **Failing Scenario:** Source code performs query string concatenations within raw Prisma query execution calls: `prisma.$queryRaw("... " + input)`.
   - **Paths/Interfaces:** `backend/verification/securityVerifier.js` -> `verifySecurityBaseline(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_security_baseline.js --test=sql-injection`
@@ -209,7 +209,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.5: README Command Parser and Sandboxed Runner
 
-- [ ] **Step P2.5.1: Verify README Scripts exist in package.json**
+- [x] **Step P2.5.1: Verify README Scripts exist in package.json**
   - **Failing Scenario:** A README contains a markdown shell block `npm run db:setup`, but `package.json` has no `db:setup` script.
   - **Paths/Interfaces:** `backend/verification/readmeVerifier.js` -> `verifyReadmeCommands(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_readme.js --test=readme-scripts`
@@ -220,7 +220,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.5.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/readmeVerifier.js`, `backend/tests/test_p2_readme.js`; message: `test(p2-5): add README script existence TDD step`
 
-- [ ] **Step P2.5.2: Verify README Port Declarations Match Code**
+- [x] **Step P2.5.2: Verify README Port Declarations Match Code**
   - **Failing Scenario:** README documents that the frontend/backend runs on port `8080`, but the source code configures `process.env.PORT || 3000` as the fallback port.
   - **Paths/Interfaces:** `backend/verification/readmeVerifier.js` -> `verifyReadmeCommands(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_readme.js --test=readme-ports`
@@ -231,7 +231,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.5.2`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/verification/readmeVerifier.js`, `backend/tests/test_p2_readme.js`; message: `test(p2-5): add README port consistency TDD step`
 
-- [ ] **Step P2.5.3: Run README Setup/Build commands in Sandbox**
+- [x] **Step P2.5.3: Run README Setup/Build commands in Sandbox**
   - **Failing Scenario:** README specifies `npm run build` as a step, but executing it in the unprivileged sandbox fails (e.g. syntax error or missing files).
   - **Paths/Interfaces:** `backend/verification/readmeVerifier.js` -> `verifyReadmeCommands(contract, files, sandbox)`
   - **RED command:** `node backend/tests/test_p2_readme.js --test=readme-sandboxed-commands`
@@ -246,7 +246,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.6: Core-over-Optional Scope Planner and DAG Policy
 
-- [ ] **Step P2.6.1: Enforce Core Requirement Priority in DAG**
+- [x] **Step P2.6.1: Enforce Core Requirement Priority in DAG**
   - **Failing Scenario:** A task graph in `dag.js` places an optional or supporting task (like `theme-toggle`) as running concurrently with or before a core task (like `prisma-migration` or `todo-crud-routes`).
   - **Paths/Interfaces:** `backend/engine/dag.js` -> `validatePlanDAG(planTasks)`
   - **RED command:** `node backend/tests/test_p2_scope_priority.js --test=dag-priority`
@@ -257,7 +257,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.6.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/engine/dag.js`, `backend/tests/test_p2_scope_priority.js`; message: `test(p2-6): add core DAG priority validation TDD step`
 
-- [ ] **Step P2.6.2: Reject Unsolicited Features from Planner**
+- [x] **Step P2.6.2: Reject Unsolicited Features from Planner**
   - **Failing Scenario:** The director planner suggests a task that does not carry any valid `requirementId` corresponding to the contract requirements.
   - **Paths/Interfaces:** `backend/agents/director.js` -> `validatePlanTasks(planTasks, contract)`
   - **RED command:** `node backend/tests/test_p2_scope_priority.js --test=unsolicited-features`
@@ -272,7 +272,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.7: Repair Target Allowlist Policy
 
-- [ ] **Step P2.7.1: Enforce Task Repair Allowlist**
+- [x] **Step P2.7.1: Enforce Task Repair Allowlist**
   - **Failing Scenario:** A repair agent is active to fix a failed test for a task allowlisted to edit only `src/components/TodoList.jsx`. The agent returns a file write to `src/index.html`.
   - **Paths/Interfaces:** `backend/engine/fileProtocol.js` -> `writeGeneratedFiles(taskContext, files)`
   - **RED command:** `node backend/tests/test_p2_repair_allowlist.js --test=repair-write`
@@ -283,7 +283,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with: step ID `P2.7.1`, test command, exit code 0, and verify output digest.
   - **Commit:** files: `backend/engine/fileProtocol.js`, `backend/tests/test_p2_repair_allowlist.js`; message: `test(p2-7): add repair write allowlist TDD step`
 
-- [ ] **Step P2.7.2: Prevent Unapproved Config Mutations**
+- [x] **Step P2.7.2: Prevent Unapproved Config Mutations**
   - **Failing Scenario:** A repair agent tries to modify config files like `package.json` or `schema.prisma` without initiating a new contract revision.
   - **Paths/Interfaces:** `backend/engine/fileProtocol.js` -> `writeGeneratedFiles(taskContext, files)`
   - **RED command:** `node backend/tests/test_p2_repair_allowlist.js --test=config-mutation`
@@ -298,7 +298,7 @@ Conform to the following P1-defined schemas:
 
 ### Task P2.8: Evidence-Derived Definition of Done and Completion Report
 
-- [ ] **Step P2.8.1: Render Evidence Without Completion Authority**
+- [x] **Step P2.8.1: Render Evidence Without Completion Authority**
   - **Failing Scenario:** A verification summary is requested while one mandatory check is not `PASS`; the report must render FAIL/BLOCKED and must not change project status. A direct `POST /api/projects/:id/complete` route must not exist.
   - **Paths/Interfaces:** `backend/verification/reportGenerator.js` -> `generateCompletionReport({ projectId, contractId, runId })`; read-only `GET /api/projects/:id/verification-summary`.
   - **RED command:** `node backend/tests/test_p2_completion_report.js --test=evidence-query`
@@ -309,7 +309,7 @@ Conform to the following P1-defined schemas:
   - **Evidence Update:** Append to `implementation-evidence/P2.md` with step ID `P2.8.1`, command, exit code, status immutability assertion, and output digest.
   - **Commit:** files: `backend/verification/reportGenerator.js`, `backend/routes/projectRoutes.js`, `backend/tests/test_p2_completion_report.js`; message: `test(p2-8): add read-only evidence completion report`
 
-- [ ] **Step P2.8.2: Overwrite Manual DoD Markdown Edits**
+- [x] **Step P2.8.2: Overwrite Manual DoD Markdown Edits**
   - **Failing Scenario:** A user manually edits `DEFINITION_OF_DONE.md` in the project directory to mark everything checked. The verification runs, and the report generator re-renders the file from the database, overwriting the manual edits.
   - **Paths/Interfaces:** `backend/verification/reportGenerator.js` -> `generateCompletionReport(runId)`
   - **RED command:** `node backend/tests/test_p2_completion_report.js --test=overwrite-dod`
@@ -336,11 +336,11 @@ The following regression test fixtures must be created under `backend/tests/fixt
 
 ## Exit Gate for P2 Quality Hardening
 
-- [ ] All mandatory plan tasks are checked.
-- [ ] Task-specific and unit-level tests pass.
-- [ ] Independent reviewer returns no blocking finding.
-- [ ] Independent tester reproduces unit acceptance.
-- [ ] Evidence receipt in `implementation-evidence/P2.md` records step IDs, commands, exit codes, and output verification digests.
-- [ ] Master plan, roadmap (`yol-haitasi-todo.md`), and continuity ledger (`PROJECT-CONTINUITY.md`) agree.
-- [ ] Project validator (`node scripts/validate-continuity.mjs`) passes successfully.
-- [ ] Unit status is updated to `verified` and committed in a coherent checkpoint.
+- [x] All mandatory plan tasks are checked.
+- [x] Task-specific and unit-level tests pass.
+- [x] Independent reviewer returns no blocking finding.
+- [x] Independent tester reproduces unit acceptance.
+- [x] Evidence receipt in `implementation-evidence/P2.md` records step IDs, commands, exit codes, and output verification digests.
+- [x] Master plan, roadmap (`yol-haitasi-todo.md`), and continuity ledger (`PROJECT-CONTINUITY.md`) agree.
+- [x] Project validator (`node scripts/validate-continuity.mjs`) passes successfully.
+- [x] Unit status is updated to `verified` and committed in a coherent checkpoint.
