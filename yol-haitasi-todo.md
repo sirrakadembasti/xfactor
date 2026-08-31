@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.7.1 (Enforce Task Repair Allowlist) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.7.2 (Prevent Unapproved Config Mutations).
+P2 Step P2.7.2 (Prevent Unapproved Config Mutations) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.8.1 (Render Evidence Without Completion Authority).
 
 Sonraki görev:
 
 ```text
-P2 Task 7 — Repair Target Allowlist Policy (Step P2.7.2: Prevent Unapproved Config Mutations)
-RED: node backend/tests/test_p2_repair_allowlist.js --test=config-mutation
+P2 Task 8 — Evidence-Derived Definition of Done and Completion Report (Step P2.8.1: Render Evidence Without Completion Authority)
+RED: node backend/tests/test_p2_completion_report.js --test=evidence-query
 ```
 
 ## Yeni Sohbet İçin Başlangıç

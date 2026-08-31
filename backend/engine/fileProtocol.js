@@ -390,6 +390,18 @@ export async function isTaskCheckpointValid(projectDir, projectId, task, options
     }
 }
 
+function isConfigurationPath(filePath) {
+    const normalizedPath = path.normalize(filePath).replace(/\\/g, '/').toLowerCase();
+    const fileName = normalizedPath.split('/').pop();
+    return (
+        fileName === 'package.json' ||
+        fileName.endsWith('.prisma') ||
+        /^(?:ts|js)config(?:\.[^/]+)*\.json$/.test(fileName) ||
+        /\.config\.(?:js|cjs|mjs|ts|cts|mts|json)$/.test(fileName) ||
+        /^\.(?:eslintrc|prettierrc)(?:\.[^/]+)?$/.test(fileName)
+    );
+}
+
 export async function writeGeneratedFiles(taskContext = {}, files = []) {
     function outOfScope(target = 'unknown') {
         const error = new Error(
@@ -420,6 +432,18 @@ export async function writeGeneratedFiles(taskContext = {}, files = []) {
             : '';
         if (!normalizedPath || !allowedSet.has(normalizedPath)) {
             throw outOfScope(file?.path);
+        }
+    }
+
+    if (taskContext.allowConfigMutation !== true) {
+        for (const file of files) {
+            if (isConfigurationPath(file.path)) {
+                const error = new Error(
+                    `UNAPPROVED_CONFIG_MUTATION: Repair cannot modify "${file.path}" without planner approval`
+                );
+                error.code = 'UNAPPROVED_CONFIG_MUTATION';
+                throw error;
+            }
         }
     }
 

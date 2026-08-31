@@ -89,4 +89,78 @@ if (!filteredTest || filteredTest === 'repair-write') {
     });
 }
 
+
+if (!filteredTest || filteredTest === 'config-mutation') {
+    await runAsyncTest('P2.7.2: repair writes reject package.json without planner approval', async () => {
+        const projectDir = await createWorkspace();
+        try {
+            let error = null;
+            try {
+                await fileProtocol.writeGeneratedFiles(
+                    {
+                        projectDir,
+                        allowedFiles: ['package.json']
+                    },
+                    [{ path: 'package.json', content: '{\"scripts\":{}}' }]
+                );
+            } catch (caught) {
+                error = caught;
+            }
+
+            assert.ok(
+                error,
+                'Expected configuration mutation block to fail on package.json write'
+            );
+            assert.strictEqual(error.code, 'UNAPPROVED_CONFIG_MUTATION');
+            await assert.rejects(
+                fs.stat(path.join(projectDir, 'package.json')),
+                candidate => candidate.code === 'ENOENT'
+            );
+        } finally {
+            await fs.rm(projectDir, { recursive: true, force: true });
+        }
+    });
+
+    await runAsyncTest('P2.7.2: repair writes reject Prisma and tool config files', async () => {
+        const projectDir = await createWorkspace();
+        try {
+            for (const filePath of ['prisma/schema.prisma', 'vite.config.js', 'tsconfig.json']) {
+                await assert.rejects(
+                    fileProtocol.writeGeneratedFiles(
+                        {
+                            projectDir,
+                            allowedFiles: [filePath]
+                        },
+                        [{ path: filePath, content: 'configuration' }]
+                    ),
+                    error => error.code === 'UNAPPROVED_CONFIG_MUTATION'
+                );
+            }
+        } finally {
+            await fs.rm(projectDir, { recursive: true, force: true });
+        }
+    });
+
+    await runAsyncTest('P2.7.2: repair writes allow planner-approved config mutations', async () => {
+        const projectDir = await createWorkspace();
+        try {
+            const written = await fileProtocol.writeGeneratedFiles(
+                {
+                    projectDir,
+                    allowedFiles: ['package.json'],
+                    allowConfigMutation: true
+                },
+                [{ path: 'package.json', content: '{\"scripts\":{\"build\":\"vite build\"}}' }]
+            );
+
+            assert.deepStrictEqual(written.map(file => file.path), ['package.json']);
+            assert.strictEqual(
+                await fs.readFile(path.join(projectDir, 'package.json'), 'utf8'),
+                '{\"scripts\":{\"build\":\"vite build\"}}'
+            );
+        } finally {
+            await fs.rm(projectDir, { recursive: true, force: true });
+        }
+    });
+}
 finish();
