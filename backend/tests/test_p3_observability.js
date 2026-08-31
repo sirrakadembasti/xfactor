@@ -201,6 +201,15 @@ await runAsyncTest('P3.1 pagination invalid/stale/cross-project cursor returns 4
   assert.strictEqual(badLimit2.status, 400);
   const badLimit3 = await requestWithMocks(`/api/projects/${projId}/verification-runs?limit=abc`, { authed: true });
   assert.strictEqual(badLimit3.status, 400);
+  // noncanonical numeric strings must be rejected (scalar positive-integer contract)
+  const badLimit4 = await requestWithMocks(`/api/projects/${projId}/verification-runs?limit=1junk`, { authed: true });
+  assert.strictEqual(badLimit4.status, 400);
+  const badLimit5 = await requestWithMocks(`/api/projects/${projId}/verification-runs?limit=1.5`, { authed: true });
+  assert.strictEqual(badLimit5.status, 400);
+  const badLimit6 = await requestWithMocks(`/api/projects/${projId}/verification-runs?limit=-1`, { authed: true });
+  assert.strictEqual(badLimit6.status, 400);
+  const badLimit7 = await requestWithMocks(`/api/projects/${projId}/verification-runs?limit=1%202`, { authed: true });
+  assert.strictEqual(badLimit7.status, 400);
 });
 
 await runAsyncTest('P3.1 pagination duplicate query params handled deterministically', async () => {

@@ -527,16 +527,16 @@ export function createProjectRouter({
         res.json(result);
     }));
     router.get('/:id/verification-runs', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
-        // Validate limit: scalar, integer 1..100, duplicate handling: take first value
+        // Validate limit: scalar, integer 1..100, trimmed raw must match /^\d+$/
         let rawLimit = req.query.limit;
         if (Array.isArray(rawLimit)) rawLimit = rawLimit[0];
         let limit = 20;
         if (rawLimit !== undefined) {
-            const parsed = parseInt(String(rawLimit), 10);
-            if (!Number.isFinite(parsed) || String(parsed) !== String(rawLimit).trim() && !/^\d+$/.test(String(rawLimit).trim())) {
-                // allow numeric string, else 400
-                if (isNaN(parsed)) return res.status(400).json({ error: 'Invalid limit' });
+            const trimmed = String(rawLimit).trim();
+            if (!/^\d+$/.test(trimmed)) {
+                return res.status(400).json({ error: 'Invalid limit' });
             }
+            const parsed = parseInt(trimmed, 10);
             if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
                 return res.status(400).json({ error: 'Invalid limit' });
             }
