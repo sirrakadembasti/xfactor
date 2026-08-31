@@ -213,3 +213,120 @@ export class TaskDAG {
         return false;
     }
 }
+
+function getTaskPriority(task) {
+    const links = [
+        ...(Array.isArray(task.requirementLinks) ? task.requirementLinks : []),
+        ...(Array.isArray(task.requirements) ? task.requirements : [])
+    ];
+    const priorities = [
+        task.core === true ? 'core' : null,
+        typeof task.priority === 'string' ? task.priority.toLowerCase() : null
+    ];
+
+    for (const link of links) {
+        if (!link || typeof link !== 'object') continue;
+        if (link.core === true) priorities.push('core');
+        if (typeof link.priority === 'string') priorities.push(link.priority.toLowerCase());
+    }
+
+    if (priorities.includes('core')) return 'core';
+    if (
+        task.core === false ||
+        priorities.includes('supporting') ||
+        priorities.includes('optional')
+    ) {
+        return 'deferred';
+    }
+    return null;
+}
+
+export function validatePlanDAG(planTasks = []) {
+    const issues = [];
+    const tasksById = new Map();
+    const duplicateIds = new Set();
+
+    for (const task of planTasks) {
+        if (typeof task.id !== 'string' || task.id.length === 0) {
+            issues.push('Task ID must be a non-empty string');
+            continue;
+        }
+        if (tasksById.has(task.id)) {
+            if (!duplicateIds.has(task.id)) {
+                issues.push(`Task ID "${task.id}" is duplicated`);
+                duplicateIds.add(task.id);
+            }
+            continue;
+        }
+        tasksById.set(task.id, task);
+    }
+
+    for (const task of planTasks) {
+        if (typeof task.id !== 'string' || task.id.length === 0) continue;
+        for (const dependencyId of task.dependencies || []) {
+            if (!tasksById.has(dependencyId)) {
+                issues.push(`Task "${task.id}" depends on unknown task "${dependencyId}"`);
+            }
+        }
+    }
+
+    if (issues.length > 0) {
+        return { passed: false, issues };
+    }
+
+    const visiting = new Set();
+    const visited = new Set();
+
+    function hasCycle(task) {
+        if (visiting.has(task.id)) return true;
+        if (visited.has(task.id)) return false;
+        visiting.add(task.id);
+        for (const dependencyId of task.dependencies || []) {
+            if (hasCycle(tasksById.get(dependencyId))) return true;
+        }
+        visiting.delete(task.id);
+        visited.add(task.id);
+        return false;
+    }
+
+    if (planTasks.some(hasCycle)) {
+        return {
+            passed: false,
+            issues: ['Task graph contains a dependency cycle']
+        };
+    }
+
+    const coreTasks = planTasks.filter(task => getTaskPriority(task) === 'core');
+    const deferredTasks = planTasks.filter(task => getTaskPriority(task) === 'deferred');
+
+    function dependsOn(task, dependencyId, seen = new Set()) {
+        for (const directDependencyId of task.dependencies || []) {
+            if (directDependencyId === dependencyId) return true;
+            if (seen.has(directDependencyId)) continue;
+            seen.add(directDependencyId);
+            if (dependsOn(tasksById.get(directDependencyId), dependencyId, seen)) return true;
+        }
+        return false;
+    }
+
+    const terminalCoreTasks = coreTasks.filter(coreTask =>
+        !coreTasks.some(otherCoreTask =>
+            otherCoreTask !== coreTask && dependsOn(otherCoreTask, coreTask.id)
+        )
+    );
+
+    for (const deferredTask of deferredTasks) {
+        for (const coreTask of terminalCoreTasks) {
+            if (!dependsOn(deferredTask, coreTask.id)) {
+                issues.push(
+                    `Task "${deferredTask.id}" can run before core task "${coreTask.id}" completes`
+                );
+            }
+        }
+    }
+
+    return {
+        passed: issues.length === 0,
+        issues
+    };
+}

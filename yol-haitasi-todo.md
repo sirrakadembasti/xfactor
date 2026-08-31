@@ -91,13 +91,13 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 Step P2.5.3 (Run README Setup/Build Commands in Sandbox) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.6.1 (Enforce Core Requirement Priority in DAG).
+P2 Step P2.6.1 (Enforce Core Requirement Priority in DAG) tamamlandı ve bağımsız testle doğrulandı. Sıradaki görev P2 Step P2.6.2 (Reject Unsolicited Features from Planner).
 
 Sonraki görev:
 
 ```text
-P2 Task 6 — Core-over-Optional Scope Planner and DAG Policy (Step P2.6.1: Enforce Core Requirement Priority in DAG)
-RED: node backend/tests/test_p2_scope_priority.js --test=dag-priority
+P2 Task 6 — Core-over-Optional Scope Planner and DAG Policy (Step P2.6.2: Reject Unsolicited Features from Planner)
+RED: node backend/tests/test_p2_scope_priority.js --test=unsolicited-features
 ```
 
 ## Yeni Sohbet İçin Başlangıç
