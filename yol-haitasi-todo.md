@@ -91,12 +91,12 @@ Her teslim biriminde:
 
 ## Şu Anki Adım
 
-P2 kalite hardening birimi 22 adım, bağımsız review/test ve regresyon kanıtlarıyla doğrulandı. Aktif birim P3; sıradaki görev yetkili salt-okunur evidence ve contract API’leri.
+P3 Task P3.1 yetkili salt-okunur evidence API’leri, bağımsız review ve testlerle doğrulandı. Sıradaki görev P3 Task P3.2 metrics ve failure fingerprinting API’leri.
 
 Sonraki görev:
 
 ```text
-P3 Task P3.1 — Authorized Read-Only Evidence and Contract APIs
+P3 Task P3.2 — Longitudinal Metrics & Failure Fingerprinting APIs
 RED: node backend/tests/test_runner.js test_p3_observability.js
 ```
 

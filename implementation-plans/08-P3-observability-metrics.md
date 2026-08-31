@@ -66,7 +66,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ## Implementation Tasks
 
-### [ ] Task P3.1: Authorized Read-Only Evidence and Contract APIs
+### [x] Task P3.1: Authorized Read-Only Evidence and Contract APIs
 - **Goal:** Expose endpoints for contract revisions, verification runs, checks, repair issues, and artifacts.
 - **Exact Paths/Interfaces:**
   - `GET /api/projects/:id/contracts` returning list of contract revisions (`Array<{ id, revision, status, contract_hash, approved_at, created_at }>`)
