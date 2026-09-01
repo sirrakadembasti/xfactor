@@ -18,7 +18,7 @@ import {
     verifySessionId,
     verifySessionToken
 } from './auth.js';
-import { generateRequestId, buildErrorResponse, logError } from './observability.js';
+import { generateRequestId, buildErrorResponse, compactStaleEvidencePayloads, logError } from './observability.js';
 import { createAuthRouter } from './routes/authRoutes.js';
 import { createProjectRouter } from './routes/projectRoutes.js';
 import { createProjectWebSocketHub } from './websocketHub.js';
@@ -262,11 +262,27 @@ server.listen(PORT, HOST, () => {
     console.log(`Backend hazır: http://${HOST}:${PORT}`);
 });
 
+const EVIDENCE_RETENTION_DAYS = 30;
+const EVIDENCE_COMPACTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+function runEvidenceCompaction() {
+    try {
+        compactStaleEvidencePayloads(db, EVIDENCE_RETENTION_DAYS);
+    } catch (error) {
+        logError('evidence.compaction_failed', error);
+    }
+}
+const initialEvidenceCompactionTimer = setTimeout(runEvidenceCompaction, 0);
+initialEvidenceCompactionTimer.unref();
+const evidenceCompactionTimer = setInterval(runEvidenceCompaction, EVIDENCE_COMPACTION_INTERVAL_MS);
+evidenceCompactionTimer.unref();
+
 let isShuttingDown = false;
 
 function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
+    clearTimeout(initialEvidenceCompactionTimer);
+    clearInterval(evidenceCompactionTimer);
 
     // 1. WebSocket istemcilerini kapat
     try {

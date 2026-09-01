@@ -1058,6 +1058,123 @@ await runAsyncTest('P3.3 fix: preview uses deferred BEGIN no writer lock (regres
   assert.strictEqual(snapshotDbState(), before);
 });
 
+// =========================================================================
+// P3.4 Immutable Evidence Retention & Query-Level Redaction
+// =========================================================================
+const retentionOldRun = 'p3-retention-old-run';
+const retentionNewRun = 'p3-retention-new-run';
+const retentionOldCheck = 'p3-retention-old-check';
+const retentionNewCheck = 'p3-retention-new-check';
+const retentionOldTime = '2025-01-01T00:00:00.000Z';
+const retentionNewTime = new Date().toISOString();
+const retentionOldEvidence = JSON.stringify({
+  reason: 'build failed password=p3-old-secret',
+  requirementIds: ['p3-imp-req-a'],
+  evidence: {
+    stdout: 'old stdout password=p3-old-secret',
+    stderr: 'old stderr Bearer sk-p3-old-secret-token',
+    durationMs: 125
+  },
+  authoritativeMetadata: { runner: 'sandbox', attempt: 2 }
+}, null, 2) + '\n';
+const expectedCompactedOldEvidence = retentionOldEvidence
+  .replace(JSON.stringify('old stdout password=p3-old-secret'), JSON.stringify('[COMPACTED]'))
+  .replace(JSON.stringify('old stderr Bearer sk-p3-old-secret-token'), JSON.stringify('[COMPACTED]'));
+const retentionNewEvidence = JSON.stringify({
+  reason: 'new failure token=p3-new-secret',
+  requirementIds: ['p3-imp-req-a'],
+  evidence: {
+    stdout: 'new stdout password=p3-new-secret',
+    stderr: 'new stderr Bearer sk-p3-new-secret-token',
+    durationMs: 250
+  },
+  authoritativeMetadata: { runner: 'sandbox', attempt: 3 }
+});
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run(retentionOldRun, impactProj, impactContractNew, retentionOldTime, retentionOldTime);
+db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run(retentionNewRun, impactProj, impactContractNew, retentionNewTime, retentionNewTime);
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'retention_gate', 'MANDATORY', 'FAIL', 'old-command', 17, ?, ?, 0, 'old-stdout-digest', 'old-stderr-digest', ?)").run(retentionOldCheck, impactContractNew, retentionOldRun, retentionOldTime, retentionOldTime, retentionOldEvidence);
+db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'retention_gate', 'MANDATORY', 'FAIL', 'new-command', 23, ?, ?, 0, 'new-stdout-digest', 'new-stderr-digest', ?)").run(retentionNewCheck, impactContractNew, retentionNewRun, retentionNewTime, retentionNewTime, retentionNewEvidence);
+db.prepare("INSERT INTO requirement_check_links (contract_id, requirement_id, verification_check_id) VALUES (?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', retentionOldCheck);
+db.prepare("INSERT INTO requirement_check_links (contract_id, requirement_id, verification_check_id) VALUES (?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', retentionNewCheck);
+db.prepare("INSERT INTO artifacts (id, project_id, contract_id, kind, path, sha256, size, status, verification_run_id) VALUES (?, ?, ?, 'zip', 'artifacts/retention.zip', ?, 50, 'rejected', ?)").run('p3-retention-artifact', impactProj, impactContractNew, 'f'.repeat(64), retentionOldRun);
+db.prepare("INSERT INTO requirement_artifact_links (contract_id, requirement_id, artifact_id) VALUES (?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', 'p3-retention-artifact');
+
+await runAsyncTest('PASS: P3.4 immutable evidence retained and payloads redacted', async () => {
+  const { compactStaleEvidencePayloads } = await import('../observability.js');
+  assert.strictEqual(typeof compactStaleEvidencePayloads, 'function');
+  const preservedBefore = JSON.stringify({
+    runs: db.prepare("SELECT * FROM verification_runs WHERE id IN (?, ?) ORDER BY id").all(retentionOldRun, retentionNewRun),
+    links: db.prepare("SELECT * FROM requirement_check_links WHERE verification_check_id IN (?, ?) ORDER BY verification_check_id").all(retentionOldCheck, retentionNewCheck),
+    artifact: db.prepare("SELECT * FROM artifacts WHERE id = ? AND contract_id = ?").get('p3-retention-artifact', impactContractNew),
+    artifactLink: db.prepare("SELECT * FROM requirement_artifact_links WHERE artifact_id = ? AND contract_id = ?").get('p3-retention-artifact', impactContractNew)
+  });
+  const oldBefore = db.prepare("SELECT * FROM verification_checks WHERE id = ?").get(retentionOldCheck);
+  const newBefore = db.prepare("SELECT * FROM verification_checks WHERE id = ?").get(retentionNewCheck);
+
+  assert.ok(compactStaleEvidencePayloads(db, 30) >= 1);
+
+  const oldAfter = db.prepare("SELECT * FROM verification_checks WHERE id = ?").get(retentionOldCheck);
+  const newAfter = db.prepare("SELECT * FROM verification_checks WHERE id = ?").get(retentionNewCheck);
+  const oldAuthoritativeBefore = { ...oldBefore, evidence_json: undefined };
+  const oldAuthoritativeAfter = { ...oldAfter, evidence_json: undefined };
+  assert.deepStrictEqual(oldAuthoritativeAfter, oldAuthoritativeBefore);
+  assert.deepStrictEqual(newAfter, newBefore, 'new evidence must remain byte-identical');
+  assert.strictEqual(oldAfter.evidence_json, expectedCompactedOldEvidence, 'only excerpt string bytes may change');
+  assert.strictEqual(JSON.stringify({
+    runs: db.prepare("SELECT * FROM verification_runs WHERE id IN (?, ?) ORDER BY id").all(retentionOldRun, retentionNewRun),
+    links: db.prepare("SELECT * FROM requirement_check_links WHERE verification_check_id IN (?, ?) ORDER BY verification_check_id").all(retentionOldCheck, retentionNewCheck),
+    artifact: db.prepare("SELECT * FROM artifacts WHERE id = ? AND contract_id = ?").get('p3-retention-artifact', impactContractNew),
+    artifactLink: db.prepare("SELECT * FROM requirement_artifact_links WHERE artifact_id = ? AND contract_id = ?").get('p3-retention-artifact', impactContractNew)
+  }), preservedBefore);
+  const compacted = JSON.parse(oldAfter.evidence_json);
+  assert.strictEqual(compacted.evidence.stdout, '[COMPACTED]');
+  assert.strictEqual(compacted.evidence.stderr, '[COMPACTED]');
+  assert.strictEqual(compacted.evidence.durationMs, 125);
+  assert.strictEqual(compacted.reason, 'build failed password=p3-old-secret');
+  assert.deepStrictEqual(compacted.requirementIds, ['p3-imp-req-a']);
+  assert.deepStrictEqual(compacted.authoritativeMetadata, { runner: 'sandbox', attempt: 2 });
+  assert.strictEqual(compactStaleEvidencePayloads(db, 30), 0, 'compaction must be idempotent');
+});
+
+await runAsyncTest('P3.4 evidence log queries redact credentials before transmission', async () => {
+  for (const [runId, checkId, secret] of [
+    [retentionOldRun, retentionOldCheck, 'p3-old-secret'],
+    [retentionNewRun, retentionNewCheck, 'p3-new-secret']
+  ]) {
+    const { status, body } = await requestWithBody(`/api/projects/${impactProj}/verification-runs/${runId}/checks/${checkId}/log`, { authed:true, userId:ownerUserId });
+    assert.strictEqual(status, 200);
+    assert.ok(!JSON.stringify(body).includes(secret), `response leaked ${secret}`);
+  }
+});
+
+await runAsyncTest('P3.4 compaction rolls back every payload when one update fails', async () => {
+  const { compactStaleEvidencePayloads } = await import('../observability.js');
+  assert.strictEqual(typeof compactStaleEvidencePayloads, 'function');
+  for (const suffix of ['a', 'b']) {
+    db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'retention_tx', 'MANDATORY', 'FAIL', 'tx-command', 1, ?, ?, 0, 'tx-out', 'tx-err', ?)").run(
+      `p3-retention-tx-${suffix}`,
+      impactContractNew,
+      retentionOldRun,
+      retentionOldTime,
+      retentionOldTime,
+      JSON.stringify({ evidence: { stdout: `raw-${suffix}`, stderr: `err-${suffix}` } })
+    );
+  }
+  const before = db.prepare("SELECT id, evidence_json FROM verification_checks WHERE id LIKE 'p3-retention-tx-%' ORDER BY id").all();
+  db.exec("CREATE TEMP TRIGGER p3_retention_abort BEFORE UPDATE OF evidence_json ON verification_checks WHEN NEW.id = 'p3-retention-tx-b' BEGIN SELECT RAISE(ABORT, 'forced compaction failure'); END;");
+  let threw = false;
+  try {
+    compactStaleEvidencePayloads(db, 30);
+  } catch {
+    threw = true;
+  } finally {
+    db.exec('DROP TRIGGER p3_retention_abort');
+  }
+  assert.ok(threw, 'compaction failure must propagate');
+  const after = db.prepare("SELECT id, evidence_json FROM verification_checks WHERE id LIKE 'p3-retention-tx-%' ORDER BY id").all();
+  assert.deepStrictEqual(after, before, 'transaction must roll back every payload update');
+});
+
 
 
  // =========================================================================

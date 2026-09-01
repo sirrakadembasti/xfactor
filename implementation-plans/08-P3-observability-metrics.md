@@ -146,7 +146,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ---
 
-### [ ] Task P3.4: Immutable Evidence Retention & Query-Level Redaction
+### [x] Task P3.4: Immutable Evidence Retention & Query-Level Redaction
 - **Goal:** Redact every returned excerpt and compact only non-authoritative raw payloads while preserving verification/audit facts indefinitely.
 - **Exact Paths/Interfaces:**
   - `compactStaleEvidencePayloads(db, retentionDays)` in `backend/observability.js`.

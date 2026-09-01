@@ -6,16 +6,16 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P3
 current_plan: implementation-plans/08-P3-observability-metrics.md
-current_task: P3 Task P3.4 - Immutable Evidence Retention & Query-Level Redaction
+current_task: P3 Task P3.5 - Read-Only Dashboard & Quality History UI
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: c3b6b708fb7326ccbae352a8695ed3c7d31357ef
+last_verified_commit: 865279ecdd7b177ac8ded72fbb99af10a46ddae7
 evidence_file: implementation-evidence/P3.md
 blocked_by: []
-next_action: Read P3 Task P3.4, write failing immutable-retention and query-redaction tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
-updated_at: 2026-09-01T06:00:06Z
+next_action: Read P3 Task P3.5, write failing DashboardView unit and dashboard E2E tests, and run the RED commands: npm --prefix frontend run test:unit; npx playwright test
+updated_at: 2026-09-01T15:36:19Z
 ---
 
 # Project Continuity
@@ -61,13 +61,14 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.1 - Authorized Read-Only Evidence and Contract APIs.
 - P3 Task P3.2 - Longitudinal Metrics & Failure Fingerprinting APIs.
 - P3 Task P3.3 - Requirement-Impact & Selective Rebuild Preview API.
+- P3 Task P3.4 - Immutable Evidence Retention & Query-Level Redaction.
 ## In Progress
 
-- P3 Task P3.4 - Immutable Evidence Retention & Query-Level Redaction.
+- P3 Task P3.5 - Read-Only Dashboard & Quality History UI.
 ## Pending
 
-1. Read P3 Task P3.4 and write isolated immutable-retention/query-redaction RED tests.
-2. Implement P3 Task P3.4 only after RED is observed.
+1. Read P3 Task P3.5 and write isolated DashboardView unit/dashboard E2E RED tests.
+2. Implement P3 Task P3.5 only after both RED commands are observed.
 3. Complete remaining P3 tasks in plan order.
 ## Decisions
 
@@ -112,6 +113,10 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.3 independent acceptance: PASS (`55/55` P3 tests).
 - P3 Task P3.3 exact plan runner after review fixes: PASS (`25/25` suites; P3 `55/55` tests).
 - P3 Task P3.3 continuity validation: PASS (`8` units; current `P3/pending`).
+- P3 Task P3.4 review: byte-preserving token compaction fix; final APPROVE.
+- P3 Task P3.4 independent acceptance: PASS (`58/58` P3 tests).
+- P3 Task P3.4 exact plan runner: PASS (`25/25` suites).
+- P3 Task P3.4 continuity validation: PASS (`8` units; current `P3/pending`).
 ## Known Failures
 
 - P3 observability and metrics remain pending.
@@ -124,7 +129,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P3 Task P3.4, write failing immutable-retention and query-redaction tests, and run the RED command: node backend/tests/test_runner.js test_p3_observability.js
+Read P3 Task P3.5, write failing DashboardView unit and dashboard E2E tests, and run the RED commands: npm --prefix frontend run test:unit; npx playwright test
 
 ## Do Not Do
 

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 
 const REDACTED = '[REDACTED]';
+const COMPACTED = '[COMPACTED]';
 const SENSITIVE_KEYS = new Set([
     'authorization',
     'cookie',
@@ -147,6 +148,146 @@ export function cleanupStaleLogs(db, retentionDays = 30) {
         return 0;
     }
 }
+
+function findEvidenceExcerptRanges(text) {
+    let ambiguous = false;
+    const matches = [];
+
+    function skipWhitespace(index) {
+        while (index < text.length && /\s/.test(text[index])) index += 1;
+        return index;
+    }
+
+    function scanString(start) {
+        let index = start + 1;
+        while (index < text.length) {
+            if (text[index] === '\\') {
+                index += 2;
+                continue;
+            }
+            if (text[index] === '"') return index + 1;
+            index += 1;
+        }
+        throw new SyntaxError('Unterminated JSON string');
+    }
+
+    function parseValue(index, path) {
+        index = skipWhitespace(index);
+        const token = text[index];
+        if (token === '"') {
+            const end = scanString(index);
+            if (path.length === 2 && path[0] === 'evidence' && (path[1] === 'stdout' || path[1] === 'stderr')) {
+                matches.push({ start: index, end, value: JSON.parse(text.slice(index, end)) });
+            }
+            return end;
+        }
+        if (token === '{') return parseObject(index, path);
+        if (token === '[') return parseArray(index, path);
+        while (index < text.length && !/[\s,\]}]/.test(text[index])) index += 1;
+        return index;
+    }
+
+    function parseObject(index, path) {
+        const keys = new Set();
+        index = skipWhitespace(index + 1);
+        if (text[index] === '}') return index + 1;
+        while (index < text.length) {
+            if (text[index] !== '"') throw new SyntaxError('Invalid JSON object key');
+            const keyEnd = scanString(index);
+            const key = JSON.parse(text.slice(index, keyEnd));
+            if (keys.has(key)) ambiguous = true;
+            keys.add(key);
+            index = skipWhitespace(keyEnd);
+            if (text[index] !== ':') throw new SyntaxError('Invalid JSON object separator');
+            index = parseValue(index + 1, [...path, key]);
+            index = skipWhitespace(index);
+            if (text[index] === '}') return index + 1;
+            if (text[index] !== ',') throw new SyntaxError('Invalid JSON object delimiter');
+            index = skipWhitespace(index + 1);
+        }
+        throw new SyntaxError('Unterminated JSON object');
+    }
+
+    function parseArray(index, path) {
+        let itemIndex = 0;
+        index = skipWhitespace(index + 1);
+        if (text[index] === ']') return index + 1;
+        while (index < text.length) {
+            index = parseValue(index, [...path, itemIndex]);
+            itemIndex += 1;
+            index = skipWhitespace(index);
+            if (text[index] === ']') return index + 1;
+            if (text[index] !== ',') throw new SyntaxError('Invalid JSON array delimiter');
+            index = skipWhitespace(index + 1);
+        }
+        throw new SyntaxError('Unterminated JSON array');
+    }
+
+    const end = skipWhitespace(parseValue(0, []));
+    if (end !== text.length) throw new SyntaxError('Trailing JSON content');
+    return ambiguous ? [] : matches;
+}
+
+export function compactStaleEvidencePayloads(targetDb, retentionDays = 30) {
+    if (!targetDb || typeof targetDb.prepare !== 'function' || typeof targetDb.exec !== 'function') {
+        throw new TypeError('A writable database connection is required');
+    }
+    if (!Number.isFinite(retentionDays) || retentionDays < 0) {
+        throw new RangeError('retentionDays must be a non-negative finite number');
+    }
+
+    const cutoffIso = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
+    const selectCandidates = targetDb.prepare(`
+        SELECT vc.id, vc.contract_id, vc.evidence_json
+        FROM verification_checks vc
+        JOIN verification_runs vr
+          ON vr.contract_id = vc.contract_id
+         AND vr.id = vc.run_id
+        WHERE vc.evidence_json IS NOT NULL
+          AND COALESCE(vc.ended_at, vr.ended_at, vc.started_at, vr.started_at) < ?
+        ORDER BY vc.id
+    `);
+    const updateEvidence = targetDb.prepare(`
+        UPDATE verification_checks
+        SET evidence_json = ?
+        WHERE contract_id = ? AND id = ?
+    `);
+
+    let compactedCount = 0;
+    targetDb.exec('BEGIN IMMEDIATE');
+    try {
+        const candidates = selectCandidates.all(cutoffIso);
+        for (const row of candidates) {
+            let excerptRanges;
+            try {
+                JSON.parse(row.evidence_json);
+                excerptRanges = findEvidenceExcerptRanges(row.evidence_json)
+                    .filter(range => range.value && range.value !== COMPACTED);
+            } catch {
+                continue;
+            }
+            if (excerptRanges.length === 0) continue;
+
+            let compactedPayload = row.evidence_json;
+            excerptRanges.sort((a, b) => b.start - a.start);
+            for (const range of excerptRanges) {
+                compactedPayload = compactedPayload.slice(0, range.start)
+                    + JSON.stringify(COMPACTED)
+                    + compactedPayload.slice(range.end);
+            }
+            const result = updateEvidence.run(compactedPayload, row.contract_id, row.id);
+            compactedCount += result.changes;
+        }
+        targetDb.exec('COMMIT');
+        return compactedCount;
+    } catch (error) {
+        try {
+            targetDb.exec('ROLLBACK');
+        } catch {}
+        throw error;
+    }
+}
+
 export function normalizeFailurePattern(message) {
     let s = redactSensitiveText(String(message || ''));
     if (typeof s !== 'string') s = String(s || '');
