@@ -833,17 +833,22 @@ export function createProjectRouter({
             }
             const requirementIds = reqRows.map(r=> r.id);
             let directIds = [];
+            let linkedFilePaths = [];
             if (requirementIds.length>0) {
                 const reqPlace = requirementIds.map(()=>'?').join(',');
                 const rows = db.prepare(`
                     SELECT DISTINCT task_id FROM requirement_task_links WHERE contract_id = ? AND requirement_id IN (${reqPlace})
                 `).all(contractId, ...requirementIds);
                 directIds = rows.map(r=> r.task_id);
+                const fileRows = db.prepare(`
+                    SELECT DISTINCT path FROM requirement_file_links WHERE contract_id = ? AND requirement_id IN (${reqPlace})
+                `).all(contractId, ...requirementIds);
+                linkedFilePaths = fileRows.map(row => row.path);
             }
             directTaskIds = directIds;
             allTasks = db.prepare(`SELECT id, task_spec_json FROM contract_tasks WHERE contract_id = ?`).all(contractId);
             try {
-                tasksToReRun = collectDownstreamTaskIds(allTasks, directTaskIds);
+                tasksToReRun = collectDownstreamTaskIds(allTasks, directTaskIds, linkedFilePaths);
             } catch (e) {
                 try { db.exec('ROLLBACK'); } catch {}
                 inTx = false;

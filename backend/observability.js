@@ -351,11 +351,13 @@ export function deriveCheckpointId({ project_id, task_id, contract_id, plan_hash
   const arr = [project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version];
   return crypto.createHash('sha256').update(JSON.stringify(arr)).digest('hex');
 }
-export function collectDownstreamTaskIds(allTaskRows, rootTaskIds) {
+export function collectDownstreamTaskIds(allTaskRows, rootTaskIds, rootFilePaths = []) {
   // allTaskRows: [{id, task_spec_json}]
   // returns sorted lexically array of transitive downstream including roots, or throws with code property
   const taskMap = new Map();
   const dependents = new Map(); // depId -> [dependentIds]
+  const rootFiles = new Set(rootFilePaths);
+  const effectiveRootTaskIds = new Set(rootTaskIds);
   for (const row of allTaskRows) {
     let spec;
     try {
@@ -376,6 +378,9 @@ export function collectDownstreamTaskIds(allTaskRows, rootTaskIds) {
       throw e;
     }
     const depArray = Array.isArray(deps) ? deps : [];
+    if (Array.isArray(spec.targetFiles) && spec.targetFiles.some(filePath => rootFiles.has(filePath))) {
+      effectiveRootTaskIds.add(row.id);
+    }
     // unknown dependency references detection: if dep not in task set
     taskMap.set(row.id, depArray);
     if (!dependents.has(row.id)) dependents.set(row.id, []);
@@ -392,32 +397,31 @@ export function collectDownstreamTaskIds(allTaskRows, rootTaskIds) {
       dependents.get(dep).push(id);
     }
   }
-  // cycle detection via DFS from each node
-  const visited = new Set();
-  const visiting = new Set();
-  function hasCycle(node) {
-    if (visiting.has(node)) return true;
-    if (visited.has(node)) return false;
-    visiting.add(node);
-    const deps = taskMap.get(node) || [];
-    for (const dep of deps) {
-      if (hasCycle(dep)) return true;
-    }
-    visiting.delete(node);
-    visited.add(node);
-    return false;
+  // Iterative topological validation avoids call-stack exhaustion on valid deep DAGs.
+  const remainingDependencies = new Map();
+  const validationQueue = [];
+  for (const [id, deps] of taskMap.entries()) {
+    remainingDependencies.set(id, deps.length);
+    if (deps.length === 0) validationQueue.push(id);
   }
-  for (const id of taskMap.keys()) {
-    if (hasCycle(id)) {
-      const e = new Error('Cycle detected');
-      e.code = 'CYCLE';
-      throw e;
+  let validationIndex = 0;
+  while (validationIndex < validationQueue.length) {
+    const id = validationQueue[validationIndex++];
+    for (const dependentId of dependents.get(id) || []) {
+      const remaining = remainingDependencies.get(dependentId) - 1;
+      remainingDependencies.set(dependentId, remaining);
+      if (remaining === 0) validationQueue.push(dependentId);
     }
+  }
+  if (validationQueue.length !== taskMap.size) {
+    const e = new Error('Cycle detected');
+    e.code = 'CYCLE';
+    throw e;
   }
   // BFS downstream from roots
   const impacted = new Set();
   const queue = [];
-  for (const rid of rootTaskIds) {
+  for (const rid of effectiveRootTaskIds) {
     if (taskMap.has(rid) && !impacted.has(rid)) {
       impacted.add(rid);
       queue.push(rid);

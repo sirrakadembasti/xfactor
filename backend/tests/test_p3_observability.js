@@ -765,7 +765,7 @@ db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_j
 db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-B', ?)").run('p3-task-b', impactContractNew, JSON.stringify({ dependencies:[] }));
 db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-C', ?)").run('p3-task-c', impactContractNew, JSON.stringify({ title:'Task Gamma', dependencies:['p3-task-a'] }));
 db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-D', ?)").run('p3-task-d', impactContractNew, JSON.stringify({ title:'Task Delta', dependencies:['p3-task-c'] }));
-db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-E', ?)").run('p3-task-e', impactContractNew, JSON.stringify({ title:'Task Epsilon', dependencies:[] }));
+db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-E', ?)").run('p3-task-e', impactContractNew, JSON.stringify({ title:'Task Epsilon', dependencies:[], targetFiles:['src/epsilon.js'] }));
 // tasks for old contract
 db.prepare("INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json) VALUES (?, ?, 'TASK-OLD', ?)").run('p3-task-old', impactContractOld, JSON.stringify({ title:'Old Task', dependencies:[] }));
 // tasks for other proj
@@ -782,6 +782,8 @@ db.prepare("INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, 
 db.prepare("INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, size) VALUES (?, ?, ?, ?, ?)").run(impactContractNew, 'p3-imp-art-1', 'src/beta.js', 'b'.repeat(64), 20);
 db.prepare("INSERT INTO requirement_file_links (contract_id, requirement_id, artifact_id, path) VALUES (?, ?, ?, ?)").run(impactContractNew, 'p3-imp-req-a', 'p3-imp-art-1', 'src/alpha.js');
 db.prepare("INSERT INTO requirement_file_links (contract_id, requirement_id, artifact_id, path) VALUES (?, ?, ?, ?)").run(impactContractNew, 'p3-imp-req-b', 'p3-imp-art-1', 'src/beta.js');
+db.prepare("INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, size) VALUES (?, ?, ?, ?, ?)").run(impactContractNew, 'p3-imp-art-1', 'src/epsilon.js', 'e'.repeat(64), 30);
+db.prepare("INSERT INTO requirement_file_links (contract_id, requirement_id, artifact_id, path) VALUES (?, ?, ?, ?)").run(impactContractNew, 'p3-imp-req-unrelated', 'p3-imp-art-1', 'src/epsilon.js');
 // task checkpoints for new contract: active completed for a,c,d ; invalidated for b ; completed for e ; old and other
 db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph1','sh1','ih1','oh1','v1','completed','[]',1)").run(impactProj, 'p3-task-a', impactContractNew);
 db.prepare("INSERT INTO task_checkpoints (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, status, requirement_ids, revision) VALUES (?, ?, ?, 'ph2','sh2','ih2','oh2','v1','completed','[]',1)").run(impactProj, 'p3-task-c', impactContractNew);
@@ -933,6 +935,15 @@ await runAsyncTest('P3.3 POST preview trimmed and lexically sorted tasks', async
   assert.deepStrictEqual(body.invalidatedCheckpointIds, []);
   assert.strictEqual(body.willRebuild, true);
 });
+await runAsyncTest('P3.3 POST preview includes task roots linked through requirement files', async () => {
+  const { status, body } = await requestWithBody(`/api/projects/${impactProj}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-UNRELATED'] } });
+  assert.strictEqual(status, 200);
+  assert.strictEqual(body.willRebuild, true);
+  assert.deepStrictEqual(body.tasksToReRun, ['p3-task-e']);
+  assert.deepStrictEqual(body.invalidatedCheckpointIds, [
+    deriveExpectedCheckpointId({ project_id: impactProj, task_id:'p3-task-e', contract_id:impactContractNew, plan_hash:'ph5', task_spec_hash:'sh5', input_hash:'ih5', output_hash:'oh5', gate_version:'v1' })
+  ]);
+});
 await runAsyncTest('P3.3 POST preview fail-closed malformed graph 409', async () => {
   for (const pid of [malformedProj, badDepTypeProj, unknownDepProj, cycleProj]) {
     const { status } = await requestWithBody(`/api/projects/${pid}/rebuild-preview`, { authed:true, userId:ownerUserId, method:'POST', body:{ changedRequirementKeys:['REQ-X'] } });
@@ -995,6 +1006,19 @@ await runAsyncTest('P3.3 fix: BFS bound overflow throws 409 via helper', async (
   const smallRows = rows.slice(0, 100);
   const smallRes = collectDownstreamTaskIds(smallRows, [rootId]);
   assert.ok(smallRes.includes(rootId) && smallRes.length===100);
+});
+await runAsyncTest('P3.3 fix: valid deep DAG stays within the 10000-task graph bound', async () => {
+  const { collectDownstreamTaskIds } = await import('../observability.js');
+  const rows = [];
+  for (let i = 0; i < 10000; i++) {
+    rows.push({
+      id: `deep-${i}`,
+      task_spec_json: JSON.stringify({ dependencies: i === 0 ? [] : [`deep-${i - 1}`] })
+    });
+  }
+  const result = collectDownstreamTaskIds(rows, ['deep-0']);
+  assert.strictEqual(result.length, 10000);
+  assert.ok(result.includes('deep-9999'));
 });
 await runAsyncTest('P3.3 fix: transaction rolls back and proves no mutation on success path', async () => {
   const before = snapshotDbState();

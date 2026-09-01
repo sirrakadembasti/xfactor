@@ -120,7 +120,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ---
 
-### [ ] Task P3.3: Requirement-Impact & Selective Rebuild Preview API
+### [x] Task P3.3: Requirement-Impact & Selective Rebuild Preview API
 - **Goal:** Trace requirement dependencies to checkpoints and predict invalidation boundaries.
 - **Exact Paths/Interfaces:**
   - `GET /api/projects/:id/requirements/:reqId/impact` (`{ requirementId, impactedTasks: Array<{ taskId, taskTitle }>, impactedCheckpoints: Array<{ checkpointId }>, impactedFiles: Array<{ path }> }`)
