@@ -6,16 +6,16 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P3
 current_plan: implementation-plans/08-P3-observability-metrics.md
-current_task: P3 Task P3.6 - Traceability DAG & Rebuild Preview UI
+current_task: P3 Unit Exit Gate
 status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: 56f0102
+last_verified_commit: 7cb9026
 evidence_file: implementation-evidence/P3.md
 blocked_by: []
-next_action: Read P3 Task P3.6, write failing DAGFlowView traceability unit and dashboard E2E tests, and run the RED commands: npm --prefix frontend run test:unit; npx playwright test
-updated_at: 2026-09-01T16:50:06Z
+next_action: Run the P3 unit exit commands in order: node backend/tests/test_runner.js test_p3_observability.js; npm --prefix frontend run test:unit; npx playwright test
+updated_at: 2026-09-01T17:47:03Z
 ---
 
 # Project Continuity
@@ -63,14 +63,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.3 - Requirement-Impact & Selective Rebuild Preview API.
 - P3 Task P3.4 - Immutable Evidence Retention & Query-Level Redaction.
 - P3 Task P3.5 - Read-Only Dashboard & Quality History UI.
+- P3 Task P3.6 - Traceability DAG & Rebuild Preview UI.
 ## In Progress
 
-- P3 Task P3.6 - Traceability DAG & Rebuild Preview UI.
+- P3 Unit Exit Gate.
 ## Pending
 
-1. Read P3 Task P3.6 and write isolated DAGFlowView traceability/dashboard E2E RED tests.
-2. Implement P3 Task P3.6 only after both RED commands are observed.
-3. Complete remaining P3 exit gate in plan order.
+1. Run all three P3 unit exit commands.
+2. Obtain independent final P3 review and acceptance.
+3. Record verified P3 continuity and roadmap state.
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -121,6 +122,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.5 review: all blocking read-only, pagination, stale-response, route-state, and cross-project isolation findings resolved; final `APPROVE`.
 - P3 Task P3.5 independent acceptance: PASS (`7/7` unit tests; `1/1` Chromium E2E).
 - P3 Task P3.5 actual browser proof: authoritative run/check evidence visible, backend redaction visible, raw secrets and mutation controls absent.
+- P3 Task P3.6 review: authoritative-status and stale-preview findings resolved; final `APPROVE`.
+- P3 Task P3.6 independent acceptance: PASS (`11/11` frontend unit tests; `2/2` Chromium E2E).
+- P3 Task P3.6 actual browser proof: authoritative verified requirement and two-node rebuild boundary visible.
 ## Known Failures
 
 - P3 observability and metrics remain pending.
@@ -133,7 +137,7 @@ User work preserved:
 
 ## Exact Next Action
 
-Read P3 Task P3.6, write failing DAGFlowView traceability unit and dashboard E2E tests, and run the RED commands: npm --prefix frontend run test:unit; npx playwright test
+Run the P3 unit exit commands in order: node backend/tests/test_runner.js test_p3_observability.js; npm --prefix frontend run test:unit; npx playwright test
 
 ## Do Not Do
 

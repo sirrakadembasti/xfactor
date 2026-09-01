@@ -206,7 +206,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ---
 
-### [ ] Task P3.6: Traceability DAG & Rebuild Preview UI
+### [x] Task P3.6: Traceability DAG & Rebuild Preview UI
 - **Goal:** Implement and test visual requirement-to-evidence graph layout using ReactFlow and visual rebuild boundaries in the frontend.
 - **Exact Paths/Interfaces:**
   - Modify `frontend/src/components/DAGFlowView.jsx` (add dynamic layout mapping for traceability).

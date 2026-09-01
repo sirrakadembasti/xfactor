@@ -27,8 +27,41 @@ test.beforeAll(async () => {
   db.prepare(`
     INSERT INTO project_contracts
       (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at)
-    VALUES (?, ?, 1, 'approved', '{}', ?, ?, ?)
-  `).run(contractId, projectId, 'd'.repeat(64), now, now);
+    VALUES (?, ?, 1, 'approved', ?, ?, ?, ?)
+  `).run(
+    contractId,
+    projectId,
+    JSON.stringify({
+      requirements: [
+        { id: 'REQ-DASHBOARD', statement: 'Render quality evidence', evidenceStatus: 'verified' },
+        { id: 'REQ-FAILED', statement: 'Expose failed evidence', evidenceStatus: 'failed' },
+        { id: 'REQ-SKIPPED', statement: 'Document optional evidence', evidenceStatus: 'skipped' }
+      ]
+    }),
+    'd'.repeat(64),
+    now,
+    now
+  );
+  db.prepare(`
+    INSERT INTO requirements
+      (id, contract_id, stable_key, statement, kind, priority, mandatory, status)
+    VALUES (?, ?, 'REQ-DASHBOARD', 'Render quality evidence', 'functional', 'high', 1, 'approved')
+  `).run('dashboard-requirement-001', contractId);
+  db.prepare(`
+    INSERT INTO contract_tasks (id, contract_id, stable_key, task_spec_json)
+    VALUES ('dashboard-task-001', ?, 'TASK-DASHBOARD', ?)
+  `).run(contractId, JSON.stringify({ title: 'Dashboard task', dependencies: [] }));
+  db.prepare(`
+    INSERT INTO requirement_task_links (contract_id, requirement_id, task_id)
+    VALUES (?, 'dashboard-requirement-001', 'dashboard-task-001')
+  `).run(contractId);
+  db.prepare(`
+    INSERT INTO task_checkpoints
+      (project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash,
+       gate_version, status, requirement_ids, revision)
+    VALUES (?, 'dashboard-task-001', ?, 'plan', 'spec', 'input', 'output', 'quality-v3',
+            'completed', '[\"dashboard-requirement-001\"]', 1)
+  `).run(projectId, contractId);
   db.prepare(`
     INSERT INTO verification_runs
       (id, project_id, contract_id, status, policy_version, started_at, ended_at)
@@ -57,6 +90,10 @@ test.beforeAll(async () => {
       }
     })
   );
+  db.prepare(`
+    INSERT INTO requirement_check_links (contract_id, requirement_id, verification_check_id)
+    VALUES (?, 'dashboard-requirement-001', ?)
+  `).run(contractId, checkId);
 });
 
 test('authorized dashboard renders redacted evidence and no mutation controls', async ({ page }) => {
@@ -79,4 +116,18 @@ test('authorized dashboard renders redacted evidence and no mutation controls', 
   for (const mutationName of [/accept/i, /complete/i, /approve/i, /bypass/i]) {
     await expect(page.getByRole('button', { name: mutationName })).toHaveCount(0);
   }
+});
+
+test('traceability DAG previews and highlights rebuild boundaries', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.getByLabel('Kullanıcı Adı').fill(username);
+  await page.getByLabel('Şifre').fill(password);
+  await page.getByRole('button', { name: 'Giriş Yap' }).click();
+
+  await page.getByRole('button', { name: 'Canlı DAG Grafiği' }).click();
+  await page.getByRole('button', { name: 'Traceability DAG' }).click();
+  await page.getByRole('button', { name: /REQ-DASHBOARD.*Render quality evidence/i }).click();
+  await page.getByRole('button', { name: 'Preview Rebuild' }).click();
+
+  await expect(page.locator('.rebuild-highlight')).toHaveCount(2);
 });

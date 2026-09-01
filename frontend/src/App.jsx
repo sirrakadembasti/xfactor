@@ -684,6 +684,7 @@ export default function App() {
                   edges={edges}
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
+                  projectId={activeProjectId}
                 />
               )}
 

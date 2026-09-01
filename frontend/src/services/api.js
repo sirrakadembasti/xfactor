@@ -159,6 +159,16 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       request(`/projects/${id}/verification-runs/${runId}`, opts),
     getVerificationCheckLog: (id, runId, checkId, opts = {}) =>
       request(`/projects/${id}/verification-runs/${runId}/checks/${checkId}/log`, opts),
+    getVerificationSummary: (id, contractId, runId, opts = {}) => {
+      const params = new URLSearchParams({ contractId, runId });
+      return request(`/projects/${id}/verification-summary?${params.toString()}`, opts);
+    },
+    previewRebuild: (id, changedRequirementKeys, opts = {}) =>
+      request(`/projects/${id}/rebuild-preview`, {
+        method: 'POST',
+        body: JSON.stringify({ changedRequirementKeys }),
+        ...opts
+      }),
 
     // Execution & Interaction
     sendChatMessage: (id, message, opts = {}) =>
