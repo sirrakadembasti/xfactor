@@ -171,7 +171,7 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ---
 
-### [ ] Task P3.5: Read-Only Dashboard & Quality History UI
+### [x] Task P3.5: Read-Only Dashboard & Quality History UI
 - **Goal:** Install and configure frontend testing stack (Vitest, React Testing Library, Playwright). Write behavioral unit tests for DashboardView.jsx. Implement a Playwright browser E2E test covering dashboard navigation, authorized evidence logs rendering, and confirming the total absence of mutation elements (guaranteeing P3 remains read-only).
 - **Exact Paths/Interfaces:**
   - Modify `frontend/package.json`: Add `"vitest": "^2.0.5"`, `"@testing-library/react": "^16.0.0"`, `"@testing-library/jest-dom": "^6.4.8"`, `"jsdom": "^24.1.1"`, `"@playwright/test": "^1.46.0"` to `devDependencies`. Add script `"test:unit": "vitest run"`.

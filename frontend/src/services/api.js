@@ -146,6 +146,20 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
     getProjectFiles: (id, opts = {}) => request(`/projects/${id}/files`, opts),
     getProjectLogs: (id, opts = {}) => request(`/projects/${id}/logs`, opts),
 
+    // Read-only quality evidence
+    getVerificationRuns: (id, opts = {}) => {
+      const { cursor, limit, ...requestOpts } = opts;
+      const params = new URLSearchParams();
+      if (cursor) params.set('cursor', cursor);
+      if (limit !== undefined) params.set('limit', String(limit));
+      const query = params.toString();
+      return request(`/projects/${id}/verification-runs${query ? `?${query}` : ''}`, requestOpts);
+    },
+    getVerificationRun: (id, runId, opts = {}) =>
+      request(`/projects/${id}/verification-runs/${runId}`, opts),
+    getVerificationCheckLog: (id, runId, checkId, opts = {}) =>
+      request(`/projects/${id}/verification-runs/${runId}/checks/${checkId}/log`, opts),
+
     // Execution & Interaction
     sendChatMessage: (id, message, opts = {}) =>
       request(`/projects/${id}/chat`, {

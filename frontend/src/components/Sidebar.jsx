@@ -26,7 +26,8 @@ export default function Sidebar({
   handleDeleteProject,
   loginUsername,
   handleLogout,
-  getStatusBadge
+  getStatusBadge,
+  readOnly = false
 }) {
   const filteredProjects = projects.filter(p =>
     (p.title || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -40,15 +41,17 @@ export default function Sidebar({
           <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center text-white font-black text-sm">X</div>
           <span className="font-bold text-base text-gray-900">XFactor Projeler</span>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleCreateProject}
-            title="Yeni Proje Başlat"
-            className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded text-indigo-600 transition"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCreateProject}
+              title="Yeni Proje Başlat"
+              className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded text-indigo-600 transition"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -94,57 +97,39 @@ export default function Sidebar({
               </div>
 
               {/* 3-Dots Menu Button */}
-              <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveMenuProjectId(activeMenuProjectId === p.id ? null : p.id);
-                  }}
-                  className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded transition opacity-80 group-hover:opacity-100"
-                  title="Proje İşlemleri"
-                >
-                  <MoreVertical size={16} />
-                </button>
+              {!readOnly && (
+                <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuProjectId(activeMenuProjectId === p.id ? null : p.id);
+                    }}
+                    className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded transition opacity-80 group-hover:opacity-100"
+                    title="Proje İşlemleri"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
 
-                {/* Context Menu Dropdown */}
-                {activeMenuProjectId === p.id && (
-                  <div className="absolute right-0 top-6 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs font-medium text-gray-700 animate-in fade-in zoom-in-95 duration-100">
-                    <button
-                      onClick={(e) => handleTogglePin(p.id, p.isPinned, e)}
-                      className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      {p.isPinned ? <PinOff size={14} className="text-gray-500" /> : <Pin size={14} className="text-amber-500" />}
-                      {p.isPinned ? 'Sabitlemeyi Kaldır' : 'Başa Sabitle'}
-                    </button>
-
-                    <button
-                      onClick={(e) => handleRenameProject(p.id, p.title, e)}
-                      className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Edit2 size={14} className="text-blue-500" />
-                      Yeniden Adlandır
-                    </button>
-
-                    <button
-                      onClick={(e) => handleDownloadProjectZip(p.id, p.title, e)}
-                      className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Download size={14} className="text-emerald-500" />
-                      ZIP Olarak İndir
-                    </button>
-
-                    <div className="border-t border-gray-100 my-1"></div>
-
-                    <button
-                      onClick={(e) => handleDeleteProject(p.id, p.title, e)}
-                      className="w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2"
-                    >
-                      <Trash2 size={14} />
-                      Projeyi Sil
-                    </button>
-                  </div>
-                )}
-              </div>
+                  {activeMenuProjectId === p.id && (
+                    <div className="absolute right-0 top-6 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs font-medium text-gray-700 animate-in fade-in zoom-in-95 duration-100">
+                      <button onClick={(e) => handleTogglePin(p.id, p.isPinned, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                        {p.isPinned ? <PinOff size={14} className="text-gray-500" /> : <Pin size={14} className="text-amber-500" />}
+                        {p.isPinned ? 'Sabitlemeyi Kaldır' : 'Başa Sabitle'}
+                      </button>
+                      <button onClick={(e) => handleRenameProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                        <Edit2 size={14} className="text-blue-500" /> Yeniden Adlandır
+                      </button>
+                      <button onClick={(e) => handleDownloadProjectZip(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                        <Download size={14} className="text-emerald-500" /> ZIP Olarak İndir
+                      </button>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button onClick={(e) => handleDeleteProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2">
+                        <Trash2 size={14} /> Projeyi Sil
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

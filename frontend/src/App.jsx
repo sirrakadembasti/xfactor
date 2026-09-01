@@ -19,6 +19,7 @@ import ChatView from './components/ChatView';
 import DAGFlowView from './components/DAGFlowView';
 import LogsView from './components/LogsView';
 import IDEView from './components/IDEView';
+import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat'), ReactFlow DAG view, Monaco Editor, and JSZip export.
 const MAX_LOGS = 500;
@@ -59,8 +60,13 @@ export default function App() {
   // Request cancellation ref for project switches
   const projectAbortRef = useRef(null);
 
-  // View state: 'chat' | 'flow' | 'ide' | 'logs'
-  const [viewMode, setViewMode] = useState('chat');
+  // View state: 'chat' | 'dashboard' | 'flow' | 'ide' | 'logs'
+  const [viewMode, setViewMode] = useState(() => window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
+  useEffect(() => {
+    const handleNavigation = () => setViewMode(window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
+    window.addEventListener('popstate', handleNavigation);
+    return () => window.removeEventListener('popstate', handleNavigation);
+  }, []);
   const [projectFiles, setProjectFiles] = useState([]);
   const [activeFile, setActiveFile] = useState(null);
 
@@ -180,7 +186,7 @@ export default function App() {
       const controller = new AbortController();
       projectAbortRef.current = controller;
 
-      setViewMode('chat');
+      setViewMode(window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
       fetchProjectState(activeProjectId, controller.signal);
 
       api.getProjectLogs(activeProjectId, { signal: controller.signal })
@@ -622,6 +628,7 @@ export default function App() {
         loginUsername={currentUser?.username || loginUsername}
         handleLogout={handleLogout}
         getStatusBadge={getStatusBadge}
+        readOnly={viewMode === 'dashboard'}
       />
 
       {/* MAIN AREA */}
@@ -631,12 +638,14 @@ export default function App() {
             <LayoutDashboard size={56} className="mb-4 text-indigo-300" />
             <h3 className="text-lg font-bold text-gray-700 mb-1">XFactor AI Orkestrasyon Platformu</h3>
             <p className="text-sm text-gray-500 mb-4">Sol menüden bir proje seçin veya yeni bir proje başlatın.</p>
-            <button
-              onClick={handleCreateProject}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition"
-            >
-              <Plus size={16} /> Yeni Proje Başlat
-            </button>
+            {viewMode !== 'dashboard' && (
+              <button
+                onClick={handleCreateProject}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition"
+              >
+                <Plus size={16} /> Yeni Proje Başlat
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -685,6 +694,12 @@ export default function App() {
                   handleResume={handleResume}
                   wsReady={ws.current?.readyState === 1}
                   getActionBadge={getActionBadge}
+                />
+              )}
+              {viewMode === 'dashboard' && (
+                <DashboardView
+                  projectId={activeProjectId}
+                  projectTitle={projectState.title}
                 />
               )}
               {viewMode === 'ide' && (

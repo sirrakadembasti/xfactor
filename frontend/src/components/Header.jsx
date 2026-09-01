@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   MessageSquare,
+  LayoutDashboard,
   Layers,
   FileCode,
   ScrollText,
@@ -22,6 +23,11 @@ export default function Header({
 }) {
   if (!projectState) return null;
   const latestArtifact = projectState.latestArtifact;
+  const selectView = mode => {
+    const path = mode === 'dashboard' ? '/dashboard' : '/';
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+    setViewMode(mode);
+  };
 
   return (
     <div className="h-14 bg-white border-b px-6 flex items-center justify-between shadow-sm z-10">
@@ -41,8 +47,16 @@ export default function Header({
         {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar / IDE) */}
         <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200 mr-2">
           <button
+            onClick={() => selectView('dashboard')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
+              viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <LayoutDashboard size={14} /> Quality Dashboard
+          </button>
+          <button
             onClick={() => {
-              setViewMode('chat');
+              selectView('chat');
               if (activeProjectId) fetchProjectState(activeProjectId);
             }}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
@@ -52,7 +66,7 @@ export default function Header({
             <MessageSquare size={14} /> Sohbet & Mimari
           </button>
           <button
-            onClick={() => setViewMode('flow')}
+            onClick={() => selectView('flow')}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
               viewMode === 'flow' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -60,7 +74,7 @@ export default function Header({
             <Layers size={14} /> Canlı DAG Grafiği
           </button>
           <button
-            onClick={() => setViewMode('logs')}
+            onClick={() => selectView('logs')}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
               viewMode === 'logs' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -69,7 +83,7 @@ export default function Header({
           </button>
           {projectState.status === 'completed' && (
             <button
-              onClick={() => setViewMode('ide')}
+              onClick={() => selectView('ide')}
               className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
                 viewMode === 'ide' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
@@ -79,7 +93,7 @@ export default function Header({
           )}
         </div>
         {/* Pending Approval Button */}
-        {projectState.status === 'pending_approval' && (
+        {viewMode !== 'dashboard' && projectState.status === 'pending_approval' && (
           <button
             onClick={handleApprove}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition"
@@ -89,7 +103,7 @@ export default function Header({
         )}
 
         {/* Running Button */}
-        {projectState.status === 'running' && (
+        {viewMode !== 'dashboard' && projectState.status === 'running' && (
           <button
             onClick={handlePause}
             className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition"
@@ -99,7 +113,7 @@ export default function Header({
         )}
 
         {/* Paused: Active Resume Button */}
-        {projectState.status === 'paused' && (
+        {viewMode !== 'dashboard' && projectState.status === 'paused' && (
           <button
             onClick={handleResume}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition animate-pulse"

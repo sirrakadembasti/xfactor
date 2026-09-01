@@ -1,0 +1,14 @@
+{
+  "name": "xfactor-e2e",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.46.0"
+  },
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
