@@ -180,7 +180,18 @@ function parseEvidence(value) {
 }
 
 function isIsoTimestamp(value) {
-    return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+    if (typeof value !== 'string') return false;
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?Z$/);
+    if (!match) return false;
+    const date = new Date(value);
+    return !Number.isNaN(date.getTime())
+        && date.getUTCFullYear() === Number(match[1])
+        && date.getUTCMonth() + 1 === Number(match[2])
+        && date.getUTCDate() === Number(match[3])
+        && date.getUTCHours() === Number(match[4])
+        && date.getUTCMinutes() === Number(match[5])
+        && date.getUTCSeconds() === Number(match[6])
+        && date.getUTCMilliseconds() === Number(match[7] || 0);
 }
 
 /**
@@ -221,8 +232,7 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
     }
     for (const check of mandatory) {
-        const evidence = parseEvidence(check.evidence_json);
-        const derivedSources = evidence?.sourceGateNames || evidence?.sourceCheckIds || evidence?.inputDigests;
+        const derivedSources = evidence?.sourceGateNames || evidence?.sourceCheckIds;
         const producerAllowed = ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(evidence?.producer);
         const sourceValid = Array.isArray(derivedSources) && derivedSources.length > 0
             && derivedSources.every(value => typeof value === 'string' && value.trim().length > 0);
