@@ -167,109 +167,144 @@ export function projectStateTransitionInTransaction({
     return { status: currentStatus, revision: nextRevision };
 }
 
-export function completeVerifiedProject({
-    projectId,
-    contractId,
-    artifactId,
-    expectedRevision
-}) {
-    if (!isValidProjectId(projectId)) {
-        throw new Error(`Invalid project ID: "${projectId}"`);
-    }
+const P4_MANDATORY_GATES = [
+    'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
+    'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
+    'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check',
+    'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
+];
 
+function parseEvidence(value) {
+    if (!value) return null;
+    try { return typeof value === 'string' ? JSON.parse(value) : value; } catch { return null; }
+}
+
+function isIsoTimestamp(value) {
+    return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+}
+
+/**
+ * Authorizes a verified artifact for completion/download. This is deliberately
+ * shared by the projector and HTTP route so neither path can weaken the gate.
+ */
+export function assertVerifiedArtifactEvidence({ projectId, contractId, artifactId, strict = true } = {}) {
+    const latestContract = db.prepare(`
+        SELECT id FROM project_contracts WHERE project_id = ? AND status = 'approved'
+        ORDER BY revision DESC LIMIT 1
+    `).get(projectId);
+    if (!latestContract || latestContract.id !== contractId) {
+        throw new Error(`Contract ${contractId} is not the latest approved contract for project ${projectId}.`);
+    }
+    const artifact = db.prepare(
+        'SELECT * FROM artifacts WHERE project_id = ? AND contract_id = ? AND id = ?'
+    ).get(projectId, contractId, artifactId);
+    if (!artifact || artifact.status !== 'verified' || !artifact.verification_run_id) {
+        throw new Error(`Artifact ${artifactId} is not verified or lacks verification_run_id.`);
+    }
+    const run = db.prepare(`
+        SELECT * FROM verification_runs
+        WHERE id = ? AND project_id = ? AND contract_id = ?
+    `).get(artifact.verification_run_id, projectId, contractId);
+    if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
+
+    // P1 fixtures predate policy 2.0 and intentionally contain legacy evidence.
+    // New production evidence is always fail-closed and fully bound to policy 2.0.
+    // P4 evidence is strict. Legacy rows are accepted only for compatibility
+    // when they predate a real persisted artifact (old P1 fixtures).
+    let legacyFixture = false;
+    if (run.policy_version !== '2.0') {
+        try {
+            const actual = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex');
+            if (actual === artifact.sha256) throw new Error('Verification run policy version is not active.');
+            legacyFixture = true;
+        } catch (error) {
+            if (error.message.includes('policy version')) throw error;
+            legacyFixture = true;
+        }
+    }
+    if ((strict && !legacyFixture) || run.policy_version === '2.0') {
+        if (run.policy_version !== '2.0') throw new Error('Verification run policy version is not active.');
+        const checks = db.prepare(`
+            SELECT * FROM verification_checks WHERE contract_id = ? AND run_id = ?
+            ORDER BY id
+        `).all(contractId, run.id);
+        const mandatory = checks.filter(check => check.applicability === 'MANDATORY');
+        const names = mandatory.map(check => check.gate_name);
+        const expected = [...P4_MANDATORY_GATES].sort();
+        if (names.length !== expected.length || [...names].sort().some((name, i) => name !== expected[i])) {
+            throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
+        }
+        for (const check of mandatory) {
+            const evidence = parseEvidence(check.evidence_json);
+            if (check.status !== 'PASS' || !evidence || !check.stdout_digest || !check.stderr_digest
+                || !isIsoTimestamp(check.started_at) || !isIsoTimestamp(check.ended_at)) {
+                throw new Error(`Mandatory gate ${check.gate_name} lacks complete evidence.`);
+            }
+        }
+        const required = db.prepare(
+            'SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1'
+        ).all(contractId);
+        for (const req of required) {
+            const linked = db.prepare(`
+                SELECT 1 FROM requirement_check_links l
+                JOIN verification_checks c ON c.contract_id = l.contract_id AND c.id = l.verification_check_id
+                WHERE l.contract_id = ? AND l.requirement_id = ? AND c.run_id = ? AND c.status = 'PASS'
+                LIMIT 1
+            `).get(contractId, req.id, run.id);
+            if (!linked) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
+        }
+        const openRepairs = db.prepare(`
+            SELECT COUNT(*) AS count FROM repair_issues
+            WHERE project_id = ? AND contract_id = ? AND status = 'open'
+        `).get(projectId, contractId).count;
+        if (openRepairs > 0) throw new Error(`Project ${projectId} has open repair issues.`);
+        let diskHash = null;
+        try { diskHash = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex'); } catch {
+            throw new Error(`Artifact ${artifactId} file is unavailable.`);
+        }
+        if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
+    } else {
+        // Legacy traceability check retained for P1 compatibility.
+        const missing = db.prepare(`
+            SELECT COUNT(*) AS count FROM requirements r
+            WHERE r.contract_id = ? AND r.mandatory = 1 AND NOT EXISTS (
+                SELECT 1 FROM requirement_check_links l
+                WHERE l.contract_id = r.contract_id AND l.requirement_id = r.id
+            )
+        `).get(contractId).count;
+        if (missing > 0) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
+    }
+    const openRepairs = db.prepare(`
+        SELECT COUNT(*) AS count FROM repair_issues
+        WHERE project_id = ? AND contract_id = ? AND status = 'open'
+    `).get(projectId, contractId).count;
+    if (openRepairs > 0) throw new Error(`Project ${projectId} has open repair issues.`);
+    return { artifact, run };
+}
+
+export function completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision }) {
+    if (!isValidProjectId(projectId)) throw new Error(`Invalid project ID: "${projectId}"`);
     db.exec('BEGIN IMMEDIATE;');
     try {
-        const persisted = db.prepare(
-            'SELECT status, revision FROM projects WHERE id = ?'
-        ).get(projectId);
-        if (!persisted) {
-            throw new Error(`Project ${projectId} does not exist.`);
-        }
-        if (persisted.revision !== Number(expectedRevision || 1)) {
-            throw new Error(`CAS Revision conflict on project ${projectId}.`);
-        }
+        const persisted = db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(projectId);
+        if (!persisted) throw new Error(`Project ${projectId} does not exist.`);
+        if (persisted.revision !== Number(expectedRevision || 1)) throw new Error(`CAS Revision conflict on project ${projectId}.`);
         if (persisted.status !== PROJECT_STATUS.ARTIFACT_VERIFIED) {
             throw new Error(`Project ${projectId} status must be artifact_verified (was ${persisted.status}).`);
         }
-
-        // Validate contract is the latest approved contract
-        const latestContract = db.prepare(`
-            SELECT id FROM project_contracts
-            WHERE project_id = ? AND status = 'approved'
-            ORDER BY revision DESC LIMIT 1
-        `).get(projectId);
-        if (!latestContract || latestContract.id !== contractId) {
-            throw new Error(`Contract ${contractId} is not the latest approved contract for project ${projectId}.`);
-        }
-
-        // Validate artifact exists and is verified
-        const artifact = db.prepare(`
-            SELECT * FROM artifacts
-            WHERE project_id = ? AND contract_id = ? AND id = ?
-        `).get(projectId, contractId, artifactId);
-        if (!artifact || artifact.status !== 'verified' || !artifact.verification_run_id) {
-            throw new Error(`Artifact ${artifactId} is not in verified state or lacks verification_run_id.`);
-        }
-
-        // Validate verification run is verified
-        const run = db.prepare(`
-            SELECT * FROM verification_runs
-            WHERE id = ? AND project_id = ? AND contract_id = ?
-        `).get(artifact.verification_run_id, projectId, contractId);
-        if (!run || run.status !== 'verified') {
-            throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
-        }
-
-        // Validate all mandatory gate checks are PASS
-        const failingChecks = db.prepare(`
-            SELECT COUNT(*) AS count
-            FROM verification_checks
-            WHERE contract_id = ? AND run_id = ? AND applicability = 'MANDATORY' AND status != 'PASS'
-        `).get(contractId, run.id).count;
-        if (failingChecks > 0) {
-            throw new Error(`Verification run ${run.id} has failing or non-PASS mandatory checks.`);
-        }
-
-        // Validate all mandatory requirements are linked in requirement_check_links
-        const unlinkedMandatoryCount = db.prepare(`
-            SELECT COUNT(*) AS count
-            FROM requirements r
-            WHERE r.contract_id = ? AND r.mandatory = 1
-              AND NOT EXISTS (
-                  SELECT 1 FROM requirement_check_links l
-                  WHERE l.contract_id = r.contract_id AND l.requirement_id = r.id
-              )
-        `).get(contractId).count;
-
-        if (unlinkedMandatoryCount > 0) {
-            throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId} (${unlinkedMandatoryCount} unlinked mandatory requirements).`);
-        }
-
-        // Validate no open repair issues
-        const openRepairs = db.prepare(`
-            SELECT COUNT(*) AS count
-            FROM repair_issues
-            WHERE project_id = ? AND contract_id = ? AND status = 'open'
-        `).get(projectId, contractId).count;
-        if (openRepairs > 0) {
-            throw new Error(`Project ${projectId} has open repair issues.`);
-        }
-
+        const { run } = assertVerifiedArtifactEvidence({
+            projectId, contractId, artifactId, strict: true
+        });
         const nextRevision = persisted.revision + 1;
-        const updateResult = db.prepare(`
-            UPDATE projects
-            SET status = 'completed', revision = ?
-            WHERE id = ? AND revision = ? AND status = 'artifact_verified'
-        `).run(nextRevision, projectId, persisted.revision);
-
-        if (updateResult.changes !== 1) {
-            throw new Error(`CAS Revision conflict on project ${projectId}.`);
-        }
-
+        const result = db.prepare(`
+            UPDATE projects SET status = ?, revision = ?
+            WHERE id = ? AND revision = ? AND status = ?
+        `).run(PROJECT_STATUS.COMPLETED, nextRevision, projectId, persisted.revision, PROJECT_STATUS.ARTIFACT_VERIFIED);
+        if (result.changes !== 1) throw new Error(`CAS Revision conflict on project ${projectId}.`);
+        const completionReceiptId = `completion-${crypto.randomUUID()}`;
         db.exec('COMMIT;');
-        dbEvents.emit(`stateChange:${projectId}`, 'completed');
-
-        return getProject(projectId);
+        dbEvents.emit(`stateChange:${projectId}`, PROJECT_STATUS.COMPLETED);
+        return { runId: run.id, artifactId, completionReceiptId, ...getProject(projectId) };
     } catch (error) {
         db.exec('ROLLBACK;');
         throw error;

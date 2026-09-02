@@ -52,8 +52,7 @@ import {
     getProject as readProjectState,
     saveProjectState as writeProjectState
 } from '../projectRepository.js';
-import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
-import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
+import { completeVerifiedProject } from '../projectRepository.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
@@ -856,7 +855,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 return;
             }
 
-            await writeDurum(projectDir, 'TAMAMLANDI', 'Proje üretimi ve test doğrulaması başarıyla sonuçlandı.');
+            // Product completion is evidence-authorized exclusively by completeVerifiedProject.
+            // Workflow output remains advisory until artifact verification supplies these IDs.
             // Otomatik Proje İskeleti ve Çalıştırılabilirlik Koruması (Scaffold Guard)
             await ensureProjectScaffold(projectDir, state, plan);
 
@@ -923,8 +923,14 @@ ${cleanTalimat}
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
             const finalState = await readProjectState(projectId);
-            finalState.status = 'completed';
-
+            if (finalState?.artifactId && finalState?.contractId) {
+                await completeVerifiedProject({
+                    projectId,
+                    contractId: finalState.contractId,
+                    artifactId: finalState.artifactId,
+                    expectedRevision: finalState.revision
+                });
+            }
             const now = new Date();
             const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });

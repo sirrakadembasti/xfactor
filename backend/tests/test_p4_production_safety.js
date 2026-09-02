@@ -13,7 +13,10 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const verificationRepository = await import('../repositories/verificationRepository.js');
 const { evaluateVerificationRun } = await import('../verification/qualityPolicy.js');
+const { completeVerifiedProject } = await import('../projectRepository.js');
 const artifactRepository = await import('../repositories/artifactRepository.js');
+const crypto = await import('crypto');
+const workflowSource = await fs.readFile(new URL('../engine/workflow.js', import.meta.url), 'utf8');
 
 const projectId = 'p4-evidence-project';
 const contractId = 'p4-evidence-contract';
@@ -133,6 +136,30 @@ await runAsyncTest('P4.4 artifact status transitions are guarded', async () => {
     assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'verified' }), /verification_run_id|invalid|immutable/i);
     artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'built' });
     assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'draft' }), /invalid|immutable/i);
+});
+
+await runAsyncTest('P4.5 completion rejects an incomplete active-policy mandatory gate set', async () => {
+    const suffix = Date.now();
+    const p = `p4-gate-${suffix}`;
+    const c = `c4-gate-${suffix}`;
+    const a = `a4-gate-${suffix}`;
+    const r = `r4-gate-${suffix}`;
+    const file = path.join(os.tmpdir(), `${a}.zip`);
+    await fs.writeFile(file, 'p4-gate-artifact');
+    const hash = crypto.createHash('sha256').update('p4-gate-artifact').digest('hex');
+    db.prepare("INSERT INTO projects (id,title,status,revision) VALUES (?, 'gate', 'artifact_verified', 1)").run(p);
+    db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash,approved_at) VALUES (?, ?, 1, 'approved', '{}', 'h', CURRENT_TIMESTAMP)").run(c, p);
+    db.prepare("INSERT INTO requirements (id,contract_id,stable_key,statement,kind,priority,mandatory,status) VALUES (?, ?, 'REQ', 'gate', 'functional', 'high', 1, 'approved')").run(r, c);
+    db.prepare("INSERT INTO verification_runs (id,project_id,contract_id,status,policy_version,started_at,ended_at) VALUES (?, ?, ?, 'verified', '2.0', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)").run(`run-${suffix}`, p, c);
+    artifactRepository.createArtifact({ id: a, projectId: p, contractId: c, kind: 'zip', path: file, sha256: hash, size: 17, status: 'verified' });
+    db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE id = ?').run(`run-${suffix}`, a);
+    assert.throws(() => completeVerifiedProject({ projectId: p, contractId: c, artifactId: a, expectedRevision: 1 }), /mandatory gate set/i);
+    await fs.rm(file, { force: true });
+});
+
+await runAsyncTest('P4.5 workflow has no direct product-completion write', async () => {
+    assert(!/finalState\\.status\\s*=\\s*['"]completed['"]/.test(workflowSource));
+    assert(workflowSource.includes('completeVerifiedProject'));
 });
 
 await isolated.cleanup();
