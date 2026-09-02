@@ -207,84 +207,57 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     `).get(artifact.verification_run_id, projectId, contractId);
     if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
 
-    // P1 fixtures predate policy 2.0 and intentionally contain legacy evidence.
-    // New production evidence is always fail-closed and fully bound to policy 2.0.
-    // P4 evidence is strict. Legacy rows are accepted only for compatibility
-    // when they predate a real persisted artifact (old P1 fixtures).
-    let legacyFixture = false;
     if (run.policy_version !== '2.0') {
-        try {
-            const actual = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex');
-            if (actual === artifact.sha256) throw new Error('Verification run policy version is not active.');
-            legacyFixture = true;
-        } catch (error) {
-            if (error.message.includes('policy version')) throw error;
-            legacyFixture = true;
+        throw new Error('Verification run policy version is not active.');
+    }
+    const checks = db.prepare(`
+        SELECT * FROM verification_checks WHERE contract_id = ? AND run_id = ?
+        ORDER BY id
+    `).all(contractId, run.id);
+    const mandatory = checks.filter(check => check.applicability === 'MANDATORY');
+    const names = mandatory.map(check => check.gate_name);
+    const expected = [...P4_MANDATORY_GATES].sort();
+    if (names.length !== expected.length || [...names].sort().some((name, i) => name !== expected[i])) {
+        throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
+    }
+    for (const check of mandatory) {
+        const evidence = parseEvidence(check.evidence_json);
+        const derivedSources = evidence?.sourceGateNames || evidence?.sourceCheckIds || evidence?.inputDigests;
+        const producerAllowed = ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(evidence?.producer);
+        const sourceValid = Array.isArray(derivedSources) && derivedSources.length > 0
+            && derivedSources.every(value => typeof value === 'string' && value.trim().length > 0);
+        const derived = evidence?.kind === 'derived_gate' && producerAllowed && sourceValid
+            && evidence.policyVersion === '2.0'
+            && isIsoTimestamp(evidence.computedAt || evidence.endedAt);
+        const executable = Boolean(check.command) && check.exit_code !== null && check.exit_code !== undefined;
+        if (check.status !== 'PASS' || !evidence || Object.keys(evidence).length === 0
+            || (!derived && !executable) || !check.stdout_digest || !check.stderr_digest
+            || !isIsoTimestamp(check.started_at) || !isIsoTimestamp(check.ended_at)) {
+            throw new Error(`Mandatory gate ${check.gate_name} lacks complete evidence.`);
         }
     }
-    if ((strict && !legacyFixture) || run.policy_version === '2.0') {
-        if (run.policy_version !== '2.0') throw new Error('Verification run policy version is not active.');
-        const checks = db.prepare(`
-            SELECT * FROM verification_checks WHERE contract_id = ? AND run_id = ?
-            ORDER BY id
-        `).all(contractId, run.id);
-        const mandatory = checks.filter(check => check.applicability === 'MANDATORY');
-        const names = mandatory.map(check => check.gate_name);
-        const expected = [...P4_MANDATORY_GATES].sort();
-        if (names.length !== expected.length || [...names].sort().some((name, i) => name !== expected[i])) {
-            throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
-        }
-        for (const check of mandatory) {
-            const evidence = parseEvidence(check.evidence_json);
-            const derived = evidence?.kind === 'derived_gate'
-                && typeof evidence.producer === 'string' && evidence.producer.length > 0
-                && Array.isArray(evidence.sourceGateNames || evidence.sourceCheckIds || evidence.inputDigests)
-                && isIsoTimestamp(evidence.computedAt || evidence.endedAt);
-            const executable = Boolean(check.command) && check.exit_code !== null && check.exit_code !== undefined;
-            if (check.status !== 'PASS' || !evidence || Object.keys(evidence).length === 0
-                || (!derived && !executable) || !check.stdout_digest || !check.stderr_digest
-                || !isIsoTimestamp(check.started_at) || !isIsoTimestamp(check.ended_at)) {
-                throw new Error(`Mandatory gate ${check.gate_name} lacks complete evidence.`);
-            }
-        }
-        const required = db.prepare(
-            'SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1'
-        ).all(contractId);
-        for (const req of required) {
-            const linked = db.prepare(`
-                SELECT 1 FROM requirement_check_links l
-                JOIN verification_checks c ON c.contract_id = l.contract_id AND c.id = l.verification_check_id
-                WHERE l.contract_id = ? AND l.requirement_id = ? AND c.run_id = ? AND c.status = 'PASS'
-                LIMIT 1
-            `).get(contractId, req.id, run.id);
-            if (!linked) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
-        }
-        const openRepairs = db.prepare(`
-            SELECT COUNT(*) AS count FROM repair_issues
-            WHERE project_id = ? AND contract_id = ? AND status = 'open'
-        `).get(projectId, contractId).count;
-        if (openRepairs > 0) throw new Error(`Project ${projectId} has open repair issues.`);
-        let diskHash = null;
-        try { diskHash = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex'); } catch {
-            throw new Error(`Artifact ${artifactId} file is unavailable.`);
-        }
-        if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
-    } else {
-        // Legacy traceability check retained for P1 compatibility.
-        const missing = db.prepare(`
-            SELECT COUNT(*) AS count FROM requirements r
-            WHERE r.contract_id = ? AND r.mandatory = 1 AND NOT EXISTS (
-                SELECT 1 FROM requirement_check_links l
-                WHERE l.contract_id = r.contract_id AND l.requirement_id = r.id
-            )
-        `).get(contractId).count;
-        if (missing > 0) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
+    const required = db.prepare(
+        'SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1'
+    ).all(contractId);
+    for (const req of required) {
+        const linked = db.prepare(`
+            SELECT 1 FROM requirement_check_links l
+            JOIN verification_checks c ON c.contract_id = l.contract_id AND c.id = l.verification_check_id
+            WHERE l.contract_id = ? AND l.requirement_id = ? AND c.run_id = ? AND c.status = 'PASS'
+            LIMIT 1
+        `).get(contractId, req.id, run.id);
+        if (!linked) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
     }
     const openRepairs = db.prepare(`
         SELECT COUNT(*) AS count FROM repair_issues
         WHERE project_id = ? AND contract_id = ? AND status = 'open'
     `).get(projectId, contractId).count;
     if (openRepairs > 0) throw new Error(`Project ${projectId} has open repair issues.`);
+    let diskHash = null;
+    try { diskHash = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex'); } catch {
+        throw new Error(`Artifact ${artifactId} file is unavailable.`);
+    }
+    if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
     return { artifact, run };
 }
 

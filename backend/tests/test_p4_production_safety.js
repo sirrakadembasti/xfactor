@@ -158,7 +158,7 @@ await runAsyncTest('P4.5 completion rejects an incomplete active-policy mandator
 });
 
 await runAsyncTest('P4.5 workflow has no direct product-completion write', async () => {
-    assert(!/finalState\\.status\\s*=\\s*['"]completed['"]/.test(workflowSource));
+    assert(!/finalState\.status\s*=\s*['"]completed['"]/.test(workflowSource));
     assert(workflowSource.includes('completeVerifiedProject'));
 });
 

@@ -923,13 +923,16 @@ ${cleanTalimat}
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
             const finalState = await readProjectState(projectId);
-            if (finalState?.artifactId && finalState?.contractId) {
+            const verificationReceipt = finalState?.verificationReceipt || finalState?.workflow?.verificationReceipt || {};
+            let projectedCompletion = false;
+            if (verificationReceipt.artifactId && verificationReceipt.contractId) {
                 await completeVerifiedProject({
                     projectId,
-                    contractId: finalState.contractId,
-                    artifactId: finalState.artifactId,
+                    contractId: verificationReceipt.contractId,
+                    artifactId: verificationReceipt.artifactId,
                     expectedRevision: finalState.revision
                 });
+                projectedCompletion = true;
             }
             const now = new Date();
             const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -959,7 +962,7 @@ ${domainSummary}
                 created_at: now.toISOString()
             });
 
-            await writeProjectState(projectId, finalState);
+            if (!projectedCompletion) await writeProjectState(projectId, finalState);
 
             await logEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
         }
