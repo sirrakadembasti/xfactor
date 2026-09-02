@@ -232,6 +232,7 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
     }
     for (const check of mandatory) {
+        const evidence = parseEvidence(check.evidence_json);
         const derivedSources = evidence?.sourceGateNames || evidence?.sourceCheckIds;
         const producerAllowed = ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(evidence?.producer);
         const sourceValid = Array.isArray(derivedSources) && derivedSources.length > 0

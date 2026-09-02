@@ -17,9 +17,18 @@ export async function verifyArtifactAndProject({
 } = {}) {
     const verification = await verifyArtifact({ projectId, contractId, artifactId }, options);
     const receipt = { runId: verification.runId, contractId, artifactId };
-    db.prepare('UPDATE projects SET workflow_state = ? WHERE id = ?').run(
-        JSON.stringify({ verificationReceipt: receipt }), projectId
-    );
+    db.exec('BEGIN IMMEDIATE');
+    try {
+        const current = db.prepare('SELECT workflow_state FROM projects WHERE id = ?').get(projectId);
+        let workflow = {};
+        try { workflow = current?.workflow_state ? JSON.parse(current.workflow_state) : {}; } catch {}
+        workflow.verificationReceipt = receipt;
+        db.prepare('UPDATE projects SET workflow_state = ? WHERE id = ?').run(JSON.stringify(workflow), projectId);
+        db.exec('COMMIT');
+    } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+    }
     if (complete) {
         if (!Number.isInteger(Number(expectedRevision))) throw new Error('expectedRevision is required for completion.');
         if (!verification.passed) return { ...receipt, completionReceiptId: undefined };
