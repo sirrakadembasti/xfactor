@@ -4,7 +4,7 @@
 
 **Goal:** Implement `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` without losing state across chats and without allowing unverified project completion.
 
-**Architecture:** Eight delivery units establish state safety first, then OS-isolated executable verification, safe checkpoint reuse, requirement traceability, runtime behavior verification, artifact verification, hardening, and observability. Git-tracked continuity/evidence records are authoritative; agent memory and self-reports are not.
+**Architecture:** Nine delivery units establish state safety first, then OS-isolated executable verification, safe checkpoint reuse, requirement traceability, runtime behavior verification, artifact verification, hardening, observability, and production safety. Git-tracked continuity/evidence records are authoritative; agent memory and self-reports are not.
 
 **Tech Stack:** Node.js ESM, Express, SQLite `node:sqlite`, existing React/Vite dashboard, OS sandbox adapters, project test harness.
 
@@ -48,6 +48,7 @@ flowchart TD
     E --> G
     F --> G
     G --> H[P3 Observability and metrics]
+    H --> I[P4 Production safety]
 ```
 
 ## Shared Interfaces
@@ -103,6 +104,7 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–9. 
 | 6 | P1-C | `06-P1-C-artifact-validation.md` | `../implementation-evidence/P1-C.md` | P0-B, P0-C, P1-B | verified |
 | 7 | P2 | `07-P2-quality-hardening.md` | `../implementation-evidence/P2.md` | P1-A, P1-B, P1-C | verified |
 | 8 | P3 | `08-P3-observability-metrics.md` | `../implementation-evidence/P3.md` | P2 | verified |
+| 9 | P4 | `09-P4-production-safety.md` | `../implementation-evidence/P4.md` | P3 | pending |
 
 ## Entry Gate for Every Unit
 

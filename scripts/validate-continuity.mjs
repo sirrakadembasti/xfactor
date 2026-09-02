@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = new URL('../', import.meta.url);
 const CONTINUITY_PATH = new URL('PROJECT-CONTINUITY.md', ROOT);
 const ROADMAP_PATH = new URL('yol-haitasi-todo.md', ROOT);
-const UNIT_IDS = ['P0-A', 'P0-B', 'P0-C', 'P1-A', 'P1-B', 'P1-C', 'P2', 'P3'];
+const UNIT_IDS = ['P0-A', 'P0-B', 'P0-C', 'P1-A', 'P1-B', 'P1-C', 'P2', 'P3', 'P4'];
 const UNIT_PLANS = [
   'implementation-plans/01-P0-A-state-contract-safety.md',
   'implementation-plans/02-P0-B-sandbox-verification.md',
@@ -15,7 +15,8 @@ const UNIT_PLANS = [
   'implementation-plans/05-P1-B-runtime-verifier.md',
   'implementation-plans/06-P1-C-artifact-validation.md',
   'implementation-plans/07-P2-quality-hardening.md',
-  'implementation-plans/08-P3-observability-metrics.md'
+  'implementation-plans/08-P3-observability-metrics.md',
+  'implementation-plans/09-P4-production-safety.md'
 ];
 const EVIDENCE_FILES = UNIT_IDS.map(id => `implementation-evidence/${id}.md`);
 const UNIT_DEPENDENCIES = {
@@ -26,7 +27,8 @@ const UNIT_DEPENDENCIES = {
   'P1-B': ['P0-B', 'P1-A'],
   'P1-C': ['P0-B', 'P0-C', 'P1-B'],
   P2: ['P1-A', 'P1-B', 'P1-C'],
-  P3: ['P2']
+  P3: ['P2'],
+  P4: ['P3']
 };
 const ROOT_PATH = fileURLToPath(ROOT);
 
@@ -206,10 +208,11 @@ const dirtyStatus = execFileSync('git', ['status', '--porcelain'], {
   encoding: 'utf8'
 }).trim();
 const dirtySection = continuity.match(/## Dirty Worktree\r?\n\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1]?.trim() || '';
-if (dirtyStatus && (!dirtySection || /^Clean\.?$/i.test(dirtySection))) {
+const cleanLedger = /^Clean\.?(?:\r?\n|$)/i.test(dirtySection);
+if (dirtyStatus && (!dirtySection || cleanLedger)) {
   fail('dirty worktree is not recorded in PROJECT-CONTINUITY.md');
 }
-if (!dirtyStatus && !/^Clean\.?$/i.test(dirtySection)) {
+if (!dirtyStatus && !cleanLedger) {
   fail('clean worktree is not recorded as Clean in PROJECT-CONTINUITY.md');
 }
 if (continuityLines > 200) fail(`PROJECT-CONTINUITY.md exceeds 200 lines: ${continuityLines}`);

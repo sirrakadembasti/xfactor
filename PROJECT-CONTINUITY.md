@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P3
-current_plan: implementation-plans/08-P3-observability-metrics.md
-current_task: Initiative complete
-status: verified
+current_unit: P4
+current_plan: implementation-plans/09-P4-production-safety.md
+current_task: P4 Task P4.1 - Superseding Continuity Ledger
+status: pending
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
 last_verified_commit: b9b7d12
-evidence_file: implementation-evidence/P3.md
+evidence_file: implementation-evidence/P4.md
 blocked_by: []
-next_action: No further delivery unit remains; preserve verified state unless a superseding plan is approved.
-updated_at: 2026-09-02T05:53:23Z
+next_action: Run P4 Task P4.1 RED continuity validation, then update canonical P4 ledger metadata without touching the audited Todo artifact.
+updated_at: 2026-09-02T00:00:00Z
 ---
 
 # Project Continuity
@@ -67,10 +67,10 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 — Observability, Metrics, and Dashboard complete and verified (Tasks P3.1–P3.6).
 ## In Progress
 
-- Initiative complete.
+- P4 Task P4.1 - Superseding Continuity Ledger.
 ## Pending
 
-- None.
+- P4 — Production Safety (pending).
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -132,13 +132,15 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - Todo artifact remains intentionally unfixed.
 ## Dirty Worktree
 
-User work preserved:
+Clean.
+
+User work preserved in the parent checkout:
 - `todo.md` deleted.
 - `eski-todo.md` untracked.
 
 ## Exact Next Action
 
-No further delivery unit remains; preserve verified state unless a superseding plan is approved.
+Run P4 Task P4.1 RED continuity validation, then update canonical P4 ledger metadata without touching the audited Todo artifact.
 
 ## Do Not Do
 
