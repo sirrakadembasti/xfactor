@@ -47,6 +47,23 @@ export function getActiveSandboxAdapter(requestedId = null) {
     throw new SandboxInitializationError(`No compatible sandbox adapter found for platform: ${platform}`);
 }
 
+export function requireSandboxCapabilities(adapter) {
+    if (typeof adapter.getCapabilities !== 'function') {
+        if (typeof adapter.isAvailable === 'function' && adapter.isAvailable()) {
+            return null;
+        }
+        throw new SandboxInitializationError(`Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`);
+    }
+
+    const capabilities = adapter.getCapabilities();
+    if (!capabilities?.available) {
+        throw new SandboxInitializationError(
+            capabilities?.reason || `Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`
+        );
+    }
+    return capabilities;
+}
+
 export async function executeInSandbox(command, args = [], options = {}) {
     let adapter = options.adapter;
 
@@ -58,17 +75,21 @@ export async function executeInSandbox(command, args = [], options = {}) {
         throw new SandboxInitializationError('Invalid or missing sandbox adapter.');
     }
 
-    if (typeof adapter.isAvailable === 'function' && !adapter.isAvailable()) {
-        throw new SandboxInitializationError(`Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`);
-    }
-
+    const capabilities = requireSandboxCapabilities(adapter);
     const scrubbedEnv = scrubEnvironmentVariables(options.env || {});
 
-    return await adapter.execute({
+    const result = await adapter.execute({
         command,
         args,
         workspace: options.workspace,
         timeoutMs: options.timeoutMs ?? 60000,
-        env: scrubbedEnv
+        env: scrubbedEnv,
+        capabilities
     });
+
+    return {
+        ...result,
+        adapterId: adapter.id || capabilities?.adapterId || 'unknown',
+        capabilities
+    };
 }

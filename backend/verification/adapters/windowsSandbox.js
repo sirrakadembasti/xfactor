@@ -1,6 +1,4 @@
-import { spawn, execSync } from 'child_process';
-import os from 'os';
-import path from 'path';
+import { spawn, spawnSync } from 'child_process';
 
 export class WindowsSandboxAdapter {
     constructor(options = {}) {
@@ -8,14 +6,35 @@ export class WindowsSandboxAdapter {
         this.options = options;
     }
 
+    getCapabilities() {
+        return {
+            available: false,
+            adapterId: this.id,
+            isolation: false,
+            jobObject: false,
+            resourceLimits: false,
+            workspaceAcl: false,
+            networkDenied: false,
+            envScrubbed: true,
+            reason: 'Windows restricted-token and Job Object isolation is not implemented'
+        };
+    }
+
     isAvailable() {
-        return os.platform() === 'win32';
+        return this.getCapabilities().available;
     }
 
     killProcessTree(pid) {
         if (!pid) return;
         try {
-            execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
+            const result = spawnSync(
+                'taskkill',
+                ['/F', '/T', '/PID', String(pid)],
+                { stdio: 'ignore', windowsHide: true }
+            );
+            if (result.error || result.status !== 0) {
+                throw result.error || new Error(`taskkill exited with status ${result.status}`);
+            }
         } catch {
             try {
                 process.kill(pid, 'SIGKILL');

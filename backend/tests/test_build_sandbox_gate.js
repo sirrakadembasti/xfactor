@@ -40,7 +40,7 @@ async function runTest(name, fn) {
 // (a) Varsayılan env (sandbox tanımsız): node_modules + build script varsa →
 // framework_build 'skipped' üretilir VE sonuç 'passed' OLMAZ (fail-closed).
 // Ayrıca untrusted build host'ta çalıştırılmaz (BUILD_RAN_MARKER oluşmamalı).
-await runTest("A. Default (unsandboxed): framework_build skipped + passed=false (fail-closed); host build NOT executed", async () => {
+await runTest("A. Default (unsandboxed): framework_build blocked + passed=false (fail-closed); host build NOT executed", async () => {
     delete process.env.XFACTOR_BUILD_SANDBOX;
 
     const dir = path.join(TEST_DIR, 'default-unsandboxed');
@@ -62,13 +62,12 @@ await runTest("A. Default (unsandboxed): framework_build skipped + passed=false 
     // 1) Fail-closed: toplam sonuç passed olmamalı.
     assert.strictEqual(result.passed, false, 'Sandbox runner yokken build gate fail-closed (passed=false) olmalı');
 
-    // 2) framework_build check'i skipped ve reddedilme sebebiyle işaretlenmeli.
+    // 2) framework_build is blocked with the refusal reason.
     const buildCheck = result.checks.find(c => c.name === 'framework_build');
     assert.ok(buildCheck, 'framework_build check mevcut olmalı');
-    assert.strictEqual(buildCheck.status, 'skipped', 'framework_build status skipped olmalı');
+    assert.strictEqual(buildCheck.status, 'blocked', 'framework_build status blocked olmalı');
     assert.ok(
-        buildCheck.reason && buildCheck.reason.includes('refusing to run untrusted build on host'),
-        `framework_build reddedilme sebebi içermeli (aldı: ${buildCheck.reason})`
+        buildCheck.reason && /Sandboxed build runner unavailable|restricted-token and Job Object isolation/.test(buildCheck.reason),
     );
 
     // 3) Build host'ta ÇALIŞTIRILMADI: marker dosyası oluşmamalı.
@@ -78,8 +77,7 @@ await runTest("A. Default (unsandboxed): framework_build skipped + passed=false 
         'Untrusted build host üzerinde çalıştırılmamalı (BUILD_RAN_MARKER oluşmamalı)'
     );
 
-    // 4) AYRIM (distinction): node_modules YOKSA eski 'skipped' davranışı korunur;
-    //    build gate fail-closed DEĞİL → passed etkilenmez (true olabilir).
+    // 4) Missing dependencies are also blocked and never authorize PASS.
     const noNodeModulesDir = path.join(TEST_DIR, 'no-node_modules');
     await fs.mkdir(noNodeModulesDir, { recursive: true });
     await fs.writeFile(path.join(noNodeModulesDir, 'package.json'), JSON.stringify({
@@ -91,17 +89,8 @@ await runTest("A. Default (unsandboxed): framework_build skipped + passed=false 
     const noNmResult = await validateProjectBuild(noNodeModulesDir, { title: 'No Node Modules' }, {});
     const noNmBuildCheck = noNmResult.checks.find(c => c.name === 'framework_build');
     assert.ok(noNmBuildCheck, 'node_modules yokken framework_build check mevcut olmalı');
-    assert.strictEqual(noNmBuildCheck.status, 'skipped', 'node_modules yokken build skipped olmalı');
-    assert.strictEqual(
-        noNmBuildCheck.reason,
-        'No build script or node_modules found',
-        'node_modules yokken eski skipped sebebi korunmalı'
-    );
-    assert.strictEqual(
-        noNmResult.passed,
-        true,
-        'node_modules yokken build gate fail-closed OLMAMALI (passed=true korunmalı)'
-    );
+    assert.strictEqual(noNmBuildCheck.status, 'blocked', 'node_modules yokken framework_build blocked olmalı');
+    assert.strictEqual(noNmResult.passed, false, 'node_modules yokken mandatory build PASS olmamalı');
 });
 
 // (b) XFACTOR_BUILD_SANDBOX=host: mevcut host build yolu çalışır;

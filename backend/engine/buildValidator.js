@@ -505,13 +505,11 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
             issues
         };
     }
-    // 1. PRISMA DOĞRULAMASI (Eğer schema.prisma varsa)
     const prismaSchemaPath = path.join(projectDir, 'prisma', 'schema.prisma');
     const rootSchemaPath = path.join(projectDir, 'schema.prisma');
-    const actualSchemaPath = fsSync.existsSync(prismaSchemaPath) 
-        ? prismaSchemaPath 
+    const actualSchemaPath = fsSync.existsSync(prismaSchemaPath)
+        ? prismaSchemaPath
         : (fsSync.existsSync(rootSchemaPath) ? rootSchemaPath : null);
-
     if (actualSchemaPath) {
         const schemaRelPath = path.relative(projectDir, actualSchemaPath);
         
