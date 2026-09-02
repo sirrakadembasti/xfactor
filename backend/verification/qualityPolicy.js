@@ -17,6 +17,8 @@ import { verifyPlaceholders } from './placeholderVerifier.js';
 import { verifyReadmeCommands } from './readmeVerifier.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 
+export const ACTIVE_POLICY_VERSION = '2.0';
+
 export const MANDATORY_GATES = [
     'package_json',
     'lockfile',
@@ -109,12 +111,46 @@ function normalizeCheck(check, index) {
         ? 'MANDATORY'
         : String(check.applicability || 'OPTIONAL').toUpperCase();
     let status = normalizeGateStatus(check.status);
-    if (mandatory && status === 'NOT_APPLICABLE') {
-        status = 'BLOCKED';
+    if (mandatory && status === 'PASS') {
+        const evidence = check.evidence && typeof check.evidence === 'object' ? check.evidence : {};
+        const policyVersion = check.policyVersion || evidence.policyVersion;
+        const hasDigest = (name) => Object.prototype.hasOwnProperty.call(check, name)
+            || Object.prototype.hasOwnProperty.call(evidence, name);
+        const nonEmptyStrings = (value) => Array.isArray(value)
+            && value.length > 0
+            && value.every((entry) => typeof entry === 'string' && entry.trim().length > 0);
+        const validTimestamp = (value) => {
+            if (typeof value !== 'string') return false;
+            const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?Z$/);
+            if (!match) return false;
+            const date = new Date(value);
+            return !Number.isNaN(date.getTime())
+                && date.getUTCFullYear() === Number(match[1])
+                && date.getUTCMonth() + 1 === Number(match[2])
+                && date.getUTCDate() === Number(match[3])
+                && date.getUTCHours() === Number(match[4])
+                && date.getUTCMinutes() === Number(match[5])
+                && date.getUTCSeconds() === Number(match[6])
+                && date.getUTCMilliseconds() === Number(match[7] || 0);
+        };
+        const sourceValid = nonEmptyStrings(evidence.sourceGateNames)
+            || nonEmptyStrings(evidence.sourceCheckIds)
+            || nonEmptyStrings(evidence.inputDigests);
+        const timeValid = validTimestamp(evidence.computedAt)
+            || (validTimestamp(evidence.startedAt) && validTimestamp(evidence.endedAt));
+        const derivedValid = evidence.kind === 'derived_gate'
+            && ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(evidence.producer)
+            && sourceValid && timeValid
+            && policyVersion === ACTIVE_POLICY_VERSION;
+        const executableComplete = Boolean(check.command)
+            && check.exitCode !== null && check.exitCode !== undefined
+            && Boolean(check.startedAt) && Boolean(check.endedAt)
+            && hasDigest('stdoutDigest') && hasDigest('stderrDigest')
+            && policyVersion === ACTIVE_POLICY_VERSION;
+        if (!derivedValid && !executableComplete) status = 'BLOCKED';
     }
-    if (check.timedOut && status === 'PASS') {
-        status = 'BLOCKED';
-    }
+    if (mandatory && status === 'NOT_APPLICABLE') status = 'BLOCKED';
+    if (check.timedOut && status === 'PASS') status = 'BLOCKED';
 
     return {
         ...check,
@@ -602,7 +638,7 @@ export async function runProjectVerification({
         projectId,
         contractId: contractRow.id,
         status: 'running',
-        policyVersion: '1.0'
+        policyVersion: ACTIVE_POLICY_VERSION
     });
 
     const workspace = projectDir || getProjectDir(projectId);

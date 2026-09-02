@@ -6,7 +6,7 @@ import { db } from '../db.js';
 import { getArtifact, updateArtifactStatus } from '../repositories/artifactRepository.js';
 import { createRun, updateRunStatus } from '../repositories/verificationRepository.js';
 import { safeExtractZip } from './safeExtractor.js';
-import { runProjectVerification } from './qualityPolicy.js';
+import { runProjectVerification, ACTIVE_POLICY_VERSION } from './qualityPolicy.js';
 
 export async function verifyArtifact({ projectId, contractId, artifactId }, options = {}) {
     const artifact = getArtifact({ projectId, contractId, artifactId });
@@ -20,7 +20,7 @@ export async function verifyArtifact({ projectId, contractId, artifactId }, opti
         projectId,
         contractId,
         status: 'running',
-        policyVersion: options.policyVersion || '1.0'
+        policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
     });
 
     updateArtifactStatus({

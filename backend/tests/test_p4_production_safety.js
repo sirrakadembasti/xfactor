@@ -4,6 +4,22 @@ import os from 'os';
 import path from 'path';
 import { executeInSandbox } from '../verification/sandboxRunner.js';
 import { WindowsSandboxAdapter } from '../verification/adapters/windowsSandbox.js';
+import { setupIsolatedTestDb } from './isolatedDb.js';
+
+const isolated = await setupIsolatedTestDb('p4-production-safety-evidence');
+process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
+const { db } = await import('../db.js');
+isolated.registerDatabase(db);
+const verificationRepository = await import('../repositories/verificationRepository.js');
+const { evaluateVerificationRun } = await import('../verification/qualityPolicy.js');
+const artifactRepository = await import('../repositories/artifactRepository.js');
+
+const projectId = 'p4-evidence-project';
+const contractId = 'p4-evidence-contract';
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P4 evidence', 'running')").run(projectId);
+db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at) VALUES (?, ?, 1, 'approved', '{}', 'hash', CURRENT_TIMESTAMP)").run(contractId, projectId);
+
 
 async function runAsyncTest(name, fn) {
     try { await fn(); console.log(`[PASS] ${name}`); }
@@ -56,3 +72,67 @@ await runAsyncTest('P4.3 missing build script is BLOCKED not PASS for mandatory 
     try { await fs.writeFile(path.join(tmp, 'package.json'), JSON.stringify({ scripts: {} })); const result = await validateProjectBuild(tmp, { title: 'No Build Script' }, {}); assert.strictEqual(result.passed, false); assert(result.checks.some(c => c.name === 'framework_build' && c.status !== 'passed')); }
     finally { await fs.rm(tmp, { recursive: true, force: true }); }
 });
+await runAsyncTest('P4.4 finalized verification check cannot be mutated', async () => {
+    const runId = `p4-run-${Date.now()}`;
+    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'running', policyVersion: '2.0' });
+    verificationRepository.createCheck({
+        id: `${runId}-check`, runId, projectId, contractId, gateName: 'framework_build',
+        applicability: 'MANDATORY', status: 'PASS', evidenceJson: { command: 'npm run build' }
+    });
+    verificationRepository.updateRunStatus(runId, 'verified');
+    assert.throws(() => verificationRepository.updateCheck(`${runId}-check`, { status: 'FAIL' }), /finalized|immutable/i);
+});
+
+await runAsyncTest('P4.4 status-only mandatory PASS is BLOCKED without evidence fields', async () => {
+    const result = evaluateVerificationRun({
+        checks: [{ gateName: 'framework_build', status: 'PASS', applicability: 'MANDATORY' }],
+        requiredGates: ['framework_build']
+    });
+    assert.strictEqual(result.status, 'BLOCKED');
+    assert(result.blockedGates.includes('framework_build'));
+});
+
+await runAsyncTest('P4.4 bare derived marker is blocked while validated derived evidence passes', async () => {
+    const bare = evaluateVerificationRun({ checks: [{ gateName: 'framework_build', status: 'PASS', derived: true }], requiredGates: ['framework_build'] });
+    assert.strictEqual(bare.status, 'BLOCKED');
+    const valid = evaluateVerificationRun({
+        checks: [{
+            gateName: 'framework_build', status: 'PASS',
+            evidence: { kind: 'derived_gate', producer: 'quality-policy-test', sourceGateNames: ['package_json'], computedAt: new Date().toISOString(), policyVersion: '2.0' }
+        }],
+        requiredGates: ['framework_build']
+    });
+    assert.strictEqual(valid.status, 'PASS');
+});
+
+await runAsyncTest('P4.4 malformed derived evidence is blocked', async () => {
+    for (const evidence of [
+        { kind: 'derived_gate', producer: '', sourceGateNames: [], computedAt: new Date().toISOString(), policyVersion: '2.0' },
+        { kind: 'derived_gate', producer: 'untrusted', sourceGateNames: ['x'], computedAt: 'not-a-date', policyVersion: '2.0' },
+        { kind: 'derived_gate', producer: 'quality-policy-test', sourceGateNames: ['x'], computedAt: '2020', policyVersion: '2.0' },
+        { kind: 'derived_gate', producer: 'quality-policy-test', sourceGateNames: ['x'], computedAt: '2020-02-31T00:00:00Z', policyVersion: '2.0' }
+    ]) {
+        const result = evaluateVerificationRun({ checks: [{ gateName: 'framework_build', status: 'PASS', evidence }], requiredGates: ['framework_build'] });
+        assert.strictEqual(result.status, 'BLOCKED');
+    }
+});
+
+await runAsyncTest('P4.4 finalized check cannot be re-ended while run remains running', async () => {
+    const runId = `p4-running-${Date.now()}`;
+    const checkId = `${runId}-check`;
+    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'running', policyVersion: '2.0' });
+    verificationRepository.startCheck({ id: checkId, runId, contractId, gateName: 'framework_build' });
+    verificationRepository.endCheck({ id: checkId, runId, contractId, status: 'PASS', exitCode: 0, endedAt: new Date().toISOString() });
+    assert.throws(() => verificationRepository.updateCheck(checkId, { status: 'FAIL' }), /finalized|immutable/i);
+    assert.throws(() => verificationRepository.endCheck({ id: checkId, runId, contractId, status: 'FAIL' }), /finalized|immutable/i);
+});
+
+await runAsyncTest('P4.4 artifact status transitions are guarded', async () => {
+    const artifactId = `p4-artifact-${Date.now()}`;
+    artifactRepository.createArtifact({ id: artifactId, projectId, contractId, kind: 'zip', path: 'x.zip', sha256: 'a'.repeat(64), size: 1 });
+    assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'verified' }), /verification_run_id|invalid|immutable/i);
+    artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'built' });
+    assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'draft' }), /invalid|immutable/i);
+});
+
+await isolated.cleanup();

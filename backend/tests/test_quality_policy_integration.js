@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
-import { evaluateVerificationRun, MANDATORY_GATES } from '../verification/qualityPolicy.js';
+import { evaluateVerificationRun, MANDATORY_GATES, ACTIVE_POLICY_VERSION } from '../verification/qualityPolicy.js';
 
 const isolated = await setupIsolatedTestDb('p0-b-quality-policy');
 process.env.DB_PATH = isolated.dbPath;
@@ -10,6 +10,14 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
 const { runAsyncTest, finish } = createTestHarness();
+
+const derivedEvidence = {
+    kind: 'derived_gate',
+    producer: 'quality-policy-test',
+    sourceGateNames: ['fixture'],
+    computedAt: '2026-09-02T00:00:00.000Z',
+    policyVersion: ACTIVE_POLICY_VERSION
+};
 
 await runAsyncTest('1. evaluateVerificationRun should reject LLM agent approval when any mandatory gate fails', async () => {
     const runResult = evaluateVerificationRun({
@@ -50,7 +58,8 @@ await runAsyncTest('3. evaluateVerificationRun should PASS only when all mandato
     const completeChecks = MANDATORY_GATES.map(gateName => ({
         gateName,
         applicability: 'MANDATORY',
-        status: 'PASS'
+        status: 'PASS',
+        evidence: { ...derivedEvidence }
     }));
 
     const completeRun = evaluateVerificationRun({

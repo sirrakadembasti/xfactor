@@ -24,6 +24,15 @@ export function createArtifact({
     return getArtifact({ projectId, contractId, artifactId: id });
 }
 
+const ARTIFACT_TRANSITIONS = {
+    draft: new Set(['built', 'verification_pending', 'rejected']),
+    built: new Set(['verification_pending', 'rejected']),
+    verification_pending: new Set(['verified', 'rejected']),
+    verified: new Set(['superseded']),
+    rejected: new Set(['superseded']),
+    superseded: new Set([])
+};
+
 export function updateArtifactStatus({
     projectId,
     contractId,
@@ -31,16 +40,20 @@ export function updateArtifactStatus({
     status,
     verificationRunId = null
 }) {
-    const result = db.prepare(`
-        UPDATE artifacts
-        SET status = ?, verification_run_id = ?
-        WHERE project_id = ? AND contract_id = ? AND id = ?
-    `).run(status, verificationRunId, projectId, contractId, artifactId);
-
-    if (result.changes !== 1) {
-        throw new Error(`Artifact ${artifactId} for project ${projectId} was not updated.`);
+    const artifact = getArtifact({ projectId, contractId, artifactId });
+    if (!artifact) throw new Error(`Artifact ${artifactId} for project ${projectId} was not found.`);
+    if (!ARTIFACT_TRANSITIONS[artifact.status]?.has(status)) {
+        throw new Error(`Artifact ${artifactId} has an invalid or immutable status transition from ${artifact.status} to ${status}.`);
     }
-
+    if (status === 'verified' && !verificationRunId) {
+        throw new Error(`Artifact ${artifactId} requires verification_run_id when verified.`);
+    }
+    if (status !== 'verified') verificationRunId = status === 'rejected' ? null : verificationRunId;
+    const result = db.prepare(`
+        UPDATE artifacts SET status = ?, verification_run_id = ?
+        WHERE project_id = ? AND contract_id = ? AND id = ? AND status = ?
+    `).run(status, verificationRunId, projectId, contractId, artifactId, artifact.status);
+    if (result.changes !== 1) throw new Error(`Artifact ${artifactId} for project ${projectId} was not updated.`);
     return getArtifact({ projectId, contractId, artifactId });
 }
 
