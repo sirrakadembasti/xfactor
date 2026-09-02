@@ -105,6 +105,7 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
         const commandStr = `${executable} ${args.join(' ')}`.trim();
         try {
             const sandboxRes = await executeInSandbox(executable, args, {
+                adapter: options.adapter,
                 workspace: cwd,
                 timeoutMs,
                 env: getSanitizedSubprocessEnv(env)
@@ -459,7 +460,10 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
             const legacyName = checkNamesMap[check.name] || check.name;
             checks.push({
                 name: legacyName,
+                gateName: check.gateName || check.name,
+                applicability: check.applicability || (check.name === 'framework_build' ? 'MANDATORY' : 'OPTIONAL'),
                 status: check.status,
+                passed: check.passed ?? (check.status === 'passed'),
                 reason: check.reason || '',
                 command: check.command || 'none',
                 exitCode: check.exitCode ?? 0,

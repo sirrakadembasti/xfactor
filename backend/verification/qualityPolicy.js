@@ -622,7 +622,7 @@ export async function runProjectVerification({
         ['placeholder_check', () => placeholderVerifier(projectFiles)],
         ['contamination_check', () => contaminationVerifier(contract, projectFiles)],
         ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)],
-        ['readme_check', () => readmeVerifier(contract, projectFiles, sandboxAdapter)]
+        ['readme_check', () => readmeVerifier(contract, projectFiles, { adapter: sandboxAdapter, workspace })]
     ];
     const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) =>
         captureHardeningGate(name, () => {

@@ -117,8 +117,11 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
     if (!hasBuildScript) {
         checks.push({
             name: 'framework_build',
-            status: 'skipped',
-            reason: 'No build script found in package.json.'
+            gateName: 'framework_build',
+            applicability: 'MANDATORY',
+            status: 'blocked',
+            passed: false,
+            reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.'
         });
     } else if (!nodeModulesPresent) {
         checks.push({

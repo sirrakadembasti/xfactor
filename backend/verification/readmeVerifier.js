@@ -117,28 +117,29 @@ export async function verifyReadmeCommands(contract = {}, files = [], sandbox = 
         }
     }
 
+    const sandboxAdapter = sandbox?.adapter || sandbox;
+    const sandboxWorkspace = sandbox?.workspace || process.cwd();
 
-    if (
-        sandbox &&
-        documentedScripts.includes('build') &&
-        Object.prototype.hasOwnProperty.call(packageScripts, 'build')
-    ) {
+    const checks = [];
+    if (documentedScripts.includes('build') && !Object.prototype.hasOwnProperty.call(packageScripts, 'build')) {
+        checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.' });
+    } else if (documentedScripts.includes('build') && !sandboxAdapter) {
+        checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.' });
+    } else if (sandboxAdapter && documentedScripts.includes('build')) {
         const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
         try {
-            const result = await executeInSandbox(npmCommand, ['run', 'build'], {
-                adapter: sandbox,
-                workspace: sandbox.workspace,
-                timeoutMs: sandbox.timeoutMs ?? 120000
-            });
-            if (result.exitCode !== 0 || result.timedOut) {
-                issues.push('Documented build command failed to execute');
-            }
+            const result = await executeInSandbox(npmCommand, ['run', 'build'], { adapter: sandboxAdapter, workspace: sandboxWorkspace, timeoutMs: sandbox?.timeoutMs ?? 120000 });
+            const passed = result.passed === true && result.exitCode === 0 && !result.timedOut;
+            checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: passed ? 'passed' : 'failed', passed, reason: passed ? 'Documented build command completed successfully.' : 'Documented build command failed to execute' });
+            if (!passed) issues.push('Documented build command failed to execute');
         } catch {
+            checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.' });
             issues.push('Documented build command failed to execute');
         }
     }
     return {
-        passed: issues.length === 0,
-        issues
+        passed: issues.length === 0 && !checks.some(check => check.status === 'blocked' || check.status === 'failed'),
+        issues,
+        checks
     };
 }

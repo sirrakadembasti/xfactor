@@ -48,11 +48,10 @@ export function getActiveSandboxAdapter(requestedId = null) {
 }
 
 export function requireSandboxCapabilities(adapter) {
-    if (typeof adapter.getCapabilities !== 'function') {
-        if (typeof adapter.isAvailable === 'function' && adapter.isAvailable()) {
-            return null;
-        }
-        throw new SandboxInitializationError(`Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`);
+    if (typeof adapter?.getCapabilities !== 'function') {
+        throw new SandboxInitializationError(
+            `Sandbox adapter "${adapter?.id || 'unknown'}" has no proven capabilities.`
+        );
     }
 
     const capabilities = adapter.getCapabilities();

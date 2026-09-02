@@ -8,7 +8,24 @@ export class PortableSandboxAdapter {
         this.options = options;
     }
 
+    getCapabilities() {
+        const supported = this.type === 'bubblewrap' || this.type === 'docker';
+        const available = supported && this.isAvailable();
+        return {
+            available,
+            adapterId: this.id,
+            isolation: available,
+            jobObject: available,
+            resourceLimits: false,
+            workspaceAcl: available,
+            networkDenied: available,
+            envScrubbed: available,
+            reason: available ? null : (supported ? `${this.type} sandbox runtime is not available on this host.` : `Unsupported portable sandbox adapter "${this.type}".`)
+        };
+    }
+
     isAvailable() {
+        if (this.type !== 'bubblewrap' && this.type !== 'docker') return false;
         const platform = os.platform();
         if (platform !== 'linux' && platform !== 'darwin') {
             return false;

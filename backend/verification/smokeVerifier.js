@@ -67,14 +67,22 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
                     port: backendService.port
                 }, options.env || {}, options);
                 spawnedHandles.push(handle.processTreeHandle);
+                allChecks.push({ name: 'service_spawn', gateName: 'service_spawn', applicability: 'MANDATORY', status: 'passed', passed: true, reason: 'Backend service spawned through sandbox boundary.' });
             } catch (spawnErr) {
                 allChecks.push({
                     name: 'service_spawn',
-                    status: 'failed',
-                    reason: `Failed to spawn backend service: ${spawnErr.message}`
+                    gateName: 'service_spawn',
+                    applicability: 'MANDATORY',
+                    status: spawnErr.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                    passed: false,
+                    reason: spawnErr.code === 'SANDBOX_UNAVAILABLE'
+                        ? 'Sandbox capability unavailable; mandatory service spawn evidence was not produced.'
+                        : `Failed to spawn backend service: ${spawnErr.message}`
                 });
                 allIssues.push(`Failed to spawn backend service: ${spawnErr.message}`);
             }
+        } else if (backendService) {
+            allChecks.push({ name: 'service_spawn', gateName: 'service_spawn', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Service spawn was skipped; mandatory service spawn evidence was not produced.' });
         }
 
         // 4. Liveness & Readiness Probing
