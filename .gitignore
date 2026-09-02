@@ -3,6 +3,9 @@ node_modules/
 dist/
 frontend/dist/
 
+# Local worktrees
+.worktrees/
+
 # Environment files
 **/.env
 **/.env.local
