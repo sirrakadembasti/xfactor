@@ -236,7 +236,13 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         }
         for (const check of mandatory) {
             const evidence = parseEvidence(check.evidence_json);
-            if (check.status !== 'PASS' || !evidence || !check.stdout_digest || !check.stderr_digest
+            const derived = evidence?.kind === 'derived_gate'
+                && typeof evidence.producer === 'string' && evidence.producer.length > 0
+                && Array.isArray(evidence.sourceGateNames || evidence.sourceCheckIds || evidence.inputDigests)
+                && isIsoTimestamp(evidence.computedAt || evidence.endedAt);
+            const executable = Boolean(check.command) && check.exit_code !== null && check.exit_code !== undefined;
+            if (check.status !== 'PASS' || !evidence || Object.keys(evidence).length === 0
+                || (!derived && !executable) || !check.stdout_digest || !check.stderr_digest
                 || !isIsoTimestamp(check.started_at) || !isIsoTimestamp(check.ended_at)) {
                 throw new Error(`Mandatory gate ${check.gate_name} lacks complete evidence.`);
             }
