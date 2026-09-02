@@ -229,6 +229,14 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         const derived = evidence?.kind === 'derived_gate' && producerAllowed && sourceValid
             && evidence.policyVersion === '2.0'
             && isIsoTimestamp(evidence.computedAt || evidence.endedAt);
+        if (derived && (evidence.sourceGateNames || evidence.sourceCheckIds)) {
+            const passByName = new Set(checks.filter(item => item.status === 'PASS').map(item => item.gate_name));
+            const passById = new Set(checks.filter(item => item.status === 'PASS').map(item => item.id));
+            if (evidence.sourceGateNames?.some(name => !passByName.has(name))
+                || evidence.sourceCheckIds?.some(id => !passById.has(id))) {
+                throw new Error(`Mandatory gate ${check.gate_name} has invalid derived evidence sources.`);
+            }
+        }
         const executable = Boolean(check.command) && check.exit_code !== null && check.exit_code !== undefined;
         if (check.status !== 'PASS' || !evidence || Object.keys(evidence).length === 0
             || (!derived && !executable) || !check.stdout_digest || !check.stderr_digest
