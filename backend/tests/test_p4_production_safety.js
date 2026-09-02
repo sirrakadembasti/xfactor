@@ -13,7 +13,7 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const verificationRepository = await import('../repositories/verificationRepository.js');
 const { evaluateVerificationRun } = await import('../verification/qualityPolicy.js');
-const { completeVerifiedProject } = await import('../projectRepository.js');
+const { completeVerifiedProject, assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
 const artifactRepository = await import('../repositories/artifactRepository.js');
 const crypto = await import('crypto');
 const workflowSource = await fs.readFile(new URL('../engine/workflow.js', import.meta.url), 'utf8');
@@ -155,6 +155,19 @@ await runAsyncTest('P4.5 completion rejects an incomplete active-policy mandator
     db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE id = ?').run(`run-${suffix}`, a);
     assert.throws(() => completeVerifiedProject({ projectId: p, contractId: c, artifactId: a, expectedRevision: 1 }), /mandatory gate set/i);
     await fs.rm(file, { force: true });
+});
+
+await runAsyncTest('P4.5 download authorization rejects artifact linked to non-verified run', async () => {
+    const suffix = Date.now();
+    const p = `p4-download-${suffix}`;
+    const c = `c4-download-${suffix}`;
+    const a = `a4-download-${suffix}`;
+    db.prepare("INSERT INTO projects (id,title,status) VALUES (?, 'download', 'artifact_verified')").run(p);
+    db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash,approved_at) VALUES (?, ?, 1, 'approved', '{}', 'h', CURRENT_TIMESTAMP)").run(c, p);
+    db.prepare("INSERT INTO verification_runs (id,project_id,contract_id,status,policy_version,started_at) VALUES (?, ?, ?, 'failed', '2.0', CURRENT_TIMESTAMP)").run(`run-${suffix}`, p, c);
+    artifactRepository.createArtifact({ id: a, projectId: p, contractId: c, kind: 'zip', path: 'missing.zip', sha256: 'a'.repeat(64), size: 1, status: 'verified' });
+    db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE id = ?').run(`run-${suffix}`, a);
+    assert.throws(() => assertVerifiedArtifactEvidence({ projectId: p, contractId: c, artifactId: a }), /not verified/i);
 });
 
 await runAsyncTest('P4.5 workflow has no direct product-completion write', async () => {
