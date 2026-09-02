@@ -43,9 +43,17 @@ function renderView(overrides = {}) {
     }),
     getVerificationSummary: vi.fn().mockResolvedValue({
       requirements: [
-        { id: 'req-auth', stableKey: 'REQ-AUTH', statement: 'Authenticate users', evidenceStatus: 'PASS' },
-        { id: 'req-api', stableKey: 'REQ-API', statement: 'Expose API', evidenceStatus: 'FAIL' },
-        { id: 'req-docs', stableKey: 'REQ-DOCS', statement: 'Document usage', evidenceStatus: 'SKIPPED' }
+        { id: 'req-auth', stableKey: 'REQ-AUTH', statement: 'Authenticate users', evidenceStatus: 'PASS', checkIds: ['check-auth'], artifactIds: ['artifact-auth'] },
+        { id: 'req-api', stableKey: 'REQ-API', statement: 'Expose API', evidenceStatus: 'FAIL', checkIds: ['check-api'], artifactIds: ['artifact-api'] },
+        { id: 'req-docs', stableKey: 'REQ-DOCS', statement: 'Document usage', evidenceStatus: 'SKIPPED', checkIds: [], artifactIds: [] }
+      ],
+      checks: [
+        { id: 'check-auth', gateName: 'api_contract', status: 'PASS' },
+        { id: 'check-api', gateName: 'smoke_gate', status: 'FAIL' }
+      ],
+      artifacts: [
+        { id: 'artifact-auth', path: 'artifacts/auth.zip', status: 'verified' },
+        { id: 'artifact-api', path: 'artifacts/api.zip', status: 'rejected' }
       ]
     }),
     previewRebuild: vi.fn().mockResolvedValue({
@@ -74,10 +82,15 @@ test('maps authoritative requirement evidence into deterministic status-colored 
 
   fireEvent.click(screen.getByRole('button', { name: 'Traceability DAG' }));
   expect(await screen.findByRole('button', { name: /REQ-AUTH.*Authenticate users/i })).toBeInTheDocument();
-  expect(screen.getByTestId('react-flow').children).toHaveLength(3);
+  expect(screen.getByTestId('react-flow').children).toHaveLength(7);
+  expect(screen.getByTestId('react-flow')).toHaveAttribute('data-edge-count', '4');
   expect(screen.getByRole('button', { name: /REQ-AUTH.*Authenticate users/i }).closest('[data-node-id]')).toHaveClass('trace-status-verified');
   expect(screen.getByRole('button', { name: /REQ-API.*Expose API/i }).closest('[data-node-id]')).toHaveClass('trace-status-failed');
   expect(screen.getByRole('button', { name: /REQ-DOCS.*Document usage/i }).closest('[data-node-id]')).toHaveClass('trace-status-skipped');
+  expect(screen.getByRole('button', { name: /Check api_contract/i }).closest('[data-node-id]')).toHaveClass('trace-status-verified');
+  expect(screen.getByRole('button', { name: /Check smoke_gate/i }).closest('[data-node-id]')).toHaveClass('trace-status-failed');
+  expect(screen.getByRole('button', { name: /Artifact artifacts\/auth.zip/i }).closest('[data-node-id]')).toHaveClass('trace-status-verified');
+  expect(screen.getByRole('button', { name: /Artifact artifacts\/api.zip/i }).closest('[data-node-id]')).toHaveClass('trace-status-failed');
 });
 
 test('previews selected requirement and highlights predicted task and checkpoint nodes', async () => {

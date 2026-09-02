@@ -1,11 +1,14 @@
 import assert from 'assert';
 import crypto from 'crypto';
 import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
 import http from 'http';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 
 const isolated = await setupIsolatedTestDb('p3-observability');
 process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
@@ -148,6 +151,23 @@ await runAsyncTest('P3.1 contracts endpoint 200 with exact structure', async () 
   }
 });
 
+await runAsyncTest('P3.1 verification summary GET is filesystem read-only', async () => {
+  const projectDir = path.join(process.env.PROJECTS_ROOT, projId);
+  const definitionPath = path.join(projectDir, 'DEFINITION_OF_DONE.md');
+  await fs.mkdir(projectDir, { recursive: true });
+  await fs.writeFile(definitionPath, 'sentinel definition\n');
+
+  const { status, text } = await requestWithMocks(
+    `/api/projects/${projId}/verification-summary?contractId=${contractIdA1}&runId=${runId1}`,
+    { authed: true }
+  );
+
+  assert.strictEqual(status, 200);
+  assert.ok(!text.includes('supersecret'));
+  assert.ok(!text.includes('sk-1234567890abcdefgh'));
+  assert.strictEqual(await fs.readFile(definitionPath, 'utf8'), 'sentinel definition\n');
+});
+
 await runAsyncTest('P3.1 verification-runs list 401/403 and 200 with exact outer keys and keyset pagination', async () => {
   const r401 = await requestWithMocks(`/api/projects/${projId}/verification-runs`, { authed: false });
   assert.strictEqual(r401.status, 401);
@@ -237,6 +257,13 @@ await runAsyncTest('P3.1 verification run detail 401/403/200 exact keys and nest
   assert.strictEqual(cross.status, 404);
   const notFound = await requestWithMocks(`/api/projects/${projId}/verification-runs/not-exist`, { authed: true });
   assert.strictEqual(notFound.status, 404);
+});
+
+await runAsyncTest('P3.1 redaction removes complete Basic authorization credentials', async () => {
+  const credential = 'dXNlcjpwYXNz';
+  const redacted = redactSensitiveText(`Authorization: Basic ${credential}`);
+  assert.strictEqual(redacted, 'Authorization: [REDACTED]');
+  assert.ok(!redacted.includes(credential));
 });
 
 await runAsyncTest('P3.1 log endpoint 401/403/200 exact keys redacted and isolation with persisted schema', async () => {

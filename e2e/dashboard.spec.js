@@ -94,6 +94,15 @@ test.beforeAll(async () => {
     INSERT INTO requirement_check_links (contract_id, requirement_id, verification_check_id)
     VALUES (?, 'dashboard-requirement-001', ?)
   `).run(contractId, checkId);
+  db.prepare(`
+    INSERT INTO artifacts
+      (id, project_id, contract_id, kind, path, sha256, size, status, verification_run_id)
+    VALUES ('dashboard-artifact-001', ?, ?, 'zip', 'artifacts/dashboard.zip', ?, 128, 'verified', ?)
+  `).run(projectId, contractId, 'a'.repeat(64), runId);
+  db.prepare(`
+    INSERT INTO requirement_artifact_links (contract_id, requirement_id, artifact_id)
+    VALUES (?, 'dashboard-requirement-001', 'dashboard-artifact-001')
+  `).run(contractId);
 });
 
 test('authorized dashboard renders redacted evidence and no mutation controls', async ({ page }) => {
@@ -126,6 +135,8 @@ test('traceability DAG previews and highlights rebuild boundaries', async ({ pag
 
   await page.getByRole('button', { name: 'Canlı DAG Grafiği' }).click();
   await page.getByRole('button', { name: 'Traceability DAG' }).click();
+  await expect(page.getByRole('button', { name: 'Check api_contract' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Artifact artifacts/dashboard.zip' })).toBeVisible();
   await page.getByRole('button', { name: /REQ-DASHBOARD.*Render quality evidence/i }).click();
   await page.getByRole('button', { name: 'Preview Rebuild' }).click();
 

@@ -142,7 +142,7 @@ async function overwriteDefinitionOfDone(report, projectDir) {
     return outputPath;
 }
 
-export async function generateCompletionReport({ projectId, contractId, runId, projectDir = null }) {
+export function buildCompletionReport({ projectId, contractId, runId }) {
     const run = db.prepare(`
         SELECT id, project_id, contract_id, status, policy_version, started_at, ended_at
         FROM verification_runs
@@ -245,6 +245,11 @@ export async function generateCompletionReport({ projectId, contractId, runId, p
         requirements,
         artifacts
     };
+    return report;
+}
+
+export async function generateCompletionReport({ projectId, contractId, runId, projectDir = null }) {
+    const report = buildCompletionReport({ projectId, contractId, runId });
     report.definitionOfDonePath = await overwriteDefinitionOfDone(report, projectDir);
     return report;
 }

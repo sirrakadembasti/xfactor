@@ -33,6 +33,8 @@ export function redactSensitiveText(value) {
     if (typeof value !== 'string' || !value) return value;
 
     return value
+        .replace(/(\bauthorization\b\s*(?:=|:)\s*)Basic\s+[A-Za-z0-9+/]+={0,2}/gi, '$1[REDACTED]')
+        .replace(/\b(Basic)\s+[A-Za-z0-9+/]+={0,2}/gi, '$1 [REDACTED]')
         .replace(/\b(Bearer)\s+[A-Za-z0-9._~+/-]+=*/gi, '$1 [REDACTED]')
         .replace(
             /(\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|jwt|authorization|cookie|password|passwd|secret|client[_-]?secret|private[_-]?key|access[_-]?key|credential|database[_-]?url|connection[_-]?string)\b\s*(?:=|:)\s*)(?:"[^"]*"|'[^']*'|[^\s&,;]+)/gi,
@@ -63,6 +65,10 @@ function sanitizeLogValue(value, seen) {
         sanitized[key] = isSensitiveKey(key) ? REDACTED : sanitizeLogValue(item, seen);
     }
     return sanitized;
+}
+
+export function redactSensitiveValue(value) {
+    return sanitizeLogValue(value, new WeakSet());
 }
 
 export function generateRequestId() {

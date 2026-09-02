@@ -102,7 +102,7 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–9. 
 | 5 | P1-B | `05-P1-B-runtime-verifier.md` | `../implementation-evidence/P1-B.md` | P0-B, P1-A | verified |
 | 6 | P1-C | `06-P1-C-artifact-validation.md` | `../implementation-evidence/P1-C.md` | P0-B, P0-C, P1-B | verified |
 | 7 | P2 | `07-P2-quality-hardening.md` | `../implementation-evidence/P2.md` | P1-A, P1-B, P1-C | verified |
-| 8 | P3 | `08-P3-observability-metrics.md` | `../implementation-evidence/P3.md` | P2 | pending |
+| 8 | P3 | `08-P3-observability-metrics.md` | `../implementation-evidence/P3.md` | P2 | verified |
 
 ## Entry Gate for Every Unit
 

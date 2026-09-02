@@ -11,7 +11,7 @@ import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
-import { logError, logWarning, redactSensitiveText, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
+import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     getProjectRole,
     canViewProject,
@@ -22,7 +22,7 @@ import {
 } from '../auth.js';
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
-import { generateCompletionReport } from '../verification/reportGenerator.js';
+import { buildCompletionReport } from '../verification/reportGenerator.js';
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -497,12 +497,12 @@ export function createProjectRouter({
             });
         }
         try {
-            const report = await generateCompletionReport({
+            const report = buildCompletionReport({
                 projectId: req.params.id,
                 contractId,
                 runId
             });
-            res.json(report);
+            res.json(redactSensitiveValue(report));
         } catch (error) {
             if (error.code === 'VERIFICATION_RUN_NOT_FOUND') {
                 return res.status(404).json({ error: error.message });

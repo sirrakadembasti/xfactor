@@ -239,17 +239,17 @@ The P3 observability layer operates as a read-only view layer over the database 
 
 ## Unit Exit Gate
 
-- [ ] All 6 P3 planning tasks are checked.
-- [ ] All P3 integration, unit, and E2E tests pass:
+- [x] All 6 P3 planning tasks are checked.
+- [x] All P3 integration, unit, and E2E tests pass:
   - Exact Command: `node backend/tests/test_runner.js test_p3_observability.js`
   - Exact Command: `npm --prefix frontend run test:unit`
   - Exact Command: `npx playwright test`
-- [ ] Independent reviewer returns no blocking finding.
-- [ ] Independent tester reproduces unit acceptance of read-only observability dashboard and DAG interaction.
-- [ ] Evidence receipt `implementation-evidence/P3.md` records commands, exit codes, commit, and findings.
-- [ ] Continuity (`PROJECT-CONTINUITY.md`) and roadmap (`yol-haitasi-todo.md`) agree.
-- [ ] Validator passes:
+- [x] Independent reviewer returns no blocking finding.
+- [x] Independent tester reproduces unit acceptance of read-only observability dashboard and DAG interaction.
+- [x] Evidence receipt `implementation-evidence/P3.md` records commands, exit codes, commit, and findings.
+- [x] Continuity (`PROJECT-CONTINUITY.md`) and roadmap (`yol-haitasi-todo.md`) agree.
+- [x] Validator passes:
   - Exact Command: `node scripts/validate-continuity.mjs`
-- [ ] Unit status changes to `verified` in one coherent checkpoint commit:
+- [x] Unit status changes to `verified` in one coherent checkpoint commit:
   - File Set: `PROJECT-CONTINUITY.md`, `yol-haitasi-todo.md`, `implementation-plans/00-MASTER-EXECUTION-PLAN.md`, `implementation-plans/08-P3-observability-metrics.md`, `implementation-evidence/P3.md`
   - Commit Message: `verif(P3): verify observability metrics and dashboard unit exit gate`

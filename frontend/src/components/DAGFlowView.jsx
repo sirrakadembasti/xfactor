@@ -13,6 +13,13 @@ function requirementKey(requirement) {
   return requirement.stableKey || requirement.stable_key || requirement.id;
 }
 
+function traceStatus(status) {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PASS' || normalized === 'VERIFIED') return 'verified';
+  if (normalized === 'FAIL' || normalized === 'FAILED' || normalized === 'BLOCKED' || normalized === 'REJECTED') return 'failed';
+  return 'skipped';
+}
+
 export default function DAGFlowView({
   nodes,
   edges,
@@ -27,6 +34,8 @@ export default function DAGFlowView({
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState('');
   const [traceRequirements, setTraceRequirements] = useState([]);
+  const [traceChecks, setTraceChecks] = useState([]);
+  const [traceArtifacts, setTraceArtifacts] = useState([]);
   const [traceRequirementsProjectId, setTraceRequirementsProjectId] = useState(null);
   const [loadingTraceability, setLoadingTraceability] = useState(false);
   const [noAuthoritativeEvidence, setNoAuthoritativeEvidence] = useState(false);
@@ -47,6 +56,8 @@ export default function DAGFlowView({
     if (mode !== 'traceability' || !projectId) return undefined;
     const controller = new AbortController();
     setTraceRequirements([]);
+    setTraceChecks([]);
+    setTraceArtifacts([]);
     setTraceRequirementsProjectId(null);
     setNoAuthoritativeEvidence(false);
     setLoadingTraceability(true);
@@ -66,11 +77,15 @@ export default function DAGFlowView({
         if (controller.signal.aborted) return;
         if (!summary) {
           setTraceRequirements([]);
+          setTraceChecks([]);
+          setTraceArtifacts([]);
           setTraceRequirementsProjectId(projectId);
           setNoAuthoritativeEvidence(true);
           return;
         }
         setTraceRequirements(Array.isArray(summary.requirements) ? summary.requirements : []);
+        setTraceChecks(Array.isArray(summary.checks) ? summary.checks : []);
+        setTraceArtifacts(Array.isArray(summary.artifacts) ? summary.artifacts : []);
         setTraceRequirementsProjectId(projectId);
       })
       .catch(requestError => {
@@ -83,11 +98,13 @@ export default function DAGFlowView({
   }, [apiClient, mode, projectId]);
 
   const traceability = useMemo(() => {
-    const visibleRequirements = traceRequirementsProjectId === projectId ? traceRequirements : [];
+    const hasCurrentTrace = traceRequirementsProjectId === projectId;
+    const visibleRequirements = hasCurrentTrace ? traceRequirements : [];
+    const visibleChecks = hasCurrentTrace ? traceChecks : [];
+    const visibleArtifacts = hasCurrentTrace ? traceArtifacts : [];
     const requirementNodes = visibleRequirements.map((requirement, index) => {
       const key = requirementKey(requirement);
-      const rawStatus = String(requirement.evidenceStatus || 'SKIPPED').toUpperCase();
-      const status = rawStatus === 'PASS' ? 'verified' : (rawStatus === 'FAIL' || rawStatus === 'BLOCKED' ? 'failed' : 'skipped');
+      const status = traceStatus(requirement.evidenceStatus);
       return {
         id: `requirement:${key}`,
         position: { x: 40, y: 40 + index * 130 },
@@ -95,19 +112,51 @@ export default function DAGFlowView({
         data: { label: `${key} — ${requirement.statement || 'Requirement'}` }
       };
     });
-    if (!preview || !selectedRequirementKey) return { nodes: requirementNodes, edges: [] };
+    const linkedCheckIds = new Set(visibleRequirements.flatMap(requirement => Array.isArray(requirement.checkIds) ? requirement.checkIds : []));
+    const linkedArtifactIds = new Set(visibleRequirements.flatMap(requirement => Array.isArray(requirement.artifactIds) ? requirement.artifactIds : []));
+    const checkNodes = visibleChecks
+      .filter(check => check.id && linkedCheckIds.has(check.id))
+      .map((check, index) => ({
+        id: `check:${check.id}`,
+        position: { x: 420, y: 40 + index * 110 },
+        className: `trace-node trace-check ${requirementStatusClasses[traceStatus(check.status)]}`,
+        data: { label: `Check ${check.gateName || check.id}` }
+      }));
+    const artifactNodes = visibleArtifacts
+      .filter(artifact => artifact.id && linkedArtifactIds.has(artifact.id))
+      .map((artifact, index) => ({
+        id: `artifact:${artifact.id}`,
+        position: { x: 800, y: 40 + index * 110 },
+        className: `trace-node trace-artifact ${requirementStatusClasses[traceStatus(artifact.status)]}`,
+        data: { label: `Artifact ${artifact.path || artifact.id}` }
+      }));
+    const knownCheckIds = new Set(checkNodes.map(node => node.id.slice('check:'.length)));
+    const knownArtifactIds = new Set(artifactNodes.map(node => node.id.slice('artifact:'.length)));
+    const evidenceEdges = visibleRequirements.flatMap(requirement => {
+      const key = requirementKey(requirement);
+      return [
+        ...(Array.isArray(requirement.checkIds) ? requirement.checkIds : [])
+          .filter(id => knownCheckIds.has(id))
+          .map(id => ({ id: `requirement:${key}->check:${id}`, source: `requirement:${key}`, target: `check:${id}` })),
+        ...(Array.isArray(requirement.artifactIds) ? requirement.artifactIds : [])
+          .filter(id => knownArtifactIds.has(id))
+          .map(id => ({ id: `requirement:${key}->artifact:${id}`, source: `requirement:${key}`, target: `artifact:${id}` }))
+      ];
+    });
+    const evidenceNodes = [...requirementNodes, ...checkNodes, ...artifactNodes];
+    if (!preview || !selectedRequirementKey) return { nodes: evidenceNodes, edges: evidenceEdges };
 
     const taskIds = Array.isArray(preview.tasksToReRun) ? preview.tasksToReRun : [];
     const checkpointIds = Array.isArray(preview.invalidatedCheckpointIds) ? preview.invalidatedCheckpointIds : [];
     const taskNodes = taskIds.map((taskId, index) => ({
       id: `task:${taskId}`,
-      position: { x: 420, y: 40 + index * 110 },
+      position: { x: 420, y: 40 + (checkNodes.length + index) * 110 },
       className: 'trace-node trace-task rebuild-highlight border-orange-500 bg-orange-50 text-orange-900 ring-4 ring-orange-400',
       data: { label: `Task ${taskId}` }
     }));
     const checkpointNodes = checkpointIds.map((checkpointId, index) => ({
       id: `checkpoint:${checkpointId}`,
-      position: { x: 800, y: 40 + index * 110 },
+      position: { x: 800, y: 40 + (artifactNodes.length + index) * 110 },
       className: 'trace-node trace-checkpoint rebuild-highlight border-rose-500 bg-rose-50 text-rose-900 ring-4 ring-rose-400',
       data: { label: `Checkpoint ${checkpointId}` }
     }));
@@ -125,8 +174,8 @@ export default function DAGFlowView({
         animated: true
       })))
     ];
-    return { nodes: [...requirementNodes, ...taskNodes, ...checkpointNodes], edges: previewEdges };
-  }, [preview, projectId, selectedRequirementKey, traceRequirements, traceRequirementsProjectId]);
+    return { nodes: [...evidenceNodes, ...taskNodes, ...checkpointNodes], edges: [...evidenceEdges, ...previewEdges] };
+  }, [preview, projectId, selectedRequirementKey, traceArtifacts, traceChecks, traceRequirements, traceRequirementsProjectId]);
 
   const previewRebuild = async () => {
     if (!projectId || !selectedRequirementKey || previewing) return;

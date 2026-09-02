@@ -5,7 +5,7 @@
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
 <!-- continuity:current_unit=P3 -->
-<!-- continuity:status=pending -->
+<!-- continuity:status=verified -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
 
@@ -28,7 +28,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
 | Aktif birim | `P3` |
-| Genel durum | `pending` |
+| Genel durum | `verified` |
 
 ## Teslim Birimleri
 
@@ -71,7 +71,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 
 ### P3 — Gözlemlenebilirlik ve metrikler
 
-- [ ] **P3 — Evidence dashboard, audit history ve quality metrics**
+- [x] **P3 — Evidence dashboard, audit history ve quality metrics**
   - Plan: `implementation-plans/08-P3-observability-metrics.md`
   - Evidence: `implementation-evidence/P3.md`
   - Bağımlılık: P2 verified.
@@ -80,24 +80,23 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 
 Her teslim biriminde:
 
-- [ ] Unit plan checklist tamamlandı.
-- [ ] Task-specific testler geçti.
-- [ ] Unit-level davranış doğrulaması geçti.
-- [ ] Bağımsız reviewer blocking bulgu vermedi.
-- [ ] Bağımsız tester sonucu yeniden üretti.
-- [ ] Evidence receipt gerçek komut/exit code/commit içeriyor.
-- [ ] `PROJECT-CONTINUITY.md` ile bu dosya uyumlu.
-- [ ] `node scripts/validate-continuity.mjs` PASS.
+- [x] Unit plan checklist tamamlandı.
+- [x] Task-specific testler geçti.
+- [x] Unit-level davranış doğrulaması geçti.
+- [x] Bağımsız reviewer blocking bulgu vermedi.
+- [x] Bağımsız tester sonucu yeniden üretti.
+- [x] Evidence receipt gerçek komut/exit code/commit içeriyor.
+- [x] `PROJECT-CONTINUITY.md` ile bu dosya uyumlu.
+- [x] `node scripts/validate-continuity.mjs` PASS.
 
 ## Şu Anki Adım
 
-P3 Task P3.2 metrics ve failure fingerprinting API’leri bağımsız review/test ile doğrulandı. Sıradaki görev P3 Task P3.3 requirement-impact ve rebuild-preview API’leri.
+Sekiz teslim birimi kanıtla doğrulandı. P3 observability API, metrik, retention/redaction, dashboard ve traceability DAG kapıları tamamlandı.
 
 Sonraki görev:
 
 ```text
-P3 Task P3.3 — Requirement-Impact & Selective Rebuild Preview API
-RED: node backend/tests/test_runner.js test_p3_observability.js
+No further delivery unit remains; preserve verified state unless a superseding plan is approved.
 ```
 
 ## Yeni Sohbet İçin Başlangıç
