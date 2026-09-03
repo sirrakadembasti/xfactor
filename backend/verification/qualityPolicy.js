@@ -8,7 +8,7 @@ import {
     projectStateTransitionInTransaction,
     saveProjectState
 } from '../projectRepository.js';
-import { createRun } from '../repositories/verificationRepository.js';
+import { createRun, updateRunStatus } from '../repositories/verificationRepository.js';
 import { verifyDependencies } from './packageVerifier.js';
 import { verifyBuild } from './buildVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
@@ -637,9 +637,10 @@ export async function runProjectVerification({
         id: runId,
         projectId,
         contractId: contractRow.id,
-        status: 'running',
+        status: 'queued',
         policyVersion: ACTIVE_POLICY_VERSION
     });
+    updateRunStatus(runId, 'running');
 
     const workspace = projectDir || getProjectDir(projectId);
     let projectFiles;
