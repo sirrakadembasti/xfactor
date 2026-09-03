@@ -202,6 +202,10 @@ export async function checkPause(projectId, signal = null) {
     let state = await readProjectState(projectId);
     if (!state || state.status !== 'paused') return state?.status;
 
+function isExecutionActive(status) {
+    return status === 'implementing' || status === 'running';
+}
+
     return new Promise((resolve, reject) => {
         let onStateChange;
         let onAbort;
@@ -312,7 +316,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         await ensureDir(managerDir);
         // 2. AŞAMA: DİREKTÖRLER (DIRECTORS - manager/ altında yuvalanır)
         for (const domain of domainList) {
-            if (await checkPause(projectId, abortController.signal) !== 'running') return;
+            if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
 
             const directorId = `${domain.prefix}.director`;
             let directorDir = path.join(managerDir, `${domain.prefix}.director`);
@@ -354,7 +358,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
             // 3. AŞAMA: TAKIM LİDERLERİ (TEAMLEADERS)
             for (const tl of teamleaders) {
-                if (await checkPause(projectId, abortController.signal) !== 'running') return;
+                if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
 
                 const tlId = `${domain.prefix}.${tl.prefix}`;
                 const tlDir = path.join(directorDir, tl.prefix);
@@ -416,14 +420,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 let waveHasFatalFailure = false;
 
                 for (const wave of executionWaves) {
-                    if (await checkPause(projectId, abortController.signal) !== 'running') return;
+                    if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
                     if (waveHasFatalFailure) break;
 
                     // Eşzamanlılık Sınırlandırıcı (Max 2 LLM görevi paralel çalışır, Rate-Limit koruması)
                     const CONCURRENCY_LIMIT = 2;
 
                     const processSingleTask = async (taskId) => {
-                        if (await checkPause(projectId, abortController.signal) !== 'running') return { success: false, paused: true };
+                        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return { success: false, paused: true };
 
                         const task = dag.getTask(taskId);
                         const coderNodeId = `${tlId}.${taskId}`;
@@ -645,7 +649,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         }
 
         // 6. AŞAMA: TESTER AJANI VE NİHAİ KONSOLİDE RAPOR
-        if (await checkPause(projectId, abortController.signal) === 'running') {
+        if (isExecutionActive(await checkPause(projectId, abortController.signal))) {
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
             const allDiskFiles = await listProjectTree(projectDir);
             for (const df of allDiskFiles) {
