@@ -895,7 +895,8 @@ export function createProjectRouter({
         try {
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
-            if (!canTransitionProjectStatus(state.status, 'running')) {
+            const canResume = state.status === PROJECT_STATUS.PAUSED || state.status === PROJECT_STATUS.IMPLEMENTING || canTransitionProjectStatus(state.status, PROJECT_STATUS.IMPLEMENTING);
+            if (!canResume) {
                 return res.status(400).json({ error: `Bu durumdan (${state.status}) çalışır duruma geçilemez.` });
             }
 
@@ -904,7 +905,7 @@ export function createProjectRouter({
                 return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
             }
 
-            state.status = 'running';
+            state.status = PROJECT_STATUS.IMPLEMENTING;
             state.chatHistory.push({ role: 'model', parts: [{ text: "▶️ Süreç kaldığı yerden devam ettiriliyor..." }] });
             await writeProjectState(id, state);
 
