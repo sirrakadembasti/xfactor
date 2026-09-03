@@ -25,7 +25,11 @@ export class PortableSandboxAdapter {
             workspaceAcl: available,
             networkDenied: available,
             envScrubbed: available,
-            reason: available ? null : `${this.type} sandbox runtime is not available on this host.`
+            reason: available
+                ? null
+                : supported
+                    ? `${this.type} sandbox runtime is not available on this host.`
+                    : `Unsupported sandbox runtime: ${this.type}.`
         };
     }
 

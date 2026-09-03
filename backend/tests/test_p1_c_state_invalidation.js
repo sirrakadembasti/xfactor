@@ -1,7 +1,9 @@
 import assert from 'assert';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import os from 'os';
+import crypto from 'crypto';
 import express from 'express';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
@@ -25,7 +27,7 @@ function seedFullVerificationFixture(label, overrides = {}) {
     const requirementId = `req-inv-${label}`;
     const runId = `run-inv-${label}`;
     const artifactId = `artifact-inv-${label}`;
-    const checkId = `check-inv-${label}`;
+    const checkId = `${runId}-smoke_gate`;
 
     const projectStatus = overrides.projectStatus || 'artifact_verified';
     const artifactStatus = overrides.artifactStatus || 'verified';
@@ -49,18 +51,31 @@ function seedFullVerificationFixture(label, overrides = {}) {
         ) VALUES (?, ?, ?, 'Mandatory statement', 'functional', 'high', 1, 'approved')
     `).run(requirementId, contractId, `REQ-${label}`);
 
+    const timestamp = new Date().toISOString();
     db.prepare(`
         INSERT INTO verification_runs (
             id, project_id, contract_id, status, policy_version, started_at, ended_at
-        ) VALUES (?, ?, ?, ?, '1.0', ?, ?)
-    `).run(runId, projectId, contractId, runStatus, new Date().toISOString(), new Date().toISOString());
+        ) VALUES (?, ?, ?, ?, '2.0', ?, ?)
+    `).run(runId, projectId, contractId, runStatus, timestamp, timestamp);
 
-    db.prepare(`
+    const mandatoryGates = [
+        'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
+        'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
+        'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check',
+        'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
+    ];
+    const insertCheck = db.prepare(`
         INSERT INTO verification_checks (
-            id, contract_id, run_id, gate_name, applicability, status,
-            started_at, ended_at, timed_out
-        ) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', ?, ?, ?, 0)
-    `).run(checkId, contractId, runId, checkStatus, new Date().toISOString(), new Date().toISOString());
+            id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
+            started_at, ended_at, stdout_digest, stderr_digest, evidence_json, timed_out
+        ) VALUES (?, ?, ?, ?, 'MANDATORY', ?, 'node gate', 0, ?, ?, ?, ?, '{"ok":true}', 0)
+    `);
+    for (const gateName of mandatoryGates) {
+        insertCheck.run(
+            `${runId}-${gateName}`, contractId, runId, gateName, checkStatus,
+            timestamp, timestamp, `stdout-${gateName}`, `stderr-${gateName}`
+        );
+    }
 
     if (withTraceability) {
         db.prepare(`
@@ -78,14 +93,17 @@ function seedFullVerificationFixture(label, overrides = {}) {
     }
 
     const artifactPath = path.join(tempDir, `${artifactId}.zip`);
+    const artifactContent = `PK fixture ${label}`;
+    fsSync.writeFileSync(artifactPath, artifactContent);
+    const artifactHash = crypto.createHash('sha256').update(artifactContent).digest('hex');
     createArtifact({
         id: artifactId,
         projectId,
         contractId,
         kind: 'zip',
         path: artifactPath,
-        sha256: 'a'.repeat(64),
-        size: 1024,
+        sha256: artifactHash,
+        size: Buffer.byteLength(artifactContent),
         manifestJson: '[]',
         status: artifactStatus
     });
@@ -165,7 +183,7 @@ try {
         db.prepare(`
             INSERT INTO requirement_check_links (contract_id, requirement_id, verification_check_id)
             VALUES (?, ?, ?)
-        `).run(f4b.contractId, optionalReqId, `check-inv-opt-linked-mand-unlinked`);
+        `).run(f4b.contractId, optionalReqId, `${f4b.runId}-smoke_gate`);
         await assert.rejects(
             async () => completeVerifiedProject({
                 projectId: f4b.projectId,
@@ -235,10 +253,8 @@ try {
 
     await runAsyncTest('4. verified download route serves verified artifacts and rejects unverified ones with 409', async () => {
         const validFixture = seedFullVerificationFixture('download-valid');
-        await fs.writeFile(validFixture.artifactPath, 'PK mock zip content');
 
         const unverifiedFixture = seedFullVerificationFixture('download-unverified', { artifactStatus: 'draft' });
-        await fs.writeFile(unverifiedFixture.artifactPath, 'PK draft zip content');
 
         const app = express();
         app.use(express.json());
@@ -265,7 +281,7 @@ try {
             );
             assert.strictEqual(res1.status, 200);
             const body1 = await res1.text();
-            assert.strictEqual(body1, 'PK mock zip content');
+            assert.strictEqual(body1, 'PK fixture download-valid');
 
             // 2. Unverified artifact download returns 409
             const res2 = await fetch(

@@ -4,18 +4,18 @@ import { scrubEnvironmentVariables, getActiveSandboxAdapter } from './sandboxRun
 
 function requireAvailableSandbox(adapter) {
     if (!adapter || typeof adapter.spawn !== 'function') {
-        const error = new Error('Sandbox adapter does not provide a long-running process boundary.');
+        const error = new Error('SANDBOX_UNAVAILABLE: adapter does not provide a long-running process boundary.');
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
     }
     if (typeof adapter.getCapabilities !== 'function') {
-        const error = new Error(`Sandbox adapter "${adapter.id || 'unknown'}" has no proven capabilities.`);
+        const error = new Error(`SANDBOX_UNAVAILABLE: adapter "${adapter.id || 'unknown'}" has no proven capabilities.`);
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
     }
     const capabilities = adapter.getCapabilities();
     if (!capabilities?.available || capabilities.serviceSpawn !== true) {
-        const error = new Error(capabilities?.reason || 'Sandbox adapter cannot prove isolated service spawning.');
+        const error = new Error(`SANDBOX_UNAVAILABLE: ${capabilities?.reason || 'adapter cannot prove isolated service spawning.'}`);
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
     }
@@ -72,11 +72,6 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
     const adapter = options.adapter || getActiveSandboxAdapter(options.sandboxAdapter || null);
     if (!hostMode) {
         requireAvailableSandbox(adapter);
-        if (typeof adapter.spawn !== 'function') {
-            const error = new Error('Sandbox adapter does not provide a long-running process boundary.');
-            error.code = 'SANDBOX_UNAVAILABLE';
-            throw error;
-        }
     }
 
     const cleanEnv = scrubEnvironmentVariables(baseEnv);

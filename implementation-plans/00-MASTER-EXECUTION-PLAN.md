@@ -89,8 +89,9 @@ These names are planning contracts. A unit that changes one must update dependen
 | 7 `007_state_contract_safety` | P0-A | Minimal contract/requirement/element/task tables, repair issues, coarse-safe `task_checkpoints` | P0-C, P1-A |
 | 8 `008_verification_evidence` | P0-B | Verification runs/checks and immutable command evidence | P1-A, P1-B, P1-C, P2, P3 |
 | 9 `009_contract_traceability_artifacts` | P1-A | Typed requirement links, artifacts, immutable artifact files, required composite keys/indexes | P1-B, P1-C, P2, P3 |
+| 10 `010_completion_receipts` | P4 | Immutable durable completion receipts linked to project, contract, artifact, and verification run | P4 completion projector and audit consumers |
 
-P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–9. Any later additive schema starts at version 10 and requires master-plan supersession before a unit plan claims ownership.
+P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–10. Any later additive schema starts at version 11 and requires master-plan supersession before a unit plan claims ownership.
 
 ## Unit Status
 

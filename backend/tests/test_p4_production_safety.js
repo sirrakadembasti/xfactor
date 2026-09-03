@@ -77,7 +77,8 @@ await runAsyncTest('P4.3 missing build script is BLOCKED not PASS for mandatory 
 });
 await runAsyncTest('P4.4 finalized verification check cannot be mutated', async () => {
     const runId = `p4-run-${Date.now()}`;
-    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'running', policyVersion: '2.0' });
+    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'queued', policyVersion: '2.0' });
+    verificationRepository.updateRunStatus(runId, 'running');
     verificationRepository.createCheck({
         id: `${runId}-check`, runId, projectId, contractId, gateName: 'framework_build',
         applicability: 'MANDATORY', status: 'PASS', evidenceJson: { command: 'npm run build' }
@@ -123,7 +124,8 @@ await runAsyncTest('P4.4 malformed derived evidence is blocked', async () => {
 await runAsyncTest('P4.4 finalized check cannot be re-ended while run remains running', async () => {
     const runId = `p4-running-${Date.now()}`;
     const checkId = `${runId}-check`;
-    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'running', policyVersion: '2.0' });
+    verificationRepository.createRun({ id: runId, projectId, contractId, status: 'queued', policyVersion: '2.0' });
+    verificationRepository.updateRunStatus(runId, 'running');
     verificationRepository.startCheck({ id: checkId, runId, contractId, gateName: 'framework_build' });
     verificationRepository.endCheck({ id: checkId, runId, contractId, status: 'PASS', exitCode: 0, endedAt: new Date().toISOString() });
     assert.throws(() => verificationRepository.updateCheck(checkId, { status: 'FAIL' }), /finalized|immutable/i);
@@ -136,6 +138,65 @@ await runAsyncTest('P4.4 artifact status transitions are guarded', async () => {
     assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'verified' }), /verification_run_id|invalid|immutable/i);
     artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'built' });
     assert.throws(() => artifactRepository.updateArtifactStatus({ projectId, contractId, artifactId, status: 'draft' }), /invalid|immutable/i);
+});
+
+await runAsyncTest('P4.5 completion returns a durable receipt containing the complete audit identity', async () => {
+    const suffix = Date.now();
+    const p = `p4-receipt-${suffix}`;
+    const c = `c4-receipt-${suffix}`;
+    const a = `a4-receipt-${suffix}`;
+    const r = `r4-receipt-${suffix}`;
+    const file = path.join(os.tmpdir(), `${a}.zip`);
+    const timestamp = new Date().toISOString();
+    await fs.writeFile(file, 'p4-receipt-artifact');
+    const artifactHash = crypto.createHash('sha256').update('p4-receipt-artifact').digest('hex');
+    db.prepare("INSERT INTO projects (id,title,status,revision) VALUES (?, 'receipt', 'artifact_verified', 4)").run(p);
+    db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash,approved_at) VALUES (?, ?, 7, 'approved', '{}', 'contract-receipt-hash', CURRENT_TIMESTAMP)").run(c, p);
+    db.prepare("INSERT INTO verification_runs (id,project_id,contract_id,status,policy_version,started_at,ended_at) VALUES (?, ?, ?, 'verified', '2.0', ?, ?)").run(r, p, c, timestamp, timestamp);
+    for (const gateName of [
+        'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
+        'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
+        'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check',
+        'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
+    ]) {
+        db.prepare(`
+            INSERT INTO verification_checks
+              (id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
+               started_at, ended_at, stdout_digest, stderr_digest, evidence_json)
+            VALUES (?, ?, ?, ?, 'MANDATORY', 'PASS', 'node gate', 0, ?, ?, ?, ?, '{"ok":true}')
+        `).run(`${r}-${gateName}`, c, r, gateName, timestamp, timestamp, `stdout-${gateName}`, `stderr-${gateName}`);
+    }
+    artifactRepository.createArtifact({
+        id: a, projectId: p, contractId: c, kind: 'zip', path: file,
+        sha256: artifactHash, size: 20, status: 'verification_pending'
+    });
+    artifactRepository.updateArtifactStatus({
+        projectId: p, contractId: c, artifactId: a, status: 'verified', verificationRunId: r
+    });
+    const result = completeVerifiedProject({ projectId: p, contractId: c, artifactId: a, expectedRevision: 4 });
+    const receipt = db.prepare('SELECT * FROM completion_receipts WHERE id = ?').get(result.completionReceiptId);
+    assert(receipt, 'completion receipt must be durable');
+    assert.deepStrictEqual(
+        {
+            project_id: receipt.project_id, contract_id: receipt.contract_id,
+            contract_hash: receipt.contract_hash, artifact_id: receipt.artifact_id,
+            artifact_hash: receipt.artifact_hash, run_id: receipt.run_id,
+            policy_version: receipt.policy_version, mandatory_gate_digests: JSON.parse(receipt.mandatory_gate_digests),
+            previous_revision: receipt.previous_revision, next_revision: receipt.next_revision,
+            completed_at: receipt.completed_at
+        },
+        {
+            project_id: p, contract_id: c, contract_hash: 'contract-receipt-hash',
+            artifact_id: a, artifact_hash: artifactHash, run_id: r, policy_version: '2.0',
+            mandatory_gate_digests: JSON.parse(JSON.stringify(
+                db.prepare('SELECT gate_name, stdout_digest, stderr_digest FROM verification_checks WHERE run_id = ? AND applicability = ? ORDER BY gate_name')
+                    .all(r, 'MANDATORY')
+            )),
+            previous_revision: 4, next_revision: 5, completed_at: receipt.completed_at
+        }
+    );
+    assert.strictEqual(result.completionReceiptId, receipt.id);
+    await fs.rm(file, { force: true });
 });
 
 await runAsyncTest('P4.5 completion rejects an incomplete active-policy mandatory gate set', async () => {

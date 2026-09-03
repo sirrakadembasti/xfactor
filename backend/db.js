@@ -462,6 +462,51 @@ export const MIGRATIONS = [
                 CREATE INDEX IF NOT EXISTS idx_req_artifact_links ON requirement_artifact_links(contract_id, requirement_id);
             `);
         }
+    },
+    {
+        version: 10,
+        name: '010_completion_receipts',
+        up: (database) => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS completion_receipts (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL,
+                    contract_hash TEXT NOT NULL,
+                    artifact_id TEXT NOT NULL,
+                    artifact_hash TEXT NOT NULL,
+                    run_id TEXT NOT NULL,
+                    policy_version TEXT NOT NULL,
+                    mandatory_gate_digests TEXT NOT NULL,
+                    previous_revision INTEGER NOT NULL,
+                    next_revision INTEGER NOT NULL,
+                    completed_at DATETIME NOT NULL,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE RESTRICT,
+                    FOREIGN KEY (project_id, contract_id) REFERENCES project_contracts(project_id, id) ON DELETE RESTRICT,
+                    FOREIGN KEY (contract_id, artifact_id)
+                      REFERENCES artifacts(contract_id, id) ON DELETE RESTRICT,
+                    FOREIGN KEY (contract_id, run_id) REFERENCES verification_runs(contract_id, id) ON DELETE RESTRICT,
+                    CHECK (next_revision = previous_revision + 1)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_completion_receipts_project
+                    ON completion_receipts(project_id, next_revision);
+                CREATE INDEX IF NOT EXISTS idx_completion_receipts_run
+                    ON completion_receipts(run_id);
+
+                CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_update
+                BEFORE UPDATE ON completion_receipts
+                BEGIN
+                    SELECT RAISE(ABORT, 'completion receipts are immutable');
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_delete
+                BEFORE DELETE ON completion_receipts
+                BEGIN
+                    SELECT RAISE(ABORT, 'completion receipts are immutable');
+                END;
+            `);
+        }
     }
 ];
 export function runMigrations(targetDb = db) {

@@ -10,9 +10,9 @@ isolated.registerDatabase(db);
 
 const { runAsyncTest, finish } = createTestHarness();
 
-await runAsyncTest('1. Schema migration 9 should create artifacts, artifact_files, and requirement link tables', async () => {
+await runAsyncTest('1. Schema migration 10 should create artifacts and durable completion receipts', async () => {
     const version = getSchemaVersion();
-    assert.strictEqual(version, 9, `Schema version should be 9, got: ${version}`);
+    assert.strictEqual(version, 10, `Schema version should be 10, got: ${version}`);
 
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
     const requiredTables = [
@@ -20,7 +20,8 @@ await runAsyncTest('1. Schema migration 9 should create artifacts, artifact_file
         'artifact_files',
         'requirement_file_links',
         'requirement_check_links',
-        'requirement_artifact_links'
+        'requirement_artifact_links',
+        'completion_receipts'
     ];
 
     for (const table of requiredTables) {

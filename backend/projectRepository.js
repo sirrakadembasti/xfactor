@@ -233,23 +233,25 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     }
     for (const check of mandatory) {
         const evidence = parseEvidence(check.evidence_json);
-        const derivedSources = evidence?.sourceGateNames || evidence?.sourceCheckIds;
-        const producerAllowed = ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(evidence?.producer);
+        const payload = evidence?.evidence && typeof evidence.evidence === 'object'
+            ? { ...evidence, ...evidence.evidence } : evidence;
+        const derivedSources = payload?.sourceGateNames || payload?.sourceCheckIds;
+        const producerAllowed = ['quality-policy-test', 'quality-policy', 'aggregate-verification'].includes(payload?.producer);
         const sourceValid = Array.isArray(derivedSources) && derivedSources.length > 0
             && derivedSources.every(value => typeof value === 'string' && value.trim().length > 0);
-        const derived = evidence?.kind === 'derived_gate' && producerAllowed && sourceValid
-            && evidence.policyVersion === '2.0'
-            && isIsoTimestamp(evidence.computedAt || evidence.endedAt);
-        if (derived && (evidence.sourceGateNames || evidence.sourceCheckIds)) {
+        const derived = payload?.kind === 'derived_gate' && producerAllowed && sourceValid
+            && payload.policyVersion === '2.0'
+            && isIsoTimestamp(payload.computedAt || payload.endedAt);
+        if (derived && (payload.sourceGateNames || payload.sourceCheckIds)) {
             const passByName = new Set(checks.filter(item => item.status === 'PASS').map(item => item.gate_name));
             const passById = new Set(checks.filter(item => item.status === 'PASS').map(item => item.id));
-            if (evidence.sourceGateNames?.some(name => !passByName.has(name))
-                || evidence.sourceCheckIds?.some(id => !passById.has(id))) {
+            if (payload.sourceGateNames?.some(name => !passByName.has(name))
+                || payload.sourceCheckIds?.some(id => !passById.has(id))) {
                 throw new Error(`Mandatory gate ${check.gate_name} has invalid derived evidence sources.`);
             }
         }
         const executable = Boolean(check.command) && check.exit_code !== null && check.exit_code !== undefined;
-        if (check.status !== 'PASS' || !evidence || Object.keys(evidence).length === 0
+        if (check.status !== 'PASS' || !payload || Object.keys(payload).length === 0
             || (!derived && !executable) || !check.stdout_digest || !check.stderr_digest
             || !isIsoTimestamp(check.started_at) || !isIsoTimestamp(check.ended_at)) {
             throw new Error(`Mandatory gate ${check.gate_name} lacks complete evidence.`);
@@ -279,7 +281,6 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
     return { artifact, run };
 }
-
 export function completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision }) {
     if (!isValidProjectId(projectId)) throw new Error(`Invalid project ID: "${projectId}"`);
     db.exec('BEGIN IMMEDIATE;');
@@ -290,16 +291,39 @@ export function completeVerifiedProject({ projectId, contractId, artifactId, exp
         if (persisted.status !== PROJECT_STATUS.ARTIFACT_VERIFIED) {
             throw new Error(`Project ${projectId} status must be artifact_verified (was ${persisted.status}).`);
         }
-        const { run } = assertVerifiedArtifactEvidence({
+        const { artifact, run } = assertVerifiedArtifactEvidence({
             projectId, contractId, artifactId, strict: true
         });
-        const nextRevision = persisted.revision + 1;
+        const contract = db.prepare(
+            'SELECT contract_hash FROM project_contracts WHERE project_id = ? AND id = ?'
+        ).get(projectId, contractId);
+        if (!contract) throw new Error(`Contract ${contractId} does not exist for project ${projectId}.`);
+        const mandatoryGateDigests = db.prepare(`
+            SELECT gate_name, stdout_digest, stderr_digest
+            FROM verification_checks
+            WHERE contract_id = ? AND run_id = ? AND applicability = 'MANDATORY'
+            ORDER BY gate_name
+        `).all(contractId, run.id);
+        const previousRevision = persisted.revision;
+        const nextRevision = previousRevision + 1;
+        const completedAt = new Date().toISOString();
         const result = db.prepare(`
             UPDATE projects SET status = ?, revision = ?
             WHERE id = ? AND revision = ? AND status = ?
-        `).run(PROJECT_STATUS.COMPLETED, nextRevision, projectId, persisted.revision, PROJECT_STATUS.ARTIFACT_VERIFIED);
+        `).run(PROJECT_STATUS.COMPLETED, nextRevision, projectId, previousRevision, PROJECT_STATUS.ARTIFACT_VERIFIED);
         if (result.changes !== 1) throw new Error(`CAS Revision conflict on project ${projectId}.`);
         const completionReceiptId = `completion-${crypto.randomUUID()}`;
+        db.prepare(`
+            INSERT INTO completion_receipts (
+                id, project_id, contract_id, contract_hash, artifact_id, artifact_hash,
+                run_id, policy_version, mandatory_gate_digests,
+                previous_revision, next_revision, completed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            completionReceiptId, projectId, contractId, contract.contract_hash,
+            artifactId, artifact.sha256, run.id, run.policy_version,
+            JSON.stringify(mandatoryGateDigests), previousRevision, nextRevision, completedAt
+        );
         db.exec('COMMIT;');
         dbEvents.emit(`stateChange:${projectId}`, PROJECT_STATUS.COMPLETED);
         return { runId: run.id, artifactId, completionReceiptId, ...getProject(projectId) };
