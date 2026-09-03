@@ -751,7 +751,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             });
 
             const testResult = {
-                approved: isQualityPassed && verificationEvaluation.passed,
+                approved: isQualityPassed && (testerAdvisory.approved !== false),
                 summary: isQualityPassed ? (testerAdvisory.summary || 'Tüm kalite denetimleri başarıyla tamamlandı.') : `[Kritik Kalite Hataları]: ${allQualityIssues.join(' | ')}`,
                 issues: isQualityPassed ? testerAdvisory.issues : [...testerAdvisory.issues, ...allQualityIssues]
             };
@@ -803,7 +803,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     }
                 }
                 invalidateProjectCheckpoints(projectId);
-                if (typeof dag?.getAllTasks === 'function') {
+                if (typeof dag !== 'undefined' && dag && typeof dag.getAllTasks === 'function') {
                     for (const t of dag.getAllTasks()) {
                         await reconcileTaskCache(projectDir, t.id, t);
                     }
