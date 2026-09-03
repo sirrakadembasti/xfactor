@@ -4,14 +4,15 @@ Evidence files are authoritative verification receipts for delivery units. A uni
 
 | Unit | Evidence | Status | Verified commit |
 | --- | --- | --- | --- |
-| P0-A | `P0-A.md` | pending | — |
-| P0-B | `P0-B.md` | pending | — |
-| P0-C | `P0-C.md` | pending | — |
-| P1-A | `P1-A.md` | pending | — |
-| P1-B | `P1-B.md` | pending | — |
-| P1-C | `P1-C.md` | pending | — |
-| P2 | `P2.md` | pending | — |
-| P3 | `P3.md` | pending | — |
+| P0-A | `P0-A.md` | verified | SELF |
+| P0-B | `P0-B.md` | verified | SELF |
+| P0-C | `P0-C.md` | verified | SELF |
+| P1-A | `P1-A.md` | verified | SELF |
+| P1-B | `P1-B.md` | verified | SELF |
+| P1-C | `P1-C.md` | verified | SELF |
+| P2 | `P2.md` | verified | SELF |
+| P3 | `P3.md` | verified | SELF |
+| P4 | `P4.md` | verified | cb151c5 |
 
 ## Receipt Rules
 
