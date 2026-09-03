@@ -6,16 +6,16 @@ improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
 current_unit: P4
 current_plan: implementation-plans/09-P4-production-safety.md
-current_task: P4 Task P4.1 - Superseding Continuity Ledger
-status: pending
+current_task: Initiative complete
+status: verified
 branch: master
 head_commit: SELF
 baseline_commit: 4164592f6a633f6094ff7fe45b4662c6bdbd835e
-last_verified_commit: b9b7d12
+last_verified_commit: cb151c5
 evidence_file: implementation-evidence/P4.md
 blocked_by: []
-next_action: Run P4 Task P4.1 RED continuity validation, then update canonical P4 ledger metadata without touching the audited Todo artifact.
-updated_at: 2026-09-02T00:00:00Z
+next_action: No further delivery unit remains; preserve verified state unless a superseding plan is approved.
+updated_at: 2026-09-03T15:40:00Z
 ---
 
 # Project Continuity
@@ -65,12 +65,18 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 Task P3.5 - Read-Only Dashboard & Quality History UI.
 - P3 Task P3.6 - Traceability DAG & Rebuild Preview UI.
 - P3 — Observability, Metrics, and Dashboard complete and verified (Tasks P3.1–P3.6).
+- P4 Task P4.1 - Superseding Continuity Ledger.
+- P4 Task P4.2 - Windows Sandbox Capability Contract.
+- P4 Task P4.3 - Unified Executable Verification Boundary.
+- P4 Task P4.4 - Immutable Verification Evidence and Artifact State.
+- P4 Task P4.5 - Artifact Download Gate and Canonical Completion Projector.
+- P4 — Production Safety complete and verified (Tasks P4.1–P4.5).
 ## In Progress
 
-- P4 Task P4.1 - Superseding Continuity Ledger.
+- Initiative complete.
 ## Pending
 
-- P4 — Production Safety (pending).
+- None.
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -127,6 +133,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P3 unit verification: backend integration `25/25` suites with P3 `60/60`; frontend unit `11/11`; Chromium E2E `2/2`.
 - P3 final review: `APPROVE`; independent acceptance: `60/60` backend, `11/11` frontend, `2/2` Chromium.
 - P3 actual browser proof: authoritative requirement-to-check/artifact edges, redacted summary, and two-node rebuild boundary verified.
+- P4 Unit verification: 18/18 isolated safety tests PASS, 25/25 integration suites PASS.
+- P4 Final review: APPROVE; Independent acceptance: PASS.
+- P4 Continuity validation: PASS (9 units; current P4/verified).
 ## Known Failures
 
 - Todo artifact remains intentionally unfixed.
@@ -140,7 +149,7 @@ User work preserved in the parent checkout:
 
 ## Exact Next Action
 
-Run P4 Task P4.1 RED continuity validation, then update canonical P4 ledger metadata without touching the audited Todo artifact.
+No further delivery unit remains; preserve verified state unless a superseding plan is approved.
 
 ## Do Not Do
 

@@ -24,7 +24,7 @@
 
 ---
 
-### Task P4.1: Superseding Continuity Ledger
+### [x] Task P4.1: Superseding Continuity Ledger
 
 **Files:**
 - Modify: `scripts/validate-continuity.mjs`
@@ -38,7 +38,7 @@
 - Consumes: P3 verified state from `PROJECT-CONTINUITY.md`, `implementation-evidence/P3.md`, and `implementation-plans/08-P3-observability-metrics.md`.
 - Produces: canonical P4 unit metadata: `current_unit: P4`, `current_plan: implementation-plans/09-P4-production-safety.md`, `evidence_file: implementation-evidence/P4.md`, status `pending`, dependency `P3`.
 
-- [ ] **Step 1: Write the failing continuity expectation**
+- [x] **Step 1: Write the failing continuity expectation**
 
 Add P4 to the validator's unit arrays in a temporary RED patch only enough for the current ledger to fail because P4 is missing from master/roadmap/evidence. Keep the expected dependency as `P4: ['P3']`.
 
@@ -70,13 +70,13 @@ const UNIT_DEPENDENCIES = {
 };
 ```
 
-- [ ] **Step 2: Run RED continuity validation**
+- [x] **Step 2: Run RED continuity validation**
 
 Run: `node scripts/validate-continuity.mjs`
 
 Expected: FAIL with a P4 parity error such as missing `implementation-evidence/P4.md`, missing P4 roadmap row, or master plan missing `09-P4-production-safety.md`.
 
-- [ ] **Step 3: Implement coherent P4 continuity supersession**
+- [x] **Step 3: Implement coherent P4 continuity supersession**
 
 Update all canonical state in one coherent change:
 
@@ -109,13 +109,13 @@ P4 is planned and not yet verified.
 - Continuity validator result
 ```
 
-- [ ] **Step 4: Run GREEN continuity validation**
+- [x] **Step 4: Run GREEN continuity validation**
 
 Run: `node scripts/validate-continuity.mjs`
 
 Expected: PASS with `CONTINUITY PASS: 9 units` and current `P4/pending`.
 
-- [ ] **Step 5: Update evidence for planning checkpoint**
+- [x] **Step 5: Update evidence for planning checkpoint**
 
 Append to `implementation-evidence/P4.md`:
 
@@ -127,7 +127,7 @@ Append to `implementation-evidence/P4.md`:
 - Implemented P4 continuity supersession without marking P4 verified and without editing the audited Todo artifact.
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/validate-continuity.mjs implementation-plans/00-MASTER-EXECUTION-PLAN.md PROJECT-CONTINUITY.md yol-haitasi-todo.md implementation-evidence/P4.md implementation-plans/09-P4-production-safety.md
@@ -136,7 +136,7 @@ git commit -m "plan(P4): add production safety continuity unit"
 
 ---
 
-### Task P4.2: Windows Sandbox Capability Contract
+### [x] Task P4.2: Windows Sandbox Capability Contract
 
 **Files:**
 - Modify: `backend/verification/adapters/windowsSandbox.js`
@@ -150,7 +150,7 @@ git commit -m "plan(P4): add production safety continuity unit"
   - `adapter.getCapabilities(): { available, adapterId, isolation, jobObject, resourceLimits, workspaceAcl, networkDenied, envScrubbed, reason }`
   - `executeInSandbox()` throws `SANDBOX_UNAVAILABLE` or returns `{ status: 'PASS'|'FAIL'|'BLOCKED', passed, exitCode, stdout, stderr, timedOut, aborted, adapterId, capabilities }`.
 
-- [ ] **Step 1: Write RED sandbox capability tests**
+- [x] **Step 1: Write RED sandbox capability tests**
 
 Create `backend/tests/test_p4_production_safety.js` with isolated tests that inject a fake Windows adapter and assert platform-only availability is insufficient:
 
@@ -197,13 +197,13 @@ await runAsyncTest('P4.2 blocks Windows adapter without proven OS isolation capa
 
 Add second RED test proving `executeInSandbox()` includes adapter/capability metadata for a passing capable adapter and scrubs secret env keys.
 
-- [ ] **Step 2: Run RED sandbox tests**
+- [x] **Step 2: Run RED sandbox tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: FAIL because `executeInSandbox()` does not consult `getCapabilities()` and capable result metadata is missing.
 
-- [ ] **Step 3: Implement capability gate**
+- [x] **Step 3: Implement capability gate**
 
 Update `backend/verification/sandboxRunner.js`:
 
@@ -225,19 +225,19 @@ Call it before `adapter.execute()`, pass `capabilities` into `execute`, and merg
 
 Update `backend/verification/adapters/windowsSandbox.js` so `isAvailable()` delegates to `getCapabilities().available`. Until a real restricted-token/Job Object implementation exists, `getCapabilities()` must return unavailable with a precise reason instead of treating plain `spawn()` as sandboxed. Replace shell-string `execSync('taskkill ...')` with argument-safe `spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], ...)`.
 
-- [ ] **Step 4: Run GREEN sandbox tests**
+- [x] **Step 4: Run GREEN sandbox tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: PASS for P4.2 tests.
 
-- [ ] **Step 5: Run existing sandbox regression tests**
+- [x] **Step 5: Run existing sandbox regression tests**
 
 Run: `node backend/tests/test_build_sandbox_gate.js`
 
 Expected: PASS; default unavailable sandbox remains fail-closed and host marker is not created.
 
-- [ ] **Step 6: Update evidence and commit**
+- [x] **Step 6: Update evidence and commit**
 
 Append command output and verdict to `implementation-evidence/P4.md` under `## Task P4.2 Receipt — Windows Sandbox Capability Contract`.
 
@@ -248,7 +248,7 @@ git commit -m "fix(sandbox): require proven Windows isolation capability"
 
 ---
 
-### Task P4.3: Unified Executable Verification Boundary
+### [x] Task P4.3: Unified Executable Verification Boundary
 
 **Files:**
 - Modify: `backend/verification/processVerifier.js`
@@ -262,7 +262,7 @@ git commit -m "fix(sandbox): require proven Windows isolation capability"
 - Consumes: `executeInSandbox()` capability result from Task P4.2.
 - Produces: one mandatory verifier status contract: mandatory executable checks are `BLOCKED` when sandbox is unavailable, command is missing, install/build evidence is missing, or execution is skipped.
 
-- [ ] **Step 1: Write RED unified-boundary tests**
+- [x] **Step 1: Write RED unified-boundary tests**
 
 Extend `backend/tests/test_p4_production_safety.js`:
 
@@ -291,13 +291,13 @@ await runAsyncTest('P4.3 missing build script is BLOCKED not PASS for mandatory 
 });
 ```
 
-- [ ] **Step 2: Run RED unified-boundary tests**
+- [x] **Step 2: Run RED unified-boundary tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: FAIL because service spawn bypasses sandbox and legacy build validation can treat missing evidence as non-failure.
 
-- [ ] **Step 3: Route service and command execution through sandbox**
+- [x] **Step 3: Route service and command execution through sandbox**
 
 Update `backend/verification/processVerifier.js` so `spawnService()` accepts an `adapter` option and calls `executeInSandbox()` or a sandbox-managed long-running process wrapper. It must not call plain `spawn()` for untrusted services unless explicit development host mode is passed.
 
@@ -314,19 +314,19 @@ Update `smokeVerifier.js`, `readmeVerifier.js`, `buildVerifier.js`, and `buildVa
 }
 ```
 
-- [ ] **Step 4: Run GREEN unified-boundary tests**
+- [x] **Step 4: Run GREEN unified-boundary tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: PASS for P4.2 and P4.3 tests.
 
-- [ ] **Step 5: Run existing verifier regression tests**
+- [x] **Step 5: Run existing verifier regression tests**
 
 Run: `node backend/tests/test_runner.js test_build_sandbox_gate.js test_p1_b_process.js test_p1_b_smoke_gate.js test_p2_readme_verifier.js`
 
 Expected: PASS with updated fail-closed expectations; no test expects mandatory skipped evidence to pass.
 
-- [ ] **Step 6: Update evidence and commit**
+- [x] **Step 6: Update evidence and commit**
 
 Append command output and verdict to `implementation-evidence/P4.md` under `## Task P4.3 Receipt — Unified Executable Verification Boundary`.
 
@@ -337,7 +337,7 @@ git commit -m "fix(verifier): route executable checks through sandbox boundary"
 
 ---
 
-### Task P4.4: Immutable Verification Evidence and Artifact State
+### [x] Task P4.4: Immutable Verification Evidence and Artifact State
 
 **Files:**
 - Modify: `backend/repositories/verificationRepository.js`
@@ -354,7 +354,7 @@ git commit -m "fix(verifier): route executable checks through sandbox boundary"
   - guarded artifact transition helper;
   - PASS evidence requirements for executable mandatory checks.
 
-- [ ] **Step 1: Write RED immutability and evidence tests**
+- [x] **Step 1: Write RED immutability and evidence tests**
 
 Extend `backend/tests/test_p4_production_safety.js` with isolated DB setup and tests:
 
@@ -381,13 +381,13 @@ await runAsyncTest('P4.4 status-only mandatory PASS is BLOCKED without evidence 
 
 Use real isolated `DB_PATH` helpers already established in `backend/tests/isolatedDb.js` before importing DB-backed repositories.
 
-- [ ] **Step 2: Run RED immutability tests**
+- [x] **Step 2: Run RED immutability tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: FAIL because finalized rows can be mutated and status-only PASS is accepted.
 
-- [ ] **Step 3: Implement guarded repositories and PASS evidence validation**
+- [x] **Step 3: Implement guarded repositories and PASS evidence validation**
 
 Update `verificationRepository.js`:
 
@@ -411,19 +411,19 @@ Update `qualityPolicy.js`:
 
 Add additive SQLite constraints/triggers in `backend/db.js` if compatible with existing migration style; otherwise add repository-level writer confinement and tests proving direct repository bypass fails.
 
-- [ ] **Step 4: Run GREEN immutability tests**
+- [x] **Step 4: Run GREEN immutability tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: PASS through P4.4 tests.
 
-- [ ] **Step 5: Run existing policy/artifact regression tests**
+- [x] **Step 5: Run existing policy/artifact regression tests**
 
 Run: `node backend/tests/test_runner.js test_quality_policy_integration.js test_p1_c_artifact_repository.js test_p3_observability.js`
 
 Expected: PASS with updated evidence-required expectations; P3 compaction remains byte-preserving and allowed only for approved stale stdout/stderr tokens.
 
-- [ ] **Step 6: Update evidence and commit**
+- [x] **Step 6: Update evidence and commit**
 
 Append command output and verdict to `implementation-evidence/P4.md` under `## Task P4.4 Receipt — Immutable Verification Evidence and Artifact State`.
 
@@ -434,7 +434,7 @@ git commit -m "fix(evidence): guard verifier and artifact state transitions"
 
 ---
 
-### Task P4.5: Artifact Download Gate and Canonical Completion Projector
+### [x] Task P4.5: Artifact Download Gate and Canonical Completion Projector
 
 **Files:**
 - Modify: `backend/projectRepository.js`
@@ -453,7 +453,7 @@ git commit -m "fix(evidence): guard verifier and artifact state transitions"
   - stricter `completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision })`;
   - artifact download authorization that revalidates current-run evidence and file hash.
 
-- [ ] **Step 1: Write RED completion and download tests**
+- [x] **Step 1: Write RED completion and download tests**
 
 Extend `backend/tests/test_p4_production_safety.js` with isolated DB tests:
 
@@ -480,13 +480,13 @@ await runAsyncTest('P4.5 workflow cannot write completed directly', async () => 
 
 Use existing test HTTP helpers if available; otherwise keep route-level test in project route test conventions.
 
-- [ ] **Step 2: Run RED completion/download tests**
+- [x] **Step 2: Run RED completion/download tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: FAIL because completion does not require exact gate set/current-run links, download does not check linked run status/policy/hash, and workflow still has direct completed write.
 
-- [ ] **Step 3: Strengthen completion projector**
+- [x] **Step 3: Strengthen completion projector**
 
 Update `completeVerifiedProject()` to require:
 
@@ -501,7 +501,7 @@ Update `completeVerifiedProject()` to require:
 
 Persist completion receipt with project ID, contract ID/hash, artifact ID/hash, run ID, policy version, mandatory gate digest list, previous revision, next revision, and timestamp.
 
-- [ ] **Step 4: Wire workflow and route completion through projector**
+- [x] **Step 4: Wire workflow and route completion through projector**
 
 Update `backend/engine/workflow.js`:
 
@@ -515,7 +515,7 @@ Update `backend/workflowAttempts.js`, deletion flow, disk sync, and auth/state v
 
 Create or update `backend/verification/verificationCli.js` so CLI and HTTP verification use the same orchestration service and return receipt IDs, not only in-memory booleans.
 
-- [ ] **Step 5: Harden artifact download route**
+- [x] **Step 5: Harden artifact download route**
 
 Update `backend/routes/projectRoutes.js` download route to reject unless the current request proves:
 
@@ -529,19 +529,19 @@ Update `backend/routes/projectRoutes.js` download route to reject unless the cur
 - no open repairs;
 - fresh file hash equals persisted `sha256`.
 
-- [ ] **Step 6: Run GREEN completion/download tests**
+- [x] **Step 6: Run GREEN completion/download tests**
 
 Run: `node backend/tests/test_p4_production_safety.js`
 
 Expected: PASS through P4.5 tests.
 
-- [ ] **Step 7: Run exact backend regression gate**
+- [x] **Step 7: Run exact backend regression gate**
 
 Run: `node backend/tests/test_runner.js test_p4_production_safety.js test_p0_a_state_transitions.js test_p1_b_quality_policy_evidence.js test_p1_c_artifact_repository.js test_p3_observability.js`
 
 Expected: PASS; no direct completed write path remains; artifact download and completion are current-run evidence-derived.
 
-- [ ] **Step 8: Update evidence and commit**
+- [x] **Step 8: Update evidence and commit**
 
 Append command output and verdict to `implementation-evidence/P4.md` under `## Task P4.5 Receipt — Artifact Download Gate and Canonical Completion Projector`.
 
@@ -554,17 +554,17 @@ git commit -m "fix(completion): derive artifact download and completion from ver
 
 ## Unit Exit Gate
 
-- [ ] All 5 P4 planning tasks are checked.
-- [ ] All P4 backend safety tests pass:
+- [x] All 5 P4 planning tasks are checked.
+- [x] All P4 backend safety tests pass:
   - Exact Command: `node backend/tests/test_p4_production_safety.js`
-- [ ] P4 regression gate passes:
+- [x] P4 regression gate passes:
   - Exact Command: `node backend/tests/test_runner.js test_p4_production_safety.js test_build_sandbox_gate.js test_p1_b_process.js test_p1_b_smoke_gate.js test_quality_policy_integration.js test_p1_c_artifact_repository.js test_p3_observability.js`
-- [ ] Independent reviewer returns no blocking finding.
-- [ ] Independent tester reproduces Windows sandbox fail-closed, persisted evidence, artifact download, and canonical completion acceptance.
-- [ ] Evidence receipt `implementation-evidence/P4.md` records commands, exit codes, commit, and findings.
-- [ ] Continuity (`PROJECT-CONTINUITY.md`) and roadmap (`yol-haitasi-todo.md`) agree on P4.
-- [ ] Validator passes:
+- [x] Independent reviewer returns no blocking finding.
+- [x] Independent tester reproduces Windows sandbox fail-closed, persisted evidence, artifact download, and canonical completion acceptance.
+- [x] Evidence receipt `implementation-evidence/P4.md` records commands, exit codes, commit, and findings.
+- [x] Continuity (`PROJECT-CONTINUITY.md`) and roadmap (`yol-haitasi-todo.md`) agree on P4.
+- [x] Validator passes:
   - Exact Command: `node scripts/validate-continuity.mjs`
-- [ ] Unit status changes to `verified` in one coherent checkpoint commit:
+- [x] Unit status changes to `verified` in one coherent checkpoint commit:
   - File Set: `PROJECT-CONTINUITY.md`, `yol-haitasi-todo.md`, `implementation-plans/00-MASTER-EXECUTION-PLAN.md`, `implementation-plans/09-P4-production-safety.md`, `implementation-evidence/P4.md`, `scripts/validate-continuity.mjs`
   - Commit Message: `verif(P4): verify production safety unit exit gate`
