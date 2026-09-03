@@ -54,6 +54,7 @@ import {
 } from '../projectRepository.js';
 import { verifyArtifactAndProject } from '../verification/verificationCli.js';
 import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
+import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
