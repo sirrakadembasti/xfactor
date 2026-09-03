@@ -141,12 +141,9 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - Todo artifact remains intentionally unfixed.
 ## Dirty Worktree
 
-Clean.
-
 User work preserved in the parent checkout:
 - `todo.md` deleted.
 - `eski-todo.md` untracked.
-
 ## Exact Next Action
 
 No further delivery unit remains; preserve verified state unless a superseding plan is approved.
