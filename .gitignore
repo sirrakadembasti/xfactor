@@ -23,3 +23,7 @@ backend/data/*.db-wal
 *.log
 backend/out*.log
 graphify-out/cache/
+
+# Test output
+test-results/
+playwright-report/
