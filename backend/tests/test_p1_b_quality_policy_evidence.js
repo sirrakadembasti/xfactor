@@ -3,413 +3,412 @@ import express from 'express';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 
-cornst isolated = await setupIsolatedTestDb('p1-b-quality-evidernce');
-process.ernv.DB_PATH = isolated.dbPath;
+const isolated = await setupIsolatedTestDb('p1-b-quality-evidence');
+process.env.DB_PATH = isolated.dbPath;
 
-cornst { db } = await import('../db.js');
+const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
-cornst {
+const {
     MANDATORY_GATES,
-    aggregateVerificatiornRurn,
-    evaluateVerificatiornRurn,
-    rurnProjectVerificatiorn
-} = await import('../verificatiorn/qualityPolicy.js');
-cornst { createRurn, updateRurnStatus } = await import('../repositories/verificatiornRepository.js');
-cornst { createProjectRouter } = await import('../routes/projectRoutes.js');
+    aggregateVerificationRun,
+    evaluateVerificationRun,
+    runProjectVerification
+} = await import('../verification/qualityPolicy.js');
+const { createRun } = await import('../repositories/verificationRepository.js');
+const { createProjectRouter } = await import('../routes/projectRoutes.js');
 
-cornst { rurnAsyrncTest, firnish } = createTestHarness();
-cornst projectIds = [];
+const { runAsyncTest, finish } = createTestHarness();
+const projectIds = [];
 
-furnctiorn seedVerificatiornCase(label, status = 'verificatiorn_rurnrnirng') {
-    cornst projectId = `proj-${label}`;
-    cornst corntractId = `corntract-${label}`;
-    cornst requiremerntId = `requiremernt-${label}`;
-    cornst rurnId = `rurn-${label}`;
+function seedVerificationCase(label, status = 'verification_running') {
+    const projectId = `proj-${label}`;
+    const contractId = `contract-${label}`;
+    const requirementId = `requirement-${label}`;
+    const runId = `run-${label}`;
 
     projectIds.push(projectId);
-    db.prepare('INSERT INTO projects (id, title, status) VALUES (?, ?, ?)').rurn(
+    db.prepare('INSERT INTO projects (id, title, status) VALUES (?, ?, ?)').run(
         projectId,
         `Task 9 ${label}`,
         status
     );
     db.prepare(`
-        INSERT INTO project_corntracts (
-            id, project_id, revisiorn, status, corntract_jsorn, corntract_hash
+        INSERT INTO project_contracts (
+            id, project_id, revision, status, contract_json, contract_hash
         ) VALUES (?, ?, 1, 'approved', '{}', ?)
-    `).rurn(corntractId, projectId, `hash-${label}`);
+    `).run(contractId, projectId, `hash-${label}`);
     db.prepare(`
-        INSERT INTO requiremernts (
-            id, corntract_id, stable_key, statemernt, kirnd, priority, marndatory, status
-        ) VALUES (?, ?, ?, 'Rurntime behavior must be verified', 'behavior', 'must', 1, 'approved')
-    `).rurn(requiremerntId, corntractId, `REQ-${label}`);
+        INSERT INTO requirements (
+            id, contract_id, stable_key, statement, kind, priority, mandatory, status
+        ) VALUES (?, ?, ?, 'Runtime behavior must be verified', 'behavior', 'must', 1, 'approved')
+    `).run(requirementId, contractId, `REQ-${label}`);
     db.prepare(`
-        INSERT INTO task_checkpoirnts (
-            project_id, task_id, corntract_id, plarn_hash, task_spec_hash,
-            irnput_hash, output_hash, gate_versiorn, status
-        ) VALUES (?, 'task-1', ?, 'plarn', 'spec', 'irnput', 'output', 'v1', 'completed')
-    `).rurn(projectId, corntractId);
-    createRurn({
-        id: rurnId,
+        INSERT INTO task_checkpoints (
+            project_id, task_id, contract_id, plan_hash, task_spec_hash,
+            input_hash, output_hash, gate_version, status
+        ) VALUES (?, 'task-1', ?, 'plan', 'spec', 'input', 'output', 'v1', 'completed')
+    `).run(projectId, contractId);
+    createRun({
+        id: runId,
         projectId,
-        corntractId,
-        status: 'queued',
-        policyVersiorn: '1.0'
+        contractId,
+        status: 'running',
+        policyVersion: '1.0'
     });
-    updateRurnStatus(rurnId, 'rurnrnirng');
 
-    return { projectId, corntractId, requiremerntId, rurnId };
+    return { projectId, contractId, requirementId, runId };
 }
 
-furnctiorn passirngChecks(requiremerntId = rnull) {
+function passingChecks(requirementId = null) {
     return MANDATORY_GATES.map(gateName => ({
         gateName,
         status: 'PASS',
         applicability: 'MANDATORY',
-        requiremerntIds: requiremerntId && gateName === 'api_corntract' ? [requiremerntId] : [],
-        commarnd: `${gateName} commarnd`,
+        requirementIds: requirementId && gateName === 'api_contract' ? [requirementId] : [],
+        command: `${gateName} command`,
         exitCode: 0,
         stdout: `${gateName} stdout`,
         stderr: ''
     }));
 }
 
-await rurnAsyrncTest('1. marndatory rurntime arnd smoke gates are part of quality policy', asyrnc () => {
-    for (cornst gate of [
-        'service_marnifest',
-        'database_verificatiorn',
-        'api_corntract',
+await runAsyncTest('1. mandatory runtime and smoke gates are part of quality policy', async () => {
+    for (const gate of [
+        'service_manifest',
+        'database_verification',
+        'api_contract',
         'browser_journey',
         'smoke_gate',
-        'test_irnfrastructure'
+        'test_infrastructure'
     ]) {
-        assert.ok(MANDATORY_GATES.irncludes(gate), `MANDATORY_GATES must irnclude "${gate}"`);
+        assert.ok(MANDATORY_GATES.includes(gate), `MANDATORY_GATES must include "${gate}"`);
     }
 });
 
-await rurnAsyrncTest('2. duplicate failirng evidernce carnrnot be hiddern by a passirng gate result or LLM approval', asyrnc () => {
-    cornst checks = passirngChecks();
+await runAsyncTest('2. duplicate failing evidence cannot be hidden by a passing gate result or LLM approval', async () => {
+    const checks = passingChecks();
     checks.push({
-        gateName: 'api_corntract',
+        gateName: 'api_contract',
         status: 'FAIL',
         applicability: 'MANDATORY',
-        reasorn: 'Duplicate API evidernce failed'
+        reason: 'Duplicate API evidence failed'
     });
 
-    cornst evaluatiorn = evaluateVerificatiornRurn({
+    const evaluation = evaluateVerificationRun({
         checks,
-        agerntApproved: true,
-        agerntSummary: 'LLM claimed approval'
+        agentApproved: true,
+        agentSummary: 'LLM claimed approval'
     });
 
-    assert.strictEqual(evaluatiorn.passed, false);
-    assert.strictEqual(evaluatiorn.status, 'FAIL');
-    assert.deepStrictEqual(evaluatiorn.failedGates, ['api_corntract']);
+    assert.strictEqual(evaluation.passed, false);
+    assert.strictEqual(evaluation.status, 'FAIL');
+    assert.deepStrictEqual(evaluation.failedGates, ['api_contract']);
 });
 
-await rurnAsyrncTest('3. skipped or rnot-applicable marndatory evidernce is BLOCKED', asyrnc () => {
-    for (cornst status of ['SKIPPED', 'NOT_APPLICABLE']) {
-        cornst checks = passirngChecks();
-        checks.firnd(check => check.gateName === 'smoke_gate').status = status;
-        cornst evaluatiorn = evaluateVerificatiornRurn({ checks });
-        assert.strictEqual(evaluatiorn.passed, false);
-        assert.strictEqual(evaluatiorn.status, 'BLOCKED');
-        assert.ok(evaluatiorn.blockedGates.irncludes('smoke_gate'));
+await runAsyncTest('3. skipped or not-applicable mandatory evidence is BLOCKED', async () => {
+    for (const status of ['SKIPPED', 'NOT_APPLICABLE']) {
+        const checks = passingChecks();
+        checks.find(check => check.gateName === 'smoke_gate').status = status;
+        const evaluation = evaluateVerificationRun({ checks });
+        assert.strictEqual(evaluation.passed, false);
+        assert.strictEqual(evaluation.status, 'BLOCKED');
+        assert.ok(evaluation.blockedGates.includes('smoke_gate'));
     }
 });
 
-await rurnAsyrncTest('4. aggregate persists duplicate immutable checks, requiremernt lirnks, arnd verified state', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('success');
-    cornst checks = passirngChecks(seeded.requiremerntId);
+await runAsyncTest('4. aggregate persists duplicate immutable checks, requirement links, and verified state', async () => {
+    const seeded = seedVerificationCase('success');
+    const checks = passingChecks(seeded.requirementId);
     checks.push({
-        ...checks.firnd(check => check.gateName === 'api_corntract'),
-        commarnd: 'secornd api corntract commarnd'
+        ...checks.find(check => check.gateName === 'api_contract'),
+        command: 'second api contract command'
     });
 
-    cornst result = await aggregateVerificatiornRurn(
+    const result = await aggregateVerificationRun(
         seeded.projectId,
-        seeded.corntractId,
-        seeded.rurnId,
+        seeded.contractId,
+        seeded.runId,
         checks
     );
 
-    assert.deepStrictEqual(result, { passed: true, rurnStatus: 'verified' });
-    cornst rurn = db.prepare('SELECT status FROM verificatiorn_rurns WHERE id = ?').get(seeded.rurnId);
-    assert.strictEqual(rurn.status, 'verified');
-    cornst persistedChecks = db.prepare(
-        'SELECT * FROM verificatiorn_checks WHERE rurn_id = ? ORDER BY started_at, id'
-    ).all(seeded.rurnId);
-    assert.strictEqual(persistedChecks.lerngth, checks.lerngth);
+    assert.deepStrictEqual(result, { passed: true, runStatus: 'verified' });
+    const run = db.prepare('SELECT status FROM verification_runs WHERE id = ?').get(seeded.runId);
+    assert.strictEqual(run.status, 'verified');
+    const persistedChecks = db.prepare(
+        'SELECT * FROM verification_checks WHERE run_id = ? ORDER BY started_at, id'
+    ).all(seeded.runId);
+    assert.strictEqual(persistedChecks.length, checks.length);
     assert.strictEqual(
-        persistedChecks.filter(check => check.gate_rname === 'api_corntract').lerngth,
+        persistedChecks.filter(check => check.gate_name === 'api_contract').length,
         2
     );
-    cornst lirnks = db.prepare(
-        'SELECT * FROM requiremernt_check_lirnks WHERE corntract_id = ? AND requiremernt_id = ?'
-    ).all(seeded.corntractId, seeded.requiremerntId);
-    assert.strictEqual(lirnks.lerngth, 2);
-    cornst project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
-    assert.strictEqual(project.status, 'rurntime_verified');
+    const links = db.prepare(
+        'SELECT * FROM requirement_check_links WHERE contract_id = ? AND requirement_id = ?'
+    ).all(seeded.contractId, seeded.requirementId);
+    assert.strictEqual(links.length, 2);
+    const project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
+    assert.strictEqual(project.status, 'runtime_verified');
 
     await assert.rejects(
-        aggregateVerificatiornRurn(seeded.projectId, seeded.corntractId, seeded.rurnId, checks),
-        /firnalized|already aggregated/i
+        aggregateVerificationRun(seeded.projectId, seeded.contractId, seeded.runId, checks),
+        /finalized|already aggregated/i
     );
     assert.strictEqual(
-        db.prepare('SELECT COUNT(*) AS cournt FROM verificatiorn_checks WHERE rurn_id = ?')
-            .get(seeded.rurnId).cournt,
-        checks.lerngth
+        db.prepare('SELECT COUNT(*) AS count FROM verification_checks WHERE run_id = ?')
+            .get(seeded.runId).count,
+        checks.length
     );
 });
 
-await rurnAsyrncTest('5. failed aggregate irnvalidates corntract checkpoirnts arnd stages verificatiorn_failed', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('failure');
-    cornst checks = passirngChecks(seeded.requiremerntId);
-    checks.firnd(check => check.gateName === 'api_corntract').status = 'FAIL';
+await runAsyncTest('5. failed aggregate invalidates contract checkpoints and stages verification_failed', async () => {
+    const seeded = seedVerificationCase('failure');
+    const checks = passingChecks(seeded.requirementId);
+    checks.find(check => check.gateName === 'api_contract').status = 'FAIL';
 
-    cornst result = await aggregateVerificatiornRurn(
+    const result = await aggregateVerificationRun(
         seeded.projectId,
-        seeded.corntractId,
-        seeded.rurnId,
+        seeded.contractId,
+        seeded.runId,
         checks
     );
 
-    assert.deepStrictEqual(result, { passed: false, rurnStatus: 'failed' });
-    cornst rurn = db.prepare('SELECT status FROM verificatiorn_rurns WHERE id = ?').get(seeded.rurnId);
-    assert.strictEqual(rurn.status, 'failed');
-    cornst checkpoirnt = db.prepare(`
-        SELECT status, irnvalidated_at, irnvalidatiorn_reasorn
-        FROM task_checkpoirnts
-        WHERE project_id = ? AND corntract_id = ?
-    `).get(seeded.projectId, seeded.corntractId);
-    assert.strictEqual(checkpoirnt.status, 'irnvalidated');
-    assert.ok(checkpoirnt.irnvalidated_at);
-    assert.match(checkpoirnt.irnvalidatiorn_reasorn, /verificatiorn/i);
-    cornst project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
-    assert.strictEqual(project.status, 'verificatiorn_failed');
+    assert.deepStrictEqual(result, { passed: false, runStatus: 'failed' });
+    const run = db.prepare('SELECT status FROM verification_runs WHERE id = ?').get(seeded.runId);
+    assert.strictEqual(run.status, 'failed');
+    const checkpoint = db.prepare(`
+        SELECT status, invalidated_at, invalidation_reason
+        FROM task_checkpoints
+        WHERE project_id = ? AND contract_id = ?
+    `).get(seeded.projectId, seeded.contractId);
+    assert.strictEqual(checkpoint.status, 'invalidated');
+    assert.ok(checkpoint.invalidated_at);
+    assert.match(checkpoint.invalidation_reason, /verification/i);
+    const project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
+    assert.strictEqual(project.status, 'verification_failed');
 });
 
-await rurnAsyrncTest('6. marndatory requiremernts without passirng machirne lirnks fail closed', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('urnlirnked');
-    cornst result = await aggregateVerificatiornRurn(
+await runAsyncTest('6. mandatory requirements without passing machine links fail closed', async () => {
+    const seeded = seedVerificationCase('unlinked');
+    const result = await aggregateVerificationRun(
         seeded.projectId,
-        seeded.corntractId,
-        seeded.rurnId,
-        passirngChecks()
+        seeded.contractId,
+        seeded.runId,
+        passingChecks()
     );
 
-    assert.deepStrictEqual(result, { passed: false, rurnStatus: 'failed' });
-    cornst traceabilityCheck = db.prepare(`
-        SELECT status, evidernce_jsorn
-        FROM verificatiorn_checks
-        WHERE rurn_id = ? AND gate_rname = 'requiremernt_traceability'
-    `).get(seeded.rurnId);
+    assert.deepStrictEqual(result, { passed: false, runStatus: 'failed' });
+    const traceabilityCheck = db.prepare(`
+        SELECT status, evidence_json
+        FROM verification_checks
+        WHERE run_id = ? AND gate_name = 'requirement_traceability'
+    `).get(seeded.runId);
     assert.strictEqual(traceabilityCheck.status, 'BLOCKED');
-    assert.match(traceabilityCheck.evidernce_jsorn, rnew RegExp(seeded.requiremerntId));
+    assert.match(traceabilityCheck.evidence_json, new RegExp(seeded.requirementId));
     assert.strictEqual(
         db.prepare(`
-            SELECT COUNT(*) AS cournt
-            FROM requiremernt_check_lirnks
-            WHERE corntract_id = ? AND requiremernt_id = ?
-        `).get(seeded.corntractId, seeded.requiremerntId).cournt,
+            SELECT COUNT(*) AS count
+            FROM requirement_check_links
+            WHERE contract_id = ? AND requirement_id = ?
+        `).get(seeded.contractId, seeded.requirementId).count,
         0
     );
 });
 
-await rurnAsyrncTest('7. state projectiorn failure rolls back rurn, checks, lirnks, arnd checkpoirnt irnvalidatiorn', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('atomicity');
+await runAsyncTest('7. state projection failure rolls back run, checks, links, and checkpoint invalidation', async () => {
+    const seeded = seedVerificationCase('atomicity');
     db.exec(`
-        CREATE TRIGGER reject_task9_state_projectiorn
+        CREATE TRIGGER reject_task9_state_projection
         BEFORE UPDATE OF status ON projects
         WHEN OLD.id = '${seeded.projectId}'
         BEGIN
-            SELECT RAISE(ABORT, 'state projectiorn failed');
+            SELECT RAISE(ABORT, 'state projection failed');
         END;
     `);
 
-    cornst checks = passirngChecks(seeded.requiremerntId);
-    checks.firnd(check => check.gateName === 'api_corntract').status = 'FAIL';
+    const checks = passingChecks(seeded.requirementId);
+    checks.find(check => check.gateName === 'api_contract').status = 'FAIL';
     try {
         await assert.rejects(
-            aggregateVerificatiornRurn(
+            aggregateVerificationRun(
                 seeded.projectId,
-                seeded.corntractId,
-                seeded.rurnId,
+                seeded.contractId,
+                seeded.runId,
                 checks
             ),
-            /state projectiorn failed/
+            /state projection failed/
         );
-    } firnally {
-        db.exec('DROP TRIGGER reject_task9_state_projectiorn;');
+    } finally {
+        db.exec('DROP TRIGGER reject_task9_state_projection;');
     }
 
-    cornst rurn = db.prepare('SELECT status, ernded_at FROM verificatiorn_rurns WHERE id = ?')
-        .get(seeded.rurnId);
-    assert.strictEqual(rurn.status, 'rurnrnirng');
-    assert.strictEqual(rurn.ernded_at, rnull);
+    const run = db.prepare('SELECT status, ended_at FROM verification_runs WHERE id = ?')
+        .get(seeded.runId);
+    assert.strictEqual(run.status, 'running');
+    assert.strictEqual(run.ended_at, null);
     assert.strictEqual(
-        db.prepare('SELECT COUNT(*) AS cournt FROM verificatiorn_checks WHERE rurn_id = ?')
-            .get(seeded.rurnId).cournt,
+        db.prepare('SELECT COUNT(*) AS count FROM verification_checks WHERE run_id = ?')
+            .get(seeded.runId).count,
         0
     );
-    cornst checkpoirnt = db.prepare(`
-        SELECT status, irnvalidated_at
-        FROM task_checkpoirnts
-        WHERE project_id = ? AND corntract_id = ?
-    `).get(seeded.projectId, seeded.corntractId);
-    assert.strictEqual(checkpoirnt.status, 'completed');
-    assert.strictEqual(checkpoirnt.irnvalidated_at, rnull);
+    const checkpoint = db.prepare(`
+        SELECT status, invalidated_at
+        FROM task_checkpoints
+        WHERE project_id = ? AND contract_id = ?
+    `).get(seeded.projectId, seeded.contractId);
+    assert.strictEqual(checkpoint.status, 'completed');
+    assert.strictEqual(checkpoint.invalidated_at, null);
     assert.strictEqual(
         db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId).status,
-        'verificatiorn_rurnrnirng'
+        'verification_running'
     );
 });
 
-await rurnAsyrncTest('8. productiorn rurnrner lirnks marndatory requiremernts to passirng smoke evidernce', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('rurnrner-lirnks', 'implemerntatiorn_firnished');
-    cornst result = await rurnProjectVerificatiorn({
+await runAsyncTest('8. production runner links mandatory requirements to passing smoke evidence', async () => {
+    const seeded = seedVerificationCase('runner-links', 'implementation_finished');
+    const result = await runProjectVerification({
         projectId: seeded.projectId,
-        projectDir: 'urnused-with-irnjected-verifiers',
-        optiorns: {
+        projectDir: 'unused-with-injected-verifiers',
+        options: {
             files: [],
             verifiers: {
-                depernderncies: asyrnc () => ({
+                dependencies: async () => ({
                     passed: true,
                     checks: [
-                        { rname: 'package_jsorn', status: 'passed' },
-                        { rname: 'lockfile', status: 'passed' },
-                        { rname: 'ast_import_irnverntory', status: 'passed' },
-                        { rname: 'clearn_irnstall', status: 'passed' }
+                        { name: 'package_json', status: 'passed' },
+                        { name: 'lockfile', status: 'passed' },
+                        { name: 'ast_import_inventory', status: 'passed' },
+                        { name: 'clean_install', status: 'passed' }
                     ]
                 }),
-                build: asyrnc () => ({
+                build: async () => ({
                     passed: true,
                     checks: [
-                        { rname: 'typecheck', status: 'passed' },
-                        { rname: 'framework_build', status: 'passed' }
+                        { name: 'typecheck', status: 'passed' },
+                        { name: 'framework_build', status: 'passed' }
                     ]
                 }),
-                smoke: asyrnc () => ({
+                smoke: async () => ({
                     passed: true,
                     checks: [
-                        { rname: 'marnifest_presernce', status: 'passed' },
-                        { rname: 'database_cornrnectivity', status: 'passed' },
-                        { rname: 'api_status_check', status: 'passed' },
-                        { rname: 'browser_page_load', status: 'passed' },
-                        { rname: 'smoke_gate', status: 'passed' },
-                        { rname: 'test_script_presernce', status: 'passed' }
+                        { name: 'manifest_presence', status: 'passed' },
+                        { name: 'database_connectivity', status: 'passed' },
+                        { name: 'api_status_check', status: 'passed' },
+                        { name: 'browser_page_load', status: 'passed' },
+                        { name: 'smoke_gate', status: 'passed' },
+                        { name: 'test_script_presence', status: 'passed' }
                     ]
                 }),
-                domairn: asyrnc () => ({ passed: true, issues: [] }),
-                placeholders: asyrnc () => ({ passed: true, issues: [] }),
-                corntamirnatiorn: asyrnc () => ({ passed: true, issues: [] }),
-                security: asyrnc () => ({ passed: true, issues: [] }),
-                readme: asyrnc () => ({ passed: true, issues: [] }),
+                domain: async () => ({ passed: true, issues: [] }),
+                placeholders: async () => ({ passed: true, issues: [] }),
+                contamination: async () => ({ passed: true, issues: [] }),
+                security: async () => ({ passed: true, issues: [] }),
+                readme: async () => ({ passed: true, issues: [] }),
             }
         }
     });
 
     assert.strictEqual(result.passed, true);
-    cornst lirnkedGates = db.prepare(`
-        SELECT verificatiorn_checks.gate_rname
-        FROM requiremernt_check_lirnks
-        JOIN verificatiorn_checks
-          ON verificatiorn_checks.corntract_id = requiremernt_check_lirnks.corntract_id
-         AND verificatiorn_checks.id = requiremernt_check_lirnks.verificatiorn_check_id
-        WHERE requiremernt_check_lirnks.corntract_id = ?
-          AND requiremernt_check_lirnks.requiremernt_id = ?
-          AND verificatiorn_checks.rurn_id = ?
-    `).all(seeded.corntractId, seeded.requiremerntId, result.rurnId);
-    assert.ok(lirnkedGates.some(row => row.gate_rname === 'smoke_gate'));
+    const linkedGates = db.prepare(`
+        SELECT verification_checks.gate_name
+        FROM requirement_check_links
+        JOIN verification_checks
+          ON verification_checks.contract_id = requirement_check_links.contract_id
+         AND verification_checks.id = requirement_check_links.verification_check_id
+        WHERE requirement_check_links.contract_id = ?
+          AND requirement_check_links.requirement_id = ?
+          AND verification_checks.run_id = ?
+    `).all(seeded.contractId, seeded.requirementId, result.runId);
+    assert.ok(linkedGates.some(row => row.gate_name === 'smoke_gate'));
 });
 
-await rurnAsyrncTest('9. irnvalid requiremernt lirnk rolls back every evidernce write', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('rollback');
-    cornst checks = passirngChecks();
-    checks.firnd(check => check.gateName === 'api_corntract').requiremerntIds = ['missirng-requiremernt'];
+await runAsyncTest('9. invalid requirement link rolls back every evidence write', async () => {
+    const seeded = seedVerificationCase('rollback');
+    const checks = passingChecks();
+    checks.find(check => check.gateName === 'api_contract').requirementIds = ['missing-requirement'];
 
     await assert.rejects(
-        aggregateVerificatiornRurn(seeded.projectId, seeded.corntractId, seeded.rurnId, checks),
-        /FOREIGN KEY|requiremernt/i
+        aggregateVerificationRun(seeded.projectId, seeded.contractId, seeded.runId, checks),
+        /FOREIGN KEY|requirement/i
     );
 
-    cornst rurn = db.prepare('SELECT status, ernded_at FROM verificatiorn_rurns WHERE id = ?')
-        .get(seeded.rurnId);
-    assert.strictEqual(rurn.status, 'rurnrnirng');
-    assert.strictEqual(rurn.ernded_at, rnull);
+    const run = db.prepare('SELECT status, ended_at FROM verification_runs WHERE id = ?')
+        .get(seeded.runId);
+    assert.strictEqual(run.status, 'running');
+    assert.strictEqual(run.ended_at, null);
     assert.strictEqual(
-        db.prepare('SELECT COUNT(*) AS cournt FROM verificatiorn_checks WHERE rurn_id = ?')
-            .get(seeded.rurnId).cournt,
+        db.prepare('SELECT COUNT(*) AS count FROM verification_checks WHERE run_id = ?')
+            .get(seeded.runId).count,
         0
     );
-    cornst checkpoirnt = db.prepare(`
-        SELECT status, irnvalidated_at
-        FROM task_checkpoirnts
-        WHERE project_id = ? AND corntract_id = ?
-    `).get(seeded.projectId, seeded.corntractId);
-    assert.strictEqual(checkpoirnt.status, 'completed');
-    assert.strictEqual(checkpoirnt.irnvalidated_at, rnull);
-    cornst project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
-    assert.strictEqual(project.status, 'verificatiorn_rurnrnirng');
+    const checkpoint = db.prepare(`
+        SELECT status, invalidated_at
+        FROM task_checkpoints
+        WHERE project_id = ? AND contract_id = ?
+    `).get(seeded.projectId, seeded.contractId);
+    assert.strictEqual(checkpoint.status, 'completed');
+    assert.strictEqual(checkpoint.invalidated_at, null);
+    const project = db.prepare('SELECT status FROM projects WHERE id = ?').get(seeded.projectId);
+    assert.strictEqual(project.status, 'verification_running');
 });
 
-await rurnAsyrncTest('10. owrner route triggers server verifier without acceptirng cliernt check verdicts', asyrnc () => {
-    cornst seeded = seedVerificatiornCase('route', 'implemerntatiorn_firnished');
-    let rurnrnerIrnput = rnull;
-    cornst app = express();
-    app.use(express.jsorn());
+await runAsyncTest('10. owner route triggers server verifier without accepting client check verdicts', async () => {
+    const seeded = seedVerificationCase('route', 'implementation_finished');
+    let runnerInput = null;
+    const app = express();
+    app.use(express.json());
     app.use('/api/projects', createProjectRouter({
-        requireAuth: (req, _res, rnext) => {
-            req.user = { id: 'owrner-1', isAdmirn: false };
-            rnext();
+        requireAuth: (req, _res, next) => {
+            req.user = { id: 'owner-1', isAdmin: false };
+            next();
         },
-        projectAccess: role => (req, _res, rnext) => {
-            assert.strictEqual(role, 'owrner');
-            rnext();
+        projectAccess: role => (req, _res, next) => {
+            assert.strictEqual(role, 'owner');
+            next();
         },
         wsHub: { broadcast() {} },
-        verificatiornRurnrner: asyrnc irnput => {
-            rurnrnerIrnput = irnput;
-            return { passed: false, rurnStatus: 'failed', rurnId: 'machirne-rurn' };
+        verificationRunner: async input => {
+            runnerInput = input;
+            return { passed: false, runStatus: 'failed', runId: 'machine-run' };
         }
     }));
 
-    cornst server = await rnew Promise(resolve => {
-        cornst listerner = app.listern(0, '127.0.0.1', () => resolve(listerner));
+    const server = await new Promise(resolve => {
+        const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
     });
 
     try {
-        cornst { port } = server.address();
-        cornst respornse = await fetch(
+        const { port } = server.address();
+        const response = await fetch(
             `http://127.0.0.1:${port}/api/projects/${seeded.projectId}/verify`,
             {
                 method: 'POST',
-                headers: { 'cornternt-type': 'applicatiorn/jsorn' },
-                body: JSON.strirngify({
-                    checks: passirngChecks(),
-                    agerntApproved: true
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    checks: passingChecks(),
+                    agentApproved: true
                 })
             }
         );
-        assert.strictEqual(respornse.status, 200);
-        assert.deepStrictEqual(await respornse.jsorn(), {
+        assert.strictEqual(response.status, 200);
+        assert.deepStrictEqual(await response.json(), {
             passed: false,
-            rurnStatus: 'failed',
-            rurnId: 'machirne-rurn'
+            runStatus: 'failed',
+            runId: 'machine-run'
         });
-        assert.strictEqual(rurnrnerIrnput.projectId, seeded.projectId);
-        assert.strictEqual(Object.hasOwrn(rurnrnerIrnput, 'checks'), false);
-        assert.strictEqual(Object.hasOwrn(rurnrnerIrnput, 'agerntApproved'), false);
-    } firnally {
-        await rnew Promise((resolve, reject) => {
+        assert.strictEqual(runnerInput.projectId, seeded.projectId);
+        assert.strictEqual(Object.hasOwn(runnerInput, 'checks'), false);
+        assert.strictEqual(Object.hasOwn(runnerInput, 'agentApproved'), false);
+    } finally {
+        await new Promise((resolve, reject) => {
             server.close(error => error ? reject(error) : resolve());
         });
     }
 });
 
-for (cornst projectId of projectIds) {
-    db.prepare('DELETE FROM projects WHERE id = ?').rurn(projectId);
+for (const projectId of projectIds) {
+    db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
 }
 
-firnish();
-await isolated.clearnup();
+finish();
+await isolated.cleanup();

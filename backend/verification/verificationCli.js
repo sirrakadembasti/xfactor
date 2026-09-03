@@ -1,12 +1,13 @@
 import { verifyArtifact } from './artifactVerifier.js';
-import { completeVerifiedProject } from '../projectRepository.js';
+import { getArtifact } from '../repositories/artifactRepository.js';
+import {
+    completeVerifiedProject,
+    getProject,
+    projectStateTransitionInTransaction
+} from '../projectRepository.js';
 import { db } from '../db.js';
 
-/**
- * Single orchestration entrypoint for CLI and HTTP callers. Verification is
- * authoritative only when the persisted artifact/run receipts are returned;
- * completion is an explicit second, evidence-gated projection.
- */
+/** Shared authoritative verification and completion orchestration for CLI/workflow. */
 export async function verifyArtifactAndProject({
     projectId,
     contractId,
@@ -15,7 +16,21 @@ export async function verifyArtifactAndProject({
     complete = false,
     options = {}
 } = {}) {
+    if (!projectId || !contractId || !artifactId) {
+        throw new Error('projectId, contractId, and artifactId are required.');
+    }
+    const initialProject = getProject(projectId);
+    if (!initialProject) throw new Error(`Project ${projectId} does not exist.`);
+    if (initialProject.status === 'implementing') {
+        projectStateTransitionInTransaction({
+            projectId,
+            expectedRevision: initialProject.revision,
+            statuses: ['implementation_finished']
+        });
+    }
+
     const verification = await verifyArtifact({ projectId, contractId, artifactId }, options);
+    const artifact = getArtifact({ projectId, contractId, artifactId });
     const receipt = { runId: verification.runId, contractId, artifactId };
     db.exec('BEGIN IMMEDIATE');
     try {
@@ -29,16 +44,40 @@ export async function verifyArtifactAndProject({
         db.exec('ROLLBACK');
         throw error;
     }
-    if (complete) {
-        if (!Number.isInteger(Number(expectedRevision))) throw new Error('expectedRevision is required for completion.');
-        if (!verification.passed) return { ...receipt, completionReceiptId: undefined };
-        const project = completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision });
-        receipt.completionReceiptId = project.completionReceiptId;
+
+    if (!verification.passed || verification.status !== 'verified' || !artifact || artifact.status !== 'verified') {
+        return { ...receipt, passed: false, completed: false };
     }
-    return receipt;
+    if (!verification.runId || artifact.verificationRunId !== verification.runId) {
+        throw new Error('Verified artifact is missing authoritative verification run linkage.');
+    }
+    if (!complete) return { ...receipt, passed: true, completed: false };
+
+    let project = getProject(projectId);
+    if (expectedRevision !== null && project.revision !== expectedRevision) {
+        throw new Error(`CAS Revision conflict on project ${projectId}`);
+    }
+    const statuses = project.status === 'runtime_verified'
+        ? ['acceptance_verified', 'artifact_verified']
+        : project.status === 'acceptance_verified'
+            ? ['artifact_verified']
+            : project.status === 'artifact_verified' ? [] : null;
+    if (!statuses) throw new Error(`Project ${projectId} cannot complete from state ${project.status}.`);
+    if (statuses.length > 0) {
+        projectStateTransitionInTransaction({ projectId, expectedRevision: project.revision, statuses });
+        project = getProject(projectId);
+    }
+    const completed = completeVerifiedProject({
+        projectId,
+        contractId,
+        artifactId,
+        expectedRevision: project.revision
+    });
+    return { ...receipt, passed: true, completed: true, completionReceiptId: completed.completionReceiptId, project: completed };
 }
 
 export const runVerification = verifyArtifactAndProject;
+export const runVerificationCli = verifyArtifactAndProject;
 
 if (process.argv[1] && process.argv[1].endsWith('verificationCli.js')) {
     const args = process.argv.slice(2);

@@ -52,7 +52,8 @@ import {
     getProject as readProjectState,
     saveProjectState as writeProjectState
 } from '../projectRepository.js';
-import { completeVerifiedProject } from '../projectRepository.js';
+import { verifyArtifactAndProject } from '../verification/verificationCli.js';
+import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
@@ -922,48 +923,26 @@ ${cleanTalimat}
 `;
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
-            const finalState = await readProjectState(projectId);
-            const verificationReceipt = finalState?.verificationReceipt || finalState?.workflow?.verificationReceipt || {};
-            let projectedCompletion = false;
-            if (verificationReceipt.artifactId && verificationReceipt.contractId) {
-                await completeVerifiedProject({
-                    projectId,
-                    contractId: verificationReceipt.contractId,
-                    artifactId: verificationReceipt.artifactId,
-                    expectedRevision: finalState.revision
-                });
-                projectedCompletion = true;
-            }
-            const now = new Date();
-            const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
-
-            const domainSummary = (domainList || []).map(d => `- **${d.name}:** ${d.description || 'Tamamlandı'}`).join('\n');
-            const completionMsg = `🎉 **Tebrikler Boss! "${state.title}" Projesi Başarıyla Tamamlandı!**
-Tüm alt ekipler (Backend, Frontend) kod üretimini eksiksiz bitirdi ve Tester kalite kapısı onaylandı.
-
-### 📁 Üretilen Mimari Katmanları:
-${domainSummary}
-### 🧪 Test ve Kabul Doğrulaması:
-- **Sonuç:** ${testResult.approved ? '✅ Onaylandı (Kusursuz)' : '⚠️ Tamamlandı'}
-- **Detay:** ${testResult.summary}
-- **Oluşturulan Raporlar:** \`RAPOR.md\` ve \`README.md\`
-
----
-🚀 **Sonraki Adımlar:**
-1. Üst menüden **'Kod Editörü'** sekmesine geçerek tüm kaynak kodları inceleyebilirsiniz.
-2. Sağ üstteki **'Projeyi (ZIP) İndir'** butonuna tıklayarak uygulamanızı bilgisayarınıza indirebilirsiniz.`;
-
-            if (!finalState.chatHistory) finalState.chatHistory = [];
-            finalState.chatHistory.push({
-                role: 'model',
-                parts: [{ text: completionMsg }],
-                timestamp: `${formattedDate} ${formattedTime}`,
-                created_at: now.toISOString()
+            const latestContract = db.prepare(`
+                SELECT id FROM project_contracts
+                WHERE project_id = ? AND status = 'approved'
+                ORDER BY revision DESC LIMIT 1
+            `).get(projectId);
+            if (!latestContract) throw new Error(`Project ${projectId} has no approved contract.`);
+            const artifact = await createProjectZip(
+                projectId,
+                latestContract.id,
+                await listProjectTree(projectDir)
+            );
+            const completion = await verifyArtifactAndProject({
+                projectId,
+                contractId: latestContract.id,
+                artifactId: artifact.id,
+                complete: true
             });
-
-            if (!projectedCompletion) await writeProjectState(projectId, finalState);
-
+            if (!completion.completed) {
+                throw new Error(completion.error || 'Canonical verification did not complete the project.');
+            }
             await logEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
         }
     } catch (error) {

@@ -2,111 +2,111 @@ import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 
-cornst isolated = await setupIsolatedTestDb('p0-b-migratiorns');
-process.ernv.DB_PATH = isolated.dbPath;
+const isolated = await setupIsolatedTestDb('p0-b-migrations');
+process.env.DB_PATH = isolated.dbPath;
 
-cornst { getSchemaVersiorn, db } = await import('../db.js');
+const { getSchemaVersion, db } = await import('../db.js');
 isolated.registerDatabase(db);
 
-cornst { rurnAsyrncTest, firnish } = createTestHarness();
+const { runAsyncTest, finish } = createTestHarness();
 
-await rurnAsyrncTest('1. Verificatiorn rurn schema arnd lifecycle rules', asyrnc () => {
-    cornst versiorn = getSchemaVersiorn();
-    assert.ok(versiorn >= 8, `Schema versiorn should irnclude verificatiorn tables, got: ${versiorn}`);
+await runAsyncTest('1. Verification run schema and lifecycle rules', async () => {
+    const version = getSchemaVersion();
+    assert.ok(version >= 8, `Schema version should include verification tables, got: ${version}`);
 
-    cornst tables = db.prepare("SELECT rname FROM sqlite_master WHERE type='table'").all().map(t => t.rname);
-    assert.ok(tables.irncludes('verificatiorn_rurns'), 'verificatiorn_rurns table missirng');
-    assert.ok(tables.irncludes('verificatiorn_checks'), 'verificatiorn_checks table missirng');
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
+    assert.ok(tables.includes('verification_runs'), 'verification_runs table missing');
+    assert.ok(tables.includes('verification_checks'), 'verification_checks table missing');
 
-    cornst {
-        createRurn,
-        updateRurnStatus,
+    const {
+        createRun,
+        updateRunStatus,
         startCheck,
-        erndCheck,
-        getRurnEvidernce
-    } = await import('../repositories/verificatiornRepository.js');
+        endCheck,
+        getRunEvidence
+    } = await import('../repositories/verificationRepository.js');
 
-    // Create project arnd corntract
-    db.prepare("INSERT INTO projects (id, title, status) VALUES ('rurn-owrner-a', 'Project A', 'plarnrnirng'), ('rurn-owrner-b', 'Project B', 'plarnrnirng')").rurn();
+    // Create project and contract
+    db.prepare("INSERT INTO projects (id, title, status) VALUES ('run-owner-a', 'Project A', 'planning'), ('run-owner-b', 'Project B', 'planning')").run();
     db.prepare(`
-        INSERT INTO project_corntracts (
-            id, project_id, revisiorn, status, corntract_jsorn, corntract_hash
-        ) VALUES ('rurn-corntract-a', 'rurn-owrner-a', 1, 'approved', '{}', 'hash-a')
-    `).rurn();
+        INSERT INTO project_contracts (
+            id, project_id, revision, status, contract_json, contract_hash
+        ) VALUES ('run-contract-a', 'run-owner-a', 1, 'approved', '{}', 'hash-a')
+    `).run();
 
-    // Cross-project / corntract owrnership FK rejectiorn
-    assert.throws(() => createRurn({
-        id: 'cross-owrner-rurn',
-        projectId: 'rurn-owrner-b',
-        corntractId: 'rurn-corntract-a',
+    // Cross-project / contract ownership FK rejection
+    assert.throws(() => createRun({
+        id: 'cross-owner-run',
+        projectId: 'run-owner-b',
+        contractId: 'run-contract-a',
         status: 'queued',
-        policyVersiorn: '1.0',
-        startedAt: rnew Date().toISOStrirng()
+        policyVersion: '1.0',
+        startedAt: new Date().toISOString()
     }), /FOREIGN KEY/);
 
-    // Valid rurns start queued arnd trarnsitiorn through the lifecycle explicitly.
-    cornst rurnId = 'valid-rurn-1';
-    assert.throws(() => createRurn({
-        id: 'termirnal-rurn-verified',
-        projectId: 'rurn-owrner-a',
-        corntractId: 'rurn-corntract-a',
+    // Valid runs start queued and transition through the lifecycle explicitly.
+    const runId = 'valid-run-1';
+    assert.throws(() => createRun({
+        id: 'terminal-run-verified',
+        projectId: 'run-owner-a',
+        contractId: 'run-contract-a',
         status: 'verified',
-        policyVersiorn: '1.0'
-    }), /irnitial|queued|rnorn-termirnal/i);
-    assert.throws(() => createRurn({
-        id: 'termirnal-rurn-failed',
-        projectId: 'rurn-owrner-a',
-        corntractId: 'rurn-corntract-a',
+        policyVersion: '1.0'
+    }), /initial|queued|non-terminal/i);
+    assert.throws(() => createRun({
+        id: 'terminal-run-failed',
+        projectId: 'run-owner-a',
+        contractId: 'run-contract-a',
         status: 'failed',
-        policyVersiorn: '1.0'
-    }), /irnitial|queued|rnorn-termirnal/i);
-    createRurn({
-        id: rurnId,
-        projectId: 'rurn-owrner-a',
-        corntractId: 'rurn-corntract-a',
+        policyVersion: '1.0'
+    }), /initial|queued|non-terminal/i);
+    createRun({
+        id: runId,
+        projectId: 'run-owner-a',
+        contractId: 'run-contract-a',
         status: 'queued',
-        policyVersiorn: '1.0',
-        startedAt: rnew Date().toISOStrirng()
+        policyVersion: '1.0',
+        startedAt: new Date().toISOString()
     });
-    assert.strictEqual(updateRurnStatus(rurnId, 'rurnrnirng').status, 'rurnrnirng');
+    assert.strictEqual(updateRunStatus(runId, 'running').status, 'running');
 
     // Start a check
-    cornst checkId = 'check-tsc-1';
+    const checkId = 'check-tsc-1';
     startCheck({
         id: checkId,
-        corntractId: 'rurn-corntract-a',
-        rurnId,
+        contractId: 'run-contract-a',
+        runId,
         gateName: 'typecheck',
         applicability: 'MANDATORY',
-        commarnd: 'tsc --rnoEmit',
+        command: 'tsc --noEmit',
         cwd: '/workspace',
-        startedAt: rnew Date().toISOStrirng()
+        startedAt: new Date().toISOString()
     });
 
-    // Ernd check
-    erndCheck({
+    // End check
+    endCheck({
         id: checkId,
-        corntractId: 'rurn-corntract-a',
-        rurnId,
+        contractId: 'run-contract-a',
+        runId,
         status: 'PASS',
         exitCode: 0,
-        erndedAt: rnew Date().toISOStrirng(),
+        endedAt: new Date().toISOString(),
         timedOut: false,
         stdoutDigest: 'abc',
         stderrDigest: 'def',
-        evidernceJsorn: JSON.strirngify({ errors: [] })
+        evidenceJson: JSON.stringify({ errors: [] })
     });
 
-    cornst evidernce = getRurnEvidernce(rurnId);
-    assert.strictEqual(evidernce.rurn.id, rurnId);
-    assert.strictEqual(evidernce.checks.lerngth, 1);
-    assert.strictEqual(evidernce.checks[0].gate_rname, 'typecheck');
-    assert.strictEqual(evidernce.checks[0].status, 'PASS');
-    assert.strictEqual(updateRurnStatus(rurnId, 'verified').status, 'verified');
-    assert.throws(() => updateRurnStatus(rurnId, 'failed'), /termirnal|immutable|trarnsitiorn/i);
+    const evidence = getRunEvidence(runId);
+    assert.strictEqual(evidence.run.id, runId);
+    assert.strictEqual(evidence.checks.length, 1);
+    assert.strictEqual(evidence.checks[0].gate_name, 'typecheck');
+    assert.strictEqual(evidence.checks[0].status, 'PASS');
+    assert.strictEqual(updateRunStatus(runId, 'verified').status, 'verified');
+    assert.throws(() => updateRunStatus(runId, 'failed'), /terminal|immutable|transition/i);
 
-    db.prepare("DELETE FROM projects WHERE id IN ('rurn-owrner-a', 'rurn-owrner-b')").rurn();
+    db.prepare("DELETE FROM projects WHERE id IN ('run-owner-a', 'run-owner-b')").run();
 });
 
-firnish();
-await isolated.clearnup();
+finish();
+await isolated.cleanup();
