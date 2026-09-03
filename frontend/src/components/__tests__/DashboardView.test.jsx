@@ -60,9 +60,9 @@ test('renders authoritative run history and evidence identifiers without mutatio
 
   expect(await screen.findByText('run-evidence-001')).toBeInTheDocument();
   expect(screen.getByText('contract-007')).toBeInTheDocument();
-  expect(screen.getByText('Independent Sandbox Evidence')).toBeInTheDocument();
-  expect(screen.getByText(/Agent Self-Reports.*advisory/i)).toBeInTheDocument();
-  expect(screen.getByText(/read-only/i)).toBeInTheDocument();
+  expect(screen.getByText(/Bağımsız Sandbox Kanıtı|Independent Sandbox Evidence/i)).toBeInTheDocument();
+  expect(screen.getByText(/Ajan Öz-Raporları|Agent Self-Reports/i)).toBeInTheDocument();
+  expect(screen.getByText(/Salt-Okunur|read-only/i)).toBeInTheDocument();
 
   for (const mutationName of [/accept/i, /complete/i, /approve/i, /bypass/i]) {
     expect(screen.queryByRole('button', { name: mutationName })).not.toBeInTheDocument();
@@ -92,14 +92,14 @@ test('loads older verification-run pages using the authoritative cursor', async 
     <DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={createApi({ getVerificationRuns })} />
   );
 
-  fireEvent.click(await screen.findByRole('button', { name: /load older runs/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /Daha Eski Koşuları Yükle|load older runs/i }));
 
   expect(await screen.findByText('run-evidence-older')).toBeInTheDocument();
   expect(getVerificationRuns).toHaveBeenLastCalledWith(
     projectId,
     expect.objectContaining({ cursor: 'older-cursor', limit: 50 })
   );
-  expect(screen.queryByRole('button', { name: /load older runs/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Daha Eski Koşuları Yükle|load older runs/i })).not.toBeInTheDocument();
 });
 
 test('discards a superseded check log response', async () => {
@@ -135,7 +135,7 @@ test('discards a superseded verification-run detail response', async () => {
   });
   render(<DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={apiClient} />);
 
-  fireEvent.click(await screen.findByRole('button', { name: /inspect verification run run-evidence-older/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /run-evidence-older.*doğrulama koşusunu incele|inspect verification run run-evidence-older/i }));
   await waitFor(() => expect(getVerificationRun).toHaveBeenCalledTimes(2));
   secondDetail.resolve({ run: olderRun, checks: [secondCheck] });
   expect(await screen.findByText('browser_e2e')).toBeInTheDocument();
@@ -175,6 +175,6 @@ test('shows a bounded error state when run history cannot be loaded', async () =
     />
   );
 
-  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Quality history could not be loaded'));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Kalite geçmişi yüklenemedi|Quality history could not be loaded/i));
   expect(screen.queryByText('network secret')).not.toBeInTheDocument();
 });

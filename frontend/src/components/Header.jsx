@@ -36,7 +36,7 @@ export default function Header({
         <div>{getStatusBadge(projectState.status)}</div>
         {latestArtifact && latestArtifact.sha256 && latestArtifact.status === 'verified' && (
           <div className="flex flex-col text-left text-[10px] text-gray-500 font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-            <span className="text-emerald-700 font-bold">Artifact verified</span>
+            <span className="text-emerald-700 font-bold">Artefakt doğrulandı</span>
             <span className="text-gray-600">SHA-256: {latestArtifact.sha256.slice(0, 16)}...</span>
           </div>
         )}
@@ -52,7 +52,7 @@ export default function Header({
               viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <LayoutDashboard size={14} /> Quality Dashboard
+            <LayoutDashboard size={14} /> Kalite Paneli
           </button>
           <button
             onClick={() => {

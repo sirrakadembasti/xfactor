@@ -89,7 +89,7 @@ export default function DAGFlowView({
         setTraceRequirementsProjectId(projectId);
       })
       .catch(requestError => {
-        if (requestError?.name !== 'AbortError') setError('Traceability evidence could not be loaded.');
+        if (requestError?.name !== 'AbortError') setError('İzlenebilirlik kanıtı yüklenemedi.');
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoadingTraceability(false);
@@ -189,7 +189,7 @@ export default function DAGFlowView({
       if (previewControllerRef.current === controller) setPreview(result);
     } catch (requestError) {
       if (requestError?.name !== 'AbortError' && previewControllerRef.current === controller) {
-        setError('Rebuild preview could not be loaded.');
+        setError('Yeniden derleme önizlemesi yüklenemedi.');
       }
     } finally {
       if (previewControllerRef.current === controller) {
@@ -215,11 +215,11 @@ export default function DAGFlowView({
   return (
     <div className="flex-1 flex flex-col h-full relative bg-slate-900/95 overflow-hidden">
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/95 p-1 shadow-lg">
-        <button type="button" onClick={() => setMode('agents')} className={`rounded px-3 py-1.5 text-xs font-bold ${mode === 'agents' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>Agent DAG</button>
-        <button type="button" onClick={() => setMode('traceability')} className={`rounded px-3 py-1.5 text-xs font-bold ${mode === 'traceability' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>Traceability DAG</button>
+        <button type="button" onClick={() => setMode('agents')} className={`rounded px-3 py-1.5 text-xs font-bold ${mode === 'agents' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>Ajan DAG'ı</button>
+        <button type="button" onClick={() => setMode('traceability')} className={`rounded px-3 py-1.5 text-xs font-bold ${mode === 'traceability' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>İzlenebilirlik DAG'ı</button>
         {mode === 'traceability' && (
           <button type="button" onClick={previewRebuild} disabled={!selectedRequirementKey || previewing} className="rounded bg-orange-500 px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-            {previewing ? 'Previewing…' : 'Preview Rebuild'}
+            {previewing ? 'Önizleniyor…' : 'Yeniden Derlemeyi Önizle'}
           </button>
         )}
       </div>
@@ -232,15 +232,15 @@ export default function DAGFlowView({
         </div>
       ) : (
         <div className="absolute top-4 right-4 z-10 rounded-lg border border-slate-700 bg-slate-800/95 px-3 py-2 text-[11px] text-slate-200">
-          <span className="text-emerald-400">Verified</span> · <span className="text-rose-400">Failed</span> · <span className="text-slate-400">Skipped</span>
+          <span className="text-emerald-400">Doğrulandı</span> · <span className="text-rose-400">Başarısız</span> · <span className="text-slate-400">Atlandı</span>
         </div>
       )}
 
       {error && <div role="alert" className="absolute left-4 top-16 z-20 rounded border border-rose-500 bg-rose-950 px-3 py-2 text-xs font-semibold text-rose-100">{error}</div>}
 
-      {mode === 'traceability' && loadingTraceability && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">Loading traceability evidence…</div>}
-      {mode === 'traceability' && !loadingTraceability && noAuthoritativeEvidence && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">No authoritative traceability evidence available.</div>}
-      {mode === 'traceability' && !loadingTraceability && !noAuthoritativeEvidence && traceRequirementsProjectId === projectId && traceRequirements.length === 0 && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">No traceability requirements available.</div>}
+      {mode === 'traceability' && loadingTraceability && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">İzlenebilirlik kanıtı yükleniyor…</div>}
+      {mode === 'traceability' && !loadingTraceability && noAuthoritativeEvidence && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">Yetkili izlenebilirlik kanıtı bulunamadı.</div>}
+      {mode === 'traceability' && !loadingTraceability && !noAuthoritativeEvidence && traceRequirementsProjectId === projectId && traceRequirements.length === 0 && <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400">İzlenebilirlik gereksinimi bulunamadı.</div>}
 
       <div className="flex-1 w-full h-full">
         <ReactFlow

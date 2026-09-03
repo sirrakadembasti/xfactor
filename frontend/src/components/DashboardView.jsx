@@ -11,10 +11,19 @@ const statusClasses = {
   BLOCKED: 'bg-amber-50 text-amber-700 border-amber-200'
 };
 
+const statusLabels = {
+  verified: 'Doğrulandı',
+  PASS: 'GEÇTİ',
+  failed: 'Başarısız',
+  FAIL: 'KALDI',
+  blocked: 'Bloke',
+  BLOCKED: 'BLOKE'
+};
+
 function StatusBadge({ status }) {
   return (
     <span className={`inline-flex rounded border px-2 py-0.5 text-[11px] font-bold ${statusClasses[status] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
-      {status}
+      {statusLabels[status] || status}
     </span>
   );
 }
@@ -70,7 +79,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
         setSelectedRunId(nextRuns[0]?.id || null);
       })
       .catch(requestError => {
-        if (requestError?.name !== 'AbortError') setError('Quality history could not be loaded.');
+        if (requestError?.name !== 'AbortError') setError('Kalite geçmişi yüklenemedi.');
       })
       .finally(() => {
         if (runsRequestRef.current === requestId) setLoadingRuns(false);
@@ -97,7 +106,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
       })
       .catch(requestError => {
         if (requestError?.name !== 'AbortError' && detailRequestRef.current === requestId) {
-          setError('Verification evidence could not be loaded.');
+          setError('Doğrulama kanıtı yüklenemedi.');
         }
       })
       .finally(() => {
@@ -116,7 +125,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
       setRuns(currentRuns => [...currentRuns, ...(Array.isArray(data?.runs) ? data.runs : [])]);
       setNextCursor(data?.nextCursor || null);
     } catch {
-      if (runsRequestRef.current === requestId) setError('Older quality history could not be loaded.');
+      if (runsRequestRef.current === requestId) setError('Daha eski kalite geçmişi yüklenemedi.');
     } finally {
       if (runsRequestRef.current === requestId) setLoadingMore(false);
     }
@@ -131,7 +140,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
       const nextLog = await apiClient.getVerificationCheckLog(projectId, selectedRunId, check.id);
       if (logRequestRef.current === requestId) setLog(nextLog);
     } catch {
-      if (logRequestRef.current === requestId) setError('Evidence log could not be loaded.');
+      if (logRequestRef.current === requestId) setError('Kanıt logu yüklenemedi.');
     } finally {
       if (logRequestRef.current === requestId) setLoadingLog(false);
     }
@@ -143,30 +152,30 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
   const checks = detailMatchesProject && Array.isArray(runDetail?.checks) ? runDetail.checks : [];
 
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50 p-6" aria-label="Quality history dashboard">
+    <main className="flex-1 overflow-y-auto bg-slate-50 p-6" aria-label="Kalite geçmişi paneli">
       <div className="mx-auto max-w-7xl space-y-5">
         <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div>
             <div className="mb-1 flex items-center gap-2 text-indigo-700">
               <History size={20} />
-              <span className="text-xs font-bold uppercase tracking-wider">Quality History</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Kalite Geçmişi</span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900">{projectTitle || 'Project'} Evidence Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Immutable verification runs, checks, digests, and redacted console evidence.</p>
+            <h1 className="text-xl font-bold text-slate-900">{projectTitle || 'Proje'} Kanıt Paneli</h1>
+            <p className="mt-1 text-sm text-slate-500">Değişmez doğrulama koşuları, kontroller, özetler ve sansürlenmiş konsol kanıtları.</p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-            <ShieldCheck size={14} /> read-only
+            <ShieldCheck size={14} /> Salt-Okunur
           </span>
         </header>
 
-        <section className="grid gap-3 md:grid-cols-2" aria-label="Evidence authority">
+        <section className="grid gap-3 md:grid-cols-2" aria-label="Kanıt otoritesi">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-emerald-900"><ShieldCheck size={16} /> Independent Sandbox Evidence</h2>
-            <p className="mt-1 text-xs text-emerald-800">Authoritative quality-policy evidence. Status and digests come from isolated verification.</p>
+            <h2 className="flex items-center gap-2 text-sm font-bold text-emerald-900"><ShieldCheck size={16} /> Bağımsız Sandbox Kanıtı</h2>
+            <p className="mt-1 text-xs text-emerald-800">Yetkili kalite politikası kanıtı. Durum ve özetler izole doğrulamadan üretilir.</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800"><FileText size={16} /> Agent Self-Reports are advisory</h2>
-            <p className="mt-1 text-xs text-slate-500">Narrative reports remain separate and never satisfy independent acceptance gates.</p>
+            <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800"><FileText size={16} /> Ajan Öz-Raporları Tavsiye Niteliğindedir</h2>
+            <p className="mt-1 text-xs text-slate-500">Anlatı raporları ayrı tutulur ve bağımsız kabul kapılarını tek başına karşılayamaz.</p>
           </div>
         </section>
 
@@ -179,17 +188,17 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="run-history-heading">
             <div className="border-b border-slate-200 px-4 py-3">
-              <h2 id="run-history-heading" className="text-sm font-bold text-slate-900">Verification runs</h2>
+              <h2 id="run-history-heading" className="text-sm font-bold text-slate-900">Doğrulama Koşuları</h2>
             </div>
             {!runsMatchProject || loadingRuns ? (
-              <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Loading evidence…</div>
+              <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kanıtlar yükleniyor…</div>
             ) : visibleRuns.length === 0 ? (
-              <div className="p-10 text-center text-sm text-slate-500">No verification evidence recorded.</div>
+              <div className="p-10 text-center text-sm text-slate-500">Kayıtlı doğrulama kanıtı bulunamadı.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-500">
-                    <tr><th className="px-4 py-2 font-semibold">Evidence ID</th><th className="px-4 py-2 font-semibold">Contract</th><th className="px-4 py-2 font-semibold">Status</th><th className="px-4 py-2 font-semibold">Started</th></tr>
+                    <tr><th className="px-4 py-2 font-semibold">Kanıt ID</th><th className="px-4 py-2 font-semibold">Sözleşme</th><th className="px-4 py-2 font-semibold">Durum</th><th className="px-4 py-2 font-semibold">Başlangıç</th></tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {visibleRuns.map(run => (
@@ -202,7 +211,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
                               setSelectedRunId(run.id);
                             }}
                             className="font-mono font-semibold text-indigo-700 hover:underline"
-                            aria-label={`Inspect verification run ${run.id}`}
+                            aria-label={`${run.id} doğrulama koşusunu incele`}
                           >
                             {run.id}
                           </button>
@@ -224,7 +233,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
                   disabled={loadingMore}
                   className="rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:cursor-wait disabled:opacity-60"
                 >
-                  {loadingMore ? 'Loading older runs…' : 'Load older runs'}
+                  {loadingMore ? 'Daha eski koşular yükleniyor…' : 'Daha Eski Koşuları Yükle'}
                 </button>
               </div>
             )}
@@ -232,16 +241,16 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
 
           <section className="min-h-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="check-heading">
             <div className="border-b border-slate-200 px-4 py-3">
-              <h2 id="check-heading" className="text-sm font-bold text-slate-900">Independent checks</h2>
+              <h2 id="check-heading" className="text-sm font-bold text-slate-900">Bağımsız Kontroller</h2>
             </div>
             {!detailMatchesProject || loadingDetail ? (
-              <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Loading checks…</div>
+              <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kontroller yükleniyor…</div>
             ) : checks.length === 0 ? (
-              <div className="p-10 text-center text-sm text-slate-500">Select a run to inspect check evidence.</div>
+              <div className="p-10 text-center text-sm text-slate-500">Kontrol kanıtlarını incelemek için bir koşu seçin.</div>
             ) : (
               <div className="divide-y divide-slate-100">
                 {checks.map(check => (
-                  <button key={check.id} type="button" onClick={() => loadLog(check)} aria-label={`${check.gate_name} evidence ${check.id}`} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 ${selectedCheckId === check.id ? 'bg-indigo-50' : ''}`}>
+                  <button key={check.id} type="button" onClick={() => loadLog(check)} aria-label={`${check.gate_name} kanıtı ${check.id}`} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 ${selectedCheckId === check.id ? 'bg-indigo-50' : ''}`}>
                     <span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-800">{check.gate_name}</span><span className="block truncate font-mono text-[11px] text-slate-500">{check.id}</span></span>
                     <StatusBadge status={check.status} />
                   </button>
@@ -252,13 +261,13 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
         </div>
 
         {detailMatchesProject && (loadingLog || log) && (
-          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-sm" aria-label="Redacted evidence log">
+          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-sm" aria-label="Sansürlenmiş konsol kanıtı">
             <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 text-slate-200">
-              <span className="text-sm font-bold">Redacted console evidence</span>
+              <span className="text-sm font-bold">Sansürlenmiş konsol kanıtı</span>
               {log?.id && <span className="font-mono text-xs text-slate-400">{log.id}</span>}
             </div>
             {loadingLog ? (
-              <div className="p-5 text-sm text-slate-400">Loading redacted log…</div>
+              <div className="p-5 text-sm text-slate-400">Sansürlenmiş log yükleniyor…</div>
             ) : (
               <div className="grid gap-px bg-slate-800 md:grid-cols-2">
                 <div className="bg-slate-950 p-4"><h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">stdout</h3><pre className="evidence-log whitespace-pre-wrap break-words text-xs text-emerald-300">{log?.stdout || '—'}</pre></div>

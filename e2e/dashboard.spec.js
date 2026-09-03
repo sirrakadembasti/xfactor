@@ -111,7 +111,7 @@ test('authorized dashboard renders redacted evidence and no mutation controls', 
   await page.getByLabel('Şifre').fill(password);
   await page.getByRole('button', { name: 'Giriş Yap' }).click();
 
-  await expect(page.getByText('Independent Sandbox Evidence')).toBeVisible();
+  await expect(page.getByText(/Bağımsız Sandbox Kanıtı|Independent Sandbox Evidence/i)).toBeVisible();
   await expect(page.getByText(runId)).toBeVisible();
   await page.getByRole('button', { name: new RegExp(`api_contract.*${checkId}`, 'i') }).click();
 
@@ -134,11 +134,11 @@ test('traceability DAG previews and highlights rebuild boundaries', async ({ pag
   await page.getByRole('button', { name: 'Giriş Yap' }).click();
 
   await page.getByRole('button', { name: 'Canlı DAG Grafiği' }).click();
-  await page.getByRole('button', { name: 'Traceability DAG' }).click();
+  await page.getByRole('button', { name: /İzlenebilirlik DAG'ı|Traceability DAG/i }).click();
   await expect(page.getByRole('button', { name: 'Check api_contract' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Artifact artifacts/dashboard.zip' })).toBeVisible();
   await page.getByRole('button', { name: /REQ-DASHBOARD.*Render quality evidence/i }).click();
-  await page.getByRole('button', { name: 'Preview Rebuild' }).click();
+  await page.getByRole('button', { name: /Yeniden Derlemeyi Önizle|Preview Rebuild/i }).click();
 
   await expect(page.locator('.rebuild-highlight')).toHaveCount(2);
 });

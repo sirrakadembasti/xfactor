@@ -80,7 +80,7 @@ function renderView(overrides = {}) {
 test('maps authoritative requirement evidence into deterministic status-colored ReactFlow nodes', async () => {
   renderView();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Traceability DAG' }));
+  fireEvent.click(screen.getByRole('button', { name: /İzlenebilirlik DAG'ı|Traceability DAG/i }));
   expect(await screen.findByRole('button', { name: /REQ-AUTH.*Authenticate users/i })).toBeInTheDocument();
   expect(screen.getByTestId('react-flow').children).toHaveLength(7);
   expect(screen.getByTestId('react-flow')).toHaveAttribute('data-edge-count', '4');
@@ -95,9 +95,9 @@ test('maps authoritative requirement evidence into deterministic status-colored 
 
 test('previews selected requirement and highlights predicted task and checkpoint nodes', async () => {
   const apiClient = renderView();
-  fireEvent.click(screen.getByRole('button', { name: 'Traceability DAG' }));
+  fireEvent.click(screen.getByRole('button', { name: /İzlenebilirlik DAG'ı|Traceability DAG/i }));
   fireEvent.click(await screen.findByRole('button', { name: /REQ-AUTH.*Authenticate users/i }));
-  fireEvent.click(screen.getByRole('button', { name: 'Preview Rebuild' }));
+  fireEvent.click(screen.getByRole('button', { name: /Yeniden Derlemeyi Önizle|Preview Rebuild/i }));
 
   await waitFor(() => expect(apiClient.previewRebuild).toHaveBeenCalledWith(
     'project-trace',
@@ -111,9 +111,9 @@ test('previews selected requirement and highlights predicted task and checkpoint
 test('discards a preview when another requirement is selected', async () => {
   const pendingPreview = deferred();
   renderView({ apiClient: { previewRebuild: vi.fn(() => pendingPreview.promise) } });
-  fireEvent.click(screen.getByRole('button', { name: 'Traceability DAG' }));
+  fireEvent.click(screen.getByRole('button', { name: /İzlenebilirlik DAG'ı|Traceability DAG/i }));
   fireEvent.click(await screen.findByRole('button', { name: /REQ-AUTH.*Authenticate users/i }));
-  fireEvent.click(screen.getByRole('button', { name: 'Preview Rebuild' }));
+  fireEvent.click(screen.getByRole('button', { name: /Yeniden Derlemeyi Önizle|Preview Rebuild/i }));
   fireEvent.click(screen.getByRole('button', { name: /REQ-API.*Expose API/i }));
 
   await act(async () => {
@@ -125,7 +125,7 @@ test('discards a preview when another requirement is selected', async () => {
   });
 
   await waitFor(() => expect(screen.queryByText('Task stale-task')).not.toBeInTheDocument());
-  expect(screen.getByRole('button', { name: 'Preview Rebuild' })).not.toBeDisabled();
+  expect(screen.getByRole('button', { name: /Yeniden Derlemeyi Önizle|Preview Rebuild/i })).not.toBeDisabled();
 });
 
 test('does not fabricate skipped statuses when no authoritative verification run exists', async () => {
@@ -134,8 +134,8 @@ test('does not fabricate skipped statuses when no authoritative verification run
       getVerificationRuns: vi.fn().mockResolvedValue({ runs: [], nextCursor: null })
     }
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Traceability DAG' }));
+  fireEvent.click(screen.getByRole('button', { name: /İzlenebilirlik DAG'ı|Traceability DAG/i }));
 
-  expect(await screen.findByText('No authoritative traceability evidence available.')).toBeInTheDocument();
+  expect(await screen.findByText(/Yetkili izlenebilirlik kanıtı bulunamadı|No authoritative traceability evidence available/i)).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /REQ-AUTH/i })).not.toBeInTheDocument();
 });
