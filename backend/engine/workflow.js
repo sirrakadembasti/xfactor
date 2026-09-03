@@ -371,13 +371,13 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 if (!taskPlan) {
                     await logEvent(wsHub, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
                     const tlAgent = getAgent('teamleader');
-                    const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname);
+                    const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || []);
                     taskPlan = await callAgentLLM('teamleader', tlPrompt, { signal: abortController.signal });
 
                     state.workflow.teamleaderPlans[tlId] = taskPlan;
                     await writeProjectState(projectId, state);
                 }
-                taskPlan = normalizeTeamleaderTasks(taskPlan);
+                taskPlan = normalizeTeamleaderTasks(taskPlan, plan.requirements || []);
                 validateTeamleaderTasks(taskPlan);
                 const depCheck = validateTaskDependencies(taskPlan.tasks);
                 if (!depCheck.valid) {

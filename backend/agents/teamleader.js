@@ -32,7 +32,12 @@ JSON ÇIKTI ŞEMASI:
 `;
 
 export const TEAMLEADER_SYSTEM_PROMPT = loadAgentPromptFromDocs('teamleader', FALLBACK_TEAMLEADER_PROMPT);
-export function buildTeamleaderPrompt(teamleaderName, mission, altTalimatname) {
+export function buildTeamleaderPrompt(teamleaderName, mission, altTalimatname, requirements = []) {
+    const reqList = Array.isArray(requirements) && requirements.length > 0
+        ? `\nOnaylı Sözleşme Gereksinimleri (Her görevin "requirementIds" dizisinde YALNIZCA bu listedeki ID'leri kullanabilirsin):\n` +
+          requirements.map(r => typeof r === 'string' ? `- ${r}` : `- ${r.id}: ${r.statement || r.title || r.id}`).join('\n') +
+          `\nKRİTİK KURAL (GEREKSİNİM KAPSAMI): Her görevin "requirementIds" alanına YALNIZCA yukarıdaki listede yer alan ID'leri (örn: "REQ-1", "REQ-2") ata. Listede bulunmayan yeni veya farklı bir REQ ID'si uydurma.\n`
+        : '';
     return `Teamleader Adı: ${teamleaderName}
 Misyon: ${mission}
 
@@ -40,7 +45,7 @@ Domain Alt-Talimatnamesi:
 """
 ${altTalimatname}
 """
-
+${reqList}
 Lütfen bu görevi bağımlılıklarıyla birlikte atomik Coder görevlerine bölerek JSON formatında döndür.`;
 }
 

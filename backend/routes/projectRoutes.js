@@ -46,7 +46,13 @@ function findFailedReports(dir, projectDir) {
 }
 
 function normalizeManagerPlanFromText(title, responseText) {
-    return {
+    const standardRequirements = [
+        { id: 'REQ-1', statement: 'Veritabanı modelleri, şema ve başlangıç verisi (Prisma SQLite)', mandatory: true, kind: 'functional', priority: 'high' },
+        { id: 'REQ-2', statement: 'REST API CRUD rotaları, veri doğrulama ve sunucu mantığı', mandatory: true, kind: 'functional', priority: 'high' },
+        { id: 'REQ-3', statement: 'Kullanıcı arayüzü bileşenleri, vitrin, listeleme ve sayfalar', mandatory: true, kind: 'functional', priority: 'high' },
+        { id: 'REQ-4', statement: 'Yönetim paneli, filtreleme, arama ve kullanıcı etkileşimi', mandatory: true, kind: 'functional', priority: 'high' }
+    ];
+    return normalizeManagerPlan({
         summary: `Mimari Plan: ${title}`,
         talimatname: `# ${title} (Mimari Şartname)\n\n${responseText.replace(/\[PLAN_HAZIR\]/g, '').trim()}`,
         domains: [
@@ -60,8 +66,9 @@ function normalizeManagerPlanFromText(title, responseText) {
                 prefix: 'frontend',
                 description: 'Kullanıcı arayüzü, sayfalar, bileşenler ve Tailwind stilleri'
             }
-        ]
-    };
+        ],
+        requirements: standardRequirements
+    });
 }
 
 export function buildManagerChatSystemPrompt(state, projectDir) {

@@ -398,13 +398,18 @@ export function validateDirectorSpec(spec) {
 /**
  * Teamleader Görev Ayrıştırma (Task Decomposition) Şeması Doğrulaması ve Normalizasyon
  */
-export function normalizeTeamleaderTasks(taskList) {
+export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
     const rawInput = Array.isArray(taskList) ? { tasks: taskList } : taskList;
     if (!rawInput || typeof rawInput !== 'object') {
         taskList = { tasks: [] };
     } else {
         taskList = rawInput;
     }
+
+    const approvedList = (Array.isArray(approvedRequirements) ? approvedRequirements : [])
+        .map(r => typeof r === 'string' ? r : r?.id)
+        .filter(id => typeof id === 'string' && id.length > 0);
+    const approvedIds = new Set(approvedList);
 
     let rawTasks = taskList.tasks || taskList.taskList || taskList.subtasks || taskList.items || [];
     if (!Array.isArray(rawTasks) || rawTasks.length === 0) {
@@ -414,7 +419,7 @@ export function normalizeTeamleaderTasks(taskList) {
             description: 'Gereksinimlere uygun temel bileşenleri ve modelleri oluştur.',
             dependencies: [],
             targetFiles: ['src/App.jsx'],
-            requirementIds: ['REQ-1']
+            requirementIds: [approvedList[0] || 'REQ-1']
         }];
     }
     taskList.tasks = rawTasks.map((t, idx) => {
@@ -426,23 +431,36 @@ export function normalizeTeamleaderTasks(taskList) {
                 description: t,
                 dependencies: idx > 0 ? [normalizeGeneratedIdentifier(`task-${idx}`)] : [],
                 targetFiles: [],
-                requirementIds: [`REQ-${idx + 1}`]
+                requirementIds: [approvedList[idx % (approvedList.length || 1)] || `REQ-${idx + 1}`]
             };
         }
         const id = normalizeGeneratedIdentifier(t.id || `task-${idx + 1}`);
         const dependencies = Array.isArray(t.dependencies)
             ? t.dependencies.map((dep) => normalizeGeneratedIdentifier(dep))
             : [];
-        const reqIds = Array.isArray(t.requirementIds)
+        let reqIds = Array.isArray(t.requirementIds)
             ? t.requirementIds
             : (Array.isArray(t.requirements) ? t.requirements : (t.requirementId ? [t.requirementId] : []));
+
+        // Eğer onaylı sözleşme gereksinimleri varsa, listede olmayan uydurulmuş ID'leri onaylı sözleşmeye güvenle bağla
+        if (approvedIds.size > 0) {
+            const validReqs = reqIds.filter(rid => approvedIds.has(rid));
+            if (validReqs.length > 0) {
+                reqIds = validReqs;
+            } else {
+                reqIds = [approvedList[idx % approvedList.length]];
+            }
+        } else if (reqIds.length === 0) {
+            reqIds = [`REQ-${idx + 1}`];
+        }
+
         return {
             id,
             title: t.title || t.name || `Görev ${idx + 1}`,
             description: t.description || t.title || `Görev ${idx + 1} geliştirme`,
             dependencies,
             targetFiles: Array.isArray(t.targetFiles) ? t.targetFiles : (t.target_files || []),
-            requirementIds: reqIds.length > 0 ? reqIds : [`REQ-${idx + 1}`]
+            requirementIds: reqIds
         };
     });
 
