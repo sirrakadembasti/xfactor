@@ -192,6 +192,10 @@ export async function logEvent(wsHub, projectId, agentType, action, filePath, me
     }
 }
 
+function isExecutionActive(status) {
+    return status === 'implementing' || status === 'running';
+}
+
 /**
  * Projenin duraklatma (pause) durumunu kontrol eder
  */
@@ -202,9 +206,6 @@ export async function checkPause(projectId, signal = null) {
     let state = await readProjectState(projectId);
     if (!state || state.status !== 'paused') return state?.status;
 
-function isExecutionActive(status) {
-    return status === 'implementing' || status === 'running';
-}
 
     return new Promise((resolve, reject) => {
         let onStateChange;
