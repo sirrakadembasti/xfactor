@@ -26,6 +26,7 @@ export async function verifyArtifactAndProject({
     }
     if (initialProject.status === 'implementing') {
         projectStateTransitionInTransaction({
+            projectId,
             expectedRevision: initialProject.revision,
             statuses: ['implementation_finished']
         });
