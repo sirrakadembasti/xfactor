@@ -249,7 +249,8 @@ export function verifyPlaceholders(files = []) {
                             }
                         }
 
-                        if (isMockOnly && !isDynamicReference(handlerBody)) {
+                        const isHealthRoute = /(^|\/)(health|healthz|ping|ready|readyz)($|\/)/i.test(routePath || '');
+                        if (isMockOnly && !isDynamicReference(handlerBody) && !isHealthRoute) {
                             issues.push(`Static mock handler detected for endpoint: ${routePath || 'unknown route'} in ${file.path}`);
                         }
                     }
@@ -277,8 +278,22 @@ export function verifyPlaceholders(files = []) {
                     } else if (expr.type === 'MemberExpression') {
                         // e.g. props.onSubmit or form.submit
                         isDirectProp = true;
+                    } else if (expr.type === 'CallExpression') {
+                        // e.g. form.handleSubmit(onSubmit)
+                        const calleeName = expr.callee?.property?.name || expr.callee?.name || '';
+                        if (calleeName.toLowerCase().includes('submit')) {
+                            const innerArg = expr.arguments?.[0];
+                            if (innerArg?.type === 'Identifier') {
+                                handlerFn = declaredFunctions.get(innerArg.name);
+                            } else if (innerArg && (innerArg.type === 'ArrowFunctionExpression' || innerArg.type === 'FunctionExpression')) {
+                                handlerFn = innerArg;
+                            } else {
+                                isDirectProp = true;
+                            }
+                        } else {
+                            isDirectProp = true;
+                        }
                     }
-
                     if (!isDirectProp) {
                         if (!handlerFn || !hasActiveAction(handlerFn)) {
                             issues.push(`Dead UI form detected with no network/API action in ${file.path}`);

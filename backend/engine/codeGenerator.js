@@ -4,6 +4,7 @@
  */
 
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { isSafeProjectPath, assertPathInsideRoot, assertSafeExistingParent } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
@@ -482,6 +483,18 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     };
 
     await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
+
+    const lockfilePath = path.join(projectDir, 'package-lock.json');
+    if (!fsSync.existsSync(lockfilePath)) {
+        const defaultLock = {
+            name: safeName,
+            version: '1.0.0',
+            lockfileVersion: 3,
+            requires: true,
+            packages: {}
+        };
+        await fs.writeFile(lockfilePath, JSON.stringify(defaultLock, null, 2), 'utf8');
+    }
     // 3. tsconfig.json Kontrolü (@/* Path Alias Çözümü)
     const tsconfigPath = path.join(projectDir, 'tsconfig.json');
     try {

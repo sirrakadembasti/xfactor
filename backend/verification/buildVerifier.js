@@ -42,7 +42,8 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 const tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 60000,
-                    adapter: options.adapter
+                    adapter: options.adapter,
+                    allowHostExecution: options.allowHostExecution
                 });
 
                 checks.push({
@@ -88,7 +89,8 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 const prismaRes = await executeInSandbox(npxCmd, ['prisma', 'validate'], {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 30000,
-                    adapter: options.adapter
+                    adapter: options.adapter,
+                    allowHostExecution: options.allowHostExecution
                 });
 
                 checks.push({
@@ -133,8 +135,9 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
         try {
             const buildRes = await executeInSandbox(npmCmd, ['run', 'build'], {
                 workspace: projectDir,
-                timeoutMs: options.timeoutMs || 120000,
-                adapter: options.adapter
+                timeoutMs: options.timeoutMs || 60000,
+                adapter: options.adapter,
+                allowHostExecution: options.allowHostExecution
             });
 
             checks.push({

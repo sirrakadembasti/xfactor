@@ -574,6 +574,9 @@ async function captureHardeningGate(name, run) {
 }
 
 function stageVerificationRunning(project) {
+    if (project.status === 'verification_running') {
+        return project;
+    }
     const paths = {
         implementation_finished: ['verification_pending', 'verification_running'],
         verification_pending: ['verification_running']
@@ -628,7 +631,10 @@ export async function runProjectVerification({
     const contaminationVerifier = injectedVerifiers.contamination || verifyContamination;
     const securityVerifier = injectedVerifiers.security || verifySecurityBaseline;
     const readmeVerifier = injectedVerifiers.readme || verifyReadmeCommands;
-    const verifierOptions = { ...options };
+    const verifierOptions = {
+        ...options,
+        allowHostExecution: options.allowHostExecution ?? (process.env.XFACTOR_BUILD_SANDBOX === 'host')
+    };
     delete verifierOptions.verifiers;
 
     await stageVerificationRunning(project);

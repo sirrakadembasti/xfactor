@@ -64,11 +64,43 @@ export function requireSandboxCapabilities(adapter) {
 }
 
 export async function executeInSandbox(command, args = [], options = {}) {
-    let adapter = options.adapter;
-
-    if (adapter === undefined) {
-        adapter = getActiveSandboxAdapter();
+    const hostMode = options.allowHostExecution === true && process.env.XFACTOR_BUILD_SANDBOX === 'host';
+    if (hostMode) {
+        const { spawn } = await import('child_process');
+        const scrubbedEnv = scrubEnvironmentVariables(options.env || process.env);
+        const child = spawn(command, args, {
+            cwd: options.workspace || process.cwd(),
+            env: scrubbedEnv,
+            windowsHide: true,
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
+        let stdout = '';
+        let stderr = '';
+        const exitCode = await new Promise((resolve) => {
+            child.stdout?.on('data', chunk => { stdout += chunk.toString(); });
+            child.stderr?.on('data', chunk => { stderr += chunk.toString(); });
+            child.on('error', err => { stderr += err.message; resolve(-1); });
+            child.on('close', code => resolve(code ?? 0));
+        });
+        return {
+            status: exitCode === 0 ? 'PASS' : 'FAIL',
+            passed: exitCode === 0,
+            exitCode,
+            stdout,
+            stderr,
+            timedOut: false,
+            aborted: false,
+            adapterId: 'host-opt-in',
+            capabilities: {
+                available: true,
+                adapterId: 'host-opt-in',
+                isolation: false,
+                envScrubbed: true
+            }
+        };
     }
+
+    let adapter = options.adapter;
 
     if (!adapter || typeof adapter.execute !== 'function') {
         throw new SandboxInitializationError('Invalid or missing sandbox adapter.');

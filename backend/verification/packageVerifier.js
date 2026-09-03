@@ -23,7 +23,7 @@ const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', 
 function extractPackageName(importPath) {
     if (!importPath || typeof importPath !== 'string') return null;
     const trimmed = importPath.trim();
-    if (trimmed.startsWith('.') || trimmed.startsWith('/') || trimmed.startsWith('\\')) {
+    if (trimmed.startsWith('.') || trimmed.startsWith('/') || trimmed.startsWith('\\') || trimmed.startsWith('@/') || trimmed.startsWith('~/') || trimmed === '@') {
         return null;
     }
 
@@ -245,7 +245,8 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
             const installRes = await executeInSandbox(npmCmd, ['ci', '--ignore-scripts'], {
                 workspace: projectDir,
                 timeoutMs: options.timeoutMs || 120000,
-                adapter: options.adapter
+                adapter: options.adapter,
+                allowHostExecution: options.allowHostExecution
             });
 
             if (installRes.passed) {
