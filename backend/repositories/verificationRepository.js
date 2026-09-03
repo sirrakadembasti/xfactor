@@ -42,7 +42,7 @@ export function updateRunStatus(runId, status, endedAt = new Date().toISOString(
     assertRunMutable(run, status);
     const result = db.prepare(`
         UPDATE verification_runs SET status = ?, ended_at = ? WHERE id = ? AND status = ?
-    `).run(status, endedAt, runId, run.status);
+    `).run(status, RUN_TRANSITIONS[status].size === 0 ? endedAt : null, runId, run.status);
     if (result.changes !== 1) throw new Error(`Verification run ${runId} was not updated.`);
     return db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(runId);
 }

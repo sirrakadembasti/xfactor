@@ -21,9 +21,11 @@ export async function verifyArtifactAndProject({
     }
     const initialProject = getProject(projectId);
     if (!initialProject) throw new Error(`Project ${projectId} does not exist.`);
+    if (expectedRevision !== null && initialProject.revision !== expectedRevision) {
+        throw new Error(`CAS Revision conflict on project ${projectId}`);
+    }
     if (initialProject.status === 'implementing') {
         projectStateTransitionInTransaction({
-            projectId,
             expectedRevision: initialProject.revision,
             statuses: ['implementation_finished']
         });
@@ -54,9 +56,6 @@ export async function verifyArtifactAndProject({
     if (!complete) return { ...receipt, passed: true, completed: false };
 
     let project = getProject(projectId);
-    if (expectedRevision !== null && project.revision !== expectedRevision) {
-        throw new Error(`CAS Revision conflict on project ${projectId}`);
-    }
     const statuses = project.status === 'runtime_verified'
         ? ['acceptance_verified', 'artifact_verified']
         : project.status === 'acceptance_verified'

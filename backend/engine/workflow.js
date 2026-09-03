@@ -938,6 +938,7 @@ ${cleanTalimat}
                 projectId,
                 contractId: latestContract.id,
                 artifactId: artifact.id,
+                expectedRevision: (await readProjectState(projectId))?.revision ?? null,
                 complete: true
             });
             if (!completion.completed) {
