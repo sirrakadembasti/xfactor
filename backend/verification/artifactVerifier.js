@@ -19,9 +19,10 @@ export async function verifyArtifact({ projectId, contractId, artifactId }, opti
         id: runId,
         projectId,
         contractId,
-        status: 'running',
+        status: 'queued',
         policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
     });
+    updateRunStatus(runId, 'running');
 
     updateArtifactStatus({
         projectId,

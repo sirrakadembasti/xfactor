@@ -8,6 +8,10 @@ export function createRun({
     policyVersion = '1.0',
     startedAt = new Date().toISOString()
 }) {
+    if (status !== 'queued') {
+        throw new Error('Verification runs must be created in the queued non-terminal state.');
+    }
+
     db.prepare(`
         INSERT INTO verification_runs (
             id, project_id, contract_id, status, policy_version, started_at
