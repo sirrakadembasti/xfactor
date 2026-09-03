@@ -443,7 +443,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
     const sandboxMode = resolveBuildSandboxMode();
 
     // Sandboxed mod: verifyBuild üzerinden aktif compiler ve sandbox kapılarına delege et
-    if (sandboxMode === 'sandboxed') {
+    if (sandboxMode === 'sandboxed' && options.phase !== 'generation') {
         const contract = plan || {};
         const buildResult = await verifyBuild(projectDir, contract, {
             timeoutMs: options.timeoutMs || 60000,

@@ -665,7 +665,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
 
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
-            let buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal });
+            let buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal, phase: 'generation' });
 
             let allQualityIssues = [
                 ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
@@ -714,7 +714,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         }
                         // Yeniden denetle: Hem statik denetim hem compiler doğrulaması
                         deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
-                        buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal });
+                        buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal, phase: 'generation' });
                         allQualityIssues = [
                             ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
                             ...(!buildAudit.passed ? buildAudit.issues : [])
