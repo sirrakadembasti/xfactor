@@ -38,8 +38,8 @@ ${projectContext ? `Mevcut Proje Bağlamı / Dosyaları:\n"""\n${projectContext}
 KURALLAR:
 1. Yalnızca JSON formatında yanıt ver (\`\`\`json ... \`\`\` bloğu içinde).
 2. Kod içeriğini "content" alanı içinde geçerli JSON dizesi olarak sağla.
-3. BİLEŞEN KOMPOZİSYONU: Sayfa (page.tsx) veya kapsayıcı bileşen yazarken, form/tablo/modal gibi alt bileşenleri sayfa içine devasa monolitik olarak gömmek yerine, oluşturulmuş bileşenleri import ederek (@/components/...) kompoze et.
-4. Gereksiz yorum veya dolgu kod ekleme; temiz, modern, modüler ve çalışan kod yaz.`;
+3. BİLEŞEN KOMPOZİSYONU & KOMPAKT KOD KURALI: Sayfa veya form yazarken kodu gereksiz yere 500 satırlık devasa monolitlere dönüştürme. Temiz, modern, çalışan ve kompakt (100-200 satır) bileşenler yaz. Kodun ASLA token sınırına takılıp yarım kesilmesine (truncation) izin verme.
+4. Her dosyanın tüm fonksiyon, etiket ve JSX kapanış parantezlerini eksiksiz kapat.`;
 }
 export function parseCoderResponse(rawText) {
     if (!rawText || typeof rawText !== 'string') {
