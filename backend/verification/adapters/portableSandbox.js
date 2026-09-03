@@ -6,6 +6,10 @@ export class PortableSandboxAdapter {
         this.id = type;
         this.type = type;
         this.options = options;
+        this.capabilities = {
+            serviceSpawn: true,
+            networkModes: ['none', 'service']
+        };
     }
 
     getCapabilities() {
@@ -15,14 +19,16 @@ export class PortableSandboxAdapter {
             available,
             adapterId: this.id,
             isolation: available,
+            serviceSpawn: available,
             jobObject: available,
             resourceLimits: false,
             workspaceAcl: available,
             networkDenied: available,
             envScrubbed: available,
-            reason: available ? null : (supported ? `${this.type} sandbox runtime is not available on this host.` : `Unsupported portable sandbox adapter "${this.type}".`)
+            reason: available ? null : `${this.type} sandbox runtime is not available on this host.`
         };
     }
+
 
     isAvailable() {
         if (this.type !== 'bubblewrap' && this.type !== 'docker') return false;
@@ -49,6 +55,40 @@ export class PortableSandboxAdapter {
                 process.kill(pid, 'SIGKILL');
             } catch {}
         }
+    }
+
+    buildServiceCommand({ command, args = [], workspace, port, networkMode = 'service' }) {
+        const workDir = workspace || process.cwd();
+        if (this.type === 'bubblewrap') {
+            return {
+                command: 'bwrap',
+                args: ['--ro-bind', '/usr', '/usr', '--ro-bind', '/lib', '/lib',
+                    '--ro-bind', '/lib64', '/lib64', '--proc', '/proc', '--dev', '/dev',
+                    '--bind', workDir, '/workspace', '--chdir', '/workspace', '--unshare-all',
+                    ...(networkMode === 'service' ? ['--share-net'] : ['--unshare-net']),
+                    '--', command, ...args]
+            };
+        }
+        return {
+            command: 'docker',
+            args: ['run', '--rm', '-v', `${workDir}:/workspace`, '-w', '/workspace',
+                '--network', networkMode === 'service' ? 'bridge' : 'none',
+                ...(port ? ['-p', `${port}:${port}`] : []), 'node:20-alpine', command, ...args]
+        };
+    }
+
+    async spawn({ command, args = [], workspace, env = {}, port, networkMode = 'service' }) {
+        const capabilities = this.getCapabilities();
+        if (!capabilities.available || !capabilities.serviceSpawn) {
+            throw new Error(capabilities.reason || `${this.type} cannot spawn services.`);
+        }
+        const wrapped = this.buildServiceCommand({ command, args, workspace, port, networkMode });
+        return spawn(wrapped.command, wrapped.args, {
+            cwd: workspace || process.cwd(),
+            env: { PATH: process.env.PATH, TEMP: '/tmp', TMP: '/tmp', NODE_ENV: 'production', ...env },
+            detached: true,
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
     }
 
     async execute({ command, args = [], workspace, timeoutMs = 60000, env = {} }) {

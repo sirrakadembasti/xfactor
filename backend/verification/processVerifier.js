@@ -1,22 +1,21 @@
 import { spawn, spawnSync } from 'child_process';
 import os from 'os';
-import { scrubEnvironmentVariables } from './sandboxRunner.js';
+import { scrubEnvironmentVariables, getActiveSandboxAdapter } from './sandboxRunner.js';
 
 function requireAvailableSandbox(adapter) {
-    if (!adapter || typeof adapter.execute !== 'function') {
-        const error = new Error('Sandbox adapter is unavailable.');
+    if (!adapter || typeof adapter.spawn !== 'function') {
+        const error = new Error('Sandbox adapter does not provide a long-running process boundary.');
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
     }
-    if (typeof adapter.getCapabilities === 'function') {
-        const capabilities = adapter.getCapabilities();
-        if (!capabilities?.available) {
-            const error = new Error(capabilities?.reason || 'Sandbox adapter is unavailable.');
-            error.code = 'SANDBOX_UNAVAILABLE';
-            throw error;
-        }
-    } else {
+    if (typeof adapter.getCapabilities !== 'function') {
         const error = new Error(`Sandbox adapter "${adapter.id || 'unknown'}" has no proven capabilities.`);
+        error.code = 'SANDBOX_UNAVAILABLE';
+        throw error;
+    }
+    const capabilities = adapter.getCapabilities();
+    if (!capabilities?.available || capabilities.serviceSpawn !== true) {
+        const error = new Error(capabilities?.reason || 'Sandbox adapter cannot prove isolated service spawning.');
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
     }
@@ -44,11 +43,13 @@ export function killProcessTree(pid) {
 export async function killService(processTreeHandle) {
     if (!processTreeHandle) return;
     const pid = typeof processTreeHandle === 'number' ? processTreeHandle : processTreeHandle.pid;
-    killProcessTree(pid);
+    if (processTreeHandle.adapter?.killProcessTree) {
+        processTreeHandle.adapter.killProcessTree(pid);
+    } else {
+        killProcessTree(pid);
+    }
     if (processTreeHandle.child && typeof processTreeHandle.child.kill === 'function') {
-        try {
-            processTreeHandle.child.kill('SIGKILL');
-        } catch {}
+        try { processTreeHandle.child.kill('SIGKILL'); } catch {}
     }
 }
 
@@ -68,7 +69,7 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
         ...env
     };
     const hostMode = options.allowHostExecution === true && process.env.XFACTOR_BUILD_SANDBOX === 'host';
-    const adapter = options.adapter;
+    const adapter = options.adapter || getActiveSandboxAdapter(options.sandboxAdapter || null);
     if (!hostMode) {
         requireAvailableSandbox(adapter);
         if (typeof adapter.spawn !== 'function') {
@@ -84,47 +85,26 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
     let stdout = '';
     let stderr = '';
 
-    const exitCodePromise = new Promise((resolve) => {
-        try {
-            child = hostMode
-                ? spawn(command, args, {
-                    cwd,
-                    env: cleanEnv,
-                    windowsHide: true,
-                    stdio: ['ignore', 'pipe', 'pipe']
-                })
-                : adapter.spawn({
-                    command,
-                    args,
-                    cwd,
-                    env: cleanEnv,
-                    windowsHide: true,
-                    stdio: ['ignore', 'pipe', 'pipe']
-                });
-        } catch (err) {
-            return resolve({ exitCode: -1, stdout: '', stderr: err.message, timedOut: false });
-        }
-
-        child.stdout?.on('data', (chunk) => {
-            stdout += chunk.toString();
-        });
-
-        child.stderr?.on('data', (chunk) => {
-            stderr += chunk.toString();
-        });
-
-        child.on('error', (err) => {
-            resolve({ exitCode: -1, stdout, stderr: stderr || err.message, timedOut: false });
-        });
-
-        child.on('close', (code) => {
-            resolve({ exitCode: code ?? 0, stdout, stderr, timedOut: false });
-        });
-    });
-
-    if (!child || !child.pid) {
+    try {
+        child = hostMode
+            ? spawn(command, args, { cwd, env: cleanEnv, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
+            : await adapter.spawn({
+                command, args, workspace: cwd, cwd, port: config.port,
+                env: cleanEnv, networkMode: options.networkMode || 'service'
+            });
+    } catch (err) {
+        throw new Error(`Failed to spawn service "${serviceId}" in sandbox: ${err.message}`);
+    }
+    if (!child?.pid) {
         throw new Error(`Failed to spawn service "${serviceId}".`);
     }
+
+    const exitCodePromise = new Promise((resolve) => {
+        child.stdout?.on('data', (chunk) => { stdout += chunk.toString(); });
+        child.stderr?.on('data', (chunk) => { stderr += chunk.toString(); });
+        child.on('error', (err) => resolve({ exitCode: -1, stdout, stderr: stderr || err.message, timedOut: false }));
+        child.on('close', (code) => resolve({ exitCode: code ?? 0, stdout, stderr, timedOut: false }));
+    });
 
     return {
         serviceId,
@@ -134,7 +114,8 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
         processTreeHandle: {
             pid: child.pid,
             serviceId,
-            child
+            child,
+            adapter: hostMode ? null : adapter
         },
         exitCodePromise
     };
