@@ -23,6 +23,7 @@ Bu kılavuz, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun çalışma ma
 8. [Test Süiti ve Otomasyonun Çalıştırılması (`npm test`)](#8-test-süiti-ve-otomasyonun-çalıştırılması-npm-test)
 9. [Sıkça Sorulan Sorular (SSS) ve Sorun Giderme](#9-sıkça-sorulan-sorular-sss-ve-sorun-giderme)
 10. [Geliştirici Rehberi: Kod Tabanı Analizi ve Bilgi Grafiği (Graphify)](#10-geliştirici-rehberi-kod-tabanı-analizi-ve-bilgi-grafiği-graphify)
+11. [18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)](#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20)
 
 ---
 
@@ -72,7 +73,16 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 │ - Deterministik Sentaks QA   │   │ - Deterministik Sentaks QA   │
 │ - Otomatik Onarım Döngüsü    │   │ - Otomatik Onarım Döngüsü    │
 │ - Final RAPOR.md & README.md │   │ - Final RAPOR.md & README.md │
-└──────────────────────────────┘   └──────────────────────────────┘
+└──────────────┬───────────────┘   └──────────────┬───────────────┘
+               │                                   │
+               ▼                                   ▼
+┌─────────────────────────────────────────────────────────────────┐
+│        BAĞIMSIZ TEMİZ ODA DOĞRULAYICI (CLEAN-ROOM VERIFIER)     │
+│ - 18 Zorunlu Kalite Kapısı (Aktif Politika 2.0 Fail-Closed Veto)│
+│ - OS Sandbox Yürütmesi (Bubblewrap / Docker / Win Isolation)    │
+│ - Sunucu Tarafı ZIP Artefaktı & SHA-256 Hash Bütünlüğü          │
+│ - Değişmez Tamamlama Makbuzu (completion_receipts, Migrasyon 10)│
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -164,11 +174,12 @@ npm run dev
 3. Manager projenin kapsamını, kullanılacak modelleri (Car, Reservation, User) ve mimariyi sizinle olgunlaştırır.
 4. **Canlı Telemetri ve Hata Teşhis Yeteneği:** Süreç sırasında duraklatılan (`paused`) veya hata alan bir projede Manager'a *"Neden durdu? Hata ne anlama geliyor?"* diye sorduğunuzda; Manager veritabanındaki canlı `project_logs` ve alt ajan `RAPOR.md` dosyalarını okuyarak hatanın hangi dosyada, hangi fonksiyon/satırda ve ne sebeple (Reviewer vetosu, kesik kod, eksik import vb.) olduğunu somut kanıtlarla şeffafça açıklar ve çözüm önerir.
 
-### Adım 4: Mimari Planı Onaylama ve Canlı Revizyon (`pending_approval`)
+### Adım 4: Mimari Planı Onaylama, Sürümlü Sözleşme ve Canlı Revizyon (`pending_approval`)
 1. Manager mimari şartnameyi tamamladığında veya Boss *"başla"* dediğinde sistem otomatik olarak `pending_approval` durumuna geçer.
-2. Sohbet panelinin hemen altında yeşil renkli **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** onay kartı belirir.
-3. **"Planı Onayla ve Başlat"** butonuna tıkladığınızda otonom DAG motoru devreye girer ve proje durumu `RUNNING` olur.
-4. **Sohbetten Canlı Revizyon Yeteneği:** Tamamlanmış veya durdurulmuş bir projede sohbete girip *"Şu sayfayı veya şu modeli yeniden yapılandır"* dediğinizde Manager revizyon şartnamesini hazırlar ve onay butonunu tekrar açarak gerçek DAG üretimini baştan tetikler.
+2. **Sürümlü Yazılım Sözleşmesi (`PROJECT_CONTRACT`):** Sistem arka planda `project_contracts`, `requirements` ve `contract_elements` tablolarına değişmez bir sözleşme revizyonu ve SHA-256 sözleşme özeti (`contract_hash`) kaydeder.
+3. Sohbet panelinin hemen altında yeşil renkli **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** onay kartı belirir.
+4. **"Planı Onayla ve Başlat"** butonuna tıkladığınızda sözleşme onaylanır (`status = approved`), otonom DAG motoru devreye girer ve proje durumu `RUNNING` olur. Onaylanmayan sözleşme kod üretimine aktarılamaz.
+5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Tamamlanmış veya durdurulmuş bir projede sohbete girip *"Next.js yerine Vite React ve Tailwind yap"* veya *"Şu modeli ekle"* dediğinizde; Manager yeni bir sözleşme taslağı oluşturur, eski çelişen gereksinimleri `superseded` olarak işaretler ve yeni bir sözleşme revizyonuyla onay butonunu tekrar açar.
 ### Adım 5: Canlı ReactFlow DAG Akışını ve Süreç Loglarını İzleme (4 Ayrı Sekme)
 1. Proje başladığında üst menüdeki 4 bağımsız sekme arasında serbestçe gezinebilirsiniz:
    - **💬 Sohbet & Mimari (`chat`):** Manager ile konuşma, canlı düşünce animasyonu (`Sparkles & Bouncing Dots`) ve otomatik bitiş/müdahale bildirimleri.
@@ -181,12 +192,14 @@ npm run dev
 2. Projeyi tekrar başlatmak için üst bardaki veya bildirim şeridindeki yeşil **"▶️ Projeyi Devam Ettir (Resume)"** butonuna basmanız yeterlidir.
 3. **Çift Katmanlı Checkpoint Koruması:** Motor, daha önce tamamlanmış görevleri diskteki `RAPOR.md`, `DURUM.md` ve fiziksel dosya boyutu (`size > 0` byte) üzerinden doğrular; reddedilmiş (`BASARISIZ`) görevleri asla atlamaz.
 
-### Adım 7: Monaco Editor'de Kodları İnceleme ve ZIP Olarak İndirme
-1. Tüm ajanlar görevlerini bitirip Tester onay verdiğinde proje durumu `COMPLETED` olur ve Manager sohbete tebrik/özet mesajı bırakır.
+### Adım 7: Monaco Editor'de Kodları İnceleme ve Güvenli ZIP Olarak İndirme
+1. Tüm ajanlar görevlerini bitirdiğinde süreç hemen tamamlandı sayılmaz. Bağımsız temiz oda doğrulayıcısı (`artifactVerifier`) devreye girer:
+   - Sunucu tarafında ZIP arşivi oluşturulur ve disk SHA-256 özeti hesaplanır (`artifacts`).
+   - Arşiv, izole sandbox temiz odasında açılarak 18 zorunlu kalite kapısından geçirilir.
+   - Tüm kontroller eksiksiz PASS olduğunda `completeVerifiedProject` fonksiyonu atomik bir CAS işlemiyle projeyi `COMPLETED` yapar ve `completion_receipts` tablosuna değişmez denetim makbuzu yazar.
 2. Üst barda iki buton belirir:
    - **💻 Kod Editörünü Aç:** Monaco Editor IDE modunda dosyaları inceler.
-   - **📥 Projeyi (ZIP) İndir:** `.env` hariç `.env.example` ve `.gitignore` dahil tüm kaynak kodları temiz paket halinde bilgisayarınıza indirir.
-
+   - **📥 Projeyi (ZIP) İndir:** Sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirir. Doğrulanmamış veya disktteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed).
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
 Sol kenar çubuğunda her proje kartının yanında üç nokta (`...`) işlem butonu yer alır:
@@ -306,4 +319,33 @@ XFactor mimarisini bir bilgi grafiğine (Knowledge Graph) dönüştürmek için:
 2. `backend/agents/index.js` ve `docs/*.md` eşleşmelerini `test_docs_agent_sync.js` test süitiyle doğrulayın.
 3. ReactFlow DAG bileşenini (`frontend/src/components/DAGFlowView.jsx`) inceleyerek dalga seviyelendirme (wave execution) mantığını genişletin.
 
+
+---
+
+## 11. 18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)
+
+XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamamlamaya yetmez. Yalnızca makine tarafından yürütülen ve değişmez kanıt üreten **18 Kalite Kapısı** projeyi onaylayabilir:
+
+| # | Kalite Kapısı | Doğrulama Mekanizması ve Kuralı |
+|---|---|---|
+| 1 | `package_json` | Bağımlılıkların biçim, sürüm ve çakışma kontrolü; geçersiz `^1.0.0` tahminleri engellenir. |
+| 2 | `lockfile` | Paket yöneticisi kilit dosyasının (`package-lock.json`) varlığı ve tutarlılığı. |
+| 3 | `ast_import_inventory` | Kod içinde `import` edilen tüm paketlerin `package.json`'da tanımlı olduğunun AST analiziyle kanıtı. |
+| 4 | `clean_install` | Temiz, izole sandbox ortamında `npm install` komutunun 0 çıkış koduyla başarıyla tamamlanması. |
+| 5 | `typecheck` | Gerçek framework derleyicisi (`tsc --noEmit`) ile tip kontrolü; eksik tip veya kırık export derhal reddedilir. |
+| 6 | `framework_build` | Gerçek framework derleme betiğinin (`npm run build`) sandbox içinde başarıyla sonuçlanması. |
+| 7 | `requirement_traceability` | Sözleşmedeki her zorunlu gereksinimin (`requirements`) en az bir PASS alan kontrolle kanıtlanması. |
+| 8 | `service_manifest` | Frontend/backend port, base URL, proxy ve CORS sözleşmesinin çakışmasız yapılandırılması. |
+| 9 | `database_verification` | Prisma şemasının (`npx prisma validate`), migration dosyalarının ve veritabanı bağlantısının doğrulanması. |
+| 10 | `api_contract` | Üretilen HTTP API rotalarının gerçek HTTP istekleriyle ve veritabanı yan etkileriyle doğrulanması. |
+| 11 | `browser_journey` | Headless Chromium tarayıcısıyla kritik kullanıcı yolculuklarının (form doldurma, CRUD, sayfa yenileme) testi. |
+| 12 | `smoke_gate` | Projenin bağımsız servis başlatıcı ve sağlık kontrolleriyle uçtan uca ayağa kalktığının doğrulanması. |
+| 13 | `test_infrastructure` | Proje içinde çalıştırılabilir test altyapısının (`test` scripti, test dosyaları) varlığı. |
+| 14 | `domain_entity_check` | Kullanıcının istediği ana modellerin ve iş akışlarının kod tabanında somut olarak varlığının denetimi. |
+| 15 | `placeholder_check` | Sahte kimlik doğrulama, içi boş formlar, işlevsiz butonlar veya stub kodların engellenmesi. |
+| 16 | `contamination_check` | Farklı şablonlardan veya alakasız projelerden kalan yabancı metin ve kodların elenmesi. |
+| 17 | `security_baseline` | Açık CORS, hard-coded secret, zayıf oturum ve enjeksiyon risklerinin statik ve dinamik denetimi. |
+| 18 | `readme_check` | Projede üretilen README.md içindeki kurulum ve çalıştırma komutlarının projeyle birebir uyumu. |
+
+Her kapı; çalıştırılan komut, çıkış kodu, SHA-256 çıktı özetleri (`stdout_digest`, `stderr_digest`) ve ISO UTC takvim zaman damgalarını veritabanında `verification_checks` ve `verification_evidence` tablolarına değişmez olarak yazar. Kanıtı eksik veya sahte olan hiçbir kontrol `PASS` sayılmaz.
 🎉 **XFactor ile otonom, güvenli ve hatasız yazılım geliştirmenin keyfini çıkarın!**

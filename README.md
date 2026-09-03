@@ -5,7 +5,7 @@
 [![SQLite](https://img.shields.io/badge/Database-SQLite%20WAL%20Migrations-003B57.svg)](https://www.sqlite.org/)
 [![Tests](https://img.shields.io/badge/Tests-100%25%20Passing%20(25%20Suites)-brightgreen.svg)](backend/tests/test_runner.js)
 
-**XFactor**, kullanıcıların doğal dilde ilettiği yazılım fikirlerini analiz ederek 6 seviyeli rol uzmanlaşması, deterministik **DAG dalga motoru** ve gerçek **derleyici/kalite kapıları** (`tsc`, `prisma`, `eslint`) ile sıfırdan çalışan tam teşekküllü projelere dönüştüren merkezi bir yapay zekâ kod üretim platformudur.
+**XFactor**, kullanıcıların doğal dilde ilettiği yazılım fikirlerini analiz ederek 6 seviyeli rol uzmanlaşması, deterministik **DAG dalga motoru**, sürümlü **yazılım sözleşmeleri (PROJECT_CONTRACT)**, 18 zorunlu **kalite kapısı** (Aktif Politika 2.0 Fail-Closed Veto) ve izole **temiz oda (clean-room) ZIP doğrulayıcısı** ile sıfırdan çalışan tam teşekküllü projelere dönüştüren otonom bir yazılım üretim platformudur.
 
 ---
 
@@ -13,9 +13,11 @@
 
 * 🤖 **6 Seviyeli Rol Uzmanlaşması:** `Manager` (Mimar), `Director` (Domain), `Teamleader` (DAG/Plan), `Coder` (Geliştirici), `Reviewer` (Kod Denetim) ve `Tester` (Kabul & QA).
 * ⚡ **Deterministik DAG Dalga Yürütücüsü:** Görevleri atomik parçalara (maks 1-2 dosya) böler, bağımsız işleri paralel dalgalar halinde çalıştırır.
-* 🛡️ **Çok Katmanlı Kalite Kapıları:** Kodlar Reviewer, statik sözdizim, TypeScript derleyicisi (`tsc --noEmit`) ve Prisma şema doğrulamasından geçmeden onaylanmaz (Fail-Closed Veto).
-* 🔒 **Sıfır Sızıntı & İzolasyon:** 24 saatlik HttpOnly sunucu oturumları, RFC 6238 TOTP/MFA desteği, asenkron `scrypt` kimlik doğrulama, CSP, HSTS, özel login rate limiter, CSRF koruması, izole alt süreç sandbox'ı ve çift yönlü disk senkronizasyonu.
-* 🖥️ **4 Bağımsız Canlı Panel:** Manager ile sohbet & planlama, canlı ReactFlow DAG akış şeması, renk kodlu telemetri logları ve dahili Monaco Editor IDE.
+* 🛡️ **18 Zorunlu Kalite Kapısı (Aktif Politika 2.0):** Kodlar yalnızca sentaks değil; `clean_install`, `typecheck`, `framework_build`, `service_manifest`, `database_verification`, `api_contract`, `browser_journey`, `smoke_gate`, `placeholder_check`, `contamination_check`, `security_baseline` ve `readme_check` olmak üzere 18 zorunlu kapının makine tarafından doğrulanmış yürütme kanıtı (SHA-256 digest, exit code, ISO UTC zaman damgası) olmadan onaylanmaz (Fail-Closed Veto).
+* 📜 **Sürümlü Sözleşme & İzlenebilirlik:** Kullanıcı istekleri doğrudan koda dökülmez; önce sürümlü sözleşmeye (`project_contracts`, `requirements`, `contract_elements`) dönüştürülür. Onaylanmayan sözleşme koda geçemez; her zorunlu ister bir doğrulama kontrolüne bağlanır.
+* 📦 **Sunucu Tarafı Temiz Oda ZIP Doğrulaması:** Dosya listesinden tahminî ZIP üretimi engellenmiştir. Sunucu tarafında üretilen ZIP artefaktı (`artifacts`), SHA-256 hash'i kilitlenerek izole `artifactVerifier` temiz odasında sıfırdan açılıp test edilmeden ve dayanıklı tamamlama makbuzu (`completion_receipts`, Migrasyon 10) üretilmeden indirilemez.
+* 🔒 **OS Sandbox Sınırları & Sıfır Sızıntı:** Bubblewrap, Docker ve Windows OS yetenek sözleşmesi ile yetkisiz sistemlerde fail-closed duran izole alt süreç sandbox'ı, otomatik gizli anahtar temizliği (`scrubEnvironmentVariables`), 24 saatlik HttpOnly sunucu oturumları, RFC 6238 TOTP/MFA desteği, asenkron `scrypt`, CSP, HSTS, login rate limiter, CSRF koruması ve çift yönlü disk senkronizasyonu.
+* 📊 **Kalite Paneli & Telemetri:** Longitudinal kapı metrikleri, hata parmak izi (fingerprinting), ister etki analizi ve yeniden derleme önizlemesi (`/impact`, `/preview`), kimlik bilgileri temizlenmiş (redacted) kanıt logları, ReactFlow DAG akış şeması ve dahili Monaco Editor IDE.
 
 ---
 
