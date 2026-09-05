@@ -468,7 +468,7 @@ Create `scripts/test-p6-production-image.mjs` with deterministic `try/finally` c
 1. Build/reuse the Task 3 application image.
 2. Create isolated host temporary directories for the two persistent mounts.
 3. Start the application container as its declared user with production env and a unique published HTTPS port reserved before launch.
-4. Start a pinned TLS reverse-proxy sidecar sharing `--network container:<app>` so it connects to `127.0.0.1:8000` and binds the published HTTPS port. Generate the proxy configuration in the isolated temp directory; the proxy image/version is a named constant.
+4. Start exact proxy image `caddy:2.8.4-alpine` as a TLS reverse-proxy sidecar sharing `--network container:<app>` so it connects to `127.0.0.1:8000` and binds the published HTTPS port. Generate the proxy configuration in the isolated temp directory and define `const PROXY_IMAGE = 'caddy:2.8.4-alpine'`.
 5. Wait on Docker health, run `p6-container-seed.mjs` via an explicit read-only bind mount, and parse its single JSON output.
 6. Run Playwright assertions from `production-operability.spec.js` against the HTTPS origin.
 7. Stop/recreate the application container with the same two mounts and verify login, readiness, and artifact download still work.
