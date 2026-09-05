@@ -9,8 +9,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-// JSZip and file-saver dynamically loaded on demand for bundle optimization
-import { api, buildWebSocketUrl, ApiError } from './services/api';
+import { api, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
 import { computeHierarchicalDAG, getAgentVisualTheme } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
@@ -21,7 +20,7 @@ import LogsView from './components/LogsView';
 import IDEView from './components/IDEView';
 import DashboardView from './components/DashboardView';
 
-// XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat'), ReactFlow DAG view, Monaco Editor, and JSZip export.
+// XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
 const MAX_LOGS = 500;
 export default function App() {
   const [authStatus, setAuthStatus] = useState('checking');
@@ -428,34 +427,18 @@ export default function App() {
     }
   };
 
-  const handleDownloadProjectZip = async (id, projectTitle, e) => {
-    e?.stopPropagation();
+  const handleDownloadProjectZip = async id => {
     setActiveMenuProjectId(null);
     try {
-      const targetState = id === activeProjectId ? projectState : await api.getProject(id);
-      const latestArtifact = targetState?.latestArtifact;
-      const contractId = targetState?.contractId || targetState?.contract_id || targetState?.plan?.contractId || 'current';
-      if (latestArtifact && latestArtifact.id && latestArtifact.status === 'verified') {
-        window.location.href = `/api/projects/${id}/contracts/${contractId}/artifacts/${latestArtifact.id}/download`;
-        return;
-      }
-      const files = await api.getProjectFiles(id);
-      if (!Array.isArray(files) || files.length === 0) {
-        setUiError('İndirilecek kaynak dosyası bulunamadı.');
-        return;
-      }
-      const [{ default: JSZipModule }, { saveAs: saveAsFn }] = await Promise.all([
-        import('jszip'),
-        import('file-saver')
-      ]);
-      const zip = new JSZipModule();
-      files.forEach(f => {
-        zip.file(f.path, f.content);
+      await requestVerifiedArtifactDownload({
+        projectId: id,
+        activeProjectId,
+        projectState,
+        getProject: api.getProject,
+        navigate: window.location.assign.bind(window.location)
       });
-      const blob = await zip.generateAsync({ type: 'blob' });
-      saveAsFn(blob, `${projectTitle || id}.zip`);
-    } catch (err) {
-      setUiError('ZIP indirme hatası: ' + err.message);
+    } catch {
+      setUiError('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');
     }
   };
 
@@ -623,7 +606,6 @@ export default function App() {
         handleCreateProject={handleCreateProject}
         handleTogglePin={handleTogglePin}
         handleRenameProject={handleRenameProject}
-        handleDownloadProjectZip={handleDownloadProjectZip}
         handleDeleteProject={handleDeleteProject}
         loginUsername={currentUser?.username || loginUsername}
         handleLogout={handleLogout}
@@ -633,6 +615,14 @@ export default function App() {
 
       {/* MAIN AREA */}
       <div className="flex-1 flex flex-col min-w-0">
+        {uiError && (
+          <div role="alert" className="flex items-center justify-between gap-3 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <span>{uiError}</span>
+            <button type="button" onClick={() => setUiError('')} className="font-semibold underline">
+              Kapat
+            </button>
+          </div>
+        )}
         {!projectState ? (
           <div className="flex-1 flex items-center justify-center text-gray-400 flex-col bg-white">
             <LayoutDashboard size={56} className="mb-4 text-indigo-300" />

@@ -23,6 +23,9 @@ export default function Header({
 }) {
   if (!projectState) return null;
   const latestArtifact = projectState.latestArtifact;
+  const canDownloadArtifact = projectState.status === 'completed'
+    && latestArtifact?.status === 'verified'
+    && String(latestArtifact?.id || '').trim() !== '';
   const selectView = mode => {
     const path = mode === 'dashboard' ? '/dashboard' : '/';
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
@@ -124,9 +127,9 @@ export default function Header({
         )}
 
         {/* Completed Download Button */}
-        {projectState.status === 'completed' && (
+        {canDownloadArtifact && (
           <button
-            onClick={() => handleDownloadProjectZip(activeProjectId, projectState.title)}
+            onClick={() => handleDownloadProjectZip(activeProjectId)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition shadow-sm"
           >
             <Download size={14} /> Projeyi (ZIP) İndir
