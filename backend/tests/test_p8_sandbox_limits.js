@@ -66,7 +66,9 @@ await runAsyncTest('P8.3 Docker cgroups enforce memory, PID, and CPU limits', as
             command: 'node',
             args: ['-e', [
                 "const fs = require('fs');",
-                "for (const name of ['memory.max', 'pids.max', 'cpu.max']) console.log(`${name}=${fs.readFileSync(`/sys/fs/cgroup/${name}`, 'utf8').trim()}`);"
+                "const read = paths => { for (const path of paths) { try { return fs.readFileSync(path, 'utf8').trim(); } catch {} } throw new Error(`missing cgroup paths: ${paths.join(', ')}`); };",
+                "const cpu = (() => { try { return read(['/sys/fs/cgroup/cpu.max']); } catch { return `${read(['/sys/fs/cgroup/cpu/cpu.cfs_quota_us'])} ${read(['/sys/fs/cgroup/cpu/cpu.cfs_period_us'])}`; } })();",
+                "for (const [name, value] of [['memory.max', read(['/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in_bytes'])], ['pids.max', read(['/sys/fs/cgroup/pids.max', '/sys/fs/cgroup/pids/pids.max'])], ['cpu.max', cpu]]) console.log(`${name}=${value}`);"
             ].join(' ')],
             containerName,
             timeoutMs: 120000
