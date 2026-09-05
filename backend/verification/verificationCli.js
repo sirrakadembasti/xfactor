@@ -14,7 +14,8 @@ export async function verifyArtifactAndProject({
     artifactId,
     expectedRevision = null,
     complete = false,
-    options = {}
+    options = {},
+    verificationRunner = verifyArtifact
 } = {}) {
     if (!projectId || !contractId || !artifactId) {
         throw new Error('projectId, contractId, and artifactId are required.');
@@ -32,7 +33,7 @@ export async function verifyArtifactAndProject({
         });
     }
 
-    const verification = await verifyArtifact({ projectId, contractId, artifactId }, options);
+    const verification = await verificationRunner({ projectId, contractId, artifactId }, options);
     const artifact = getArtifact({ projectId, contractId, artifactId });
     const receipt = { runId: verification.runId, contractId, artifactId };
     db.exec('BEGIN IMMEDIATE');

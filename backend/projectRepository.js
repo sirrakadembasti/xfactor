@@ -6,6 +6,8 @@ import { db, dbEvents, formatDBDate } from './db.js';
 import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
+import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactRepository.js';
+
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
@@ -67,7 +69,7 @@ export function getProject(projectId) {
     if (!project) return null;
 
     const contractRow = db.prepare(`
-        SELECT contract_json FROM project_contracts
+        SELECT id, contract_json FROM project_contracts
         WHERE project_id = ?
         ORDER BY
             CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
@@ -97,6 +99,15 @@ export function getProject(projectId) {
         try { workflow = JSON.parse(project.workflow_state); } catch {}
     }
 
+    const artifact = contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id });
+    const latestArtifact = artifact && {
+        id: artifact.id,
+        status: artifact.status,
+        sha256: artifact.sha256,
+        size: artifact.size,
+        verificationRunId: artifact.verificationRunId
+    };
+
     return {
         id: project.id,
         title: project.title,
@@ -106,7 +117,9 @@ export function getProject(projectId) {
         revision: project.revision || 1,
         plan,
         workflow,
-        chatHistory
+        chatHistory,
+        contractId: contractRow?.id || null,
+        latestArtifact: latestArtifact || null
     };
 }
 
@@ -206,17 +219,15 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     if (!latestContract || latestContract.id !== contractId) {
         throw new Error(`Contract ${contractId} is not the latest approved contract for project ${projectId}.`);
     }
-    const artifact = db.prepare(
-        'SELECT * FROM artifacts WHERE project_id = ? AND contract_id = ? AND id = ?'
-    ).get(projectId, contractId, artifactId);
-    if (!artifact || artifact.status !== 'verified' || !artifact.verification_run_id) {
-        throw new Error(`Artifact ${artifactId} is not verified or lacks verification_run_id.`);
+    const artifact = getArtifact({ projectId, contractId, artifactId });
+    if (!artifact || artifact.status !== 'verified' || !artifact.verificationRunId) {
+        throw new Error(`Artifact ${artifactId} is not verified or lacks verification run linkage.`);
     }
     const run = db.prepare(`
         SELECT * FROM verification_runs
         WHERE id = ? AND project_id = ? AND contract_id = ?
-    `).get(artifact.verification_run_id, projectId, contractId);
-    if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
+    `).get(artifact.verificationRunId, projectId, contractId);
+    if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verificationRunId} is not verified.`);
 
     if (run.policy_version !== '2.0') {
         throw new Error('Verification run policy version is not active.');

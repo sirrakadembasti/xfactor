@@ -79,7 +79,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'rejected');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);
@@ -149,7 +149,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'verified');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const latest = getLatestVerifiedArtifact({ projectId, contractId });
         assert.strictEqual(latest.id, artifactId);
@@ -187,7 +187,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'rejected');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);
