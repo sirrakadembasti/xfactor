@@ -24,6 +24,7 @@ const testFiles = [
     'test_generation_isolation.js',
     'test_subprocess_sandbox.js',
     'test_p5_execution_boundary.js',
+    'test_p8_sandbox_limits.js',
     'test_p5_artifact_completion.js',
     'test_p6_archive_ownership.js',
     'test_p6_static_serving.js',

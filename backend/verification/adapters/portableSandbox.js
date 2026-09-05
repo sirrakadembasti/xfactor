@@ -1,11 +1,42 @@
 import { spawn, execSync } from 'child_process';
 import os from 'os';
 
+export const DEFAULT_SANDBOX_LIMITS = Object.freeze({
+    cpus: '2.0',
+    memory: '1g',
+    memorySwap: '1g',
+    pids: '100',
+    tmpfs: '/tmp:rw,noexec,nosuid,size=64m'
+});
+
+export function buildDockerIsolationArgs({ port = null, limits = DEFAULT_SANDBOX_LIMITS } = {}) {
+    return [
+        '--cpus', limits.cpus,
+        '--memory', limits.memory,
+        '--memory-swap', limits.memorySwap,
+        '--pids-limit', limits.pids,
+        '--security-opt', 'no-new-privileges:true',
+        '--cap-drop', 'ALL',
+        '--tmpfs', limits.tmpfs,
+        ...(port ? ['-p', `127.0.0.1:${port}:${port}`] : [])
+    ];
+}
+
 export class PortableSandboxAdapter {
     constructor(type = 'bubblewrap', options = {}) {
         this.id = type;
         this.type = type;
         this.options = options;
+        this.platform = typeof options.platform === 'function'
+            ? options.platform
+            : () => options.platform || os.platform();
+        this.dockerProbe = typeof options.dockerProbe === 'function'
+            ? options.dockerProbe
+            : typeof options.probe === 'function'
+                ? options.probe
+                : () => {
+                    execSync('docker info', { stdio: 'ignore' });
+                };
         this.capabilities = {
             serviceSpawn: true,
             networkModes: ['none', 'service']
@@ -21,7 +52,7 @@ export class PortableSandboxAdapter {
             isolation: available,
             serviceSpawn: available,
             jobObject: available,
-            resourceLimits: false,
+            resourceLimits: available && this.type === 'docker',
             workspaceAcl: available,
             networkDenied: available,
             envScrubbed: available,
@@ -36,14 +67,13 @@ export class PortableSandboxAdapter {
 
     isAvailable() {
         if (this.type !== 'bubblewrap' && this.type !== 'docker') return false;
-        const platform = os.platform();
-        if (platform !== 'linux' && platform !== 'darwin') {
-            return false;
-        }
+        if (this.type === 'bubblewrap' && this.platform() !== 'linux') return false;
 
         try {
-            const checkCmd = this.type === 'docker' ? 'docker --version' : 'bwrap --version';
-            execSync(checkCmd, { stdio: 'ignore' });
+            if (this.type === 'docker') {
+                return this.dockerProbe() !== false;
+            }
+            execSync('bwrap --version', { stdio: 'ignore' });
             return true;
         } catch {
             return false;
@@ -61,7 +91,7 @@ export class PortableSandboxAdapter {
         }
     }
 
-    buildServiceCommand({ command, args = [], workspace, port, networkMode = 'service' }) {
+    buildServiceCommand({ command, args = [], workspace, port, networkMode = 'service', containerName = null }) {
         const workDir = workspace || process.cwd();
         if (this.type === 'bubblewrap') {
             return {
@@ -75,18 +105,26 @@ export class PortableSandboxAdapter {
         }
         return {
             command: 'docker',
-            args: ['run', '--rm', '-v', `${workDir}:/workspace`, '-w', '/workspace',
+            args: [
+                'run', '--rm',
+                ...(containerName ? ['--name', containerName] : []),
+                '-v', `${workDir}:/workspace`,
+                '-w', '/workspace',
                 '--network', networkMode === 'service' ? 'bridge' : 'none',
-                ...(port ? ['-p', `${port}:${port}`] : []), 'node:20-alpine', command, ...args]
+                ...buildDockerIsolationArgs({ port }),
+                'node:22.23.2-alpine',
+                command,
+                ...args
+            ]
         };
     }
 
-    async spawn({ command, args = [], workspace, env = {}, port, networkMode = 'service' }) {
+    async spawn({ command, args = [], workspace, env = {}, port, networkMode = 'service', containerName = null }) {
         const capabilities = this.getCapabilities();
         if (!capabilities.available || !capabilities.serviceSpawn) {
             throw new Error(capabilities.reason || `${this.type} cannot spawn services.`);
         }
-        const wrapped = this.buildServiceCommand({ command, args, workspace, port, networkMode });
+        const wrapped = this.buildServiceCommand({ command, args, workspace, port, networkMode, containerName });
         return spawn(wrapped.command, wrapped.args, {
             cwd: workspace || process.cwd(),
             env: { PATH: process.env.PATH, TEMP: '/tmp', TMP: '/tmp', NODE_ENV: 'production', ...env },
@@ -95,7 +133,8 @@ export class PortableSandboxAdapter {
         });
     }
 
-    async execute({ command, args = [], workspace, timeoutMs = 60000, env = {} }) {
+
+    async execute({ command, args = [], workspace, timeoutMs = 60000, env = {}, port = null, networkMode = 'none', containerName = null }) {
         if (!this.isAvailable()) {
             return {
                 status: 'BLOCKED',
@@ -139,10 +178,12 @@ export class PortableSandboxAdapter {
                 spawnCmd = 'docker';
                 spawnArgs = [
                     'run', '--rm',
+                    ...(containerName ? ['--name', containerName] : []),
                     '-v', `${workspace || process.cwd()}:/workspace`,
                     '-w', '/workspace',
-                    '--network', 'none',
-                    'node:20-alpine',
+                    '--network', networkMode === 'service' ? 'bridge' : 'none',
+                    ...buildDockerIsolationArgs({ port }),
+                    'node:22.23.2-alpine',
                     command,
                     ...args
                 ];
