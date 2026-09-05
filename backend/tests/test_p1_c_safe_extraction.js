@@ -2,11 +2,8 @@ import assert from 'assert';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { createRequire } from 'module';
+import JSZip from 'jszip';
 import { createTestHarness } from './testHarness.js';
-
-const require = createRequire(import.meta.url);
-const JSZip = (await import('jszip').catch(() => null))?.default || require('../../frontend/node_modules/jszip');
 
 const { safeExtractZip } = await import('../verification/safeExtractor.js');
 

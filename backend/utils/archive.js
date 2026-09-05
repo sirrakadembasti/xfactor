@@ -1,32 +1,12 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
+import JSZip from 'jszip';
+import { getArtifactsRoot } from '../artifactPaths.js';
 import { createArtifact, addArtifactFile } from '../repositories/artifactRepository.js';
 
-const require = createRequire(import.meta.url);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-async function getJSZip() {
-    try {
-        const mod = await import('jszip');
-        return mod.default || mod;
-    } catch {
-        try {
-            return require('jszip');
-        } catch {
-            const frontendJsZipPath = path.resolve(__dirname, '../../frontend/node_modules/jszip');
-            const mod = require(frontendJsZipPath);
-            return mod.default || mod;
-        }
-    }
-}
-
-export async function createProjectZip(projectId, contractId, files, artifactsDir = 'backend/data/artifacts') {
-    const JSZipClass = await getJSZip();
-    const zip = new JSZipClass();
+export async function createProjectZip(projectId, contractId, files, artifactsDir = getArtifactsRoot()) {
+    const zip = new JSZip();
     const manifest = [];
 
     for (const file of files) {

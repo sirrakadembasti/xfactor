@@ -25,6 +25,7 @@ const testFiles = [
     'test_subprocess_sandbox.js',
     'test_p5_execution_boundary.js',
     'test_p5_artifact_completion.js',
+    'test_p6_archive_ownership.js',
     'test_agent_contract_schemas.js',
     'test_p5_mfa_login.js',
     'test_database_migrations.js',

@@ -1,26 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-async function getJSZip() {
-    try {
-        const mod = await import('jszip');
-        return mod.default || mod;
-    } catch {
-        try {
-            return require('jszip');
-        } catch {
-            const frontendJsZipPath = path.resolve(__dirname, '../../frontend/node_modules/jszip');
-            const mod = require(frontendJsZipPath);
-            return mod.default || mod;
-        }
-    }
-}
+import JSZip from 'jszip';
 
 function assertSafeEntryName(entryName, resolvedOutputDir) {
     if (entryName.includes('\0')) {
@@ -53,14 +33,13 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
     const resolvedOutputDir = path.resolve(outputDir);
     await fs.mkdir(resolvedOutputDir, { recursive: true });
 
-    const JSZipClass = await getJSZip();
     let zip;
 
     if (typeof zipBufferOrPathOrInstance === 'string') {
         const buf = await fs.readFile(zipBufferOrPathOrInstance);
-        zip = await JSZipClass.loadAsync(buf);
+        zip = await JSZip.loadAsync(buf);
     } else if (Buffer.isBuffer(zipBufferOrPathOrInstance) || zipBufferOrPathOrInstance instanceof Uint8Array) {
-        zip = await JSZipClass.loadAsync(zipBufferOrPathOrInstance);
+        zip = await JSZip.loadAsync(zipBufferOrPathOrInstance);
     } else if (zipBufferOrPathOrInstance && typeof zipBufferOrPathOrInstance.file === 'function' && zipBufferOrPathOrInstance.files) {
         // Pre-validate any un-sanitized keys directly on instance
         for (const rawKey of Object.keys(zipBufferOrPathOrInstance.files)) {
@@ -68,7 +47,7 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
         }
         // Serialize and reload instance to ensure compressed size accuracy for ratio calculation
         const buf = await zipBufferOrPathOrInstance.generateAsync({ type: 'nodebuffer', platform: 'UNIX' });
-        zip = await JSZipClass.loadAsync(buf);
+        zip = await JSZip.loadAsync(buf);
     } else {
         throw new Error('Invalid ZIP input: expected file path, Buffer, or JSZip instance.');
     }
