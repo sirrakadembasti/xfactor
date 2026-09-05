@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import os from 'os';
 import { scrubEnvironmentVariables, getActiveSandboxAdapter } from './sandboxRunner.js';
 
@@ -68,11 +68,8 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
         NODE_ENV: 'production',
         ...env
     };
-    const hostMode = options.allowHostExecution === true && process.env.XFACTOR_BUILD_SANDBOX === 'host';
     const adapter = options.adapter || getActiveSandboxAdapter(options.sandboxAdapter || null);
-    if (!hostMode) {
-        requireAvailableSandbox(adapter);
-    }
+    requireAvailableSandbox(adapter);
 
     const cleanEnv = scrubEnvironmentVariables(baseEnv);
 
@@ -81,12 +78,15 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
     let stderr = '';
 
     try {
-        child = hostMode
-            ? spawn(command, args, { cwd, env: cleanEnv, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
-            : await adapter.spawn({
-                command, args, workspace: cwd, cwd, port: config.port,
-                env: cleanEnv, networkMode: options.networkMode || 'service'
-            });
+        child = await adapter.spawn({
+            command,
+            args,
+            workspace: cwd,
+            cwd,
+            port: config.port,
+            env: cleanEnv,
+            networkMode: options.networkMode || 'service'
+        });
     } catch (err) {
         throw new Error(`Failed to spawn service "${serviceId}" in sandbox: ${err.message}`);
     }
@@ -110,7 +110,7 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
             pid: child.pid,
             serviceId,
             child,
-            adapter: hostMode ? null : adapter
+            adapter
         },
         exitCodePromise
     };

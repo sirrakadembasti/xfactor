@@ -246,7 +246,6 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
                 workspace: projectDir,
                 timeoutMs: options.timeoutMs || 120000,
                 adapter: options.adapter,
-                allowHostExecution: options.allowHostExecution
             });
 
             if (installRes.passed) {

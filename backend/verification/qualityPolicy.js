@@ -631,10 +631,7 @@ export async function runProjectVerification({
     const contaminationVerifier = injectedVerifiers.contamination || verifyContamination;
     const securityVerifier = injectedVerifiers.security || verifySecurityBaseline;
     const readmeVerifier = injectedVerifiers.readme || verifyReadmeCommands;
-    const verifierOptions = {
-        ...options,
-        allowHostExecution: options.allowHostExecution ?? (process.env.XFACTOR_BUILD_SANDBOX === 'host')
-    };
+    const verifierOptions = { ...options };
     delete verifierOptions.verifiers;
 
     await stageVerificationRunning(project);

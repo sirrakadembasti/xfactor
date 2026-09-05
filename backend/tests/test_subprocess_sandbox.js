@@ -6,13 +6,21 @@
 import assert from 'assert';
 import path from 'path';
 import fs from 'fs/promises';
-import {
+import { setupIsolatedTestDb } from './isolatedDb.js';
+
+const isolated = await setupIsolatedTestDb('subprocess-sandbox');
+process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
+await fs.mkdir(process.env.PROJECTS_ROOT, { recursive: true });
+
+const {
     executeSafeCommand,
     getSanitizedSubprocessEnv,
-    killProcessTree,
     validateProjectBuild
-} from '../engine/buildValidator.js';
-import { createProject, deleteProject, getProjectDir } from '../projectRepository.js';
+} = await import('../engine/buildValidator.js');
+const { createProject, deleteProject, getProjectDir } = await import('../projectRepository.js');
+const { db } = await import('../db.js');
+isolated.registerDatabase(db);
 
 let testProjectId = null;
 let projectDir = null;
@@ -165,6 +173,7 @@ async function runTests() {
 
     } finally {
         await teardown();
+        await isolated.cleanup();
     }
 
     console.log('==================================================');

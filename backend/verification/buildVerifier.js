@@ -43,7 +43,6 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 60000,
                     adapter: options.adapter,
-                    allowHostExecution: options.allowHostExecution
                 });
 
                 checks.push({
@@ -90,7 +89,6 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 30000,
                     adapter: options.adapter,
-                    allowHostExecution: options.allowHostExecution
                 });
 
                 checks.push({
@@ -137,7 +135,6 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 workspace: projectDir,
                 timeoutMs: options.timeoutMs || 60000,
                 adapter: options.adapter,
-                allowHostExecution: options.allowHostExecution
             });
 
             checks.push({

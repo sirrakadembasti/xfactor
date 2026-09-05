@@ -23,6 +23,7 @@ const testFiles = [
     'test_cancellation_and_deadlines.js',
     'test_generation_isolation.js',
     'test_subprocess_sandbox.js',
+    'test_p5_execution_boundary.js',
     'test_agent_contract_schemas.js',
     'test_database_migrations.js',
     'test_health_and_lifecycle.js',
