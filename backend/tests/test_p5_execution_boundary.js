@@ -1,12 +1,18 @@
 import assert from 'assert';
-import { executeInSandbox } from '../verification/sandboxRunner.js';
-import { spawnService } from '../verification/processVerifier.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { setupIsolatedTestDb } from './isolatedDb.js';
 
+const isolated = await setupIsolatedTestDb('p5-execution-boundary');
+process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
+await fs.mkdir(process.env.PROJECTS_ROOT, { recursive: true });
+const { executeInSandbox } = await import('../verification/sandboxRunner.js');
+const { spawnService } = await import('../verification/processVerifier.js');
 const originalMode = process.env.XFACTOR_BUILD_SANDBOX;
+process.env.XFACTOR_BUILD_SANDBOX = 'host';
 
 try {
-    process.env.XFACTOR_BUILD_SANDBOX = 'host';
-
     let executeCalls = 0;
     const unavailable = {
         id: 'unavailable-test',
@@ -42,7 +48,7 @@ try {
         spawnService('p5-service', {
             command: process.execPath,
             args: ['-e', 'process.exit(0)'],
-            cwd: process.cwd()
+            cwd: process.env.PROJECTS_ROOT
         }, {}, {
             adapter: unavailableServiceAdapter,
             allowHostExecution: true
@@ -87,4 +93,5 @@ try {
     } else {
         process.env.XFACTOR_BUILD_SANDBOX = originalMode;
     }
+    await isolated.cleanup();
 }
