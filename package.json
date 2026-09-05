@@ -2,7 +2,8 @@
   "name": "xfactor-e2e",
   "private": true,
   "scripts": {
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:production-image": "node scripts/test-p6-production-image.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.46.0"

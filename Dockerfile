@@ -24,7 +24,7 @@ COPY backend/ ./
 COPY docs/ /app/docs/
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 RUN mkdir -p /app/backend/data/artifacts /app/projects \
-    && chown -R xfactor:xfactor /app
+    && chown -R xfactor:xfactor /app/backend/data /app/projects
 VOLUME ["/app/backend/data", "/app/projects"]
 USER xfactor
 EXPOSE 8000

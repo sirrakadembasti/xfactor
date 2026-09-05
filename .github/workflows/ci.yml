@@ -51,3 +51,20 @@ jobs:
 
       - name: Verify production image contract
         run: node scripts/test-p6-image-contract.mjs
+
+      - name: Install production smoke dependencies
+        run: npm ci
+
+      - name: Install Chromium for production smoke
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove production HTTPS container surface
+        run: npm run test:production-image
+
+      - name: Upload production smoke traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-image-playwright-traces
+          path: test-results/
+          if-no-files-found: ignore
