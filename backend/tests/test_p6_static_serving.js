@@ -19,13 +19,17 @@ async function runTests() {
     await fs.mkdir(path.join(distRoot, 'assets'), { recursive: true });
     await fs.writeFile(path.join(distRoot, 'index.html'), '<!doctype html><main>SPA shell</main>');
     await fs.writeFile(path.join(distRoot, 'assets', 'app-abc123.js'), 'console.log("app")');
+    await fs.writeFile(path.join(distRoot, 'assets', 'runtime.js'), 'console.log("runtime")');
+    const outsideFile = path.join(root, 'outside.js');
+    await fs.writeFile(outsideFile, 'outside distribution root');
+    await fs.symlink(outsideFile, path.join(distRoot, 'assets', 'escape.js'));
     await fs.writeFile(path.join(distRoot, 'assets', 'app-abc123.css'), 'body{}');
 
     const app = express();
     app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
     app.get('/readyz', (_req, res) => res.json({ status: 'ready' }));
-    mountProductionFrontend(app, { production: true, distRoot });
     app.use('/api', (req, res) => res.status(404).json({ error: 'API endpoint bulunamadı.', code: 'NOT_FOUND', requestId: req.get('x-request-id') || 'test-request' }));
+    mountProductionFrontend(app, { production: true, distRoot });
 
     const server = await start(app);
     const { port } = server.address();
@@ -37,6 +41,8 @@ async function runTests() {
         const navigation = await request('/projects/example', { headers: { accept: 'text/html' } });
         assert.match(navigation.headers.get('cache-control'), /no-cache/);
         assert.equal((await request('/assets/app-abc123.js')).headers.get('cache-control'), 'public, max-age=31536000, immutable');
+        assert.match((await request('/assets/runtime.js')).headers.get('cache-control'), /no-cache/);
+        assert.equal((await request('/assets/escape.js')).status, 404);
         assert.equal((await request('/missing.js', { headers: { accept: 'text/html' } })).status, 404);
 
         const api = await request('/api/does-not-exist', { headers: { accept: 'text/html', 'x-request-id': 'api-request' } });

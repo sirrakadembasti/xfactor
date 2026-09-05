@@ -15,11 +15,18 @@ export function getFrontendDistRoot(env = process.env) {
 export async function assertProductionFrontendAvailable({ production, distRoot = getFrontendDistRoot() }) {
     if (!production) return;
 
-    const entry = path.resolve(distRoot, 'index.html');
+    const root = path.resolve(distRoot);
+    const entry = path.resolve(root, 'index.html');
     try {
-        const stat = await fs.stat(entry);
-        if (!stat.isFile()) throw new Error('index.html is not a file');
-        await fs.access(entry, constants.R_OK);
+        const [canonicalRoot, canonicalEntry, stat] = await Promise.all([
+            fs.realpath(root),
+            fs.realpath(entry),
+            fs.stat(entry)
+        ]);
+        if (!isCanonicalPathWithinRoot(canonicalRoot, canonicalEntry) || !stat.isFile()) {
+            throw new Error('index.html is not a file within the frontend distribution root');
+        }
+        await fs.access(canonicalEntry, constants.R_OK);
     } catch (error) {
         throw new Error(`Production frontend index.html is unavailable: ${error.message}`);
     }
@@ -33,23 +40,43 @@ export function isSpaNavigation(req) {
     return !path.posix.basename(req.path).includes('.');
 }
 
-function isPathWithinRoot(root, requestPath) {
+function isCanonicalPathWithinRoot(root, target) {
+    return target === root || target.startsWith(`${root}${path.sep}`);
+}
+
+async function resolveStaticTarget(root, canonicalRoot, requestPath) {
     try {
-        const resolved = path.resolve(root, `.${decodeURIComponent(requestPath)}`);
-        return resolved === root || resolved.startsWith(`${root}${path.sep}`);
+        const candidate = path.resolve(root, `.${decodeURIComponent(requestPath)}`);
+        if (!isCanonicalPathWithinRoot(root, candidate)) return 'outside';
+        const target = await fs.realpath(candidate);
+        return isCanonicalPathWithinRoot(canonicalRoot, target) ? 'inside' : 'outside';
     } catch {
-        return false;
+        return 'missing';
     }
+}
+
+function isFingerprintedAsset(servedPath) {
+    return /[-.][a-f0-9]{6,}\.[^.]+$/i.test(path.basename(servedPath));
 }
 
 export function mountProductionFrontend(app, { production, distRoot = getFrontendDistRoot() }) {
     if (!production) return;
 
     const root = path.resolve(distRoot);
+    const canonicalRoot = fs.realpath(root);
+    const canonicalEntry = Promise.all([
+        canonicalRoot,
+        fs.realpath(path.resolve(root, 'index.html'))
+    ]).then(([canonicalRootValue, entry]) => {
+        if (!isCanonicalPathWithinRoot(canonicalRootValue, entry)) {
+            throw new Error('Frontend index.html resolves outside the distribution root');
+        }
+        return entry;
+    });
     const staticFiles = express.static(root, {
         index: false,
         setHeaders(response, servedPath) {
-            if (path.extname(servedPath).toLowerCase() === '.html') {
+            if (path.extname(servedPath).toLowerCase() === '.html' || !isFingerprintedAsset(servedPath)) {
                 response.setHeader('Cache-Control', 'no-cache');
             } else {
                 response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -57,15 +84,23 @@ export function mountProductionFrontend(app, { production, distRoot = getFronten
         }
     });
 
-    app.use((req, res, next) => {
-        if (!isPathWithinRoot(root, req.path)) return next();
-        return staticFiles(req, res, next);
+    app.use(async (req, res, next) => {
+        try {
+            const target = await resolveStaticTarget(root, await canonicalRoot, req.path);
+            if (target === 'outside') return res.sendStatus(404);
+            if (target === 'missing') return next();
+            return staticFiles(req, res, next);
+        } catch (error) {
+            return next(error);
+        }
     });
 
-    app.use((req, res, next) => {
+    app.use(async (req, res, next) => {
         if (!isSpaNavigation(req)) return next();
-        const entry = path.resolve(root, 'index.html');
-        if (!isPathWithinRoot(root, req.path)) return next();
-        return res.sendFile(entry, { headers: { 'Cache-Control': 'no-cache' } }, next);
+        try {
+            return res.sendFile(await canonicalEntry, { headers: { 'Cache-Control': 'no-cache' } }, next);
+        } catch (error) {
+            return next(error);
+        }
     });
 }
