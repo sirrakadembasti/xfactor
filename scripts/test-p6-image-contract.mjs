@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, mkdirSync, cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +42,7 @@ function copyTrackedContext(destination) {
   for (const relativePath of tracked.stdout.split('\0').filter(Boolean)) {
     const source = join(repositoryRoot, relativePath);
     const target = join(destination, relativePath);
+    if (!existsSync(source)) continue;
     mkdirSync(dirname(target), { recursive: true });
     cpSync(source, target, { force: true });
   }

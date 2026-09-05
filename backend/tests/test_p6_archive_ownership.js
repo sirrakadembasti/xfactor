@@ -69,6 +69,17 @@ try {
         assert.throws(() => getArtifactsRoot({ NODE_ENV: 'production', ARTIFACTS_ROOT: 'relative' }), /ARTIFACTS_ROOT must be absolute/);
     });
 
+    await runAsyncTest('frontend dependency inventory excludes JSZip from every recognized manifest and lockfile', async () => {
+        const frontendRoot = path.join(repoRoot, 'frontend');
+        const dependencyFiles = ['package.json', 'package-lock.json', 'bun.lock', 'bun.lockb'];
+
+        for (const file of dependencyFiles) {
+            const dependencyFile = path.join(frontendRoot, file);
+            const contents = await fs.readFile(dependencyFile, 'utf8').catch(error => error.code === 'ENOENT' ? null : Promise.reject(error));
+            if (contents !== null) assert.doesNotMatch(contents, /["']?jszip["']?\s*(?::|@)/i, `${file} must not declare or resolve frontend JSZip`);
+        }
+    });
+
     await runAsyncTest('ZIP creation and extraction use backend JSZip without frontend dependencies', async () => {
         const backendManifest = JSON.parse(await fs.readFile(path.join(repoRoot, 'backend', 'package.json'), 'utf8'));
         const frontendManifest = JSON.parse(await fs.readFile(path.join(repoRoot, 'frontend', 'package.json'), 'utf8'));
