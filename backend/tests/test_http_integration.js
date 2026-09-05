@@ -152,6 +152,11 @@ let child;
 try {
     const dbPath = path.join(tempDir, 'projects.db');
     const projectsRoot = path.join(tempDir, 'projects');
+    const artifactsRoot = path.join(tempDir, 'artifacts');
+    const frontendDistRoot = path.join(tempDir, 'frontend-dist');
+    await fs.mkdir(artifactsRoot, { recursive: true });
+    await fs.mkdir(frontendDistRoot, { recursive: true });
+    await fs.writeFile(path.join(frontendDistRoot, 'index.html'), '<!doctype html><main>test SPA</main>');
     const port = await reservePort();
     const env = {
         ...process.env,
@@ -161,6 +166,8 @@ try {
         NODE_ENV: 'production',
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: APP_ORIGIN,
+        ARTIFACTS_ROOT: artifactsRoot,
+        FRONTEND_DIST_ROOT: frontendDistRoot,
         ALLOW_MOCK_FALLBACK: 'false',
         LLM_PROVIDER: 'google',
         GOOGLE_API_KEY: '',

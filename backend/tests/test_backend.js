@@ -70,7 +70,10 @@ await runAsyncTest("0b. Runtime config should enforce the production proxy and H
     assert.doesNotThrow(() => validateRuntimeConfig({
         NODE_ENV: 'production',
         TRUST_PROXY: 'loopback',
-        ALLOWED_ORIGINS: 'https://xfactor.example'
+        ALLOWED_ORIGINS: 'https://xfactor.example',
+        ARTIFACTS_ROOT: process.cwd(),
+        PROJECTS_ROOT: process.cwd(),
+        DB_PATH: process.cwd()
     }));
 });
 
