@@ -253,9 +253,9 @@ export class PortableSandboxAdapter {
                     aborted: false
                 });
             });
-
             child.on('close', (code) => {
                 clearTimeout(timer);
+                if (timedOut) this.cleanupDockerContainer(dockerContainerName);
                 const passed = code === 0 && !timedOut;
                 resolve({
                     status: timedOut ? 'BLOCKED' : (passed ? 'PASS' : 'FAIL'),

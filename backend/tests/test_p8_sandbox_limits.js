@@ -112,15 +112,21 @@ await runAsyncTest('P8.4 timed-out Docker execution cleans its named container',
         return;
     }
     const containerName = `xfactor-p8-timeout-${process.pid}-${Date.now()}`;
-    const result = await adapter.execute({
-        command: 'node',
-        args: ['-e', 'setTimeout(() => {}, 30000)'],
-        containerName,
-        timeoutMs: 1000
-    });
-    assert.strictEqual(result.status, 'BLOCKED');
-    assert.strictEqual(result.timedOut, true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    assert.throws(() => execFileSync('docker', ['inspect', containerName], { stdio: 'ignore' }));
+    try {
+        const result = await adapter.execute({
+            command: 'node',
+            args: ['-e', 'setTimeout(() => {}, 30000)'],
+            containerName,
+            timeoutMs: 1000
+        });
+        assert.strictEqual(result.status, 'BLOCKED');
+        assert.strictEqual(result.timedOut, true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        assert.throws(() => execFileSync('docker', ['inspect', containerName], { stdio: 'ignore' }));
+    } finally {
+        try {
+            execFileSync('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
+        } catch {}
+    }
 });
 finish();
