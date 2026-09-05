@@ -966,6 +966,9 @@ export function createProjectRouter({
             await deleteProject(id);
             res.json({ success: true, message: "Proje başarıyla silindi." });
         } catch (err) {
+            if (err.code === 'PROJECT_LOCKED_RECEIPT') {
+                return res.status(409).json({ error: err.message, code: err.code });
+            }
             next(err);
         }
     });

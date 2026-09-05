@@ -435,7 +435,32 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     dbEvents.emit(`stateChange:${state.id}`, state.status);
 }
 
-export async function deleteProject(projectId, env = process.env) {
+export async function deleteProject(projectId, envOrOptions = process.env, maybeOptions = {}) {
+    if (!isValidProjectId(projectId)) {
+        throw new Error(`Invalid project ID format: "${projectId}"`);
+    }
+    // Signature support: legacy raw env object, options object, or legacy string env.
+    let env = process.env;
+    let force = false;
+    if (typeof envOrOptions === 'object' && envOrOptions !== null) {
+        if ('env' in envOrOptions || 'force' in envOrOptions) {
+            env = envOrOptions.env || process.env;
+            force = Boolean(envOrOptions.force);
+        } else {
+            env = envOrOptions;
+        }
+    } else if (typeof envOrOptions === 'string') {
+        env = envOrOptions;
+        force = Boolean(maybeOptions?.force);
+    }
+    // RESTRICT: a project with a verified delivery receipt cannot be deleted
+    // unless explicitly forced. Checked before any state change or disk move.
+    const receipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+    if (receipt && !force) {
+        const err = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
+        err.code = 'PROJECT_LOCKED_RECEIPT';
+        throw err;
+    }
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID format: "${projectId}"`);
     }
@@ -464,6 +489,22 @@ export async function deleteProject(projectId, env = process.env) {
     // 4. DB kayıtlarını temizle
     db.exec('BEGIN IMMEDIATE;');
     try {
+        if (force) {
+            // Forced deletes are an explicit admin override: remove the project's
+            // delivery receipts as well. Receipts are otherwise immutable
+            // (FK RESTRICT + immutable-delete trigger), so the trigger is
+            // dropped and recreated inside this transaction.
+            db.exec('DROP TRIGGER IF EXISTS completion_receipts_immutable_delete');
+            try {
+                db.prepare('DELETE FROM completion_receipts WHERE project_id = ?').run(projectId);
+            } finally {
+                db.exec(`CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_delete
+                BEFORE DELETE ON completion_receipts
+                BEGIN
+                    SELECT RAISE(ABORT, 'completion receipts are immutable');
+                END`);
+            }
+        }
         db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(projectId);
         db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(projectId);
         db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(projectId);

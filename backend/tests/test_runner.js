@@ -41,6 +41,7 @@ const testFiles = [
     'test_e2e_simulation.js',
     'test_disk_sync_and_isolation.js',
     'test_p7_reconciliation.js',
+    'test_p7_delete_protection.js',
     'test_p2_frontend.js',
     'test_p2_security_auth.js',
     'test_p3_observability.js'
