@@ -11,6 +11,7 @@ import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactR
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
+import { reconcileProjectsWithDisk } from './services/reconciliationService.js';
 
 
 export async function createProject({ title, ownerUserId = null, env = process.env } = {}) {
@@ -480,69 +481,8 @@ export async function deleteProject(projectId, env = process.env) {
     return true;
 }
 
+export { reconcileProjectsWithDisk };
+
 export function syncProjectsWithDisk(env = process.env) {
-    const root = getProjectsRoot(env);
-    // Eksik root durumunda veri kaybını önlemek için güvenli koruma
-    if (!fsSync.existsSync(root)) {
-        return {
-            success: false,
-            error: `Projects root directory "${root}" does not exist. No DB records modified.`,
-            syncedCount: 0,
-            orphansRemoved: 0,
-            quarantined: []
-        };
-    }
-
-    const diskEntries = fsSync.readdirSync(root, { withFileTypes: true });
-    const validDiskDirs = [];
-    const quarantined = [];
-
-    for (const d of diskEntries) {
-        if (!d.isDirectory()) continue;
-        if (d.name.startsWith('.')) continue; // .trash, .git veya geçici dotfile'ları yoksay
-        if (isValidProjectId(d.name)) {
-            validDiskDirs.push(d.name);
-        } else {
-            quarantined.push(d.name);
-        }
-    }
-
-    const dbProjects = db.prepare('SELECT id FROM projects').all().map(p => p.id);
-    const dbProjectSet = new Set(dbProjects);
-
-    let syncedCount = 0;
-    let orphansRemoved = 0;
-
-    db.exec('BEGIN IMMEDIATE;');
-    try {
-        for (const diskId of validDiskDirs) {
-            if (!dbProjectSet.has(diskId)) {
-                db.prepare('INSERT INTO projects (id, title, status, plan, workflow_state) VALUES (?, ?, ?, NULL, NULL)')
-                    .run(diskId, diskId, 'completed');
-                syncedCount++;
-            }
-        }
-
-        for (const dbId of dbProjects) {
-            const expectedDir = path.join(root, dbId);
-            if (!fsSync.existsSync(expectedDir)) {
-                db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM projects WHERE id = ?').run(dbId);
-                orphansRemoved++;
-            }
-        }
-        db.exec('COMMIT;');
-    } catch (error) {
-        db.exec('ROLLBACK;');
-        throw error;
-    }
-
-    return {
-        success: true,
-        syncedCount,
-        orphansRemoved,
-        quarantined
-    };
+    return reconcileProjectsWithDisk({ env });
 }

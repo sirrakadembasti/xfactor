@@ -17,9 +17,8 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
-import { logError, writeStructuredLog } from './observability.js';
+import { logError } from './observability.js';
 
-import { getProjectsRoot, isValidProjectId } from './projectPaths.js';
 import { reconcileStaleWorkflowAttempts } from './workflowAttempts.js';
 export const dbEvents = new EventEmitter();
 
@@ -817,53 +816,7 @@ export function getProjectChatHistory(projectId, { cursor = null, limit = 100 } 
     }));
 }
 
-export function syncProjectsWithDisk(env = process.env) {
-    const PROJECTS_DIR = getProjectsRoot(env);
-    if (!fs.existsSync(PROJECTS_DIR)) {
-        return { syncedOnDisk: 0, cleanedOrphans: 0 };
-    }
-    const onDiskProjectIds = new Set();
-    try {
-        const entries = fs.readdirSync(PROJECTS_DIR, { withFileTypes: true });
-        for (const entry of entries) {
-            if (entry.isDirectory() && !entry.name.startsWith('.') && isValidProjectId(entry.name)) {
-                onDiskProjectIds.add(entry.name);
-                const exists = db.prepare('SELECT id, title, status FROM projects WHERE id = ?').get(entry.name);
-                if (!exists) {
-                    db.prepare('INSERT INTO projects (id, title, status, plan, is_pinned) VALUES (?, ?, ?, NULL, 0)')
-                        .run(entry.name, entry.name, 'planning');
-                    writeStructuredLog('info', 'db.project_sync_created', { projectId: entry.name });
-                }
-            }
-        }
-        const allDbProjects = db.prepare('SELECT id, title, status FROM projects').all();
-        let cleanedCount = 0;
-        for (const p of allDbProjects) {
-            if (!onDiskProjectIds.has(p.id)) {
-                db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(p.id);
-                db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(p.id);
-                db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(p.id);
-                db.prepare('DELETE FROM workflow_attempts WHERE project_id = ?').run(p.id);
-                db.prepare('DELETE FROM projects WHERE id = ?').run(p.id);
-                cleanedCount++;
-            }
-        }
-        if (cleanedCount > 0) {
-            writeStructuredLog('info', 'db.project_sync_orphans_cleaned', { count: cleanedCount });
-        }
-        return { syncedOnDisk: onDiskProjectIds.size, cleanedOrphans: cleanedCount };
-    } catch (error) {
-        logError('db.project_sync_failed', error);
-        return { error: 'PROJECT_SYNC_FAILED' };
-    }
-}
-
-// Başlangıçta senkronizasyonu ve çökme kurtarmayı çalıştır
-try {
-    syncProjectsWithDisk();
-} catch (error) {
-    logError('db.startup_sync_failed', error);
-}
+// Başlangıçta çökme kurtarmayı çalıştır
 try {
     reconcileStaleWorkflowAttempts();
 } catch (error) {
