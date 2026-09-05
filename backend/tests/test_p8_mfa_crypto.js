@@ -25,10 +25,12 @@ const {
     generateTotpSecret,
     verifyUserTotp,
     toPublicUser,
+    authenticateUser,
     authenticateUserAsync,
     setPasswordVerifierForTests
 } = authModule;
 const { runAsyncTest, finish } = createTestHarness();
+ 
 
 function currentTotp(secret) {
     const counter = Math.floor(Math.floor(Date.now() / 1000) / 30);
@@ -44,6 +46,17 @@ function currentTotp(secret) {
 }
 
 try {
+    await runAsyncTest('key parsing enforces production requirements and derives a development fallback', async () => {
+        const derived = getMfaEncryptionKeys({ NODE_ENV: 'test' }).current;
+        assert.strictEqual(derived.toString('hex'), crypto.createHash('sha256').update('dev-secret').digest('hex'));
+        assert.throws(() => getMfaEncryptionKeys({ NODE_ENV: 'production' }), /MFA_ENCRYPTION_KEY/i);
+        assert.throws(() => getMfaEncryptionKeys({ NODE_ENV: 'production', MFA_ENCRYPTION_KEY: '00' }), /MFA_ENCRYPTION_KEY/i);
+        assert.throws(() => getMfaEncryptionKeys({
+            NODE_ENV: 'test',
+            MFA_ENCRYPTION_KEY: '11'.repeat(32),
+            MFA_PREVIOUS_ENCRYPTION_KEYS: ` ${'22'.repeat(32)}, malformed`
+        }), /MFA_ENCRYPTION_KEY/i);
+    });
     await runAsyncTest('AES-GCM round trip uses a random 12-byte IV and preserves the 40-char secret', async () => {
         const keys = getMfaEncryptionKeys(process.env);
         const payload = encryptMfaSecret('ab'.repeat(20), keys.current);
@@ -121,6 +134,17 @@ try {
         assert.strictEqual(calls.length, 2);
         assert.strictEqual(calls[0].hash, user.passwordHash);
         assert.match(calls[1].hash, /^scrypt\$/);
+    });
+    await runAsyncTest('synchronous unknown-user authentication invokes the dummy verifier', async () => {
+        const calls = [];
+        setPasswordVerifierForTests((password, hash) => {
+            calls.push({ password, hash });
+            return false;
+        });
+        assert.strictEqual(authenticateUser('p8-missing-sync', 'wrong-password'), null);
+        setPasswordVerifierForTests(null);
+        assert.strictEqual(calls.length, 1);
+        assert.match(calls[0].hash, /^scrypt\$/);
     });
 } finally {
     setPasswordVerifierForTests(null);

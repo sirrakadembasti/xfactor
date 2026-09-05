@@ -81,10 +81,12 @@ export function verifyPassword(password, storedHash) {
 }
 
 let passwordVerifier = verifyPasswordAsync;
+let syncPasswordVerifier = verifyPassword;
 const DUMMY_PASSWORD_HASH = hashPassword('dummy-password-verification-value');
 
 export function setPasswordVerifierForTests(verifier) {
     passwordVerifier = typeof verifier === 'function' ? verifier : verifyPasswordAsync;
+    syncPasswordVerifier = typeof verifier === 'function' ? verifier : verifyPassword;
 }
 
 export async function authenticateUserAsync(username, password) {
@@ -238,11 +240,8 @@ export function createUser(username, password) {
 
 export function authenticateUser(username, password) {
     const user = findUserByUsername(username);
-    if (!user) {
-        return null;
-    }
-
-    return verifyPassword(password, user.passwordHash) ? user : null;
+    const verified = syncPasswordVerifier(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    return user && verified === true ? user : null;
 }
 
 export function promoteUserToAdmin(username, password) {

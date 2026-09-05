@@ -31,8 +31,9 @@ function parseKey(value) {
 
 function parsePreviousKeys(value) {
     if (value == null || value === '') return [];
-    const entries = Array.isArray(value) ? value : String(value).split(',');
-    return entries.filter(entry => String(entry).length > 0).map(parseKey);
+    const entries = (Array.isArray(value) ? value : String(value).split(',')).map(entry => String(entry).trim());
+    if (entries.some(entry => entry.length === 0)) throw invalidKey();
+    return entries.map(parseKey);
 }
 
 export function getMfaEncryptionKeys(env = process.env) {
@@ -40,8 +41,11 @@ export function getMfaEncryptionKeys(env = process.env) {
     let current;
     if (env.MFA_ENCRYPTION_KEY != null && String(env.MFA_ENCRYPTION_KEY) !== '') {
         current = parseKey(String(env.MFA_ENCRYPTION_KEY));
-    } else if (!production && typeof env.JWT_SECRET === 'string' && env.JWT_SECRET.length > 0) {
-        current = crypto.createHash('sha256').update(env.JWT_SECRET, 'utf8').digest();
+    } else if (!production) {
+        const jwtSecret = typeof env.JWT_SECRET === 'string' && env.JWT_SECRET.length > 0
+            ? env.JWT_SECRET
+            : 'dev-secret';
+        current = crypto.createHash('sha256').update(jwtSecret, 'utf8').digest();
     } else {
         throw invalidKey();
     }

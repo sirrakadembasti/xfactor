@@ -76,6 +76,8 @@ try {
         const accepted = await postLogin({ username, password, totp: currentTotp(mfaSecret) });
         assert.strictEqual(accepted.status, 200);
         assert.match(accepted.headers.get('set-cookie'), /xfactor_session=/);
+        assert.strictEqual(accepted.body.user.totpSecret, undefined);
+        assert.strictEqual(JSON.stringify(accepted.body).includes(mfaSecret), false);
         assert.strictEqual(activeSessionCount(mfaUser.id), 1);
     });
 
