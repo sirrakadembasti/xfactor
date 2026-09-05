@@ -97,11 +97,11 @@ test('only the completed verified project exposes a Header ZIP download', async 
   await page.getByRole('button', { name: 'Kodu Doğrula' }).click();
   await expect(page.getByText(/XFactor Projeler/)).toBeVisible();
 
-  await page.getByText(unverifiedTitle, { exact: true }).click();
+  await page.locator('span', { hasText: new RegExp(`^${unverifiedTitle}$`) }).click();
   await expect(page.getByRole('button', { name: 'Projeyi (ZIP) İndir' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /ZIP olarak indir/i })).toHaveCount(0);
 
-  await page.getByText(verifiedTitle, { exact: true }).click();
+  await page.locator('span', { hasText: new RegExp(`^${verifiedTitle}$`) }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Projeyi (ZIP) İndir' }).click();
   const download = await downloadPromise;
