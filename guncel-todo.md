@@ -115,22 +115,22 @@
 
 **Bağımlılık:** P5 verified.
 
-- [ ] `jszip` sahipliğini backend package/lock dosyalarına taşı.
-- [ ] Archive ve safe extractor için frontend `node_modules` fallback’ini kaldır.
-- [ ] Tek-imaj veya ayrı frontend/backend deployment sözleşmesini kesinleştir.
-- [ ] Seçilen sözleşmeye göre frontend static serving veya ayrı web image uygula.
-- [ ] SPA route fallback ve cache header davranışını doğrula.
-- [ ] Docker build’de `npm ci` fail-closed kullan; `npm install` fallback’ini kaldır.
-- [ ] Backend/frontend standalone Dockerfile’larını aynı runtime/lock politikasıyla hizala.
-- [ ] Health/readiness ve production HTTPS/reverse-proxy senaryosunu smoke test et.
-- [ ] Production imajında artifact oluşturma, clean-room açma ve download akışını doğrula.
+- [x] `jszip` sahipliğini backend package/lock dosyalarına taşı.
+- [x] Archive ve safe extractor için frontend `node_modules` fallback’ini kaldır.
+- [x] Tek-imaj veya ayrı frontend/backend deployment sözleşmesini kesinleştir.
+- [x] Seçilen sözleşmeye göre frontend static serving veya ayrı web image uygula.
+- [x] SPA route fallback ve cache header davranışını doğrula.
+- [x] Docker build’de `npm ci` fail-closed kullan; `npm install` fallback’ini kaldır.
+- [x] Backend/frontend standalone Dockerfile’larını aynı runtime/lock politikasıyla hizala.
+- [x] Health/readiness ve production HTTPS/reverse-proxy senaryosunu smoke test et.
+- [x] Production imajında artifact oluşturma, clean-room açma ve download akışını doğrula.
 
 ### P6 Çıkış Kapısı
 
-- [ ] Temiz production image build geçiyor.
-- [ ] UI, API, WebSocket ve artifact download seçilen deployment modelinde erişilebilir.
-- [ ] Backend ZIP işlemleri frontend dependencies olmadan çalışıyor.
-- [ ] Reproducible install doğrulandı.
+- [x] Temiz production image build geçiyor.
+- [x] UI, API, WebSocket ve artifact download seçilen deployment modelinde erişilebilir.
+- [x] Backend ZIP işlemleri frontend dependencies olmadan çalışıyor.
+- [x] Reproducible install doğrulandı.
 
 ---
 

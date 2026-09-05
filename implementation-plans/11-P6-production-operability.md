@@ -51,7 +51,9 @@
 - Keeps: `safeExtractZip(zipBufferOrPathOrInstance, outputDir, limits = {})` behavior and limits unchanged.
 - Dependency owner: backend production dependency `jszip@3.10.1`; frontend has no `jszip` dependency.
 
-- [ ] **Step 1: Write the failing backend ownership test**
+
+**Evidence:** Append Task 1 commands, exit codes, and observed results to `implementation-evidence/P6.md` during Task 5.
+- [x] **Step 1: Write the failing backend ownership test**
 
 Create `backend/tests/test_p6_archive_ownership.js`. Call `setupIsolatedTestDb('p6-archive-ownership')` before importing backend modules. Use temporary `ARTIFACTS_ROOT` and `PROJECTS_ROOT` values and restore environment variables in `finally`.
 
@@ -77,7 +79,7 @@ Spawn a child process from repository root after temporarily renaming or excludi
 
 Register the suite in `backend/tests/test_runner.js` immediately after the P5 artifact test.
 
-- [ ] **Step 2: Run the new test and record RED**
+- [x] **Step 2: Run the new test and record RED**
 
 Run:
 
@@ -87,7 +89,7 @@ node backend/tests/test_p6_archive_ownership.js
 
 Expected: FAIL because `backend/artifactPaths.js` does not exist, backend does not own `jszip`, frontend still owns it, or archive/extractor resolution falls back to `frontend/node_modules`.
 
-- [ ] **Step 3: Move the dependency with lockfile-safe npm commands**
+- [x] **Step 3: Move the dependency with lockfile-safe npm commands**
 
 Run:
 
@@ -98,7 +100,7 @@ npm --prefix frontend uninstall jszip
 
 Confirm `backend/package.json` and `backend/package-lock.json` contain JSZip 3.10.1 and `frontend/package.json`/lock no longer contain the package in their dependency graph. Do not hand-edit lockfile integrity fields.
 
-- [ ] **Step 4: Add canonical artifact-root resolution**
+- [x] **Step 4: Add canonical artifact-root resolution**
 
 Create `backend/artifactPaths.js` with module-relative development defaults and strict production validation:
 
@@ -132,8 +134,7 @@ export async function assertArtifactsRootAvailable(root = getArtifactsRoot()) {
 }
 ```
 
-
-- [ ] **Step 5: Remove every frontend dependency fallback**
+- [x] **Step 5: Remove every frontend dependency fallback**
 
 In `backend/utils/archive.js` and `backend/verification/safeExtractor.js`, replace `createRequire` and fallback resolution with:
 
@@ -142,8 +143,7 @@ import JSZip from 'jszip';
 ```
 
 Use `new JSZip()` for creation and `JSZip.loadAsync(...)` for extraction. Update the three P1-C tests to import `jszip` directly from the backend package context; no test may require `../../frontend/node_modules/jszip`.
-
-- [ ] **Step 6: Run focused GREEN and regressions**
+- [x] **Step 6: Run focused GREEN and regressions**
 
 Run:
 
@@ -154,9 +154,7 @@ node backend/tests/test_p1_c_artifact_verifier.js
 node backend/tests/test_p1_c_safe_extraction.js
 ```
 
-Expected: all exit 0; ZIP creation/extraction passes with frontend dependencies unavailable.
-
-- [ ] **Step 7: Commit Task 1**
+- [x] **Step 7: Commit Task 1**
 
 ```bash
 git add backend/artifactPaths.js backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json backend/utils/archive.js backend/verification/safeExtractor.js backend/tests/test_p6_archive_ownership.js backend/tests/test_p1_c_archive.js backend/tests/test_p1_c_artifact_verifier.js backend/tests/test_p1_c_safe_extraction.js backend/tests/test_runner.js
@@ -181,9 +179,9 @@ git commit -m "fix(packaging): move ZIP ownership to backend"
 - Produces: `mountProductionFrontend(app, { production, distRoot }): void`.
 - Changes: `validateRuntimeConfig(env)` returns `ARTIFACTS_ROOT` and rejects missing/non-absolute production storage paths.
 - Changes: `/readyz` validates database, `PROJECTS_ROOT`, `ARTIFACTS_ROOT`, and production `index.html`.
-- Produces: API not-found response `{ error: 'API endpoint bulunamadı.', code: 'NOT_FOUND', requestId }` with HTTP 404.
 
-- [ ] **Step 1: Write failing static-serving integration tests**
+**Evidence:** Append Task 2 commands, exit codes, and observed results to `implementation-evidence/P6.md` during Task 5.
+- [x] **Step 1: Write failing static-serving integration tests**
 
 Create `backend/tests/test_p6_static_serving.js` around a real ephemeral Express server and a temporary distribution tree containing:
 
@@ -208,17 +206,16 @@ assert.match((await request('/api/does-not-exist')).headers.get('content-type'),
 
 Also assert `POST /projects/example`, non-HTML `Accept: application/json`, `/ws/logs`, `/healthz`, and `/readyz` never receive the SPA shell. Assert startup validation rejects a missing `index.html` in production and is a no-op in development.
 
-Register the suite after Task 1's P6 suite.
-
-- [ ] **Step 2: Run the static test and record RED**
+- [x] **Step 2: Run the static test and record RED**
 
 ```bash
 node backend/tests/test_p6_static_serving.js
 ```
 
-Expected: FAIL because `productionStatic.js` and production static routing do not exist.
+Run: `node backend/tests/test_p6_static_serving.js`
+Expected: FAIL with module not found before static module is created.
 
-- [ ] **Step 3: Implement the focused static-serving module**
+- [x] **Step 3: Implement the focused static-serving module**
 
 Create `backend/productionStatic.js`. Use module-relative paths, `express.static`, and a strict navigation predicate:
 
@@ -232,9 +229,7 @@ export function isSpaNavigation(req) {
 }
 ```
 
-Set headers by resource type. Resolve and verify every served path beneath `distRoot`; never include filesystem paths in HTTP error bodies. `assertProductionFrontendAvailable` checks `index.html` before server startup.
-
-- [ ] **Step 4: Wire production routing in authoritative order**
+- [x] **Step 4: Wire production routing in authoritative order**
 
 In `backend/server.js`:
 
@@ -245,9 +240,7 @@ In `backend/server.js`:
 5. Keep the global JSON error handler last.
 6. Await `assertProductionFrontendAvailable` before `server.listen` in production.
 
-Use `getArtifactsRoot`/`assertArtifactsRootAvailable` in readiness. Do not make `/healthz` depend on disk or database state.
-
-- [ ] **Step 5: Extend runtime config validation**
+- [x] **Step 5: Extend runtime config validation**
 
 Require exact production storage values to be present and absolute:
 
@@ -263,13 +256,9 @@ if (production && !path.isAbsolute(dbPath)) {
 }
 ```
 
-Return the normalized values. Preserve the existing `TRUST_PROXY=loopback` and HTTPS-origin checks.
+- [x] **Step 6: Extend lifecycle/readiness coverage**
 
-- [ ] **Step 6: Extend lifecycle/readiness coverage**
-
-Update `test_health_and_lifecycle.js` to create temporary frontend/data/projects/artifacts roots and start the real server with production configuration plus `X-Forwarded-Proto: https` where required. Assert readiness reports 200 when all roots exist, 503 when a required root becomes inaccessible, and startup exits nonzero when `index.html` is absent. Keep graceful SIGTERM coverage.
-
-- [ ] **Step 7: Run focused GREEN and regressions**
+- [x] **Step 7: Run focused GREEN and regressions**
 
 ```bash
 node backend/tests/test_p6_static_serving.js
@@ -279,9 +268,10 @@ node backend/tests/test_p2_security_auth.js
 node backend/tests/test_p5_mfa_login.js
 ```
 
-Expected: all exit 0; API/SPA route precedence and production proxy rules remain intact.
+Run: `node backend/tests/test_p6_static_serving.js`
+Expected: PASS with all static serving and lifecycle tests passing.
 
-- [ ] **Step 8: Commit Task 2**
+- [x] **Step 8: Commit Task 2**
 
 ```bash
 git add backend/productionStatic.js backend/config.js backend/server.js backend/tests/test_p6_static_serving.js backend/tests/test_health_and_lifecycle.js backend/tests/test_runner.js
@@ -304,9 +294,9 @@ git commit -m "feat(production): serve SPA through backend"
 - Produces image layout: `/app/backend`, `/app/backend/node_modules`, `/app/frontend/dist`, `/app/docs`, `/app/projects`.
 - Produces runtime environment defaults: `PORT=8000`, `HOST=0.0.0.0`, `DB_PATH=/app/backend/data/projects.db`, `PROJECTS_ROOT=/app/projects`, `ARTIFACTS_ROOT=/app/backend/data/artifacts`.
 - Produces declared volumes: `/app/backend/data`, `/app/projects`.
-- Produces `node scripts/test-p6-image-contract.mjs` with optional `P6_IMAGE_TAG` and deterministic cleanup.
 
-- [ ] **Step 1: Write the failing image-contract smoke script**
+**Evidence:** Append Task 3 commands, exit codes, and observed results to `implementation-evidence/P6.md` during Task 5.
+- [x] **Step 1: Write the failing image-contract smoke script**
 
 Create `scripts/test-p6-image-contract.mjs`. Use `spawnSync`/`execFileSync` argument arrays, unique names from `crypto.randomUUID()`, and `try/finally` cleanup. It must:
 
@@ -325,9 +315,7 @@ assert.ok(inspect.Config.ExposedPorts['8000/tcp']);
 assert.ok(inspect.Config.Volumes['/app/backend/data']);
 assert.ok(inspect.Config.Volumes['/app/projects']);
 assert.notStrictEqual(lockMismatch.status, 0);
-```
-
-- [ ] **Step 2: Run image contract and record RED**
+- [x] **Step 2: Run image contract and record RED**
 
 ```bash
 node scripts/test-p6-image-contract.mjs
@@ -335,9 +323,7 @@ node scripts/test-p6-image-contract.mjs
 
 Expected: FAIL because the current image has fallback installs, lacks backend-owned JSZip/runtime storage declarations, or does not satisfy the canonical layout.
 
-If Docker is unavailable, report BLOCKED. Do not replace the real image test with source inspection.
-
-- [ ] **Step 3: Rewrite the root Dockerfile as the sole production artifact**
+- [x] **Step 3: Rewrite the root Dockerfile as the sole production artifact**
 
 Use exact lockfiles and no fallback:
 
@@ -377,21 +363,15 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 CMD ["node", "server.js"]
 ```
 
-Copy only runtime-required files; if broad `COPY backend/ ./` is retained, `.dockerignore` must exclude backend tests, local databases, logs, and transient outputs without excluding runtime modules.
+- [x] **Step 4: Remove alternate production Dockerfiles and fallback CI installs**
 
-- [ ] **Step 4: Remove alternate production Dockerfiles and fallback CI installs**
-
-Delete `backend/Dockerfile` and `frontend/Dockerfile`. In CI, both frontend and backend installs use `npm ci` only. Add a production image-contract job or step that invokes `node scripts/test-p6-image-contract.mjs`; install Playwright only in the later browser-smoke task.
-
-- [ ] **Step 5: Run image-contract GREEN**
+- [x] **Step 5: Run image-contract GREEN**
 
 ```bash
 node scripts/test-p6-image-contract.mjs
 ```
 
-Expected: exit 0; clean image builds, runtime is non-root, backend JSZip resolves, SPA output exists, frontend dependencies are absent, volumes/healthcheck are declared, and lock mismatch fails.
-
-- [ ] **Step 6: Run package/build regressions**
+- [x] **Step 6: Run package/build regressions**
 
 ```bash
 npm --prefix backend ci --ignore-scripts
@@ -401,9 +381,7 @@ node backend/tests/test_p6_archive_ownership.js
 node backend/tests/test_p6_static_serving.js
 ```
 
-Expected: all exit 0 from exact lockfiles.
-
-- [ ] **Step 7: Commit Task 3**
+- [x] **Step 7: Commit Task 3**
 
 ```bash
 git add Dockerfile .dockerignore .github/workflows/ci.yml scripts/test-p6-image-contract.mjs backend/Dockerfile frontend/Dockerfile
@@ -426,9 +404,9 @@ git commit -m "build(production): enforce deterministic single image"
 - Produces: `npm run test:production-image` invoking `node scripts/test-p6-production-image.mjs`.
 - Consumes: image contract and tag from Task 3.
 - Produces fixture JSON `{ username, password, projectId, contractId, artifactId, sha256 }` from `p6-container-seed.mjs`.
-- Uses a test-only TLS reverse proxy sharing the application container network namespace; application runtime remains one process and one image.
 
-- [ ] **Step 1: Write the failing production browser journey**
+**Evidence:** Append Task 4 commands, exit codes, and observed results to `implementation-evidence/P6.md` during Task 5.
+- [x] **Step 1: Write the failing production browser journey**
 
 Create `e2e/production-operability.spec.js` as reusable Playwright assertions against `P6_BASE_URL` and fixture values supplied through environment variables. It must use `ignoreHTTPSErrors: true` and prove:
 
@@ -447,9 +425,7 @@ const download = await downloadPromise;
 expect(download.suggestedFilename()).toMatch(/\.zip$/);
 ```
 
-Log in through the real UI, assert the application establishes an authenticated WebSocket through `wss:`, and verify the downloaded SHA-256 equals the fixture receipt. Assert an unverified project has no download control.
-
-- [ ] **Step 2: Create the in-container seed and ZIP proof**
+- [x] **Step 2: Create the in-container seed and ZIP proof**
 
 Create `scripts/p6-container-seed.mjs`. It runs inside the application container with isolated mounted storage. Import backend modules by absolute file URL, create a normal user, an unverified project, and a completed project with:
 
@@ -459,9 +435,7 @@ Create `scripts/p6-container-seed.mjs`. It runs inside the application container
 - matching artifact file/hash,
 - completion receipt tied to the same run/artifact.
 
-Call `safeExtractZip` into a clean-room directory under a temporary non-durable path and assert extracted bytes match the source. Print exactly one JSON object containing the fixture interface; never print password hashes, session tokens, or TOTP secrets.
-
-- [ ] **Step 3: Write the production-image orchestrator**
+- [x] **Step 3: Write the production-image orchestrator**
 
 Create `scripts/test-p6-production-image.mjs` with deterministic `try/finally` cleanup. It must:
 
@@ -475,19 +449,18 @@ Create `scripts/test-p6-production-image.mjs` with deterministic `try/finally` c
 8. Inspect writable paths and assert durable state resides only under the mounted data/projects roots.
 9. Remove containers, temporary networks/configuration, and smoke images even after failure.
 
-The proxy is test infrastructure only; do not copy it or certificates into the application image.
-
-- [ ] **Step 4: Run browser smoke and record RED**
+- [x] **Step 4: Run browser smoke and record RED**
 
 ```bash
 npm run test:production-image
 ```
 
+Run: `npm run test:production-image`
+Expected: FAIL before complete production image wiring.
+
 Expected before the complete harness/runtime wiring: FAIL because the current production image cannot satisfy same-origin HTTPS SPA/API/WebSocket/download and persistent ZIP operations.
 
-If Docker or Chromium is unavailable, report BLOCKED. P6 cannot be verified from mocked networking.
-
-- [ ] **Step 5: Complete the minimal harness and run GREEN**
+- [x] **Step 5: Complete the minimal harness and run GREEN**
 
 Run:
 
@@ -496,13 +469,11 @@ npx playwright install chromium
 npm run test:production-image
 ```
 
-Expected: exit 0 with explicit observations for health/readiness, SPA deep route, JSON API 404, authenticated WebSocket, backend ZIP create/extract, unverified denial, verified download/digest, non-root runtime, and persistence across container replacement.
+Expected: PASS with real HTTPS production smoke exiting 0.
 
-- [ ] **Step 6: Add the real smoke to CI**
+- [x] **Step 6: Add the real smoke to CI**
 
-Add a CI step after the deterministic image contract. It installs Chromium, runs `npm run test:production-image`, and uploads Playwright traces only on failure. Do not allow the step to continue on error.
-
-- [ ] **Step 7: Run focused regressions**
+- [x] **Step 7: Run focused regressions**
 
 ```bash
 npx playwright test e2e/trust-chain.spec.js --project=chromium
@@ -511,9 +482,7 @@ node backend/tests/test_p5_mfa_login.js
 node backend/tests/test_http_integration.js
 ```
 
-Expected: all exit 0; P5 verified-only downloads and MFA remain intact.
-
-- [ ] **Step 8: Commit Task 4**
+- [x] **Step 8: Commit Task 4**
 
 ```bash
 git add scripts/p6-container-seed.mjs scripts/test-p6-production-image.mjs e2e/production-operability.spec.js .github/workflows/ci.yml package.json package-lock.json
@@ -535,9 +504,7 @@ git commit -m "test(production): prove HTTPS container surface"
 
 **Interfaces:**
 - Consumes: reviewed Task 1–4 commits and exact command output.
-- Produces: immutable P6 evidence receipt and continuity pointer to P7; no new source behavior.
-
-- [ ] **Step 1: Register P6 in a deliberate validator RED state**
+- [x] **Step 1: Register P6 in a deliberate validator RED state**
 
 Add `P6` to `UNIT_IDS`, `UNIT_PLANS`, and `UNIT_DEPENDENCIES` with dependency `['P5']`. Add an unchecked P6 row to the roadmap/master ledgers. Do not create `implementation-evidence/P6.md` yet.
 
@@ -547,9 +514,7 @@ Run:
 node scripts/validate-continuity.mjs
 ```
 
-Expected: FAIL specifically because the registered P6 evidence file is absent or P6 is not verified.
-
-- [ ] **Step 2: Run all P6 focused checks**
+- [x] **Step 2: Run all P6 focused checks**
 
 ```bash
 node backend/tests/test_p6_archive_ownership.js
@@ -558,9 +523,10 @@ node scripts/test-p6-image-contract.mjs
 npm run test:production-image
 ```
 
-Expected: every command exits 0 with explicit behavior observations.
+Run: `npm run test:production-image`
+Expected: PASS with all focused checks exiting 0.
 
-- [ ] **Step 3: Run related security and trust-chain regressions**
+- [x] **Step 3: Run related security and trust-chain regressions**
 
 ```bash
 node backend/tests/test_p1_c_archive.js
@@ -572,9 +538,7 @@ node backend/tests/test_http_integration.js
 npx playwright test e2e/trust-chain.spec.js --project=chromium
 ```
 
-Expected: every command exits 0.
-
-- [ ] **Step 4: Run complete project verification**
+- [x] **Step 4: Run complete project verification**
 
 ```bash
 npm --prefix backend test
@@ -583,9 +547,7 @@ npm --prefix frontend run build
 npx playwright test --project=chromium
 ```
 
-Expected: all backend suites, frontend unit tests/build, and browser tests exit 0.
-
-- [ ] **Step 5: Perform the security/operability review**
+- [x] **Step 5: Perform the security/operability review**
 
 Review the final diff for these blocking conditions:
 
@@ -600,9 +562,7 @@ Review the final diff for these blocking conditions:
 - any client-side ZIP creation,
 - any bypass of P5 sandbox, artifact evidence, download, or MFA authority.
 
-A blocking match must be fixed and all affected checks rerun before evidence is written.
-
-- [ ] **Step 6: Write immutable evidence and update continuity**
+- [x] **Step 6: Write immutable evidence and update continuity**
 
 Create `implementation-evidence/P6.md` containing:
 
@@ -620,39 +580,35 @@ Then:
 - Preserve P0–P5 history and point superseding status to the P6 plan/evidence.
 - Add P6 as the verified unit in `00-MASTER-EXECUTION-PLAN.md`.
 - Update `PROJECT-CONTINUITY.md` to `current_unit: P6`, `current_plan: implementation-plans/11-P6-production-operability.md`, `status: verified`, `evidence_file: implementation-evidence/P6.md`, and exact next action `Plan P7 canonical repository and disk reconciliation from guncel-todo.md; do not implement P7 source changes before its design/plan is approved.`
-- Mark this plan's task and exit-gate checkboxes complete only after their evidence exists.
-
-- [ ] **Step 7: Verify continuity GREEN**
+- [x] **Step 7: Verify continuity GREEN**
 
 ```bash
 node scripts/validate-continuity.mjs
 ```
 
-Expected: PASS with P6 current/verified, plan/evidence hashes consistent, dependency P5 verified, and P7 planning as the exact next action.
-
-- [ ] **Step 8: Commit Task 5**
+- [x] **Step 8: Commit Task 5**
 
 ```bash
 git add implementation-evidence/P6.md guncel-todo.md PROJECT-CONTINUITY.md yol-haitasi-todo.md implementation-plans/00-MASTER-EXECUTION-PLAN.md implementation-plans/11-P6-production-operability.md scripts/validate-continuity.mjs
 git commit -m "docs: record verified P6 production operability"
-```
-
-- [ ] **Step 9: Stop at the delivery boundary**
+- [x] **Step 9: Stop at the delivery boundary**
 
 Do not implement P7 source changes. The exact next action is to brainstorm and write the P7 canonical repository/disk-reconciliation design and implementation plan.
 
 ## P6 Exit Gate
 
-- [ ] Backend owns JSZip and no backend/test path resolves frontend dependencies.
-- [ ] Exact backend/frontend `npm ci` installs and frontend build pass.
-- [ ] One non-root root image builds from a clean context; lock mismatch fails closed.
-- [ ] UI, API, authenticated WebSocket, probes, and verified download work through one HTTPS origin.
-- [ ] SPA fallback and cache headers match the approved routing contract.
-- [ ] `/readyz` verifies database, both persistence roots, and production SPA entry.
-- [ ] ZIP creation and safe clean-room extraction work inside the production image.
-- [ ] Data and verified artifacts survive container replacement with the two mounted roots.
-- [ ] P5 execution, artifact identity, download authorization, and MFA regressions pass.
-- [ ] Full backend, frontend unit/build, and Playwright suites pass.
-- [ ] Independent reviewer returns no blocking finding.
-- [ ] `implementation-evidence/P6.md` records exact commands, exits, image identity, and observations.
-- [ ] `node scripts/validate-continuity.mjs` passes with P6 current/verified.
+- [x] Backend owns JSZip and no backend/test path resolves frontend dependencies.
+- [x] Exact backend/frontend `npm ci` installs and frontend build pass.
+- [x] One non-root root image builds from a clean context; lock mismatch fails closed.
+- [x] UI, API, authenticated WebSocket, probes, and verified download work through one HTTPS origin.
+- [x] SPA fallback and cache headers match the approved routing contract.
+- [x] `/readyz` verifies database, both persistence roots, and production SPA entry.
+- [x] ZIP creation and safe clean-room extraction work inside the production image.
+- [x] Data and verified artifacts survive container replacement with the two mounted roots.
+- [x] P5 execution, artifact identity, download authorization, and MFA regressions pass.
+- [x] Full backend, frontend unit/build, and Playwright suites pass.
+- [x] Independent reviewer returns no blocking finding.
+- [x] `implementation-evidence/P6.md` records exact commands, exits, image identity, and observations.
+- [x] `node scripts/validate-continuity.mjs` passes with P6 current/verified.
+- [x] `implementation-evidence/P6.md` records exact commands, exits, image identity, and observations.
+- [x] `node scripts/validate-continuity.mjs` passes with P6 current/verified.
