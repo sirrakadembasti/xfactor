@@ -115,18 +115,24 @@ try {
         await fs.mkdir(path.join(dir, 'assets'), { recursive: true });
         const icoBytes = crypto.randomBytes(1024);
         const pngBytes = crypto.randomBytes(2048);
+        const gifBytes = crypto.randomBytes(1536);
         await fs.writeFile(path.join(dir, 'public', 'favicon.ico'), icoBytes);
         await fs.writeFile(path.join(dir, 'assets', 'logo.png'), pngBytes);
+        await fs.writeFile(path.join(dir, 'assets', 'anim.gif'), gifBytes);
         const { status, body } = await getFilesViaHttp(project.id);
         assert.strictEqual(status, 200);
         const icoEntry = body.find((e) => e.path === 'public/favicon.ico');
         const pngEntry = body.find((e) => e.path === 'assets/logo.png');
+        const gifEntry = body.find((e) => e.path === 'assets/anim.gif');
         assert.ok(icoEntry, 'public/favicon.ico must be listed');
         assert.ok(pngEntry, 'assets/logo.png must be listed');
+        assert.ok(gifEntry, 'assets/anim.gif must be listed');
         assert.strictEqual(icoEntry.encoding, 'base64');
         assert.strictEqual(pngEntry.encoding, 'base64');
+        assert.strictEqual(gifEntry.encoding, 'base64');
         assert.ok(Buffer.from(icoEntry.content, 'base64').equals(icoBytes), 'ico bytes must round-trip');
         assert.ok(Buffer.from(pngEntry.content, 'base64').equals(pngBytes), 'png bytes must round-trip');
+        assert.ok(Buffer.from(gifEntry.content, 'base64').equals(gifBytes), 'gif bytes must round-trip');
     });
 
     finish();

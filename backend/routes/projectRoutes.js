@@ -236,7 +236,7 @@ export function createProjectRouter({
             const ALLOWED_EXTENSIONS = new Set([
                 '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',
                 '.prisma', '.sql', '.svg', '.ico', '.png', '.jpg', '.jpeg', '.webp',
-                '.txt', '.yaml', '.yml', '.graphql', '.gql'
+                '.gif', '.txt', '.yaml', '.yml', '.graphql', '.gql'
             ]);
             const ALLOWED_DOT_FILES = new Set(['.env.example', '.gitignore']);
             const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
