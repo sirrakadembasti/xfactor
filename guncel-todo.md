@@ -138,25 +138,25 @@
 
 **Bağımlılık:** P6 verified.
 
-- [ ] Tek canonical project repository ve disk reconciliation servisi belirle.
-- [ ] Duplicate `syncProjectsWithDisk` ve legacy state erişim yollarını kaldır.
-- [ ] Startup sync’i transactionsız destructive delete yapmayacak biçimde değiştir.
-- [ ] Eksik/boş/unmounted root durumunu fail-closed ve non-destructive yap.
-- [ ] Orphan kayıtları otomatik silmek yerine quarantine/reconciliation raporuna taşı.
-- [ ] Completion receipt’li projeler için RESTRICT ve disk eksikliği senaryolarını test et.
-- [ ] SQLite `busy_timeout`, checkpoint ve durability politikasını tanımla.
-- [ ] `/files` global dosya/adet/byte limitlerini tek sayaçla uygula.
-- [ ] Binary dosyaları metin gibi okumayı bırak; açık encoding/content contract tanımla.
-- [ ] Approve response’u persisted current state’ten üret.
-- [ ] Generated README’yi gerçek stack ve service manifest üzerinden üret.
-- [ ] `projectRoutes.js`, `workflow.js`, `db.js` ve `App.jsx` için yalnız değişen sorumlulukları hedefli ayır.
+- [x] Tek canonical project repository ve disk reconciliation servisi belirle.
+- [x] Duplicate `syncProjectsWithDisk` ve legacy state erişim yollarını kaldır.
+- [x] Startup sync’i transactionsız destructive delete yapmayacak biçimde değiştir.
+- [x] Eksik/boş/unmounted root durumunu fail-closed ve non-destructive yap.
+- [x] Orphan kayıtları otomatik silmek yerine quarantine/reconciliation raporuna taşı.
+- [x] Completion receipt’li projeler için RESTRICT ve disk eksikliği senaryolarını test et.
+- [x] SQLite `busy_timeout`, checkpoint ve durability politikasını tanımla.
+- [x] `/files` global dosya/adet/byte limitlerini tek sayaçla uygula.
+- [x] Binary dosyaları metin gibi okumayı bırak; açık encoding/content contract tanımla.
+- [x] Approve response’u persisted current state’ten üret.
+- [x] Generated README’yi gerçek stack ve service manifest üzerinden üret.
+- [x] `projectRoutes.js`, `workflow.js`, `db.js` ve `App.jsx` için yalnız değişen sorumlulukları hedefli ayır.
 
 ### P7 Çıkış Kapısı
 
-- [ ] Startup/reconciliation hiçbir mount hatasında veri silmiyor.
-- [ ] Tek repository yolu tüm callsite’lar tarafından kullanılıyor.
-- [ ] Dosya API limitleri çok dizinli ve binary projelerde doğrulanıyor.
-- [ ] Concurrent DB yazma senaryoları deterministik sonuç veriyor.
+- [x] Startup/reconciliation hiçbir mount hatasında veri silmiyor.
+- [x] Tek repository yolu tüm callsite’lar tarafından kullanılıyor.
+- [x] Dosya API limitleri çok dizinli ve binary projelerde doğrulanıyor.
+- [x] Concurrent DB yazma senaryoları deterministik sonuç veriyor.
 
 ---
 
@@ -188,8 +188,6 @@
 
 ---
 
-## Sıralı Sonraki Eylem
-
 ```text
-implementation-plans/10-P5-critical-trust-chain.md ayrıntılı planını hazırla; onay ve plan doğrulamasından sonra yalnız P5.1 Task 1 ile uygulamaya başla.
+Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
 ```

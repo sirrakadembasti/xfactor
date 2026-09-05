@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P6 -->
+<!-- continuity:current_unit=P7 -->
 <!-- continuity:status=verified -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -100,6 +100,13 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Bağımlılık: P5 verified.
   - Supersession: P6 kanonik durum ve sıralı eylem için `guncel-todo.md` geçerlidir.
 
+
+### P7 — Data and architectural hardening
+- [x] **P7 — Data and architectural hardening**
+  - Plan: `implementation-plans/12-P7-data-architecture.md`
+  - Evidence: `implementation-evidence/P7.md`
+  - Bağımlılık: P6 verified.
+
 ## Genel Doğrulama Kapıları
 
 Her teslim biriminde:
@@ -108,12 +115,12 @@ Her teslim biriminde:
 - [x] Task-specific testler geçti.
 - [x] Unit-level davranış doğrulaması geçti.
 - [x] Bağımsız reviewer blocking bulgu vermedi.
-On bir teslim biriminden P0–P6 kanıtla doğrulandı; P0–P5 tarihsel durumlarını korur. P6'nın superseding planı ve P7 sıralı eylemi `guncel-todo.md` içindedir.
+On iki teslim biriminden P0–P7 kanıtla doğrulandı; P0–P6 tarihsel durumlarını korur. P7'nın superseding planı ve P8 sıralı eylemi `guncel-todo.md` içindedir.
 
 Sonraki görev:
 
 ```text
-Plan P7 canonical repository and disk reconciliation from guncel-todo.md; do not implement P7 source changes before its design/plan is approved.
+Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
 ```
 
 ## Yeni Sohbet İçin Başlangıç

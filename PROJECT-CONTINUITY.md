@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P6
-current_plan: implementation-plans/11-P6-production-operability.md
-current_task: P6 verified; P7 canonical repository and disk reconciliation design/plan is the next action
+current_unit: P7
+current_plan: implementation-plans/12-P7-data-architecture.md
+current_task: P7 verified; P8 CI, security hardening, and operational limits design/plan is the next action
 status: verified
-branch: design/p6-production-operability
+branch: design/p7-data-architecture
 head_commit: SELF
 baseline_commit: eb4b3b3
 last_verified_commit: e46bebd
-evidence_file: implementation-evidence/P6.md
+evidence_file: implementation-evidence/P7.md
 blocked_by: []
-next_action: Plan P7 canonical repository and disk reconciliation from guncel-todo.md; do not implement P7 source changes before its design/plan is approved.
-updated_at: 2026-09-05T18:50:00Z
+next_action: Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
+updated_at: 2026-09-05T22:00:00Z
 ---
 
 # Project Continuity
@@ -73,12 +73,13 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P4 — Production Safety complete and verified (Tasks P4.1–P4.5).
 - P5 — Critical Trust Chain verified (Tasks 1–5).
 - P6 — Production Operability verified (Tasks 1–5).
+- P7 — Data and Architectural Hardening verified (Tasks 1–6).
 ## In Progress
 
-- P6 verified; P7 canonical repository and disk reconciliation design/plan is the next action.
+- P7 verified; P8 CI, security hardening, and operational limits design/plan is the next action.
 ## Pending
 
-- P7 source implementation awaits an approved P7 design/plan.
+- P8 source implementation awaits an approved P8 design/plan.
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -145,6 +146,10 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P6 Unit verification: backend 4, static 1, image contract 1, container smoke 1, regressions 18, full backend 30, frontend unit 21, frontend build 1, browser 5 passed/skipped.
 - P6 Final review: APPROVE; Independent acceptance: PASS.
 - P6 Continuity validation: PASS (11 units; current P6/verified).
+- P7 Task 6 continuity RED: PASS as expected — registered P7 evidence was intentionally absent; `node scripts/validate-continuity.mjs` exited 1 with `ENOENT` for `implementation-evidence/P7.md`.
+- P7 Task 6 focused checks: PASS — reconciliation 5, delete protection 4, SQLite durability 5, approve state 1, files API 4, README generator 6; related regressions disk sync 4, P1.7 3, P1.8 3, archive 4, static serving PASS (`test_p2_readme.js` 3 pre-existing environmental failures noted, untouched by P7).
+- P7 Step 4 complete verification: backend full suite `36/36` suites PASS (77.76s), frontend unit `21/21` PASS, frontend build PASS (Vite 6.4.3; 1710 modules; 26.63s), Chromium full suite `4 passed, 1 skipped` (57.8s).
+- P7 Continuity validation: PASS (12 units; current P7/verified).
 ## Known Failures
 
 - Todo artifact remains intentionally unfixed.
@@ -153,7 +158,7 @@ Implement the approved project-quality pipeline redesign without relying on chat
 Clean.
 ## Exact Next Action
 
-Plan P7 canonical repository and disk reconciliation from guncel-todo.md; do not implement P7 source changes before its design/plan is approved.
+Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
 
 ## Do Not Do
 

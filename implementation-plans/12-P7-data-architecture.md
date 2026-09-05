@@ -44,7 +44,7 @@
 
 **Evidence:** Append Task 1 commands, exit codes, and observed results to `implementation-evidence/P7.md` during Task 6.
 
-- [ ] **Step 1: Write the failing reconciliation test**
+- [x] **Step 1: Write the failing reconciliation test**
 
 Create `backend/tests/test_p7_reconciliation.js` using `setupIsolatedTestDb('p7-reconciliation')`:
 - Test 1: When a project exists in SQLite but its folder is missing on disk, `reconcileProjectsWithDisk` leaves the project in the database and returns its ID in `missingOnDisk`.
@@ -53,12 +53,12 @@ Create `backend/tests/test_p7_reconciliation.js` using `setupIsolatedTestDb('p7-
 - Test 4: Folders with invalid project IDs or dotfiles are quarantined and not imported.
 - Test 5: Importing `backend/db.js` has no disk sync side-effects (does not create directories or mutate projects).
 
-- [ ] **Step 2: Run test to verify it fails (RED)**
+- [x] **Step 2: Run test to verify it fails (RED)**
 
 Run: `node backend/tests/test_p7_reconciliation.js`
 Expected: FAIL with module not found or missing `reconcileProjectsWithDisk` function.
 
-- [ ] **Step 3: Implement `backend/services/reconciliationService.js`**
+- [x] **Step 3: Implement `backend/services/reconciliationService.js`**
 
 Implement `reconcileProjectsWithDisk`:
 - Read `projectsRoot = options?.projectsRoot || getProjectsRoot(options?.env)`.
@@ -69,7 +69,7 @@ Implement `reconcileProjectsWithDisk`:
   - For each SQLite project missing on disk: DO NOT DELETE. Collect in `missingOnDisk`.
 - Return `{ success: true, syncedCount, missingOnDisk, quarantined }`.
 
-- [ ] **Step 4: Purify `backend/db.js` and update repository callsites**
+- [x] **Step 4: Purify `backend/db.js` and update repository callsites**
 
 - In `backend/db.js`: delete `syncProjectsWithDisk` and remove the top-level `syncProjectsWithDisk()` call at lines 862-866.
 - In `backend/projectRepository.js`: replace internal sync logic with delegation to `reconciliationService.js`.
@@ -77,12 +77,12 @@ Implement `reconcileProjectsWithDisk`:
 - Update `test_disk_sync_and_isolation.js` and `test_p1_7_pure_get_and_sync.js` to use the canonical service.
 - Register `test_p7_reconciliation.js` in `backend/tests/test_runner.js`.
 
-- [ ] **Step 5: Run tests to verify they pass (GREEN)**
+- [x] **Step 5: Run tests to verify they pass (GREEN)**
 
 Run: `node backend/tests/test_p7_reconciliation.js && node backend/tests/test_disk_sync_and_isolation.js && node backend/tests/test_p1_7_pure_get_and_sync.js`
 Expected: PASS with 0 failures across all reconciliation test suites.
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```bash
 git add backend/services/reconciliationService.js backend/projectRepository.js backend/db.js backend/routes/projectRoutes.js backend/tests/test_p7_reconciliation.js backend/tests/test_disk_sync_and_isolation.js backend/tests/test_p1_7_pure_get_and_sync.js backend/tests/test_runner.js
@@ -106,7 +106,7 @@ git commit -m "feat(p7): extract non-destructive reconciliation service and puri
 
 **Evidence:** Append Task 2 commands, exit codes, and observed results to `implementation-evidence/P7.md` during Task 6.
 
-- [ ] **Step 1: Write the failing deletion protection test**
+- [x] **Step 1: Write the failing deletion protection test**
 
 Create `backend/tests/test_p7_delete_protection.js`:
 - Test 1: Attempting to delete a regular draft/planning project succeeds as normal.
@@ -114,12 +114,12 @@ Create `backend/tests/test_p7_delete_protection.js`:
 - Test 3: `deleteProject(projectId, { force: true })` bypasses the restriction and deletes the project.
 - Test 4: `DELETE /api/projects/:id` returns 409 Conflict when the project has a completion receipt.
 
-- [ ] **Step 2: Run test to verify it fails (RED)**
+- [x] **Step 2: Run test to verify it fails (RED)**
 
 Run: `node backend/tests/test_p7_delete_protection.js`
 Expected: FAIL because `deleteProject` currently deletes projects with completion receipts unconditionally.
 
-- [ ] **Step 3: Implement RESTRICT guard in `deleteProject` and HTTP route**
+- [x] **Step 3: Implement RESTRICT guard in `deleteProject` and HTTP route**
 
 In `backend/projectRepository.js` (`deleteProject`):
 - Check `completion_receipts`:
@@ -137,12 +137,12 @@ In `backend/routes/projectRoutes.js` (`DELETE /:id`):
 - Catch errors with `code === 'PROJECT_LOCKED_RECEIPT'` and return `res.status(409).json({ error: err.message, code: err.code })`.
 - Register `test_p7_delete_protection.js` in `backend/tests/test_runner.js`.
 
-- [ ] **Step 4: Run tests to verify they pass (GREEN)**
+- [x] **Step 4: Run tests to verify they pass (GREEN)**
 
 Run: `node backend/tests/test_p7_delete_protection.js && node backend/tests/test_p1_8_create_delete_boundary.js`
 Expected: PASS with protected projects rejecting deletion and draft projects deleting cleanly.
 
-- [ ] **Step 5: Commit Task 2**
+- [x] **Step 5: Commit Task 2**
 
 ```bash
 git add backend/projectRepository.js backend/routes/projectRoutes.js backend/tests/test_p7_delete_protection.js backend/tests/test_runner.js
@@ -167,7 +167,7 @@ git commit -m "feat(p7): enforce RESTRICT deletion protection for completed deli
 
 **Evidence:** Append Task 3 commands, exit codes, and observed results to `implementation-evidence/P7.md` during Task 6.
 
-- [ ] **Step 1: Write the failing durability and approve response tests**
+- [x] **Step 1: Write the failing durability and approve response tests**
 
 1. Create `backend/tests/test_p7_sqlite_durability.js`:
    - Assert `PRAGMA busy_timeout` returns `5000`.
@@ -181,12 +181,12 @@ git commit -m "feat(p7): enforce RESTRICT deletion protection for completed deli
    - Call `POST /api/projects/:id/approve`.
    - Assert response status is 200, response body has `status === 'implementing'`, `revision` is incremented, and `workflow` is initialized.
 
-- [ ] **Step 2: Run tests to verify they fail (RED)**
+- [x] **Step 2: Run tests to verify they fail (RED)**
 
 Run: `node backend/tests/test_p7_sqlite_durability.js && node backend/tests/test_p7_approve_state.js`
 Expected: FAIL because `busy_timeout` is not set and approve response returns stale `planning` / `contract_approved` state.
 
-- [ ] **Step 3: Implement SQLite PRAGMA hardening and fix approve response**
+- [x] **Step 3: Implement SQLite PRAGMA hardening and fix approve response**
 
 In `backend/db.js`:
 - Add PRAGMA initialization immediately upon connection creation:
@@ -206,12 +206,12 @@ In `backend/routes/projectRoutes.js`:
   ```
 - Register both test files in `backend/tests/test_runner.js`.
 
-- [ ] **Step 4: Run tests to verify they pass (GREEN)**
+- [x] **Step 4: Run tests to verify they pass (GREEN)**
 
 Run: `node backend/tests/test_p7_sqlite_durability.js && node backend/tests/test_p7_approve_state.js`
 Expected: PASS with verified PRAGMAs, concurrent write tolerance, and accurate approve response state.
 
-- [ ] **Step 5: Commit Task 3**
+- [x] **Step 5: Commit Task 3**
 
 ```bash
 git add backend/db.js backend/routes/projectRoutes.js backend/tests/test_p7_sqlite_durability.js backend/tests/test_p7_approve_state.js backend/tests/test_runner.js
@@ -234,7 +234,7 @@ git commit -m "feat(p7): harden SQLite durability and align approve response sta
 
 **Evidence:** Append Task 4 commands, exit codes, and observed results to `implementation-evidence/P7.md` during Task 6.
 
-- [ ] **Step 1: Write the failing files API test**
+- [x] **Step 1: Write the failing files API test**
 
 Create `backend/tests/test_p7_files_api.js`:
 - Test 1: Deeply nested directory with >500 files stops returning files at exactly 500 total files globally.
@@ -242,12 +242,12 @@ Create `backend/tests/test_p7_files_api.js`:
 - Test 3: Text file (e.g. `src/App.jsx`, `README.md`) returns `encoding: 'utf8'` and matching text content.
 - Test 4: Binary file (e.g. `public/favicon.ico`, `assets/logo.png`) returns `encoding: 'base64'` and content decodable to the original binary bytes.
 
-- [ ] **Step 2: Run test to verify it fails (RED)**
+- [x] **Step 2: Run test to verify it fails (RED)**
 
 Run: `node backend/tests/test_p7_files_api.js`
 Expected: FAIL because `/files` returns no `encoding` field, mangles binary files, and resets file count per directory.
 
-- [ ] **Step 3: Implement global file limits and binary encoding**
+- [x] **Step 3: Implement global file limits and binary encoding**
 
 In `backend/routes/projectRoutes.js` (`GET /:id/files`):
 - Define sets:
@@ -270,12 +270,12 @@ In `backend/routes/projectRoutes.js` (`GET /:id/files`):
 - Halt recursion immediately if `results.length >= MAX_TOTAL_FILES || totalBytes >= MAX_TOTAL_BYTES`.
 - Register `test_p7_files_api.js` in `backend/tests/test_runner.js`.
 
-- [ ] **Step 4: Run tests to verify they pass (GREEN)**
+- [x] **Step 4: Run tests to verify they pass (GREEN)**
 
 Run: `node backend/tests/test_p7_files_api.js`
 Expected: PASS with exact global ceilings and clean base64/utf8 discrimination.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 ```bash
 git add backend/routes/projectRoutes.js backend/tests/test_p7_files_api.js backend/tests/test_runner.js
@@ -299,7 +299,7 @@ git commit -m "feat(p7): enforce global files API limits and binary base64 encod
 
 **Evidence:** Append Task 5 commands, exit codes, and observed results to `implementation-evidence/P7.md` during Task 6.
 
-- [ ] **Step 1: Write the failing README generator test**
+- [x] **Step 1: Write the failing README generator test**
 
 Create `backend/tests/test_p7_readme_generator.js`:
 - Test 1: Pure Vite/React project generates `npm run dev` and port `5173`; contains NO `prisma` or `NEXTAUTH_SECRET` instructions.
@@ -307,12 +307,12 @@ Create `backend/tests/test_p7_readme_generator.js`:
 - Test 3: Project with `.env.example` lists actual environment variable keys defined in the example file.
 - Test 4: Internal orchestration tags and agent names (`*.director`, `[PLAN_HAZIR]`) are cleanly stripped from the architecture section.
 
-- [ ] **Step 2: Run test to verify it fails (RED)**
+- [x] **Step 2: Run test to verify it fails (RED)**
 
 Run: `node backend/tests/test_p7_readme_generator.js`
 Expected: FAIL because `readmeGenerator.js` does not exist.
 
-- [ ] **Step 3: Implement `backend/engine/readmeGenerator.js` and wire to workflow**
+- [x] **Step 3: Implement `backend/engine/readmeGenerator.js` and wire to workflow**
 
 - Implement `generateProjectReadme`:
   - Inspect `package.json` in `projectDir` to detect dependencies and scripts.
@@ -323,12 +323,12 @@ Expected: FAIL because `readmeGenerator.js` does not exist.
 - In `backend/engine/workflow.js`: import `generateProjectReadme` and replace the hardcoded template generation at lines 870-932.
 - Register `test_p7_readme_generator.js` in `backend/tests/test_runner.js`.
 
-- [ ] **Step 4: Run tests to verify they pass (GREEN)**
+- [x] **Step 4: Run tests to verify they pass (GREEN)**
 
 Run: `node backend/tests/test_p7_readme_generator.js && node backend/tests/test_p2_readme.js`
 Expected: PASS with dynamically generated stack-accurate READMEs and clean verification.
 
-- [ ] **Step 5: Commit Task 5**
+- [x] **Step 5: Commit Task 5**
 
 ```bash
 git add backend/engine/readmeGenerator.js backend/engine/workflow.js backend/verification/readmeVerifier.js backend/tests/test_p7_readme_generator.js backend/tests/test_runner.js
@@ -354,14 +354,14 @@ git commit -m "feat(p7): implement stack-aware dynamic README generator"
 
 **Evidence:** This task creates and finalizes `implementation-evidence/P7.md`; no P7 status becomes verified before all preceding evidence is present.
 
-- [ ] **Step 1: Register P7 in a deliberate validator RED state**
+- [x] **Step 1: Register P7 in a deliberate validator RED state**
 
 Add `P7` to `UNIT_IDS`, `UNIT_PLANS`, and `UNIT_DEPENDENCIES` (with dependency `['P6']`) in `scripts/validate-continuity.mjs`. Add an unchecked P7 row to roadmap/master ledgers. Do not create `implementation-evidence/P7.md` yet.
 
 Run: `node scripts/validate-continuity.mjs`
 Expected: FAIL specifically because `implementation-evidence/P7.md` is absent.
 
-- [ ] **Step 2: Run all P7 focused test suites**
+- [x] **Step 2: Run all P7 focused test suites**
 
 Run: `node backend/tests/test_p7_reconciliation.js`
 Expected: PASS with non-destructive sync verified.
@@ -378,12 +378,12 @@ Expected: PASS with global ceilings and binary base64 encoding verified.
 Run: `node backend/tests/test_p7_readme_generator.js`
 Expected: PASS with dynamic stack-aware README verified.
 
-- [ ] **Step 3: Run related regression suites**
+- [x] **Step 3: Run related regression suites**
 
 Run: `node backend/tests/test_disk_sync_and_isolation.js && node backend/tests/test_p1_7_pure_get_and_sync.js && node backend/tests/test_p1_8_create_delete_boundary.js && node backend/tests/test_p2_readme.js && node backend/tests/test_p6_archive_ownership.js && node backend/tests/test_p6_static_serving.js`
 Expected: PASS with all existing repository, sync, archive, and static serving regressions passing cleanly.
 
-- [ ] **Step 4: Run complete project verification**
+- [x] **Step 4: Run complete project verification**
 
 Run: `npm --prefix backend test`
 Expected: PASS with all backend suites exiting 0.
@@ -397,7 +397,7 @@ Expected: PASS with clean production Vite build.
 Run: `npx playwright test --project=chromium`
 Expected: PASS with browser suites passing cleanly.
 
-- [ ] **Step 5: Perform the security and data integrity audit**
+- [x] **Step 5: Perform the security and data integrity audit**
 
 Review final diff against blocking conditions:
 - any unhandled auto-delete of SQLite projects on disk discrepancy,
@@ -407,7 +407,7 @@ Review final diff against blocking conditions:
 - any hardcoded stack commands in generated READMEs,
 - any bypass of RESTRICT deletion protection for completed deliverables.
 
-- [ ] **Step 6: Write immutable evidence and update continuity**
+- [x] **Step 6: Write immutable evidence and update continuity**
 
 Create `implementation-evidence/P7.md` with:
 - Frontmatter (`unit: P7`, `plan: implementation-plans/12-P7-data-architecture.md`, `status: verified`).
@@ -417,19 +417,19 @@ Create `implementation-evidence/P7.md` with:
 
 Update `guncel-todo.md`, `yol-haitasi-todo.md`, `00-MASTER-EXECUTION-PLAN.md`, and `PROJECT-CONTINUITY.md` to mark P7 verified and set the exact next action to P8 planning. Mark all plan checkboxes complete.
 
-- [ ] **Step 7: Verify continuity GREEN**
+- [x] **Step 7: Verify continuity GREEN**
 
 Run: `node scripts/validate-continuity.mjs`
 Expected: PASS with 12 units, P7 verified, and P8 planning as next action.
 
-- [ ] **Step 8: Commit Task 6**
+- [x] **Step 8: Commit Task 6**
 
 ```bash
 git add implementation-evidence/P7.md guncel-todo.md PROJECT-CONTINUITY.md yol-haitasi-todo.md implementation-plans/00-MASTER-EXECUTION-PLAN.md implementation-plans/12-P7-data-architecture.md scripts/validate-continuity.mjs
 git commit -m "docs: record verified P7 data and architectural hardening"
 ```
 
-- [ ] **Step 9: Stop at the delivery boundary**
+- [x] **Step 9: Stop at the delivery boundary**
 
 Do not implement P8 source changes. The exact next action is to brainstorm and write the P8 CI, security hardening, and operational limits design and implementation plan.
 
@@ -437,14 +437,14 @@ Do not implement P8 source changes. The exact next action is to brainstorm and w
 
 ## P7 Exit Gate
 
-- [ ] Startup/reconciliation is non-destructive and never deletes DB records on missing disk directories.
-- [ ] Single canonical reconciliation service used across all callsites; duplicate sync logic removed.
-- [ ] Deletion of projects with completion receipts is strictly RESTRICT-protected.
-- [ ] SQLite `PRAGMA busy_timeout = 5000;` and WAL durability enforced.
-- [ ] `POST /api/projects/:id/approve` returns fresh persisted `implementing` state.
-- [ ] `/files` API enforces global ceilings (500 files, 20MB) and encodes binary files as base64.
-- [ ] Generated README reflects actual project stack, dependencies, and manifest configuration.
-- [ ] All focused unit, regression, backend full, frontend unit/build, and Playwright tests pass.
-- [ ] Independent reviewer returns no blocking finding.
-- [ ] `implementation-evidence/P7.md` records exact commands, exit codes, and observations.
-- [ ] `node scripts/validate-continuity.mjs` passes with P7 verified.
+- [x] Startup/reconciliation is non-destructive and never deletes DB records on missing disk directories.
+- [x] Single canonical reconciliation service used across all callsites; duplicate sync logic removed.
+- [x] Deletion of projects with completion receipts is strictly RESTRICT-protected.
+- [x] SQLite `PRAGMA busy_timeout = 5000;` and WAL durability enforced.
+- [x] `POST /api/projects/:id/approve` returns fresh persisted `implementing` state.
+- [x] `/files` API enforces global ceilings (500 files, 20MB) and encodes binary files as base64.
+- [x] Generated README reflects actual project stack, dependencies, and manifest configuration.
+- [x] All focused unit, regression, backend full, frontend unit/build, and Playwright tests pass.
+- [x] Independent reviewer returns no blocking finding.
+- [x] `implementation-evidence/P7.md` records exact commands, exit codes, and observations.
+- [x] `node scripts/validate-continuity.mjs` passes with P7 verified.
