@@ -23,6 +23,8 @@ import {
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
 import { buildCompletionReport } from '../verification/reportGenerator.js';
+import { listArtifacts } from '../repositories/artifactRepository.js';
+
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -679,18 +681,13 @@ export function createProjectRouter({
         res.json(result);
     }));
     router.get('/:id/artifacts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
-        const rows = db.prepare(`
-            SELECT id, kind, path, sha256, size, status, verification_run_id
-            FROM artifacts WHERE project_id = ? ORDER BY created_at DESC
-        `).all(req.params.id);
-        const result = rows.map(r => ({
-            id: r.id,
-            kind: r.kind,
-            path: r.path,
-            sha256: r.sha256,
-            size: r.size,
-            status: r.status,
-            verification_run_id: r.verification_run_id
+        const result = listArtifacts({ projectId: req.params.id }).map(artifact => ({
+            id: artifact.id,
+            kind: artifact.kind,
+            sha256: artifact.sha256,
+            size: artifact.size,
+            status: artifact.status,
+            verificationRunId: artifact.verificationRunId
         }));
         res.json(result);
     }));

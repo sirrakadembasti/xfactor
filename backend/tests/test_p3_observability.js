@@ -350,7 +350,9 @@ await runAsyncTest('P3.1 artifacts endpoint 401/403/200 exact keys', async () =>
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body));
   for (const a of body) {
-    assertExactKeys(a, ['id','kind','path','sha256','size','status','verification_run_id'], 'artifact');
+    assertExactKeys(a, ['id','kind','sha256','size','status','verificationRunId'], 'artifact');
+    assert.strictEqual('path' in a, false);
+    assert.strictEqual('manifestJson' in a, false);
   }
 });
 

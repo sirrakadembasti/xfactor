@@ -109,6 +109,15 @@ export function getArtifactFiles({ contractId, artifactId }) {
     `).all(contractId, artifactId);
 }
 
+export function listArtifacts({ projectId }) {
+    return db.prepare(`
+        SELECT *
+        FROM artifacts
+        WHERE project_id = ?
+        ORDER BY created_at DESC, id DESC
+    `).all(projectId).map(mapArtifactRow);
+}
+
 export function getLatestVerifiedArtifact({ projectId, contractId }) {
     return mapArtifactRow(db.prepare(`
         SELECT *
