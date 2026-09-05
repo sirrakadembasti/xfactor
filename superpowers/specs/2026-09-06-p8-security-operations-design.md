@@ -54,14 +54,16 @@ When a generated service requests port forwarding:
 ### 2.1 AES-256-GCM At-Rest Encryption (`backend/crypto/mfaCrypto.js`)
 - Module exports:
   - `encryptMfaSecret(plaintextHex, key): string`
-  - `decryptMfaSecret(ciphertextString, key): string`
-  - `getMfaEncryptionKey(env?: NodeJS.ProcessEnv): Buffer`
+  - `decryptMfaSecret(ciphertextString, keys): { plaintext: string, keyIndex: number }`
+  - `getMfaEncryptionKeys(env?: NodeJS.ProcessEnv): { current: Buffer, previous: Buffer[] }`
 - Encrypted format: `v1:<iv_hex>:<authTag_hex>:<ciphertext_hex>`.
 - Key resolution:
-  - Production requires `MFA_ENCRYPTION_KEY` (32 bytes hex or base64).
-  - Development / test derives 32 bytes using `crypto.createHash('sha256').update(env.JWT_SECRET || 'dev-secret').digest()`.
-- Transparent Migration:
-  - In `verifyTotpToken`: if the secret from `users.totp_secret` does not start with `v1:`, treat as legacy plaintext, verify, and upon success immediately re-encrypt and update the user record.
+  - Production requires `MFA_ENCRYPTION_KEY` (exactly 32 bytes encoded as 64 hex characters or base64).
+  - Optional `MFA_PREVIOUS_ENCRYPTION_KEYS` is a comma-separated list of prior 32-byte keys used only for decryption during rotation.
+  - Development/test derives 32 bytes using `crypto.createHash('sha256').update(env.JWT_SECRET || 'dev-secret').digest()` when the current key is unset.
+- `generateTotpSecret(userId)` returns the plaintext enrollment secret once but stores only the encrypted `v1:` value.
+- `verifyUserTotp(user, token)` owns database migration because it has `user.id`: it decrypts encrypted secrets, verifies RFC 6238, and rewrites the row with the current key after successful verification when the secret was plaintext legacy data or used a previous key.
+- The pure `verifyTotpToken(plaintextSecret, token)` remains database-independent and never mutates rows.
 
 ### 2.2 Timing-Safe Login Lookup (`backend/auth.js`)
 - Precompute a static dummy scrypt hash at module initialization:
