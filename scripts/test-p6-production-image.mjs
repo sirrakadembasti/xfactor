@@ -31,9 +31,11 @@ function success(label, result) {
   return result;
 }
 function cleanup() {
-  for (const name of [proxyName, appName]) run('docker', ['rm', '--force', name], { stdio: 'ignore' });
-  run('docker', ['image', 'rm', '--force', imageTag], { stdio: 'ignore' });
-  rmSync(fixtureRoot, { recursive: true, force: true });
+  for (const name of [proxyName, appName]) {
+    try { run('docker', ['rm', '--force', name], { stdio: 'ignore' }); } catch {}
+  }
+  try { run('docker', ['image', 'rm', '--force', imageTag], { stdio: 'ignore' }); } catch {}
+  try { rmSync(fixtureRoot, { recursive: true, force: true }); } catch {}
 }
 async function reservePort() {
   const server = createServer();
@@ -118,7 +120,9 @@ function assertRuntimeBoundaries() {
   assert.notEqual(success('non-root runtime', run('docker', ['exec', appName, 'id', '-u'])).stdout.trim(), '0');
   const mounts = JSON.parse(success('mounted storage inspection', run('docker', ['inspect', appName])).stdout)[0].Mounts;
   assert.deepEqual(mounts.map(mount => mount.Destination).sort(), ['/app/backend/data', '/app/projects']);
-  success('mounted data writable', run('docker', ['exec', appName, 'sh', '-c', 'test -w /app/backend/data && test -w /app/projects && test ! -w /app/backend/server.js']));
+  success('mounted data writable and application paths immutable', run('docker', ['exec', appName, 'sh', '-c',
+    'test -w /app/backend/data && test -w /app/projects && test ! -w /app && test ! -w /app/backend && test ! -w /app/frontend && test ! -w /app/docs && test ! -w /app/backend/node_modules'
+  ]));
 }
 
 try {

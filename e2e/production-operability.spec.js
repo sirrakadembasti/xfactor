@@ -15,8 +15,6 @@ const sha256 = process.env.P6_SHA256;
 test.use({ ignoreHTTPSErrors: true });
 
 test('production HTTPS origin serves SPA, API, authenticated WebSocket, and verified ZIP only', async ({ page }) => {
-  const webSocketUrls = [];
-  page.on('websocket', socket => webSocketUrls.push(socket.url()));
 
   await page.goto(baseUrl);
   await page.locator('#login-username').fill(username);
@@ -29,7 +27,27 @@ test('production HTTPS origin serves SPA, API, authenticated WebSocket, and veri
   await expect(page.locator('#root')).not.toBeEmpty();
   await page.locator('span').filter({ hasText: 'P6 Verified Project' }).click();
   await expect(page.getByRole('button', { name: 'Projeyi (ZIP) İndir' })).toBeVisible();
-  await expect.poll(() => webSocketUrls.some(url => url.startsWith('wss:'))).toBe(true);
+  const subscribedProjectId = await page.evaluate(async activeProjectId => new Promise((resolve, reject) => {
+    const socket = new WebSocket(`wss://${window.location.host}/ws/logs`);
+    const timeout = setTimeout(() => reject(new Error('authenticated WebSocket subscription timed out')), 10_000);
+    const fail = event => {
+      clearTimeout(timeout);
+      reject(new Error(`authenticated WebSocket closed before subscription: ${event.code || 'error'}`));
+    };
+    socket.onerror = fail;
+    socket.onclose = fail;
+    socket.onopen = () => socket.send(JSON.stringify({ type: 'subscribe', projectId: activeProjectId }));
+    socket.onmessage = event => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'subscribed' && message.projectId === activeProjectId) {
+        clearTimeout(timeout);
+        socket.close();
+        resolve(message.projectId);
+      }
+    };
+  }), projectId);
+  expect(subscribedProjectId).toBe(projectId);
+
 
   const api404 = await page.request.get(`${baseUrl}/api/does-not-exist`);
   expect(api404.status()).toBe(404);
@@ -50,5 +68,9 @@ test('production HTTPS origin serves SPA, API, authenticated WebSocket, and veri
   const unverified = projects.find(project => project.id !== projectId);
   expect(unverified).toBeTruthy();
   await page.locator('span').filter({ hasText: 'P6 Unverified Project' }).click();
+  const deniedDownload = await page.request.get(
+    `${baseUrl}/api/projects/${unverified.id}/contracts/${unverified.id}-contract/artifacts/${unverified.id}-artifact/download`
+  );
+  expect([404, 409]).toContain(deniedDownload.status());
   await expect(page.getByRole('button', { name: 'Projeyi (ZIP) İndir' })).toHaveCount(0);
 });

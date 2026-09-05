@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 const backend = process.env.P6_BACKEND_ROOT || '/app/backend';
 const load = file => import(pathToFileURL(path.join(backend, file)).href);
-const [{ createUser }, { createProject }, { db }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus }, { completeVerifiedProject }] = await Promise.all([
+const [{ createUser }, { createProject }, { db }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus, createArtifact }, { completeVerifiedProject }] = await Promise.all([
   load('auth.js'), load('projectRepository.js'), load('db.js'), load('utils/archive.js'),
   load('verification/safeExtractor.js'), load('repositories/artifactRepository.js'), load('projectRepository.js')
 ]);
@@ -30,6 +30,20 @@ try {
   const completed = await createProject({ title: 'P6 Verified Project', ownerUserId: user.id });
   const contractId = `contract-${suffix}`;
   const runId = `run-${suffix}`;
+  const unverifiedContractId = `${unverified.id}-contract`;
+  const unverifiedArtifactId = `${unverified.id}-artifact`;
+  db.prepare(`INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at)
+    VALUES (?, ?, 1, 'approved', ?, ?, ?)`).run(unverifiedContractId, unverified.id, JSON.stringify({ name: 'P6 unverified project' }), crypto.randomBytes(32).toString('hex'), now);
+  createArtifact({
+    id: unverifiedArtifactId,
+    projectId: unverified.id,
+    contractId: unverifiedContractId,
+    kind: 'zip',
+    path: path.join(process.env.ARTIFACTS_ROOT, `${unverifiedArtifactId}.zip`),
+    sha256: crypto.randomBytes(32).toString('hex'),
+    size: 0,
+    status: 'draft'
+  });
   db.prepare("UPDATE projects SET status = 'artifact_verified', revision = 1 WHERE id = ?").run(completed.id);
   db.prepare(`INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at)
     VALUES (?, ?, 1, 'approved', ?, ?, ?)`).run(contractId, completed.id, JSON.stringify({ name: 'P6 verified project' }), crypto.randomBytes(32).toString('hex'), now);
