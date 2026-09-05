@@ -232,6 +232,7 @@ export function createProjectRouter({
             const MAX_FILE_SIZE = 2 * 1024 * 1024;
             const MAX_TOTAL_FILES = 500;
             const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+            const BINARY_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.ico', '.gif']);
             const ALLOWED_EXTENSIONS = new Set([
                 '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',
                 '.prisma', '.sql', '.svg', '.ico', '.png', '.jpg', '.jpeg', '.webp',
@@ -241,11 +242,11 @@ export function createProjectRouter({
             const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
             const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
 
+            const results = [];
             let totalBytes = 0;
             async function getFiles(targetDir, relativePath = '') {
-                let results = [];
                 if (results.length >= MAX_TOTAL_FILES || totalBytes >= MAX_TOTAL_BYTES) {
-                    return results;
+                    return;
                 }
                 try {
                     const list = await fs.readdir(targetDir, { withFileTypes: true });
@@ -258,7 +259,7 @@ export function createProjectRouter({
                         if (!isSafeProjectPath(relPath, dir)) continue;
                         if (file.isDirectory()) {
                             if (!IGNORED_DIRS.has(file.name)) {
-                                results = results.concat(await getFiles(resPath, relPath));
+                                await getFiles(resPath, relPath);
                             }
                         } else {
                             if (IGNORED_FILES.has(file.name)) continue;
@@ -268,20 +269,25 @@ export function createProjectRouter({
                                 const stat = await fs.stat(resPath);
                                 if (stat.size > MAX_FILE_SIZE) continue;
                                 await assertPathInsideRoot(resPath, dir);
-                                const content = await fs.readFile(resPath, 'utf8');
+                                const isBinary = BINARY_EXTENSIONS.has(ext);
+                                const rawContent = await fs.readFile(resPath);
                                 totalBytes += stat.size;
-                                results.push({ path: relPath, content });
+                                results.push({
+                                    path: relPath,
+                                    content: isBinary ? rawContent.toString('base64') : rawContent.toString('utf8'),
+                                    encoding: isBinary ? 'base64' : 'utf8',
+                                    size: stat.size
+                                });
                             } catch (error) {
                                 logWarning('api.project_file_read_failed', error, { projectId: req.params.id, file: relPath });
                             }
                         }
                     }
                 } catch (err) {}
-                return results;
             }
 
-            const files = await getFiles(dir);
-            res.json(files);
+            await getFiles(dir);
+            res.json(results);
         } catch (error) {
             next(error);
         }

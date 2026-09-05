@@ -46,7 +46,8 @@ const testFiles = [
     'test_p2_security_auth.js',
     'test_p3_observability.js',
     'test_p7_sqlite_durability.js',
-    'test_p7_approve_state.js'
+    'test_p7_approve_state.js',
+    'test_p7_files_api.js'
 ];
 
 async function runTestFile(file, env, timeoutMs = 120000) {
