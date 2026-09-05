@@ -448,6 +448,7 @@ export async function deleteProject(projectId, envOrOptions = process.env, maybe
             force = Boolean(envOrOptions.force);
         } else {
             env = envOrOptions;
+            force = Boolean(maybeOptions?.force);
         }
     } else if (typeof envOrOptions === 'string') {
         env = envOrOptions;
@@ -460,9 +461,6 @@ export async function deleteProject(projectId, envOrOptions = process.env, maybe
         const err = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
         err.code = 'PROJECT_LOCKED_RECEIPT';
         throw err;
-    }
-    if (!isValidProjectId(projectId)) {
-        throw new Error(`Invalid project ID format: "${projectId}"`);
     }
     const { abortProjectExecution } = await import('./engine/cancellation.js');
     // 1. Aktif in-flight workflow varsa derhal durdur
@@ -489,6 +487,15 @@ export async function deleteProject(projectId, envOrOptions = process.env, maybe
     // 4. DB kayıtlarını temizle
     db.exec('BEGIN IMMEDIATE;');
     try {
+        // Re-verify inside the transaction: closes the race between the early
+        // check and the deletes, so a concurrent receipt insert degrades to a
+        // clean RESTRICT error instead of a raw FOREIGN KEY failure.
+        const lockedReceipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+        if (lockedReceipt && !force) {
+            const lockedErr = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
+            lockedErr.code = 'PROJECT_LOCKED_RECEIPT';
+            throw lockedErr;
+        }
         if (force) {
             // Forced deletes are an explicit admin override: remove the project's
             // delivery receipts as well. Receipts are otherwise immutable
