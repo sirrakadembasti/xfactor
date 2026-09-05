@@ -1,5 +1,5 @@
 import path from 'node:path';
-
+import { getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
 function normalize(value) {
     return String(value ?? '').trim();
 }
@@ -45,6 +45,13 @@ export function validateRuntimeConfig(env = process.env) {
     }
     if (production && !path.isAbsolute(dbPath)) {
         issues.push('DB_PATH must be an absolute path in production');
+    }
+    if (production) {
+        try {
+            getMfaEncryptionKeys(env);
+        } catch {
+            issues.push('MFA_ENCRYPTION_KEY must be a valid 32-byte key in production');
+        }
     }
 
 

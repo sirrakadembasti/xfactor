@@ -11,6 +11,9 @@ const isolated = await setupIsolatedTestDb('p5-mfa-login');
 process.env.DB_PATH = isolated.dbPath;
 process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 await fs.mkdir(process.env.PROJECTS_ROOT, { recursive: true });
+process.env.NODE_ENV = 'test';
+process.env.MFA_ENCRYPTION_KEY = '44'.repeat(32);
+process.env.MFA_PREVIOUS_ENCRYPTION_KEYS = '';
 
 const [{ db }, { createUser, generateTotpSecret }, { createAuthRouter }] = await Promise.all([
     import('../db.js'),

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { db } from './db.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
+import { decryptMfaSecret, encryptMfaSecret, getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
 
 function normalizeUsername(username) {
     return String(username ?? '').trim();
@@ -79,18 +80,60 @@ export function verifyPassword(password, storedHash) {
     }
 }
 
-export async function authenticateUserAsync(username, password) {
-    const user = findUserByUsername(username);
-    if (!user) {
-        return null;
-    }
-    return (await verifyPasswordAsync(password, user.passwordHash)) ? user : null;
+let passwordVerifier = verifyPasswordAsync;
+const DUMMY_PASSWORD_HASH = hashPassword('dummy-password-verification-value');
+
+export function setPasswordVerifierForTests(verifier) {
+    passwordVerifier = typeof verifier === 'function' ? verifier : verifyPasswordAsync;
 }
 
-export function generateTotpSecret(userId) {
+export async function authenticateUserAsync(username, password) {
+    const user = findUserByUsername(username);
+    const verified = await passwordVerifier(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    return user && verified ? user : null;
+}
+
+export function generateTotpSecret(userId, env = process.env) {
+    const keys = getMfaEncryptionKeys(env);
     const secret = crypto.randomBytes(20).toString('hex');
-    db.prepare('UPDATE users SET totp_secret = ?, mfa_enabled = 1 WHERE id = ?').run(secret, userId);
+    const encrypted = encryptMfaSecret(secret, keys.current);
+    db.prepare('UPDATE users SET totp_secret = ?, mfa_enabled = 1 WHERE id = ?').run(encrypted, userId);
     return secret;
+}
+
+export function verifyUserTotp(user, token, env = process.env) {
+    if (!user || typeof user.totpSecret !== 'string') {
+        return false;
+    }
+
+    const storedSecret = user.totpSecret;
+    let plaintext;
+    let keyIndex = -1;
+    let keys;
+    try {
+        keys = getMfaEncryptionKeys(env);
+        if (/^[0-9a-fA-F]{40}$/.test(storedSecret)) {
+            plaintext = storedSecret;
+        } else {
+            ({ plaintext, keyIndex } = decryptMfaSecret(storedSecret, keys));
+        }
+    } catch {
+        return false;
+    }
+
+    if (!verifyTotpToken(plaintext, token)) {
+        return false;
+    }
+
+    if (keyIndex !== 0) {
+        const encrypted = encryptMfaSecret(plaintext, keys.current);
+        db.prepare(`
+            UPDATE users
+            SET totp_secret = ?
+            WHERE id = ? AND totp_secret = ?
+        `).run(encrypted, user.id, storedSecret);
+    }
+    return true;
 }
 
 export function verifyTotpToken(secret, token) {

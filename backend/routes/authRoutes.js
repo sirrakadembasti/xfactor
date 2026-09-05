@@ -6,7 +6,7 @@ import {
     createSession,
     revokeSession,
     toPublicUser,
-    verifyTotpToken
+    verifyUserTotp
 } from '../auth.js';
 import {
     readSessionToken,
@@ -31,7 +31,7 @@ export function createAuthRouter({ requireAuth, production }) {
             if (!totp) {
                 return res.status(202).json({ mfaRequired: true });
             }
-            if (!user.totpSecret || !verifyTotpToken(user.totpSecret, totp)) {
+            if (!user.totpSecret || !verifyUserTotp(user, totp, process.env)) {
                 return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
             }
         }

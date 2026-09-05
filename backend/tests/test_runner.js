@@ -30,6 +30,7 @@ const testFiles = [
     'test_p6_static_serving.js',
     'test_agent_contract_schemas.js',
     'test_p5_mfa_login.js',
+    'test_p8_mfa_crypto.js',
     'test_database_migrations.js',
     'test_health_and_lifecycle.js',
     'test_concurrency_pool.js',

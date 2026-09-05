@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { createTestHarness } from './testHarness.js';
+process.env.NODE_ENV = 'test';
+process.env.MFA_ENCRYPTION_KEY = '55'.repeat(32);
+process.env.MFA_PREVIOUS_ENCRYPTION_KEYS = '';
 import { createSecurityHeadersMiddleware, isSecureTransportRequest } from '../security.js';
 import {
     createUser,
