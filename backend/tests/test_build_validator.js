@@ -3,15 +3,13 @@
  */
 
 import assert from 'assert';
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
-import { fileURLToPath } from 'url';
 import { executeSafeCommand, validateProjectBuild } from '../engine/buildValidator.js';
 import { detectProjectStack } from '../engine/codeGenerator.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TEST_DIR = path.join(__dirname, '../data', `test-build-gate-${Date.now()}`);
+const TEST_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-build-gate-'));
 
 console.log("==================================================");
 console.log("⚡ XFactor Real Build & Compiler Quality Gate Test Suite");

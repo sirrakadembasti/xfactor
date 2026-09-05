@@ -7,15 +7,13 @@
  */
 
 import assert from 'assert';
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
-import { fileURLToPath } from 'url';
 import { validateProjectBuild } from '../engine/buildValidator.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TEST_DIR = path.join(__dirname, '../data', `test-build-sandbox-gate-${Date.now()}`);
+const TEST_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-build-sandbox-gate-'));
 
 console.log("==================================================");
 console.log("P0.4 Build Sandbox Gate Test Suite");

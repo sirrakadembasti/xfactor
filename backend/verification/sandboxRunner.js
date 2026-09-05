@@ -55,7 +55,7 @@ export function requireSandboxCapabilities(adapter) {
     }
 
     const capabilities = adapter.getCapabilities();
-    if (!capabilities?.available) {
+    if (!capabilities?.available || capabilities.isolation !== true) {
         throw new SandboxInitializationError(
             capabilities?.reason || `Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`
         );

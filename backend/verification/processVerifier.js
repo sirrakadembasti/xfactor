@@ -14,7 +14,7 @@ function requireAvailableSandbox(adapter) {
         throw error;
     }
     const capabilities = adapter.getCapabilities();
-    if (!capabilities?.available || capabilities.serviceSpawn !== true) {
+    if (!capabilities?.available || capabilities.isolation !== true || capabilities.serviceSpawn !== true) {
         const error = new Error(`SANDBOX_UNAVAILABLE: ${capabilities?.reason || 'adapter cannot prove isolated service spawning.'}`);
         error.code = 'SANDBOX_UNAVAILABLE';
         throw error;
