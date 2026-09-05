@@ -57,6 +57,7 @@ import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
 import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
+import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 import { generateProjectReadme } from './readmeGenerator.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');

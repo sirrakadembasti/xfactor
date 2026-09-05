@@ -64,7 +64,7 @@ function detectRunCommand(pkg) {
   const scripts = pkg?.scripts || {};
   if (scripts.dev) return 'npm run dev';
   if (scripts.start) return 'npm start';
-  return 'npm run dev';
+  return null;
 }
 
 export async function generateProjectReadme({
@@ -147,12 +147,14 @@ export async function generateProjectReadme({
     step += 1;
   }
 
-  lines.push(`### ${step}. Adım: Uygulamayı Başlatın`);
-  lines.push('```bash');
-  lines.push(runCommand);
-  lines.push('```');
-  lines.push(`Uygulamanız varsayılan olarak \`http://localhost:${port}\` adresinde çalışacaktır.`);
-  lines.push('');
+  if (runCommand) {
+    lines.push(`### ${step}. Adım: Uygulamayı Başlatın`);
+    lines.push('```bash');
+    lines.push(runCommand);
+    lines.push('```');
+    lines.push(`Uygulamanız varsayılan olarak \`http://localhost:${port}\` adresinde çalışacaktır.`);
+    lines.push('');
+  }
   lines.push('---');
   lines.push('');
   lines.push('## 📋 Proje Özellikleri ve Mimari Yapı');

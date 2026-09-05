@@ -110,4 +110,21 @@ if (!filteredTest || filteredTest === 'sanitize') {
   });
 }
 
+if (!filteredTest || filteredTest === 'no-scripts') {
+  await runAsyncTest('P7.5.5: Project without scripts omits run step, invents no command', async () => {
+    const dir = await makeDir({
+      'package.json': JSON.stringify({ name: 'x', dependencies: {} }),
+    });
+    const readme = await generateProjectReadme({
+      projectTitle: 'X',
+      summary: 's',
+      talimatname: '',
+      projectDir: dir,
+    });
+    assert.ok(!readme.includes('npm run dev'), 'must not invent npm run dev');
+    assert.ok(!readme.includes('npm start'), 'must not invent npm start');
+    assert.ok(!/Uygulamayı Başlatın/.test(readme), 'must omit the run step');
+  });
+}
+
 finish();
