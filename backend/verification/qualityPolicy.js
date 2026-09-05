@@ -332,11 +332,14 @@ function evaluateVerificationRunWithTraceability(contractId, checks) {
             passingRequirementIds.add(String(requirementId));
         }
     }
-
     const missingRequirementIds = mandatoryRequirementIds.filter(
         requirementId => !passingRequirementIds.has(requirementId)
     );
-    const traceabilityPassed = missingRequirementIds.length === 0;
+    const sourceGateNames = machineChecks
+        .filter(check => normalizeGateStatus(check.status) === 'PASS')
+        .map(check => check.gateName || check.name)
+        .filter(Boolean);
+    const traceabilityPassed = missingRequirementIds.length === 0 && sourceGateNames.length > 0;
     const traceabilityCheck = {
         gateName: 'requirement_traceability',
         applicability: 'MANDATORY',
@@ -345,7 +348,16 @@ function evaluateVerificationRunWithTraceability(contractId, checks) {
         reason: traceabilityPassed
             ? `${mandatoryRequirementIds.length} mandatory requirement(s) have passing machine evidence.`
             : `${missingRequirementIds.length} mandatory requirement(s) lack passing machine evidence.`,
-        evidence: { missingRequirementIds }
+        evidence: traceabilityPassed
+            ? {
+                kind: 'derived_gate',
+                producer: 'aggregate-verification',
+                sourceGateNames,
+                computedAt: new Date().toISOString(),
+                policyVersion: ACTIVE_POLICY_VERSION,
+                missingRequirementIds
+            }
+            : { missingRequirementIds }
     };
 
     return evaluateVerificationRun({
@@ -527,6 +539,15 @@ function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
             ? `No machine evidence was produced for ${gateName}.`
             : `${members.length} machine check(s) aggregated for ${gateName}.`,
         evidence: {
+            ...(status === 'PASS'
+                ? {
+                    kind: 'derived_gate',
+                    producer: 'aggregate-verification',
+                    sourceGateNames: members.map(check => `detail:${check.name}`),
+                    computedAt: new Date().toISOString(),
+                    policyVersion: ACTIVE_POLICY_VERSION
+                }
+                : {}),
             checks: members.map(check => ({
                 name: check.name,
                 status: normalizeGateStatus(check.status),
@@ -555,12 +576,22 @@ async function captureHardeningGate(name, run) {
     try {
         const result = await run();
         const issues = Array.isArray(result?.issues) ? result.issues : [];
+        const passed = result?.passed === true;
         return {
             gateName: name,
             applicability: 'MANDATORY',
-            status: result?.passed === true ? 'PASS' : 'FAIL',
+            status: passed ? 'PASS' : 'FAIL',
             reason: issues.join('; '),
-            evidence: { issues }
+            evidence: passed
+                ? {
+                    kind: 'derived_gate',
+                    producer: 'quality-policy',
+                    sourceGateNames: [name],
+                    computedAt: new Date().toISOString(),
+                    policyVersion: ACTIVE_POLICY_VERSION,
+                    issues
+                }
+                : { issues }
         };
     } catch (error) {
         return {
