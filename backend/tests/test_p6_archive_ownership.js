@@ -35,6 +35,35 @@ function runChild(script) {
     });
 }
 
+function assertNoJsZipInDependencyMap(dependencies, label) {
+    assert.strictEqual(dependencies?.jszip, undefined, `${label} must not declare JSZip`);
+}
+
+function assertNoJsZipInPackageLock(lock, label) {
+    assertNoJsZipInDependencyMap(lock.packages?.['']?.dependencies, label);
+    assertNoJsZipInDependencyMap(lock.packages?.['']?.devDependencies, label);
+    assertNoJsZipInDependencyMap(lock.packages?.['']?.optionalDependencies, label);
+    assertNoJsZipInDependencyMap(lock.packages?.['']?.peerDependencies, label);
+
+    for (const [packagePath, packageMetadata] of Object.entries(lock.packages ?? {})) {
+        assert.notStrictEqual(packagePath.split('/').at(-1), 'jszip', `${label} must not resolve JSZip`);
+        assert.notStrictEqual(packageMetadata.name, 'jszip', `${label} must not resolve JSZip`);
+    }
+
+    assertNoJsZipInDependencyMap(lock.dependencies, label);
+}
+
+function assertNoJsZipInBunLock(lock, label) {
+    const workspace = lock.workspaces?.[''];
+    assertNoJsZipInDependencyMap(workspace?.dependencies, label);
+    assertNoJsZipInDependencyMap(workspace?.devDependencies, label);
+
+    for (const [packageName, packageMetadata] of Object.entries(lock.packages ?? {})) {
+        assert.notStrictEqual(packageName, 'jszip', `${label} must not resolve JSZip`);
+        assert.notStrictEqual(Array.isArray(packageMetadata) ? packageMetadata[0]?.split('@')[0] : packageMetadata?.name, 'jszip', `${label} must not resolve JSZip`);
+    }
+}
+
 try {
     process.env.DB_PATH = isolated.dbPath;
     process.env.ARTIFACTS_ROOT = path.join(isolatedRoot, 'artifacts');
@@ -73,11 +102,23 @@ try {
         const frontendRoot = path.join(repoRoot, 'frontend');
         const dependencyFiles = ['package.json', 'package-lock.json', 'bun.lock', 'bun.lockb'];
 
-        for (const file of dependencyFiles) {
-            const dependencyFile = path.join(frontendRoot, file);
-            const contents = await fs.readFile(dependencyFile, 'utf8').catch(error => error.code === 'ENOENT' ? null : Promise.reject(error));
-            if (contents !== null) assert.doesNotMatch(contents, /["']?jszip["']?\s*(?::|@)/i, `${file} must not declare or resolve frontend JSZip`);
-        }
+        assert.throws(
+            () => assertNoJsZipInPackageLock({ packages: { 'node_modules/jszip': { version: '3.10.1' } } }, 'package-lock fixture'),
+            /JSZip/
+        );
+
+        const manifest = JSON.parse(await fs.readFile(path.join(frontendRoot, 'package.json'), 'utf8'));
+        assertNoJsZipInDependencyMap(manifest.dependencies, 'package.json');
+        assertNoJsZipInDependencyMap(manifest.devDependencies, 'package.json');
+
+        const npmLock = JSON.parse(await fs.readFile(path.join(frontendRoot, 'package-lock.json'), 'utf8'));
+        assertNoJsZipInPackageLock(npmLock, 'package-lock.json');
+
+        const bunLock = await fs.readFile(path.join(frontendRoot, 'bun.lock'), 'utf8').catch(error => error.code === 'ENOENT' ? null : Promise.reject(error));
+        if (bunLock !== null) assertNoJsZipInBunLock(JSON.parse(bunLock), 'bun.lock');
+
+        const bunBinaryLock = await fs.readFile(path.join(frontendRoot, 'bun.lockb')).catch(error => error.code === 'ENOENT' ? null : Promise.reject(error));
+        assert.strictEqual(bunBinaryLock, null, 'bun.lockb is obsolete under the canonical npm lock policy');
     });
 
     await runAsyncTest('ZIP creation and extraction use backend JSZip without frontend dependencies', async () => {
