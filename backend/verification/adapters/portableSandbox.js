@@ -1,5 +1,6 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
 import os from 'os';
+import { randomUUID } from 'crypto';
 
 export const DEFAULT_SANDBOX_LIMITS = Object.freeze({
     cpus: '2.0',
@@ -91,6 +92,13 @@ export class PortableSandboxAdapter {
         }
     }
 
+    cleanupDockerContainer(containerName) {
+        if (this.type !== 'docker' || !containerName) return;
+        try {
+            execFileSync('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
+        } catch {}
+    }
+
     buildServiceCommand({ command, args = [], workspace, port, networkMode = 'service', containerName = null }) {
         const workDir = workspace || process.cwd();
         if (this.type === 'bubblewrap') {
@@ -146,6 +154,9 @@ export class PortableSandboxAdapter {
                 aborted: false
             };
         }
+        const dockerContainerName = this.type === 'docker'
+            ? containerName || `xfactor-sandbox-${process.pid}-${randomUUID()}`
+            : null;
 
         return new Promise((resolve) => {
             const cleanEnv = {
@@ -178,7 +189,7 @@ export class PortableSandboxAdapter {
                 spawnCmd = 'docker';
                 spawnArgs = [
                     'run', '--rm',
-                    ...(containerName ? ['--name', containerName] : []),
+                    ...(dockerContainerName ? ['--name', dockerContainerName] : []),
                     '-v', `${workspace || process.cwd()}:/workspace`,
                     '-w', '/workspace',
                     '--network', networkMode === 'service' ? 'bridge' : 'none',
@@ -218,6 +229,7 @@ export class PortableSandboxAdapter {
                 timer = setTimeout(() => {
                     timedOut = true;
                     this.killProcessTree(child.pid);
+                    this.cleanupDockerContainer(dockerContainerName);
                 }, timeoutMs);
             }
 

@@ -11,6 +11,11 @@ const { runAsyncTest, finish } = createTestHarness();
 
 await runAsyncTest('P8.1 Docker isolation arguments enforce exact limits and loopback binding', async () => {
     const args = buildDockerIsolationArgs({ port: 5173 });
+    const assertPair = (flag, expected) => {
+        const index = args.indexOf(flag);
+        assert.ok(index >= 0, `missing Docker isolation flag: ${flag}`);
+        assert.strictEqual(args[index + 1], expected, `${flag} must be paired with ${expected}`);
+    };
     assert.deepStrictEqual(DEFAULT_SANDBOX_LIMITS, {
         cpus: '2.0',
         memory: '1g',
@@ -18,16 +23,16 @@ await runAsyncTest('P8.1 Docker isolation arguments enforce exact limits and loo
         pids: '100',
         tmpfs: '/tmp:rw,noexec,nosuid,size=64m'
     });
-    for (const expected of [
-        '--cpus', '2.0',
-        '--memory', '1g',
-        '--memory-swap', '1g',
-        '--pids-limit', '100',
-        '--security-opt', 'no-new-privileges:true',
-        '--cap-drop', 'ALL',
-        '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m',
-        '-p', '127.0.0.1:5173:5173'
-    ]) assert.ok(args.includes(expected), `missing Docker isolation argument: ${expected}`);
+    for (const [flag, expected] of [
+        ['--cpus', '2.0'],
+        ['--memory', '1g'],
+        ['--memory-swap', '1g'],
+        ['--pids-limit', '100'],
+        ['--security-opt', 'no-new-privileges:true'],
+        ['--cap-drop', 'ALL'],
+        ['--tmpfs', '/tmp:rw,noexec,nosuid,size=64m'],
+        ['-p', '127.0.0.1:5173:5173']
+    ]) assertPair(flag, expected);
     assert.ok(!args.some(value => /(^|:)0\.0\.0\.0/.test(value) || value.includes('0.0.0.0:')),
         'Docker port binding must not wildcard-bind');
 });
@@ -48,6 +53,10 @@ await runAsyncTest('P8.2 Docker capability probing is OS-independent and fail-cl
     const unavailableCapabilities = unavailableOnWindows.getCapabilities();
     assert.strictEqual(unavailableCapabilities.available, false);
     assert.strictEqual(unavailableCapabilities.resourceLimits, false);
+    await assert.rejects(
+        unavailableOnWindows.spawn({ command: 'node', args: ['--version'] }),
+        /not available/
+    );
     const blocked = await unavailableOnWindows.execute({ command: 'node', args: ['--version'] });
     assert.strictEqual(blocked.status, 'BLOCKED');
     assert.strictEqual(blocked.passed, false);
@@ -56,6 +65,9 @@ await runAsyncTest('P8.2 Docker capability probing is OS-independent and fail-cl
 await runAsyncTest('P8.3 Docker cgroups enforce memory, PID, and CPU limits', async () => {
     const adapter = new PortableSandboxAdapter('docker');
     if (!adapter.getCapabilities().available) {
+        if (process.env.P8_REQUIRE_DOCKER_LIMITS === '1') {
+            throw new Error('P8_REQUIRE_DOCKER_LIMITS=1 requires an available Docker daemon');
+        }
         console.log('[SKIP] P8.3 Docker is unavailable; CI requires a real Docker run.');
         return;
     }
@@ -80,7 +92,7 @@ await runAsyncTest('P8.3 Docker cgroups enforce memory, PID, and CPU limits', as
         const [quota, period] = values['cpu.max'].split(/\s+/).map(Number);
         assert.ok(Number.isFinite(memory) && memory <= 1024 ** 3, `memory.max=${values['memory.max']}`);
         assert.strictEqual(pids, 100, `pids.max=${values['pids.max']}`);
-        assert.ok(Number.isFinite(quota) && Number.isFinite(period) && quota / period <= 2,
+        assert.ok(Number.isFinite(quota) && quota > 0 && Number.isFinite(period) && period > 0 && quota / period <= 2,
             `cpu.max=${values['cpu.max']}`);
         console.log(`[CGROUP] memory.max=${memory} pids.max=${pids} cpu.max=${quota} ${period}`);
     } finally {
@@ -90,4 +102,25 @@ await runAsyncTest('P8.3 Docker cgroups enforce memory, PID, and CPU limits', as
     }
 });
 
+await runAsyncTest('P8.4 timed-out Docker execution cleans its named container', async () => {
+    const adapter = new PortableSandboxAdapter('docker');
+    if (!adapter.getCapabilities().available) {
+        if (process.env.P8_REQUIRE_DOCKER_LIMITS === '1') {
+            throw new Error('P8_REQUIRE_DOCKER_LIMITS=1 requires an available Docker daemon');
+        }
+        console.log('[SKIP] P8.4 Docker is unavailable; CI requires a real Docker run.');
+        return;
+    }
+    const containerName = `xfactor-p8-timeout-${process.pid}-${Date.now()}`;
+    const result = await adapter.execute({
+        command: 'node',
+        args: ['-e', 'setTimeout(() => {}, 30000)'],
+        containerName,
+        timeoutMs: 1000
+    });
+    assert.strictEqual(result.status, 'BLOCKED');
+    assert.strictEqual(result.timedOut, true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    assert.throws(() => execFileSync('docker', ['inspect', containerName], { stdio: 'ignore' }));
+});
 finish();
