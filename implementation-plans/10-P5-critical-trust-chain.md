@@ -230,7 +230,7 @@ node backend/tests/test_build_sandbox_gate.js
 node backend/tests/test_p4_production_safety.js
 ```
 
-Expected: all PASS; no marker file is created by an unavailable-sandbox scenario.
+Expected GREEN: all PASS; no marker file is created by an unavailable-sandbox scenario.
 
 - [ ] **Step 9: Commit Task 1**
 
@@ -374,7 +374,7 @@ node backend/tests/test_p1_c_artifact_verifier.js
 node backend/tests/test_p4_production_safety.js
 ```
 
-Expected: all PASS; artifact domain consumers use camelCase and the receipt run matches the artifact run.
+Expected GREEN: all PASS; artifact domain consumers use camelCase and the receipt run matches the artifact run.
 
 - [ ] **Step 7: Commit Task 2**
 
@@ -481,7 +481,7 @@ npm --prefix frontend run test:unit -- --run src/components/__tests__/P5Download
 npm --prefix frontend run test:unit
 ```
 
-Expected: all frontend tests PASS; no project-list ZIP action exists and Header exposes download only for a verified artifact.
+Expected GREEN: all frontend tests PASS; no project-list ZIP action exists and Header exposes download only for a verified artifact.
 
 - [ ] **Step 7: Commit Task 3 frontend changes**
 
@@ -682,7 +682,7 @@ Run:
 npx playwright test e2e/trust-chain.spec.js --project=chromium
 ```
 
-Expected: MFA challenge and both download authorization scenarios PASS against real frontend/backend processes and isolated fixture storage.
+Expected GREEN: MFA challenge and both download authorization scenarios PASS against real frontend/backend processes and isolated fixture storage.
 
 - [ ] **Step 11: Commit Task 4**
 

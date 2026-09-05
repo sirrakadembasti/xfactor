@@ -62,53 +62,52 @@
 
 **Amaç:** Generated kod yürütme, artifact indirme/completion ve MFA değişmezlerini fail-closed yapmak.
 
-**Durum:** `[~] Tasarım onaylandı; ayrıntılı uygulama planı hazırlanacak.`
+**Durum:** `[x] P5 davranış kanıtı, güvenlik review ve tüm Step 4 proje-geneli doğrulama kapılarıyla doğrulandı. Sonraki eylem yalnız P6 production-operability tasarım/planını hazırlamaktır.`
 
 ### P5.1 — Host execution sınırı
 
-- [ ] Generated proje için environment tabanlı host fallback yetkisini kaldır.
-- [ ] Sandbox capability yoksa komutu çalıştırmadan `BLOCKED` üret.
-- [ ] Unit testlerde yalnız dependency-injected fake adapter kullan.
-- [ ] Windows adapterın uygulanmamış capability durumunu fail-closed koru.
-- [ ] Host üzerinde yan etki oluşmadığını davranış testiyle kanıtla.
+- [x] Generated proje için environment tabanlı host fallback yetkisini kaldır.
+- [x] Sandbox capability yoksa komutu çalıştırmadan `BLOCKED` üret.
+- [x] Unit testlerde yalnız dependency-injected fake adapter kullan.
+- [x] Windows adapterın uygulanmamış capability durumunu fail-closed koru.
+- [x] Host üzerinde yan etki oluşmadığını davranış testiyle kanıtla.
 
 ### P5.2 — Artifact ve completion zinciri
 
-- [ ] Artifact repository sınırında tek canonical model tanımla.
-- [ ] `verification_run_id` ↔ `verificationRunId` dönüşümünü repository içinde yap.
-- [ ] Başarılı clean-room verification sonrası aynı run ID ile artifact bağlantısını doğrula.
-- [ ] Completion receipt oluşturulmasını ve `completed` geçişini entegrasyon testiyle kanıtla.
-- [ ] Receipt’siz mevcut completed kayıtları otomatik değiştirme; reconciliation raporuna ayır.
+- [x] Artifact repository sınırında tek canonical model tanımla.
+- [x] `verification_run_id` ↔ `verificationRunId` dönüşümünü repository içinde yap.
+- [x] Başarılı clean-room verification sonrası aynı run ID ile artifact bağlantısını doğrula.
+- [x] Completion receipt oluşturulmasını ve `completed` geçişini entegrasyon testiyle kanıtla.
+- [x] Receipt’siz mevcut completed kayıtları otomatik değiştirme; reconciliation raporuna ayır.
 
 ### P5.3 — Verified-only download
 
-- [ ] Frontend client-side JSZip/FileSaver ZIP fallback’ini kaldır.
-- [ ] Verified artifact yoksa indirme kontrolünü kapat ve açık hata göster.
-- [ ] Artifact download URL’sini configured API base üzerinden üret.
-- [ ] Server download route’unda latest approved contract, artifact hash ve verification evidence kontrollerini koru.
-- [ ] Browser testinde doğrulanmamış projenin ZIP indiremeyeceğini kanıtla.
-- [ ] Browser testinde doğrulanmış artifact’ın doğru origin üzerinden indirildiğini kanıtla.
+- [x] Frontend client-side JSZip/FileSaver ZIP fallback’ini kaldır.
+- [x] Verified artifact yoksa indirme kontrolünü kapat ve açık hata göster.
+- [x] Artifact download URL’sini configured API base üzerinden üret.
+- [x] Server download route’unda latest approved contract, artifact hash ve verification evidence kontrollerini koru.
+- [x] Browser testinde doğrulanmamış projenin ZIP indiremeyeceğini kanıtla.
+- [x] Browser testinde doğrulanmış artifact’ın doğru origin üzerinden indirildiğini kanıtla.
 
 ### P5.4 — MFA enforcement
 
-- [ ] `POST /api/login` payload’ına opsiyonel altı haneli `totp` ekle.
-- [ ] Password doğru ve MFA açıkken TOTP yoksa session üretmeden `202 { mfaRequired: true }` dön.
-- [ ] Geçersiz TOTP’de session/cookie üretme.
-- [ ] Geçerli TOTP’de session oluştur.
-- [ ] MFA kapalı kullanıcıların mevcut password-only login davranışını koru.
-- [ ] Frontend login görünümüne ikinci aşama TOTP girişi ekle.
-- [ ] Logout ve account-state temizliğinde MFA ara state’ini temizle.
+- [x] `POST /api/login` payload’ına opsiyonel altı haneli `totp` ekle.
+- [x] Password doğru ve MFA açıkken TOTP yoksa session üretmeden `202 { mfaRequired: true }` dön.
+- [x] Geçersiz TOTP’de session/cookie üretme.
+- [x] Geçerli TOTP’de session oluştur.
+- [x] MFA kapalı kullanıcıların mevcut password-only login davranışını koru.
+- [x] Logout ve account-state temizliğinde MFA ara state’ini temizle.
 
 ### P5 Çıkış Kapısı
 
-- [ ] P5 dar unit ve route integration testleri geçiyor.
-- [ ] Frontend unit testleri geçiyor.
-- [ ] İlgili backend regresyon süiti geçiyor.
-- [ ] Gerçek browser MFA ve verified-only download akışları geçiyor.
-- [ ] Generated komut sandbox yokken host üzerinde çalışmıyor.
-- [ ] Completion receipt aynı verification run ve artifact hash ile oluşuyor.
-- [ ] Bağımsız review blocking bulgu vermiyor.
-- [ ] Evidence kaydı gerçek komut, exit code ve sonuç içeriyor.
+- [x] P5 dar unit ve route integration testleri geçiyor.
+- [x] Frontend unit testleri geçiyor.
+- [x] İlgili backend regresyon süiti geçiyor.
+- [x] Gerçek browser MFA ve verified-only download akışları geçiyor.
+- [x] Generated komut sandbox yokken host üzerinde çalışmıyor.
+- [x] Completion receipt aynı verification run ve artifact hash ile oluşuyor.
+- [x] Bağımsız review blocking bulgu vermiyor.
+- [x] Evidence kaydı gerçek komut, exit code ve sonuç içeriyor.
 
 ---
 

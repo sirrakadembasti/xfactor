@@ -164,3 +164,30 @@ exit 0
 ```
 
 The original backend full-suite retry remains invalidated. The controller must rerun it after the corrective commit.
+
+## Final Step 4 evidence and completion
+
+The controller reran the reserved project-wide gates on `2bb4028` after both harness corrections:
+
+```text
+npm --prefix backend test
+exit 0
+📊 Test Özeti: 28 Süit Başarılı, 0 Süit Hatalı (27.82 sn)
+
+npm --prefix frontend run build
+exit 0
+Vite 6.4.3; 1710 modules transformed; built in 12.64s
+index.html 0.41 kB; CSS 37.68 kB; JS 383.02 kB
+
+npx playwright test --project=chromium
+exit 0
+4 passed (24.1s)
+```
+
+The browser command emitted `NO_COLOR`/`FORCE_COLOR` and experimental SQLite warnings but no failure. P5 evidence, both ledgers, continuity, and master plan are finalized as `verified`; P6 source changes remain out of scope.
+
+```text
+node scripts/validate-continuity.mjs
+exit 0
+CONTINUITY PASS: 10 units, plan hash b6ca15499900, current P5/verified
+```

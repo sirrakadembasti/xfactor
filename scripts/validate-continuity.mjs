@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = new URL('../', import.meta.url);
 const CONTINUITY_PATH = new URL('PROJECT-CONTINUITY.md', ROOT);
 const ROADMAP_PATH = new URL('yol-haitasi-todo.md', ROOT);
-const UNIT_IDS = ['P0-A', 'P0-B', 'P0-C', 'P1-A', 'P1-B', 'P1-C', 'P2', 'P3', 'P4'];
+const UNIT_IDS = ['P0-A', 'P0-B', 'P0-C', 'P1-A', 'P1-B', 'P1-C', 'P2', 'P3', 'P4', 'P5'];
 const UNIT_PLANS = [
   'implementation-plans/01-P0-A-state-contract-safety.md',
   'implementation-plans/02-P0-B-sandbox-verification.md',
@@ -16,7 +16,8 @@ const UNIT_PLANS = [
   'implementation-plans/06-P1-C-artifact-validation.md',
   'implementation-plans/07-P2-quality-hardening.md',
   'implementation-plans/08-P3-observability-metrics.md',
-  'implementation-plans/09-P4-production-safety.md'
+  'implementation-plans/09-P4-production-safety.md',
+  'implementation-plans/10-P5-critical-trust-chain.md'
 ];
 const EVIDENCE_FILES = UNIT_IDS.map(id => `implementation-evidence/${id}.md`);
 const UNIT_DEPENDENCIES = {
@@ -28,7 +29,8 @@ const UNIT_DEPENDENCIES = {
   'P1-C': ['P0-B', 'P0-C', 'P1-B'],
   P2: ['P1-A', 'P1-B', 'P1-C'],
   P3: ['P2'],
-  P4: ['P3']
+  P4: ['P3'],
+  P5: ['P4']
 };
 const ROOT_PATH = fileURLToPath(ROOT);
 
