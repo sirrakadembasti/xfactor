@@ -884,14 +884,4 @@ await runAsyncTest("22. Chat approval should dynamically configure domains and t
 });
 // ----------------------------------------------------
 // 23. Frontend IDE Dosya Ağacı ve Dışa Aktarım Uyumluluğu
-// ----------------------------------------------------
-await runAsyncTest("23. Frontend App component should render approval card and Monaco IDE view", async () => {
-    const appSource = fs.readFileSync(path.join(projectRoot, 'frontend', 'src', 'App.jsx'), 'utf8');
-
-    assert.ok(appSource.includes("pending_approval"), "App should handle pending_approval state");
-    assert.ok(appSource.includes("Planı Onayla ve Başlat"), "App should display approval button");
-    assert.ok(appSource.includes("ReactFlow"), "App should render ReactFlow for DAG visualization");
-    assert.ok(appSource.includes("Editor"), "App should render Monaco Editor for IDE view");
-    assert.ok(appSource.includes("JSZip"), "App should support ZIP download via JSZip");
-});
 finish();

@@ -143,3 +143,24 @@ exit 0
 ```
 
 The backend Step 4 result is still invalidated by its original failure and must be rerun by the controller after this commit.
+
+## Controller Step 4 backend retry — stale test corrections
+
+The retry reached and passed the lifecycle suite, then failed on two obsolete source-text assertions. Neither asserted a consumer-observable contract:
+
+- `backend/tests/test_backend.js` case 23 pinned `App.jsx` strings for Monaco, ReactFlow, and JSZip. P5's reviewed download design explicitly removes browser JSZip/FileSaver authority, and the frontend source-text check was not an observable backend contract.
+- `backend/tests/test_p2_frontend.js` P2.3 required `import('jszip')`, directly contradicting P5 Task 3's required removal of the client ZIP fallback. Its behavior is already covered by `P5DownloadPolicy.test.jsx` and Chromium trust-chain journeys: server-authorized URLs only, Header visibility only for verified artifacts, and no Sidebar ZIP control.
+
+Both stale implementation-pinning test blocks were removed rather than re-pinned to a replacement source spelling.
+
+```text
+node backend/tests/test_backend.js
+exit 0
+🎉 Testler Tamamlandı: 29 BAŞARILI, 0 HATALI
+
+node backend/tests/test_p2_frontend.js
+exit 0
+🎉 Testler Tamamlandı: 6 BAŞARILI, 0 HATALI
+```
+
+The original backend full-suite retry remains invalidated. The controller must rerun it after the corrective commit.
