@@ -12,7 +12,7 @@ P6 does not add Windows Job Objects, sandbox resource limits, MFA enrollment, an
 
 ## Canonical Deployment Contract
 
-The repository root `Dockerfile` is the only production image definition. It uses `node:22.5.0-alpine` stages and npm `10.8.2`, matching the repository package-manager and engine policy.
+The repository root `Dockerfile` is the only production image definition. It uses exact `node:22.23.2-alpine` stages and npm `10.9.8`, matching the repository package-manager and engine policy.
 
 The build has three stages:
 

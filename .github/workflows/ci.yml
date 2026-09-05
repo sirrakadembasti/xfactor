@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.5.0
+          node-version: 22.23.2
           cache: 'npm'
           cache-dependency-path: 'backend/package-lock.json'
 
@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.5.0
+          node-version: 22.23.2
 
       - name: Verify production image contract
         run: node scripts/test-p6-image-contract.mjs

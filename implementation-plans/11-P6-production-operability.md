@@ -6,14 +6,14 @@
 
 **Architecture:** The root multi-stage Dockerfile is the only production artifact. Backend-owned `jszip`, stable persistent path helpers, fail-closed static SPA serving, and a real container/TLS-proxy smoke harness make the deployment contract executable rather than documentary. SQLite/artifacts remain under `/app/backend/data`; generated projects remain under `/app/projects`.
 
-**Tech Stack:** Node.js 22.5.0, npm 10.8.2, Express 4, React 18/Vite 6, SQLite, JSZip 3.10.1, Docker, Playwright Chromium.
+**Tech Stack:** Node.js 22.23.2, npm 10.9.8, Express 4, React 18/Vite 6, SQLite, JSZip 3.10.1, Docker, Playwright Chromium.
 
 ## Global Constraints
 
 - Implement the approved design at `superpowers/specs/2026-09-05-p6-production-operability-design.md` exactly.
 - The root `Dockerfile` is the only production image definition; remove `backend/Dockerfile` and `frontend/Dockerfile` in the canonical cutover.
 - Production dependency installation uses `npm ci`; no `npm install` fallback is permitted in Dockerfiles or CI.
-- The production runtime is Node.js 22.5.0 Alpine, runs as non-root user `xfactor`, and exposes only application port `8000`.
+- The production runtime is exact `node:22.23.2-alpine`, runs as non-root user `xfactor`, and exposes only application port `8000`.
 - TLS terminates at an external loopback reverse proxy. Production requires `NODE_ENV=production`, `TRUST_PROXY=loopback`, and HTTPS-only `ALLOWED_ORIGINS`.
 - Persist `/app/backend/data` and `/app/projects`; do not introduce the P7 unified repository/storage redesign.
 - Backend ZIP creation and extraction must not import from or inspect `frontend/node_modules`.
@@ -342,19 +342,19 @@ If Docker is unavailable, report BLOCKED. Do not replace the real image test wit
 Use exact lockfiles and no fallback:
 
 ```dockerfile
-FROM node:22.5.0-alpine AS frontend-builder
+FROM node:22.23.2-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY frontend/ ./
 RUN npm run build
 
-FROM node:22.5.0-alpine AS backend-deps
+FROM node:22.23.2-alpine AS backend-deps
 WORKDIR /app/backend
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 
-FROM node:22.5.0-alpine AS runtime
+FROM node:22.23.2-alpine AS runtime
 WORKDIR /app/backend
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \

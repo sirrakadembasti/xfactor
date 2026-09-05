@@ -94,3 +94,51 @@ Independent Docker reproductions using npm `10.7.0`, `10.8.2`, `10.8.3`, and `10
 ## Remaining concern
 
 The real Docker build cannot progress to runtime, JSZip, layout, healthcheck, or lock-mismatch assertions while the pinned Node `22.5.0` defect remains. No version change was made because that would conflict with the required image contract.
+
+## Human ruling and resolved Docker GREEN
+
+The human approved replacing the defective exact `node:22.5.0-alpine` pin with exact `node:22.23.2-alpine`, retaining Node 22, Alpine, `npm ci`-only production installs, non-root execution, and every image contract.
+
+Version record command:
+
+```text
+docker run --rm node:22.23.2-alpine sh -c "node --version && npm --version"
+```
+
+Exit code: `0`
+
+Exact version output:
+
+```text
+v22.23.2
+10.9.8
+```
+
+Updated files: `Dockerfile`, `.github/workflows/ci.yml`, `package.json`, `package-lock.json`, `backend/package.json`, `backend/package-lock.json`, `frontend/package.json`, `frontend/package-lock.json`, `backend/tests/test_p2_security_auth.js`, `superpowers/specs/2026-09-05-p6-production-operability-design.md`, `implementation-plans/11-P6-production-operability.md`, `.superpowers/sdd/11-P6-production-operability/task-3-brief.md`, and `.superpowers/sdd/11-P6-production-operability/progress.md`. Lockfiles were refreshed only with `npm install --package-lock-only --ignore-scripts` inside the approved Docker image; integrity data was not hand-edited.
+
+Docker contract command:
+
+```text
+node scripts/test-p6-image-contract.mjs
+```
+
+Exit code: `0`
+
+Exact output:
+
+```text
+P6 image contract passed: clean build, non-root runtime, JSZip, frontend layout, volumes, healthcheck, and lock mismatch rejection.
+```
+
+Cleanup evidence: the contract completed with exit `0` after its `finally` block removed UUID-tagged clean and lock-mismatch images and both temporary Git-tracked build contexts.
+
+Affected focused regression commands and exits:
+
+| Command | Exit | Exact relevant output |
+| --- | --- | --- |
+| `npm --prefix backend ci --ignore-scripts` | `0` | `added 94 packages in 46s` |
+| `npm --prefix frontend ci --ignore-scripts` | `0` | `npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation`; `added 305 packages in 4m` |
+| `npm --prefix frontend run build` | `0` | `✓ 1710 modules transformed.`; `✓ built in 45.98s` |
+| `node backend/tests/test_p2_security_auth.js` | `0` | `🎉 Testler Tamamlandı: 8 BAŞARILI, 0 HATALI` |
+
+Final self-review: all production build stages use exact `node:22.23.2-alpine`; all root/backend/frontend manifests declare exact Node `22.23.2` and npm `10.9.8`; generated locks match those manifest engine declarations; CI uses `22.23.2`; no Dockerfile or CI install fallback was introduced; the image contract exercised a clean tracked context, non-root runtime, backend JSZip import, frontend dependency absence, runtime declaration inspection, and stale-lock rejection.

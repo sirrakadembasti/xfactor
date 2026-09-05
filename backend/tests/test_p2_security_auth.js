@@ -62,10 +62,10 @@ await runAsyncTest('P2.8 Backend and frontend declare consistent packageManager 
     const backendPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
     const frontendPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../frontend/package.json'), 'utf8'));
 
-    assert.strictEqual(backendPkg.packageManager, 'npm@10.8.2');
-    assert.strictEqual(backendPkg.engines?.node, '>=22.5.0');
-    assert.strictEqual(frontendPkg.packageManager, 'npm@10.8.2');
-    assert.strictEqual(frontendPkg.engines?.node, '>=22.5.0');
+    assert.strictEqual(backendPkg.packageManager, 'npm@10.9.8');
+    assert.strictEqual(backendPkg.engines?.node, '22.23.2');
+    assert.strictEqual(frontendPkg.packageManager, 'npm@10.9.8');
+    assert.strictEqual(frontendPkg.engines?.node, '22.23.2');
 });
 
 // =========================================================================
@@ -119,7 +119,7 @@ await runAsyncTest('P2.10 Dockerfile and .dockerignore strictly isolate secrets 
     const dockerfile = fs.readFileSync(path.resolve(__dirname, '../../Dockerfile'), 'utf8');
     const dockerignore = fs.readFileSync(path.resolve(__dirname, '../../.dockerignore'), 'utf8');
 
-    assert.match(dockerfile, /FROM node:22\.5\.0-alpine/, 'Must use pinned node image');
+    assert.match(dockerfile, /FROM node:22\.23\.2-alpine/, 'Must use pinned node image');
     assert.match(dockerfile, /USER xfactor/, 'Must run as non-root user');
     assert.match(dockerfile, /HEALTHCHECK/, 'Must declare healthcheck');
 
