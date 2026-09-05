@@ -33,6 +33,15 @@ if (!fs.existsSync(DATA_DIR)) {
 const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'projects.db');
 export const db = new DatabaseCtor(DB_PATH, { create: true });
 
+db.exec('PRAGMA busy_timeout = 5000;');
+db.exec('PRAGMA foreign_keys = ON;');
+db.exec('PRAGMA journal_mode = WAL;');
+db.exec('PRAGMA synchronous = NORMAL;');
+
+export function setBusyTimeout(timeoutMs, targetDb = db) {
+    targetDb.exec(`PRAGMA busy_timeout = ${parseInt(timeoutMs, 10)};`);
+}
+
 function columnExists(database, tableName, columnName) {
     try {
         const columns = database.prepare(`PRAGMA table_info(${tableName})`).all();
@@ -509,8 +518,10 @@ export const MIGRATIONS = [
     }
 ];
 export function runMigrations(targetDb = db) {
+    targetDb.exec('PRAGMA busy_timeout = 5000;');
     targetDb.exec('PRAGMA foreign_keys = ON;');
     targetDb.exec('PRAGMA journal_mode = WAL;');
+    targetDb.exec('PRAGMA synchronous = NORMAL;');
     targetDb.exec(`
         CREATE TABLE IF NOT EXISTS schema_migrations (
             version INTEGER PRIMARY KEY,

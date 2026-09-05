@@ -467,7 +467,7 @@ export function createProjectRouter({
                     attemptId: lease.attempt.id
                 });
             });
-            res.json({ ...state, attemptId: lease.attempt.id });
+            res.json({ ...approvedState, attemptId: lease.attempt.id });
         } catch (err) {
             next(err);
         }
