@@ -31,6 +31,17 @@ async function request(url) {
     });
 }
 
+async function allocateLoopbackPort() {
+    const probe = http.createServer();
+    await new Promise((resolve, reject) => {
+        probe.once('error', reject);
+        probe.listen(0, '127.0.0.1', resolve);
+    });
+    const { port } = probe.address();
+    await new Promise((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
+    return port;
+}
+
 async function runTests() {
     console.log('==================================================');
     console.log('⚡ Sub-project 5.2: Health Probes & Lifecycle');
@@ -45,7 +56,7 @@ async function runTests() {
     await fs.mkdir(testProjectsRoot, { recursive: true });
 
     // Start ephemeral server process
-    const testPort = 39123;
+    const testPort = await allocateLoopbackPort();
     const serverProc = spawn(process.execPath, [path.join(__dirname, '../server.js')], {
         env: {
             ...process.env,
