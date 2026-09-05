@@ -5,7 +5,8 @@ import {
     authenticateUserAsync,
     createSession,
     revokeSession,
-    toPublicUser
+    toPublicUser,
+    verifyTotpToken
 } from '../auth.js';
 import {
     readSessionToken,
@@ -17,8 +18,8 @@ export function createAuthRouter({ requireAuth, production }) {
     const router = Router();
 
     router.post('/login', async (req, res) => {
-        const { username, password } = req.body || {};
-        if (!validateLoginPayload({ username, password })) {
+        const { username, password, totp } = req.body || {};
+        if (!validateLoginPayload({ username, password, totp })) {
             return res.status(400).json({ error: 'Geçersiz kullanıcı adı veya şifre formatı.' });
         }
 
@@ -26,6 +27,15 @@ export function createAuthRouter({ requireAuth, production }) {
         if (!user) {
             return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
         }
+        if (user.mfaEnabled) {
+            if (!totp) {
+                return res.status(202).json({ mfaRequired: true });
+            }
+            if (!user.totpSecret || !verifyTotpToken(user.totpSecret, totp)) {
+                return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
+            }
+        }
+
         const existingToken = readSessionToken(req);
         if (existingToken) {
             revokeSession(existingToken);

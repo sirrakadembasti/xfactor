@@ -157,10 +157,10 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
 
   return {
     // Auth
-    login: (username, password, opts = {}) =>
+    login: (username, password, totp = '', opts = {}) =>
       request('/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, ...(totp ? { totp } : {}) }),
         ...opts
       }),
     getSession: (opts = {}) => request('/session', opts),

@@ -27,6 +27,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginTotp, setLoginTotp] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   const [projects, setProjects] = useState([]);
@@ -99,6 +101,8 @@ export default function App() {
     setProjectFiles([]);
     setActiveFile(null);
     setLoginPassword('');
+    setLoginTotp('');
+    setMfaRequired(false);
     setLoginError('');
   }, []);
 
@@ -350,13 +354,27 @@ export default function App() {
   const onNodesChange = useCallback(changes => setNodes(nds => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback(changes => setEdges(eds => applyEdgeChanges(changes, eds)), []);
 
+  const cancelMfa = useCallback(() => {
+    setLoginPassword('');
+    setLoginTotp('');
+    setMfaRequired(false);
+    setLoginError('');
+  }, []);
+
   const handleLogin = async e => {
     e.preventDefault();
     setLoginError('');
     try {
-      const data = await api.login(loginUsername, loginPassword);
-      setCurrentUser(data.user);
+      const data = await api.login(loginUsername, loginPassword, loginTotp);
+      if (data.mfaRequired) {
+        setLoginTotp('');
+        setMfaRequired(true);
+        return;
+      }
       setLoginPassword('');
+      setLoginTotp('');
+      setMfaRequired(false);
+      setCurrentUser(data.user);
       setAuthStatus('authenticated');
     } catch (err) {
       setLoginError(err.message);
@@ -588,6 +606,10 @@ export default function App() {
         setLoginPassword={setLoginPassword}
         loginError={loginError}
         handleLogin={handleLogin}
+        mfaRequired={mfaRequired}
+        loginTotp={loginTotp}
+        setLoginTotp={setLoginTotp}
+        cancelMfa={cancelMfa}
       />
     );
   }

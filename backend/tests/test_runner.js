@@ -26,6 +26,7 @@ const testFiles = [
     'test_p5_execution_boundary.js',
     'test_p5_artifact_completion.js',
     'test_agent_contract_schemas.js',
+    'test_p5_mfa_login.js',
     'test_database_migrations.js',
     'test_health_and_lifecycle.js',
     'test_concurrency_pool.js',

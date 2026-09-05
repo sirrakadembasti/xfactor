@@ -124,6 +124,11 @@ export function validateLoginPayload(payload) {
         return false;
     }
 
+    const totp = payload.totp;
+    if (totp !== undefined && (typeof totp !== 'string' || !/^\d{6}$/.test(totp.trim()))) {
+        return false;
+    }
+
     return true;
 }
 

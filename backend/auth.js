@@ -133,7 +133,9 @@ function mapUserRow(row) {
         id: row.id,
         username: row.username,
         passwordHash: row.password_hash,
-        isAdmin: row.is_admin === 1
+        isAdmin: row.is_admin === 1,
+        mfaEnabled: row.mfa_enabled === 1,
+        totpSecret: row.totp_secret || null
     };
 }
 
