@@ -22,7 +22,7 @@ jobs:
       - name: Install backend dependencies
         run: |
           cd backend
-          npm ci || npm install
+          npm ci
       - name: Security & Dependency Audits
         run: |
           cd backend && npm audit --audit-level=high
@@ -36,5 +36,18 @@ jobs:
       - name: Install frontend dependencies & Build
         run: |
           cd frontend
-          npm ci || npm install
+          npm ci
           npm run build
+
+  production-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.5.0
+
+      - name: Verify production image contract
+        run: node scripts/test-p6-image-contract.mjs
