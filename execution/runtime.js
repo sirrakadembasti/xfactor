@@ -6,7 +6,7 @@ import { lstat, realpath } from 'node:fs/promises';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
 const MAX_JOB_MS = 15 * 60 * 1000;
-const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI|PATH)$/;
+const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI)$/;
 
 function safeId(jobId) {
   const raw = String(jobId ?? '');
@@ -128,23 +128,25 @@ async function waitForReadiness(name, deadline, signal) { while (Date.now() < de
 function streamResult(out, err, ob, eb, oh, eh) { return { stdout: Buffer.concat(out).toString(), stderr: Buffer.concat(err).toString(), stdoutBytes: ob, stderrBytes: eb, stdoutTruncated: ob > OUTPUT_CEILING, stderrTruncated: eb > OUTPUT_CEILING, stdoutSha256: oh.digest('hex'), stderrSha256: eh.digest('hex') }; }
 
 async function validateJobPaths(job) {
-  const root = typeof job.workspaceRoot === 'string' ? job.workspaceRoot : undefined;
+  if (job.workspaceRoot !== undefined) throw new Error('Operator-owned workspace root cannot be supplied by a job');
   const fields = ['archivePath', 'inputPath', 'inputPaths', 'filePath', 'filePaths', 'resultPath', 'resultPaths', 'outputPath', 'outputPaths'];
   for (const field of fields) {
     if (job[field] === undefined) continue;
     const values = Array.isArray(job[field]) ? job[field] : [job[field]];
     for (const value of values) {
       if (typeof value !== 'string') throw new Error(`Invalid workspace path in ${field}`);
-      if (root) await validateOwnedPath(value, root); else validateWorkspacePath(value);
+      validateWorkspacePath(value);
     }
   }
 }
 export async function executeJob(job, { signal, onResource } = {}) {
-  const names = resourceNames(job.jobId); const started = Date.now(); const deadline = Math.min(Number(job.deadline) || started + MAX_JOB_MS, started + MAX_JOB_MS); const install = job.operation === 'prepare_dependencies'; let proxy;
-  if (signal?.aborted) return { status: 'failed', error: 'Cancelled by user' }; if (Date.now() >= deadline) return { status: 'failed', error: 'Job deadline exceeded before startup' }; if (install) try { validateDependencySources(job); } catch (e) { return { status: 'failed', error: e.message }; }
+  const names = resourceNames(job.jobId); const started = Date.now(); const deadline = Math.min(Number(job.deadline) || started + MAX_JOB_MS, started + MAX_JOB_MS); const install = job.operation === 'prepare_dependencies'; let installPhase = install; let proxy;
+  try { await validateJobPaths(job); } catch (e) { return { status: 'failed', error: e.message }; }
+  if (install) {
+    try { validateDependencySources(job); } catch (e) { return { status: 'failed', error: e.message }; }
+  }
   const opts = () => ({ signal, deadline });
   try {
-    await validateJobPaths(job);
     await docker(['info'], opts());
     await cleanupOwned('rm', names.job, opts());
     await cleanupOwned('network', names.job, opts()).catch(e => { if (!/No such network|not found/i.test(e.message)) throw e; });
@@ -164,8 +166,7 @@ export async function executeJob(job, { signal, onResource } = {}) {
         const cwd = options.cwd === undefined ? undefined : `/workspace/${validateWorkspacePath(options.cwd)}`;
         const env = {};
         for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
-
-        if (install && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
+        if (installPhase && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
         const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
         da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...(Array.isArray(args) ? args : []));
         const p = cp.spawn('docker', da, { stdio: ['ignore', 'pipe', 'pipe'] }); const out = [], err = [], oh = createHash('sha256'), eh = createHash('sha256');
@@ -180,24 +181,29 @@ export async function executeJob(job, { signal, onResource } = {}) {
         if (!/^[a-zA-Z0-9_.-]+$/.test(command) || command.startsWith('.')) throw new Error('Unsafe executable path');
         const cwd = options.cwd === undefined ? undefined : `/workspace/${validateWorkspacePath(options.cwd)}`; const env = {};
         for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
-        if (install && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
+        if (installPhase && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
         const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
         da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...args);
         const p = cp.spawn('docker', da, { stdio: options.stdio || 'pipe', windowsHide: true });
-        const timeout = options.timeout ? setTimeout(() => p.kill('SIGKILL'), options.timeout) : undefined; p.once('close', () => timeout && clearTimeout(timeout));
-        if (options.signal) options.signal.addEventListener('abort', () => p.kill('SIGKILL'), { once: true }); return p;
+        const timeoutMs = Math.max(1, Math.min(options.timeout || 120000, deadline - Date.now())); const timeout = setTimeout(() => p.kill('SIGKILL'), timeoutMs);
+        const abort = () => p.kill('SIGKILL');
+        p.once('close', () => { clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); });
+        signal?.addEventListener('abort', abort, { once: true }); options.signal?.addEventListener('abort', abort, { once: true }); return p;
       },
     };
     let result;
-    if (job.code) result = await adapter.execute('node', ['-e', job.code], { timeout: Math.min(120000, deadline - Date.now()), env: job.env });
+    const phaseCode = install ? (job.installCode || job.code) : job.code;
+    if (phaseCode) result = await adapter.execute('node', ['-e', phaseCode], { timeout: Math.min(120000, deadline - Date.now()), env: job.env });
     if (install) {
       await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.build],opts());
       await docker(['network','connect',names.build,names.container],opts());
       await docker(['network','disconnect',names.install,names.container],opts());
       if (proxy) await docker(['rm','-f',proxy],opts());
+      proxyAddress = undefined;
+      installPhase = false;
       await docker(['network','rm',names.install],opts());
       onResource?.({type:'network',name:names.build,internal:true,phase:'build'});
-      if (job.postTransitionCode) result = await adapter.execute('node', ['-e', job.postTransitionCode], { timeout: Math.min(120000, deadline - Date.now()), env: job.postTransitionEnv });
+      if (job.buildCode) result = await adapter.execute('node', ['-e', job.buildCode], { timeout: Math.min(120000, deadline - Date.now()), env: job.buildEnv });
     }
     return { status:'success', result:result || 'Completed', adapter };
   } catch (e) { return { status:'failed', error:signal?.aborted?'Cancelled by user':e.message, ...(e.result?{result:e.result}:{}) }; }

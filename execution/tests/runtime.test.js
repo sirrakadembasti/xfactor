@@ -1,22 +1,26 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert';
 import cp from 'node:child_process';
+import http from 'node:http';
 import EventEmitter from 'node:events';
 import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { createProxy, isSafeIP } from '../registryProxy.js';
 import { cleanupContainer, executeJob, ownedContainerExists, validateDependencySources, validateWorkspacePath, validateOwnedPath } from '../runtime.js';
-import { isSafeIP } from '../registryProxy.js';
 
 test('Isolated worker runtime constraints and cancellation', async (t) => {
   let containerExists = true;
   let readinessEnabled = true;
   let lastSpawnArgs = [];
   let lastExecArgs = [];
+  let installExecArgs = [];
   
   mock.method(cp, 'spawn', (cmd, args, opts) => {
-    lastSpawnArgs = [...args];
-    if (args[0] === 'exec') lastExecArgs = [...args];
+    if (args[0] === 'exec') {
+      lastExecArgs = [...args];
+      if (args.includes('process.exit(0);')) installExecArgs = [...args];
+    }
     if (args[0] === 'run') containerExists = true;
     const proc = new EventEmitter();
     proc.stdout = new EventEmitter();
@@ -86,13 +90,15 @@ test('Isolated worker runtime constraints and cancellation', async (t) => {
       onResource: () => {},
     });
     assert.equal(installResult.status, 'success', installResult.error || '');
-    assert.ok(lastExecArgs.includes('--env'));
-    const spawned = installResult.adapter.spawn('node', [], { env: { EXECUTION_WORKER_TOKEN: 'secret' }, cwd: 'src', timeout: 1000 });
+    assert.ok(installExecArgs.includes('--env'));
+    assert.ok(installExecArgs.includes('NPM_CONFIG_REGISTRY=http://172.18.0.2:3128'));
+    assert.ok(installExecArgs.includes('NPM_CONFIG_CACHE=/tmp/npm-cache'));
+    assert.ok(installExecArgs.includes('NPM_CONFIG_IGNORE_SCRIPTS=true'));
+    const spawned = installResult.adapter.spawn('node', [], { env: { EXECUTION_WORKER_TOKEN: 'secret', PATH: '/evil' }, cwd: 'src', timeout: 1000 });
     spawned.kill();
-    assert.ok(lastExecArgs.includes('NPM_CONFIG_CACHE=/tmp/npm-cache'));
-    assert.ok(lastExecArgs.includes('NPM_CONFIG_IGNORE_SCRIPTS=true'));
-    assert.ok(lastSpawnArgs.every((arg) =>
-      !arg.includes('EXECUTION_WORKER_TOKEN') && !arg.includes('UNRELATED_SECRET')));
+    assert.ok(lastExecArgs.includes('--workdir'));
+    assert.ok(lastExecArgs.includes('/workspace/src'));
+    assert.ok(!lastExecArgs.some(arg => arg.includes('NPM_CONFIG_') || arg.includes('EXECUTION_WORKER_TOKEN') || arg.includes('/evil')));
     // 2. Cancellation and container cleanup
     const jobCancel = { 
       jobId: 'job-cancel-cleanup', 
@@ -170,6 +176,20 @@ test('registry proxy rejects normalized private and reserved addresses', () => {
     assert.equal(isSafeIP(ip), false, ip);
   }
   assert.equal(isSafeIP('8.8.8.8'), true);
+});
+
+test('registry proxy denies unsafe DNS answers before outbound connect', async () => {
+  const proxy = await createProxy({ resolver: { resolve: async () => ['192.0.2.1'] } });
+  const port = proxy.address().port;
+  const status = await new Promise((resolve, reject) => {
+    const request = http.get({ host: '127.0.0.1', port, path: '/is-number' }, (response) => {
+      response.resume();
+      response.once('end', () => resolve(response.statusCode));
+    });
+    request.once('error', reject);
+  });
+  proxy.close();
+  assert.equal(status, 403);
 });
 
 test('workspace paths reject host and traversal forms', () => {

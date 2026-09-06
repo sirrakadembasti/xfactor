@@ -64,8 +64,8 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       operation: 'prepare_dependencies',
       deadline: Date.now() + 120000,
       manifest: { dependencies: { 'is-number': '^7.0.0' } },
-      code: "require('child_process').execFileSync('npm', ['view', 'is-number', 'version'], { stdio: 'inherit' })",
-      postTransitionCode: `
+      installCode: "require('child_process').execFileSync('npm', ['view', 'is-number', 'version'], { stdio: 'inherit' })",
+      buildCode: `
         const { execFileSync } = require('child_process');
         for (const target of ['1.1.1.1', '169.254.169.254']) {
           try { execFileSync('curl', ['--max-time', '2', '-s', target]); process.exit(1); } catch {}
