@@ -72,12 +72,24 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
     assert.match(result.error, /Symlinks|workspace path/i);
   });
 
-  await t.test('startup deadline leaves no owned labelled resources', async () => {
+  await t.test('startup deadline leaves no owned labelled resources after resource creation', async () => {
     const jobId = 'job-startup-deadline';
-    const result = await executeJob({ jobId, deadline: Date.now() + 1, operation: 'verify_artifact' }, {
+    const resources = [];
+    const deadline = Date.now() + 10000;
+    const waitForDeadline = new Int32Array(new SharedArrayBuffer(4));
+    const result = await executeJob({ jobId, deadline, operation: 'verify_artifact' }, {
       signal: new AbortController().signal,
+      onResource: (resource) => {
+        resources.push(resource);
+        if (resources.length === 1) {
+          const remaining = Math.max(1, deadline - Date.now() + 100);
+          Atomics.wait(waitForDeadline, 0, 0, remaining);
+        }
+      },
     });
+    assert.ok(resources.length >= 1, 'deadline must occur after an owned resource is created');
     assert.strictEqual(result.status, 'failed');
+    assert.match(result.error, /deadline|timed[- ]out/i);
     const label = createHash('sha256').update(jobId).digest('hex');
     assert.strictEqual(execSync(`docker ps -a --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${label}" --format "{{.ID}}"`).toString().trim(), '');
     assert.strictEqual(execSync(`docker network ls --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${label}" --format "{{.ID}}"`).toString().trim(), '');
@@ -189,21 +201,25 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       createHash('sha256').update(Buffer.alloc(2 * 1024 * 1024, 'a')).digest('hex'));
   });
 
-  await t.test('cancellation cleanup and no residual labelled containers/networks', async () => {
+  await t.test('cancellation cleanup after resource creation and no residual labelled resources', async () => {
     const jobId = 'job-cancel-clean';
     const job = { jobId, deadline: Date.now() + 60000, operation: 'verify_artifact' };
     const abort = new AbortController();
-    
+    const resources = [];
     job.code = `setInterval(() => {}, 1000);`;
-    const p = executeJob(job, { signal: abort.signal, onResource: () => {} });
-    
-    // Abort after brief wait
-    setTimeout(() => abort.abort(), 1000);
-    
+    const p = executeJob(job, {
+      signal: abort.signal,
+      onResource: (resource) => {
+        resources.push(resource);
+        if (resources.length === 1) abort.abort();
+      },
+    });
+
     const result = await p;
+    assert.ok(resources.length >= 1, 'cancellation must occur after an owned resource is created');
     assert.strictEqual(result.status, 'failed');
     assert.match(result.error, /Cancelled by user/);
-    
+
     const jobLabel = createHash('sha256').update(jobId).digest('hex');
     const psOut = execSync(`docker ps -a --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${jobLabel}" --format "{{.ID}}"`);
     assert.strictEqual(psOut.toString().trim(), '', 'Residual owned container remains');
