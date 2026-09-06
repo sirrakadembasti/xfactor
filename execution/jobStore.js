@@ -31,25 +31,36 @@ export class JobStore {
   insertJob(job) {
     const now = Date.now();
     for (const [id, j] of this.jobs.entries()) {
-      // Clean up jobs whose deadline passed AND they are not active
       if (j.deadline <= now && (j.status === 'pending' || j.status === 'running')) {
          j.status = 'failed_timeout';
          j.completedAt = now;
       }
-      // Results retained 24 hours
       if (j.completedAt && (now - j.completedAt) > 24 * 60 * 60 * 1000) {
          this.jobs.delete(id);
       }
     }
-
+    
     if (this.jobs.has(job.jobId)) {
       const existing = this.jobs.get(job.jobId);
-      if (existing.archiveBase64 !== job.archiveBase64) {
+      const isExactMatch = 
+        existing.version === job.version &&
+        existing.operation === job.operation &&
+        existing.projectId === job.projectId &&
+        existing.contractId === job.contractId &&
+        existing.contractHash === job.contractHash &&
+        existing.revision === job.revision &&
+        existing.artifactId === job.artifactId &&
+        existing.archiveBase64 === job.archiveBase64 &&
+        existing.nonce === job.nonce &&
+        existing.inputSha256 === job.inputSha256 &&
+        JSON.stringify(existing.contract) === JSON.stringify(job.contract);
+        
+      if (!isExactMatch) {
         throw new Error('Duplicate jobId with different input');
       }
       return 'exists';
     }
-    
+
     let active = 0;
     for (const j of this.jobs.values()) {
       if (j.status === 'pending' || j.status === 'running') active++;
@@ -74,10 +85,13 @@ export class JobStore {
     return job;
   }
 
-  updateJobStatus(jobId, fromStatus, toStatus) {
+  updateJobStatus(jobId, fromStatus, toStatus, result = null) {
     const job = this.jobs.get(jobId);
     if (!job || job.status !== fromStatus) return false;
     job.status = toStatus;
+    if (result) {
+       job.result = result;
+    }
     if (toStatus === 'completed' || toStatus === 'failed' || toStatus === 'cancelled') {
        job.completedAt = Date.now();
     }

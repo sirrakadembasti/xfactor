@@ -18,9 +18,8 @@ export function createWorkerServer({ config, store, executeJob }) {
     const job = store.getNextPendingJob();
     if (!job) return;
     
-    // Check deadline before running
     if (Date.now() >= job.deadline) {
-      store.updateJobStatus(job.jobId, 'pending', 'failed');
+      store.updateJobStatus(job.jobId, 'pending', 'failed', { error: 'Deadline exceeded before execution' });
       return triggerExecution();
     }
     
@@ -31,19 +30,18 @@ export function createWorkerServer({ config, store, executeJob }) {
       const p = executeJob(job, {
         signal: abortController.signal,
         onResource: () => {} 
-      }).then(() => {
+      }).then((result) => {
         if (!abortController.signal.aborted) {
-          store.updateJobStatus(job.jobId, 'running', 'completed');
+          store.updateJobStatus(job.jobId, 'running', 'completed', result || { success: true });
         }
       }).catch((err) => {
         if (!abortController.signal.aborted) {
-          store.updateJobStatus(job.jobId, 'running', 'failed');
+          store.updateJobStatus(job.jobId, 'running', 'failed', { error: err.message });
           console.error(`Job ${job.jobId} failed:`, err.message); 
         }
       }).finally(() => {
         activeJobs.delete(job.jobId);
         isExecuting = false;
-        // Schedule next execution
         setImmediate(triggerExecution);
       });
 
@@ -51,7 +49,6 @@ export function createWorkerServer({ config, store, executeJob }) {
     }
   }
 
-  // Kick off any pending jobs from restart
   setImmediate(triggerExecution);
 
   const server = http.createServer(async (req, res) => {
@@ -74,7 +71,7 @@ export function createWorkerServer({ config, store, executeJob }) {
       let bodyStr = '';
       if (req.method === 'POST') {
         const contentLength = parseInt(req.headers['content-length'] || '0', 10);
-        if (contentLength > 34 * 1024 * 1024) { // ~34MB max
+        if (contentLength > 34 * 1024 * 1024) { 
           res.writeHead(413);
           res.end(JSON.stringify({ error: 'Payload too large' }));
           req.destroy();
@@ -103,6 +100,15 @@ export function createWorkerServer({ config, store, executeJob }) {
         } catch {
           res.writeHead(400);
           return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+        }
+        
+        // Digest identity validation against the archiveBase64, as it's the core payload
+        if (input && typeof input.inputSha256 === 'string' && typeof input.archiveBase64 === 'string') {
+           const computedHash = crypto.createHash('sha256').update(input.archiveBase64).digest('hex');
+           if (computedHash !== input.inputSha256) {
+             res.writeHead(400);
+             return res.end(JSON.stringify({ error: 'Digest mismatch' }));
+           }
         }
 
         const validation = validateJob(input, Date.now());
@@ -134,7 +140,6 @@ export function createWorkerServer({ config, store, executeJob }) {
         res.writeHead(202);
         res.end(JSON.stringify({ jobId: job.jobId, status: 'queued' }));
         
-        // Notify execution loop
         triggerExecution();
         return;
       }
@@ -167,8 +172,8 @@ export function createWorkerServer({ config, store, executeJob }) {
             try { await activeJob.promise; } catch {} // await cleanup
             activeJobs.delete(jobId);
           }
-          store.updateJobStatus(jobId, 'running', 'cancelled');
-          store.updateJobStatus(jobId, 'pending', 'cancelled');
+          store.updateJobStatus(jobId, 'running', 'cancelled', { reason: 'cancelled by client' });
+          store.updateJobStatus(jobId, 'pending', 'cancelled', { reason: 'cancelled by client' });
           res.writeHead(200);
           return res.end(JSON.stringify({ status: 'cancelled' }));
         }
