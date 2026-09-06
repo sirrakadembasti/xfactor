@@ -27,6 +27,7 @@ import {
     createRequireAuth,
     readSessionToken
 } from './sessionAuth.js';
+import { createMaintenanceScheduler } from './maintenance.js';
 import { db, getSchemaVersion, checkpointWAL } from './db.js';
 import { getProjectsRoot } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
@@ -288,7 +289,7 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 8000;
 const HOST = process.env.HOST || '127.0.0.1';
-
+const maintenance = createMaintenanceScheduler({ database: db });
 async function startServer() {
     try {
         await assertProductionFrontendAvailable({
@@ -325,9 +326,9 @@ let isShuttingDown = false;
 function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
+    maintenance.stop();
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
-
     // 1. WebSocket istemcilerini kapat
     try {
         for (const client of wss.clients) {

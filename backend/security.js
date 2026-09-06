@@ -57,7 +57,8 @@ export function createSecurityHeadersMiddleware({ production = false } = {}) {
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('X-Frame-Options', 'DENY');
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none';");
+        const connectSrc = production ? "'self' wss:" : "'self' ws: wss:";
+        res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; frame-ancestors 'none';`);
         if (production && isSecureTransportRequest(req, { production: true, trustProxy: 'loopback' })) {
             res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }

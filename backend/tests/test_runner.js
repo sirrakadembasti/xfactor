@@ -31,6 +31,7 @@ const testFiles = [
     'test_agent_contract_schemas.js',
     'test_p5_mfa_login.js',
     'test_p8_mfa_crypto.js',
+    'test_p8_security_operations.js',
     'test_database_migrations.js',
     'test_health_and_lifecycle.js',
     'test_concurrency_pool.js',

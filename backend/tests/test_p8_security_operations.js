@@ -1,0 +1,178 @@
+import assert from 'node:assert/strict';
+import events from 'node:events';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { createTestHarness } from './testHarness.js';
+
+const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-p8-security-operations-'));
+process.env.NODE_ENV = 'test';
+process.env.DB_PATH = path.join(tempRoot, 'projects.db');
+process.env.PROJECTS_ROOT = path.join(tempRoot, 'projects');
+
+const { createSecurityHeadersMiddleware } = await import('../security.js');
+const { db } = await import('../db.js');
+const { sweepExpiredSessions, createMaintenanceScheduler } = await import('../maintenance.js');
+const { createProject, getProject, deleteProject } = await import('../projectRepository.js');
+const { writeProjectState, checkPause } = await import('../engine/workflow.js');
+const { generateLLMResponse } = await import('../llm.js');
+const { runAsyncTest, finish } = createTestHarness();
+
+await runAsyncTest('production and development CSP connect-src directives are exact', async () => {
+    const getCsp = production => {
+        const headers = {};
+        createSecurityHeadersMiddleware({ production })(
+            { socket: { remoteAddress: '127.0.0.1' } },
+            { setHeader: (name, value) => { headers[name.toLowerCase()] = value; } },
+            () => {}
+        );
+        return headers['content-security-policy'];
+    };
+
+    assert.match(getCsp(true), /connect-src 'self' wss:/);
+    assert.doesNotMatch(getCsp(true), /connect-src[^;]*\bws:/);
+    assert.match(getCsp(false), /connect-src 'self' ws: wss:/);
+});
+
+await runAsyncTest('session maintenance removes only expired and old-revoked rows', async () => {
+    const now = new Date('2026-09-06T00:00:00.000Z');
+    const userId = `p8-maintenance-user-${Date.now()}`;
+    db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(userId, userId, 'test');
+    const rows = [
+        ['active', '2026-09-07T00:00:00.000Z', null],
+        ['expired', '2026-09-05T23:59:59.000Z', null],
+        ['recent-revoked', '2026-09-07T00:00:00.000Z', '2026-09-03 00:00:00'],
+        ['old-revoked', '2026-09-07T00:00:00.000Z', '2026-08-20 00:00:00']
+    ];
+    for (const [id, expiresAt, revokedAt] of rows) {
+        db.prepare('INSERT INTO user_sessions (id, user_id, token_hash, expires_at, revoked_at) VALUES (?, ?, ?, ?, ?)')
+            .run(`p8-${id}-${Date.now()}`, userId, `hash-${id}-${Date.now()}`, expiresAt, revokedAt);
+    }
+
+    const { sweptCount } = sweepExpiredSessions(db, now);
+    assert.equal(sweptCount, 2);
+    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM user_sessions WHERE user_id = ? AND (id LIKE ? OR id LIKE ?)').get(userId, 'p8-active-%', 'p8-recent-revoked-%').count, 2);
+    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM user_sessions WHERE user_id = ? AND (id LIKE ? OR id LIKE ?)').get(userId, 'p8-expired-%', 'p8-old-revoked-%').count, 0);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+});
+
+await runAsyncTest('maintenance scheduler starts immediately, uses hourly interval, unreferences and stops idempotently', async () => {
+    const timeouts = [];
+    const intervals = [];
+    const clearedTimeouts = [];
+    const clearedIntervals = [];
+    let sweepRuns = 0;
+    const database = { prepare: () => ({ run: () => { sweepRuns++; return { changes: 0 }; } }) };
+    const makeTimer = (collection, callback, delay) => {
+        const timer = { callback, delay, unrefCalls: 0, unref() { this.unrefCalls++; } };
+        collection.push(timer);
+        return timer;
+    };
+    const scheduler = createMaintenanceScheduler({
+        database,
+        setTimeoutFn: (callback, delay) => makeTimer(timeouts, callback, delay),
+        setIntervalFn: (callback, delay) => makeTimer(intervals, callback, delay),
+        clearTimeoutFn: timer => clearedTimeouts.push(timer),
+        clearIntervalFn: timer => clearedIntervals.push(timer)
+    });
+
+    assert.equal(timeouts.length, 1);
+    assert.equal(timeouts[0].delay, 0);
+    assert.equal(intervals.length, 1);
+    assert.equal(intervals[0].delay, 3_600_000);
+    assert.equal(timeouts[0].unrefCalls, 1);
+    assert.equal(intervals[0].unrefCalls, 1);
+    timeouts[0].callback();
+    intervals[0].callback();
+    assert.equal(sweepRuns, 2);
+
+    scheduler.stop();
+    scheduler.stop();
+    assert.deepEqual(clearedTimeouts, [timeouts[0]]);
+    assert.deepEqual(clearedIntervals, [intervals[0]]);
+});
+
+await runAsyncTest('repeated generateLLMResponse operations remove abort listeners after completion and abort', async () => {
+    const originalFetch = globalThis.fetch;
+    try {
+        globalThis.fetch = async () => ({
+            ok: true,
+            json: async () => ({ choices: [{ message: { content: 'ok' } }] })
+        });
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const completedController = new AbortController();
+            const completedBefore = events.getEventListeners(completedController.signal, 'abort').length;
+            await generateLLMResponse([{ role: 'user', content: 'hello' }], {
+                provider: 'openai',
+                apiKey: 'test-key',
+                baseURL: 'http://127.0.0.1/chat/completions',
+                signal: completedController.signal
+            });
+            assert.equal(events.getEventListeners(completedController.signal, 'abort').length, completedBefore);
+        }
+
+        globalThis.fetch = (_url, { signal }) => new Promise((_, reject) => {
+            signal.addEventListener('abort', () => {
+                const error = new Error('aborted');
+                error.name = 'AbortError';
+                reject(error);
+            }, { once: true });
+        });
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const abortedController = new AbortController();
+            const abortedBefore = events.getEventListeners(abortedController.signal, 'abort').length;
+            const responsePromise = generateLLMResponse([{ role: 'user', content: 'hello' }], {
+                provider: 'openai',
+                apiKey: 'test-key',
+                baseURL: 'http://127.0.0.1/chat/completions',
+                signal: abortedController.signal
+            });
+            abortedController.abort('test-abort');
+            await assert.rejects(responsePromise, /aborted/i);
+            assert.equal(events.getEventListeners(abortedController.signal, 'abort').length, abortedBefore);
+        }
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+await runAsyncTest('repeated checkPause operations remove abort listeners after completion and abort', async () => {
+    const project = await createProject({ title: `P8 listener project ${Date.now()}` });
+    try {
+        project.status = 'pending_approval';
+        await writeProjectState(project.id, project);
+        project.status = 'contract_approved';
+        await writeProjectState(project.id, project);
+        project.status = 'implementing';
+        await writeProjectState(project.id, project);
+        project.status = 'paused';
+        await writeProjectState(project.id, project);
+        const implementingState = getProject(project.id);
+        implementingState.status = 'implementing';
+        await writeProjectState(project.id, implementingState);
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const completedController = new AbortController();
+            const completedBefore = events.getEventListeners(completedController.signal, 'abort').length;
+            assert.equal(await checkPause(project.id, completedController.signal), 'implementing');
+            assert.equal(events.getEventListeners(completedController.signal, 'abort').length, completedBefore);
+        }
+
+        db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const abortedController = new AbortController();
+            const abortedBefore = events.getEventListeners(abortedController.signal, 'abort').length;
+            const aborted = checkPause(project.id, abortedController.signal);
+            setImmediate(() => abortedController.abort('test-abort'));
+            assert.equal(await aborted, 'paused');
+            assert.equal(events.getEventListeners(abortedController.signal, 'abort').length, abortedBefore);
+        }
+    } finally {
+        await deleteProject(project.id);
+    }
+});
+
+
+finish();
+db.close();
+await fs.rm(tempRoot, { recursive: true, force: true });

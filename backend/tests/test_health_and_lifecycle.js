@@ -68,6 +68,7 @@ async function runTests() {
         NODE_ENV: 'production',
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: 'https://xfactor.example',
+        MFA_ENCRYPTION_KEY: '55'.repeat(32),
         DB_PATH: dbPath,
         PROJECTS_ROOT: projectsRoot,
         ARTIFACTS_ROOT: artifactsRoot,
@@ -83,7 +84,10 @@ async function runTests() {
         const health = await request(port, '/healthz');
         assert.equal(health.status, 200);
         assert.equal((await health.json()).status, 'ok');
-
+        assert.equal(
+            health.headers.get('content-security-policy'),
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss:; frame-ancestors 'none';"
+        );
         const ready = await request(port, '/readyz');
         assert.equal(ready.status, 200);
         assert.equal((await ready.json()).status, 'ready');
