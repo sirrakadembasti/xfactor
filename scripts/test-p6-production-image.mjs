@@ -53,6 +53,7 @@ function startApplication() {
     '--mount', `type=bind,source=${dataRoot},target=/app/backend/data`,
     '--mount', `type=bind,source=${projectsRoot},target=/app/projects`,
     '--env', 'NODE_ENV=production', '--env', 'TRUST_PROXY=loopback',
+    '--env', 'MFA_ENCRYPTION_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
     '--env', `ALLOWED_ORIGINS=https://localhost:${httpsPort}`,
     '--env', 'DB_PATH=/app/backend/data/projects.db', '--env', 'ARTIFACTS_ROOT=/app/backend/data/artifacts',
     '--env', 'PROJECTS_ROOT=/app/projects', imageTag
