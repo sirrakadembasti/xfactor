@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { request as httpsRequest } from 'node:https';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -130,6 +130,11 @@ try {
   httpsPort = await reservePort();
   mkdirSync(dataRoot, { recursive: true });
   mkdirSync(projectsRoot, { recursive: true });
+  // Native Linux enforces bind-mount UID ownership (unlike Docker Desktop, which
+  // silently permits writes). The image runs as non-root `xfactor`, so the host
+  // fixture dirs must be world-writable or SQLite/artifact writes fail with EACCES.
+  chmodSync(dataRoot, 0o777);
+  chmodSync(projectsRoot, 0o777);
   writeFileSync(join(fixtureRoot, 'Caddyfile'), `{\n  skip_install_trust\n}\n\nhttps://localhost:${httpsPort} {\n  bind 0.0.0.0\n  tls internal\n  reverse_proxy 127.0.0.1:8000 {\n    header_up X-Forwarded-Proto https\n  }\n}\n`);
   success('production image build', run('docker', ['build', '--tag', imageTag, '.']));
   startApplication();
