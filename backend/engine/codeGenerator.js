@@ -29,7 +29,18 @@ const KNOWN_PACKAGE_VERSIONS = {
     '@types/jsonwebtoken': '^9.0.7',
     'next-auth': '^4.24.11',
     'uuid': '^11.0.4',
-    '@types/uuid': '^10.0.0'
+    '@types/uuid': '^10.0.0',
+    'express': '^4.21.2',
+    'cors': '^2.8.5',
+    'helmet': '^8.0.0',
+    'dotenv': '^16.4.7',
+    'morgan': '^1.10.0',
+    '@types/express': '^5.0.0',
+    '@types/cors': '^2.8.17',
+    '@types/morgan': '^1.9.9',
+    'cookie-parser': '^1.4.7',
+    '@types/cookie-parser': '^1.4.8',
+    'class-variance-authority': '^0.7.1'
 };
 
 const NODE_BUILTINS = new Set([
@@ -502,7 +513,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {
         const tsconfigContent = {
             compilerOptions: {
-                target: 'es5',
+                target: 'es2022',
                 lib: ['dom', 'dom.iterable', 'esnext'],
                 allowJs: true,
                 skipLibCheck: true,

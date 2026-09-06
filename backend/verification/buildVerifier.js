@@ -9,8 +9,37 @@ function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text)).digest('hex');
 }
 
+export function ensureLocalBinShims(projectDir) {
+    const nodeModulesDir = path.join(projectDir, 'node_modules');
+    if (!fsSync.existsSync(nodeModulesDir)) return;
+
+    const binDir = path.join(nodeModulesDir, '.bin');
+    if (!fsSync.existsSync(binDir)) {
+        fsSync.mkdirSync(binDir, { recursive: true });
+    }
+
+    const shims = [
+        { name: 'next', target: '../next/dist/bin/next' },
+        { name: 'prisma', target: '../prisma/build/index.js' }
+    ];
+    for (const { name, target } of shims) {
+        if (!fsSync.existsSync(path.join(binDir, target))) continue;
+
+        const cmdPath = path.join(binDir, `${name}.cmd`);
+        const shPath = path.join(binDir, name);
+        if (!fsSync.existsSync(cmdPath)) {
+            fsSync.writeFileSync(cmdPath, `@node "%~dp0\\${target.replace(/\//g, '\\')}" %*\n`);
+        }
+        if (!fsSync.existsSync(shPath)) {
+            fsSync.writeFileSync(shPath, `#!/bin/sh\nnode "$(dirname "$0")/${target}" "$@"\n`);
+        }
+    }
+}
+
 export async function verifyBuild(projectDir, contract = {}, options = {}) {
     const checks = [];
+    ensureLocalBinShims(projectDir);
+
 
     // 1. Dependency Presence Check (Fail-closed)
     const nodeModulesPath = path.join(projectDir, 'node_modules');
@@ -43,6 +72,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 60000,
                     adapter: options.adapter,
+                    env: options.env,
                 });
 
                 checks.push({
@@ -89,6 +119,10 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     workspace: projectDir,
                     timeoutMs: options.timeoutMs || 30000,
                     adapter: options.adapter,
+                    env: {
+                        DATABASE_URL: options.env?.DATABASE_URL || 'file:./dev.db',
+                        ...(options.env || {})
+                    },
                 });
 
                 checks.push({
@@ -135,6 +169,10 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 workspace: projectDir,
                 timeoutMs: options.timeoutMs || 60000,
                 adapter: options.adapter,
+                env: {
+                    DATABASE_URL: options.env?.DATABASE_URL || 'file:./dev.db',
+                    ...(options.env || {})
+                },
             });
 
             checks.push({

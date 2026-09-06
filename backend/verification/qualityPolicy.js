@@ -610,7 +610,10 @@ function stageVerificationRunning(project) {
     }
     const paths = {
         implementation_finished: ['verification_pending', 'verification_running'],
-        verification_pending: ['verification_running']
+        verification_pending: ['verification_running'],
+        paused: ['verification_pending', 'verification_running'],
+        implementing: ['implementation_finished', 'verification_pending', 'verification_running'],
+        verification_failed: ['paused', 'verification_pending', 'verification_running']
     };
     const path = paths[project.status];
     if (!path) {

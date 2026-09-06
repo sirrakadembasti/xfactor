@@ -905,7 +905,10 @@ export function createProjectRouter({
         try {
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
-            const canResume = state.status === PROJECT_STATUS.PAUSED || state.status === PROJECT_STATUS.IMPLEMENTING || canTransitionProjectStatus(state.status, PROJECT_STATUS.IMPLEMENTING);
+            const canResume = state.status === PROJECT_STATUS.PAUSED
+                || state.status === PROJECT_STATUS.IMPLEMENTING
+                || state.status === PROJECT_STATUS.VERIFICATION_FAILED
+                || canTransitionProjectStatus(state.status, PROJECT_STATUS.IMPLEMENTING);
             if (!canResume) {
                 return res.status(400).json({ error: `Bu durumdan (${state.status}) çalışır duruma geçilemez.` });
             }
@@ -913,6 +916,11 @@ export function createProjectRouter({
             const lease = acquireWorkflowLease(id, `http-resume-${req.user.id}`);
             if (!lease.acquired) {
                 return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
+            }
+
+            if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
+                state.status = PROJECT_STATUS.PAUSED;
+                await writeProjectState(id, state);
             }
 
             state.status = PROJECT_STATUS.IMPLEMENTING;

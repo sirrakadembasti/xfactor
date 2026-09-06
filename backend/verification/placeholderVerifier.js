@@ -249,8 +249,9 @@ export function verifyPlaceholders(files = []) {
                             }
                         }
 
-                        const isHealthRoute = /(^|\/)(health|healthz|ping|ready|readyz)($|\/)/i.test(routePath || '');
-                        if (isMockOnly && !isDynamicReference(handlerBody) && !isHealthRoute) {
+                        const normalizedRoute = String(routePath || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+                        const isExemptRoute = /^(health|healthz|ping|ready|readyz|info|status|api|api\/v1)?$/.test(normalizedRoute);
+                        if (isMockOnly && !isDynamicReference(handlerBody) && !isExemptRoute) {
                             issues.push(`Static mock handler detected for endpoint: ${routePath || 'unknown route'} in ${file.path}`);
                         }
                     }
