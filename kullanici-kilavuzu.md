@@ -126,6 +126,15 @@ npm run create-admin -- admin
 npm run dev
 ```
 `create-admin` parolayı ve doğrulamasını terminalde göstermeden sorar. Mevcut kullanıcıyı yöneticiye yükseltmek için o kullanıcının geçerli parolası gerekir.
+
+#### Yönetici parolası yenileme ve sıfırlama
+Parola en az 12 karakter olmalı (en fazla 256); terminal kriteri önceden basar ve parolayı göstermeden sorar.
+```bash
+npm run create-admin -- admin            # yeni yönetici oluşturur
+npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
+npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+```
+`Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
 > Backend sunucusu `http://127.0.0.1:8000` adresinde hazır olacaktır.
 
 > [!CAUTION]

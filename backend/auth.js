@@ -257,6 +257,26 @@ export function promoteUserToAdmin(username, password) {
     return toPublicUser({ ...user, isAdmin: true });
 }
 
+export function changeUserPassword(username, currentPassword, newPassword) {
+    const user = findUserByUsername(username);
+    if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
+        throw new Error('Existing user credentials do not match.');
+    }
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+    return toPublicUser(user);
+}
+
+export function resetUserPassword(username, newPassword) {
+    const user = findUserByUsername(username);
+    if (!user) {
+        throw new Error('User not found.');
+    }
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+    return toPublicUser(user);
+}
+
 export const PROJECT_LIFECYCLE = Object.values(PROJECT_STATUS);
 
 export function isValidProjectStatus(status) {

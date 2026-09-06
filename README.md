@@ -34,6 +34,15 @@ npm run create-admin -- admin    # Yönetici hesabını oluşturun (parolayı so
 npm run dev                      # Backend hazır: http://127.0.0.1:8000
 ```
 
+#### Yönetici parolası işlemleri
+Parola en az 12 karakter olmalı (en fazla 256); terminal parolayı göstermeden sorar ve kriteri önceden basar.
+```bash
+npm run create-admin -- admin            # yeni yönetici oluşturur
+npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
+npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+```
+`Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
+
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS ortamında backend portunu (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kullanınız.
 
