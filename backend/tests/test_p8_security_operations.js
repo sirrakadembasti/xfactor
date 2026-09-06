@@ -15,7 +15,7 @@ const { db, dbEvents } = await import('../db.js');
 const { sweepExpiredSessions, createMaintenanceScheduler } = await import('../maintenance.js');
 const { createProject, deleteProject } = await import('../projectRepository.js');
 const { writeProjectState, checkPause } = await import('../engine/workflow.js');
-const { generateLLMResponse } = await import('../llm.js');
+const { generateLLMResponse, raceWithAbort } = await import('../llm.js');
 const { runAsyncTest, finish } = createTestHarness();
 
 await runAsyncTest('production and development CSP connect-src directives are exact', async () => {
@@ -32,6 +32,26 @@ await runAsyncTest('production and development CSP connect-src directives are ex
     assert.match(getCsp(true), /connect-src 'self' wss:/);
     assert.doesNotMatch(getCsp(true), /connect-src[^;]*\bws:/);
     assert.match(getCsp(false), /connect-src 'self' ws: wss:/);
+});
+await runAsyncTest('raceWithAbort removes SDK abort listeners after resolve and abort', async () => {
+    let resolveOperation;
+    const resolveController = new AbortController();
+    const resolveBefore = events.getEventListeners(resolveController.signal, 'abort').length;
+    const resolved = raceWithAbort(new Promise(resolve => { resolveOperation = resolve; }), resolveController.signal);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(events.getEventListeners(resolveController.signal, 'abort').length, resolveBefore + 1);
+    resolveOperation('resolved');
+    assert.equal(await resolved, 'resolved');
+    assert.equal(events.getEventListeners(resolveController.signal, 'abort').length, resolveBefore);
+
+    const abortController = new AbortController();
+    const abortBefore = events.getEventListeners(abortController.signal, 'abort').length;
+    const aborted = raceWithAbort(new Promise(() => {}), abortController.signal);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(events.getEventListeners(abortController.signal, 'abort').length, abortBefore + 1);
+    abortController.abort('test-abort');
+    await assert.rejects(aborted, error => error.name === 'AbortError');
+    assert.equal(events.getEventListeners(abortController.signal, 'abort').length, abortBefore);
 });
 
 await runAsyncTest('session maintenance removes only expired and old-revoked rows', async () => {
