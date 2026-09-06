@@ -2,7 +2,7 @@
 
 ## Durum ve kaynak
 
-Yazılı tasarım incelemesi bekleniyor; uygulama henüz başlamadı.
+Yazılı tasarım kullanıcı tarafından “başla” ile onaylandı. Uygulama ve inceleme durumu bu plana ait SDD ledger'ında tutulur; bu tasarım tamamlanmış kod kanıtı değildir.
 
 - Kullanıcı 2026-09-06 tarihinde hedefli sentez ardından kontrollü düzeltmeyi, yeni güvenlik sözleşmesini ve ayrı execution worker mimarisini seçti.
 - Kaynak baseline: `83b29c8a3379d9bccf5b99b98f58a095217fe684` ve özgün çalışma ağacındaki commit edilmemiş uygulama değişiklikleri. Bu bir remote main denetimi değildir.
