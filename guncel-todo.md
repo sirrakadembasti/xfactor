@@ -164,30 +164,30 @@
 
 **Bağımlılık:** P7 verified.
 
-- [ ] CI’a `frontend npm run test:unit` ekle.
-- [ ] CI’a root `npm run test:e2e` ekle.
-- [ ] Dependency audit için zaman aşımı ve kayıtlı sonuç politikası tanımla.
-- [ ] Sandbox’a CPU, RAM, PID, disk ve timeout limitleri ekle.
-- [ ] Windows için restricted-token/Job Object sandboxını uygula veya generated execution’ı izole Linux/Docker worker’a taşı.
-- [ ] Docker service portlarını loopback’e bağla.
-- [ ] Production CSP `connect-src` değerini beklenen originlerle sınırla.
-- [ ] TOTP secret at-rest encryption ve key rotation tasarımını uygula.
-- [ ] Username timing farkını dummy scrypt ile azalt.
-- [ ] Session cleanup ve revoke lifecycle operasyonunu zamanlanmış bakım işine bağla.
-- [ ] Frontend `uiError` ve WebSocket durumunu erişilebilir biçimde göster.
-- [ ] Abort listener cleanup uygula.
-- [ ] README ve kullanıcı kılavuzundaki MFA, sandbox, ZIP ve test iddialarını gerçek davranışla eşitle.
-- [ ] Tek-node sınırlarını ve horizontal scaling önkoşullarını operasyon dokümanına ekle.
+- [x] CI’a `frontend npm run test:unit` ekle.
+- [x] CI’a root `npm run test:e2e` ekle.
+- [x] Dependency audit için zaman aşımı ve kayıtlı sonuç politikası tanımla.
+- [x] Sandbox’a CPU, RAM, PID, disk ve timeout limitleri ekle.
+- [x] Windows için restricted-token/Job Object sandboxını uygula veya generated execution’ı izole Linux/Docker worker’a taşı.
+- [x] Docker service portlarını loopback’e bağla.
+- [x] Production CSP `connect-src` değerini beklenen originlerle sınırla.
+- [x] TOTP secret at-rest encryption ve key rotation tasarımını uygula.
+- [x] Username timing farkını dummy scrypt ile azalt.
+- [x] Session cleanup ve revoke lifecycle operasyonunu zamanlanmış bakım işine bağla.
+- [x] Frontend `uiError` ve WebSocket durumunu erişilebilir biçimde göster.
+- [x] Abort listener cleanup uygula.
+- [x] README ve kullanıcı kılavuzundaki MFA, sandbox, ZIP ve test iddialarını gerçek davranışla eşitle.
+- [x] Tek-node sınırlarını ve horizontal scaling önkoşullarını operasyon dokümanına ekle.
 
 ### P8 Çıkış Kapısı
 
-- [ ] Backend, frontend unit ve browser E2E CI’da zorunlu.
-- [ ] Sandbox resource/network sınırları davranış testiyle kanıtlı.
-- [ ] Dokümantasyon ile runtime davranışı arasında bilinen çelişki yok.
-- [ ] Nihai security review blocking bulgu vermiyor.
+- [x] Backend, frontend unit ve browser E2E CI’da zorunlu.
+- [x] Sandbox resource/network sınırları davranış testiyle kanıtlı.
+- [x] Dokümantasyon ile runtime davranışı arasında bilinen çelişki yok.
+- [x] Nihai security review blocking bulgu vermiyor.
 
 ---
 
 ```text
-Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
+Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.
 ```

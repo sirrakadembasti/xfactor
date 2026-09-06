@@ -4,18 +4,18 @@ initiative: project-quality-improvement
 improvement_plan: PROJECT-QUALITY-IMPROVEMENT-PLAN.md
 improvement_plan_sha256: b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8
 master_plan: implementation-plans/00-MASTER-EXECUTION-PLAN.md
-current_unit: P7
-current_plan: implementation-plans/12-P7-data-architecture.md
-current_task: P7 verified; P8 CI, security hardening, and operational limits design/plan is the next action
+current_unit: P8
+current_plan: implementation-plans/13-P8-security-operations.md
+current_task: P8 verified; roadmap P0–P8 is closed with no new source implementation pending
 status: verified
-branch: design/p7-data-architecture
+branch: design/p8-security-operations
 head_commit: SELF
 baseline_commit: eb4b3b3
-last_verified_commit: e46bebd
-evidence_file: implementation-evidence/P7.md
+last_verified_commit: c025e51
+evidence_file: implementation-evidence/P8.md
 blocked_by: []
-next_action: Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
-updated_at: 2026-09-05T22:00:00Z
+next_action: Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.
+updated_at: 2026-09-06T08:38:35Z
 ---
 
 # Project Continuity
@@ -74,12 +74,13 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P5 — Critical Trust Chain verified (Tasks 1–5).
 - P6 — Production Operability verified (Tasks 1–5).
 - P7 — Data and Architectural Hardening verified (Tasks 1–6).
+- P8 — CI, Security Hardening, and Operational Limits verified (Tasks 1–6).
 ## In Progress
 
-- P7 verified; P8 CI, security hardening, and operational limits design/plan is the next action.
+- P8 verified; roadmap P0–P8 is closed with no new source implementation pending.
 ## Pending
 
-- P8 source implementation awaits an approved P8 design/plan.
+- No pending units; a new approved design/plan is required before any new source implementation.
 ## Decisions
 
 - Git-tracked files are canonical; chat memory is not.
@@ -148,8 +149,11 @@ Implement the approved project-quality pipeline redesign without relying on chat
 - P6 Continuity validation: PASS (11 units; current P6/verified).
 - P7 Task 6 continuity RED: PASS as expected — registered P7 evidence was intentionally absent; `node scripts/validate-continuity.mjs` exited 1 with `ENOENT` for `implementation-evidence/P7.md`.
 - P7 Task 6 focused checks: PASS — reconciliation 5, delete protection 4, SQLite durability 5, approve state 1, files API 4, README generator 6; related regressions disk sync 4, P1.7 3, P1.8 3, archive 4, static serving PASS (`test_p2_readme.js` 3 pre-existing environmental failures noted, untouched by P7).
-- P7 Step 4 complete verification: backend full suite `36/36` suites PASS (77.76s), frontend unit `21/21` PASS, frontend build PASS (Vite 6.4.3; 1710 modules; 26.63s), Chromium full suite `4 passed, 1 skipped` (57.8s).
 - P7 Continuity validation: PASS (12 units; current P7/verified).
+- P8 Task 6 continuity RED: PASS as expected — registered P8 evidence was intentionally absent; `node scripts/validate-continuity.mjs` exited 1 with `ENOENT` for `implementation-evidence/P8.md`.
+- P8 Task 6 focused checks: PASS — MFA crypto 12, security operations 6, CI contract PASS, sandbox limits 4 (strict P8_REQUIRE_DOCKER_LIMITS=1 fail-closed without daemon), P8 UI status 6/6; trust regressions P5 boundary PASS, P5 MFA 3, P6 static PASS, P7 durability 5, P7 delete 4.
+- P8 Step 4 complete verification: backend full suite `40/40` suites PASS, frontend unit `27/27` PASS (5 files) + build PASS (Vite; 1711 modules), Chromium `4 passed, 1 skipped`, image contract PASS, production smoke PASS (89.83s, three OBSERVED lines). Step 4 fixes: `be353b3` (MFA key/CI contract in pre-P8 suites), `c025e51` (MFA key in smoke container).
+- P8 Continuity validation: PASS (13 units; current P8/verified).
 ## Known Failures
 
 - Todo artifact remains intentionally unfixed.
@@ -158,7 +162,7 @@ Implement the approved project-quality pipeline redesign without relying on chat
 Clean.
 ## Exact Next Action
 
-Brainstorm and write the P8 CI, security hardening, and operational limits design/plan from guncel-todo.md; do not implement P8 source changes before that plan is approved.
+Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.
 
 ## Do Not Do
 

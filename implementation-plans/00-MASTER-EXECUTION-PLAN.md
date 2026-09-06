@@ -110,6 +110,7 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–10.
 | 10 | P5 | 10-P5-critical-trust-chain.md | ../implementation-evidence/P5.md | P4 | verified |
 | 11 | P6 | 11-P6-production-operability.md | ../implementation-evidence/P6.md | P5 | verified |
 | 12 | P7 | 12-P7-data-architecture.md | ../implementation-evidence/P7.md | P6 | verified |
+| 13 | P8 | 13-P8-security-operations.md | ../implementation-evidence/P8.md | P7 | verified |
 
 ## Entry Gate for Every Unit
 

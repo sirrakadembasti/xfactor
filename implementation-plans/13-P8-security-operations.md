@@ -45,7 +45,7 @@
 
 **Evidence:** Append Task 1 commands, exits, cgroup observations, and loopback command evidence to `implementation-evidence/P8.md` during Task 6.
 
-- [ ] **Step 1: Write failing command and real-runtime tests**
+- [x] **Step 1: Write failing command and real-runtime tests**
 
 Create `backend/tests/test_p8_sandbox_limits.js` with these observable contracts:
 
@@ -56,12 +56,12 @@ Create `backend/tests/test_p8_sandbox_limits.js` with these observable contracts
 
 Use unique container names and cleanup in `finally`. Docker-unavailable local runs may skip the cgroup case but P8 evidence/CI cannot mark verified without a real Docker run.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `node backend/tests/test_p8_sandbox_limits.js`
 Expected: FAIL because limit arguments, cross-platform Docker probing, and `resourceLimits:true` are absent.
 
-- [ ] **Step 3: Implement one Docker isolation-argument builder**
+- [x] **Step 3: Implement one Docker isolation-argument builder**
 
 In `portableSandbox.js`:
 
@@ -87,16 +87,16 @@ export function buildDockerIsolationArgs({ port = null, limits = DEFAULT_SANDBOX
 
 Use it in Docker `buildServiceCommand` and `execute`; do not maintain two argument lists. Add dependency injection only for `platform` and Docker probe so tests do not monkey-patch globals.
 
-- [ ] **Step 4: Preserve bubblewrap and fail-closed behavior**
+- [x] **Step 4: Preserve bubblewrap and fail-closed behavior**
 
 Bubblewrap keeps namespace isolation and reports `resourceLimits:true` only when its enforced limits are present. Unsupported/unavailable adapters must not spawn. Update existing adapter tests to the new exact command.
 
-- [ ] **Step 5: Run GREEN and regressions**
+- [x] **Step 5: Run GREEN and regressions**
 
 Run: `node backend/tests/test_p8_sandbox_limits.js && node backend/tests/test_sandbox_adapters.js && node backend/tests/test_p5_execution_boundary.js`
 Expected: PASS; real cgroup values and loopback-only port binding are observed, and P5 unavailable-adapter no-spawn remains intact.
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```bash
 git add backend/verification/adapters/portableSandbox.js backend/tests/test_p8_sandbox_limits.js backend/tests/test_sandbox_adapters.js backend/tests/test_runner.js
@@ -127,7 +127,7 @@ git commit -m "feat(p8): enforce sandbox resource and network limits"
 
 **Evidence:** Append Task 2 commands, exits, tamper rejection, migration, rotation, secret-projection, and timing observations to `implementation-evidence/P8.md` during Task 6.
 
-- [ ] **Step 1: Write crypto, migration, and timing RED tests**
+- [x] **Step 1: Write crypto, migration, and timing RED tests**
 
 Create `test_p8_mfa_crypto.js` with isolated DB and fixed 32-byte test keys:
 
@@ -140,25 +140,25 @@ Create `test_p8_mfa_crypto.js` with isolated DB and fixed 32-byte test keys:
 - Login/session/public projections never include the encrypted or plaintext secret.
 - Unknown username and wrong password paths both execute a scrypt verification. Use a focused injected verifier seam or deterministic call counter, not wall-clock thresholds.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `node backend/tests/test_p8_mfa_crypto.js`
 Expected: FAIL because crypto helpers, encrypted storage, rotation, migration, and dummy verification do not exist.
 
-- [ ] **Step 3: Implement strict key parsing and AES-GCM**
+- [x] **Step 3: Implement strict key parsing and AES-GCM**
 
 Accept exactly 64 hex chars or base64 decoding to 32 bytes. Production has no default. Development/test derives current key from JWT secret. Use `crypto.randomBytes(12)`, `createCipheriv('aes-256-gcm', ...)`, and `timingSafeEqual` only where fixed-length comparison is needed. Errors must not contain keys or secrets.
 
-- [ ] **Step 4: Wire auth enrollment, verification, migration, and timing defense**
+- [x] **Step 4: Wire auth enrollment, verification, migration, and timing defense**
 
 Add `verifyUserTotp(user, token, env)` and update `authRoutes.js` to call it. Migration update must use `WHERE id = ? AND totp_secret = ?` so concurrent key rotation cannot be overwritten. Add a module-initialized dummy hash and always call the same password verifier for unknown users.
 
-- [ ] **Step 5: Run GREEN and auth regressions**
+- [x] **Step 5: Run GREEN and auth regressions**
 
 Run: `node backend/tests/test_p8_mfa_crypto.js && node backend/tests/test_p5_mfa_login.js && node backend/tests/test_p2_security_auth.js`
 Expected: PASS; encrypted enrollment, tamper rejection, legacy migration, previous-key rotation, dummy verification, and P5 MFA session ordering all hold.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 ```bash
 git add backend/crypto/mfaCrypto.js backend/auth.js backend/routes/authRoutes.js backend/config.js backend/tests/test_p8_mfa_crypto.js backend/tests/test_p2_security_auth.js backend/tests/test_p5_mfa_login.js backend/tests/test_runner.js
@@ -185,7 +185,7 @@ git commit -m "feat(p8): encrypt and rotate MFA secrets"
 
 **Evidence:** Append Task 3 commands, exits, CSP values, swept counts, timer lifecycle, and listener counts to `implementation-evidence/P8.md` during Task 6.
 
-- [ ] **Step 1: Write failing CSP/maintenance tests and listener regressions**
+- [x] **Step 1: Write failing CSP/maintenance tests and listener regressions**
 
 Create `test_p8_security_operations.js`:
 
@@ -194,25 +194,25 @@ Create `test_p8_security_operations.js`:
 - Fake timer functions prove immediate startup schedule, 3,600,000ms interval, `unref()` calls, and idempotent `stop()` cleanup.
 - Repeated completed/aborted `generateLLMResponse` and `checkPause` operations leave zero additional `abort` listeners. Use `events.getEventListeners(signal, 'abort')` before/after.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `node backend/tests/test_p8_security_operations.js`
 Expected: FAIL because production CSP still allows `ws:`, maintenance module/scheduler are absent, or listener contracts are unproved.
 
-- [ ] **Step 3: Implement maintenance module and CSP split**
+- [x] **Step 3: Implement maintenance module and CSP split**
 
 Delegate session deletion to the existing auth cleanup semantics or execute the same predicate against an injected DB. Scheduler owns both timers and never starts at module import.
 
-- [ ] **Step 4: Wire scheduler lifecycle to server**
+- [x] **Step 4: Wire scheduler lifecycle to server**
 
 Create scheduler after server configuration, and call `maintenance.stop()` in graceful shutdown before closing HTTP/SQLite. Keep probe behavior unchanged.
 
-- [ ] **Step 5: Run GREEN and lifecycle regressions**
+- [x] **Step 5: Run GREEN and lifecycle regressions**
 
 Run: `node backend/tests/test_p8_security_operations.js && node backend/tests/test_health_and_lifecycle.js && node backend/tests/test_p2_security_auth.js`
 Expected: PASS; CSP, exact sweep predicate, timer cleanup, listener counts, and server shutdown all hold.
 
-- [ ] **Step 6: Commit Task 3**
+- [x] **Step 6: Commit Task 3**
 
 ```bash
 git add backend/maintenance.js backend/security.js backend/server.js backend/tests/test_p8_security_operations.js backend/tests/test_health_and_lifecycle.js backend/tests/test_runner.js
@@ -236,7 +236,7 @@ git commit -m "feat(p8): schedule session maintenance and harden CSP"
 
 **Evidence:** Append Task 4 commands, exits, rendered labels, live-region semantics, focus, and dismiss behavior to `implementation-evidence/P8.md` during Task 6.
 
-- [ ] **Step 1: Write failing frontend behavior tests**
+- [x] **Step 1: Write failing frontend behavior tests**
 
 Render the focused component/Header/App with realistic props and assert:
 
@@ -246,21 +246,21 @@ Render the focused component/Header/App with realistic props and assert:
 - Every state uses a visible text label and `role="status"`; color is not the only cue.
 - A new `uiError` focuses the `role="alert"`; dismiss button is keyboard operable and removes it.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `npm --prefix frontend run test:unit -- --run src/components/__tests__/P8UiStatus.test.jsx`
 Expected: FAIL because the status component/labels and focus behavior do not exist.
 
-- [ ] **Step 3: Implement minimal component and wiring**
+- [x] **Step 3: Implement minimal component and wiring**
 
 Use an exhaustive state map, no decorative-only semantics, and pass `wsState` from App to Header. Add an alert ref/effect; do not restructure App's WebSocket state machine.
 
-- [ ] **Step 4: Run GREEN and frontend regressions**
+- [x] **Step 4: Run GREEN and frontend regressions**
 
 Run: `npm --prefix frontend run test:unit -- --run src/components/__tests__/P8UiStatus.test.jsx && npm --prefix frontend run test:unit`
 Expected: PASS with accessible status/focus behavior and all existing frontend tests.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 ```bash
 git add frontend/src/components/ConnectionStatus.jsx frontend/src/components/Header.jsx frontend/src/App.jsx frontend/src/components/__tests__/P8UiStatus.test.jsx
@@ -286,7 +286,7 @@ git commit -m "feat(p8): expose accessible live connection status"
 
 **Evidence:** Append Task 5 commands, exits, parsed CI job/step assertions, and documentation/runtime parity review to `implementation-evidence/P8.md` during Task 6.
 
-- [ ] **Step 1: Write failing CI contract test**
+- [x] **Step 1: Write failing CI contract test**
 
 Create a behavioral YAML parse/structure test that asserts:
 
@@ -297,25 +297,25 @@ Create a behavioral YAML parse/structure test that asserts:
 
 Do not use brittle whole-file string equality; parse YAML or inspect normalized job/step objects.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `node backend/tests/test_p8_ci_contract.js`
 Expected: FAIL because frontend unit/root E2E/audit bounds/job dependency are absent.
 
-- [ ] **Step 3: Update CI fail-closed gates**
+- [x] **Step 3: Update CI fail-closed gates**
 
 Install root and frontend dependencies before their tests. Use GNU `timeout 60s npm audit --audit-level=high`. Run `npm --prefix frontend run test:unit`, build, install Chromium, and `npm run test:e2e`. Keep production smoke after `needs:test`.
 
-- [ ] **Step 4: Synchronize README and create operations guide**
+- [x] **Step 4: Synchronize README and create operations guide**
 
 Document only observed behavior: two-step RFC 6238 MFA, AES-GCM secret envelope/key rotation, container-only generated execution and exact limits, server-authorized verified ZIP downloads, persistent volumes, reverse proxy/TLS contract, maintenance interval, and current single-node limitation. Horizontal scaling prerequisites: shared SQL database, shared projects/artifacts, distributed sessions, and pub/sub WebSocket fanout.
 
-- [ ] **Step 5: Run GREEN and documentation checks**
+- [x] **Step 5: Run GREEN and documentation checks**
 
 Run: `node backend/tests/test_p8_ci_contract.js && node backend/tests/test_docs_agent_sync.js && node scripts/validate-continuity.mjs`
 Expected: PASS; CI graph and documentation references match runtime and continuity remains valid.
 
-- [ ] **Step 6: Commit Task 5**
+- [x] **Step 6: Commit Task 5**
 
 ```bash
 git add .github/workflows/ci.yml README.md docs/OPERATIONS.md backend/tests/test_p8_ci_contract.js backend/tests/test_runner.js
@@ -341,14 +341,14 @@ git commit -m "ci(p8): require complete tests and document operations"
 
 **Evidence:** This task creates `implementation-evidence/P8.md`; no P8 checkbox/status becomes verified before every mandatory gate passes.
 
-- [ ] **Step 1: Register deliberate continuity RED**
+- [x] **Step 1: Register deliberate continuity RED**
 
 Add P8 to validator IDs/plans/dependencies with `P8:['P7']`, add unchecked roadmap/master rows, and do not create P8 evidence yet.
 
 Run: `node scripts/validate-continuity.mjs`
 Expected: FAIL specifically because `implementation-evidence/P8.md` is absent/unverified.
 
-- [ ] **Step 2: Run focused P8 checks**
+- [x] **Step 2: Run focused P8 checks**
 
 Run: `node backend/tests/test_p8_sandbox_limits.js && node backend/tests/test_p8_mfa_crypto.js && node backend/tests/test_p8_security_operations.js && node backend/tests/test_p8_ci_contract.js`
 Expected: PASS with real Docker cgroup evidence, crypto migration/rotation, CSP/maintenance/listener proof, and CI graph assertions.
@@ -356,12 +356,12 @@ Expected: PASS with real Docker cgroup evidence, crypto migration/rotation, CSP/
 Run: `npm --prefix frontend run test:unit -- --run src/components/__tests__/P8UiStatus.test.jsx`
 Expected: PASS with all accessibility states and focus behavior.
 
-- [ ] **Step 3: Run trust-chain regressions**
+- [x] **Step 3: Run trust-chain regressions**
 
 Run: `node backend/tests/test_p5_execution_boundary.js && node backend/tests/test_p5_mfa_login.js && node backend/tests/test_p6_static_serving.js && node backend/tests/test_p7_sqlite_durability.js && node backend/tests/test_p7_delete_protection.js`
 Expected: PASS with P5–P7 invariants unchanged.
 
-- [ ] **Step 4: Run complete project and production verification**
+- [x] **Step 4: Run complete project and production verification**
 
 Run: `npm --prefix backend test`
 Expected: PASS, zero failed suites.
@@ -375,20 +375,20 @@ Expected: PASS for browser suite; production-only fixture test may be explicitly
 Run: `node scripts/test-p6-image-contract.mjs && npm run test:production-image`
 Expected: PASS with clean image limits, HTTPS surface, authenticated WSS, verified ZIP, and persistence observations.
 
-- [ ] **Step 5: Perform final security/operability audit**
+- [x] **Step 5: Perform final security/operability audit**
 
 Block verification on any host execution fallback, unbounded Docker resource, wildcard published port, plaintext production `ws:`, plaintext MFA row after enrollment/migration, secret response/log, username timing shortcut, leaked abort listener, unscheduled cleanup, optional CI gate, or documentation/runtime mismatch.
 
-- [ ] **Step 6: Write evidence and close roadmap**
+- [x] **Step 6: Write evidence and close roadmap**
 
 Create P8 evidence frontmatter (`unit:P8`, plan path, `status:verified`) and record exact commits, review verdicts, commands, exits, counts, Docker cgroup values, crypto/timing observations, UI accessibility, CI graph, production smoke, and audit result. Mark P8 and exit gates verified in roadmaps/master/current continuity. Set exact next action to `Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.`
 
-- [ ] **Step 7: Run continuity GREEN**
+- [x] **Step 7: Run continuity GREEN**
 
 Run: `node scripts/validate-continuity.mjs`
 Expected: PASS with 13 units, current P8/verified, dependency P7 verified, and no next implementation invented.
 
-- [ ] **Step 8: Commit Task 6**
+- [x] **Step 8: Commit Task 6**
 
 ```bash
 git add implementation-evidence/P8.md guncel-todo.md PROJECT-CONTINUITY.md yol-haitasi-todo.md implementation-plans/00-MASTER-EXECUTION-PLAN.md implementation-plans/13-P8-security-operations.md scripts/validate-continuity.mjs
@@ -397,16 +397,16 @@ git commit -m "docs: record verified P8 security and operations"
 
 ## P8 Exit Gate
 
-- [ ] CI requires backend, frontend unit/build, Chromium E2E, audits, and production-image smoke.
-- [ ] Docker sandbox enforces CPU, memory, swap, PID, privilege, tmpfs, timeout, and loopback-port boundaries with real runtime evidence.
-- [ ] Windows uses Docker isolation when available and otherwise blocks generated execution.
-- [ ] MFA secrets use authenticated encryption, support previous-key rotation, and transparently migrate legacy rows.
-- [ ] Unknown-user login performs dummy scrypt verification.
-- [ ] Production CSP excludes plaintext WebSocket connections.
-- [ ] Session sweeper and graceful timer cleanup are active.
-- [ ] Abort listener counts remain stable after completion and cancellation.
-- [ ] WebSocket and UI error states are accessible and keyboard operable.
-- [ ] README and operations guide match observed runtime behavior and state single-node limits.
-- [ ] Full backend/frontend/browser/image/production smoke gates pass.
-- [ ] Independent final security review has no blocking finding.
-- [ ] `implementation-evidence/P8.md` and continuity validator close P0–P8 as verified.
+- [x] **CI requires backend, frontend unit/build, Chromium E2E, audits, and production-image smoke.
+- [x] **Docker sandbox enforces CPU, memory, swap, PID, privilege, tmpfs, timeout, and loopback-port boundaries with real runtime evidence.
+- [x] **Windows uses Docker isolation when available and otherwise blocks generated execution.
+- [x] **MFA secrets use authenticated encryption, support previous-key rotation, and transparently migrate legacy rows.
+- [x] **Unknown-user login performs dummy scrypt verification.
+- [x] **Production CSP excludes plaintext WebSocket connections.
+- [x] **Session sweeper and graceful timer cleanup are active.
+- [x] **Abort listener counts remain stable after completion and cancellation.
+- [x] **WebSocket and UI error states are accessible and keyboard operable.
+- [x] **README and operations guide match observed runtime behavior and state single-node limits.
+- [x] **Full backend/frontend/browser/image/production smoke gates pass.
+- [x] **Independent final security review has no blocking finding.
+- [x] **`implementation-evidence/P8.md` and continuity validator close P0–P8 as verified.
