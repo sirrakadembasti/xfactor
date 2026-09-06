@@ -70,7 +70,8 @@ export async function generateLLMResponse(messages, options = {}) {
     let baseURL = options.baseURL?.trim() || '';
     const timeoutMs = Number(options.timeoutMs ?? process.env.LLM_TIMEOUT_MS ?? 60000);
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
-    const mergedSignal = options.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal;
+    const combineSignals = options.signalCombiner || (signals => AbortSignal.any(signals));
+    const mergedSignal = options.signal ? combineSignals([options.signal, timeoutSignal]) : timeoutSignal;
 
     if (mergedSignal.aborted) {
         const preflightErr = new Error(`LLM call aborted: ${mergedSignal.reason || 'ABORTED'}`);

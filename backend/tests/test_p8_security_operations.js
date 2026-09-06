@@ -11,9 +11,9 @@ process.env.DB_PATH = path.join(tempRoot, 'projects.db');
 process.env.PROJECTS_ROOT = path.join(tempRoot, 'projects');
 
 const { createSecurityHeadersMiddleware } = await import('../security.js');
-const { db } = await import('../db.js');
+const { db, dbEvents } = await import('../db.js');
 const { sweepExpiredSessions, createMaintenanceScheduler } = await import('../maintenance.js');
-const { createProject, getProject, deleteProject } = await import('../projectRepository.js');
+const { createProject, deleteProject } = await import('../projectRepository.js');
 const { writeProjectState, checkPause } = await import('../engine/workflow.js');
 const { generateLLMResponse } = await import('../llm.js');
 const { runAsyncTest, finish } = createTestHarness();
@@ -62,7 +62,12 @@ await runAsyncTest('maintenance scheduler starts immediately, uses hourly interv
     const clearedTimeouts = [];
     const clearedIntervals = [];
     let sweepRuns = 0;
-    const database = { prepare: () => ({ run: () => { sweepRuns++; return { changes: 0 }; } }) };
+    let shouldThrow = false;
+    const database = { prepare: () => ({ run: () => {
+        if (shouldThrow) throw new Error('maintenance test failure');
+        sweepRuns++;
+        return { changes: 0 };
+    } }) };
     const makeTimer = (collection, callback, delay) => {
         const timer = { callback, delay, unrefCalls: 0, unref() { this.unrefCalls++; } };
         collection.push(timer);
@@ -86,10 +91,16 @@ await runAsyncTest('maintenance scheduler starts immediately, uses hourly interv
     intervals[0].callback();
     assert.equal(sweepRuns, 2);
 
+    shouldThrow = true;
+    assert.doesNotThrow(() => intervals[0].callback());
+    shouldThrow = false;
     scheduler.stop();
     scheduler.stop();
     assert.deepEqual(clearedTimeouts, [timeouts[0]]);
     assert.deepEqual(clearedIntervals, [intervals[0]]);
+    timeouts[0].callback();
+    intervals[0].callback();
+    assert.equal(sweepRuns, 2);
 });
 
 await runAsyncTest('repeated generateLLMResponse operations remove abort listeners after completion and abort', async () => {
@@ -100,15 +111,16 @@ await runAsyncTest('repeated generateLLMResponse operations remove abort listene
             json: async () => ({ choices: [{ message: { content: 'ok' } }] })
         });
         for (let attempt = 0; attempt < 3; attempt++) {
-            const completedController = new AbortController();
-            const completedBefore = events.getEventListeners(completedController.signal, 'abort').length;
+            const mergedController = new AbortController();
+            const completedBefore = events.getEventListeners(mergedController.signal, 'abort').length;
             await generateLLMResponse([{ role: 'user', content: 'hello' }], {
                 provider: 'openai',
                 apiKey: 'test-key',
                 baseURL: 'http://127.0.0.1/chat/completions',
-                signal: completedController.signal
+                signal: new AbortController().signal,
+                signalCombiner: () => mergedController.signal
             });
-            assert.equal(events.getEventListeners(completedController.signal, 'abort').length, completedBefore);
+            assert.equal(events.getEventListeners(mergedController.signal, 'abort').length, completedBefore);
         }
 
         globalThis.fetch = (_url, { signal }) => new Promise((_, reject) => {
@@ -119,17 +131,20 @@ await runAsyncTest('repeated generateLLMResponse operations remove abort listene
             }, { once: true });
         });
         for (let attempt = 0; attempt < 3; attempt++) {
-            const abortedController = new AbortController();
-            const abortedBefore = events.getEventListeners(abortedController.signal, 'abort').length;
+            const mergedController = new AbortController();
+            const abortedBefore = events.getEventListeners(mergedController.signal, 'abort').length;
             const responsePromise = generateLLMResponse([{ role: 'user', content: 'hello' }], {
                 provider: 'openai',
                 apiKey: 'test-key',
                 baseURL: 'http://127.0.0.1/chat/completions',
-                signal: abortedController.signal
+                signal: new AbortController().signal,
+                signalCombiner: () => mergedController.signal
             });
-            abortedController.abort('test-abort');
+            await new Promise(resolve => setImmediate(resolve));
+            assert.equal(events.getEventListeners(mergedController.signal, 'abort').length, abortedBefore + 1);
+            mergedController.abort('test-abort');
             await assert.rejects(responsePromise, /aborted/i);
-            assert.equal(events.getEventListeners(abortedController.signal, 'abort').length, abortedBefore);
+            assert.equal(events.getEventListeners(mergedController.signal, 'abort').length, abortedBefore);
         }
     } finally {
         globalThis.fetch = originalFetch;
@@ -147,25 +162,35 @@ await runAsyncTest('repeated checkPause operations remove abort listeners after 
         await writeProjectState(project.id, project);
         project.status = 'paused';
         await writeProjectState(project.id, project);
-        const implementingState = getProject(project.id);
-        implementingState.status = 'implementing';
-        await writeProjectState(project.id, implementingState);
+        const stateEvent = `stateChange:${project.id}`;
 
         for (let attempt = 0; attempt < 3; attempt++) {
             const completedController = new AbortController();
             const completedBefore = events.getEventListeners(completedController.signal, 'abort').length;
-            assert.equal(await checkPause(project.id, completedController.signal), 'implementing');
+            const dbListenersBefore = events.getEventListeners(dbEvents, stateEvent).length;
+            const completed = checkPause(project.id, completedController.signal);
+            await new Promise(resolve => setImmediate(resolve));
+            assert.equal(events.getEventListeners(completedController.signal, 'abort').length, completedBefore + 1);
+            assert.equal(events.getEventListeners(dbEvents, stateEvent).length, dbListenersBefore + 1);
+            dbEvents.emit(stateEvent, 'implementing');
+            assert.equal(await completed, 'implementing');
             assert.equal(events.getEventListeners(completedController.signal, 'abort').length, completedBefore);
+            assert.equal(events.getEventListeners(dbEvents, stateEvent).length, dbListenersBefore);
+            db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
         }
 
-        db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
         for (let attempt = 0; attempt < 3; attempt++) {
             const abortedController = new AbortController();
             const abortedBefore = events.getEventListeners(abortedController.signal, 'abort').length;
+            const dbListenersBefore = events.getEventListeners(dbEvents, stateEvent).length;
             const aborted = checkPause(project.id, abortedController.signal);
-            setImmediate(() => abortedController.abort('test-abort'));
+            await new Promise(resolve => setImmediate(resolve));
+            assert.equal(events.getEventListeners(abortedController.signal, 'abort').length, abortedBefore + 1);
+            assert.equal(events.getEventListeners(dbEvents, stateEvent).length, dbListenersBefore + 1);
+            abortedController.abort('test-abort');
             assert.equal(await aborted, 'paused');
             assert.equal(events.getEventListeners(abortedController.signal, 'abort').length, abortedBefore);
+            assert.equal(events.getEventListeners(dbEvents, stateEvent).length, dbListenersBefore);
         }
     } finally {
         await deleteProject(project.id);

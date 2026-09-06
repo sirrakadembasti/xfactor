@@ -289,17 +289,19 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 8000;
 const HOST = process.env.HOST || '127.0.0.1';
-const maintenance = createMaintenanceScheduler({ database: db });
+let maintenance = null;
 async function startServer() {
     try {
         await assertProductionFrontendAvailable({
             production: runtimeConfig.production,
             distRoot: getFrontendDistRoot()
         });
+        maintenance = createMaintenanceScheduler({ database: db });
         server.listen(PORT, HOST, () => {
             console.log(`Backend hazır: http://${HOST}:${PORT}`);
         });
     } catch (error) {
+        maintenance?.stop();
         console.error(`Backend startup failed: ${error.message}`);
         process.exitCode = 1;
     }
@@ -326,7 +328,7 @@ let isShuttingDown = false;
 function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
-    maintenance.stop();
+    maintenance?.stop();
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
     // 1. WebSocket istemcilerini kapat
