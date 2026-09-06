@@ -31,9 +31,14 @@ function parseKey(value) {
 
 function parsePreviousKeys(value) {
     if (value == null || value === '') return [];
-    const entries = (Array.isArray(value) ? value : String(value).split(',')).map(entry => String(entry).trim());
-    if (entries.some(entry => entry.length === 0)) throw invalidKey();
-    return entries.map(parseKey);
+    const entries = Array.isArray(value) ? value : String(value).split(',');
+    const normalized = entries.map(entry => {
+        if (Buffer.isBuffer(entry)) return entry;
+        if (typeof entry !== 'string') throw invalidKey();
+        return entry.trim();
+    });
+    if (normalized.some(entry => typeof entry === 'string' && entry.length === 0)) throw invalidKey();
+    return normalized.map(parseKey);
 }
 
 export function getMfaEncryptionKeys(env = process.env) {

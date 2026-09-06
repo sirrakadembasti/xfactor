@@ -15,7 +15,7 @@ process.env.NODE_ENV = 'test';
 process.env.MFA_ENCRYPTION_KEY = '44'.repeat(32);
 process.env.MFA_PREVIOUS_ENCRYPTION_KEYS = '';
 
-const [{ db }, { createUser, generateTotpSecret }, { createAuthRouter }] = await Promise.all([
+const [{ db }, { createUser, generateTotpSecret, verifySessionToken }, { createAuthRouter }] = await Promise.all([
     import('../db.js'),
     import('../auth.js'),
     import('../routes/authRoutes.js')
@@ -41,10 +41,25 @@ const mfaUser = createUser('p5-mfa-user', 'MfaPassword123456!');
 const mfaSecret = generateTotpSecret(mfaUser.id);
 const app = express();
 app.use(express.json());
-app.use(createAuthRouter({ requireAuth: () => {}, production: false }));
+app.use(createAuthRouter({
+    requireAuth: (req, res, next) => {
+        const token = req.headers.cookie?.match(/(?:^|; )xfactor_session=([^;]+)/)?.[1];
+        const session = token ? verifySessionToken(token) : null;
+        if (!session) return res.status(401).json({ error: 'Unauthorized' });
+        req.user = session.user;
+        return next();
+    },
+    production: false
+}));
 const server = http.createServer(app);
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const { port } = server.address();
+async function getSession(cookieHeader) {
+    const response = await fetch(`http://127.0.0.1:${port}/session`, {
+        headers: { cookie: cookieHeader.split(';', 1)[0], connection: 'close' }
+    });
+    return { status: response.status, body: await response.json() };
+}
 
 async function postLogin(payload) {
     const response = await fetch(`http://127.0.0.1:${port}/login`, {
@@ -78,6 +93,11 @@ try {
         assert.match(accepted.headers.get('set-cookie'), /xfactor_session=/);
         assert.strictEqual(accepted.body.user.totpSecret, undefined);
         assert.strictEqual(JSON.stringify(accepted.body).includes(mfaSecret), false);
+        const session = await getSession(accepted.headers.get('set-cookie'));
+        assert.strictEqual(session.status, 200);
+        assert.strictEqual(session.body.user.totpSecret, undefined);
+        assert.strictEqual(JSON.stringify(session.body).includes(mfaSecret), false);
+        assert.strictEqual(JSON.stringify(session.body).includes('v1:'), false);
         assert.strictEqual(activeSessionCount(mfaUser.id), 1);
     });
 

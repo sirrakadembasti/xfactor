@@ -46,15 +46,50 @@ function currentTotp(secret) {
 }
 
 try {
-    await runAsyncTest('key parsing enforces production requirements and derives a development fallback', async () => {
+    await runAsyncTest('key parsing enforces production requirements and derives deterministic keys', async () => {
         const derived = getMfaEncryptionKeys({ NODE_ENV: 'test' }).current;
         assert.strictEqual(derived.toString('hex'), crypto.createHash('sha256').update('dev-secret').digest('hex'));
+        const first = getMfaEncryptionKeys({ NODE_ENV: 'test', JWT_SECRET: 'first-secret' }).current;
+        const second = getMfaEncryptionKeys({ NODE_ENV: 'test', JWT_SECRET: 'second-secret' }).current;
+        assert.notDeepStrictEqual(first, second);
+        const secret = 'aa'.repeat(20);
+        const payload = encryptMfaSecret(secret, first);
+        assert.strictEqual(decryptMfaSecret(payload, { current: first, previous: [] }).plaintext, secret);
         assert.throws(() => getMfaEncryptionKeys({ NODE_ENV: 'production' }), /MFA_ENCRYPTION_KEY/i);
         assert.throws(() => getMfaEncryptionKeys({ NODE_ENV: 'production', MFA_ENCRYPTION_KEY: '00' }), /MFA_ENCRYPTION_KEY/i);
+    });
+
+    await runAsyncTest('whitespace-padded comma previous keys and Buffer previous keys decrypt', async () => {
+        const previousHex = '22'.repeat(32);
+        const secret = 'bb'.repeat(20);
+        const payload = encryptMfaSecret(secret, Buffer.from(previousHex, 'hex'));
+        const padded = getMfaEncryptionKeys({
+            NODE_ENV: 'test',
+            MFA_ENCRYPTION_KEY: '11'.repeat(32),
+            MFA_PREVIOUS_ENCRYPTION_KEYS: `  ${previousHex}  `
+        });
+        assert.strictEqual(decryptMfaSecret(payload, padded).plaintext, secret);
+        const buffers = getMfaEncryptionKeys({
+            NODE_ENV: 'test',
+            MFA_ENCRYPTION_KEY: '11'.repeat(32),
+            MFA_PREVIOUS_ENCRYPTION_KEYS: [Buffer.from(previousHex, 'hex')]
+        });
+        assert.strictEqual(decryptMfaSecret(payload, buffers).plaintext, secret);
+    });
+
+    await runAsyncTest('malformed previous key is rejected', async () => {
         assert.throws(() => getMfaEncryptionKeys({
             NODE_ENV: 'test',
             MFA_ENCRYPTION_KEY: '11'.repeat(32),
             MFA_PREVIOUS_ENCRYPTION_KEYS: ` ${'22'.repeat(32)}, malformed`
+        }), /MFA_ENCRYPTION_KEY/i);
+    });
+
+    await runAsyncTest('empty previous key entry is rejected', async () => {
+        assert.throws(() => getMfaEncryptionKeys({
+            NODE_ENV: 'test',
+            MFA_ENCRYPTION_KEY: '11'.repeat(32),
+            MFA_PREVIOUS_ENCRYPTION_KEYS: `${'22'.repeat(32)},  `
         }), /MFA_ENCRYPTION_KEY/i);
     });
     await runAsyncTest('AES-GCM round trip uses a random 12-byte IV and preserves the 40-char secret', async () => {
