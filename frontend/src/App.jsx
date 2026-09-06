@@ -36,11 +36,22 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [uiError, setUiError] = useState('');
   const isPollingRef = useRef(false);
-  // Active project reference for WebSocket message filtering without reconnecting
-  const activeProjectRef = useRef(activeProjectId);
+  const uiErrorRef = useRef(null);
+  const uiErrorTriggerRef = useRef(null);
+  const rememberUiErrorTrigger = useCallback(trigger => {
+    const candidate = trigger?.currentTarget
+      || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    if (candidate && candidate !== document.body) uiErrorTriggerRef.current = candidate;
+  }, []);
+  const dismissUiError = useCallback(() => {
+    setUiError('');
+    const trigger = uiErrorTriggerRef.current;
+    uiErrorTriggerRef.current = null;
+    if (trigger?.isConnected) trigger.focus();
+  }, []);
   useEffect(() => {
-    activeProjectRef.current = activeProjectId;
-  }, [activeProjectId]);
+    if (uiError) uiErrorRef.current?.focus();
+  }, [uiError]);
 
   const [projectState, setProjectState] = useState(null);
   const [chatInput, setChatInput] = useState('');
@@ -445,7 +456,8 @@ export default function App() {
     }
   };
 
-  const handleDownloadProjectZip = async id => {
+  const handleDownloadProjectZip = async (id, event) => {
+    rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
     try {
       await requestVerifiedArtifactDownload({
@@ -486,8 +498,9 @@ export default function App() {
     }
   };
 
-  const handleApprove = async () => {
+  const handleApprove = async event => {
     if (!activeProjectId) return;
+    rememberUiErrorTrigger(event);
     const { nodes: resetNodes, edges: resetEdges } = computeHierarchicalDAG([]);
     setNodes(resetNodes);
     setEdges(resetEdges);
@@ -503,8 +516,9 @@ export default function App() {
     }
   };
 
-  const handleResume = async () => {
+  const handleResume = async event => {
     if (!activeProjectId) return;
+    rememberUiErrorTrigger(event);
     setViewMode('flow');
     try {
       const data = await api.resumeProject(activeProjectId);
@@ -515,8 +529,9 @@ export default function App() {
     }
   };
 
-  const handlePause = async () => {
+  const handlePause = async event => {
     if (!activeProjectId) return;
+    rememberUiErrorTrigger(event);
     try {
       const data = await api.pauseProject(activeProjectId);
       setProjectState(data);
@@ -638,9 +653,14 @@ export default function App() {
       {/* MAIN AREA */}
       <div className="flex-1 flex flex-col min-w-0">
         {uiError && (
-          <div role="alert" className="flex items-center justify-between gap-3 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div
+            ref={uiErrorRef}
+            role="alert"
+            tabIndex="-1"
+            className="flex items-center justify-between gap-3 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
             <span>{uiError}</span>
-            <button type="button" onClick={() => setUiError('')} className="font-semibold underline">
+            <button type="button" onClick={dismissUiError} className="font-semibold underline">
               Kapat
             </button>
           </div>
@@ -673,6 +693,7 @@ export default function App() {
               handleResume={handleResume}
               handleDownloadProjectZip={handleDownloadProjectZip}
               getStatusBadge={getStatusBadge}
+              wsState={wsState}
             />
 
             {/* Content Area */}

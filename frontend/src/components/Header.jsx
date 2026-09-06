@@ -9,6 +9,7 @@ import {
   Pause,
   Download
 } from 'lucide-react';
+import ConnectionStatus from './ConnectionStatus';
 export default function Header({
   projectState,
   activeProjectId,
@@ -19,7 +20,8 @@ export default function Header({
   handlePause,
   handleResume,
   handleDownloadProjectZip,
-  getStatusBadge
+  getStatusBadge,
+  wsState = 'disconnected'
 }) {
   if (!projectState) return null;
   const latestArtifact = projectState.latestArtifact;
@@ -37,6 +39,7 @@ export default function Header({
       <div className="flex items-center gap-3 min-w-0">
         <h2 className="font-bold text-base text-gray-900 truncate">{projectState.title}</h2>
         <div>{getStatusBadge(projectState.status)}</div>
+        <ConnectionStatus state={wsState} />
         {latestArtifact && latestArtifact.sha256 && latestArtifact.status === 'verified' && (
           <div className="flex flex-col text-left text-[10px] text-gray-500 font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
             <span className="text-emerald-700 font-bold">Artefakt doğrulandı</span>
@@ -129,7 +132,7 @@ export default function Header({
         {/* Completed Download Button */}
         {canDownloadArtifact && (
           <button
-            onClick={() => handleDownloadProjectZip(activeProjectId)}
+            onClick={event => handleDownloadProjectZip(activeProjectId, event)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition shadow-sm"
           >
             <Download size={14} /> Projeyi (ZIP) İndir
