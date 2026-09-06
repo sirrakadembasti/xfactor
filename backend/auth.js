@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { db } from './db.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
+import { decryptMfaSecret, encryptMfaSecret, getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
 
 function normalizeUsername(username) {
     return String(username ?? '').trim();
@@ -79,18 +80,62 @@ export function verifyPassword(password, storedHash) {
     }
 }
 
-export async function authenticateUserAsync(username, password) {
-    const user = findUserByUsername(username);
-    if (!user) {
-        return null;
-    }
-    return (await verifyPasswordAsync(password, user.passwordHash)) ? user : null;
+let passwordVerifier = verifyPasswordAsync;
+let syncPasswordVerifier = verifyPassword;
+const DUMMY_PASSWORD_HASH = hashPassword('dummy-password-verification-value');
+
+export function setPasswordVerifierForTests(verifier) {
+    passwordVerifier = typeof verifier === 'function' ? verifier : verifyPasswordAsync;
+    syncPasswordVerifier = typeof verifier === 'function' ? verifier : verifyPassword;
 }
 
-export function generateTotpSecret(userId) {
+export async function authenticateUserAsync(username, password) {
+    const user = findUserByUsername(username);
+    const verified = await passwordVerifier(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    return user && verified ? user : null;
+}
+
+export function generateTotpSecret(userId, env = process.env) {
+    const keys = getMfaEncryptionKeys(env);
     const secret = crypto.randomBytes(20).toString('hex');
-    db.prepare('UPDATE users SET totp_secret = ?, mfa_enabled = 1 WHERE id = ?').run(secret, userId);
+    const encrypted = encryptMfaSecret(secret, keys.current);
+    db.prepare('UPDATE users SET totp_secret = ?, mfa_enabled = 1 WHERE id = ?').run(encrypted, userId);
     return secret;
+}
+
+export function verifyUserTotp(user, token, env = process.env) {
+    if (!user || typeof user.totpSecret !== 'string') {
+        return false;
+    }
+
+    const storedSecret = user.totpSecret;
+    let plaintext;
+    let keyIndex = -1;
+    let keys;
+    try {
+        keys = getMfaEncryptionKeys(env);
+        if (/^[0-9a-fA-F]{40}$/.test(storedSecret)) {
+            plaintext = storedSecret;
+        } else {
+            ({ plaintext, keyIndex } = decryptMfaSecret(storedSecret, keys));
+        }
+    } catch {
+        return false;
+    }
+
+    if (!verifyTotpToken(plaintext, token)) {
+        return false;
+    }
+
+    if (keyIndex !== 0) {
+        const encrypted = encryptMfaSecret(plaintext, keys.current);
+        db.prepare(`
+            UPDATE users
+            SET totp_secret = ?
+            WHERE id = ? AND totp_secret = ?
+        `).run(encrypted, user.id, storedSecret);
+    }
+    return true;
 }
 
 export function verifyTotpToken(secret, token) {
@@ -133,7 +178,9 @@ function mapUserRow(row) {
         id: row.id,
         username: row.username,
         passwordHash: row.password_hash,
-        isAdmin: row.is_admin === 1
+        isAdmin: row.is_admin === 1,
+        mfaEnabled: row.mfa_enabled === 1,
+        totpSecret: row.totp_secret || null
     };
 }
 
@@ -193,11 +240,8 @@ export function createUser(username, password) {
 
 export function authenticateUser(username, password) {
     const user = findUserByUsername(username);
-    if (!user) {
-        return null;
-    }
-
-    return verifyPassword(password, user.passwordHash) ? user : null;
+    const verified = syncPasswordVerifier(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    return user && verified === true ? user : null;
 }
 
 export function promoteUserToAdmin(username, password) {
@@ -211,6 +255,26 @@ export function promoteUserToAdmin(username, password) {
 
     db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(user.id);
     return toPublicUser({ ...user, isAdmin: true });
+}
+
+export function changeUserPassword(username, currentPassword, newPassword) {
+    const user = findUserByUsername(username);
+    if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
+        throw new Error('Existing user credentials do not match.');
+    }
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+    return toPublicUser(user);
+}
+
+export function resetUserPassword(username, newPassword) {
+    const user = findUserByUsername(username);
+    if (!user) {
+        throw new Error('User not found.');
+    }
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+    return toPublicUser(user);
 }
 
 export const PROJECT_LIFECYCLE = Object.values(PROJECT_STATUS);

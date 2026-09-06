@@ -57,6 +57,26 @@ async function fetchWithRetry(url, options, { retries = 3, signal = null } = {})
     throw new Error(`Fetch ${retries} denemeden sonra başarısız oldu. Son hata: ${lastError?.message || lastError}`);
 }
 
+function createAbortError(signal) {
+    const abortError = new Error(`LLM call aborted: ${signal?.reason || 'ABORTED'}`);
+    abortError.name = 'AbortError';
+    return abortError;
+}
+
+export function raceWithAbort(operationPromise, signal) {
+    if (!signal) return Promise.resolve(operationPromise);
+    if (signal.aborted) return Promise.reject(createAbortError(signal));
+
+    let onAbort;
+    const abortPromise = new Promise((_, reject) => {
+        onAbort = () => reject(createAbortError(signal));
+        signal.addEventListener('abort', onAbort, { once: true });
+    });
+    return Promise.race([operationPromise, abortPromise]).finally(() => {
+        signal.removeEventListener('abort', onAbort);
+    });
+}
+
 export async function generateLLMResponse(messages, options = {}) {
     dotenv.config(); // Her istekte güncel .env değişkenlerini yükle
 
@@ -70,7 +90,8 @@ export async function generateLLMResponse(messages, options = {}) {
     let baseURL = options.baseURL?.trim() || '';
     const timeoutMs = Number(options.timeoutMs ?? process.env.LLM_TIMEOUT_MS ?? 60000);
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
-    const mergedSignal = options.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal;
+    const combineSignals = options.signalCombiner || (signals => AbortSignal.any(signals));
+    const mergedSignal = options.signal ? combineSignals([options.signal, timeoutSignal]) : timeoutSignal;
 
     if (mergedSignal.aborted) {
         const preflightErr = new Error(`LLM call aborted: ${mergedSignal.reason || 'ABORTED'}`);
@@ -159,32 +180,7 @@ export async function generateLLMResponse(messages, options = {}) {
             }
             // Pass signal or race with mergedSignal for SDK
             const generatePromise = model.generateContent({ contents });
-            let result;
-            if (mergedSignal) {
-                if (mergedSignal.aborted) {
-                    const abortErr = new Error(`LLM call aborted: ${mergedSignal.reason || 'ABORTED'}`);
-                    abortErr.name = 'AbortError';
-                    throw abortErr;
-                }
-                let onAbort;
-                const abortPromise = new Promise((_, reject) => {
-                    onAbort = () => {
-                        const abortErr = new Error(`LLM call aborted: ${mergedSignal.reason || 'ABORTED'}`);
-                        abortErr.name = 'AbortError';
-                        reject(abortErr);
-                    };
-                    mergedSignal.addEventListener('abort', onAbort, { once: true });
-                });
-                try {
-                    result = await Promise.race([generatePromise, abortPromise]);
-                } finally {
-                    if (onAbort) {
-                        mergedSignal.removeEventListener('abort', onAbort);
-                    }
-                }
-            } else {
-                result = await generatePromise;
-            }
+            const result = await raceWithAbort(generatePromise, mergedSignal);
             const candidate = result.response.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'sdk', tokenLimit: 8192 });

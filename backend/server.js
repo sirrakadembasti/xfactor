@@ -27,8 +27,15 @@ import {
     createRequireAuth,
     readSessionToken
 } from './sessionAuth.js';
+import { createMaintenanceScheduler } from './maintenance.js';
 import { db, getSchemaVersion, checkpointWAL } from './db.js';
 import { getProjectsRoot } from './projectRepository.js';
+import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
+import {
+    assertProductionFrontendAvailable,
+    getFrontendDistRoot,
+    mountProductionFrontend
+} from './productionStatic.js';
 dotenv.config();
 
 const runtimeConfig = validateRuntimeConfig(process.env);
@@ -61,24 +68,36 @@ app.get('/healthz', (req, res) => {
     });
 });
 
-app.get('/readyz', (req, res) => {
+app.get('/readyz', async (req, res) => {
     try {
         const row = db.prepare('SELECT 1 as alive').get();
         if (!row || row.alive !== 1) {
             return res.status(503).json({ status: 'not_ready', error: 'Database query failed' });
         }
 
-        const projectsRoot = getProjectsRoot();
-        if (!fs.existsSync(projectsRoot)) {
-            fs.mkdirSync(projectsRoot, { recursive: true });
-        }
+        const projectsRoot = runtimeConfig.PROJECTS_ROOT || getProjectsRoot();
+        const projectsStat = fs.statSync(projectsRoot);
+        if (!projectsStat.isDirectory()) throw new Error('PROJECTS_ROOT must be a directory');
+        fs.accessSync(projectsRoot, fs.constants.R_OK | fs.constants.W_OK);
+
+        const artifactsRoot = runtimeConfig.ARTIFACTS_ROOT || getArtifactsRoot();
+        const artifactsStat = fs.statSync(artifactsRoot);
+        if (!artifactsStat.isDirectory()) throw new Error('ARTIFACTS_ROOT must be a directory');
+        await assertArtifactsRootAvailable(artifactsRoot);
+
+        const frontendDistRoot = getFrontendDistRoot();
+        await assertProductionFrontendAvailable({
+            production: runtimeConfig.production,
+            distRoot: frontendDistRoot
+        });
 
         const schemaVersion = getSchemaVersion();
-
         res.status(200).json({
             status: 'ready',
             database: 'connected',
             projectsRoot: 'accessible',
+            artifactsRoot: 'accessible',
+            frontend: runtimeConfig.production ? 'available' : 'not_required',
             schemaVersion
         });
     } catch (err) {
@@ -238,6 +257,19 @@ app.use('/api', createAuthRouter({
 }));
 app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub }));
 
+app.use('/api', (req, res) => {
+    res.status(404).json({
+        error: 'API endpoint bulunamadı.',
+        code: 'NOT_FOUND',
+        requestId: req.requestId
+    });
+});
+
+mountProductionFrontend(app, {
+    production: runtimeConfig.production,
+    distRoot: getFrontendDistRoot()
+});
+
 // Global Error Handler
 app.use((err, req, res, _next) => {
     const requestId = req.requestId || generateRequestId();
@@ -257,10 +289,25 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 8000;
 const HOST = process.env.HOST || '127.0.0.1';
+let maintenance = null;
+async function startServer() {
+    try {
+        await assertProductionFrontendAvailable({
+            production: runtimeConfig.production,
+            distRoot: getFrontendDistRoot()
+        });
+        maintenance = createMaintenanceScheduler({ database: db });
+        server.listen(PORT, HOST, () => {
+            console.log(`Backend hazır: http://${HOST}:${PORT}`);
+        });
+    } catch (error) {
+        maintenance?.stop();
+        console.error(`Backend startup failed: ${error.message}`);
+        process.exitCode = 1;
+    }
+}
 
-server.listen(PORT, HOST, () => {
-    console.log(`Backend hazır: http://${HOST}:${PORT}`);
-});
+startServer();
 
 const EVIDENCE_RETENTION_DAYS = 30;
 const EVIDENCE_COMPACTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -281,9 +328,9 @@ let isShuttingDown = false;
 function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
+    maintenance?.stop();
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
-
     // 1. WebSocket istemcilerini kapat
     try {
         for (const client of wss.clients) {

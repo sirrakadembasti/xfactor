@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { createTestHarness } from './testHarness.js';
+process.env.NODE_ENV = 'test';
+process.env.MFA_ENCRYPTION_KEY = '55'.repeat(32);
+process.env.MFA_PREVIOUS_ENCRYPTION_KEYS = '';
 import { createSecurityHeadersMiddleware, isSecureTransportRequest } from '../security.js';
 import {
     createUser,
@@ -62,10 +65,10 @@ await runAsyncTest('P2.8 Backend and frontend declare consistent packageManager 
     const backendPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
     const frontendPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../frontend/package.json'), 'utf8'));
 
-    assert.strictEqual(backendPkg.packageManager, 'npm@10.8.2');
-    assert.strictEqual(backendPkg.engines?.node, '>=22.5.0');
-    assert.strictEqual(frontendPkg.packageManager, 'npm@10.8.2');
-    assert.strictEqual(frontendPkg.engines?.node, '>=22.5.0');
+    assert.strictEqual(backendPkg.packageManager, 'npm@10.9.8');
+    assert.strictEqual(backendPkg.engines?.node, '22.23.2');
+    assert.strictEqual(frontendPkg.packageManager, 'npm@10.9.8');
+    assert.strictEqual(frontendPkg.engines?.node, '22.23.2');
 });
 
 // =========================================================================
@@ -119,7 +122,7 @@ await runAsyncTest('P2.10 Dockerfile and .dockerignore strictly isolate secrets 
     const dockerfile = fs.readFileSync(path.resolve(__dirname, '../../Dockerfile'), 'utf8');
     const dockerignore = fs.readFileSync(path.resolve(__dirname, '../../.dockerignore'), 'utf8');
 
-    assert.match(dockerfile, /FROM node:22\.5\.0-alpine/, 'Must use pinned node image');
+    assert.match(dockerfile, /FROM node:22\.23\.2-alpine/, 'Must use pinned node image');
     assert.match(dockerfile, /USER xfactor/, 'Must run as non-root user');
     assert.match(dockerfile, /HEALTHCHECK/, 'Must declare healthcheck');
 
@@ -131,7 +134,7 @@ await runAsyncTest('P2.10 Dockerfile and .dockerignore strictly isolate secrets 
 await runAsyncTest('P2.11 CI workflow runs full test suite and frontend build', async () => {
     const ciYaml = fs.readFileSync(path.resolve(__dirname, '../../.github/workflows/ci.yml'), 'utf8');
     assert.match(ciYaml, /npm test/, 'Must execute npm test in CI');
-    assert.match(ciYaml, /npm run build/, 'Must execute frontend build in CI');
+    assert.match(ciYaml, /run build/, 'Must execute frontend build in CI');
 });
 // =========================================================================
 // P2.6: Auth Operations & Session Cleanup

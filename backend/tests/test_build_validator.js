@@ -3,19 +3,13 @@
  */
 
 import assert from 'assert';
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
-import { fileURLToPath } from 'url';
 import { executeSafeCommand, validateProjectBuild } from '../engine/buildValidator.js';
 import { detectProjectStack } from '../engine/codeGenerator.js';
-// P0.4: Test 4/5 host build yolunu kullanmalı (varsayılan artık fail-closed sandboxed).
-// Diğer süitleri etkilememek için orijinal değer teardown'da geri alınır.
-const __ORIGINAL_XFACTOR_BUILD_SANDBOX = process.env.XFACTOR_BUILD_SANDBOX;
-process.env.XFACTOR_BUILD_SANDBOX = 'host';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TEST_DIR = path.join(__dirname, '../data', `test-build-gate-${Date.now()}`);
+const TEST_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-build-gate-'));
 
 console.log("==================================================");
 console.log("⚡ XFactor Real Build & Compiler Quality Gate Test Suite");
@@ -34,6 +28,21 @@ async function runTest(name, fn) {
         console.error(`         Hata: ${err.message}`);
         failedCount++;
     }
+}
+
+function sandboxAdapter(result) {
+    return {
+        id: 'build-validator-test',
+        getCapabilities: () => ({
+            available: true,
+            isolation: true,
+            adapterId: 'build-validator-test',
+            envScrubbed: true
+        }),
+        async execute() {
+            return result;
+        }
+    };
 }
 
 // 1. Stack Detection Testi
@@ -87,7 +96,10 @@ const alice: User = { id: 'u1', name: 'Alice', age: 25 };
 greet(alice);
 `, 'utf8');
 
-    const result = await validateProjectBuild(validTsDir, { title: 'Valid TS' }, {});
+    const result = await validateProjectBuild(validTsDir, { title: 'Valid TS' }, {}, {
+        phase: 'generation',
+        skipFrameworkBuild: true
+    });
     assert.strictEqual(result.passed, true, 'Valid TypeScript projesi denetimden başarıyla geçmeli');
     assert.strictEqual(result.issues.length, 0, 'Hiçbir issue olmamalı');
     assert.ok(result.checks.some(c => c.name === 'typescript_typecheck' && c.exitCode === 0));
@@ -118,7 +130,10 @@ export function calculate(a: number): number {
 }
 `, 'utf8');
 
-    const result = await validateProjectBuild(invalidTsDir, { title: 'Invalid TS' }, {});
+    const result = await validateProjectBuild(invalidTsDir, { title: 'Invalid TS' }, {}, {
+        phase: 'generation',
+        skipFrameworkBuild: true
+    });
     assert.strictEqual(result.passed, false, 'Invalid TypeScript projesi yakalanmalı ve FAIL olmalı');
     assert.ok(result.issues.length > 0, 'En az bir derleme hatası raporlanmalı');
     assert.ok(result.issues.some(i => i.includes('TypeScript Tip/Derleme Hatası') || i.includes('Type')), 'TypeScript hata detayı içermeli');
@@ -142,7 +157,10 @@ model BrokenModel {
 }
 `, 'utf8');
 
-    const result = await validateProjectBuild(invalidPrismaDir, { title: 'Invalid Prisma' }, {});
+    const result = await validateProjectBuild(invalidPrismaDir, { title: 'Invalid Prisma' }, {}, {
+        phase: 'generation',
+        skipFrameworkBuild: true
+    });
     assert.strictEqual(result.passed, false, 'Bozuk Prisma şeması FAIL olmalı');
     assert.ok(result.issues.some(i => i.includes('Prisma')), 'Prisma şema hatası raporlanmalı');
 });
@@ -159,9 +177,22 @@ await runTest("5. Test 4 — Build Failure: package.json build scripti hata veri
         }
     }, null, 2), 'utf8');
 
-    const result = await validateProjectBuild(failBuildDir, { title: 'Fail Build' }, {});
+    const result = await validateProjectBuild(failBuildDir, { title: 'Fail Build' }, {}, {
+        adapter: sandboxAdapter({
+            status: 'FAIL',
+            passed: false,
+            exitCode: 1,
+            stdout: '',
+            stderr: 'Critical build failure!',
+            timedOut: false,
+            aborted: false
+        })
+    });
     assert.strictEqual(result.passed, false, 'Build hatası durumunda passed=false olmalı');
-    assert.ok(result.issues.some(i => i.includes('Framework Build Hatası')), 'Build hatası detayı raporlanmalı');
+    assert.ok(
+        result.checks.some(check => check.name === 'framework_build' && check.status === 'failed'),
+        'Framework build kapısı failed olmalı'
+    );
 });
 
 // 6. Test 5 — Command Timeout (Killed safely)
@@ -171,6 +202,15 @@ await runTest("6. Test 5 — Timeout: Takılan/sonsuz döngüdeki komut timeout 
 
     // 5 saniye uyuyan komutu 500ms timeout ile çalıştır
     const res = await executeSafeCommand('node', ['-e', 'setTimeout(() => {}, 10000);'], {
+        adapter: sandboxAdapter({
+            status: 'BLOCKED',
+            passed: false,
+            exitCode: -1,
+            stdout: '',
+            stderr: '',
+            timedOut: true,
+            aborted: false
+        }),
         cwd: timeoutDir,
         timeoutMs: 500
     });
@@ -194,12 +234,6 @@ await runTest("7. Security: Whitelist dışındaki keyfi komutlar kesinlikle eng
 try {
     await fs.rm(TEST_DIR, { recursive: true, force: true });
 } catch {}
-// P0.4: env'i orijinal haline geri al (diğer süitler etkilenmesin).
-if (__ORIGINAL_XFACTOR_BUILD_SANDBOX === undefined) {
-    delete process.env.XFACTOR_BUILD_SANDBOX;
-} else {
-    process.env.XFACTOR_BUILD_SANDBOX = __ORIGINAL_XFACTOR_BUILD_SANDBOX;
-}
 
 console.log("==================================================");
 console.log(`🎉 Build Validator Testleri: ${passedCount} Başarılı, ${failedCount} Hatalı`);

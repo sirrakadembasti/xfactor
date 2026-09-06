@@ -6,9 +6,12 @@ import { db, dbEvents, formatDBDate } from './db.js';
 import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
+import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactRepository.js';
+
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
+import { reconcileProjectsWithDisk } from './services/reconciliationService.js';
 
 
 export async function createProject({ title, ownerUserId = null, env = process.env } = {}) {
@@ -67,7 +70,7 @@ export function getProject(projectId) {
     if (!project) return null;
 
     const contractRow = db.prepare(`
-        SELECT contract_json FROM project_contracts
+        SELECT id, contract_json FROM project_contracts
         WHERE project_id = ?
         ORDER BY
             CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
@@ -97,6 +100,15 @@ export function getProject(projectId) {
         try { workflow = JSON.parse(project.workflow_state); } catch {}
     }
 
+    const artifact = contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id });
+    const latestArtifact = artifact && {
+        id: artifact.id,
+        status: artifact.status,
+        sha256: artifact.sha256,
+        size: artifact.size,
+        verificationRunId: artifact.verificationRunId
+    };
+
     return {
         id: project.id,
         title: project.title,
@@ -106,7 +118,9 @@ export function getProject(projectId) {
         revision: project.revision || 1,
         plan,
         workflow,
-        chatHistory
+        chatHistory,
+        contractId: contractRow?.id || null,
+        latestArtifact: latestArtifact || null
     };
 }
 
@@ -206,17 +220,15 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     if (!latestContract || latestContract.id !== contractId) {
         throw new Error(`Contract ${contractId} is not the latest approved contract for project ${projectId}.`);
     }
-    const artifact = db.prepare(
-        'SELECT * FROM artifacts WHERE project_id = ? AND contract_id = ? AND id = ?'
-    ).get(projectId, contractId, artifactId);
-    if (!artifact || artifact.status !== 'verified' || !artifact.verification_run_id) {
-        throw new Error(`Artifact ${artifactId} is not verified or lacks verification_run_id.`);
+    const artifact = getArtifact({ projectId, contractId, artifactId });
+    if (!artifact || artifact.status !== 'verified' || !artifact.verificationRunId) {
+        throw new Error(`Artifact ${artifactId} is not verified or lacks verification run linkage.`);
     }
     const run = db.prepare(`
         SELECT * FROM verification_runs
         WHERE id = ? AND project_id = ? AND contract_id = ?
-    `).get(artifact.verification_run_id, projectId, contractId);
-    if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verification_run_id} is not verified.`);
+    `).get(artifact.verificationRunId, projectId, contractId);
+    if (!run || run.status !== 'verified') throw new Error(`Verification run ${artifact.verificationRunId} is not verified.`);
 
     if (run.policy_version !== '2.0') {
         throw new Error('Verification run policy version is not active.');
@@ -423,9 +435,32 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     dbEvents.emit(`stateChange:${state.id}`, state.status);
 }
 
-export async function deleteProject(projectId, env = process.env) {
+export async function deleteProject(projectId, envOrOptions = process.env, maybeOptions = {}) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID format: "${projectId}"`);
+    }
+    // Signature support: legacy raw env object, options object, or legacy string env.
+    let env = process.env;
+    let force = false;
+    if (typeof envOrOptions === 'object' && envOrOptions !== null) {
+        if ('env' in envOrOptions || 'force' in envOrOptions) {
+            env = envOrOptions.env || process.env;
+            force = Boolean(envOrOptions.force);
+        } else {
+            env = envOrOptions;
+            force = Boolean(maybeOptions?.force);
+        }
+    } else if (typeof envOrOptions === 'string') {
+        env = envOrOptions;
+        force = Boolean(maybeOptions?.force);
+    }
+    // RESTRICT: a project with a verified delivery receipt cannot be deleted
+    // unless explicitly forced. Checked before any state change or disk move.
+    const receipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+    if (receipt && !force) {
+        const err = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
+        err.code = 'PROJECT_LOCKED_RECEIPT';
+        throw err;
     }
     const { abortProjectExecution } = await import('./engine/cancellation.js');
     // 1. Aktif in-flight workflow varsa derhal durdur
@@ -452,6 +487,31 @@ export async function deleteProject(projectId, env = process.env) {
     // 4. DB kayıtlarını temizle
     db.exec('BEGIN IMMEDIATE;');
     try {
+        // Re-verify inside the transaction: closes the race between the early
+        // check and the deletes, so a concurrent receipt insert degrades to a
+        // clean RESTRICT error instead of a raw FOREIGN KEY failure.
+        const lockedReceipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+        if (lockedReceipt && !force) {
+            const lockedErr = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
+            lockedErr.code = 'PROJECT_LOCKED_RECEIPT';
+            throw lockedErr;
+        }
+        if (force) {
+            // Forced deletes are an explicit admin override: remove the project's
+            // delivery receipts as well. Receipts are otherwise immutable
+            // (FK RESTRICT + immutable-delete trigger), so the trigger is
+            // dropped and recreated inside this transaction.
+            db.exec('DROP TRIGGER IF EXISTS completion_receipts_immutable_delete');
+            try {
+                db.prepare('DELETE FROM completion_receipts WHERE project_id = ?').run(projectId);
+            } finally {
+                db.exec(`CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_delete
+                BEFORE DELETE ON completion_receipts
+                BEGIN
+                    SELECT RAISE(ABORT, 'completion receipts are immutable');
+                END`);
+            }
+        }
         db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(projectId);
         db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(projectId);
         db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(projectId);
@@ -469,69 +529,8 @@ export async function deleteProject(projectId, env = process.env) {
     return true;
 }
 
+export { reconcileProjectsWithDisk };
+
 export function syncProjectsWithDisk(env = process.env) {
-    const root = getProjectsRoot(env);
-    // Eksik root durumunda veri kaybını önlemek için güvenli koruma
-    if (!fsSync.existsSync(root)) {
-        return {
-            success: false,
-            error: `Projects root directory "${root}" does not exist. No DB records modified.`,
-            syncedCount: 0,
-            orphansRemoved: 0,
-            quarantined: []
-        };
-    }
-
-    const diskEntries = fsSync.readdirSync(root, { withFileTypes: true });
-    const validDiskDirs = [];
-    const quarantined = [];
-
-    for (const d of diskEntries) {
-        if (!d.isDirectory()) continue;
-        if (d.name.startsWith('.')) continue; // .trash, .git veya geçici dotfile'ları yoksay
-        if (isValidProjectId(d.name)) {
-            validDiskDirs.push(d.name);
-        } else {
-            quarantined.push(d.name);
-        }
-    }
-
-    const dbProjects = db.prepare('SELECT id FROM projects').all().map(p => p.id);
-    const dbProjectSet = new Set(dbProjects);
-
-    let syncedCount = 0;
-    let orphansRemoved = 0;
-
-    db.exec('BEGIN IMMEDIATE;');
-    try {
-        for (const diskId of validDiskDirs) {
-            if (!dbProjectSet.has(diskId)) {
-                db.prepare('INSERT INTO projects (id, title, status, plan, workflow_state) VALUES (?, ?, ?, NULL, NULL)')
-                    .run(diskId, diskId, 'completed');
-                syncedCount++;
-            }
-        }
-
-        for (const dbId of dbProjects) {
-            const expectedDir = path.join(root, dbId);
-            if (!fsSync.existsSync(expectedDir)) {
-                db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(dbId);
-                db.prepare('DELETE FROM projects WHERE id = ?').run(dbId);
-                orphansRemoved++;
-            }
-        }
-        db.exec('COMMIT;');
-    } catch (error) {
-        db.exec('ROLLBACK;');
-        throw error;
-    }
-
-    return {
-        success: true,
-        syncedCount,
-        orphansRemoved,
-        quarantined
-    };
+    return reconcileProjectsWithDisk({ env });
 }

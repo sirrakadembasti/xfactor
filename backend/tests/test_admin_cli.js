@@ -111,4 +111,116 @@ await runAsyncTest('Admin CLI requires an interactive TTY', async () => {
     );
 });
 
+await runAsyncTest('Admin CLI renews password with --renew flag', async () => {
+    const stdin = new FakeInput();
+    const stdout = new FakeOutput();
+    const renewCalls = [];
+    const running = runCreateAdmin({
+        args: ['admin', '--renew'],
+        stdin,
+        stdout,
+        provision: () => assert.fail('Provision must not run'),
+        renew: async (username, currentPassword, newPassword) => {
+            renewCalls.push({ username, currentPassword, newPassword });
+            return { username };
+        }
+    });
+
+    await nextTurn();
+    stdin.emit('data', 'OldPassword!2026\r');
+    await nextTurn();
+    stdin.emit('data', 'NewPassword!2027\r');
+    await nextTurn();
+    stdin.emit('data', 'NewPassword!2027\r');
+
+    assert.deepStrictEqual(await running, { username: 'admin' });
+    assert.deepStrictEqual(renewCalls, [{
+        username: 'admin',
+        currentPassword: 'OldPassword!2026',
+        newPassword: 'NewPassword!2027'
+    }]);
+    assert.ok(!stdout.text.includes('OldPassword!2026'));
+    assert.ok(!stdout.text.includes('NewPassword!2027'));
+    assert.ok(stdout.text.includes('Parola yenilendi: admin'));
+});
+
+await runAsyncTest('Admin CLI rejects renewal on confirmation mismatch', async () => {
+    const stdin = new FakeInput();
+    const stdout = new FakeOutput();
+    const running = runCreateAdmin({
+        args: ['admin', '--renew'],
+        stdin,
+        stdout,
+        provision: () => assert.fail('Provision must not run'),
+        renew: () => assert.fail('Renew must not run')
+    });
+
+    await nextTurn();
+    stdin.emit('data', 'OldPassword!2026\r');
+    await nextTurn();
+    stdin.emit('data', 'NewPassword!2027\r');
+    await nextTurn();
+    stdin.emit('data', 'DifferentPassword!2028\r');
+    await assert.rejects(running, /match/i);
+});
+
+await runAsyncTest('Admin CLI rejects unknown second argument', async () => {
+    await assert.rejects(
+        runCreateAdmin({
+            args: ['admin', '--unknown'],
+            stdin: new FakeInput(),
+            stdout: new FakeOutput(),
+            provision: () => assert.fail('Provision must not run'),
+            renew: () => assert.fail('Renew must not run')
+        }),
+        /renew|username argument/i
+    );
+});
+
+await runAsyncTest('Admin CLI resets password with --reset flag without current password', async () => {
+    const stdin = new FakeInput();
+    const stdout = new FakeOutput();
+    const resetCalls = [];
+    const running = runCreateAdmin({
+        args: ['admin', '--reset'],
+        stdin,
+        stdout,
+        provision: () => assert.fail('Provision must not run'),
+        renew: () => assert.fail('Renew must not run'),
+        reset: async (username, newPassword) => {
+            resetCalls.push({ username, newPassword });
+            return { username };
+        }
+    });
+
+    await nextTurn();
+    stdin.emit('data', 'ResetPassword!2029\r');
+    await nextTurn();
+    stdin.emit('data', 'ResetPassword!2029\r');
+
+    assert.deepStrictEqual(await running, { username: 'admin' });
+    assert.deepStrictEqual(resetCalls, [{ username: 'admin', newPassword: 'ResetPassword!2029' }]);
+    assert.ok(!stdout.text.includes('ResetPassword!2029'));
+    assert.ok(stdout.text.includes('Parola sıfırlandı: admin'));
+});
+
+await runAsyncTest('Admin CLI rejects reset on confirmation mismatch', async () => {
+    const stdin = new FakeInput();
+    const stdout = new FakeOutput();
+    const running = runCreateAdmin({
+        args: ['admin', '--reset'],
+        stdin,
+        stdout,
+        provision: () => assert.fail('Provision must not run'),
+        renew: () => assert.fail('Renew must not run'),
+        reset: () => assert.fail('Reset must not run')
+    });
+
+    await nextTurn();
+    stdin.emit('data', 'ResetPassword!2029\r');
+    await nextTurn();
+    stdin.emit('data', 'DifferentPassword!2030\r');
+    await assert.rejects(running, /match/i);
+});
+
 finish();

@@ -83,181 +83,37 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
     const {
         cwd = process.cwd(),
         timeoutMs = DEFAULT_TIMEOUT_MS,
-        maxBufferSize = MAX_BUFFER_SIZE,
-        env = process.env,
-        signal = null,
-        sandboxMode = resolveBuildSandboxMode()
+        env = process.env
     } = options;
 
-    // 1. Güvenlik & Whitelist Kontrolü
     const baseExec = path.basename(executable).toLowerCase();
     if (!ALLOWED_EXECUTABLES.has(baseExec) && !ALLOWED_EXECUTABLES.has(executable.toLowerCase())) {
         throw new Error(`İzin verilmeyen çalıştırılabilir komut: "${executable}". Yalnızca whitelist komutlar çalıştırılabilir.`);
     }
-
-    // 2. Dizin Doğrulama
     if (!fsSync.existsSync(cwd)) {
         throw new Error(`Geçersiz çalışma dizini: "${cwd}" mevcut değil.`);
     }
 
-    // 3. Sandbox Redirection Hook
-    if (sandboxMode === 'sandboxed') {
-        const commandStr = `${executable} ${args.join(' ')}`.trim();
-        try {
-            const sandboxRes = await executeInSandbox(executable, args, {
-                adapter: options.adapter,
-                workspace: cwd,
-                timeoutMs,
-                env: getSanitizedSubprocessEnv(env)
-            });
-            const passed = Boolean(sandboxRes.passed);
-            return {
-                passed,
-                success: passed,
-                status: passed ? 'passed' : (sandboxRes.timedOut ? 'timeout' : 'failed'),
-                exitCode: sandboxRes.exitCode,
-                stdout: sandboxRes.stdout || '',
-                stderr: sandboxRes.stderr || '',
-                timedOut: Boolean(sandboxRes.timedOut),
-                aborted: Boolean(sandboxRes.aborted),
-                command: commandStr
-            };
-        } catch (err) {
-            if (err.code === 'SANDBOX_UNAVAILABLE') {
-                throw err;
-            }
-            return {
-                passed: false,
-                success: false,
-                status: 'failed',
-                exitCode: -1,
-                stdout: '',
-                stderr: err.message,
-                timedOut: false,
-                aborted: false,
-                command: commandStr
-            };
-        }
-    }
-
-    // 4. Platform uyumlu komut çözümleme (Host fallback mode)
-    let runExecutable = executable;
-    let runArgs = args;
-
-    if (process.platform === 'win32') {
-        const comSpec = process.env.ComSpec || 'cmd.exe';
-        if (executable.toLowerCase() === 'node' || executable.toLowerCase() === 'node.exe') {
-            runExecutable = process.execPath;
-            runArgs = args;
-        } else {
-            runExecutable = comSpec;
-            runArgs = ['/d', '/s', '/c', executable, ...args];
-        }
-    }
-
-    const cleanEnv = getSanitizedSubprocessEnv(env);
-    return new Promise((resolve) => {
-        let stdout = '';
-        let stderr = '';
-        let timedOut = false;
-        let aborted = false;
-
-        if (signal?.aborted) {
-            return resolve({
-                passed: false,
-                status: 'failed',
-                exitCode: -1,
-                stdout: '',
-                stderr: `Komut iptal edildi: ${signal.reason || 'ABORTED'}`,
-                timedOut: false,
-                aborted: true,
-                command: `${executable} ${args.join(' ')}`.trim()
-            });
-        }
-
-        let proc;
-        try {
-            proc = spawn(runExecutable, runArgs, {
-                cwd,
-                env: cleanEnv,
-                stdio: ['ignore', 'pipe', 'pipe'],
-                shell: false,
-                windowsHide: true
-            });
-        } catch (spawnError) {
-            return resolve({
-                passed: false,
-                status: 'failed',
-                exitCode: -1,
-                stdout: '',
-                stderr: spawnError.message,
-                timedOut: false,
-                aborted: false,
-                command: `${executable} ${args.join(' ')}`.trim()
-            });
-        }
-
-        const onAbort = () => {
-            aborted = true;
-            killProcessTree(proc);
-        };
-
-        if (signal) {
-            signal.addEventListener('abort', onAbort, { once: true });
-        }
-
-        const timer = setTimeout(() => {
-            timedOut = true;
-            killProcessTree(proc);
-        }, timeoutMs);
-        if (proc.stdout) {
-            proc.stdout.on('data', (chunk) => {
-                if (stdout.length < maxBufferSize) {
-                    stdout += chunk.toString();
-                }
-            });
-        }
-
-        if (proc.stderr) {
-            proc.stderr.on('data', (chunk) => {
-                if (stderr.length < maxBufferSize) {
-                    stderr += chunk.toString();
-                }
-            });
-        }
-
-        proc.on('error', (err) => {
-            clearTimeout(timer);
-            if (signal) signal.removeEventListener('abort', onAbort);
-            killProcessTree(proc);
-            resolve({
-                passed: false,
-                status: 'failed',
-                exitCode: -1,
-                stdout: stdout.trim(),
-                stderr: `${stderr}\n${err.message}`.trim(),
-                timedOut,
-                aborted,
-                command: `${executable} ${args.join(' ')}`.trim()
-            });
-        });
-
-        proc.on('close', (exitCode) => {
-            clearTimeout(timer);
-            if (signal) signal.removeEventListener('abort', onAbort);
-            const passed = exitCode === 0 && !timedOut && !aborted;
-            resolve({
-                passed,
-                status: passed ? 'passed' : 'failed',
-                exitCode: exitCode !== null ? exitCode : ((timedOut || aborted) ? -1 : 0),
-                stdout: stdout.trim(),
-                stderr: stderr.trim(),
-                timedOut,
-                aborted,
-                command: `${executable} ${args.join(' ')}`.trim()
-            });
-        });
+    const command = `${executable} ${args.join(' ')}`.trim();
+    const sandboxResult = await executeInSandbox(executable, args, {
+        adapter: options.adapter,
+        sandboxAdapter: options.sandboxAdapter,
+        workspace: cwd,
+        timeoutMs,
+        env: getSanitizedSubprocessEnv(env)
     });
+    const passed = Boolean(sandboxResult.passed);
+    return {
+        passed,
+        success: passed,
+        status: passed ? 'passed' : (sandboxResult.timedOut ? 'timeout' : 'failed'),
+        exitCode: sandboxResult.exitCode,
+        stdout: sandboxResult.stdout || '',
+        stderr: sandboxResult.stderr || '',
+        timedOut: Boolean(sandboxResult.timedOut),
+        aborted: Boolean(sandboxResult.aborted),
+        command
+    };
 }
 
 /**
@@ -407,21 +263,6 @@ export async function validateTypeScriptFiles(projectDir, tsconfigPath) {
         issues
     };
 }
-/**
- * Build sandbox çalışma modunu çözümler.
- *
- * Güvenlik sözleşmesi (fail-closed): Üretilen projenin `npm run build` adımı
- * varsayılan olarak HOST üzerinde çalıştırılmaz. Gerçek bir OS-level sandbox
- * runner bu ortamda garanti edilmediğinden, yalnızca açık opt-in olan
- * `XFACTOR_BUILD_SANDBOX=host` değeri host yolunu (mevcut executeSafeCommand)
- * etkinleştirir. Diğer tüm değerler (tanımsız, 'sandboxed', yanlış yazım…)
- * "sandboxed" kabul edilir ve gerçek runner yoksa build gate fail-closed olur.
- *
- * @returns {'host'|'sandboxed'}
- */
-export function resolveBuildSandboxMode() {
-    return process.env.XFACTOR_BUILD_SANDBOX === 'host' ? 'host' : 'sandboxed';
-}
 
 /**
  * Üretilen projede stack'e göre gerçek derleme ve doğrulama denetimlerini yürütür.
@@ -440,10 +281,9 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
     }
 
     const stack = await detectProjectStack(projectDir, state, plan);
-    const sandboxMode = resolveBuildSandboxMode();
 
-    // Sandboxed mod: verifyBuild üzerinden aktif compiler ve sandbox kapılarına delege et
-    if (sandboxMode === 'sandboxed' && options.phase !== 'generation') {
+    // Non-generation validation delegates every executable check to the sandbox verifier.
+    if (options.phase !== 'generation') {
         const contract = plan || {};
         const buildResult = await verifyBuild(projectDir, contract, {
             timeoutMs: options.timeoutMs || 60000,
@@ -516,7 +356,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         : (fsSync.existsSync(rootSchemaPath) ? rootSchemaPath : null);
     if (actualSchemaPath) {
         const schemaRelPath = path.relative(projectDir, actualSchemaPath);
-        
+
         // A. Önce Semantik Prisma Şema Doğrulaması (Hızlı & Offline-Safe)
         try {
             const schemaContent = await fs.readFile(actualSchemaPath, 'utf8');
@@ -553,7 +393,8 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
             const prismaValidateRes = await executeSafeCommand(localPrismaBin, ['validate', `--schema=${schemaRelPath}`], {
                 cwd: projectDir,
                 timeoutMs,
-                signal: options.signal
+                signal: options.signal,
+                adapter: options.adapter
             });
 
             checks.push({
@@ -618,7 +459,8 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
             const tscRes = await executeSafeCommand(localTscBin, ['--noEmit'], {
                 cwd: projectDir,
                 timeoutMs,
-                signal: options.signal
+                signal: options.signal,
+                adapter: options.adapter
             });
 
             checks.push({
@@ -659,17 +501,14 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         try {
             const pkgContent = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
             if (pkgContent.scripts && pkgContent.scripts.build) {
-                const sandboxMode = resolveBuildSandboxMode();
-
-                if (sandboxMode === 'host') {
-                    // Açık opt-in: build adımı host üzerinde mevcut executeSafeCommand yoluyla çalıştırılır.
-                    ranFrameworkBuild = true;
+                ranFrameworkBuild = true;
+                try {
                     const buildRes = await executeSafeCommand('npm', ['run', 'build'], {
+                        adapter: options.adapter,
                         cwd: projectDir,
                         timeoutMs: timeoutMs * 2,
                         signal: options.signal
                     });
-
                     checks.push({
                         name: 'framework_build',
                         status: buildRes.passed ? 'passed' : 'failed',
@@ -679,23 +518,20 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
                         stderr: buildRes.stderr,
                         timedOut: buildRes.timedOut
                     });
-
                     if (!buildRes.passed) {
                         const buildErr = buildRes.stderr || buildRes.stdout || 'Framework build işlemi başarısız oldu.';
                         issues.push(`Framework Build Hatası (npm run build):\n${buildErr}`);
                     }
-                } else {
-                    // Sandboxed mod: gerçek OS-level sandbox runner bu ortamda yok.
-                    // Güvenilmeyen build'i host üzerinde sessizce çalıştırmayı REDDEDER (fail-closed).
-                    ranFrameworkBuild = true; // tek bir framework_build check üretilsin
-                    sandboxBuildRefused = true;
-                    issues.push('Sandboxed build runner unavailable (XFACTOR_BUILD_SANDBOX not host); untrusted build refused on host.');
+                } catch (error) {
+                    const blocked = error.code === 'SANDBOX_UNAVAILABLE';
+                    sandboxBuildRefused = blocked;
+                    issues.push(error.message);
                     checks.push({
                         name: 'framework_build',
-                        status: 'skipped',
-                        reason: 'Sandboxed build runner unavailable (XFACTOR_BUILD_SANDBOX not host); refusing to run untrusted build on host',
+                        status: blocked ? 'blocked' : 'failed',
+                        reason: error.message,
                         command: 'none',
-                        exitCode: 0,
+                        exitCode: null,
                         stdout: '',
                         stderr: '',
                         timedOut: false

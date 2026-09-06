@@ -36,6 +36,40 @@ export const buildApiUrl = (baseUrl = DEFAULT_API_URL, path = '') => {
   if (!relativePath) return base;
   return `${base}/${relativePath}`;
 };
+
+export const buildArtifactDownloadUrl = (
+  projectId,
+  contractId,
+  artifactId,
+  baseURL = API_BASE_URL
+) => {
+  if (![projectId, contractId, artifactId].every(identity => String(identity ?? '').trim())) {
+    throw new Error('Artefakt indirme kimliği yapılandırılmamış.');
+  }
+
+  return buildApiUrl(
+    baseURL,
+    `/projects/${encodeURIComponent(projectId)}` +
+    `/contracts/${encodeURIComponent(contractId)}` +
+    `/artifacts/${encodeURIComponent(artifactId)}/download`
+  );
+};
+
+export const requestVerifiedArtifactDownload = async ({
+  projectId,
+  activeProjectId,
+  projectState,
+  getProject,
+  navigate
+}) => {
+  const targetState = projectId === activeProjectId ? projectState : await getProject(projectId);
+  const { contractId, latestArtifact } = targetState || {};
+  if (!contractId || !latestArtifact?.id || latestArtifact.status !== 'verified') {
+    throw new Error('UNVERIFIED_ARTIFACT');
+  }
+
+  navigate(buildArtifactDownloadUrl(projectId, contractId, latestArtifact.id));
+};
 export const buildWebSocketUrl = (apiBaseUrl = DEFAULT_API_URL) => {
   const apiUrl = new URL(String(apiBaseUrl || DEFAULT_API_URL));
   if (!['http:', 'https:'].includes(apiUrl.protocol)) {
@@ -123,10 +157,10 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
 
   return {
     // Auth
-    login: (username, password, opts = {}) =>
+    login: (username, password, totp = '', opts = {}) =>
       request('/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, ...(totp ? { totp } : {}) }),
         ...opts
       }),
     getSession: (opts = {}) => request('/session', opts),

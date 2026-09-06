@@ -7,7 +7,6 @@ import {
   PinOff,
   Edit2,
   Trash2,
-  Download,
   MoreVertical
 } from 'lucide-react';
 
@@ -22,7 +21,6 @@ export default function Sidebar({
   handleCreateProject,
   handleTogglePin,
   handleRenameProject,
-  handleDownloadProjectZip,
   handleDeleteProject,
   loginUsername,
   handleLogout,
@@ -118,9 +116,6 @@ export default function Sidebar({
                       </button>
                       <button onClick={(e) => handleRenameProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
                         <Edit2 size={14} className="text-blue-500" /> Yeniden Adlandır
-                      </button>
-                      <button onClick={(e) => handleDownloadProjectZip(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
-                        <Download size={14} className="text-emerald-500" /> ZIP Olarak İndir
                       </button>
                       <div className="border-t border-gray-100 my-1"></div>
                       <button onClick={(e) => handleDeleteProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2">

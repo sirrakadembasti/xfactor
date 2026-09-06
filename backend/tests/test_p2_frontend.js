@@ -48,12 +48,6 @@ await runAsyncTest('P2.4 Frontend HTML and LoginView provide accessibility and s
     assert.match(loginCode, /role="alert"/, 'Error banner must use role="alert"');
 });
 
-await runAsyncTest('P2.3 App.jsx loads JSZip dynamically on demand to optimize bundle size', async () => {
-    const appCode = fs.readFileSync(path.join(FRONTEND_SRC, 'App.jsx'), 'utf8');
-    assert.doesNotMatch(appCode, /^import\s+JSZip\s+from\s+'jszip';/m, 'Static JSZip import must be removed');
-    assert.match(appCode, /import\('jszip'\)/, 'Must import jszip dynamically');
-});
-
 
 await runAsyncTest('P2.3 App.jsx throttles and batches rapid WebSocket log updates', async () => {
     const appCode = fs.readFileSync(path.join(FRONTEND_SRC, 'App.jsx'), 'utf8');

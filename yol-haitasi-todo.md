@@ -4,7 +4,7 @@
 <!-- continuity:initiative=project-quality-improvement -->
 <!-- continuity:improvement_plan_sha256=b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8 -->
 <!-- continuity:master_plan=implementation-plans/00-MASTER-EXECUTION-PLAN.md -->
-<!-- continuity:current_unit=P4 -->
+<!-- continuity:current_unit=P8 -->
 <!-- continuity:status=verified -->
 
 Bu dosya kullanıcı tarafından ön yüzde/Kod Editörü görünümünde izlenebilen yol haritasıdır. Kanonik oturum devri `PROJECT-CONTINUITY.md`, ayrıntılı iş tanımı `implementation-plans/`, gerçek doğrulama makbuzları `implementation-evidence/` altındadır.
@@ -27,7 +27,7 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
 | İyileştirme planı | `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` |
 | Plan SHA-256 | `b6ca1549990034bdd391ac89eebd7677522d13fc6f9192a5ad24c14d898f0db8` |
 | Master plan | `implementation-plans/00-MASTER-EXECUTION-PLAN.md` |
-| Aktif birim | `P4` |
+| Aktif birim | `P5` |
 | Genel durum | verified |
 
 ## Teslim Birimleri
@@ -83,6 +83,36 @@ Bir satır yalnız ilgili evidence dosyası `verified` olduğunda `[x]` yapılab
   - Evidence: `implementation-evidence/P4.md`
   - Bağımlılık: P3 verified.
 
+
+### P5 — Critical trust chain
+
+- [x] **P5 — Critical trust chain**
+  - Plan: `implementation-plans/10-P5-critical-trust-chain.md`
+  - Evidence: `implementation-evidence/P5.md`
+  - Bağımlılık: P4 verified.
+  - Supersession: P5 kanonik durum ve sonraki P6 eylemi için `guncel-todo.md` geçerlidir; P0–P4 tarihsel status korunur.
+
+
+### P6 — Production operability
+- [x] **P6 — Production operability**
+  - Plan: `implementation-plans/11-P6-production-operability.md`
+  - Evidence: `implementation-evidence/P6.md`
+  - Bağımlılık: P5 verified.
+  - Supersession: P6 kanonik durum ve sıralı eylem için `guncel-todo.md` geçerlidir.
+
+
+### P7 — Data and architectural hardening
+- [x] **P7 — Data and architectural hardening**
+  - Plan: `implementation-plans/12-P7-data-architecture.md`
+  - Evidence: `implementation-evidence/P7.md`
+  - Bağımlılık: P6 verified.
+
+### P8 — CI, security hardening, and operational limits
+- [x] **P8 — CI, security hardening, and operational limits**
+  - Plan: `implementation-plans/13-P8-security-operations.md`
+  - Evidence: `implementation-evidence/P8.md`
+  - Bağımlılık: P7 verified.
+
 ## Genel Doğrulama Kapıları
 
 Her teslim biriminde:
@@ -91,19 +121,12 @@ Her teslim biriminde:
 - [x] Task-specific testler geçti.
 - [x] Unit-level davranış doğrulaması geçti.
 - [x] Bağımsız reviewer blocking bulgu vermedi.
-- [x] Bağımsız tester sonucu yeniden üretti.
-- [x] Evidence receipt gerçek komut/exit code/commit içeriyor.
-- [x] `PROJECT-CONTINUITY.md` ile bu dosya uyumlu.
-- [x] `node scripts/validate-continuity.mjs` PASS.
-
-## Şu Anki Adım
-
-Dokuz teslim birimi kanıtla doğrulandı; girişim tamamlandı.
+On üç teslim biriminden P0–P8 kanıtla doğrulandı; P0–P7 tarihsel durumlarını korur.
 
 Sonraki görev:
 
 ```text
-No further delivery unit remains; preserve verified state unless a superseding plan is approved.
+Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.
 ```
 
 ## Yeni Sohbet İçin Başlangıç

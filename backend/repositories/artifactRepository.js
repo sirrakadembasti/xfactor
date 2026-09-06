@@ -1,5 +1,23 @@
 import { db } from '../db.js';
 
+function mapArtifactRow(row) {
+    if (!row) return undefined;
+    return {
+        id: row.id,
+        projectId: row.project_id,
+        contractId: row.contract_id,
+        kind: row.kind,
+        path: row.path,
+        sha256: row.sha256,
+        size: row.size,
+        manifestJson: row.manifest_json,
+        status: row.status,
+        verificationRunId: row.verification_run_id,
+        createdAt: row.created_at
+    };
+}
+
+
 export function createArtifact({
     id,
     projectId,
@@ -48,7 +66,6 @@ export function updateArtifactStatus({
     if (status === 'verified' && !verificationRunId) {
         throw new Error(`Artifact ${artifactId} requires verification_run_id when verified.`);
     }
-    if (status !== 'verified') verificationRunId = status === 'rejected' ? null : verificationRunId;
     const result = db.prepare(`
         UPDATE artifacts SET status = ?, verification_run_id = ?
         WHERE project_id = ? AND contract_id = ? AND id = ? AND status = ?
@@ -58,11 +75,11 @@ export function updateArtifactStatus({
 }
 
 export function getArtifact({ projectId, contractId, artifactId }) {
-    return db.prepare(`
+    return mapArtifactRow(db.prepare(`
         SELECT *
         FROM artifacts
         WHERE project_id = ? AND contract_id = ? AND id = ?
-    `).get(projectId, contractId, artifactId);
+    `).get(projectId, contractId, artifactId));
 }
 
 export function addArtifactFile({
@@ -92,14 +109,23 @@ export function getArtifactFiles({ contractId, artifactId }) {
     `).all(contractId, artifactId);
 }
 
-export function getLatestVerifiedArtifact({ projectId, contractId }) {
+export function listArtifacts({ projectId }) {
     return db.prepare(`
+        SELECT *
+        FROM artifacts
+        WHERE project_id = ?
+        ORDER BY created_at DESC, id DESC
+    `).all(projectId).map(mapArtifactRow);
+}
+
+export function getLatestVerifiedArtifact({ projectId, contractId }) {
+    return mapArtifactRow(db.prepare(`
         SELECT *
         FROM artifacts
         WHERE project_id = ? AND contract_id = ? AND status = 'verified'
         ORDER BY created_at DESC, id DESC
         LIMIT 1
-    `).get(projectId, contractId);
+    `).get(projectId, contractId));
 }
 
 export function supersedeArtifacts({ projectId, contractId, exceptArtifactId = null }) {

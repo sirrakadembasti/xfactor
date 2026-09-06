@@ -2,12 +2,9 @@ import assert from 'assert';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { createRequire } from 'module';
+import JSZip from 'jszip';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
-
-const require = createRequire(import.meta.url);
-const JSZip = (await import('jszip').catch(() => null))?.default || require('../../frontend/node_modules/jszip');
 
 const isolated = await setupIsolatedTestDb('p1-c-artifact-verifier');
 process.env.DB_PATH = isolated.dbPath;
@@ -51,6 +48,21 @@ async function createTestZip(fileName, files, options = {}) {
     return zipPath;
 }
 
+function passingCheck(name) {
+    const timestamp = new Date().toISOString();
+    return {
+        name,
+        status: 'PASS',
+        command: `verify ${name}`,
+        exitCode: 0,
+        startedAt: timestamp,
+        endedAt: timestamp,
+        stdoutDigest: `stdout-${name}`,
+        stderrDigest: `stderr-${name}`,
+        policyVersion: '2.0'
+    };
+}
+
 try {
     await runAsyncTest('1. verifyArtifact fails closed and rejects artifact when package lockfile is missing', async () => {
         const zipPath = await createTestZip('broken-lock.zip', [
@@ -79,7 +91,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'rejected');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);
@@ -115,30 +127,44 @@ try {
                 dependencies: async () => ({
                     passed: true,
                     checks: [
-                        { name: 'package_json', status: 'passed' },
-                        { name: 'lockfile', status: 'passed' },
-                        { name: 'ast_import_inventory', status: 'passed' },
-                        { name: 'clean_install', status: 'passed' }
-                    ]
+                        'package_json',
+                        'lockfile',
+                        'ast_import_inventory',
+                        'clean_install'
+                    ].map(passingCheck)
                 }),
                 build: async () => ({
                     passed: true,
-                    checks: [
-                        { name: 'typecheck', status: 'passed' },
-                        { name: 'framework_build', status: 'passed' }
-                    ]
+                    checks: ['typecheck', 'framework_build'].map(passingCheck)
                 }),
                 smoke: async () => ({
                     passed: true,
                     checks: [
-                        { name: 'manifest_presence', status: 'passed' },
-                        { name: 'database_connectivity', status: 'passed' },
-                        { name: 'api_status_check', status: 'passed' },
-                        { name: 'browser_page_load', status: 'passed' },
-                        { name: 'smoke_gate', status: 'passed' },
-                        { name: 'test_script_presence', status: 'passed' }
-                    ]
-                })
+                        'manifest_presence',
+                        'service_definitions',
+                        'port_uniqueness',
+                        'prisma_schema_presence',
+                        'prisma_db_push',
+                        'database_connectivity',
+                        'database_write_capability',
+                        'database_file_accessible',
+                        'api_status_check',
+                        'api_query_check',
+                        'database_mutation_assertion',
+                        'browser_page_load',
+                        'browser_journey_steps',
+                        'service_spawn',
+                        'smoke_liveness_probe',
+                        'smoke_gate',
+                        'test_script_presence',
+                        'test_suite_execution'
+                    ].map(passingCheck)
+                }),
+                domain: async () => ({ passed: true, issues: [] }),
+                placeholders: async () => ({ passed: true, issues: [] }),
+                contamination: async () => ({ passed: true, issues: [] }),
+                security: async () => ({ passed: true, issues: [] }),
+                readme: async () => ({ passed: true, issues: [] })
             }
         });
 
@@ -149,7 +175,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'verified');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const latest = getLatestVerifiedArtifact({ projectId, contractId });
         assert.strictEqual(latest.id, artifactId);
@@ -157,6 +183,26 @@ try {
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);
         assert.strictEqual(run.status, 'verified');
+        const hardeningEvidence = db.prepare(`
+            SELECT evidence_json FROM verification_checks
+            WHERE run_id = ? AND gate_name = 'domain_entity_check'
+        `).get(result.runId);
+        const evidence = JSON.parse(hardeningEvidence.evidence_json).evidence;
+        assert.deepStrictEqual(
+            {
+                kind: evidence.kind,
+                producer: evidence.producer,
+                sourceGateNames: evidence.sourceGateNames,
+                policyVersion: evidence.policyVersion
+            },
+            {
+                kind: 'derived_gate',
+                producer: 'quality-policy',
+                sourceGateNames: ['domain_entity_check'],
+                policyVersion: '2.0'
+            }
+        );
+        assert.ok(evidence.computedAt);
     });
 
     await runAsyncTest('3. verifyArtifact rejects malicious symlink artifact and sets artifact status rejected with linked run', async () => {
@@ -187,7 +233,7 @@ try {
 
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.status, 'rejected');
-        assert.strictEqual(artifact.verification_run_id, result.runId);
+        assert.strictEqual(artifact.verificationRunId, result.runId);
 
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);

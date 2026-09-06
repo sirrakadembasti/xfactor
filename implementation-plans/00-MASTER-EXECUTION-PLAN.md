@@ -4,7 +4,7 @@
 
 **Goal:** Implement `PROJECT-QUALITY-IMPROVEMENT-PLAN.md` without losing state across chats and without allowing unverified project completion.
 
-**Architecture:** Nine delivery units establish state safety first, then OS-isolated executable verification, safe checkpoint reuse, requirement traceability, runtime behavior verification, artifact verification, hardening, observability, and production safety. Git-tracked continuity/evidence records are authoritative; agent memory and self-reports are not.
+**Architecture:** Ten delivery units establish state safety first, then OS-isolated executable verification, safe checkpoint reuse, requirement traceability, runtime behavior verification, artifact verification, hardening, observability, production safety, and the P5 critical trust-chain cutover. Git-tracked continuity/evidence records are authoritative; agent memory and self-reports are not.
 
 **Tech Stack:** Node.js ESM, Express, SQLite `node:sqlite`, existing React/Vite dashboard, OS sandbox adapters, project test harness.
 
@@ -49,6 +49,7 @@ flowchart TD
     F --> G
     G --> H[P3 Observability and metrics]
     H --> I[P4 Production safety]
+    I --> J[P5 Critical trust chain]
 ```
 
 ## Shared Interfaces
@@ -106,6 +107,10 @@ P0-C, P1-B, and P1-C consume these schemas and must not reuse migrations 7–10.
 | 7 | P2 | `07-P2-quality-hardening.md` | `../implementation-evidence/P2.md` | P1-A, P1-B, P1-C | verified |
 | 8 | P3 | `08-P3-observability-metrics.md` | `../implementation-evidence/P3.md` | P2 | verified |
 | 9 | P4 | 09-P4-production-safety.md | ../implementation-evidence/P4.md | P3 | verified |
+| 10 | P5 | 10-P5-critical-trust-chain.md | ../implementation-evidence/P5.md | P4 | verified |
+| 11 | P6 | 11-P6-production-operability.md | ../implementation-evidence/P6.md | P5 | verified |
+| 12 | P7 | 12-P7-data-architecture.md | ../implementation-evidence/P7.md | P6 | verified |
+| 13 | P8 | 13-P8-security-operations.md | ../implementation-evidence/P8.md | P7 | verified |
 
 ## Entry Gate for Every Unit
 

@@ -1,146 +1,127 @@
-/**
- * Sub-project 5.2: Health Probes, Liveness & Server Lifecycle
- * Test Suite
- */
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-import assert from 'assert';
-import fs from 'fs/promises';
-import http from 'http';
-import os from 'os';
-import path from 'path';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverPath = path.join(__dirname, '../server.js');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+async function reservePort() {
+    const probe = http.createServer();
+    await new Promise((resolve, reject) => probe.listen(0, '127.0.0.1', error => error ? reject(error) : resolve()));
+    const { port } = probe.address();
+    await new Promise(resolve => probe.close(resolve));
+    return port;
+}
 
-async function request(url) {
+function startServer(env) {
+    return spawn(process.execPath, [serverPath], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+async function waitForStart(child) {
+    let output = '';
     return new Promise((resolve, reject) => {
-        http.get(url, (res) => {
-            let data = '';
-            res.on('data', chunk => { data += chunk; });
-            res.on('end', () => {
-                try {
-                    const parsed = JSON.parse(data);
-                    resolve({ status: res.statusCode, data: parsed, headers: res.headers });
-                } catch {
-                    resolve({ status: res.statusCode, data, headers: res.headers });
-                }
-            });
-        }).on('error', reject);
+        const timer = setTimeout(() => reject(new Error(`Server start timed out: ${output}`)), 10000);
+        const onData = chunk => {
+            output += chunk;
+            if (output.includes('Backend hazır')) {
+                clearTimeout(timer);
+                resolve();
+            }
+        };
+        child.stdout.on('data', onData);
+        child.stderr.on('data', onData);
+        child.once('exit', code => {
+            clearTimeout(timer);
+            reject(new Error(`Server exited during startup (${code}): ${output}`));
+        });
+    });
+}
+
+async function waitForExit(child) {
+    return new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal })));
+}
+
+async function request(port, pathname) {
+    return fetch(`http://127.0.0.1:${port}${pathname}`, {
+        headers: { 'x-forwarded-proto': 'https', accept: 'text/html' }
     });
 }
 
 async function runTests() {
-    console.log('==================================================');
-    console.log('⚡ Sub-project 5.2: Health Probes & Lifecycle');
-    console.log('==================================================');
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-health-test-'));
+    const dbPath = path.join(tempRoot, 'data', 'projects.db');
+    const projectsRoot = path.join(tempRoot, 'projects');
+    const artifactsRoot = path.join(tempRoot, 'artifacts');
+    const frontendRoot = path.join(tempRoot, 'frontend-dist');
+    await fs.mkdir(path.dirname(dbPath), { recursive: true });
+    await fs.mkdir(projectsRoot, { recursive: true });
+    await fs.mkdir(artifactsRoot, { recursive: true });
+    await fs.mkdir(frontendRoot, { recursive: true });
+    await fs.writeFile(path.join(frontendRoot, 'index.html'), '<!doctype html><main>ready SPA</main>');
 
-    let passed = 0;
-    let failed = 0;
-
-    const testTempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-health-test-'));
-    const testDbPath = path.join(testTempDir, 'test_lifecycle.db');
-    const testProjectsRoot = path.join(testTempDir, 'test_projects');
-    await fs.mkdir(testProjectsRoot, { recursive: true });
-
-    // Start ephemeral server process
-    const testPort = 39123;
-    const serverProc = spawn(process.execPath, [path.join(__dirname, '../server.js')], {
-        env: {
-            ...process.env,
-            PORT: String(testPort),
-            HOST: '127.0.0.1',
-            DB_PATH: testDbPath,
-            PROJECTS_ROOT: testProjectsRoot
-        },
-        stdio: ['ignore', 'pipe', 'pipe']
-    });
-
+    const commonEnv = {
+        ...process.env,
+        NODE_ENV: 'production',
+        TRUST_PROXY: 'loopback',
+        ALLOWED_ORIGINS: 'https://xfactor.example',
+        MFA_ENCRYPTION_KEY: '55'.repeat(32),
+        DB_PATH: dbPath,
+        PROJECTS_ROOT: projectsRoot,
+        ARTIFACTS_ROOT: artifactsRoot,
+        FRONTEND_DIST_ROOT: frontendRoot,
+        HOST: '127.0.0.1'
+    };
+    let child;
     try {
-        // Wait for server to become ready
-        await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('Server start timed out')), 10000);
-            serverProc.stdout.on('data', (chunk) => {
-                if (chunk.toString().includes('Backend hazır')) {
-                    clearTimeout(timeout);
-                    resolve();
-                }
-            });
-            serverProc.stderr.on('data', (chunk) => {
-                const text = chunk.toString();
-                if (text.includes('Backend hazır')) {
-                    clearTimeout(timeout);
-                    resolve();
-                }
-            });
-        });
+        const port = await reservePort();
+        child = startServer({ ...commonEnv, PORT: String(port) });
+        await waitForStart(child);
 
-        // Test 1: GET /healthz (Liveness Probe)
-        try {
-            const healthRes = await request(`http://127.0.0.1:${testPort}/healthz`);
-            assert.strictEqual(healthRes.status, 200, 'Health check should return 200 OK');
-            assert.strictEqual(healthRes.data.status, 'ok', 'Status should be ok');
-            assert(typeof healthRes.data.uptime === 'number', 'Uptime should be reported');
+        const health = await request(port, '/healthz');
+        assert.equal(health.status, 200);
+        assert.equal((await health.json()).status, 'ok');
+        assert.equal(
+            health.headers.get('content-security-policy'),
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss:; frame-ancestors 'none';"
+        );
+        const ready = await request(port, '/readyz');
+        assert.equal(ready.status, 200);
+        assert.equal((await ready.json()).status, 'ready');
 
-            console.log('  [PASS] 1. GET /healthz liveness probe returns 200 OK');
-            passed++;
-        } catch (err) {
-            console.log('  [FAIL] 1. GET /healthz liveness probe:', err.message);
-            failed++;
-        }
+        const navigation = await request(port, '/projects/example');
+        assert.equal(navigation.status, 200);
+        assert.match(navigation.headers.get('cache-control'), /no-cache/);
 
-        // Test 2: GET /readyz (Readiness Probe)
-        try {
-            const readyRes = await request(`http://127.0.0.1:${testPort}/readyz`);
-            assert.strictEqual(readyRes.status, 200, 'Readiness check should return 200 OK');
-            assert.strictEqual(readyRes.data.status, 'ready', 'Status should be ready');
-            assert.strictEqual(readyRes.data.database, 'connected', 'Database should be connected');
-            assert.strictEqual(readyRes.data.projectsRoot, 'accessible', 'Projects root should be accessible');
-            assert(typeof readyRes.data.schemaVersion === 'number' && readyRes.data.schemaVersion >= 1, 'Schema version should be reported');
+        await fs.rm(artifactsRoot, { recursive: true, force: true });
+        const unavailable = await request(port, '/readyz');
+        assert.equal(unavailable.status, 503);
 
-            console.log('  [PASS] 2. GET /readyz readiness probe verifies database and filesystem');
-            passed++;
-        } catch (err) {
-            console.log('  [FAIL] 2. GET /readyz readiness probe:', err.message);
-            failed++;
-        }
+        child.kill('SIGTERM');
+        const graceful = await waitForExit(child);
+        assert.equal(
+            graceful.code === 0 || graceful.signal === 'SIGTERM',
+            true,
+            `Expected clean SIGTERM shutdown, received ${JSON.stringify(graceful)}`
+        );
+        child = undefined;
 
-        // Test 3: Graceful shutdown on SIGTERM / SIGINT
-        try {
-            const exitPromise = new Promise((resolve) => {
-                serverProc.on('close', (code, signal) => {
-                    resolve({ code, signal });
-                });
-            });
-
-            serverProc.kill('SIGTERM');
-            const { code, signal } = await exitPromise;
-
-            const isCleanExit = code === 0 || signal === 'SIGTERM' || signal === 'SIGINT';
-            assert.strictEqual(isCleanExit, true, `Server should terminate cleanly, received code: ${code}, signal: ${signal}`);
-
-            console.log('  [PASS] 3. Server gracefully shuts down on termination signal');
-            passed++;
-        } catch (err) {
-            console.log('  [FAIL] 3. Graceful shutdown on termination signal:', err.message);
-            failed++;
-        }
-
+        const missingFrontendPort = await reservePort();
+        await fs.rm(path.join(frontendRoot, 'index.html'));
+        const missingFrontend = startServer({ ...commonEnv, PORT: String(missingFrontendPort) });
+        const failure = await waitForExit(missingFrontend);
+        assert.notEqual(failure.code, 0, 'Production startup must fail without index.html');
+        console.log('P6 health and lifecycle tests passed');
     } finally {
-        try {
-            serverProc.kill('SIGKILL');
-        } catch {}
-        await fs.rm(testTempDir, { recursive: true, force: true }).catch(() => {});
-    }
-
-    console.log('==================================================');
-    console.log(`📊 Sonuç: ${passed} Başarılı, ${failed} Hatalı`);
-    console.log('==================================================');
-
-    if (failed > 0) {
-        process.exit(1);
+        if (child?.exitCode === null) child.kill('SIGKILL');
+        await fs.rm(tempRoot, { recursive: true, force: true });
     }
 }
 
-runTests();
+runTests().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+});

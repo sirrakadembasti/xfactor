@@ -3,10 +3,10 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
-import { createProject, deleteProject, assertVerifiedArtifactEvidence } from '../projectRepository.js';
+import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk } from '../projectRepository.js';
 import { acquireWorkflowLease, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
-import { db, getAllProjects, getProjectLogs, updateProject, syncProjectsWithDisk } from '../db.js';
+import { db, getAllProjects, getProjectLogs, updateProject } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
@@ -23,6 +23,8 @@ import {
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
 import { buildCompletionReport } from '../verification/reportGenerator.js';
+import { listArtifacts } from '../repositories/artifactRepository.js';
+
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -230,20 +232,21 @@ export function createProjectRouter({
             const MAX_FILE_SIZE = 2 * 1024 * 1024;
             const MAX_TOTAL_FILES = 500;
             const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+            const BINARY_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.ico', '.gif']);
             const ALLOWED_EXTENSIONS = new Set([
                 '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',
                 '.prisma', '.sql', '.svg', '.ico', '.png', '.jpg', '.jpeg', '.webp',
-                '.txt', '.yaml', '.yml', '.graphql', '.gql'
+                '.gif', '.txt', '.yaml', '.yml', '.graphql', '.gql'
             ]);
             const ALLOWED_DOT_FILES = new Set(['.env.example', '.gitignore']);
             const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
             const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
 
+            const results = [];
             let totalBytes = 0;
             async function getFiles(targetDir, relativePath = '') {
-                let results = [];
                 if (results.length >= MAX_TOTAL_FILES || totalBytes >= MAX_TOTAL_BYTES) {
-                    return results;
+                    return;
                 }
                 try {
                     const list = await fs.readdir(targetDir, { withFileTypes: true });
@@ -256,7 +259,7 @@ export function createProjectRouter({
                         if (!isSafeProjectPath(relPath, dir)) continue;
                         if (file.isDirectory()) {
                             if (!IGNORED_DIRS.has(file.name)) {
-                                results = results.concat(await getFiles(resPath, relPath));
+                                await getFiles(resPath, relPath);
                             }
                         } else {
                             if (IGNORED_FILES.has(file.name)) continue;
@@ -266,20 +269,25 @@ export function createProjectRouter({
                                 const stat = await fs.stat(resPath);
                                 if (stat.size > MAX_FILE_SIZE) continue;
                                 await assertPathInsideRoot(resPath, dir);
-                                const content = await fs.readFile(resPath, 'utf8');
+                                const isBinary = BINARY_EXTENSIONS.has(ext);
+                                const rawContent = await fs.readFile(resPath);
                                 totalBytes += stat.size;
-                                results.push({ path: relPath, content });
+                                results.push({
+                                    path: relPath,
+                                    content: isBinary ? rawContent.toString('base64') : rawContent.toString('utf8'),
+                                    encoding: isBinary ? 'base64' : 'utf8',
+                                    size: stat.size
+                                });
                             } catch (error) {
                                 logWarning('api.project_file_read_failed', error, { projectId: req.params.id, file: relPath });
                             }
                         }
                     }
                 } catch (err) {}
-                return results;
             }
 
-            const files = await getFiles(dir);
-            res.json(files);
+            await getFiles(dir);
+            res.json(results);
         } catch (error) {
             next(error);
         }
@@ -465,7 +473,7 @@ export function createProjectRouter({
                     attemptId: lease.attempt.id
                 });
             });
-            res.json({ ...state, attemptId: lease.attempt.id });
+            res.json({ ...approvedState, attemptId: lease.attempt.id });
         } catch (err) {
             next(err);
         }
@@ -679,18 +687,13 @@ export function createProjectRouter({
         res.json(result);
     }));
     router.get('/:id/artifacts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
-        const rows = db.prepare(`
-            SELECT id, kind, path, sha256, size, status, verification_run_id
-            FROM artifacts WHERE project_id = ? ORDER BY created_at DESC
-        `).all(req.params.id);
-        const result = rows.map(r => ({
-            id: r.id,
-            kind: r.kind,
-            path: r.path,
-            sha256: r.sha256,
-            size: r.size,
-            status: r.status,
-            verification_run_id: r.verification_run_id
+        const result = listArtifacts({ projectId: req.params.id }).map(artifact => ({
+            id: artifact.id,
+            kind: artifact.kind,
+            sha256: artifact.sha256,
+            size: artifact.size,
+            status: artifact.status,
+            verificationRunId: artifact.verificationRunId
         }));
         res.json(result);
     }));
@@ -969,6 +972,9 @@ export function createProjectRouter({
             await deleteProject(id);
             res.json({ success: true, message: "Proje başarıyla silindi." });
         } catch (err) {
+            if (err.code === 'PROJECT_LOCKED_RECEIPT') {
+                return res.status(409).json({ error: err.message, code: err.code });
+            }
             next(err);
         }
     });

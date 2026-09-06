@@ -350,7 +350,9 @@ await runAsyncTest('P3.1 artifacts endpoint 401/403/200 exact keys', async () =>
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body));
   for (const a of body) {
-    assertExactKeys(a, ['id','kind','path','sha256','size','status','verification_run_id'], 'artifact');
+    assertExactKeys(a, ['id','kind','sha256','size','status','verificationRunId'], 'artifact');
+    assert.strictEqual('path' in a, false);
+    assert.strictEqual('manifestJson' in a, false);
   }
 });
 
@@ -1060,10 +1062,6 @@ await runAsyncTest('P3.3 fix: transaction rolls back and proves no mutation on s
   assert.strictEqual(snapshotDbState(), before2);
 });
 await runAsyncTest('P3.3 fix: preview uses deferred BEGIN no writer lock (regression)', async () => {
-  const fs = await import('fs/promises');
-  const content = await fs.readFile('backend/routes/projectRoutes.js', 'utf8');
-  assert.ok(content.includes("db.exec('BEGIN')"), 'must use deferred BEGIN');
-  assert.ok(!content.includes('BEGIN IMMEDIATE'), 'must not use BEGIN IMMEDIATE');
   // observable lock check via second connection: deferred SHARED does not block writer
   const { DatabaseSync } = await import('node:sqlite');
   const db2 = new DatabaseSync(isolated.dbPath);

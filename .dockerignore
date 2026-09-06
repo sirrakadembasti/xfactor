@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 node_modules
+backend/tests/
+backend/data/
+backend/logs/
+backend/coverage/
 dist
 projects/*
 !projects/.gitkeep

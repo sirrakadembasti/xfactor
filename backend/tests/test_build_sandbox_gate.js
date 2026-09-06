@@ -1,22 +1,19 @@
 /**
  * P0.4 — Build Sandbox Gate Test Suite
  *
- * Varsayılan yapılandırmada üretilen projenin untrusted `npm run build` adımı
- * host üzerinde ÇALIŞTIRILMAZ; gerçek sandbox runner yoksa build gate
- * fail-closed'dur. Host modu yalnız açık opt-in (XFACTOR_BUILD_SANDBOX=host)
- * ile devreye girer ve mevcut executeSafeCommand yolunu kullanır.
+ * Üretilen projenin untrusted `npm run build` adımı host üzerinde
+ * ÇALIŞTIRILMAZ. Sandbox capability yoksa build gate fail-closed kalır;
+ * `XFACTOR_BUILD_SANDBOX=host` bu sınırı değiştirmez.
  */
 
 import assert from 'assert';
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
-import { fileURLToPath } from 'url';
-import { validateProjectBuild, resolveBuildSandboxMode } from '../engine/buildValidator.js';
+import { validateProjectBuild } from '../engine/buildValidator.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TEST_DIR = path.join(__dirname, '../data', `test-build-sandbox-gate-${Date.now()}`);
+const TEST_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-build-sandbox-gate-'));
 
 console.log("==================================================");
 console.log("P0.4 Build Sandbox Gate Test Suite");
@@ -54,8 +51,6 @@ await runTest("A. Default (unsandboxed): framework_build blocked + passed=false 
         }
     }, null, 2), 'utf8');
 
-    // Sözleşme: resolveBuildSandboxMode varsayılanında 'sandboxed' dönmeli.
-    assert.strictEqual(resolveBuildSandboxMode(), 'sandboxed', 'Varsayılan mod sandboxed olmalı');
 
     const result = await validateProjectBuild(dir, { title: 'Default Unsandboxed' }, {});
 
@@ -93,30 +88,31 @@ await runTest("A. Default (unsandboxed): framework_build blocked + passed=false 
     assert.strictEqual(noNmResult.passed, false, 'node_modules yokken mandatory build PASS olmamalı');
 });
 
-// (b) XFACTOR_BUILD_SANDBOX=host: mevcut host build yolu çalışır;
-// bilinen FAIL fixture (build exit 1) failed döner.
-await runTest("B. XFACTOR_BUILD_SANDBOX=host: host build path runs; failing build script returns failed", async () => {
+// (b) Legacy host flag güven sınırını değiştirmez.
+await runTest("B. XFACTOR_BUILD_SANDBOX=host: build remains blocked and host script does not run", async () => {
     process.env.XFACTOR_BUILD_SANDBOX = 'host';
 
-    const dir = path.join(TEST_DIR, 'host-fail');
+    const dir = path.join(TEST_DIR, 'host-flag-ignored');
     await fs.mkdir(path.join(dir, 'node_modules'), { recursive: true });
     await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({
-        name: 'host-fail-app',
+        name: 'host-flag-ignored-app',
         version: '1.0.0',
         scripts: {
-            build: 'node -e "console.error(\'Critical build failure!\'); process.exit(1);"'
+            build: 'node -e "require(\'fs\').writeFileSync(\'BUILD_RAN_MARKER\',\'1\')"'
         }
     }, null, 2), 'utf8');
 
-    assert.strictEqual(resolveBuildSandboxMode(), 'host', 'XFACTOR_BUILD_SANDBOX=host iken mod host olmalı');
+    const result = await validateProjectBuild(dir, { title: 'Host Flag Ignored' }, {});
 
-    const result = await validateProjectBuild(dir, { title: 'Host Fail' }, {});
-
-    assert.strictEqual(result.passed, false, 'Host modunda başarısız build passed=false olmalı');
+    assert.strictEqual(result.passed, false);
     const buildCheck = result.checks.find(c => c.name === 'framework_build');
-    assert.ok(buildCheck, 'framework_build check mevcut olmalı');
-    assert.strictEqual(buildCheck.status, 'failed', 'Host modunda başarısız build status failed olmalı');
-    assert.ok(result.issues.some(i => i.includes('Framework Build Hatası')), 'Build hatası detayı raporlanmalı');
+    assert.ok(buildCheck);
+    assert.strictEqual(buildCheck.status, 'blocked');
+    assert.strictEqual(
+        fsSync.existsSync(path.join(dir, 'BUILD_RAN_MARKER')),
+        false,
+        'Legacy host flag must not execute generated build scripts'
+    );
 });
 
 // Temizlik

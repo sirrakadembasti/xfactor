@@ -15,9 +15,9 @@ const {
     evaluateVerificationRun,
     runProjectVerification
 } = await import('../verification/qualityPolicy.js');
-const { createRun } = await import('../repositories/verificationRepository.js');
-const { createProjectRouter } = await import('../routes/projectRoutes.js');
+const { createRun, updateRunStatus } = await import('../repositories/verificationRepository.js');
 
+const { createProjectRouter } = await import('../routes/projectRoutes.js');
 const { runAsyncTest, finish } = createTestHarness();
 const projectIds = [];
 
@@ -53,23 +53,35 @@ function seedVerificationCase(label, status = 'verification_running') {
         id: runId,
         projectId,
         contractId,
-        status: 'running',
+        status: 'queued',
         policyVersion: '1.0'
     });
+    updateRunStatus(runId, 'running');
 
     return { projectId, contractId, requirementId, runId };
 }
 
-function passingChecks(requirementId = null) {
-    return MANDATORY_GATES.map(gateName => ({
+function passingCheck(gateName) {
+    const timestamp = new Date().toISOString();
+    return {
+        name: gateName,
         gateName,
         status: 'PASS',
-        applicability: 'MANDATORY',
-        requirementIds: requirementId && gateName === 'api_contract' ? [requirementId] : [],
         command: `${gateName} command`,
         exitCode: 0,
-        stdout: `${gateName} stdout`,
-        stderr: ''
+        startedAt: timestamp,
+        endedAt: timestamp,
+        stdoutDigest: `stdout-${gateName}`,
+        stderrDigest: `stderr-${gateName}`,
+        policyVersion: '2.0'
+    };
+}
+
+function passingChecks(requirementId = null) {
+    return MANDATORY_GATES.map(gateName => ({
+        ...passingCheck(gateName),
+        applicability: 'MANDATORY',
+        requirementIds: requirementId && gateName === 'api_contract' ? [requirementId] : []
     }));
 }
 
@@ -275,29 +287,23 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
                 dependencies: async () => ({
                     passed: true,
                     checks: [
-                        { name: 'package_json', status: 'passed' },
-                        { name: 'lockfile', status: 'passed' },
-                        { name: 'ast_import_inventory', status: 'passed' },
-                        { name: 'clean_install', status: 'passed' }
-                    ]
+                        'package_json', 'lockfile', 'ast_import_inventory', 'clean_install'
+                    ].map(passingCheck)
                 }),
                 build: async () => ({
                     passed: true,
-                    checks: [
-                        { name: 'typecheck', status: 'passed' },
-                        { name: 'framework_build', status: 'passed' }
-                    ]
+                    checks: ['typecheck', 'framework_build'].map(passingCheck)
                 }),
                 smoke: async () => ({
                     passed: true,
                     checks: [
-                        { name: 'manifest_presence', status: 'passed' },
-                        { name: 'database_connectivity', status: 'passed' },
-                        { name: 'api_status_check', status: 'passed' },
-                        { name: 'browser_page_load', status: 'passed' },
-                        { name: 'smoke_gate', status: 'passed' },
-                        { name: 'test_script_presence', status: 'passed' }
-                    ]
+                        'manifest_presence', 'service_definitions', 'port_uniqueness',
+                        'prisma_schema_presence', 'prisma_db_push', 'database_connectivity',
+                        'database_write_capability', 'database_file_accessible', 'api_status_check',
+                        'api_query_check', 'database_mutation_assertion', 'browser_page_load',
+                        'browser_journey_steps', 'service_spawn', 'smoke_liveness_probe',
+                        'smoke_gate', 'test_script_presence', 'test_suite_execution'
+                    ].map(passingCheck)
                 }),
                 domain: async () => ({ passed: true, issues: [] }),
                 placeholders: async () => ({ passed: true, issues: [] }),

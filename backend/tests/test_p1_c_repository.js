@@ -127,7 +127,7 @@ try {
             artifactId: 'artifact-verified'
         });
         assert.strictEqual(artifact.status, 'verified');
-        assert.strictEqual(artifact.verification_run_id, verificationRunId);
+        assert.strictEqual(artifact.verificationRunId, verificationRunId);
         assert.strictEqual(
             getLatestVerifiedArtifact({ projectId, contractId }).id,
             'artifact-verified'

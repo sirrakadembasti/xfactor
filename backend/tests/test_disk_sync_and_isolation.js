@@ -23,7 +23,8 @@ await runAsyncTest('1. getProjectsRoot should point to xfactor-main/projects by 
 });
 
 await runAsyncTest('2. syncProjectsWithDisk should detect manually added project directories and register in DB', async () => {
-    const { db, getAllProjects, syncProjectsWithDisk } = await import('../db.js');
+    const { db, getAllProjects } = await import('../db.js');
+    const { syncProjectsWithDisk } = await import('../projectRepository.js');
     const { getProjectsRoot } = await import('../projectPaths.js');
     const root = getProjectsRoot();
 
@@ -34,17 +35,20 @@ await runAsyncTest('2. syncProjectsWithDisk should detect manually added project
 
     try {
         const syncRes = syncProjectsWithDisk();
-        assert.ok(syncRes.syncedOnDisk >= 1, 'At least 1 project should be synced from disk');
+        assert.strictEqual(syncRes.success, true);
+        assert.ok(syncRes.syncedCount >= 1, 'At least 1 project should be synced from disk');
 
         const all = getAllProjects();
         assert.ok(all.some(p => p.id === testId), 'Manually added disk project must be returned by getAllProjects');
     } finally {
         await fs.rm(testDir, { recursive: true, force: true }).catch(() => {});
+        db.prepare('DELETE FROM projects WHERE id = ?').run(testId);
     }
 });
 
-await runAsyncTest('3. syncProjectsWithDisk should prune orphan records when directory is deleted from disk', async () => {
-    const { db, getAllProjects, syncProjectsWithDisk } = await import('../db.js');
+await runAsyncTest('3. syncProjectsWithDisk must NOT prune records when directory is missing from disk', async () => {
+    const { db, getAllProjects } = await import('../db.js');
+    const { syncProjectsWithDisk } = await import('../projectRepository.js');
     const { getProjectsRoot } = await import('../projectPaths.js');
     const root = getProjectsRoot();
 
@@ -52,16 +56,23 @@ await runAsyncTest('3. syncProjectsWithDisk should prune orphan records when dir
     const testDir = path.join(root, testId);
     await fs.mkdir(testDir, { recursive: true });
 
-    // Sync to create in DB
-    syncProjectsWithDisk();
-    assert.ok(getAllProjects().some(p => p.id === testId));
+    try {
+        // Sync to create in DB
+        syncProjectsWithDisk();
+        assert.ok(getAllProjects().some(p => p.id === testId));
 
-    // Delete folder from disk
-    await fs.rm(testDir, { recursive: true, force: true });
+        // Delete folder from disk
+        await fs.rm(testDir, { recursive: true, force: true });
 
-    // Sync should prune orphan
-    syncProjectsWithDisk();
-    assert.ok(!getAllProjects().some(p => p.id === testId), 'Orphan DB entry must be deleted after folder removal');
+        // Sync must report the missing folder WITHOUT deleting the DB row
+        const res = syncProjectsWithDisk();
+        assert.strictEqual(res.success, true);
+        assert.ok(res.missingOnDisk.includes(testId), 'Missing folder must be reported in missingOnDisk');
+        assert.ok(getAllProjects().some(p => p.id === testId), 'DB entry must survive after folder removal');
+    } finally {
+        await fs.rm(testDir, { recursive: true, force: true }).catch(() => {});
+        db.prepare('DELETE FROM projects WHERE id = ?').run(testId);
+    }
 });
 
 await runAsyncTest('4. Custom PROJECTS_ROOT in environment must be strictly respected', async () => {

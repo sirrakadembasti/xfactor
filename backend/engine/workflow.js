@@ -58,6 +58,7 @@ import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
+import { generateProjectReadme } from './readmeGenerator.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -869,6 +870,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await ensureProjectScaffold(projectDir, state, plan);
 
             // Otomatik Çalıştırma ve Kurulum Kılavuzu (Kapsamlı README.md)
+            // P7 Task 5: stack-aware dynamic README — inspects package.json,
+            // .env.example and Prisma presence instead of a hardcoded template.
             let managerTalimat = plan.talimatname || '';
             if (!managerTalimat) {
                 try {
@@ -879,55 +882,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 } catch {}
             }
 
-            let cleanTalimat = managerTalimat.replace(/^#\s+[^\n]+\n/, '').trim();
-            // İç ajan, orkestrasyon jargonu ve onay buton yönlendirmelerini temizle
-            cleanTalimat = cleanTalimat
-                .replace(/###\s*(?:📦\s*)?(?:\d+\.\s*)?Domain\s*(&|ve)\s*Ajan\s*Bölünmesi[\s\S]*?(?=(?:###|##|---|$))/gi, '')
-                .replace(/\*?\*?`?(?:backend|frontend|database)\.director`?\*?:[^\n]*/gi, '')
-                .replace(/Mimari planı ve şartnameyi hazırladım[\s\S]*$/gi, '')
-                .replace(/\[PLAN_HAZIR\]/g, '')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
-
-            const readmeContent = `# 🚀 ${state.title}
-
-> ${plan.summary || 'Modern web ve API uygulaması.'}
-
----
-
-## 🛠️ Kurulum ve Çalıştırma Rehberi
-
-Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları sırasıyla uygulayın:
-
-### 1. Adım: Bağımlılıkları Yükleyin
-\`\`\`bash
-npm install
-\`\`\`
-
-### 2. Adım: Veritabanı ve Şemayı Hazırlayın (Prisma / SQLite)
-> **Not:** \`.env.example\` dosyasını \`.env\` olarak kopyalayın, \`NEXTAUTH_SECRET\` değerini uzun rastgele bir anahtarla değiştirin ve \`DATABASE_URL="file:./dev.db"\` ayarını doğrulayın.
-\`\`\`bash
-npx prisma generate
-npx prisma db push
-\`\`\`
-
-### 3. Adım: (Varsa) Tohum / Örnek Verileri Yükleyin
-\`\`\`bash
-npx prisma db seed
-\`\`\`
-
-### 4. Adım: Uygulamayı Başlatın
-\`\`\`bash
-npm run dev
-\`\`\`
-Uygulamanız varsayılan olarak \`http://localhost:3000\` adresinde çalışacaktır.
-
----
-
-## 📋 Proje Özellikleri ve Mimari Yapı
-
-${cleanTalimat}
-`;
+            const readmeContent = await generateProjectReadme({
+                projectTitle: state.title,
+                summary: plan.summary,
+                talimatname: managerTalimat,
+                projectDir,
+                manifest: plan.service_manifest || plan.serviceManifest || null,
+                detectedStack: plan.stack || plan.detectedStack || null,
+            });
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
             const latestContract = db.prepare(`

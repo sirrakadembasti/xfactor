@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'url';
-import { promoteUserToAdmin } from '../auth.js';
+import { changeUserPassword, promoteUserToAdmin, resetUserPassword } from '../auth.js';
 
 export function readTerminalLine(prompt, {
     hidden = false,
@@ -62,16 +62,65 @@ export async function runCreateAdmin({
     args = process.argv.slice(2),
     stdin = process.stdin,
     stdout = process.stdout,
-    provision = promoteUserToAdmin
+    provision = promoteUserToAdmin,
+    renew = changeUserPassword,
+    reset = resetUserPassword
 } = {}) {
-    if (!Array.isArray(args) || args.length > 1) {
-        throw new Error('Pass at most one username argument; passwords are prompted interactively.');
+    const mode = args.length === 2 && (args[1] === '--renew' || args[1] === '--reset') ? args[1] : null;
+    if (!Array.isArray(args) || args.length > 2 || (args.length === 2 && mode === null)) {
+        throw new Error('Pass at most one username argument, optionally followed by --renew or --reset; passwords are prompted interactively.');
     }
 
     const username = String(args[0] || await readTerminalLine('Kullanıcı adı: ', {
         stdin,
         stdout
     })).trim();
+    stdout.write('Parola en az 12 karakter olmalı (en fazla 256); iki giriş aynı olmalı.\n');
+    if (mode === '--reset') {
+        const newPassword = await readTerminalLine('Yeni parola: ', {
+            hidden: true,
+            stdin,
+            stdout
+        });
+        const confirmation = await readTerminalLine('Yeni parola tekrar: ', {
+            hidden: true,
+            stdin,
+            stdout
+        });
+
+        if (newPassword !== confirmation) {
+            throw new Error('Password confirmation does not match.');
+        }
+
+        const user = await reset(username, newPassword);
+        stdout.write(`Parola sıfırlandı: ${user.username}\n`);
+        return user;
+    }
+    if (mode === '--renew') {
+        const currentPassword = await readTerminalLine('Mevcut parola: ', {
+            hidden: true,
+            stdin,
+            stdout
+        });
+        const newPassword = await readTerminalLine('Yeni parola: ', {
+            hidden: true,
+            stdin,
+            stdout
+        });
+        const confirmation = await readTerminalLine('Yeni parola tekrar: ', {
+            hidden: true,
+            stdin,
+            stdout
+        });
+
+        if (newPassword !== confirmation) {
+            throw new Error('Password confirmation does not match.');
+        }
+
+        const user = await renew(username, currentPassword, newPassword);
+        stdout.write(`Parola yenilendi: ${user.username}\n`);
+        return user;
+    }
     const password = await readTerminalLine('Parola: ', {
         hidden: true,
         stdin,
