@@ -36,6 +36,11 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [uiError, setUiError] = useState('');
   const isPollingRef = useRef(false);
+  // Active project reference for WebSocket message filtering without reconnecting
+  const activeProjectRef = useRef(activeProjectId);
+  useEffect(() => {
+    activeProjectRef.current = activeProjectId;
+  }, [activeProjectId]);
   const uiErrorRef = useRef(null);
   const uiErrorTriggerRef = useRef(null);
   const rememberUiErrorTrigger = useCallback(trigger => {
