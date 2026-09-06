@@ -109,7 +109,7 @@ async function waitForHttps() {
   throw new Error(`timed out waiting for HTTPS proxy: ${lastError?.message}\n${caddyLogs.stdout}\n${caddyLogs.stderr}`);
 }
 function runJourney(fixture) {
-  const result = run(process.execPath, [playwrightCli, 'test', 'e2e/production-operability.spec.js', '--project=chromium'], {
+  const result = run(process.execPath, [playwrightCli, 'test', '--config', 'e2e/production.config.js', '--project=chromium'], {
     env: { ...process.env, P6_BASE_URL: `https://localhost:${httpsPort}`, P6_USERNAME: fixture.username,
       P6_PASSWORD: fixture.password, P6_PROJECT_ID: fixture.projectId, P6_CONTRACT_ID: fixture.contractId,
       P6_ARTIFACT_ID: fixture.artifactId, P6_SHA256: fixture.sha256 }
