@@ -13,6 +13,8 @@ RUN apk add --no-cache curl bash jq
 # Copy the portable executable translation entrypoint
 COPY entrypoint.js /opt/worker/entrypoint.js
 RUN chown -R worker:worker /opt/worker && chmod +x /opt/worker/entrypoint.js
+COPY registryProxy.js /opt/proxy/registryProxy.js
+RUN chown -R worker:worker /opt/proxy
 
 USER worker
 WORKDIR /workspace

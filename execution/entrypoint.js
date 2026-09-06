@@ -14,7 +14,7 @@ if (mode === 'serve') {
     executable = executable.slice(0, -4);
   }
 
-  const allowlist = ['NODE_ENV', 'PATH', 'CI', 'NPM_CONFIG_REGISTRY', 'NPM_CONFIG_PROXY', 'NPM_CONFIG_HTTPS_PROXY', 'NPM_CONFIG_IGNORE_SCRIPTS'];
+  const allowlist = ['NODE_ENV', 'PATH', 'CI', 'NPM_CONFIG_REGISTRY', 'NPM_CONFIG_IGNORE_SCRIPTS', 'NPM_CONFIG_CACHE'];
   const safeEnv = {};
   for (const key of allowlist) {
     if (process.env[key] !== undefined) {

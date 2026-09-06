@@ -4,6 +4,7 @@ import { executeJob } from '../runtime.js';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 function assertOwnedResources(resource) {
   if (resource.type === 'network') {
@@ -42,6 +43,32 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
        assert.fail(`Test setup failed to build image: ${e.message}`);
     }
   }
+
+  await t.test('rejects forbidden dependency sources before starting Docker', async () => {
+    const result = await executeJob({
+      jobId: 'job-forbidden-dep',
+      operation: 'prepare_dependencies',
+      deadline: Date.now() + 60000,
+      manifest: { dependencies: { escaped: 'https://evil.example/pkg.tgz' } },
+    }, { signal: new AbortController().signal });
+    assert.strictEqual(result.status, 'failed');
+    assert.match(result.error, /Forbidden dependency source/);
+  });
+
+  await t.test('install uses proxy network then transitions to fresh build network', async () => {
+    const resources = [];
+    const result = await executeJob({
+      jobId: 'job-install-proxy',
+      operation: 'prepare_dependencies',
+      deadline: Date.now() + 120000,
+      manifest: { dependencies: { 'is-number': '^7.0.0' } },
+      code: "require('child_process').execFileSync('npm', ['view', 'is-number', 'version'], { stdio: 'inherit' })",
+    }, { signal: new AbortController().signal, onResource: (resource) => resources.push(resource) });
+    assert.strictEqual(result.status, 'success');
+    assert.ok(resources.some((resource) => resource.type === 'proxy'));
+    assert.ok(resources.some((resource) => resource.phase === 'install'));
+    assert.ok(resources.some((resource) => resource.phase === 'build'));
+  });
 
   await t.test('enforces cgroups (memory limit OOM)', async () => {
     const job = { jobId: 'job-cgroup-mem', deadline: Date.now() + 60000, operation: 'verify_artifact' };
@@ -118,12 +145,12 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       process.stdout.write(buf);
     `;
     const result = await executeJob(job, { signal: abort.signal, onResource: () => {} });
-    assert.strictEqual(result.status, 'success');
-    
-    // Verify it was truncated to 1 MiB exactly
-    const maxRetained = 1024 * 1024;
-    assert.strictEqual(result.result.stdout.length, maxRetained);
-    assert.ok(result.result.stdoutSha256, 'Should compute full stream SHA256');
+    assert.strictEqual(result.status, 'failed');
+    assert.strictEqual(result.result.stdout.length, 1024 * 1024);
+    assert.strictEqual(result.result.stdoutTruncated, true);
+    assert.strictEqual(result.result.stdoutBytes, 2 * 1024 * 1024);
+    assert.strictEqual(result.result.stdoutSha256,
+      createHash('sha256').update(Buffer.alloc(2 * 1024 * 1024, 'a')).digest('hex'));
   });
 
   await t.test('cancellation cleanup and no residual labelled containers/networks', async () => {
