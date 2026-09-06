@@ -45,14 +45,16 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
   }
 
   await t.test('rejects forbidden dependency sources before starting Docker', async () => {
+    const resources = [];
     const result = await executeJob({
       jobId: 'job-forbidden-dep',
       operation: 'prepare_dependencies',
       deadline: Date.now() + 60000,
       manifest: { dependencies: { escaped: 'https://evil.example/pkg.tgz' } },
-    }, { signal: new AbortController().signal });
+    }, { signal: new AbortController().signal, onResource: resource => resources.push(resource) });
     assert.strictEqual(result.status, 'failed');
     assert.match(result.error, /Forbidden dependency source/);
+    assert.deepStrictEqual(resources, []);
   });
 
   await t.test('install uses proxy network then transitions to fresh build network', async () => {
@@ -63,6 +65,12 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       deadline: Date.now() + 120000,
       manifest: { dependencies: { 'is-number': '^7.0.0' } },
       code: "require('child_process').execFileSync('npm', ['view', 'is-number', 'version'], { stdio: 'inherit' })",
+      postTransitionCode: `
+        const { execFileSync } = require('child_process');
+        for (const target of ['1.1.1.1', '169.254.169.254']) {
+          try { execFileSync('curl', ['--max-time', '2', '-s', target]); process.exit(1); } catch {}
+        }
+      `,
     }, { signal: new AbortController().signal, onResource: (resource) => resources.push(resource) });
     assert.strictEqual(result.status, 'success');
     assert.ok(resources.some((resource) => resource.type === 'proxy'));

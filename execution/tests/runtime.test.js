@@ -48,6 +48,15 @@ test('Isolated worker runtime constraints and cancellation', async (t) => {
     return proc;
   });
 
+  await t.test('declared escaping paths fail before Docker startup', async () => {
+    const result = await executeJob({
+      jobId: 'path-boundary',
+      deadline: Date.now() + 10000,
+      inputPaths: ['../outside'],
+    }, { signal: new AbortController().signal });
+    assert.equal(result.status, 'failed');
+    assert.match(result.error, /workspace|path/i);
+  });
   await t.test('cancels job, cleans up container, limits output, drops privileges', async () => {
     // 1. Output ceiling enforcement
     const jobExceedingOutput = { 
@@ -78,6 +87,8 @@ test('Isolated worker runtime constraints and cancellation', async (t) => {
     });
     assert.equal(installResult.status, 'success', installResult.error || '');
     assert.ok(lastExecArgs.includes('--env'));
+    const spawned = installResult.adapter.spawn('node', [], { env: { EXECUTION_WORKER_TOKEN: 'secret' }, cwd: 'src', timeout: 1000 });
+    spawned.kill();
     assert.ok(lastExecArgs.includes('NPM_CONFIG_CACHE=/tmp/npm-cache'));
     assert.ok(lastExecArgs.includes('NPM_CONFIG_IGNORE_SCRIPTS=true'));
     assert.ok(lastSpawnArgs.every((arg) =>
@@ -136,12 +147,26 @@ test('dependency policy rejects non-registry sources and permits registry lock e
   }), /Non-registry lockfile source/);
   assert.equal(validateDependencySources({
     manifest: { dependencies: { good: '^1.2.3' } },
-    lockfile: { packages: { 'node_modules/good': { resolved: 'https://registry.npmjs.org/good/-/good-1.2.3.tgz' } } },
+    lockfile: {
+      packages: { 'node_modules/good': { resolved: 'https://registry.npmjs.org/good/-/good-1.2.3.tgz' } },
+      dependencies: {
+        good: {
+          resolved: 'https://registry.npmjs.org/good/-/good-1.2.3.tgz',
+          dependencies: { nested: { resolved: 'https://registry.npmjs.org/nested/-/nested-1.0.0.tgz' } },
+        },
+      },
+    },
   }), true);
+  assert.throws(() => validateDependencySources({
+    lockfile: { dependencies: { good: { dependencies: { nested: { resolved: 'https://evil.example/nested.tgz' } } } } },
+  }), /Non-registry lockfile source/);
 });
 
 test('registry proxy rejects normalized private and reserved addresses', () => {
-  for (const ip of ['::ffff:127.0.0.1', '::ffff:10.0.0.1', '169.254.1.1', '192.168.1.1', '::1', 'fc00::1', 'ff02::1']) {
+  for (const ip of [
+    '::ffff:127.0.0.1', '::ffff:10.0.0.1', '169.254.1.1', '192.0.2.1',
+    '198.51.100.1', '192.168.1.1', '::1', 'fc00::1', '2001:db8::1', 'ff02::1',
+  ]) {
     assert.equal(isSafeIP(ip), false, ip);
   }
   assert.equal(isSafeIP('8.8.8.8'), true);
