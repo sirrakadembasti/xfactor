@@ -27,6 +27,8 @@ export function validateRuntimeConfig(env = process.env) {
     const artifactsRoot = normalize(env.ARTIFACTS_ROOT);
     const projectsRoot = normalize(env.PROJECTS_ROOT);
     const dbPath = normalize(env.DB_PATH);
+    const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8080';
+    const workerToken = normalize(env.EXECUTION_WORKER_TOKEN);
     const issues = [];
 
     if (production) {
@@ -46,6 +48,9 @@ export function validateRuntimeConfig(env = process.env) {
     if (production && !path.isAbsolute(dbPath)) {
         issues.push('DB_PATH must be an absolute path in production');
     }
+    if (production && !workerToken) {
+        issues.push('EXECUTION_WORKER_TOKEN is required in production');
+    }
     if (production) {
         try {
             getMfaEncryptionKeys(env);
@@ -53,7 +58,6 @@ export function validateRuntimeConfig(env = process.env) {
             issues.push('MFA_ENCRYPTION_KEY must be a valid 32-byte key in production');
         }
     }
-
 
     if (issues.length > 0) {
         throw new Error(`Invalid runtime config: ${issues.join('; ')}`);
@@ -67,5 +71,7 @@ export function validateRuntimeConfig(env = process.env) {
         ARTIFACTS_ROOT: artifactsRoot,
         PROJECTS_ROOT: projectsRoot,
         DB_PATH: dbPath,
+        EXECUTION_WORKER_URL: workerUrl,
+        EXECUTION_WORKER_TOKEN: workerToken,
     };
 }
