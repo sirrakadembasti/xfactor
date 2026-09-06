@@ -38,6 +38,7 @@ const testFiles = [
     'test_build_validator.js',
     'test_quality_gate.js',
     'test_docs_agent_sync.js',
+    'test_p8_ci_contract.js',
     'test_deep_verification.js',
     'test_tur2_edge_cases.js',
     'test_runtime_verification.js',

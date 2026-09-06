@@ -23,24 +23,47 @@ jobs:
         run: |
           cd backend
           npm ci
-      - name: Security & Dependency Audits
+
+      - name: Install frontend dependencies
         run: |
-          cd backend && npm audit --audit-level=high
-          cd ../frontend && npm audit --audit-level=high
+          cd frontend
+          npm ci
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Backend dependency audit
+        run: |
+          cd backend
+          timeout 60s npm audit --audit-level=high
+
+      - name: Frontend dependency audit
+        run: |
+          cd frontend
+          timeout 60s npm audit --audit-level=high
 
       - name: Run Backend & Hardening Test Suites
+        env:
+          P8_REQUIRE_DOCKER_LIMITS: '1'
         run: |
           cd backend
           npm test
 
-      - name: Install frontend dependencies & Build
-        run: |
-          cd frontend
-          npm ci
-          npm run build
+      - name: Run frontend unit tests
+        run: npm --prefix frontend run test:unit
+
+      - name: Build frontend
+        run: npm --prefix frontend run build
+
+      - name: Install Chromium for E2E
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E suite
+        run: npm run test:e2e
 
   production-image:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - uses: actions/checkout@v4
 

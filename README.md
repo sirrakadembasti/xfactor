@@ -53,7 +53,7 @@ npm run dev                      # Web Arayüzü: http://localhost:5173
 
 ## 🧪 Test Süiti & Güvenlik Doğrulaması
 
-Platform, tüm çekirdek motorları, güvenlik sınırlarını, MFA ve observabilite mekanizmalarını kapsayan 25 bağımsız test süitine sahiptir:
+Platform, çekirdek motorları, güvenlik sınırlarını, MFA ve observabilite mekanizmalarını kapsayan backend test süitleri ile frontend birim testleri ve Chromium tabanlı E2E testlerine sahiptir. CI (`test` işi) bunların tamamını zorunlu kılar: backend/frontend `npm audit --audit-level=high` (60 sn sınır, engelleyici), `P8_REQUIRE_DOCKER_LIMITS=1` ile backend süitleri, `test:unit`, frontend build ve `test:e2e`.
 
 ```bash
 cd backend
@@ -61,10 +61,16 @@ npm test
 ```
 > Testler `os.tmpdir()` üzerindeki izole geçici sandbox'ta çalışır; geliştirme veritabanınızı (`projects.db`) ve `projects/` klasörünüzü kesinlikle kirletmez.
 
+```bash
+npm --prefix frontend run test:unit
+npm run test:e2e
+```
+
 ---
 
 ## 📚 Kapsamlı Dokümantasyon
 
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
+* 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
 * 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
 
