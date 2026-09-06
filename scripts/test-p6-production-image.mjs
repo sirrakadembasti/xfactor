@@ -129,6 +129,7 @@ function assertRuntimeBoundaries() {
 try {
   httpsPort = await reservePort();
   mkdirSync(dataRoot, { recursive: true });
+  mkdirSync(projectsRoot, { recursive: true });
   writeFileSync(join(fixtureRoot, 'Caddyfile'), `{\n  skip_install_trust\n}\n\nhttps://localhost:${httpsPort} {\n  bind 0.0.0.0\n  tls internal\n  reverse_proxy 127.0.0.1:8000 {\n    header_up X-Forwarded-Proto https\n  }\n}\n`);
   success('production image build', run('docker', ['build', '--tag', imageTag, '.']));
   startApplication();
