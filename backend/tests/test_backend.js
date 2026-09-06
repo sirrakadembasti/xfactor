@@ -73,7 +73,8 @@ await runAsyncTest("0b. Runtime config should enforce the production proxy and H
         ALLOWED_ORIGINS: 'https://xfactor.example',
         ARTIFACTS_ROOT: process.cwd(),
         PROJECTS_ROOT: process.cwd(),
-        DB_PATH: process.cwd()
+        DB_PATH: process.cwd(),
+        MFA_ENCRYPTION_KEY: 'ab'.repeat(32)
     }));
 });
 

@@ -164,6 +164,7 @@ try {
         DB_PATH: dbPath,
         PROJECTS_ROOT: projectsRoot,
         NODE_ENV: 'production',
+        MFA_ENCRYPTION_KEY: 'ab'.repeat(32),
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: APP_ORIGIN,
         ARTIFACTS_ROOT: artifactsRoot,

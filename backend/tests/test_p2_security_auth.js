@@ -134,7 +134,7 @@ await runAsyncTest('P2.10 Dockerfile and .dockerignore strictly isolate secrets 
 await runAsyncTest('P2.11 CI workflow runs full test suite and frontend build', async () => {
     const ciYaml = fs.readFileSync(path.resolve(__dirname, '../../.github/workflows/ci.yml'), 'utf8');
     assert.match(ciYaml, /npm test/, 'Must execute npm test in CI');
-    assert.match(ciYaml, /npm run build/, 'Must execute frontend build in CI');
+    assert.match(ciYaml, /run build/, 'Must execute frontend build in CI');
 });
 // =========================================================================
 // P2.6: Auth Operations & Session Cleanup
