@@ -1,7 +1,6 @@
 import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { posix, resolve } from 'node:path';
-import { lstat, realpath } from 'node:fs/promises';
 
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
@@ -98,22 +97,10 @@ export function validateWorkspacePath(value, { allowEmpty = false } = {}) {
   return normalized;
 }
 
-export async function validateOwnedPath(value, root) {
-  const relative = validateWorkspacePath(value);
-  const base = await realpath(root);
-  const target = resolve(base, ...relative.split('/'));
-  if (target !== base && !target.startsWith(base + '\\') && !target.startsWith(base + '/')) throw new Error('Workspace path escapes owned workspace');
-  let current = base;
-  for (const part of relative.split('/')) {
-    current = resolve(current, part);
-    try {
-      if ((await lstat(current)).isSymbolicLink()) throw new Error('Symlinks are not permitted in workspace paths');
-    } catch (error) {
-      if (error?.code === 'ENOENT') break;
-      throw error;
-    }
-  }
-  return relative;
+export function validateOwnedPath(value) {
+  // Never inspect host paths; validation of existing segments happens inside
+  // the owned container via the check-path adapter command.
+  return `/workspace/${validateWorkspacePath(value)}`;
 }
 async function cleanupOwned(kind, label, options) {
   const listArgs = kind === 'rm'
@@ -130,18 +117,26 @@ function streamResult(out, err, ob, eb, oh, eh) { return { stdout: Buffer.concat
 async function validateJobPaths(job) {
   if (job.workspaceRoot !== undefined) throw new Error('Operator-owned workspace root cannot be supplied by a job');
   const fields = ['archivePath', 'inputPath', 'inputPaths', 'filePath', 'filePaths', 'resultPath', 'resultPaths', 'outputPath', 'outputPaths'];
+  const paths = [];
   for (const field of fields) {
     if (job[field] === undefined) continue;
     const values = Array.isArray(job[field]) ? job[field] : [job[field]];
     for (const value of values) {
       if (typeof value !== 'string') throw new Error(`Invalid workspace path in ${field}`);
-      validateWorkspacePath(value);
+      paths.push(validateWorkspacePath(value));
     }
   }
+  return paths;
 }
 export async function executeJob(job, { signal, onResource } = {}) {
-  const names = resourceNames(job.jobId); const started = Date.now(); const deadline = Math.min(Number(job.deadline) || started + MAX_JOB_MS, started + MAX_JOB_MS); const install = job.operation === 'prepare_dependencies'; let installPhase = install; let proxy;
-  try { await validateJobPaths(job); } catch (e) { return { status: 'failed', error: e.message }; }
+  const names = resourceNames(job.jobId);
+  const started = Date.now();
+  const deadline = Math.min(Number(job.deadline) || started + MAX_JOB_MS, started + MAX_JOB_MS);
+  const install = job.operation === 'prepare_dependencies';
+  let installPhase = install;
+  let proxy;
+  let declaredPaths;
+  try { declaredPaths = await validateJobPaths(job); } catch (e) { return { status: 'failed', error: e.message }; }
   if (install) {
     try { validateDependencySources(job); } catch (e) { return { status: 'failed', error: e.message }; }
   }
@@ -160,8 +155,13 @@ export async function executeJob(job, { signal, onResource } = {}) {
     }
     const runArgs = ['run','-d','--rm','--name',names.container,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,'--cpus','2.0','--memory','1g','--memory-swap','1g','--pids-limit','100','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges=true','--network',net,'--tmpfs','/tmp:rw,size=64m,exec,mode=1777','--tmpfs','/workspace:rw,size=1g,exec,mode=1777',IMAGE_NAME,'serve'];
     await docker(runArgs, opts()); onResource?.({ type:'container', name:names.container, phase:install?'install':'build' }); await waitForReadiness(names.container, deadline, signal);
+    const checkPaths = async () => {
+      for (const relative of declaredPaths) {
+        await docker(['exec', names.container, 'node', '/opt/worker/entrypoint.js', 'check-path', `/workspace/${relative}`], opts());
+      }
+    };
     const adapter = {
-      execute: (command, args = [], options = {}) => new Promise((resolve, reject) => {
+      execute: async (command, args = [], options = {}) => { await checkPaths(); return new Promise((resolve, reject) => {
         if (!/^[a-zA-Z0-9_.-]+$/.test(command) || command.startsWith('.')) return reject(new Error('Unsafe executable path'));
         const cwd = options.cwd === undefined ? undefined : `/workspace/${validateWorkspacePath(options.cwd)}`;
         const env = {};
@@ -176,8 +176,10 @@ export async function executeJob(job, { signal, onResource } = {}) {
         const ms = Math.max(1, Math.min(options.timeout || 120000, deadline - Date.now())); const timer = setTimeout(() => { finish(reject, new Error('Command timed out')); try { p.kill('SIGKILL'); } catch {} }, ms);
         const abort = () => { finish(reject, new Error('Cancelled by user')); try { p.kill('SIGKILL'); } catch {} }; signal?.addEventListener('abort', abort, { once: true });
         p.once('close', (code, sig) => { clearTimeout(timer); signal?.removeEventListener('abort', abort); const r = streamResult(out, err, ob, eb, oh, eh); if (code === 0 && !r.stdoutTruncated && !r.stderrTruncated) finish(resolve, r); else { const e = new Error(r.stdoutTruncated || r.stderrTruncated ? 'Output exceeded fixed ceiling' : `Command failed with code ${code}${sig ? ` (signal ${sig})` : ''}`); e.result = r; finish(reject, e); } });
-      }),
+      }); },
       spawn: (command, args = [], options = {}) => {
+        if (signal?.aborted || options.signal?.aborted) throw new Error('Cancelled by user');
+        if (Date.now() >= deadline) throw new Error('Job deadline exceeded');
         if (!/^[a-zA-Z0-9_.-]+$/.test(command) || command.startsWith('.')) throw new Error('Unsafe executable path');
         const cwd = options.cwd === undefined ? undefined : `/workspace/${validateWorkspacePath(options.cwd)}`; const env = {};
         for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
@@ -185,10 +187,14 @@ export async function executeJob(job, { signal, onResource } = {}) {
         const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
         da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...args);
         const p = cp.spawn('docker', da, { stdio: options.stdio || 'pipe', windowsHide: true });
-        const timeoutMs = Math.max(1, Math.min(options.timeout || 120000, deadline - Date.now())); const timeout = setTimeout(() => p.kill('SIGKILL'), timeoutMs);
-        const abort = () => p.kill('SIGKILL');
-        p.once('close', () => { clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); });
-        signal?.addEventListener('abort', abort, { once: true }); options.signal?.addEventListener('abort', abort, { once: true }); return p;
+        const timeoutMs = Math.max(1, Math.min(options.timeout || 120000, deadline - Date.now()));
+        let cleaned = false;
+        const cleanup = () => { if (cleaned) return; cleaned = true; clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); };
+        const abort = () => { try { p.kill('SIGKILL'); } catch {} cleanup(); };
+        const timeout = setTimeout(abort, timeoutMs);
+        signal?.addEventListener('abort', abort, { once: true }); options.signal?.addEventListener('abort', abort, { once: true });
+        p.once('close', cleanup);
+        return p;
       },
     };
     let result;

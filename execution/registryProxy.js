@@ -69,7 +69,7 @@ export function isSafeIP(input) {
   return true;
 }
 
-export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns } = {}) {
+export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, connector = https.request } = {}) {
   const server = http.createServer(async (req, res) => {
     try {
       const rawTarget = String(req.url || '/');
@@ -97,7 +97,7 @@ export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns } = {
         res.end('DNS resolved to unsafe IP');
         return;
       }
-      const proxyReq = https.request({
+      const proxyReq = connector({
         hostname: safeAddress,
         port: 443,
         path: targetUrl.pathname + targetUrl.search,

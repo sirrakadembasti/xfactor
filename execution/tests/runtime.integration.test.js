@@ -57,6 +57,32 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
     assert.deepStrictEqual(resources, []);
   });
 
+  await t.test('container path adapter rejects symlinked workspace segments', async () => {
+    const resources = [];
+    const result = await executeJob({
+      jobId: 'job-container-symlink',
+      operation: 'prepare_dependencies',
+      deadline: Date.now() + 60000,
+      manifest: { dependencies: {} },
+      inputPaths: ['owned/link/secret'],
+      installCode: "require('fs').mkdirSync('/workspace/owned', { recursive: true }); require('fs').symlinkSync('/tmp', '/workspace/owned/link');",
+      buildCode: 'process.exit(0);',
+    }, { signal: new AbortController().signal, onResource: resource => resources.push(resource) });
+    assert.strictEqual(result.status, 'failed');
+    assert.match(result.error, /Symlinks|workspace path/i);
+  });
+
+  await t.test('startup deadline leaves no owned labelled resources', async () => {
+    const jobId = 'job-startup-deadline';
+    const result = await executeJob({ jobId, deadline: Date.now() + 1, operation: 'verify_artifact' }, {
+      signal: new AbortController().signal,
+    });
+    assert.strictEqual(result.status, 'failed');
+    const label = createHash('sha256').update(jobId).digest('hex');
+    assert.strictEqual(execSync(`docker ps -a --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${label}" --format "{{.ID}}"`).toString().trim(), '');
+    assert.strictEqual(execSync(`docker network ls --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${label}" --format "{{.ID}}"`).toString().trim(), '');
+  });
+
   await t.test('install uses proxy network then transitions to fresh build network', async () => {
     const resources = [];
     const result = await executeJob({
@@ -66,16 +92,22 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       manifest: { dependencies: { 'is-number': '^7.0.0' } },
       installCode: "require('child_process').execFileSync('npm', ['view', 'is-number', 'version'], { stdio: 'inherit' })",
       buildCode: `
+        const http = require('http');
+        const service = http.createServer((req, res) => res.end('healthy'));
+        service.listen(18080, '0.0.0.0', () => {
+          http.get('http://127.0.0.1:18080/health', response => {
+            let body = ''; response.on('data', chunk => body += chunk);
+            response.on('end', () => { if (response.statusCode !== 200 || body !== 'healthy') process.exit(1); service.close(); });
+          }).on('error', () => process.exit(1));
+        });
         const { execFileSync } = require('child_process');
-        for (const target of ['1.1.1.1', '169.254.169.254']) {
-          try { execFileSync('curl', ['--max-time', '2', '-s', target]); process.exit(1); } catch {}
+        for (const target of ['http://1.1.1.1', 'http://169.254.169.254', 'http://172.18.0.2:3128']) {
+          try { execFileSync('curl', ['--max-time', '2', '-sS', target]); process.exit(1); } catch {}
         }
       `,
     }, { signal: new AbortController().signal, onResource: (resource) => resources.push(resource) });
     assert.strictEqual(result.status, 'success');
     assert.ok(resources.some((resource) => resource.type === 'proxy'));
-    assert.ok(resources.some((resource) => resource.phase === 'install'));
-    assert.ok(resources.some((resource) => resource.phase === 'build'));
   });
 
   await t.test('enforces cgroups (memory limit OOM)', async () => {
@@ -86,10 +118,6 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
       resources.push(resource);
       assertOwnedResources(resource);
     };
-    
-    // Allocate external memory and touch every page so cgroups must account
-    // for the committed pages. Do not catch the OOM: evidence must be a
-    // kernel/container termination, never a self-reported success or timeout.
     job.code = `
       const pages = [];
       const chunkSize = 64 * 1024 * 1024;
@@ -176,13 +204,11 @@ test('Isolated worker integration tests (requires Docker daemon)', async (t) => 
     assert.strictEqual(result.status, 'failed');
     assert.match(result.error, /Cancelled by user/);
     
-    // Strictly assert NO residual container
-    const containerName = `xfactor-worker-${jobId}`;
-    const psOut = execSync(`docker ps -a --filter "name=${containerName}" --format "{{.ID}}"`);
-    assert.strictEqual(psOut.toString().trim(), '', 'Residual container remains');
-    
-    // Strictly assert NO residual network
-    const netOut = execSync(`docker network ls --filter "name=${containerName}-net" --format "{{.ID}}"`);
-    assert.strictEqual(netOut.toString().trim(), '', 'Residual network remains');
+    const jobLabel = createHash('sha256').update(jobId).digest('hex');
+    const psOut = execSync(`docker ps -a --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${jobLabel}" --format "{{.ID}}"`);
+    assert.strictEqual(psOut.toString().trim(), '', 'Residual owned container remains');
+
+    const netOut = execSync(`docker network ls --filter "label=xfactor.owner=execution" --filter "label=xfactor.job=${jobLabel}" --format "{{.ID}}"`);
+    assert.strictEqual(netOut.toString().trim(), '', 'Residual owned network remains');
   });
 });

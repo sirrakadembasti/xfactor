@@ -4,8 +4,6 @@ import cp from 'node:child_process';
 import http from 'node:http';
 import EventEmitter from 'node:events';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, symlink, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { createProxy, isSafeIP } from '../registryProxy.js';
 import { cleanupContainer, executeJob, ownedContainerExists, validateDependencySources, validateWorkspacePath, validateOwnedPath } from '../runtime.js';
 
@@ -179,17 +177,23 @@ test('registry proxy rejects normalized private and reserved addresses', () => {
 });
 
 test('registry proxy denies unsafe DNS answers before outbound connect', async () => {
-  const proxy = await createProxy({ resolver: { resolve: async () => ['192.0.2.1'] } });
-  const port = proxy.address().port;
-  const status = await new Promise((resolve, reject) => {
-    const request = http.get({ host: '127.0.0.1', port, path: '/is-number' }, (response) => {
-      response.resume();
-      response.once('end', () => resolve(response.statusCode));
+  for (const address of ['192.0.2.1', '169.254.169.254', '::ffff:127.0.0.1']) {
+    let outbound = 0;
+    const proxy = await createProxy({
+      resolver: { resolve: async () => [address] },
+      connector: () => { outbound += 1; throw new Error('unexpected outbound connection'); },
     });
-    request.once('error', reject);
-  });
-  proxy.close();
-  assert.equal(status, 403);
+    const port = proxy.address().port;
+    const status = await new Promise((resolve, reject) => {
+      const request = http.get({ host: '127.0.0.1', port, path: '/is-number' }, response => {
+        response.resume(); response.once('end', () => resolve(response.statusCode));
+      });
+      request.once('error', reject);
+    });
+    await new Promise(resolve => proxy.close(resolve));
+    assert.equal(status, 403);
+    assert.equal(outbound, 0);
+  }
 });
 
 test('workspace paths reject host and traversal forms', () => {
@@ -207,13 +211,6 @@ test('pre-aborted jobs fail before Docker startup', async () => {
   assert.match(result.error, /Cancelled/);
 });
 
-test('workspace symlink entries are rejected', async () => {
-  const root = await mkdtemp(`${tmpdir()}/xfactor-path-`);
-  try {
-    await mkdir(`${root}/owned`);
-    await symlink('/tmp', `${root}/owned/link`);
-    await assert.rejects(() => validateOwnedPath('owned/link/secret', root), /Symlinks/);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
+test('workspace path checks are delegated to the container', () => {
+  assert.equal(validateOwnedPath('owned/file'), '/workspace/owned/file');
 });
