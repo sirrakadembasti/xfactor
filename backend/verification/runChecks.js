@@ -2,7 +2,6 @@ import { verifyDependencies } from './packageVerifier.js';
 import { verifyBuild } from './buildVerifier.js';
 import { verifyReadmeCommands } from './readmeVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
-import { verifyTestInfrastructure } from './testInfrastructureVerifier.js';
 
 async function collectFiles(adapter, supplied = null) {
     if (Array.isArray(supplied)) {
@@ -31,12 +30,13 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
     checks.push(...build.checks);
     const readme = await verifyReadmeCommands(contract, inventory, { ...options });
     checks.push(...(readme.checks || []));
-    const applicable = [[verifyProjectSmoke, 'smoke_gate'], [verifyTestInfrastructure, 'test_infrastructure']];
-    if (contract.database) { const { verifyDatabase } = await import('./databaseVerifier.js'); applicable.push([(dir, c, opts) => verifyDatabase(dir, c, env, opts), 'database_check']); }
-    if (contract.api?.baseUrl) { const { verifyAPIContract } = await import('./apiVerifier.js'); applicable.push([(_dir, c, opts) => verifyAPIContract(contract.api.baseUrl, contract.databasePath, c, opts), 'api_check']); }
-    if (contract.browser?.journey) { const { verifyBrowserJourney } = await import('./browserVerifier.js'); applicable.push([(_dir, c, opts) => verifyBrowserJourney(contract.browser.url, contract.browser.journey, opts), 'browser_check']); }
-    if (contract.process?.command) { const { spawnService, killService } = await import('./processVerifier.js'); applicable.push([async () => { const handle = await spawnService(contract.process.id || 'verification', contract.process, env, { ...options }); try { return { passed: true, checks: [{ name: 'process_check', status: 'passed', reason: 'Service started with supplied process identity.', evidence: { adapterId: adapter?.id, pid: handle.pid } }] }; } finally { await killService(handle); } }, 'process_check']); }
-    for (const [verifier] of applicable) { try { const result = await verifier(workspace, contract, options); checks.push(...(result.checks || [])); } catch (error) { checks.push({ name: 'verification_runtime', status: 'blocked', reason: error.message }); } }
+    // Smoke is the single runtime orchestrator; it owns service lifecycle and all
+    // applicable database/API/browser/process/health/test-infrastructure gates.
+    const applicable = [[verifyProjectSmoke, 'smoke_gate']];
+    for (const [verifier] of applicable) {
+        try { const result = await verifier(workspace, contract, options); checks.push(...(result.checks || [])); }
+        catch (error) { checks.push({ name: 'verification_runtime', status: 'blocked', reason: error.message }); }
+    }
     const finalChecks = checks.map(check => withEvidence(check, runId, requirementIds));
     return { runId, checks: finalChecks, passed: finalChecks.every(check => ['passed', 'skipped'].includes(check.status)) };
 }

@@ -12,7 +12,7 @@ export async function verifyDatabase(projectDir, contract = {}, env = {}, option
     const schemaPath = contract.schemaPath || 'prisma/schema.prisma';
     const dbPath = resolveDatabaseFilePath(projectDir, env);
     try {
-        const result = await executeInSandbox('node', ['-e', "const fs=require('fs'); const s=fs.existsSync(process.argv[1]); process.stdout.write(JSON.stringify({schemaExists:fs.existsSync(process.argv[2]),databaseExists:s}))", dbPath, schemaPath], { adapter, workspace: options.workspace || '/workspace', timeoutMs: options.timeoutMs || 30000, signal: options.signal, env });
+        const result = await executeInSandbox('node', ['-e', "const [db,schema]=process.argv.slice(1); const fs=require('fs'); process.stdout.write(JSON.stringify({schemaExists:fs.existsSync(schema),databaseExists:fs.existsSync(db)}))", dbPath, schemaPath], { adapter, workspace: options.workspace || '/workspace', timeoutMs: options.timeoutMs || 30000, signal: options.signal, env });
         const evidence = { adapterId: adapter.id, stdout: result.stdout, stderr: result.stderr, command: 'database evidence probe' };
         const parsed = JSON.parse(result.stdout || '{}');
         if (!parsed.schemaExists && !parsed.databaseExists) return { passed: false, checks: [{ name: 'database_connectivity', status: 'blocked', reason: 'No database or schema evidence supplied by sandbox.', evidence }], issues: ['Database prerequisite missing.'], dbPath: null };

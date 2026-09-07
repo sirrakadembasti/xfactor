@@ -9,12 +9,9 @@ import {
     saveProjectState
 } from '../projectRepository.js';
 import { createRun, updateRunStatus } from '../repositories/verificationRepository.js';
-import { verifyDependencies } from './packageVerifier.js';
-import { verifyBuild } from './buildVerifier.js';
-import { verifyProjectSmoke } from './smokeVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
 import { verifyPlaceholders } from './placeholderVerifier.js';
-import { verifyReadmeCommands } from './readmeVerifier.js';
+import { runVerificationChecks } from './runChecks.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 
 export const ACTIVE_POLICY_VERSION = '2.0';
@@ -656,92 +653,41 @@ export async function runProjectVerification({
         ORDER BY stable_key
     `).all(contractRow.id).map(row => row.id);
     const injectedVerifiers = options.verifiers || {};
-    const dependencyVerifier = injectedVerifiers.dependencies || verifyDependencies;
-    const buildVerifier = injectedVerifiers.build || verifyBuild;
-    const smokeVerifier = injectedVerifiers.smoke || verifyProjectSmoke;
     const domainVerifier = injectedVerifiers.domain || verifyDomainCompliance;
     const placeholderVerifier = injectedVerifiers.placeholders || verifyPlaceholders;
     const contaminationVerifier = injectedVerifiers.contamination || verifyContamination;
     const securityVerifier = injectedVerifiers.security || verifySecurityBaseline;
-    const readmeVerifier = injectedVerifiers.readme || verifyReadmeCommands;
     const verifierOptions = { ...options };
     delete verifierOptions.verifiers;
 
     await stageVerificationRunning(project);
-    const runId = `verification-${crypto.randomUUID()}`;
-    createRun({
-        id: runId,
-        projectId,
-        contractId: contractRow.id,
-        status: 'queued',
-        policyVersion: ACTIVE_POLICY_VERSION
-    });
+    const runId = options.runId || `verification-${crypto.randomUUID()}`;
+    createRun({ id: runId, projectId, contractId: contractRow.id, status: 'queued', policyVersion: ACTIVE_POLICY_VERSION });
     updateRunStatus(runId, 'running');
 
     const workspace = projectDir || getProjectDir(projectId);
-    let projectFiles;
-    let projectFilesError = null;
-    try {
-        projectFiles = Array.isArray(options.files)
-            ? options.files
-            : await listProjectTree(workspace, { strict: true });
-    } catch (error) {
-        projectFiles = [];
-        projectFilesError = error;
-    }
+    const projectFiles = Array.isArray(options.files) ? options.files : [];
     const sandboxAdapter = verifierOptions.adapter ?? null;
     const hardeningRuns = [
         ['domain_entity_check', () => domainVerifier(contract, projectFiles)],
         ['placeholder_check', () => placeholderVerifier(projectFiles)],
         ['contamination_check', () => contaminationVerifier(contract, projectFiles)],
-        ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)],
-        ['readme_check', () => readmeVerifier(contract, projectFiles, { adapter: sandboxAdapter, workspace })]
+        ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)]
     ];
-    const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) =>
-        captureHardeningGate(name, () => {
-            if (projectFilesError) throw projectFilesError;
-            return run();
-        })
-    ));
-    const dependencyResult = await captureVerifier(
-        () => dependencyVerifier(workspace, contract, verifierOptions),
-        'package_json'
-    );
-    const buildResult = dependencyResult.passed
-        ? await captureVerifier(
-            () => buildVerifier(workspace, contract, verifierOptions),
-            'framework_build'
-        )
-        : { passed: false, checks: [] };
-    const smokeResult = dependencyResult.passed && buildResult.passed
-        ? await captureVerifier(
-            () => smokeVerifier(workspace, contract, verifierOptions),
-            'smoke_gate'
-        )
-        : { passed: false, checks: [] };
+    const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) => captureHardeningGate(name, run)));
+    const workerResult = options.workerResult || await runVerificationChecks({
+        workspace: '/workspace',
+        contract,
+        requirementIds: mandatoryRequirementIds,
+        adapter: verifierOptions.adapter,
+        signal: verifierOptions.signal,
+        env: verifierOptions.env,
+        runId,
+        files: projectFiles
+    });
+    const workerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
+    const policyChecks = [...workerChecks, ...hardeningChecks];
 
-    const dependencyChecks = Array.isArray(dependencyResult.checks)
-        ? dependencyResult.checks
-        : [];
-    const buildChecks = Array.isArray(buildResult.checks) ? buildResult.checks : [];
-    const smokeChecks = Array.isArray(smokeResult.checks) ? smokeResult.checks : [];
-    const policyChecks = [
-        ...dependencyChecks,
-        ...buildChecks,
-        ...hardeningChecks,
-        ...Object.keys(RUNTIME_GATE_MEMBERS).map(gateName => (
-            combineRuntimeGate(
-                gateName,
-                smokeChecks,
-                gateName === 'smoke_gate' ? mandatoryRequirementIds : []
-            )
-        )),
-        ...smokeChecks.map(check => ({
-            ...check,
-            gateName: `detail:${check.name}`,
-            applicability: 'OPTIONAL'
-        }))
-    ];
 
     const result = await aggregateVerificationRun(
         projectId,

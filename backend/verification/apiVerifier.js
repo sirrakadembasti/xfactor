@@ -8,9 +8,9 @@ export async function sendHttpRequest(targetUrl, method = 'GET', data = null, ti
     }
     if (typeof adapter?.execute !== 'function') throw Object.assign(new Error('SANDBOX_UNAVAILABLE: API adapter is required.'), { code: 'SANDBOX_UNAVAILABLE' });
     const parsed = new URL(targetUrl);
-    const script = "const fs=require('fs'); const chunks=[]; process.stdin.on('data',c=>chunks.push(c)); process.stdin.on('end',async()=>{try{const r=await fetch(process.argv[1],{method:process.argv[2],headers:{'content-type':'application/json','accept':'application/json'},body=process.argv[3]||undefined}); const text=await r.text(); process.stdout.write(JSON.stringify({statusCode:r.status,headers:Object.fromEntries(r.headers),rawBody:text,data:(()=>{try{return JSON.parse(text)}catch{return text}})()}))}catch(e){process.stderr.write(e.message);process.exit(1)}});";
+    const script = "const [url,method,body]=process.argv.slice(1); fetch(url,{method,headers:{'content-type':'application/json','accept':'application/json'},...(body?{body}: {})}).then(async r=>{const text=await r.text();let data=text;try{data=JSON.parse(text)}catch{};process.stdout.write(JSON.stringify({statusCode:r.status,headers:Object.fromEntries(r.headers),rawBody:text,data}))}).catch(e=>{process.stderr.write(e.message);process.exit(1)})";
     const result = await executeInSandbox('node', ['-e', script, parsed.href, method, data == null ? '' : JSON.stringify(data)], { adapter, workspace: options.workspace || '/workspace', timeoutMs, signal: options.signal, env: options.env });
-    if (!result.passed) throw new Error(result.stderr || 'Sandbox request failed');
+    if (result.passed === false && result.exitCode !== 0) throw new Error(result.stderr || 'Sandbox request failed');
     return JSON.parse(result.stdout || '{}');
 }
 

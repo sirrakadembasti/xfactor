@@ -203,6 +203,7 @@ export async function executeJob(job, { signal, onResource } = {}) {
         await docker(['exec', names.container, 'node', '/opt/worker/entrypoint.js', 'check-path', `/workspace/${relative}`], opts());
       }
     };
+    const ownedProcesses = new Map();
     const adapter = {
       id: 'docker-worker',
       getCapabilities: () => ({ available: true, isolation: true, adapterId: 'docker-worker', execute: true, spawn: true, writeFile: true }),
@@ -261,15 +262,29 @@ export async function executeJob(job, { signal, onResource } = {}) {
         if (installPhase && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
         const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
         da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...args);
+        const p = cp.spawn('docker', da, { stdio: options.stdio || 'pipe', windowsHide: true });
+        ownedProcesses.set(p.pid, p);
         const timeoutMs = Math.max(1, Math.min(options.timeout || options.timeoutMs || 120000, deadline - Date.now()));
         let cleaned = false;
-        const cleanup = () => { if (cleaned) return; cleaned = true; clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); };
+        const cleanup = () => { if (cleaned) return; cleaned = true; ownedProcesses.delete(p.pid); clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); };
         const abort = () => { try { p.kill('SIGKILL'); } catch {} cleanup(); };
         const timeout = setTimeout(abort, timeoutMs);
         signal?.addEventListener('abort', abort, { once: true }); options.signal?.addEventListener('abort', abort, { once: true });
         p.once('close', cleanup);
         return p;
       },
+      kill: async (pid) => {
+        const child = ownedProcesses.get(Number(pid));
+        if (!child) return;
+        await new Promise(resolve => {
+          let settled = false;
+          const done = () => { if (!settled) { settled = true; resolve(); } };
+          child.once('close', done);
+          try { child.kill('SIGTERM'); } catch { done(); }
+          setTimeout(() => { try { child.kill('SIGKILL'); } catch {} done(); }, Math.min(5000, Math.max(1, deadline - Date.now())));
+        });
+      },
+      killProcessTree: async (pid) => adapter.kill(pid),
     };
     if (install) {
       const prepared = await prepareDependencies({ packageJsonBytes: job.packageJsonBytes, workspace: '/workspace', adapter, signal, env: job.env || {}, runId: job.runId });
