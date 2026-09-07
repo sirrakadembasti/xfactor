@@ -92,13 +92,25 @@ app.get('/readyz', async (req, res) => {
         });
 
         const schemaVersion = getSchemaVersion();
+        
+        let executionStatus = 'unknown';
+        try {
+            const { createExecutionClient } = await import('./executionClient.js');
+            const client = createExecutionClient(runtimeConfig);
+            const caps = await client.getCapabilities();
+            executionStatus = caps.status === 'ready' ? 'ready' : 'unavailable';
+        } catch (e) {
+            executionStatus = 'unavailable';
+        }
+
         res.status(200).json({
             status: 'ready',
             database: 'connected',
             projectsRoot: 'accessible',
             artifactsRoot: 'accessible',
             frontend: runtimeConfig.production ? 'available' : 'not_required',
-            schemaVersion
+            schemaVersion,
+            executionCapacity: executionStatus
         });
     } catch (err) {
         logError('readyz.failed', err, { requestId: req.requestId });

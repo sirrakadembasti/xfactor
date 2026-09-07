@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
 import { listProjectTree } from '../engine/codeGenerator.js';
+import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { db, dbEvents } from '../db.js';
 import {
     getProject,
@@ -14,7 +15,7 @@ import { verifyPlaceholders } from './placeholderVerifier.js';
 import { runVerificationChecks } from './runChecks.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 
-export const ACTIVE_POLICY_VERSION = '2.0';
+export { ACTIVE_POLICY_VERSION };
 
 export const MANDATORY_GATES = [
     'package_json',

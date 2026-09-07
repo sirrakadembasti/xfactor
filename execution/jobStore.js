@@ -32,50 +32,32 @@ export class JobStore {
     const now = Date.now();
     for (const [id, j] of this.jobs.entries()) {
       if (j.deadline <= now && (j.status === 'pending' || j.status === 'running')) {
-         j.status = 'failed_timeout';
-         j.completedAt = now;
+        j.status = 'failed_timeout';
+        j.completedAt = now;
       }
-      if (j.completedAt && (now - j.completedAt) > 24 * 60 * 60 * 1000) {
-         this.jobs.delete(id);
-      }
+      if (j.completedAt && (now - j.completedAt) > 24 * 60 * 60 * 1000) this.jobs.delete(id);
     }
-    
+
+    const identity = ['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'];
     if (this.jobs.has(job.jobId)) {
       const existing = this.jobs.get(job.jobId);
-      const isExactMatch = 
-        existing.version === job.version &&
-        existing.operation === job.operation &&
-        existing.projectId === job.projectId &&
-        existing.contractId === job.contractId &&
-        existing.contractHash === job.contractHash &&
-        existing.revision === job.revision &&
-        existing.artifactId === job.artifactId &&
-        existing.archiveBase64 === job.archiveBase64 &&
-        existing.nonce === job.nonce &&
-        existing.inputSha256 === job.inputSha256 &&
-        JSON.stringify(existing.contract) === JSON.stringify(job.contract);
-        
-      if (!isExactMatch) {
-        throw new Error('Duplicate jobId with different input');
-      }
+      const sameIdentity = identity.every(key => existing[key] === job[key])
+        && existing.packageJsonBase64 === job.packageJsonBase64
+        && existing.archiveBase64 === job.archiveBase64
+        && JSON.stringify(existing.contract) === JSON.stringify(job.contract);
+      if (!sameIdentity) throw new Error('Duplicate jobId with different input');
       return 'exists';
     }
-
     let active = 0;
-    for (const j of this.jobs.values()) {
-      if (j.status === 'pending' || j.status === 'running') active++;
-    }
+    for (const j of this.jobs.values()) if (j.status === 'pending' || j.status === 'running') active++;
     if (active >= 8) throw new Error('Queue capacity exceeded');
-
     this.jobs.set(job.jobId, { ...job, status: 'pending' });
     this._save();
     return 'inserted';
   }
   
   getNextPendingJob() {
-    for (const j of this.jobs.values()) {
-      if (j.status === 'pending') return j;
-    }
+    for (const j of this.jobs.values()) if (j.status === 'pending') return j;
     return null;
   }
 
@@ -90,14 +72,17 @@ export class JobStore {
     if (!job || job.status !== fromStatus) return false;
     job.status = toStatus;
     if (result) {
-       job.result = result;
+      const identity = Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId']
+        .map(key => [key, job[key]]));
+      job.result = { ...result, ...identity };
     }
-    if (toStatus === 'completed' || toStatus === 'failed' || toStatus === 'cancelled') {
-       job.completedAt = Date.now();
+    if (toStatus === 'completed' || toStatus === 'failed' || toStatus === 'cancelled' || toStatus === 'failed_timeout' || toStatus === 'failed_interrupted') {
+      job.completedAt = Date.now();
     }
     this._save();
     return true;
   }
+  
 
   deleteJob(jobId) {
     const deleted = this.jobs.delete(jobId);

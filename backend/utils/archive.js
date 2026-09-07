@@ -3,53 +3,99 @@ import fs from 'fs/promises';
 import path from 'path';
 import JSZip from 'jszip';
 import { getArtifactsRoot } from '../artifactPaths.js';
-import { createArtifact, addArtifactFile } from '../repositories/artifactRepository.js';
 
-export async function createProjectZip(projectId, contractId, files, artifactsDir = getArtifactsRoot()) {
+async function loadArchiveDefaults() {
+    const [{ db }, repository] = await Promise.all([
+        import('../db.js'),
+        import('../repositories/artifactRepository.js')
+    ]);
+    return {
+        db,
+        createArtifact: repository.createArtifact,
+        addArtifactFile: repository.addArtifactFile,
+        withArtifactTransaction: repository.withArtifactTransaction
+    };
+}
+
+function canonicalPath(value) {
+    if (typeof value !== 'string' || !value || value.includes('\0')) {
+        throw new Error(`Invalid path: ${value}`);
+    }
+    const normalized = path.posix.normalize(value.replace(/\\/g, '/'));
+    if (normalized === '.' || normalized === '..' || normalized.startsWith('../')
+        || normalized.startsWith('/') || normalized.includes('/../')) {
+        throw new Error(`Invalid path: ${value}`);
+    }
+    return normalized;
+}
+
+export async function createProjectZip(
+    projectId,
+    contractId,
+    files,
+    artifactsDir = getArtifactsRoot(),
+    deps = {}
+) {
+    if (!Array.isArray(files)) throw new Error('Artifact files must be an array.');
     const zip = new JSZip();
     const manifest = [];
-
-    for (const file of files) {
-        zip.file(file.path, file.content);
-        const hash = crypto.createHash('sha256').update(file.content).digest('hex');
-        const size = Buffer.byteLength(file.content, 'utf8');
-        manifest.push({ path: file.path, sha256: hash, size });
-    }
-
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-    const zipHash = crypto.createHash('sha256').update(zipBuffer).digest('hex');
-    const zipSize = zipBuffer.length;
-
-    const artifactId = `artifact-${crypto.randomUUID()}`;
-    const zipFileName = `${projectId}-${artifactId}.zip`;
-    const artifactPath = path.join(artifactsDir, zipFileName);
-
-    await fs.mkdir(artifactsDir, { recursive: true });
-    await fs.writeFile(artifactPath, zipBuffer);
-
-    const manifestJson = JSON.stringify(manifest);
-
-    createArtifact({
-        id: artifactId,
-        projectId,
-        contractId,
-        kind: 'zip',
-        path: artifactPath,
-        sha256: zipHash,
-        size: zipSize,
-        manifestJson,
-        status: 'draft'
-    });
-
-    for (const file of manifest) {
-        addArtifactFile({
-            contractId,
-            artifactId,
-            path: file.path,
-            sha256: file.sha256,
-            size: file.size
+    const seenPaths = new Set();
+    const orderedFiles = [...files].sort((a, b) => canonicalPath(a?.path).localeCompare(canonicalPath(b?.path)));
+    for (const file of orderedFiles) {
+        const normalizedPath = canonicalPath(file?.path);
+        if (seenPaths.has(normalizedPath)) throw new Error(`Duplicate file path detected: ${normalizedPath}`);
+        if (!Buffer.isBuffer(file?.content) && typeof file?.content !== 'string' && !(file?.content instanceof Uint8Array)) {
+            throw new Error(`Invalid content for ${normalizedPath}`);
+        }
+        seenPaths.add(normalizedPath);
+        const content = Buffer.isBuffer(file.content) ? file.content : Buffer.from(file.content);
+        zip.file(normalizedPath, content, { date: new Date(0), createFolders: false });
+        manifest.push({
+            path: normalizedPath,
+            sha256: crypto.createHash('sha256').update(content).digest('hex'),
+            size: content.length
         });
     }
-
-    return { id: artifactId, sha256: zipHash, path: artifactPath, size: zipSize, manifest };
+    const zipBuffer = await zip.generateAsync({
+        type: 'nodebuffer',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+        platform: 'UNIX'
+    });
+    const needsDefaults = !deps.createArtifact || !deps.addArtifactFile || !deps.withArtifactTransaction;
+    const loaded = needsDefaults ? await loadArchiveDefaults() : {};
+    const db = deps.db || loaded.db;
+    const createArtifact = deps.createArtifact || loaded.createArtifact;
+    const addArtifactFile = deps.addArtifactFile || loaded.addArtifactFile;
+    const withArtifactTransaction = deps.withArtifactTransaction || loaded.withArtifactTransaction;
+    const zipHash = crypto.createHash('sha256').update(zipBuffer).digest('hex');
+    const zipSize = zipBuffer.length;
+    const artifactId = `artifact-${crypto.randomUUID()}`;
+    const zipFileName = `${projectId}-${artifactId}.zip`;
+    const tempArtifactPath = path.join(artifactsDir, `${zipFileName}.tmp`);
+    const finalArtifactPath = path.join(artifactsDir, zipFileName);
+    await fs.mkdir(artifactsDir, { recursive: true });
+    try {
+        await fs.writeFile(tempArtifactPath, zipBuffer, { flag: 'wx' });
+        const result = await withArtifactTransaction(async () => {
+            createArtifact({
+                id: artifactId, projectId, contractId, kind: 'zip',
+                path: finalArtifactPath, sha256: zipHash, size: zipSize,
+                manifestJson: JSON.stringify(manifest), status: 'draft'
+            });
+            for (const file of manifest) {
+                addArtifactFile({
+                    contractId, artifactId, path: file.path,
+                    sha256: file.sha256, size: file.size
+                });
+            }
+            await fs.rename(tempArtifactPath, finalArtifactPath);
+            return { id: artifactId, sha256: zipHash, path: finalArtifactPath, size: zipSize, manifest };
+        }, db);
+        return result;
+    } catch (error) {
+        await fs.rm(tempArtifactPath, { force: true }).catch(() => {});
+        await fs.rm(finalArtifactPath, { force: true }).catch(() => {});
+        throw error;
+    }
 }

@@ -1,4 +1,5 @@
 import assert from 'assert';
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -63,6 +64,38 @@ function passingCheck(name) {
     };
 }
 
+function artifactIdentity(artifactId, runId, artifactHash) {
+    return {
+        version: 1,
+        jobId: `job-${runId}`,
+        operation: 'verify_artifact',
+        projectId,
+        contractId,
+        contractHash: 'hash',
+        revision: 1,
+        artifactId,
+        nonce: `nonce-${runId}`,
+        inputSha256: artifactHash,
+        runId
+    };
+}
+
+function workerResponse(identity, checks = [], status = 'failed', error = 'worker rejection') {
+    return {
+        ...identity,
+        status,
+        error: status === 'completed' ? null : error,
+        result: { ...identity, status, checks }
+    };
+}
+
+const allGates = [
+    'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
+    'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
+    'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check',
+    'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
+];
+
 try {
     await runAsyncTest('1. verifyArtifact fails closed and rejects artifact when package lockfile is missing', async () => {
         const zipPath = await createTestZip('broken-lock.zip', [
@@ -71,19 +104,20 @@ try {
         ]);
 
         const artifactId = 'artifact-broken-lock';
+        const archiveBytes = await fs.readFile(zipPath);
+        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
         createArtifact({
-            id: artifactId,
-            projectId,
-            contractId,
-            kind: 'zip',
-            path: zipPath,
-            sha256: 'mocksha1',
-            size: 100,
-            manifestJson: '[]',
-            status: 'draft'
+            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
+            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
         });
-
-        const result = await verifyArtifact({ projectId, contractId, artifactId });
+        const runId = 'run-broken-lock';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId,
+            activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, [], 'failed', 'package-lock.json missing') }
+        });
         assert.strictEqual(result.status, 'failed');
         assert.strictEqual(result.passed, false);
         assert.ok(result.runId);
@@ -107,65 +141,26 @@ try {
         ]);
 
         const artifactId = 'artifact-valid';
+        const archiveBytes = await fs.readFile(zipPath);
+        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
         createArtifact({
-            id: artifactId,
-            projectId,
-            contractId,
-            kind: 'zip',
-            path: zipPath,
-            sha256: 'mocksha2',
-            size: 200,
-            manifestJson: '[]',
-            status: 'draft'
+            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
+            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
         });
-
-        // Reset project status for clean verification run
         db.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(projectId);
-
+        const runId = 'run-valid';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const checks = allGates.map(name => ({
+            ...passingCheck(name),
+            evidenceJson: name === 'domain_entity_check'
+                ? { evidence: { kind: 'derived_gate', producer: 'quality-policy', sourceGateNames: ['domain_entity_check'], policyVersion: '2.0', computedAt: new Date().toISOString() } }
+                : { evidence: { producer: 'quality-policy', policyVersion: '2.0' } }
+        }));
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {
-            verifiers: {
-                dependencies: async () => ({
-                    passed: true,
-                    checks: [
-                        'package_json',
-                        'lockfile',
-                        'ast_import_inventory',
-                        'clean_install'
-                    ].map(passingCheck)
-                }),
-                build: async () => ({
-                    passed: true,
-                    checks: ['typecheck', 'framework_build'].map(passingCheck)
-                }),
-                smoke: async () => ({
-                    passed: true,
-                    checks: [
-                        'manifest_presence',
-                        'service_definitions',
-                        'port_uniqueness',
-                        'prisma_schema_presence',
-                        'prisma_db_push',
-                        'database_connectivity',
-                        'database_write_capability',
-                        'database_file_accessible',
-                        'api_status_check',
-                        'api_query_check',
-                        'database_mutation_assertion',
-                        'browser_page_load',
-                        'browser_journey_steps',
-                        'service_spawn',
-                        'smoke_liveness_probe',
-                        'smoke_gate',
-                        'test_script_presence',
-                        'test_suite_execution'
-                    ].map(passingCheck)
-                }),
-                domain: async () => ({ passed: true, issues: [] }),
-                placeholders: async () => ({ passed: true, issues: [] }),
-                contamination: async () => ({ passed: true, issues: [] }),
-                security: async () => ({ passed: true, issues: [] }),
-                readme: async () => ({ passed: true, issues: [] })
-            }
+            runId,
+            activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, checks, 'completed') }
         });
 
         assert.strictEqual(result.status, 'verified');
@@ -212,19 +207,20 @@ try {
         ], { platform: 'UNIX' });
 
         const artifactId = 'artifact-symlink';
+        const archiveBytes = await fs.readFile(zipPath);
+        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
         createArtifact({
-            id: artifactId,
-            projectId,
-            contractId,
-            kind: 'zip',
-            path: zipPath,
-            sha256: 'mocksha3',
-            size: 150,
-            manifestJson: '[]',
-            status: 'draft'
+            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
+            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
         });
-
-        const result = await verifyArtifact({ projectId, contractId, artifactId });
+        const runId = 'run-symlink';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId,
+            activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, [], 'failed', 'Symbolic link detected') }
+        });
         assert.strictEqual(result.status, 'failed');
         assert.strictEqual(result.passed, false);
         assert.ok(result.runId);
@@ -239,10 +235,14 @@ try {
         assert.ok(run);
         assert.strictEqual(run.status, 'failed');
     });
-
     await runAsyncTest('4. verifyArtifact throws meaningful error when artifact is missing from DB', async () => {
+        const runId = 'run-missing-artifact';
+        const identity = artifactIdentity('non-existent-artifact', runId, '0'.repeat(64));
         await assert.rejects(
-            async () => verifyArtifact({ projectId, contractId, artifactId: 'non-existent-artifact' }),
+            async () => verifyArtifact({ projectId, contractId, artifactId: 'non-existent-artifact' }, {
+                runId, activeJob: identity,
+                executionClient: { verifyArtifact: async () => { throw new Error('must not execute'); } }
+            }),
             /not found/i
         );
     });

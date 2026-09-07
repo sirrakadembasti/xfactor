@@ -53,6 +53,14 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
     }
 
     const files = Object.keys(zip.files).filter(name => !zip.files[name].dir);
+    const normalizedNames = new Set();
+    for (const name of files) {
+        const safeName = name.replace(/\\/g, '/');
+        if (normalizedNames.has(safeName)) {
+            throw new Error(`Extraction aborted: Duplicate entry: ${name}`);
+        }
+        normalizedNames.add(safeName);
+    }
 
     if (files.length > maxFiles) {
         throw new Error(`Extraction aborted: Exceeded file count limit (${files.length} > ${maxFiles})`);
@@ -60,35 +68,41 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
 
     let totalDecompressedSize = 0;
 
+    // Validate archive metadata before asking JSZip to allocate decompressed bytes.
     for (const entryName of files) {
-        const resolvedPath = assertSafeEntryName(entryName, resolvedOutputDir);
         const fileEntry = zip.files[entryName];
         const mode = fileEntry.unixPermissions;
-
-        // Symbolic link detection (0xA000 flag mask in UNIX file modes)
         if (mode && (mode & 0xf000) === 0xa000) {
             throw new Error(`Extraction aborted: Symbolic link detected in zip: ${entryName}`);
         }
-
-        const content = await fileEntry.async('nodebuffer');
-        const decompressedSize = content.length;
-        totalDecompressedSize += decompressedSize;
-
+        const uncompressedSize = fileEntry._data?.uncompressedSize;
+        const compressedSize = fileEntry._data?.compressedSize;
+        if (!Number.isSafeInteger(uncompressedSize) || uncompressedSize < 0
+            || !Number.isSafeInteger(compressedSize) || compressedSize < 0) {
+            throw new Error(`Extraction aborted: Missing size metadata for ${entryName}`);
+        }
+        totalDecompressedSize += uncompressedSize;
         if (totalDecompressedSize > maxTotalBytes) {
             throw new Error(`Extraction aborted: Exceeded total decompressed size limit (${totalDecompressedSize} > ${maxTotalBytes})`);
         }
-
-        if (decompressedSize > 1024) {
-            const compressedSize = fileEntry._data?.compressedSize || decompressedSize;
-            const ratio = decompressedSize / Math.max(compressedSize, 1);
+        if (uncompressedSize > 1024) {
+            const ratio = uncompressedSize / Math.max(compressedSize, 1);
             if (ratio > maxRatio) {
                 throw new Error(`Extraction aborted: Decompression bomb detected (ratio ${ratio.toFixed(1)}:1 exceeds ${maxRatio}:1)`);
             }
         }
+    }
 
+    for (const entryName of files) {
+        const resolvedPath = assertSafeEntryName(entryName, resolvedOutputDir);
+        const content = await zip.files[entryName].async('nodebuffer');
+        if (content.length > maxTotalBytes || content.length > totalDecompressedSize) {
+            throw new Error(`Extraction aborted: Decompressed size mismatch for ${entryName}`);
+        }
         await fs.mkdir(path.dirname(resolvedPath), { recursive: true });
         await fs.writeFile(resolvedPath, content);
     }
 
     return { success: true, files };
+
 }

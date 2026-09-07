@@ -26,6 +26,8 @@ import { buildCompletionReport } from '../verification/reportGenerator.js';
 import { listArtifacts } from '../repositories/artifactRepository.js';
 
 
+import { authorizeArtifactDownload } from './artifactDownloadAuthorization.js';
+
 function findFailedReports(dir, projectDir) {
     const reports = [];
     try {
@@ -890,12 +892,12 @@ export function createProjectRouter({
         const { id, contractId, artifactId } = req.params;
         const { getArtifact } = await import('../repositories/artifactRepository.js');
         const artifact = getArtifact({ projectId: id, contractId, artifactId });
-        if (!artifact) return res.status(404).json({ error: 'Artifact not found' });
-        try {
-            assertVerifiedArtifactEvidence({ projectId: id, contractId, artifactId, strict: true });
-        } catch (error) {
-            const status = /latest approved contract/i.test(error.message) ? 404 : 409;
-            return res.status(status).json({ error: error.message });
+        const authorization = authorizeArtifactDownload({
+            artifact,
+            assertEvidence: () => assertVerifiedArtifactEvidence({ projectId: id, contractId, artifactId, strict: true })
+        });
+        if (authorization.status !== 200) {
+            return res.status(authorization.status).json({ error: authorization.error });
         }
         res.download(artifact.path, path.basename(artifact.path));
     }));

@@ -58,7 +58,10 @@ import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
-import { generateProjectReadme } from './readmeGenerator.js';
+import { generateProjectReadme } from '\./readmeGenerator\.js';
+import { collectArtifactFiles } from '../artifactInventory.js';
+import { createExecutionClient } from '../executionClient.js';
+import { validateRuntimeConfig } from '../config.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -893,22 +896,77 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
             const latestContract = db.prepare(`
-                SELECT id FROM project_contracts
+                SELECT id, revision, contract_json, contract_hash FROM project_contracts
                 WHERE project_id = ? AND status = 'approved'
                 ORDER BY revision DESC LIMIT 1
             `).get(projectId);
             if (!latestContract) throw new Error(`Project ${projectId} has no approved contract.`);
+            const limits = { maxFiles: 1000, maxTotalBytes: 50 * 1024 * 1024 };
+            const files = await collectArtifactFiles(projectDir, limits);
+
+            const config = validateRuntimeConfig(process.env);
+            const executionClient = createExecutionClient(config);
+            const contractHash = latestContract.contract_hash;
+            if (!/^[a-f0-9]{64}$/.test(contractHash)) throw new Error('Approved contract has invalid hash.');
+            const contract = JSON.parse(latestContract.contract_json);
+            const nonce = crypto.randomBytes(32).toString('hex');
+            const runId = `verification-${crypto.randomUUID()}`;
+            const deadline = Date.now() + 15 * 60 * 1000;
+            const activeJob = {
+                version: 1,
+                jobId: crypto.randomUUID(),
+                projectId,
+                contractId: latestContract.id,
+                contractHash,
+                revision: latestContract.revision,
+                artifactId: `pending-${runId}`,
+                nonce,
+                runId,
+                deadline
+            };
+
+            const packageJsonFile = files.find(f => f.path === 'package.json');
+            if (!packageJsonFile) throw new Error('Artifact requires package.json for dependency preparation.');
+            const packageJsonBytes = Buffer.from(packageJsonFile.content);
+            const prepJob = {
+                ...activeJob,
+                inputSha256: crypto.createHash('sha256').update(packageJsonBytes).digest('hex'),
+                packageJsonBytes
+            };
+            const prepResult = await executionClient.prepareDependencies(prepJob);
+            if (prepResult.status !== 'completed' || !prepResult.result?.packageLockBase64) {
+                throw new Error('Dependency preparation did not produce a package-lock.json.');
+            }
+            const lockContent = Buffer.from(prepResult.result.packageLockBase64, 'base64');
+            if (crypto.createHash('sha256').update(lockContent).digest('hex') !== prepResult.result.packageLockSha256) {
+                throw new Error('Worker returned a package-lock digest mismatch.');
+            }
+            const existingLockIndex = files.findIndex(f => f.path === 'package-lock.json');
+            if (existingLockIndex >= 0) files[existingLockIndex].content = lockContent;
+            else files.push({ path: 'package-lock.json', content: lockContent });
+
             const artifact = await createProjectZip(
                 projectId,
                 latestContract.id,
-                await listProjectTree(projectDir)
+                files
             );
+            const archiveBytes = await fs.readFile(artifact.path);
+            const artifactSha256 = crypto.createHash('sha256').update(archiveBytes).digest('hex');
+            if (artifactSha256 !== artifact.sha256) throw new Error('Published artifact digest mismatch.');
+            const verifyIdentity = {
+                ...activeJob,
+                artifactId: artifact.id,
+                contract,
+                inputSha256: artifactSha256,
+                archiveBase64: archiveBytes.toString('base64')
+            };
             const completion = await verifyArtifactAndProject({
                 projectId,
                 contractId: latestContract.id,
                 artifactId: artifact.id,
                 expectedRevision: (await readProjectState(projectId))?.revision ?? null,
-                complete: true
+                complete: true,
+                options: { runId, activeJob: verifyIdentity, archiveBase64: verifyIdentity.archiveBase64 }
             });
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
@@ -926,7 +984,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await logEvent(wsHub, projectId, "System", "error", "", `Süreç hatası. Referans: ${errorLog.requestId}`, "system");
             const failedState = await readProjectState(projectId);
             if (failedState) {
-                failedState.status = 'paused';
+                // fail-closed pause check
+                const immutableStatuses = new Set(['completed', 'artifact_verified', 'acceptance_verified', 'runtime_verified']);
+                if (!immutableStatuses.has(failedState.status)) {
+                    failedState.status = 'paused';
+                }
                 const errNow = new Date();
                 const errDate = errNow.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const errTime = errNow.toLocaleTimeString('tr-TR', { hour12: false });

@@ -40,20 +40,22 @@ test('Job Boundary API', async (t) => {
   const client = createExecutionClient(config);
 
   const getValidJob = () => {
-    const archiveBase64 = 'base64...';
+    const archive = Buffer.from('worker-boundary');
+    const archiveBase64 = archive.toString('base64');
     return {
       version: 1,
       jobId: crypto.randomUUID(),
       operation: 'verify_artifact',
       projectId: 'proj-123',
       contractId: 'c-1',
-      contractHash: 'hash',
-      revision: 'rev-1',
+      contractHash: crypto.createHash('sha256').update('contract').digest('hex'),
+      revision: 1,
       artifactId: 'art-1',
       archiveBase64,
       nonce: crypto.randomBytes(32).toString('hex'),
-      inputSha256: crypto.createHash('sha256').update(archiveBase64).digest('hex'),
+      inputSha256: crypto.createHash('sha256').update(archive).digest('hex'),
       contract: { some: 'data' },
+      runId: `run-${crypto.randomUUID()}`,
       deadline: Date.now() + 60000
     };
   };
@@ -126,8 +128,7 @@ test('Job Boundary API', async (t) => {
     setTimeout(() => { if (executeWaitResolve) executeWaitResolve(); }, 50);
     await p2;
     
-    // Same jobId, different input (e.g., changed contractHash) should fail 409
-    const jobDifferent = { ...job, contractHash: 'different' };
+    const jobDifferent = { ...job, contractHash: crypto.createHash('sha256').update('different').digest('hex') };
     await assert.rejects(client.verifyArtifact(jobDifferent), /Worker error \(409\)/);
   });
 
@@ -153,8 +154,7 @@ test('Job Boundary API', async (t) => {
        abortController.abort();
     }, 50);
     
-    await assert.rejects(p, /Aborted/);
-    
+    await assert.rejects(p, error => error?.name === 'AbortError' || /aborted/i.test(error?.message || ''));
     const jobInStore = store.getJob(job.jobId, job.projectId);
     assert.equal(jobInStore.status, 'cancelled');
   });

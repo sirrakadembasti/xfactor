@@ -1,5 +1,17 @@
 import { db } from '../db.js';
 
+export async function withArtifactTransaction(work, database = db) {
+    database.exec('BEGIN IMMEDIATE;');
+    try {
+        const result = await work();
+        database.exec('COMMIT;');
+        return result;
+    } catch (error) {
+        try { database.exec('ROLLBACK;'); } catch {}
+        throw error;
+    }
+}
+
 function mapArtifactRow(row) {
     if (!row) return undefined;
     return {

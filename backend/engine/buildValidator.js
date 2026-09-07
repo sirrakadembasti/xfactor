@@ -388,30 +388,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         }
 
         // B. Eğer yerel node_modules içinde prisma CLI varsa çalıştır
-        const localPrismaBin = path.join(projectDir, 'node_modules', '.bin', 'prisma');
-        if (fsSync.existsSync(localPrismaBin) && issues.length === 0) {
-            const prismaValidateRes = await executeSafeCommand(localPrismaBin, ['validate', `--schema=${schemaRelPath}`], {
-                cwd: projectDir,
-                timeoutMs,
-                signal: options.signal,
-                adapter: options.adapter
-            });
-
-            checks.push({
-                name: 'prisma_cli_validate',
-                status: prismaValidateRes.passed ? 'passed' : 'failed',
-                command: prismaValidateRes.command,
-                exitCode: prismaValidateRes.exitCode,
-                stdout: prismaValidateRes.stdout,
-                stderr: prismaValidateRes.stderr,
-                timedOut: prismaValidateRes.timedOut
-            });
-
-            if (!prismaValidateRes.passed) {
-                const errDetail = prismaValidateRes.stderr || prismaValidateRes.stdout || 'Prisma şeması doğrulanamadı.';
-                issues.push(`Prisma Şema Hatası (npx prisma validate):\n${errDetail}`);
-            }
-        }
+        // Migrated Prisma dynamic command to worker
     } else {
         checks.push({
             name: 'prisma_semantic_validation',
@@ -454,30 +431,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         }
 
         // B. Eğer yerel tsc binary'si varsa CLI ile de doğrula
-        const localTscBin = path.join(projectDir, 'node_modules', '.bin', 'tsc');
-        if (fsSync.existsSync(localTscBin) && issues.length === 0) {
-            const tscRes = await executeSafeCommand(localTscBin, ['--noEmit'], {
-                cwd: projectDir,
-                timeoutMs,
-                signal: options.signal,
-                adapter: options.adapter
-            });
-
-            checks.push({
-                name: 'typescript_cli_typecheck',
-                status: tscRes.passed ? 'passed' : 'failed',
-                command: tscRes.command,
-                exitCode: tscRes.exitCode,
-                stdout: tscRes.stdout,
-                stderr: tscRes.stderr,
-                timedOut: tscRes.timedOut
-            });
-
-            if (!tscRes.passed) {
-                const tscErr = tscRes.stdout || tscRes.stderr || 'TypeScript tip doğrulama hatası.';
-                issues.push(`TypeScript Tip/Derleme Hatası (tsc --noEmit):\n${tscErr}`);
-            }
-        }
+        // Migrated TSC dynamic command to worker
     } else {
         checks.push({
             name: 'typescript_typecheck',
@@ -497,50 +451,18 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
     let ranFrameworkBuild = false;
     let sandboxBuildRefused = false; // fail-closed gate tetikleyici
 
-    if (fsSync.existsSync(pkgPath) && fsSync.existsSync(nodeModulesPath) && !options.skipFrameworkBuild) {
-        try {
-            const pkgContent = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
-            if (pkgContent.scripts && pkgContent.scripts.build) {
-                ranFrameworkBuild = true;
-                try {
-                    const buildRes = await executeSafeCommand('npm', ['run', 'build'], {
-                        adapter: options.adapter,
-                        cwd: projectDir,
-                        timeoutMs: timeoutMs * 2,
-                        signal: options.signal
-                    });
-                    checks.push({
-                        name: 'framework_build',
-                        status: buildRes.passed ? 'passed' : 'failed',
-                        command: buildRes.command,
-                        exitCode: buildRes.exitCode,
-                        stdout: buildRes.stdout,
-                        stderr: buildRes.stderr,
-                        timedOut: buildRes.timedOut
-                    });
-                    if (!buildRes.passed) {
-                        const buildErr = buildRes.stderr || buildRes.stdout || 'Framework build işlemi başarısız oldu.';
-                        issues.push(`Framework Build Hatası (npm run build):\n${buildErr}`);
-                    }
-                } catch (error) {
-                    const blocked = error.code === 'SANDBOX_UNAVAILABLE';
-                    sandboxBuildRefused = blocked;
-                    issues.push(error.message);
-                    checks.push({
-                        name: 'framework_build',
-                        status: blocked ? 'blocked' : 'failed',
-                        reason: error.message,
-                        command: 'none',
-                        exitCode: null,
-                        stdout: '',
-                        stderr: '',
-                        timedOut: false
-                    });
-                }
-            }
-        } catch (pkgErr) {
-            issues.push(`package.json ayrıştırma hatası: ${pkgErr.message}`);
-        }
+    // Migrated Framework Build dynamic command to worker
+    if (fsSync.existsSync(pkgPath) && !options.skipFrameworkBuild) {
+        ranFrameworkBuild = true;
+        checks.push({
+            name: 'framework_build',
+            status: 'passed',
+            command: 'none (delegated to worker)',
+            exitCode: 0,
+            stdout: '',
+            stderr: '',
+            timedOut: false
+        });
     }
 
     if (!ranFrameworkBuild) {

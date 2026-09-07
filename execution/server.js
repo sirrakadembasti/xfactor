@@ -12,6 +12,21 @@ export function createWorkerServer({ config, store, executeJob }) {
   let isExecuting = false;
   const activeJobs = new Map();
 
+      const identityResponse = (job, extra = {}) => ({
+        ...extra,
+        version: job.version,
+        jobId: job.jobId,
+        operation: job.operation,
+        projectId: job.projectId,
+        contractId: job.contractId,
+        contractHash: job.contractHash,
+        revision: job.revision,
+        artifactId: job.artifactId,
+        nonce: job.nonce,
+        inputSha256: job.inputSha256,
+        runId: job.runId
+      });
+
   function triggerExecution() {
     if (isExecuting) return;
     
@@ -19,7 +34,7 @@ export function createWorkerServer({ config, store, executeJob }) {
     if (!job) return;
     
     if (Date.now() >= job.deadline) {
-      store.updateJobStatus(job.jobId, 'pending', 'failed', { error: 'Deadline exceeded before execution' });
+      store.updateJobStatus(job.jobId, 'pending', 'failed_timeout', { error: 'Deadline exceeded before execution' });
       return triggerExecution();
     }
     
@@ -27,12 +42,23 @@ export function createWorkerServer({ config, store, executeJob }) {
       isExecuting = true;
       const abortController = new AbortController();
       
-      const p = executeJob(job, {
+      const executionJob = { ...job };
+      if (job.operation === 'prepare_dependencies') {
+        executionJob.packageJsonBytes = Buffer.from(job.packageJsonBase64, 'base64');
+      }
+      const p = executeJob(executionJob, {
         signal: abortController.signal,
-        onResource: () => {} 
+        onResource: () => {}
       }).then((result) => {
-        if (!abortController.signal.aborted) {
-          store.updateJobStatus(job.jobId, 'running', 'completed', result || { success: true });
+        if (abortController.signal.aborted) return;
+        if (Date.now() >= job.deadline) {
+          store.updateJobStatus(job.jobId, 'running', 'failed_timeout', { error: 'Deadline exceeded during execution' });
+        } else if (result?.status === 'success' && result.result && typeof result.result === 'object') {
+          store.updateJobStatus(job.jobId, 'running', 'completed', result.result);
+        } else if (['failed', 'blocked', 'cancelled'].includes(result?.status)) {
+          store.updateJobStatus(job.jobId, 'running', result.status === 'cancelled' ? 'cancelled' : 'failed', result.result || { error: result.error || 'Worker execution failed' });
+        } else {
+          store.updateJobStatus(job.jobId, 'running', 'failed', { error: 'Worker returned an invalid result.' });
         }
       }).catch((err) => {
         if (!abortController.signal.aborted) {
@@ -65,19 +91,17 @@ export function createWorkerServer({ config, store, executeJob }) {
       
       if (req.method === 'GET' && url.pathname === '/readyz') {
         res.writeHead(200);
-        return res.end(JSON.stringify({ supportedTypes: ['prepareDependencies', 'verifyArtifact'] }));
+        return res.end(JSON.stringify({ supportedTypes: ['prepare_dependencies', 'verify_artifact'], executionCapacity: true }));
       }
-
       let bodyStr = '';
       if (req.method === 'POST') {
         const contentLength = parseInt(req.headers['content-length'] || '0', 10);
-        if (contentLength > 34 * 1024 * 1024) { 
+        if (contentLength > 34 * 1024 * 1024) {
           res.writeHead(413);
           res.end(JSON.stringify({ error: 'Payload too large' }));
           req.destroy();
           return;
         }
-        
         const chunks = [];
         let length = 0;
         for await (const chunk of req) {
@@ -101,14 +125,13 @@ export function createWorkerServer({ config, store, executeJob }) {
           res.writeHead(400);
           return res.end(JSON.stringify({ error: 'Invalid JSON' }));
         }
-        
-        // Digest identity validation against the archiveBase64, as it's the core payload
-        if (input && typeof input.inputSha256 === 'string' && typeof input.archiveBase64 === 'string') {
-           const computedHash = crypto.createHash('sha256').update(input.archiveBase64).digest('hex');
-           if (computedHash !== input.inputSha256) {
-             res.writeHead(400);
-             return res.end(JSON.stringify({ error: 'Digest mismatch' }));
-           }
+
+        if (input && input.operation === 'verify_artifact' && typeof input.inputSha256 === 'string' && typeof input.archiveBase64 === 'string') {
+          const computedHash = crypto.createHash('sha256').update(Buffer.from(input.archiveBase64, 'base64')).digest('hex');
+          if (computedHash !== input.inputSha256) {
+            res.writeHead(400);
+            return res.end(JSON.stringify({ error: 'Digest mismatch' }));
+          }
         }
 
         const validation = validateJob(input, Date.now());
@@ -122,8 +145,7 @@ export function createWorkerServer({ config, store, executeJob }) {
         try {
           const inserted = store.insertJob(job);
           if (inserted === 'exists') {
-            res.writeHead(202);
-            return res.end(JSON.stringify({ jobId: job.jobId, status: 'queued' }));
+            return res.end(JSON.stringify(identityResponse(job, { status: 'queued' })));
           }
         } catch (e) {
           if (e.message.includes('Duplicate jobId with different input')) {
@@ -137,8 +159,7 @@ export function createWorkerServer({ config, store, executeJob }) {
           throw e;
         }
 
-        res.writeHead(202);
-        res.end(JSON.stringify({ jobId: job.jobId, status: 'queued' }));
+        res.end(JSON.stringify(identityResponse(job, { status: 'queued' })));
         
         triggerExecution();
         return;
