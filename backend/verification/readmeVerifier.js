@@ -128,8 +128,8 @@ export async function verifyReadmeCommands(contract = {}, files = [], sandbox = 
     } else if (sandboxAdapter && documentedScripts.includes('build')) {
         const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
         try {
-            const result = await executeInSandbox(npmCommand, ['run', 'build'], { adapter: sandboxAdapter, workspace: sandboxWorkspace, timeoutMs: sandbox?.timeoutMs ?? 120000 });
-            const passed = result.passed === true && result.exitCode === 0 && !result.timedOut;
+            const result = await executeInSandbox(npmCommand, ['run', 'build'], { adapter: sandboxAdapter, workspace: sandboxWorkspace, timeoutMs: sandbox?.timeoutMs ?? 120000, signal: sandbox?.signal, env: sandbox?.env });
+            const passed = (result.passed === true || result.exitCode === 0) && result.exitCode === 0 && !result.timedOut;
             checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: passed ? 'passed' : 'failed', passed, reason: passed ? 'Documented build command completed successfully.' : 'Documented build command failed to execute' });
             if (!passed) issues.push('Documented build command failed to execute');
         } catch {

@@ -2,9 +2,12 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import module from 'module';
+import crypto from 'crypto';
 import { parse } from '@babel/parser';
 import { executeInSandbox } from './sandboxRunner.js';
-
+function computeDigest(text) {
+    return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
+}
 const NODE_BUILTINS = new Set(
     module.builtinModules || [
         'assert', 'async_hooks', 'buffer', 'child_process', 'cluster', 'console',
@@ -169,130 +172,90 @@ export async function scanProjectImports(projectDir) {
 export async function verifyDependencies(projectDir, contract = {}, options = {}) {
     const checks = [];
 
-    // 1. package.json check
+    // Worker callers provide an adapter inventory. Never inspect the host workspace.
+    const suppliedFiles = Array.isArray(options.files) ? options.files : null;
+    const readSupplied = name => suppliedFiles?.find(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith(`/${name}`) || String(file.path || '').toLowerCase() === name);
+    const packageFile = readSupplied('package.json');
     const packageJsonPath = path.join(projectDir, 'package.json');
     let packageJson = null;
     try {
-        const content = await fs.readFile(packageJsonPath, 'utf8');
+        const content = packageFile ? String(packageFile.content || '') : await fs.readFile(packageJsonPath, 'utf8');
         packageJson = JSON.parse(content);
-        checks.push({
-            name: 'package_json',
-            status: 'passed',
-            reason: 'package.json exists and is valid JSON.'
-        });
+        checks.push({ name: 'package_json', status: 'passed', reason: 'package.json exists and is valid JSON.' });
     } catch (err) {
-        checks.push({
-            name: 'package_json',
-            status: 'failed',
-            reason: `package.json is missing or invalid: ${err.message}`
-        });
+        checks.push({ name: 'package_json', status: 'failed', reason: `package.json is missing or invalid: ${err.message}` });
         return { passed: false, checks };
     }
-
-    // 2. Lockfile check (package-lock.json, yarn.lock, or pnpm-lock.yaml)
     const lockfiles = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'];
-    const lockfileFound = lockfiles.some(f => fsSync.existsSync(path.join(projectDir, f)));
+    const lockfileFound = suppliedFiles
+        ? lockfiles.some(name => Boolean(readSupplied(name)))
+        : lockfiles.some(f => fsSync.existsSync(path.join(projectDir, f)));
+    checks.push({ name: 'lockfile', status: lockfileFound ? 'passed' : 'failed', reason: lockfileFound ? 'Deterministic lockfile is present.' : 'No deterministic lockfile found.' });
+    const declaredDeps = new Set([...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {}), ...Object.keys(packageJson.peerDependencies || {}), ...Object.keys(packageJson.optionalDependencies || {})]);
+    const discoveredImports = suppliedFiles
+        ? new Set(suppliedFiles.flatMap(file => CODE_EXTENSIONS.has(path.extname(String(file.path || '')).toLowerCase()) ? [...extractImportsFromCode(String(file.content || ''))] : []))
+        : await scanProjectImports(projectDir);
+    const undeclared = [...discoveredImports].filter(pkg => !declaredDeps.has(pkg));
+    checks.push({ name: 'ast_import_inventory', status: undeclared.length ? 'failed' : 'passed', reason: undeclared.length ? `Source code imports undeclared packages: ${undeclared.join(', ')}` : `All ${discoveredImports.size} discovered imports are declared in package.json.`, undeclared, count: discoveredImports.size });
+
+    // 4. Sandboxed clean install. A populated node_modules directory is not
+    // evidence: always execute npm ci against the validated npm lockfile.
     if (!lockfileFound) {
         checks.push({
-            name: 'lockfile',
-            status: 'failed',
-            reason: 'No deterministic lockfile (package-lock.json/yarn.lock/pnpm-lock.yaml) found.'
+            name: 'clean_install',
+            status: 'blocked',
+            command: null,
+            reason: 'Clean install blocked because a deterministic lockfile is missing.'
         });
-    } else {
-        checks.push({
-            name: 'lockfile',
-            status: 'passed',
-            reason: 'Deterministic lockfile is present.'
-        });
-    }
-
-    // 3. AST Import Inventory Match
-    const declaredDeps = new Set([
-        ...Object.keys(packageJson.dependencies || {}),
-        ...Object.keys(packageJson.devDependencies || {}),
-        ...Object.keys(packageJson.peerDependencies || {}),
-        ...Object.keys(packageJson.optionalDependencies || {})
-    ]);
-
-    const discoveredImports = await scanProjectImports(projectDir);
-    const undeclared = [];
-    for (const pkg of discoveredImports) {
-        if (!declaredDeps.has(pkg)) {
-            undeclared.push(pkg);
-        }
-    }
-
-    if (undeclared.length > 0) {
-        checks.push({
-            name: 'ast_import_inventory',
-            status: 'failed',
-            reason: `Source code imports undeclared packages: ${undeclared.join(', ')}`,
-            undeclared
-        });
-    } else {
-        checks.push({
-            name: 'ast_import_inventory',
-            status: 'passed',
-            reason: `All ${discoveredImports.size} discovered imports are declared in package.json.`,
-            count: discoveredImports.size
-        });
-    }
-
-    // 4. Sandboxed Clean Install (npm ci)
-    // 4. Sandboxed Clean Install
-    const nodeModulesDir = path.join(projectDir, 'node_modules');
-    const hasExistingModules = fsSync.existsSync(nodeModulesDir) && fsSync.readdirSync(nodeModulesDir).length > 20;
-
-    if (hasExistingModules) {
+    } else if (!(suppliedFiles ? Boolean(readSupplied('package-lock.json')) : fsSync.existsSync(path.join(projectDir, 'package-lock.json')))) {
         checks.push({
             name: 'clean_install',
-            status: 'passed',
-            command: 'npm verify (clean room cache)',
-            exitCode: 0,
-            stdout: 'Dependencies verified from clean room cache.',
-            stderr: '',
-            stdoutDigest: computeDigest('Dependencies verified from clean room cache.'),
-            stderrDigest: computeDigest(''),
-            reason: 'Dependencies verified from clean room cache.'
+            status: 'blocked',
+            command: null,
+            reason: 'Unsupported toolchain: only npm package-lock.json is supported for clean verification.'
         });
-    } else if (lockfileFound && undeclared.length === 0) {
+    } else if (undeclared.length > 0) {
+        checks.push({
+            name: 'clean_install',
+            status: 'blocked',
+            command: null,
+            reason: 'Clean install blocked by undeclared imports.'
+        });
+    } else {
         const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        const hasFullLock = fsSync.existsSync(path.join(projectDir, 'package-lock.json')) &&
-            fsSync.readFileSync(path.join(projectDir, 'package-lock.json'), 'utf8').includes('"node_modules/');
-        const installArgs = hasFullLock ? ['ci', '--ignore-scripts'] : ['install', '--ignore-scripts', '--no-audit', '--no-fund'];
+        const installArgs = ['ci', '--ignore-scripts'];
         try {
             const installRes = await executeInSandbox(npmCmd, installArgs, {
                 workspace: projectDir,
                 timeoutMs: options.timeoutMs || 120000,
                 adapter: options.adapter,
+                signal: options.signal,
+                env: options.env
             });
-            if (installRes.passed) {
-                checks.push({
-                    name: 'clean_install',
-                    status: 'passed',
-                    reason: 'Clean install succeeded in sandbox.'
-                });
-            } else {
-                checks.push({
-                    name: 'clean_install',
-                    status: 'failed',
-                    reason: `Clean install failed in sandbox: ${installRes.stderr || installRes.stdout}`,
-                    exitCode: installRes.exitCode
-                });
-            }
+            checks.push({
+                name: 'clean_install',
+                status: installRes.passed ? 'passed' : 'failed',
+                command: `${npmCmd} ${installArgs.join(' ')}`,
+                exitCode: installRes.exitCode ?? (installRes.passed ? 0 : 1),
+                stdout: installRes.stdout || '',
+                stderr: installRes.stderr || '',
+                stdoutDigest: computeDigest(installRes.stdout),
+                stderrDigest: computeDigest(installRes.stderr),
+                reason: installRes.passed ? 'Clean npm ci install succeeded in sandbox.' : `Clean install failed in sandbox: ${installRes.stderr || installRes.stdout}`
+            });
         } catch (err) {
             checks.push({
                 name: 'clean_install',
                 status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                command: `${npmCmd} ${installArgs.join(' ')}`,
+                exitCode: err.exitCode ?? null,
+                stdout: err.stdout || '',
+                stderr: err.stderr || err.message || '',
+                stdoutDigest: computeDigest(err.stdout),
+                stderrDigest: computeDigest(err.stderr || err.message),
                 reason: `Clean install sandbox error: ${err.message}`
             });
         }
-    } else {
-        checks.push({
-            name: 'clean_install',
-            status: 'skipped',
-            reason: 'Skipped clean install due to prior dependency validation failures.'
-        });
     }
 
     const allPassed = checks.every(c => c.status === 'passed' || c.status === 'skipped');

@@ -42,6 +42,7 @@ try {
 
         const mockSandboxAdapter = {
             id: 'mock-sandbox',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute(req) {
                 return {
@@ -74,6 +75,7 @@ try {
 
         const mockFailingAdapter = {
             id: 'mock-sandbox',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute(req) {
                 return {

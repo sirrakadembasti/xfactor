@@ -1,74 +1,9 @@
-import http from 'http';
-import https from 'https';
-import { URL } from 'url';
-
 export async function probeServiceHealth(healthUrl, startupTimeoutMs = 10000, options = {}) {
-    const startTime = Date.now();
-    const parsedUrl = new URL(healthUrl);
-    const client = parsedUrl.protocol === 'https:' ? https : http;
-
-    let delay = options.initialDelayMs || 50;
-    const maxDelay = options.maxDelayMs || 500;
-    let lastError = 'No response';
-    let lastStatusCode = 0;
-
-    while (Date.now() - startTime < startupTimeoutMs) {
-        const attemptResult = await new Promise((resolve) => {
-            const req = client.get(healthUrl, { timeout: Math.min(2000, startupTimeoutMs) }, (res) => {
-                let body = '';
-                res.on('data', (chunk) => { body += chunk; });
-                res.on('end', () => {
-                    const statusCode = res.statusCode || 0;
-                    if (statusCode >= 200 && statusCode < 300) {
-                        resolve({
-                            responsive: true,
-                            statusCode,
-                            latencyMs: Date.now() - startTime,
-                            body
-                        });
-                    } else {
-                        resolve({
-                            responsive: false,
-                            statusCode,
-                            error: `Service responded with HTTP ${statusCode}`
-                        });
-                    }
-                });
-            });
-
-            req.on('timeout', () => {
-                req.destroy();
-                resolve({ responsive: false, statusCode: 0, error: 'Request timeout' });
-            });
-
-            req.on('error', (err) => {
-                resolve({ responsive: false, statusCode: 0, error: err.message });
-            });
-        });
-
-        if (attemptResult.responsive) {
-            return attemptResult;
-        }
-
-        lastError = attemptResult.error || lastError;
-        lastStatusCode = attemptResult.statusCode || lastStatusCode;
-
-        // Non-2xx status from an actual responding server (e.g. 500) fails immediately if requested or after retry
-        if (lastStatusCode >= 400 && lastStatusCode < 600 && options.failFastOnServerError) {
-            return {
-                responsive: false,
-                statusCode: lastStatusCode,
-                error: lastError
-            };
-        }
-
-        await new Promise(r => setTimeout(r, delay));
-        delay = Math.min(delay * 1.5, maxDelay);
+    if (typeof options.adapter?.request !== 'function' && typeof options.adapter?.execute !== 'function') return { responsive: false, statusCode: 0, error: 'SANDBOX_UNAVAILABLE: health adapter is required.' };
+    const started = Date.now(); let delay = options.initialDelayMs || 50; let last = 'No response'; let statusCode = 0;
+    while (Date.now() - started < startupTimeoutMs) {
+        try { const response = typeof options.adapter.request === 'function' ? await options.adapter.request({ url: healthUrl, method: 'GET', timeoutMs: Math.min(2000, startupTimeoutMs), signal: options.signal }) : await options.adapter.execute({ command: 'node', args: ['-e', `fetch(${JSON.stringify(healthUrl)}).then(async r=>process.stdout.write(JSON.stringify({statusCode:r.status,body:await r.text()}))).catch(e=>{console.error(e.message);process.exit(1)})`], workspace: options.workspace || '/workspace', timeoutMs: 2000, signal: options.signal }); const code = response.statusCode || 0; statusCode = code; if (code >= 200 && code < 300) return { responsive: true, statusCode: code, latencyMs: Date.now() - started, body: response.body || response.rawBody || '' }; last = `Service responded with HTTP ${code}`; if (options.failFastOnServerError && code >= 400) break; } catch (e) { last = e.message; }
+        await new Promise(resolve => setTimeout(resolve, delay)); delay = Math.min(delay * 1.5, options.maxDelayMs || 500);
     }
-
-    return {
-        responsive: false,
-        statusCode: lastStatusCode,
-        error: `Readiness probe timed out after ${startupTimeoutMs}ms: ${lastError}`
-    };
+    return { responsive: false, statusCode, error: `Readiness probe timed out after ${startupTimeoutMs}ms: ${last}` };
 }

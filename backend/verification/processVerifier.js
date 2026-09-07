@@ -1,117 +1,13 @@
-import { spawnSync } from 'child_process';
-import os from 'os';
-import { scrubEnvironmentVariables, getActiveSandboxAdapter } from './sandboxRunner.js';
-
-function requireAvailableSandbox(adapter) {
-    if (!adapter || typeof adapter.spawn !== 'function') {
-        const error = new Error('SANDBOX_UNAVAILABLE: adapter does not provide a long-running process boundary.');
-        error.code = 'SANDBOX_UNAVAILABLE';
-        throw error;
-    }
-    if (typeof adapter.getCapabilities !== 'function') {
-        const error = new Error(`SANDBOX_UNAVAILABLE: adapter "${adapter.id || 'unknown'}" has no proven capabilities.`);
-        error.code = 'SANDBOX_UNAVAILABLE';
-        throw error;
-    }
-    const capabilities = adapter.getCapabilities();
-    if (!capabilities?.available || capabilities.isolation !== true || capabilities.serviceSpawn !== true) {
-        const error = new Error(`SANDBOX_UNAVAILABLE: ${capabilities?.reason || 'adapter cannot prove isolated service spawning.'}`);
-        error.code = 'SANDBOX_UNAVAILABLE';
-        throw error;
-    }
-    return adapter;
-}
-
-export function killProcessTree(pid) {
-    if (!pid || typeof pid !== 'number') return;
-
-    if (os.platform() === 'win32') {
-        try {
-            spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-        } catch {
-            try { process.kill(pid, 'SIGKILL'); } catch {}
-        }
-    } else {
-        try {
-            process.kill(-pid, 'SIGKILL');
-        } catch {
-            try { process.kill(pid, 'SIGKILL'); } catch {}
-        }
-    }
-}
-
-export async function killService(processTreeHandle) {
-    if (!processTreeHandle) return;
-    const pid = typeof processTreeHandle === 'number' ? processTreeHandle : processTreeHandle.pid;
-    if (processTreeHandle.adapter?.killProcessTree) {
-        processTreeHandle.adapter.killProcessTree(pid);
-    } else {
-        killProcessTree(pid);
-    }
-    if (processTreeHandle.child && typeof processTreeHandle.child.kill === 'function') {
-        try { processTreeHandle.child.kill('SIGKILL'); } catch {}
-    }
-}
-
+import { scrubEnvironmentVariables } from './sandboxRunner.js';
+function requireAdapter(adapter) { if (!adapter || typeof adapter.spawn !== 'function') throw Object.assign(new Error('SANDBOX_UNAVAILABLE: service adapter is required.'), { code: 'SANDBOX_UNAVAILABLE' }); return adapter; }
+export async function killService(handle) { if (!handle) return; const adapter = handle.adapter || handle.processTreeHandle?.adapter; if (typeof adapter?.kill === 'function') return adapter.kill(handle.pid || handle.processTreeHandle?.pid, { signal: 'SIGTERM' }); if (typeof adapter?.killProcessTree === 'function') return adapter.killProcessTree(handle.pid || handle.processTreeHandle?.pid); }
+export function killProcessTree() { throw Object.assign(new Error('SANDBOX_UNAVAILABLE: host process termination is prohibited.'), { code: 'SANDBOX_UNAVAILABLE' }); }
 export async function spawnService(serviceId, config = {}, env = {}, options = {}) {
-    const {
-        command = process.execPath,
-        args = [],
-        cwd = process.cwd()
-    } = config;
-
-    const baseEnv = {
-        PATH: process.env.PATH,
-        SYSTEMROOT: process.env.SYSTEMROOT,
-        TEMP: process.env.TEMP,
-        TMP: process.env.TMP,
-        NODE_ENV: 'production',
-        ...env
-    };
-    const adapter = options.adapter || getActiveSandboxAdapter(options.sandboxAdapter || null);
-    requireAvailableSandbox(adapter);
-
-    const cleanEnv = scrubEnvironmentVariables(baseEnv);
-
-    let child;
-    let stdout = '';
-    let stderr = '';
-
-    try {
-        child = await adapter.spawn({
-            command,
-            args,
-            workspace: cwd,
-            cwd,
-            port: config.port,
-            env: cleanEnv,
-            networkMode: options.networkMode || 'service'
-        });
-    } catch (err) {
-        throw new Error(`Failed to spawn service "${serviceId}" in sandbox: ${err.message}`);
-    }
-    if (!child?.pid) {
-        throw new Error(`Failed to spawn service "${serviceId}".`);
-    }
-
-    const exitCodePromise = new Promise((resolve) => {
-        child.stdout?.on('data', (chunk) => { stdout += chunk.toString(); });
-        child.stderr?.on('data', (chunk) => { stderr += chunk.toString(); });
-        child.on('error', (err) => resolve({ exitCode: -1, stdout, stderr: stderr || err.message, timedOut: false }));
-        child.on('close', (code) => resolve({ exitCode: code ?? 0, stdout, stderr, timedOut: false }));
-    });
-
-    return {
-        serviceId,
-        pid: child.pid,
-        port: config.port,
-        child,
-        processTreeHandle: {
-            pid: child.pid,
-            serviceId,
-            child,
-            adapter
-        },
-        exitCodePromise
-    };
+    const adapter = requireAdapter(options.adapter);
+    const child = await adapter.spawn({ command: config.command, args: config.args || [], workspace: options.workspace || config.cwd || '/workspace', cwd: options.workspace || config.cwd, port: config.port, env: scrubEnvironmentVariables(env), signal: options.signal, networkMode: options.networkMode || 'service' });
+    if (!child) throw new Error(`Failed to spawn service "${serviceId}".`);
+    let stdout = '', stderr = '';
+    child.stdout?.on('data', c => { stdout += c.toString(); }); child.stderr?.on('data', c => { stderr += c.toString(); });
+    const exitCodePromise = new Promise(resolve => { child.on?.('error', e => resolve({ exitCode: -1, stdout, stderr: stderr || e.message })); child.on?.('close', code => resolve({ exitCode: code ?? 0, stdout, stderr })); });
+    return { serviceId, pid: child.pid, port: config.port, child, adapter, processTreeHandle: { pid: child.pid, serviceId, adapter }, exitCodePromise };
 }

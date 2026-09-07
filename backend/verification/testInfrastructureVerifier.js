@@ -4,8 +4,7 @@ import crypto from 'crypto';
 import { executeInSandbox } from './sandboxRunner.js';
 
 function computeDigest(text) {
-    if (!text) return null;
-    return crypto.createHash('sha256').update(String(text)).digest('hex');
+    return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
 export async function verifyTestInfrastructure(projectDir, contract = {}, options = {}) {
@@ -14,10 +13,9 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
 
     const packageJsonPath = path.join(projectDir, 'package.json');
     let packageJson = null;
-
-    // 1. package.json and test script check
+    const packageFile = options.files?.find(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith('/package.json') || String(file.path || '').toLowerCase() === 'package.json');
     try {
-        const content = await fs.readFile(packageJsonPath, 'utf8');
+        const content = packageFile ? String(packageFile.content || '') : await fs.readFile(packageJsonPath, 'utf8');
         packageJson = JSON.parse(content);
     } catch (err) {
         checks.push({
@@ -50,9 +48,11 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     try {
         const testRes = await executeInSandbox(npmCmd, ['test'], {
-            workspace: projectDir,
+            workspace: options.workspace || projectDir,
             timeoutMs: options.timeoutMs || 60000,
-            adapter: options.adapter
+            adapter: options.adapter,
+            signal: options.signal,
+            env: options.env
         });
 
         if (testRes.passed) {

@@ -7,8 +7,8 @@ RUN npm install -g npm@10.9.8
 # Set up the non-root execution user and directories
 RUN addgroup -S worker && adduser -S worker -G worker
 
-# Provide basic utilities for entrypoint and process handling
-RUN apk add --no-cache curl bash jq
+# Provide basic utilities and fixed archive extraction tooling.
+RUN apk add --no-cache curl bash jq unzip
 
 # Copy the portable executable translation entrypoint
 COPY entrypoint.js /opt/worker/entrypoint.js

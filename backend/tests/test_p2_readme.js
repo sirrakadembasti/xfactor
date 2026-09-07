@@ -73,7 +73,7 @@ npm run build#docs
             }
         ];
 
-        const result = await verifyReadmeCommands({}, files, null);
+        const result = await verifyReadmeCommands({}, files, { id: 'fixture', getCapabilities: () => ({ available: true, isolation: true }), execute: async () => ({ exitCode: 0, stdout: '', stderr: '' }) });
         assert.strictEqual(result.passed, true);
         assert.strictEqual(result.issues.length, 0);
     });
@@ -214,6 +214,7 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
         const calls = [];
         const sandbox = {
             id: 'fixture',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute(request) {
                 calls.push(request);
@@ -253,6 +254,7 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
     await runAsyncTest('P2.5.3: verifyReadmeCommands rejects a timed-out sandboxed build command', async () => {
         const sandbox = {
             id: 'fixture',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute() {
                 return {
@@ -283,6 +285,7 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
     await runAsyncTest('P2.5.3: verifyReadmeCommands rejects sandbox execution errors', async () => {
         const sandbox = {
             id: 'fixture',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute() {
                 throw new Error('Sandbox unavailable');
@@ -308,6 +311,7 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
     await runAsyncTest('P2.5.3: verifyReadmeCommands passes a successful sandboxed build command', async () => {
         const sandbox = {
             id: 'fixture',
+            getCapabilities() { return { available: true, isolation: true }; },
             isAvailable() { return true; },
             async execute() {
                 return {

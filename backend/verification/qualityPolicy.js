@@ -96,8 +96,7 @@ function normalizeGateStatus(status) {
 }
 
 function computeDigest(text) {
-    if (!text) return null;
-    return crypto.createHash('sha256').update(String(text)).digest('hex');
+    return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
 function normalizeCheck(check, index) {

@@ -5,9 +5,9 @@ import crypto from 'crypto';
 import { executeInSandbox } from './sandboxRunner.js';
 
 function computeDigest(text) {
-    if (!text) return null;
-    return crypto.createHash('sha256').update(String(text)).digest('hex');
+    return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
+
 
 export function ensureLocalBinShims(projectDir) {
     const nodeModulesDir = path.join(projectDir, 'node_modules');
@@ -38,27 +38,23 @@ export function ensureLocalBinShims(projectDir) {
 
 export async function verifyBuild(projectDir, contract = {}, options = {}) {
     const checks = [];
-    ensureLocalBinShims(projectDir);
+    const dependencyResult = options.dependencyResult;
+    if (dependencyResult && dependencyResult.passed !== true) {
+        return {
+            passed: false,
+            checks: [{ name: 'framework_build', status: 'blocked', reason: 'Build blocked because dependency verification did not pass.' }]
+        };
+    }
 
-
-    // 1. Dependency Presence Check (Fail-closed)
-    const nodeModulesPath = path.join(projectDir, 'node_modules');
-    const nodeModulesPresent = fsSync.existsSync(nodeModulesPath);
-
-    const packageJsonPath = path.join(projectDir, 'package.json');
+    const suppliedFiles = Array.isArray(options.files) ? options.files : null;
+    const hasFile = name => suppliedFiles?.some(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith(`/${name}`) || String(file.path || '').toLowerCase() === name);
+    const fileContent = name => suppliedFiles?.find(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith(`/${name}`) || String(file.path || '').toLowerCase() === name)?.content;
+    const nodeModulesPresent = suppliedFiles ? true : fsSync.existsSync(path.join(projectDir, 'node_modules'));
     let packageJson = null;
-    try {
-        const content = await fs.readFile(packageJsonPath, 'utf8');
-        packageJson = JSON.parse(content);
-    } catch {}
-
+    try { packageJson = JSON.parse(suppliedFiles ? String(fileContent('package.json') || '') : await fs.readFile(path.join(projectDir, 'package.json'), 'utf8')); } catch {}
     const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-
-    // 2. TypeScript Typecheck Gate
-    const tsconfigPath = path.join(projectDir, 'tsconfig.json');
-    const hasTsconfig = fsSync.existsSync(tsconfigPath);
-
+    const hasTsconfig = suppliedFiles ? hasFile('tsconfig.json') : fsSync.existsSync(path.join(projectDir, 'tsconfig.json'));
     if (hasTsconfig) {
         if (!nodeModulesPresent) {
             checks.push({
@@ -69,7 +65,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
         } else {
             try {
                 const tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
-                    workspace: projectDir,
+                    workspace: options.workspace || projectDir,
                     timeoutMs: options.timeoutMs || 60000,
                     adapter: options.adapter,
                     env: options.env,
@@ -104,7 +100,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
 
     // 3. Prisma Schema Validation Gate
     const prismaSchemaPath = path.join(projectDir, 'prisma', 'schema.prisma');
-    const hasPrisma = fsSync.existsSync(prismaSchemaPath);
+    const hasPrisma = suppliedFiles ? hasFile('prisma/schema.prisma') || hasFile('schema.prisma') : fsSync.existsSync(prismaSchemaPath);
 
     if (hasPrisma) {
         if (!nodeModulesPresent) {
@@ -116,7 +112,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
         } else {
             try {
                 const prismaRes = await executeInSandbox(npxCmd, ['prisma', 'validate'], {
-                    workspace: projectDir,
+                    workspace: options.workspace || projectDir,
                     timeoutMs: options.timeoutMs || 30000,
                     adapter: options.adapter,
                     env: {
@@ -166,7 +162,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
     } else {
         try {
             const buildRes = await executeInSandbox(npmCmd, ['run', 'build'], {
-                workspace: projectDir,
+                workspace: options.workspace || projectDir,
                 timeoutMs: options.timeoutMs || 60000,
                 adapter: options.adapter,
                 env: {
