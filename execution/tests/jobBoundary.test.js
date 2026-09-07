@@ -23,7 +23,9 @@ test('Job Boundary API', async (t) => {
       executeWaitResolve = r;
       signal.addEventListener('abort', r);
     });
-    return { testOutcome: 'success' };
+    if (signal.aborted) return { status: 'cancelled', error: 'cancelled' };
+    const identity = Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'].map(key => [key, job[key]]));
+    return { status: 'success', result: { ...identity, testOutcome: 'success' } };
   };
   
   const server = createWorkerServer({ config, store, executeJob });
@@ -146,15 +148,14 @@ test('Job Boundary API', async (t) => {
   await t.test('cancellation aborts polling and cleans up', async () => {
     const job = getValidJob();
     
-    const abortController = new AbortController();
-    const p = client.verifyArtifact(job, { signal: abortController.signal });
+    const p = client.verifyArtifact(job);
     
     setTimeout(async () => {
        await client.cancelJob(job.jobId);
-       abortController.abort();
     }, 50);
     
-    await assert.rejects(p, error => error?.name === 'AbortError' || /aborted/i.test(error?.message || ''));
+    const finalState = await p;
+    assert.equal(finalState.status, 'cancelled');
     const jobInStore = store.getJob(job.jobId, job.projectId);
     assert.equal(jobInStore.status, 'cancelled');
   });

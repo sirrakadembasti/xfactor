@@ -2,6 +2,16 @@ import fs from 'fs/promises';
 import path from 'path';
 import JSZip from 'jszip';
 
+function canonicalZipPath(value) {
+    const normalized = value.replace(/\\/g, '/');
+    if (!normalized || normalized.startsWith('/') || normalized.split('/').some(segment => segment === '..')) {
+        throw new Error(`Extraction aborted: Invalid archive path: ${value}`);
+    }
+    const canonical = normalized.split('/').filter(Boolean).join('/');
+    if (!canonical || canonical === '.') throw new Error(`Extraction aborted: Invalid archive path: ${value}`);
+    return canonical;
+}
+
 function assertSafeEntryName(entryName, resolvedOutputDir) {
     if (entryName.includes('\0')) {
         throw new Error(`Extraction aborted: Traversal attack detected (null byte) in ${entryName}`);
@@ -53,13 +63,15 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
     }
 
     const files = Object.keys(zip.files).filter(name => !zip.files[name].dir);
+    const canonicalByRaw = new Map();
     const normalizedNames = new Set();
-    for (const name of files) {
-        const safeName = name.replace(/\\/g, '/');
+    for (const rawName of files) {
+        const safeName = canonicalZipPath(rawName);
         if (normalizedNames.has(safeName)) {
-            throw new Error(`Extraction aborted: Duplicate entry: ${name}`);
+            throw new Error(`Extraction aborted: Duplicate canonical entry: ${safeName}`);
         }
         normalizedNames.add(safeName);
+        canonicalByRaw.set(rawName, safeName);
     }
 
     if (files.length > maxFiles) {
@@ -94,10 +106,11 @@ export async function safeExtractZip(zipBufferOrPathOrInstance, outputDir, limit
     }
 
     for (const entryName of files) {
-        const resolvedPath = assertSafeEntryName(entryName, resolvedOutputDir);
+        const canonicalName = canonicalByRaw.get(entryName);
+        const resolvedPath = assertSafeEntryName(canonicalName, resolvedOutputDir);
         const content = await zip.files[entryName].async('nodebuffer');
         if (content.length > maxTotalBytes || content.length > totalDecompressedSize) {
-            throw new Error(`Extraction aborted: Decompressed size mismatch for ${entryName}`);
+            throw new Error(`Extraction aborted: Decompressed size mismatch for ${canonicalName}`);
         }
         await fs.mkdir(path.dirname(resolvedPath), { recursive: true });
         await fs.writeFile(resolvedPath, content);

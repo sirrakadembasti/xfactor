@@ -49,6 +49,33 @@ async function createTestZip(fileName, files, options = {}) {
     return zipPath;
 }
 
+async function registerArtifact(artifactId, zipPath) {
+    const archiveBytes = await fs.readFile(zipPath);
+    const zip = await JSZip.loadAsync(archiveBytes);
+    const manifest = [];
+    for (const [entryPath, entry] of Object.entries(zip.files)) {
+        if (entry.dir) continue;
+        const content = await entry.async('nodebuffer');
+        const row = {
+            path: entryPath.replace(/\\/g, '/'),
+            sha256: crypto.createHash('sha256').update(content).digest('hex'),
+            size: content.length
+        };
+        manifest.push(row);
+    }
+    const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
+    createArtifact({
+        id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
+        sha256: archiveHash, size: archiveBytes.length,
+        manifestJson: JSON.stringify(manifest), status: 'draft'
+    });
+    for (const row of manifest) {
+        db.prepare('INSERT INTO artifact_files (contract_id, artifact_id, path, sha256, size) VALUES (?, ?, ?, ?, ?)')
+            .run(contractId, artifactId, row.path, row.sha256, row.size);
+    }
+    return { archiveBytes, archiveHash };
+}
+
 function passingCheck(name) {
     const timestamp = new Date().toISOString();
     return {
@@ -104,12 +131,7 @@ try {
         ]);
 
         const artifactId = 'artifact-broken-lock';
-        const archiveBytes = await fs.readFile(zipPath);
-        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
-        createArtifact({
-            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
-            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
-        });
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
         const runId = 'run-broken-lock';
         const identity = artifactIdentity(artifactId, runId, archiveHash);
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {
@@ -141,12 +163,7 @@ try {
         ]);
 
         const artifactId = 'artifact-valid';
-        const archiveBytes = await fs.readFile(zipPath);
-        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
-        createArtifact({
-            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
-            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
-        });
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
         db.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(projectId);
         const runId = 'run-valid';
         const identity = artifactIdentity(artifactId, runId, archiveHash);
@@ -207,12 +224,7 @@ try {
         ], { platform: 'UNIX' });
 
         const artifactId = 'artifact-symlink';
-        const archiveBytes = await fs.readFile(zipPath);
-        const archiveHash = crypto.createHash('sha256').update(archiveBytes).digest('hex');
-        createArtifact({
-            id: artifactId, projectId, contractId, kind: 'zip', path: zipPath,
-            sha256: archiveHash, size: archiveBytes.length, manifestJson: '[]', status: 'draft'
-        });
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
         const runId = 'run-symlink';
         const identity = artifactIdentity(artifactId, runId, archiveHash);
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {

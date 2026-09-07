@@ -98,7 +98,10 @@ app.get('/readyz', async (req, res) => {
             const { createExecutionClient } = await import('./executionClient.js');
             const client = createExecutionClient(runtimeConfig);
             const caps = await client.getCapabilities();
-            executionStatus = caps.status === 'ready' ? 'ready' : 'unavailable';
+            const supported = Array.isArray(caps.supportedTypes)
+                && caps.supportedTypes.includes('prepare_dependencies')
+                && caps.supportedTypes.includes('verify_artifact');
+            executionStatus = caps.executionCapacity === true && supported ? 'ready' : 'unavailable';
         } catch (e) {
             executionStatus = 'unavailable';
         }

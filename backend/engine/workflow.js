@@ -914,26 +914,26 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const deadline = Date.now() + 15 * 60 * 1000;
             const activeJob = {
                 version: 1,
-                jobId: crypto.randomUUID(),
                 projectId,
                 contractId: latestContract.id,
                 contractHash,
                 revision: latestContract.revision,
                 artifactId: `pending-${runId}`,
-                nonce,
+                contract,
                 runId,
                 deadline
             };
 
             const packageJsonFile = files.find(f => f.path === 'package.json');
             if (!packageJsonFile) throw new Error('Artifact requires package.json for dependency preparation.');
-            const packageJsonBytes = Buffer.from(packageJsonFile.content);
             const prepJob = {
                 ...activeJob,
+                jobId: crypto.randomUUID(),
+                nonce: crypto.randomBytes(32).toString('hex'),
                 inputSha256: crypto.createHash('sha256').update(packageJsonBytes).digest('hex'),
                 packageJsonBytes
             };
-            const prepResult = await executionClient.prepareDependencies(prepJob);
+            const prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
             if (prepResult.status !== 'completed' || !prepResult.result?.packageLockBase64) {
                 throw new Error('Dependency preparation did not produce a package-lock.json.');
             }
@@ -955,8 +955,9 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             if (artifactSha256 !== artifact.sha256) throw new Error('Published artifact digest mismatch.');
             const verifyIdentity = {
                 ...activeJob,
+                jobId: crypto.randomUUID(),
+                nonce: crypto.randomBytes(32).toString('hex'),
                 artifactId: artifact.id,
-                contract,
                 inputSha256: artifactSha256,
                 archiveBase64: archiveBytes.toString('base64')
             };
@@ -966,7 +967,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 artifactId: artifact.id,
                 expectedRevision: (await readProjectState(projectId))?.revision ?? null,
                 complete: true,
-                options: { runId, activeJob: verifyIdentity, archiveBase64: verifyIdentity.archiveBase64 }
+                options: { runId, activeJob: verifyIdentity, archiveBase64: verifyIdentity.archiveBase64, signal: abortController.signal }
             });
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');

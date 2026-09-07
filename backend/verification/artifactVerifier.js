@@ -1,21 +1,25 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
+import JSZip from 'jszip';
 import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 
 async function loadRepositoryDefaults() {
-    const [{ db }, artifactRepo, verificationRepo] = await Promise.all([
+    const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
         import('../db.js'),
         import('../repositories/artifactRepository.js'),
-        import('../repositories/verificationRepository.js')
+        import('../repositories/verificationRepository.js'),
+        import('../contracts/traceability.js')
     ]);
     return {
         db,
         getArtifact: artifactRepo.getArtifact,
+        getArtifactFiles: artifactRepo.getArtifactFiles,
         updateArtifactStatus: artifactRepo.updateArtifactStatus,
         createRun: verificationRepo.createRun,
         updateRunStatus: verificationRepo.updateRunStatus,
-        createCheck: verificationRepo.createCheck
+        createCheck: verificationRepo.createCheck,
+        linkRequirementToCheck: traceability.linkRequirementToCheck
     };
 }
 
@@ -38,6 +42,16 @@ function checkStatus(value) {
     if (value === 'passed' || value === 'PASS') return 'PASS';
     if (value === 'failed' || value === 'FAIL') return 'FAIL';
     return 'BLOCKED';
+}
+
+function canonicalArchivePath(value) {
+    const normalized = value.replace(/\\/g, '/');
+    if (!normalized || normalized.startsWith('/') || normalized.split('/').some(part => part === '..')) {
+        throw new Error(`Invalid archive path: ${value}`);
+    }
+    const canonical = normalized.split('/').filter(Boolean).join('/');
+    if (!canonical || canonical === '.') throw new Error(`Invalid archive path: ${value}`);
+    return canonical;
 }
 
 /**
@@ -66,15 +80,18 @@ export async function verifyArtifact(
         throw new Error('Verification deadline exceeded');
     }
 
-    const needsDefaults = !options.db || !options.getArtifact || !options.updateArtifactStatus
-        || !options.createRun || !options.updateRunStatus || !options.createCheck;
+    const needsDefaults = !options.db || !options.getArtifact || !options.getArtifactFiles
+        || !options.updateArtifactStatus || !options.createRun || !options.updateRunStatus
+        || !options.createCheck || !options.linkRequirementToCheck;
     const loaded = needsDefaults ? await loadRepositoryDefaults() : {};
     const database = options.db || loaded.db;
     const getArtifact = options.getArtifact || loaded.getArtifact;
+    const getArtifactFiles = options.getArtifactFiles || loaded.getArtifactFiles;
     const updateArtifactStatus = options.updateArtifactStatus || loaded.updateArtifactStatus;
     const createRun = options.createRun || loaded.createRun;
     const updateRunStatus = options.updateRunStatus || loaded.updateRunStatus;
     const createCheck = options.createCheck || loaded.createCheck;
+    const linkRequirementToCheck = options.linkRequirementToCheck || loaded.linkRequirementToCheck;
     const artifact = getArtifact({ projectId, contractId, artifactId });
     if (!artifact) throw new Error(`Artifact ${artifactId} for project ${projectId} not found.`);
 
@@ -124,6 +141,31 @@ export async function verifyArtifact(
     if (crypto.createHash('sha256').update(archiveBytes).digest('hex') !== artifact.sha256) {
         throw new Error('Verification archive digest does not match persisted artifact.');
     }
+    const zip = await JSZip.loadAsync(archiveBytes);
+    const submitted = [];
+    const seen = new Set();
+    for (const rawName of Object.keys(zip.files)) {
+        if (zip.files[rawName].dir) continue;
+        const name = canonicalArchivePath(rawName);
+        if (seen.has(name)) throw new Error(`Archive contains duplicate canonical path: ${name}`);
+        seen.add(name);
+        const bytes = await zip.files[rawName].async('nodebuffer');
+        submitted.push({ path: name, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), size: bytes.length });
+    }
+    const persistedManifest = JSON.parse(artifact.manifestJson || '[]');
+    const persistedFiles = getArtifactFiles({ contractId, artifactId }).map(row => ({
+        path: canonicalArchivePath(row.path), sha256: row.sha256, size: Number(row.size)
+    }));
+    const compare = (left, right, label) => {
+        const a = [...left].sort((x, y) => x.path.localeCompare(y.path));
+        const b = [...right].sort((x, y) => x.path.localeCompare(y.path));
+        if (a.length !== b.length || a.some((item, i) => item.path !== b[i].path
+            || item.sha256 !== b[i].sha256 || Number(item.size) !== Number(b[i].size))) {
+            throw new Error(`Artifact ${label} does not match submitted archive.`);
+        }
+    };
+    compare(submitted, persistedManifest, 'manifest');
+    compare(submitted, persistedFiles, 'file rows');
     let runCreated = false;
     try {
         createRun({
@@ -149,8 +191,9 @@ export async function verifyArtifact(
         }
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
         for (const check of workerResult.checks || []) {
+            const checkId = check.id || crypto.randomUUID();
             createCheck({
-                id: check.id || crypto.randomUUID(),
+                id: checkId,
                 contractId,
                 runId,
                 gateName: check.gateName || check.name,
@@ -162,9 +205,12 @@ export async function verifyArtifact(
                 exitCode: check.exitCode ?? null,
                 stdoutDigest: check.stdoutDigest || null,
                 stderrDigest: check.stderrDigest || null,
-                evidenceJson: check.evidenceJson ?? null,
+                evidenceJson: check.evidence ?? check.evidenceJson ?? null,
                 timedOut: Boolean(check.timedOut)
             });
+            for (const requirementId of check.requirementIds || []) {
+                linkRequirementToCheck({ contractId, requirementId, verificationCheckId: checkId });
+            }
         }
         const passed = result.status === 'completed';
         updateArtifactStatus({
