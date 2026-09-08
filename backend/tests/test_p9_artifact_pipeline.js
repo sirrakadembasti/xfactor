@@ -74,6 +74,37 @@ async function runTests() {
             await ws.cleanup();
         }
     });
+    
+    await runAsyncTest("1a. Publication rejects compression ratio bombs before filesystem or database mutation", async () => {
+        const ws = await workspace();
+        const publication = { artifactRows: 0, fileRows: 0, transactions: 0 };
+        const deps = {
+            db: {},
+            createArtifact() { publication.artifactRows++; },
+            addArtifactFile() { publication.fileRows++; },
+            withArtifactTransaction: async work => {
+                publication.transactions++;
+                return work();
+            }
+        };
+        try {
+            const repeatedContent = Buffer.alloc(128 * 1024, 0x41);
+            await assert.rejects(
+                createProjectZip("ratio-project", "ratio-contract", [
+                    { path: "repeated.txt", content: repeatedContent }
+                ], ws.dir, deps),
+                /Decompression bomb detected|compression ratio/i
+            );
+            assert.strictEqual(publication.artifactRows, 0, "No artifact DB row may be created");
+            assert.strictEqual(publication.fileRows, 0, "No artifact file DB row may be created");
+            assert.strictEqual(publication.transactions, 0, "Publication transaction must not begin");
+            assert.deepStrictEqual(await fs.readdir(ws.dir), [], "No temporary or final archive may be created");
+        } finally {
+            await ws.cleanup();
+        }
+    });
+
+
 
     await runAsyncTest("2. Missing/oversize/symlink/duplicate limits", async () => {
         const ws = await workspace();

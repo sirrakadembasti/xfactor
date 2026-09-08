@@ -123,6 +123,7 @@ try {
     });
 
     await runAsyncTest('P9.3: verify transfers exact archive to fixed workspace with extraction limits', async () => {
+        const { ARTIFACT_LIMITS } = await import('../artifactLimits.js');
         const archive = Buffer.from('zip-bytes');
         const calls = [];
         const result = await verifyArtifact({
@@ -140,6 +141,7 @@ try {
         assert.equal(calls[1].source, '/workspace/artifact.zip');
         assert.equal(calls[1].target, '/workspace');
         assert.equal(calls[1].limits.maxFiles, 500);
+        assert.equal(calls[1].limits.maxRatio, ARTIFACT_LIMITS.maxCompressionRatio);
         assert.equal(result.runId, 'archive-contract-run');
     });
 

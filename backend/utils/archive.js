@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import JSZip from 'jszip';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
+import { inspectZipEntries } from '../verification/safeExtractor.js';
 import { getArtifactsRoot } from '../artifactPaths.js';
 
 async function loadArchiveDefaults() {
@@ -70,6 +71,16 @@ export async function createProjectZip(
         platform: 'UNIX'
     });
     if (zipBuffer.length > ARTIFACT_LIMITS.maxArchiveBytes) throw new Error('Artifact archive-size limit exceeded.');
+
+    // Inspect central-directory metadata before allocating decompressed entry bytes
+    // or touching the artifact filesystem/database.
+    const generatedZip = await JSZip.loadAsync(zipBuffer);
+    await inspectZipEntries(generatedZip, {
+        maxFiles: ARTIFACT_LIMITS.maxFiles,
+        maxTotalBytes: ARTIFACT_LIMITS.maxExtractedBytes,
+        maxFileBytes: ARTIFACT_LIMITS.maxFileBytes,
+        maxRatio: ARTIFACT_LIMITS.maxCompressionRatio
+    }, { readContent: false });
     const needsDefaults = !deps.createArtifact || !deps.addArtifactFile || !deps.withArtifactTransaction;
     const loaded = needsDefaults ? await loadArchiveDefaults() : {};
     const db = deps.db || loaded.db;
