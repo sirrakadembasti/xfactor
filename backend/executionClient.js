@@ -16,32 +16,19 @@ export function createExecutionClient(config) {
     return res.json();
   }
   async function submitAndPoll(input, operation, signal) {
-    const job = identityOf(input, operation);
-    if (!job.runId) throw new Error('caller-supplied runId is required');
+    const job = identityOf(input, operation); if (!job.runId) throw new Error('caller-supplied runId is required');
     const payload = { ...job };
-    if (operation === 'prepare_dependencies') {
-      const bytes = input.packageJsonBytes ? Buffer.from(input.packageJsonBytes) : (input.packageJsonBase64 ? Buffer.from(input.packageJsonBase64, 'base64') : null);
-      if (!input.packageJsonBase64 && bytes) payload.packageJsonBase64 = bytes.toString('base64');
-      delete payload.packageJsonBytes;
-      if (!payload.inputSha256 && bytes) payload.inputSha256 = job.inputSha256 = digest(bytes);
-    } else if (!payload.inputSha256 && input.archiveBase64) payload.inputSha256 = job.inputSha256 = digest(Buffer.from(input.archiveBase64, 'base64'));
+    if (operation === 'prepare_dependencies') { const bytes = input.packageJsonBytes ? Buffer.from(input.packageJsonBytes) : (input.packageJsonBase64 ? Buffer.from(input.packageJsonBase64, 'base64') : null); if (!input.packageJsonBase64 && bytes) payload.packageJsonBase64 = bytes.toString('base64'); delete payload.packageJsonBytes; if (!payload.inputSha256 && bytes) payload.inputSha256 = job.inputSha256 = digest(bytes); }
+    else if (!payload.inputSha256 && input.archiveBase64) payload.inputSha256 = job.inputSha256 = digest(Buffer.from(input.archiveBase64, 'base64'));
     let cancellation;
-    const cancel = () => cancellation || (cancellation = request(`/v1/jobs/${encodeURIComponent(job.jobId)}`, { method: 'DELETE' }));
+    const cancel = () => cancellation || (cancellation = (async () => { const until = Date.now() + 3000; while (Date.now() < until) { try { return await request(`/v1/jobs/${encodeURIComponent(job.jobId)}`, { method: 'DELETE' }); } catch (error) { if (!/Worker error \(404\)/.test(error.message)) throw error; await new Promise(resolve => setTimeout(resolve, 25)); } } return { status: 'not_found' }; })());
     const abort = async () => { try { await cancel(); } catch (e) { throw new Error(`Abort cancellation failed: ${e.message}`, { cause: e }); } throw new DOMException('The operation was aborted', 'AbortError'); };
     if (signal?.aborted) return abort();
     try {
-      const submitted = await request('/v1/jobs', { method: 'POST', body: JSON.stringify(payload), signal });
+      let submitted; try { submitted = await request('/v1/jobs', { method: 'POST', body: JSON.stringify(payload), signal }); } catch (error) { if (signal?.aborted) await abort(); throw error; }
       assertIdentity(submitted, job);
-      while (true) {
-        if (signal?.aborted) await abort();
-        let status;
-        try { status = await request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`, { signal }); }
-        catch (e) { if (signal?.aborted) await abort(); throw e; }
-        assertIdentity(status, job); if (status.result) assertIdentity(status.result, job);
-        if (['completed','failed','cancelled','failed_interrupted','failed_timeout'].includes(status.status)) return status;
-        await new Promise((resolve, reject) => { let done = false; const timer = setTimeout(() => { done = true; signal?.removeEventListener('abort', onAbort); resolve(); }, 100); const onAbort = () => { if (done) return; done = true; clearTimeout(timer); abort().then(reject, reject); }; signal?.addEventListener('abort', onAbort, { once: true }); });
-      }
-    } finally { /* per-request timer listeners remove themselves; cancellation is deduplicated */ }
+      while (true) { if (signal?.aborted) await abort(); let status; try { status = await request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`, { signal }); } catch (error) { if (signal?.aborted) await abort(); throw error; } assertIdentity(status, job); if (status.result) assertIdentity(status.result, job); if (['completed','failed','cancelled','failed_interrupted','failed_timeout'].includes(status.status)) return status; await new Promise((resolve, reject) => { let done = false; const onAbort = () => { if (done) return; done = true; clearTimeout(timer); abort().then(reject, reject); }; const timer = setTimeout(() => { done = true; signal?.removeEventListener('abort', onAbort); resolve(); }, 100); signal?.addEventListener('abort', onAbort, { once: true }); }); }
+    } finally {}
   }
   return { prepareDependencies: (job, { signal } = {}) => submitAndPoll(job, 'prepare_dependencies', signal), verifyArtifact: (job, { signal } = {}) => submitAndPoll(job, 'verify_artifact', signal), getCapabilities: ({ signal } = {}) => request('/readyz', { signal }), cancelJob: jobId => request(`/v1/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }) };
 }

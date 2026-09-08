@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
+import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 
 async function loadRepositoryDefaults() {
@@ -144,10 +145,10 @@ export async function verifyArtifact(
     }
     const zip = await JSZip.loadAsync(archiveBytes);
     const entries = await inspectZipEntries(zip, {
-        maxFiles: 500,
-        maxTotalBytes: 20 * 1024 * 1024,
-        maxFileBytes: 2 * 1024 * 1024,
-        maxRatio: 100
+        maxFiles: ARTIFACT_LIMITS.maxFiles,
+        maxTotalBytes: ARTIFACT_LIMITS.maxExtractedBytes,
+        maxFileBytes: ARTIFACT_LIMITS.maxFileBytes,
+        maxRatio: ARTIFACT_LIMITS.maxCompressionRatio
     });
     const submitted = entries.map(item => ({
         path: item.path,

@@ -61,6 +61,7 @@ import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './chec
 import { generateProjectReadme } from '\./readmeGenerator\.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
 import { createExecutionClient } from '../executionClient.js';
+import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
@@ -900,8 +901,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 WHERE project_id = ? AND status = 'approved'
                 ORDER BY revision DESC LIMIT 1
             `).get(projectId);
-            if (!latestContract) throw new Error(`Project ${projectId} has no approved contract.`);
-            const limits = { maxFiles: 1000, maxTotalBytes: 50 * 1024 * 1024 };
+            const limits = {
+                maxFiles: ARTIFACT_LIMITS.maxFiles,
+                maxTotalBytes: ARTIFACT_LIMITS.maxExtractedBytes,
+                maxFileBytes: ARTIFACT_LIMITS.maxFileBytes
+            };
             const files = await collectArtifactFiles(projectDir, limits);
 
             const config = validateRuntimeConfig(process.env);

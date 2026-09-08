@@ -84,6 +84,9 @@ export class JobStore {
   }
   
 
+  hasJob(jobId) {
+    return this.jobs.has(jobId);
+  }
   deleteJob(jobId) {
     const deleted = this.jobs.delete(jobId);
     if (deleted) this._save();

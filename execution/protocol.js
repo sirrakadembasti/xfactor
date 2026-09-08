@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
+import { ARTIFACT_LIMITS } from '../backend/artifactLimits.js';
 const MAX_DEADLINE_MS = 15 * 60 * 1000;
 const MAX_PACKAGE_BYTES = 4 * 1024 * 1024;
-const MAX_ARCHIVE_BYTES = 24 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES = ARTIFACT_LIMITS.maxArchiveBytes;
 const HEX64 = /^[a-f0-9]{64}$/;
 function validId(value, max = 200) { return typeof value === 'string' && value.length > 0 && value.length <= max; }
 function decodeBase64(value, maxBytes, field) {

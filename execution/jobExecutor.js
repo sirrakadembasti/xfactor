@@ -1,10 +1,11 @@
 import crypto from 'node:crypto';
 import { runVerificationChecks } from '../backend/verification/runChecks.js';
+import { ARTIFACT_LIMITS } from '../backend/artifactLimits.js';
 
-const MAX_ARCHIVE_BYTES = 24 * 1024 * 1024;
-const MAX_EXTRACTED_BYTES = 20 * 1024 * 1024;
-const MAX_FILES = 500;
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES = ARTIFACT_LIMITS.maxArchiveBytes;
+const MAX_EXTRACTED_BYTES = ARTIFACT_LIMITS.maxExtractedBytes;
+const MAX_FILES = ARTIFACT_LIMITS.maxFiles;
+const MAX_FILE_BYTES = ARTIFACT_LIMITS.maxFileBytes;
 
 function digest(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function asBytes(value) { return Buffer.isBuffer(value) ? value : Buffer.from(value || ''); }

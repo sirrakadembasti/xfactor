@@ -2,7 +2,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { validateJob } from './protocol.js';
 
-export function createWorkerServer({ config, store, executeJob }) {
+export function createWorkerServer({ config, store, executeJob, responseDelayMs = 0 }) {
   const token = config?.EXECUTION_WORKER_TOKEN || config?.WORKER_TOKEN;
   if (!token || !store || !executeJob) {
     throw new Error('Missing token, store, or executor');
@@ -142,9 +142,29 @@ export function createWorkerServer({ config, store, executeJob }) {
         }
 
         const job = validation.job;
+        let responseFinished = false;
+        let cancellationPromise = null;
+        const cancelOnDisconnect = () => {
+          if (responseFinished || res.writableFinished || cancellationPromise) return;
+          if (!req.aborted && !res.destroyed) return;
+          cancellationPromise = (async () => {
+            const active = activeJobs.get(job.jobId);
+            if (active) {
+              active.controller.abort();
+              await active.promise;
+            } else {
+              store.updateJobStatus(job.jobId, 'pending', 'cancelled', { reason: 'client disconnected before acceptance response' });
+            }
+          })();
+        };
+        req.once('aborted', cancelOnDisconnect);
+        res.once('close', cancelOnDisconnect);
+        res.once('finish', () => { responseFinished = true; res.removeListener('close', cancelOnDisconnect); req.removeListener('aborted', cancelOnDisconnect); });
         try {
           const inserted = store.insertJob(job);
           if (inserted === 'exists') {
+            if (responseDelayMs > 0) await new Promise(resolve => setTimeout(resolve, responseDelayMs));
+            if (cancellationPromise) { await cancellationPromise; return; }
             return res.end(JSON.stringify(identityResponse(job, { status: 'queued' })));
           }
         } catch (e) {
@@ -158,9 +178,9 @@ export function createWorkerServer({ config, store, executeJob }) {
           }
           throw e;
         }
-
+        if (responseDelayMs > 0) await new Promise(resolve => setTimeout(resolve, responseDelayMs));
+        if (cancellationPromise) { await cancellationPromise; return; }
         res.end(JSON.stringify(identityResponse(job, { status: 'queued' })));
-        
         triggerExecution();
         return;
       }
@@ -187,10 +207,14 @@ export function createWorkerServer({ config, store, executeJob }) {
         }
 
         if (req.method === 'DELETE') {
+          if (!store.hasJob(jobId)) {
+            res.writeHead(404);
+            return res.end(JSON.stringify({ error: 'Job not found' }));
+          }
           const activeJob = activeJobs.get(jobId);
           if (activeJob) {
             activeJob.controller.abort();
-            try { await activeJob.promise; } catch {} // await cleanup
+            try { await activeJob.promise; } catch {}
             activeJobs.delete(jobId);
           }
           store.updateJobStatus(jobId, 'running', 'cancelled', { reason: 'cancelled by client' });

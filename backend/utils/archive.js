@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import JSZip from 'jszip';
+import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { getArtifactsRoot } from '../artifactPaths.js';
 
 async function loadArchiveDefaults() {
@@ -41,6 +42,8 @@ export async function createProjectZip(
     const manifest = [];
     const seenPaths = new Set();
     const orderedFiles = [...files].sort((a, b) => canonicalPath(a?.path).localeCompare(canonicalPath(b?.path)));
+    if (orderedFiles.length > ARTIFACT_LIMITS.maxFiles) throw new Error('Artifact file count limit exceeded.');
+    let totalInputBytes = 0;
     for (const file of orderedFiles) {
         const normalizedPath = canonicalPath(file?.path);
         if (seenPaths.has(normalizedPath)) throw new Error(`Duplicate file path detected: ${normalizedPath}`);
@@ -49,6 +52,10 @@ export async function createProjectZip(
         }
         seenPaths.add(normalizedPath);
         const content = Buffer.isBuffer(file.content) ? file.content : Buffer.from(file.content);
+        if (content.length > ARTIFACT_LIMITS.maxFileBytes || totalInputBytes + content.length > ARTIFACT_LIMITS.maxExtractedBytes) {
+            throw new Error('Artifact extracted-size limit exceeded.');
+        }
+        totalInputBytes += content.length;
         zip.file(normalizedPath, content, { date: new Date(0), createFolders: false });
         manifest.push({
             path: normalizedPath,
@@ -62,6 +69,7 @@ export async function createProjectZip(
         compressionOptions: { level: 6 },
         platform: 'UNIX'
     });
+    if (zipBuffer.length > ARTIFACT_LIMITS.maxArchiveBytes) throw new Error('Artifact archive-size limit exceeded.');
     const needsDefaults = !deps.createArtifact || !deps.addArtifactFile || !deps.withArtifactTransaction;
     const loaded = needsDefaults ? await loadArchiveDefaults() : {};
     const db = deps.db || loaded.db;

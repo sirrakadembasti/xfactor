@@ -28,6 +28,19 @@ test('Job Boundary API', async (t) => {
     const identity = Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'].map(key => [key, job[key]]));
     return { status: 'success', result: { ...identity, testOutcome: 'success' } };
   };
+
+  const waitForResolver = async (jobId, timeoutMs = 2000) => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (executeWaitResolvers.has(jobId)) return;
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    throw new Error(`Executor resolver was not registered for ${jobId}`);
+  };
+  const releaseWhenReady = async (jobId, timeoutMs = 2000) => {
+    await waitForResolver(jobId, timeoutMs);
+    executeWaitResolvers.get(jobId)?.();
+  };
   
   const server = createWorkerServer({ config, store, executeJob });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -111,7 +124,7 @@ test('Job Boundary API', async (t) => {
   await t.test('polling awaits terminal outcome', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 100);
+    await releaseWhenReady(job.jobId);
     const finalState = await p;
     assert.equal(finalState.status, 'completed');
     assert.equal(finalState.result.testOutcome, 'success');
@@ -120,10 +133,9 @@ test('Job Boundary API', async (t) => {
   await t.test('duplicate jobId handling (exact retry vs collision)', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
+    await releaseWhenReady(job.jobId);
     await p;
     const p2 = client.verifyArtifact(job);
-    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
     await p2;
     const jobDifferent = { ...job, contractHash: crypto.createHash('sha256').update('different').digest('hex') };
     await assert.rejects(client.verifyArtifact(jobDifferent), /Worker error \(409\)/);
@@ -132,7 +144,7 @@ test('Job Boundary API', async (t) => {
   await t.test('cross-principal polling rejected', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
+    await releaseWhenReady(job.jobId);
     await p;
     const url = `${config.EXECUTION_WORKER_URL}/v1/jobs/${job.jobId}?projectId=wrong-proj`;
     const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -141,27 +153,45 @@ test('Job Boundary API', async (t) => {
 
   await t.test('cancellation aborts polling and cleans up', async () => {
     const job = getValidJob();
-    
     const p = client.verifyArtifact(job);
-    
-    setTimeout(async () => {
-       await client.cancelJob(job.jobId);
-    }, 50);
-    
+    await waitForResolver(job.jobId);
+    await client.cancelJob(job.jobId);
     const finalState = await p;
     assert.equal(finalState.status, 'cancelled');
-    const jobInStore = store.getJob(job.jobId, job.projectId);
-    assert.equal(jobInStore.status, 'cancelled');
+    assert.equal(store.getJob(job.jobId, job.projectId).status, 'cancelled');
   });
 
   await t.test('local abort requests remote cancellation and awaits cleanup', async () => {
     const job = getValidJob();
     const controller = new AbortController();
     const p = client.verifyArtifact(job, { signal: controller.signal });
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await waitForResolver(job.jobId);
     controller.abort();
     await assert.rejects(p, error => error?.name === 'AbortError' || /aborted/i.test(error?.message || ''));
     assert.equal(store.getJob(job.jobId, job.projectId)?.status, 'cancelled');
+  });
+
+  await t.test('abort after accepted POST cancels delayed response job', async () => {
+    const delayedStore = new JobStore();
+    let starts = 0;
+    const delayedServer = createWorkerServer({
+      config: { EXECUTION_WORKER_TOKEN: token }, store: delayedStore, responseDelayMs: 200,
+      executeJob: async () => { starts++; return { status: 'success', result: {} }; }
+    });
+    await new Promise(resolve => delayedServer.listen(0, '127.0.0.1', resolve));
+    const delayedClient = createExecutionClient({ EXECUTION_WORKER_TOKEN: token, EXECUTION_WORKER_URL: `http://127.0.0.1:${delayedServer.address().port}` });
+    const job = getValidJob();
+    const controller = new AbortController();
+    const pending = delayedClient.verifyArtifact(job, { signal: controller.signal });
+    const acceptedDeadline = Date.now() + 2000;
+    while (!delayedStore.hasJob(job.jobId) && Date.now() < acceptedDeadline) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(delayedStore.hasJob(job.jobId), true, 'delayed POST was not accepted');
+    controller.abort();
+    await assert.rejects(pending, error => error?.name === 'AbortError');
+    assert.equal(delayedStore.getJob(job.jobId, job.projectId)?.status, 'cancelled');
+    assert.equal(starts, 0);
+    await new Promise(resolve => delayedServer.close(resolve));
+    delayedStore.close();
   });
   await t.test('queue capacity (max 8)', async () => {
     const pendingJobs = [];
