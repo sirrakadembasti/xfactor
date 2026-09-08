@@ -94,6 +94,26 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
     // A pre-extraction rejection has no verification checks or materialized workspace evidence.
     assert.strictEqual(result.result?.checks, undefined, JSON.stringify(result));
   });
+  await t.test('real fallback rejects a filename ending CR before unzip or materialization', async () => {
+    const controlZip = await archive({
+      'materialize-me.txt\r': 'must-not-materialize'
+    });
+    const result = await executeJob({
+      jobId: 'job-archive-control-name',
+      operation: 'verify_artifact',
+      runId: runId('archive-control-name'),
+      deadline: Date.now() + 60000,
+      archiveBase64: controlZip.toString('base64'),
+      inputSha256: digest(controlZip),
+      contract: {},
+      requirementIds: []
+    }, { signal: new AbortController().signal });
+    assert.strictEqual(result.status, 'failed', JSON.stringify(result));
+    assert.match(`${result.error || ''} ${result.result?.reason || ''}`, /unsafe archive filename|control character/i, JSON.stringify(result));
+    assert.match(result.result?.evidence?.stderr || '', /unsafe archive filename|control character/i, JSON.stringify(result));
+    assert.strictEqual(result.result?.checks, undefined, JSON.stringify(result));
+  });
+
 
   await t.test('startup deadline cleans owned labelled resources', async () => {
     const fixture = await artifact('deadline-fixture');
