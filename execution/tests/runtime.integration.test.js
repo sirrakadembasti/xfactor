@@ -9,10 +9,10 @@ import { createHash } from 'node:crypto';
 
 const runId = name => `integration-${name}`;
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-async function archive(files) {
+async function archive(files, options = {}) {
   const zip = new JSZip();
   for (const [name, content] of Object.entries(files)) zip.file(name, content);
-  return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX', compression: 'STORE' });
+  return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX', compression: 'STORE', ...options });
 }
 async function artifact(name, scripts = {}, extra = {}) {
   const manifest = { name, version: '1.0.0', private: true, scripts, ...extra };
@@ -73,6 +73,26 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
     assert.strictEqual(result.status, 'failed', JSON.stringify(result));
     assert.match(result.result?.reason || '', /Archive extraction rejected:.*symlink/i, JSON.stringify(result));
     assert.ok(result.result?.evidence?.stderrSha256, JSON.stringify(result));
+  });
+  await t.test('real fallback rejects high-ratio ZIP before unzip or materialization', async () => {
+    const ratioZip = await archive({
+      'materialize-me.txt': 'x'.repeat(1536 * 1024)
+    }, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
+    const result = await executeJob({
+      jobId: 'job-archive-ratio',
+      operation: 'verify_artifact',
+      runId: runId('archive-ratio'),
+      deadline: Date.now() + 60000,
+      archiveBase64: ratioZip.toString('base64'),
+      inputSha256: digest(ratioZip),
+      contract: {},
+      requirementIds: []
+    }, { signal: new AbortController().signal });
+    assert.strictEqual(result.status, 'failed', JSON.stringify(result));
+    assert.match(`${result.error || ''} ${result.result?.reason || ''}`, /compression ratio/i, JSON.stringify(result));
+    assert.match(result.result?.evidence?.stderr || '', /compression ratio/i, JSON.stringify(result));
+    // A pre-extraction rejection has no verification checks or materialized workspace evidence.
+    assert.strictEqual(result.result?.checks, undefined, JSON.stringify(result));
   });
 
   await t.test('startup deadline cleans owned labelled resources', async () => {

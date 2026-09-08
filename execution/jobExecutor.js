@@ -43,7 +43,84 @@ export async function prepareDependencies({ packageJsonBytes, workspace = '/work
     return prepareResult({ lockBytes: lock, runId, evidence: { command: 'npm install --package-lock-only --ignore-scripts --no-audit --no-fund', exitCode: install.exitCode ?? 0, stdoutDigest: install.stdoutSha256 || digest(Buffer.from(install.stdout || '')), stderrDigest: install.stderrSha256 || digest(Buffer.from(install.stderr || '')) } });
 }
 
-const extractionScript = `const fs=require('fs'),cp=require('child_process'),path=require('path');const root='/workspace',zip=path.join(root,'artifact.zip'),out=root;const maxFiles=${MAX_FILES},maxTotal=${MAX_EXTRACTED_BYTES},maxFile=${MAX_FILE_BYTES},maxRatio=${MAX_COMPRESSION_RATIO};const listing=cp.execFileSync('unzip',['-Z','-v',zip],{encoding:'utf8'}),metadata=[];let current=null;for(const line of listing.split(/\\r?\\n/)){if(/^Central directory entry #/.test(line)){if(current)metadata.push(current);current={};continue}if(!current)continue;const name=line.match(/^\\s*file name:\\s*(.*)$/),compressed=line.match(/^\\s*compressed size:\\s*(\\d+)/),uncompressed=line.match(/^\\s*uncompressed size:\\s*(\\d+)/);if(name)current.name=name[1];if(compressed)current.compressed=Number(compressed[1]);if(uncompressed)current.uncompressed=Number(uncompressed[1])}if(current)metadata.push(current);const files=metadata.filter(entry=>entry.name&&!entry.name.endsWith('/'));if(files.length>maxFiles)throw Error('archive file count limit exceeded');const seen=new Set();for(const entry of files){const name=entry.name;if(!name||name.includes('\\0')||name.startsWith('/')||name.includes('\\\\')||name.split('/').includes('..'))throw Error('unsafe archive path');if(seen.has(name))throw Error('duplicate archive entry');seen.add(name);if(!Number.isSafeInteger(entry.compressed)||entry.compressed<0||!Number.isSafeInteger(entry.uncompressed)||entry.uncompressed<0)throw Error('archive size metadata missing');if(entry.uncompressed>maxFile)throw Error('archive file size limit exceeded');if(entry.uncompressed>1024&&entry.uncompressed/Math.max(entry.compressed,1)>maxRatio)throw Error('archive compression ratio limit exceeded')}let total=0;for(const entry of files){total+=entry.uncompressed;if(total>maxTotal)throw Error('archive extracted size limit exceeded')}if(/Unix file attributes \\(12[0-7]{4} octal\\)/.test(listing))throw Error('symlink archive entry');cp.execFileSync('unzip',['-qq','-o',zip,'-d',out],{stdio:'pipe'});`;
+const extractionScript = `const fs=require('fs');
+const cp=require('child_process');
+const path=require('path');
+const root='/workspace';
+const zip=path.join(root,'artifact.zip');
+const out=root;
+const maxFiles=${MAX_FILES};
+const maxTotal=${MAX_EXTRACTED_BYTES};
+const maxFile=${MAX_FILE_BYTES};
+const maxRatio=${MAX_COMPRESSION_RATIO};
+
+function metadataError(message){ throw new Error(message); }
+function parseNames(output){
+  if(typeof output!=='string'||!output.endsWith('\\n')) metadataError('archive name metadata is ambiguous');
+  const lines=output.split(/\\r?\\n/);
+  if(lines.pop()!=='') metadataError('archive name metadata is ambiguous');
+  if(!lines.length) metadataError('archive metadata missing');
+  if(lines.some(name=>!name||/[\\u0000-\\u001f\\u007f]/.test(name))) metadataError('archive name metadata is ambiguous');
+  return lines;
+}
+function parseField(block,label){
+  const expression=new RegExp('^[ \\t]*'+label+':[ \\t]*([0-9]+)[ \\t]+bytes[ \\t]*\\r?$','gm');
+  const matches=[...block.matchAll(expression)];
+  if(matches.length!==1) metadataError('archive size metadata missing or ambiguous');
+  const value=Number(matches[0][1]);
+  if(!Number.isSafeInteger(value)||value<0) metadataError('archive size metadata is ambiguous');
+  return value;
+}
+function parseMode(block){
+  const expression=/^[ \\t]*Unix file attributes[ \\t]*\\(([0-7]+) octal\\):/gm;
+  const matches=[...block.matchAll(expression)];
+  if(matches.length===1){
+    const mode=Number.parseInt(matches[0][1],8);
+    if(!Number.isSafeInteger(mode)||mode<0) metadataError('archive mode metadata is ambiguous');
+    return mode;
+  }
+  if(matches.length>1) metadataError('archive mode metadata is ambiguous');
+  const origins=[...block.matchAll(/^[ \\t]*file system or operating system of origin:[ \\t]*(.+)$/gmi)];
+  if(origins.length!==1||!/MS-DOS|OS\\/2|NT FAT|FAT/i.test(origins[0][1])) metadataError('archive mode metadata missing or ambiguous');
+  return null;
+}
+function parseVerbose(output){
+  const markers=[...output.matchAll(/^Central directory entry #([0-9]+):[ \\t]*\\r?\\n-{5,}\\r?\\n/gm)];
+  if(!markers.length) metadataError('archive metadata missing');
+  return markers.map((marker,index)=>{
+    const next=markers[index+1];
+    const block=output.slice(marker.index+marker[0].length,next?next.index:output.length);
+    if(Number(marker[1])!==index+1) metadataError('archive metadata order is ambiguous');
+    return {compressed:parseField(block,'compressed size'),uncompressed:parseField(block,'uncompressed size'),mode:parseMode(block)};
+  });
+}
+function canonicalPath(raw){
+  if(typeof raw!=='string'||!raw||raw.includes('\\0')||raw.includes('\\\\')||raw.startsWith('/')||raw.split('/').includes('..')) metadataError('unsafe archive path');
+  const normalized=path.posix.normalize(raw);
+  const canonical=normalized.replace(/\\/+$/,'');
+  if(!canonical||canonical==='.'||canonical==='..'||canonical.startsWith('../')) metadataError('unsafe archive path');
+  return canonical;
+}
+const names=parseNames(cp.execFileSync('unzip',['-Z1',zip],{encoding:'utf8'}));
+const records=parseVerbose(cp.execFileSync('unzip',['-Z','-v',zip],{encoding:'utf8'}));
+if(names.length!==records.length) metadataError('archive metadata count mismatch');
+const entries=records.map((record,index)=>({ ...record, rawName:names[index], path:canonicalPath(names[index]) }));
+const seen=new Set();
+for(const entry of entries){
+  if(seen.has(entry.path)) metadataError('duplicate archive entry');
+  seen.add(entry.path);
+  if(entry.mode!==null&&(entry.mode&0xf000)===0xa000) metadataError('symlink archive entry');
+}
+const files=entries.filter(entry=>!entry.rawName.endsWith('/')&&(entry.mode===null||(entry.mode&0xf000)!==0x4000));
+if(files.length>maxFiles) metadataError('archive file count limit exceeded');
+let total=0;
+for(const entry of files){
+  if(entry.uncompressed>maxFile) metadataError('archive file size limit exceeded');
+  if(entry.uncompressed>maxTotal-total) metadataError('archive extracted size limit exceeded');
+  total+=entry.uncompressed;
+  if(entry.uncompressed>1024&&entry.uncompressed/Math.max(entry.compressed,1)>maxRatio) metadataError('archive compression ratio limit exceeded');
+}
+cp.execFileSync('unzip',['-qq','-o',zip,'-d',out],{stdio:'pipe'});`;
 
 export async function verifyArtifact({ archiveBase64, archiveSha256, workspace = '/workspace', job, adapter, signal, env = {} } = {}) {
     if (!job?.runId) throw new Error('caller-supplied runId is required');
@@ -68,7 +145,7 @@ export async function verifyArtifact({ archiveBase64, archiveSha256, workspace =
         }
     } catch (error) {
         const rawFull = String(error?.result?.stderr || error?.message || 'archive extraction failed').replace(/\s+/g, ' ').slice(0, 8192);
-        const reason = /symlink archive entry/i.test(rawFull) ? 'symlink archive entry' : /unsafe archive path/i.test(rawFull) ? 'unsafe archive path' : /duplicate archive entry/i.test(rawFull) ? 'duplicate archive entry' : /compression ratio limit/i.test(rawFull) ? 'archive compression ratio limit exceeded' : /file size limit/i.test(rawFull) ? 'archive file size limit exceeded' : /extracted size limit/i.test(rawFull) ? 'archive extracted size limit exceeded' : /file count limit/i.test(rawFull) ? 'archive file count limit exceeded' : 'archive extraction failed';
+        const reason = /symlink archive entry/i.test(rawFull) ? 'symlink archive entry' : /unsafe archive path/i.test(rawFull) ? 'unsafe archive path' : /duplicate archive entry/i.test(rawFull) ? 'duplicate archive entry' : /compression ratio limit/i.test(rawFull) ? 'archive compression ratio limit exceeded' : /file size limit/i.test(rawFull) ? 'archive file size limit exceeded' : /extracted size limit/i.test(rawFull) ? 'archive extracted size limit exceeded' : /file count limit/i.test(rawFull) ? 'archive file count limit exceeded' : /archive .*metadata|metadata .* (?:missing|ambiguous|mismatch|order)/i.test(rawFull) ? 'archive metadata validation failed' : 'archive extraction failed';
         const detail = reason;
         return { passed: false, status: 'blocked', reason: `Archive extraction rejected: ${detail}`, runId: job.runId, archiveSha256: actual, evidence: { runId: job.runId, archiveBytes: archive.length, command: 'bounded ZIP metadata validation and extraction', exitCode: error?.result?.code ?? 1, stderr: rawFull, stderrSha256: error?.result?.stderrSha256 || digest(Buffer.from(rawFull)) } };
     }
