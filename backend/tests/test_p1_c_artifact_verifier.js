@@ -217,7 +217,7 @@ try {
         assert.ok(evidence.computedAt);
     });
 
-    await runAsyncTest('3. verifyArtifact rejects malicious symlink artifact and sets artifact status rejected with linked run', async () => {
+    await runAsyncTest('3. verifyArtifact rejects malicious symlink before persistence', async () => {
         const zipPath = await createTestZip('symlink.zip', [
             { path: 'safe.txt', content: 'hello' },
             { path: 'link-out.js', content: '../target', options: { unixPermissions: 0o120777 } }
@@ -227,25 +227,22 @@ try {
         const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
         const runId = 'run-symlink';
         const identity = artifactIdentity(artifactId, runId, archiveHash);
-        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
-            runId,
-            activeJob: identity,
-            archiveBase64: archiveBytes.toString('base64'),
-            executionClient: { verifyArtifact: async () => workerResponse(identity, [], 'failed', 'Symbolic link detected') }
-        });
-        assert.strictEqual(result.status, 'failed');
-        assert.strictEqual(result.passed, false);
-        assert.ok(result.runId);
-        assert.ok(result.error);
-        assert.match(result.error, /Symbolic link/i);
-
+        await assert.rejects(
+            verifyArtifact({ projectId, contractId, artifactId }, {
+                runId,
+                activeJob: identity,
+                archiveBase64: archiveBytes.toString('base64'),
+                executionClient: { verifyArtifact: async () => { throw new Error('must not execute'); } }
+            }),
+            /Symbolic link detected/i
+        );
         const artifact = getArtifact({ projectId, contractId, artifactId });
-        assert.strictEqual(artifact.status, 'rejected');
-        assert.strictEqual(artifact.verificationRunId, result.runId);
-
-        const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
-        assert.ok(run);
-        assert.strictEqual(run.status, 'failed');
+        assert.strictEqual(artifact.status, 'draft');
+        assert.strictEqual(artifact.verificationRunId, null);
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM verification_runs WHERE id = ?').get(runId).count,
+            0
+        );
     });
     await runAsyncTest('4. verifyArtifact throws meaningful error when artifact is missing from DB', async () => {
         const runId = 'run-missing-artifact';

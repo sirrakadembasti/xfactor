@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
+import { inspectZipEntries } from './safeExtractor.js';
 
 async function loadRepositoryDefaults() {
     const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
@@ -142,16 +143,17 @@ export async function verifyArtifact(
         throw new Error('Verification archive digest does not match persisted artifact.');
     }
     const zip = await JSZip.loadAsync(archiveBytes);
-    const submitted = [];
-    const seen = new Set();
-    for (const rawName of Object.keys(zip.files)) {
-        if (zip.files[rawName].dir) continue;
-        const name = canonicalArchivePath(rawName);
-        if (seen.has(name)) throw new Error(`Archive contains duplicate canonical path: ${name}`);
-        seen.add(name);
-        const bytes = await zip.files[rawName].async('nodebuffer');
-        submitted.push({ path: name, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), size: bytes.length });
-    }
+    const entries = await inspectZipEntries(zip, {
+        maxFiles: 500,
+        maxTotalBytes: 20 * 1024 * 1024,
+        maxFileBytes: 2 * 1024 * 1024,
+        maxRatio: 100
+    });
+    const submitted = entries.map(item => ({
+        path: item.path,
+        sha256: crypto.createHash('sha256').update(item.content).digest('hex'),
+        size: item.content.length
+    }));
     const persistedManifest = JSON.parse(artifact.manifestJson || '[]');
     const persistedFiles = getArtifactFiles({ contractId, artifactId }).map(row => ({
         path: canonicalArchivePath(row.path), sha256: row.sha256, size: Number(row.size)

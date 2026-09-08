@@ -17,11 +17,12 @@ test('Job Boundary API', async (t) => {
   const token = crypto.randomBytes(32).toString('hex');
   const config = { EXECUTION_WORKER_TOKEN: token };
   
-  let executeWaitResolve = null;
+  const executeWaitResolvers = new Map();
   const executeJob = async (job, { signal }) => {
-    await new Promise(r => {
-      executeWaitResolve = r;
-      signal.addEventListener('abort', r);
+    await new Promise(resolve => {
+      const finish = () => { executeWaitResolvers.delete(job.jobId); resolve(); };
+      executeWaitResolvers.set(job.jobId, finish);
+      signal.addEventListener('abort', finish, { once: true });
     });
     if (signal.aborted) return { status: 'cancelled', error: 'cancelled' };
     const identity = Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'].map(key => [key, job[key]]));
@@ -33,8 +34,9 @@ test('Job Boundary API', async (t) => {
   const port = server.address().port;
   config.EXECUTION_WORKER_URL = `http://127.0.0.1:${port}`;
   
-  t.after(() => {
-    server.close();
+  t.after(async () => {
+    await new Promise(resolve => server.close(resolve));
+    assert.equal(executeWaitResolvers.size, 0);
     store.close();
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
@@ -109,11 +111,7 @@ test('Job Boundary API', async (t) => {
   await t.test('polling awaits terminal outcome', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    
-    setTimeout(() => {
-      if (executeWaitResolve) executeWaitResolve();
-    }, 100);
-    
+    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 100);
     const finalState = await p;
     assert.equal(finalState.status, 'completed');
     assert.equal(finalState.result.testOutcome, 'success');
@@ -122,14 +120,11 @@ test('Job Boundary API', async (t) => {
   await t.test('duplicate jobId handling (exact retry vs collision)', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    setTimeout(() => { if (executeWaitResolve) executeWaitResolve(); }, 50);
+    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
     await p;
-    
-    // Retry exact same job should succeed (idempotent, return completed immediately)
     const p2 = client.verifyArtifact(job);
-    setTimeout(() => { if (executeWaitResolve) executeWaitResolve(); }, 50);
+    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
     await p2;
-    
     const jobDifferent = { ...job, contractHash: crypto.createHash('sha256').update('different').digest('hex') };
     await assert.rejects(client.verifyArtifact(jobDifferent), /Worker error \(409\)/);
   });
@@ -137,9 +132,8 @@ test('Job Boundary API', async (t) => {
   await t.test('cross-principal polling rejected', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
-    setTimeout(() => { if (executeWaitResolve) executeWaitResolve(); }, 50);
+    setTimeout(() => executeWaitResolvers.get(job.jobId)?.(), 50);
     await p;
-    
     const url = `${config.EXECUTION_WORKER_URL}/v1/jobs/${job.jobId}?projectId=wrong-proj`;
     const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     assert.equal(res.status, 403);
@@ -160,20 +154,29 @@ test('Job Boundary API', async (t) => {
     assert.equal(jobInStore.status, 'cancelled');
   });
 
+  await t.test('local abort requests remote cancellation and awaits cleanup', async () => {
+    const job = getValidJob();
+    const controller = new AbortController();
+    const p = client.verifyArtifact(job, { signal: controller.signal });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    controller.abort();
+    await assert.rejects(p, error => error?.name === 'AbortError' || /aborted/i.test(error?.message || ''));
+    assert.equal(store.getJob(job.jobId, job.projectId)?.status, 'cancelled');
+  });
   await t.test('queue capacity (max 8)', async () => {
     const pendingJobs = [];
-    for (let i = 0; i < 8; i++) { 
+    const pendingRequests = [];
+    for (let i = 0; i < 8; i++) {
       const j = getValidJob();
-      client.verifyArtifact(j).catch(()=>{}); 
+      pendingRequests.push(client.verifyArtifact(j).catch(() => {}));
       pendingJobs.push(j);
     }
-    
     await new Promise(r => setTimeout(r, 100));
-    
     await assert.rejects(client.verifyArtifact(getValidJob()), /Worker error \(429\)/);
-    
-    for (const j of pendingJobs) await client.cancelJob(j.jobId);
-    if (executeWaitResolve) executeWaitResolve();
+    await Promise.all(pendingJobs.map(j => client.cancelJob(j.jobId)));
+    await Promise.all(pendingRequests);
+    for (const j of pendingJobs) assert.equal(store.getJob(j.jobId, j.projectId)?.status, 'cancelled');
+    assert.equal(executeWaitResolvers.size, 0);
   });
 
   await t.test('restart recovery marks interrupted as failed', async () => {

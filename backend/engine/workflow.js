@@ -926,6 +926,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
             const packageJsonFile = files.find(f => f.path === 'package.json');
             if (!packageJsonFile) throw new Error('Artifact requires package.json for dependency preparation.');
+            const packageJsonBytes = Buffer.from(packageJsonFile.content);
             const prepJob = {
                 ...activeJob,
                 jobId: crypto.randomUUID(),
