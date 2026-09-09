@@ -582,16 +582,31 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                         // Nihai onaylı dosyaları güvenli path guard üzerinden yaz.
                         const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files, task.targetFiles);
-                        const writtenPathSet = new Set(
-                            writtenMeta.map(file => path.normalize(file.path).replace(/\\/g, '/'))
+                        const writtenMetaByPath = new Map(
+                            writtenMeta.map(file => [
+                                path.normalize(file.path).replace(/\\/g, '/'),
+                                file
+                            ])
                         );
-                        const missingTargetFiles = expectedTargetFiles.filter(file => !writtenPathSet.has(file));
-                        if (missingTargetFiles.length > 0) {
-                            const writeError = `Görev tamamlanamadı: kabul edilmiş hedef dosyalar yazılmadı (${missingTargetFiles.join(', ')}).`;
+                        const writtenPathSet = new Set(writtenMetaByPath.keys());
+                        const incompleteTargetFiles = [];
+                        for (const expectedTargetFile of expectedTargetFiles) {
+                            const written = writtenMetaByPath.get(expectedTargetFile);
+                            if (!written || !Number.isFinite(written.size) || written.size <= 0) {
+                                incompleteTargetFiles.push(expectedTargetFile);
+                                continue;
+                            }
+                            const targetStat = await fs.stat(path.join(projectDir, written.path)).catch(() => null);
+                            if (!targetStat?.isFile() || targetStat.size === 0) {
+                                incompleteTargetFiles.push(expectedTargetFile);
+                            }
+                        }
+                        if (incompleteTargetFiles.length > 0) {
+                            const writeError = `Görev tamamlanamadı: kabul edilmiş hedef dosyalar boş veya yazılmadı (${incompleteTargetFiles.join(', ')}).`;
                             await writeDurum(coderDir, 'BASARISIZ', writeError);
                             await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
                             dag.setTaskStatus(taskId, 'failed', { error: writeError });
-                            await logEvent(wsHub, projectId, "Coder", "failure", missingTargetFiles.join(', '), writeError, coderNodeId, tlId);
+                            await logEvent(wsHub, projectId, "Coder", "failure", incompleteTargetFiles.join(', '), writeError, coderNodeId, tlId);
                             return { success: false, taskId, error: writeError };
                         }
                         const writtenFiles = coderOutput.files

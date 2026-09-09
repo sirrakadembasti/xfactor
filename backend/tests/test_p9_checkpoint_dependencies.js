@@ -11,6 +11,7 @@ import {
     verifyTaskCheckpoint
 } from '../engine/checkpointHelper.js';
 import { isTaskCompleted, writeDurum, writeRapor } from '../engine/fileProtocol.js';
+import { normalizeTeamleaderTasks, validateTaskDependencies } from '../agents/schemas.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 const tempDirs = [];
@@ -58,6 +59,34 @@ try {
             /tanımsız bağımlılığa sahip.*missing-upstream/i,
             'unknown dependency IDs must not be silently remapped'
         );
+    });
+
+    await runAsyncTest('workflow task normalization preserves Set and generator dependencies', async () => {
+        function* dependencyIds() {
+            yield 'upstream';
+        }
+
+        const normalized = normalizeTeamleaderTasks({
+            tasks: [
+                {
+                    id: 'consumer',
+                    title: 'Consumer',
+                    dependencies: dependencyIds(),
+                    targetFiles: ['src/output.js'],
+                    requirementIds: ['REQ-1']
+                },
+                {
+                    id: 'upstream',
+                    title: 'Upstream',
+                    dependencies: new Set(),
+                    targetFiles: ['src/upstream.js'],
+                    requirementIds: ['REQ-1']
+                }
+            ]
+        });
+
+        assert.deepStrictEqual(normalized.tasks[0].dependencies, ['upstream']);
+        assert.strictEqual(validateTaskDependencies(normalized.tasks).valid, true);
     });
 
     await runAsyncTest('unchanged dependency graph reuses checkpoint while changed dependency set does not', async () => {
@@ -168,6 +197,13 @@ try {
             await isTaskCompleted(coderDir, workspace, ['src/missing-output.js']),
             false,
             'zero accepted target writes must not be completed'
+        );
+
+        await fs.writeFile(path.join(workspace, 'src', 'empty-output.js'), '');
+        assert.strictEqual(
+            await isTaskCompleted(coderDir, workspace, ['src/empty-output.js']),
+            false,
+            'zero-byte accepted target writes must not be completed'
         );
 
         await fs.writeFile(path.join(workspace, 'src', 'first-output.js'), 'first');
