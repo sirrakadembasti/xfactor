@@ -7,14 +7,16 @@ import {
     getProject,
     projectStateTransitionInTransaction
 } from '../projectRepository.js';
+import { assertWorkflowLease } from '../workflowAttempts.js';
 import { db } from '../db.js';
-/** Shared authoritative verification and completion orchestration for CLI/workflow. */
 export async function verifyArtifactAndProject({
     projectId,
     contractId,
     artifactId,
     expectedRevision = null,
     complete = false,
+    attemptId = null,
+    leaseOwner = null,
     options = {},
     verificationRunner = verifyArtifact
 } = {}) {
@@ -30,7 +32,9 @@ export async function verifyArtifactAndProject({
         projectStateTransitionInTransaction({
             projectId,
             expectedRevision: initialProject.revision,
-            statuses: ['implementation_finished']
+            statuses: ['implementation_finished'],
+            attemptId,
+            leaseOwner
         });
     }
 
@@ -39,6 +43,9 @@ export async function verifyArtifactAndProject({
     const receipt = { runId: verification.runId, contractId, artifactId };
     db.exec('BEGIN IMMEDIATE');
     try {
+        if (attemptId !== null || leaseOwner !== null) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
+        }
         const current = db.prepare('SELECT workflow_state FROM projects WHERE id = ?').get(projectId);
         let workflow = {};
         try { workflow = current?.workflow_state ? JSON.parse(current.workflow_state) : {}; } catch {}
@@ -66,14 +73,22 @@ export async function verifyArtifactAndProject({
             : project.status === 'artifact_verified' ? [] : null;
     if (!statuses) throw new Error(`Project ${projectId} cannot complete from state ${project.status}.`);
     if (statuses.length > 0) {
-        projectStateTransitionInTransaction({ projectId, expectedRevision: project.revision, statuses });
+        projectStateTransitionInTransaction({
+            projectId,
+            expectedRevision: project.revision,
+            statuses,
+            attemptId,
+            leaseOwner
+        });
         project = getProject(projectId);
     }
     const completed = completeVerifiedProject({
         projectId,
         contractId,
         artifactId,
-        expectedRevision: project.revision
+        expectedRevision: project.revision,
+        attemptId,
+        leaseOwner
     });
     return { ...receipt, passed: true, completed: true, completionReceiptId: completed.completionReceiptId, project: completed };
 }

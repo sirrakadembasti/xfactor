@@ -19,7 +19,7 @@ import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { logError } from './observability.js';
 
-import { reconcileStaleWorkflowAttempts } from './workflowAttempts.js';
+import { reconcileStaleWorkflowAttempts, assertWorkflowLease } from './workflowAttempts.js';
 export const dbEvents = new EventEmitter();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -515,7 +515,50 @@ export const MIGRATIONS = [
                 END;
             `);
         }
-    }
+    },
+    {
+        version: 11,
+        name: '011_workflow_lease_fencing',
+        up: (database) => {
+            for (const column of ['started_epoch', 'heartbeat_epoch', 'ended_epoch']) {
+                if (!columnExists(database, 'workflow_attempts', column)) {
+                    database.exec(`ALTER TABLE workflow_attempts ADD COLUMN ${column} INTEGER`);
+                }
+            }
+            if (!columnExists(database, 'project_logs', 'attempt_id')) {
+                database.exec('ALTER TABLE project_logs ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'project_logs', 'lease_owner')) {
+                database.exec('ALTER TABLE project_logs ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'task_checkpoints', 'attempt_id')) {
+                database.exec('ALTER TABLE task_checkpoints ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'task_checkpoints', 'lease_owner')) {
+                database.exec('ALTER TABLE task_checkpoints ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'repair_issues', 'attempt_id')) {
+                database.exec('ALTER TABLE repair_issues ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'repair_issues', 'lease_owner')) {
+                database.exec('ALTER TABLE repair_issues ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'completion_receipts', 'attempt_id')) {
+                database.exec('ALTER TABLE completion_receipts ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'completion_receipts', 'lease_owner')) {
+                database.exec('ALTER TABLE completion_receipts ADD COLUMN lease_owner TEXT');
+            }
+            database.exec(`
+                CREATE INDEX IF NOT EXISTS idx_workflow_attempts_heartbeat_epoch
+                    ON workflow_attempts(status, heartbeat_epoch);
+                CREATE INDEX IF NOT EXISTS idx_project_logs_attempt
+                    ON project_logs(project_id, attempt_id);
+                CREATE INDEX IF NOT EXISTS idx_completion_receipts_attempt
+                    ON completion_receipts(project_id, attempt_id);
+            `);
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');
@@ -757,22 +800,41 @@ export function deleteProject(id) {
     return true;
 }
 
-export function saveProjectLog(logData) {
-    const insertLog = db.prepare(`
-        INSERT INTO project_logs (project_id, agent, action, file, message, node_id, parent_node_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    insertLog.run(
-        logData.projectId,
-        logData.agent || null,
-        logData.action || null,
-        logData.file || null,
-        logData.message || '',
-        logData.node_id || null,
-        logData.parent_node_id || null,
-        logData.created_at || new Date().toISOString()
+export function saveProjectLog(logData, leaseOptions = null) {
+    const options = leaseOptions || (
+        logData?.attemptId || logData?.leaseOwner
+            ? { attemptId: logData.attemptId, leaseOwner: logData.leaseOwner }
+            : null
     );
+    const attemptId = options?.attemptId ?? null;
+    const leaseOwner = options?.leaseOwner ?? null;
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+        if (options) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId: logData.projectId, database: db });
+        }
+        db.prepare(`
+            INSERT INTO project_logs (
+                project_id, agent, action, file, message, node_id, parent_node_id, created_at, attempt_id, lease_owner
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            logData.projectId,
+            logData.agent || null,
+            logData.action || null,
+            logData.file || null,
+            logData.message || '',
+            logData.node_id || null,
+            logData.parent_node_id || null,
+            logData.created_at || new Date().toISOString(),
+            attemptId,
+            leaseOwner
+        );
+        db.exec('COMMIT;');
+    } catch (error) {
+        db.exec('ROLLBACK;');
+        throw error;
+    }
 }
 
 export function getProjectLogs(projectId, { cursor = null, limit = 100 } = {}) {

@@ -91,7 +91,7 @@ await runAsyncTest('4. abortProjectExecution should release workflow attempt as 
     assert.strictEqual(controller.signal.aborted, true);
 
     const { releaseWorkflowLease } = await import('../workflowAttempts.js');
-    releaseWorkflowLease(lease.attempt.id, 'paused');
+    releaseWorkflowLease(lease.attempt.id, 'paused', { leaseOwner: 'worker-pause-test' });
 
     const attempt = db.prepare('SELECT status, ended_at FROM workflow_attempts WHERE id = ?').get(lease.attempt.id);
     assert.strictEqual(attempt.status, 'paused');

@@ -1,5 +1,6 @@
-import { db } from '../db.js';
 import { canonicalizeTaskDependencies } from './dag.js';
+import { db } from '../db.js';
+import { assertWorkflowLease } from '../workflowAttempts.js';
 
 
 export function saveCheckpoint({
@@ -16,34 +17,51 @@ export function saveCheckpoint({
     invalidationReason = null,
     revision = 1,
     createdAt = new Date().toISOString(),
-    invalidatedAt = null
+    invalidatedAt = null,
+    attemptId = null,
+    leaseOwner = null
 }) {
     const reqIdsJson = Array.isArray(requirementIds)
         ? JSON.stringify(requirementIds)
         : (typeof requirementIds === 'string' ? requirementIds : '[]');
 
-    db.prepare(`
-        INSERT INTO task_checkpoints (
-            project_id, task_id, contract_id, plan_hash, task_spec_hash,
-            input_hash, output_hash, gate_version, status, requirement_ids,
-            invalidation_reason, revision, created_at, invalidated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-        projectId,
-        taskId,
-        contractId,
-        planHash,
-        taskSpecHash,
-        inputHash,
-        outputHash,
-        gateVersion,
-        status,
-        reqIdsJson,
-        invalidationReason,
-        revision,
-        createdAt,
-        invalidatedAt
-    );
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+        if (attemptId !== null || leaseOwner !== null) {
+            if (!attemptId || !leaseOwner) {
+                throw new Error('attemptId and leaseOwner are required for fenced workflow mutations.');
+            }
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
+        }
+        db.prepare(`
+            INSERT INTO task_checkpoints (
+                project_id, task_id, contract_id, plan_hash, task_spec_hash,
+                input_hash, output_hash, gate_version, status, requirement_ids,
+                invalidation_reason, revision, created_at, invalidated_at, attempt_id, lease_owner
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            projectId,
+            taskId,
+            contractId,
+            planHash,
+            taskSpecHash,
+            inputHash,
+            outputHash,
+            gateVersion,
+            status,
+            reqIdsJson,
+            invalidationReason,
+            revision,
+            createdAt,
+            invalidatedAt,
+            attemptId,
+            leaseOwner
+        );
+        db.exec('COMMIT;');
+    } catch (error) {
+        db.exec('ROLLBACK;');
+        throw error;
+    }
 
     return getCheckpoint({
         projectId,

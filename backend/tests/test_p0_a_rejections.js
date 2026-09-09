@@ -25,7 +25,8 @@ try {
             const lease = acquireWorkflowLease(project.id, 'test-rejection-runner');
 
             releaseWorkflowLease(lease.attempt.id, 'rejected', {
-                error: 'Verification failed'
+                error: 'Verification failed',
+                leaseOwner: 'test-rejection-runner'
             });
 
             const updatedAttempt = db.prepare(

@@ -38,13 +38,17 @@ import {
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
 import { validatePlanTasks } from '../agents/director.js';
-import { db, getProjectState, saveProjectState, dbEvents, saveProjectLog } from '../db.js';
+import { db, getProjectState, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { generateLLMResponse } from '../llm.js';
 import { validateProjectBuild } from './buildValidator.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
-import { updateAttemptHeartbeat, releaseWorkflowLease } from '../workflowAttempts.js';
+import {
+    updateAttemptHeartbeat,
+    releaseWorkflowLease,
+    assertWorkflowLease
+} from '../workflowAttempts.js';
 import { registerProjectAbortController, unregisterProjectAbortController } from './cancellation.js';
 import {
     getProjectDir,
@@ -58,7 +62,7 @@ import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
-import { generateProjectReadme } from '\./readmeGenerator\.js';
+import { generateProjectReadme } from './readmeGenerator.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
@@ -167,11 +171,17 @@ export async function runWithConcurrency(items, limit, workerFn, { signal = null
     if (firstError) {
         throw firstError;
     }
-
-    return results.filter(r => r !== undefined);
-}
-
-export async function logEvent(wsHub, projectId, agentType, action, filePath, message, nodeId, parentNodeId = null) {
+export async function logEvent(
+    wsHub,
+    projectId,
+    agentType,
+    action,
+    filePath,
+    message,
+    nodeId,
+    parentNodeId = null,
+    leaseOptions = null
+) {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const formattedTime = now.toLocaleTimeString('tr-TR', { hour12: false });
@@ -181,16 +191,19 @@ export async function logEvent(wsHub, projectId, agentType, action, filePath, me
         time_only: formattedTime,
         created_at: now.toISOString(),
         agent: agentType,
-        action: action,
+        action,
         file: redactSensitiveText(filePath),
         message: redactSensitiveText(message),
         node_id: nodeId,
-        parent_node_id: parentNodeId
+        parent_node_id: parentNodeId,
+        attemptId: leaseOptions?.attemptId ?? null,
+        leaseOwner: leaseOptions?.leaseOwner ?? null
     };
 
     try {
-        saveProjectLog(event);
+        saveProjectLog(event, leaseOptions);
     } catch (error) {
+        if (leaseOptions) throw error;
         logError('workflow.event_persist_failed', error, { projectId, action });
     }
 
@@ -258,7 +271,7 @@ async function callAgentLLM(agentRole, userPrompt, { signal = null } = {}) {
 /**
  * Ana Otonom İş Akışı Yürütücüsü (Workflow Engine)
  */
-export async function executeProjectTasks(projectId, wsHub = null, attemptId = null) {
+export async function executeProjectTasks(projectId, wsHub = null, attemptId = null, leaseOwner = null) {
     const projectDir = getProjectDir(projectId);
     const state = await readProjectState(projectId);
 
@@ -268,6 +281,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
     const abortController = new AbortController();
     registerProjectAbortController(projectId, abortController);
+    const effectiveLeaseOwner = leaseOwner;
+    const leaseOptions = attemptId
+        ? { attemptId, leaseOwner: effectiveLeaseOwner }
+        : null;
+    const workflowWriteState = (id, nextState) => writeProjectState(id, nextState, leaseOptions);
+    const workflowLogEvent = (...args) => logEvent(...args, leaseOptions);
 
     let heartbeatTimer = null;
     let terminalStatus = 'completed';
@@ -275,12 +294,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
     if (attemptId) {
         heartbeatTimer = setInterval(() => {
-            updateAttemptHeartbeat(attemptId);
+            if (!updateAttemptHeartbeat(attemptId, effectiveLeaseOwner)
+                && !abortController.signal.aborted) {
+                abortController.abort('LEASE_LOST');
+            }
         }, 5000);
     }
 
     try {
-        await logEvent(wsHub, projectId, "Manager", "start", "", "Otonom DAG orkestrasyon süreci başlatıldı.", "manager");
+        if (attemptId) assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+        await workflowLogEvent(wsHub, projectId, "Manager", "start", "", "Otonom DAG orkestrasyon süreci başlatıldı.", "manager");
 
         // 1. AŞAMA: MANAGER & ROOT PROTOKOLÜ
         await checkPause(projectId, abortController.signal);
@@ -291,7 +314,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const managerPrompt = managerAgent.buildPrompt(state.title, state.chatHistory ? state.chatHistory.map(m => ({ role: m.role, content: m.parts ? m.parts[0].text : '' })) : []);
             plan = await callAgentLLM('manager', managerPrompt, { signal: abortController.signal });
             state.plan = plan;
-            await writeProjectState(projectId, state);
+            await workflowWriteState(projectId, state);
         }
         plan = normalizeManagerPlan(plan);
         validateManagerPlan(plan);
@@ -302,7 +325,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             state.workflow.teamleaderPlans = {};
         }
         state.workflow.planHash = planHash;
-        await writeProjectState(projectId, state);
+        await workflowWriteState(projectId, state);
 
         const sortedRawDomains = orderDomainsCoreFirst(plan.domains);
         const domainList = sortedRawDomains.map(d => ({
@@ -311,11 +334,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             description: typeof d === 'string' ? `${d} domaini` : (d.description || `${d.name} domaini`)
         }));
         await setupRootProtocol(projectDir, plan.talimatname, domainList);
-        await logEvent(wsHub, projectId, "Manager", "write", "TALIMATNAME.md", "Ana şartname ve kök TODO.md protokolü oluşturuldu.", "manager");
+        await workflowLogEvent(wsHub, projectId, "Manager", "write", "TALIMATNAME.md", "Ana şartname ve kök TODO.md protokolü oluşturuldu.", "manager");
 
         // Architecture-First (Önce Mimari Sözleşme): Kodlama başlamadan önce onaylı paketler, .env.example ve köprüler kilitlenir!
         await ensureProjectScaffold(projectDir, state, plan);
-        await logEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env.example) önceden diske kilitlendi.", "manager");
+        await workflowLogEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env.example) önceden diske kilitlendi.", "manager");
 
         const generatedProjectFiles = [];
         const repairTargetFiles = new Set();
@@ -338,14 +361,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
             let directorSpec = state.workflow.directorSpecs[domain.prefix];
             if (!directorSpec || Array.isArray(directorSpec) || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0)) {
-                await logEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
+                await workflowLogEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
                 const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
                 const rawSpec = await callAgentLLM('director', directorPrompt, { signal: abortController.signal });
                 directorSpec = normalizeDirectorSpec(rawSpec, domain.prefix);
 
                 state.workflow.directorSpecs[domain.prefix] = directorSpec;
-                await writeProjectState(projectId, state);
+                await workflowWriteState(projectId, state);
             } else {
                 directorSpec = normalizeDirectorSpec(directorSpec, domain.prefix);
             }
@@ -362,7 +385,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     directorSpec.altTalimatname,
                     teamleaders
                 );
-                await logEvent(wsHub, projectId, "Director", "write", "ALT-TALIMATNAME.md", `${domain.name} için ALT-TALIMATNAME.md üretildi.`, directorId, "manager");
+                await workflowLogEvent(wsHub, projectId, "Director", "write", "ALT-TALIMATNAME.md", `${domain.name} için ALT-TALIMATNAME.md üretildi.`, directorId, "manager");
             }
             // 3. AŞAMA: TAKIM LİDERLERİ (TEAMLEADERS)
             for (const tl of teamleaders) {
@@ -376,13 +399,13 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 const tasksOnDisk = await readTasksFromTodoFile(tlTodoPath);
 
                 if (!taskPlan) {
-                    await logEvent(wsHub, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
+                    await workflowLogEvent(wsHub, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
                     const tlAgent = getAgent('teamleader');
                     const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || []);
                     taskPlan = await callAgentLLM('teamleader', tlPrompt, { signal: abortController.signal });
 
                     state.workflow.teamleaderPlans[tlId] = taskPlan;
-                    await writeProjectState(projectId, state);
+                    await workflowWriteState(projectId, state);
                 }
                 taskPlan = normalizeTeamleaderTasks(taskPlan, plan.requirements || []);
                 validateTeamleaderTasks(taskPlan);
@@ -473,23 +496,21 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                         if (checkpointValid) {
                             dag.setTaskStatus(taskId, 'completed');
-                            await logEvent(
-                                wsHub,
-                                projectId,
-                                "Coder",
-                                "skip",
-                                task.targetFiles ? task.targetFiles.join(', ') : '',
-                                `Görev "${task.title}" CAS checkpoint doğrulamasıyla geçerli, atlanıyor.`,
-                                coderNodeId,
-                                tlId
-                            );
+                            await workflowLogEvent(wsHub,
+                            projectId,
+                            "Coder",
+                            "skip",
+                            task.targetFiles ? task.targetFiles.join(', ') : '',
+                            `Görev "${task.title}" CAS checkpoint doğrulamasıyla geçerli, atlanıyor.`,
+                            coderNodeId,
+                            tlId);
                             return { success: true, taskId, skipped: true };
                         }
 
                         // Checkpoint geçersizse dosya sistemi önbelleğini ve TODO durumunu sıfırla
                         await reconcileTaskCache(projectDir, taskId, task);
 
-                        await logEvent(wsHub, projectId, "Teamleader", "delegate", "", `Görev "${task.title}" Coder'a iletildi. Kod üretiliyor...`, coderNodeId, tlId);
+                        await workflowLogEvent(wsHub, projectId, "Teamleader", "delegate", "", `Görev "${task.title}" Coder'a iletildi. Kod üretiliyor...`, coderNodeId, tlId);
 
                         await setupCoderProtocol(
                             tlDir,
@@ -520,7 +541,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const coderPrompt = coderAgent.buildPrompt(taskId, task.title, task.description, task.targetFiles, projectContext);
                         let coderOutput = await callAgentLLM('coder', coderPrompt, { signal: abortController.signal });
 
-                        await logEvent(wsHub, projectId, "Coder", "write", task.targetFiles.join(', '), `İlk kod bloğu üretildi. Reviewer denetim döngüsü başlatılıyor...`, coderNodeId, tlId);
+                        await workflowLogEvent(wsHub, projectId, "Coder", "write", task.targetFiles.join(', '), `İlk kod bloğu üretildi. Reviewer denetim döngüsü başlatılıyor...`, coderNodeId, tlId);
 
                         // 5. AŞAMA: REVIEWER & SELF-CORRECTION DÖNGÜSÜ
                         const loopResult = await executeCorrectionLoop({
@@ -532,16 +553,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             maxRetries: 2,
                             signal: abortController.signal,
                             onFeedback: async ({ iteration, feedback, summary }) => {
-                                await logEvent(
-                                    wsHub,
-                                    projectId,
-                                    "Reviewer",
-                                    "feedback",
-                                    "",
-                                    `[${iteration}. Tur İnceleme] Düzeltme istendi: ${feedback || summary}. Coder yeniden kodluyor...`,
-                                    coderNodeId,
-                                    tlId
-                                );
+                                await workflowLogEvent(wsHub,
+                                projectId,
+                                "Reviewer",
+                                "feedback",
+                                "",
+                                `[${iteration}. Tur İnceleme] Düzeltme istendi: ${feedback || summary}. Coder yeniden kodluyor...`,
+                                coderNodeId,
+                                tlId);
                             }
                         });
 
@@ -553,16 +572,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             await writeDurum(coderDir, 'BASARISIZ', `Görev Reviewer tarafından reddedildi: ${failReason}`);
                             await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\nReviewer Reddi:\n${failReason}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: REDDEDILDI\n\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`);
                             dag.setTaskStatus(taskId, 'failed', { error: failReason });
-                            await logEvent(
-                                wsHub,
-                                projectId,
-                                "Reviewer",
-                                "veto",
-                                task.targetFiles.join(', '),
-                                `[VETO] Görev "${task.title}" kalite kapısından geçemedi: ${failReason}`,
-                                coderNodeId,
-                                tlId
-                            );
+                            await workflowLogEvent(wsHub,
+                            projectId,
+                            "Reviewer",
+                            "veto",
+                            task.targetFiles.join(', '),
+                            `[VETO] Görev "${task.title}" kalite kapısından geçemedi: ${failReason}`,
+                            coderNodeId,
+                            tlId);
                             return { success: false, taskId, error: failReason };
                         }
 
@@ -576,7 +593,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             await writeDurum(coderDir, 'BASARISIZ', writeError);
                             await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
                             dag.setTaskStatus(taskId, 'failed', { error: writeError });
-                            await logEvent(wsHub, projectId, "Coder", "failure", "", writeError, coderNodeId, tlId);
+                            await workflowLogEvent(wsHub, projectId, "Coder", "failure", "", writeError, coderNodeId, tlId);
                             return { success: false, taskId, error: writeError };
                         }
 
@@ -606,7 +623,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             await writeDurum(coderDir, 'BASARISIZ', writeError);
                             await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
                             dag.setTaskStatus(taskId, 'failed', { error: writeError });
-                            await logEvent(wsHub, projectId, "Coder", "failure", incompleteTargetFiles.join(', '), writeError, coderNodeId, tlId);
+                            await workflowLogEvent(wsHub, projectId, "Coder", "failure", incompleteTargetFiles.join(', '), writeError, coderNodeId, tlId);
                             return { success: false, taskId, error: writeError };
                         }
                         const writtenFiles = coderOutput.files
@@ -637,23 +654,24 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                                     inputHash: inHash,
                                     outputHash: outHash,
                                     gateVersion: '1.0.0',
-                                    status: 'completed'
+                                    status: 'completed',
+                                    attemptId,
+                                    leaseOwner: effectiveLeaseOwner
                                 });
                             }
                         } catch (cpErr) {
+                            if (cpErr?.code === 'WORKFLOW_LEASE_FENCED') throw cpErr;
                             logWarning('workflow.checkpoint_save_failed', cpErr, { projectId, taskId });
                         }
                         dag.setTaskStatus(taskId, 'completed', coderOutput);
-                        await logEvent(
-                            wsHub,
-                            projectId,
-                            "Coder",
-                            "finish",
-                            task.targetFiles.join(', '),
-                            `Görev "${task.title}" tamamlandı (Reviewer Onaylı).`,
-                            coderNodeId,
-                            tlId
-                        );
+                        await workflowLogEvent(wsHub,
+                        projectId,
+                        "Coder",
+                        "finish",
+                        task.targetFiles.join(', '),
+                        `Görev "${task.title}" tamamlandı (Reviewer Onaylı).`,
+                        coderNodeId,
+                        tlId);
 
                         return { success: true, taskId, files: writtenFiles };
                     };
@@ -681,7 +699,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             .map(r => `• [${r.taskId}] ${r.error || 'Reviewer vetosu'}`)
                             .join('\n');
                         const errorDetail = `[DALGA VETOSU] Dalga içindeki şu görevler kalite kapısından geçemedi ve veto edildi:\n${failedList}\n\nSüreç güvenli modda duraklatıldı. Manager ile mimariyi düzenleyebilir veya 'Devam Et (Resume)' butonuna basarak yeniden deneyebilirsiniz.`;
-                        await logEvent(wsHub, projectId, "Workflow", "error", "", errorDetail, tlId);
+                        await workflowLogEvent(wsHub, projectId, "Workflow", "error", "", errorDetail, tlId);
                         throw new Error(`Orkestrasyon duraklatıldı: Görevler kalite kapısını geçemedi.`);
                     }
                 }
@@ -727,16 +745,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
             while (allQualityIssues.length > 0 && repairAttempts < MAX_REPAIR_ATTEMPTS) {
                 repairAttempts++;
-                await logEvent(
-                    wsHub,
-                    projectId,
-                    "Tester",
-                    "feedback",
-                    "",
-                    `[Kalite Kapısı Uyarısı - Onarım ${repairAttempts}/${MAX_REPAIR_ATTEMPTS}] Hatalar tespit edildi (${allQualityIssues.slice(0, 2).join(' | ')}). Coder otomatik onarım döngüsü başlatılıyor...`,
-                    "tester",
-                    "manager"
-                );
+                await workflowLogEvent(wsHub,
+                projectId,
+                "Tester",
+                "feedback",
+                "",
+                `[Kalite Kapısı Uyarısı - Onarım ${repairAttempts}/${MAX_REPAIR_ATTEMPTS}] Hatalar tespit edildi (${allQualityIssues.slice(0, 2).join(' | ')}). Coder otomatik onarım döngüsü başlatılıyor...`,
+                "tester",
+                "manager");
 
                 const coderAgent = getAgent('coder');
                 const existingFilesList = generatedProjectFiles.map(f => f.path).join(', ');
@@ -814,44 +830,53 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     'BASARISIZ',
                     `Proje kabul testlerini geçemedi: ${testResult.summary}`
                 );
-                await logEvent(
-                    wsHub,
-                    projectId,
-                    "Tester",
-                    "error",
-                    "",
-                    `Proje kabul testlerini geçemedi: ${testResult.summary}`,
-                    "tester",
-                    "manager"
-                );
+                await workflowLogEvent(wsHub,
+                projectId,
+                "Tester",
+                "error",
+                "",
+                `Proje kabul testlerini geçemedi: ${testResult.summary}`,
+                "tester",
+                "manager");
 
-                const latestContract = db.prepare(`
-                    SELECT id FROM project_contracts
-                    WHERE project_id = ? AND status = 'approved'
-                `).get(projectId);
-                if (latestContract) {
-                    for (const issue of testResult.issues) {
-                        const issueText = String(issue);
-                        const issueId = `repair-${crypto.randomUUID()}`;
-                        const fingerprint = crypto.createHash('md5')
-                            .update(issueText)
-                            .digest('hex');
-                        db.prepare(`
-                            INSERT INTO repair_issues (
-                                id, project_id, contract_id, run_id,
-                                fingerprint, severity, status, detail_json
-                            ) VALUES (?, ?, ?, ?, ?, 'critical', 'open', ?)
-                        `).run(
-                            issueId,
-                            projectId,
-                            latestContract.id,
-                            attemptId,
-                            fingerprint,
-                            JSON.stringify({ issue: issueText })
-                        );
+                db.exec('BEGIN IMMEDIATE;');
+                try {
+                    assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+                    const latestContract = db.prepare(`
+                        SELECT id FROM project_contracts
+                        WHERE project_id = ? AND status = 'approved'
+                    `).get(projectId);
+                    if (latestContract) {
+                        for (const issue of testResult.issues) {
+                            const issueText = String(issue);
+                            const issueId = `repair-${crypto.randomUUID()}`;
+                            const fingerprint = crypto.createHash('md5')
+                                .update(issueText)
+                                .digest('hex');
+                            db.prepare(`
+                                INSERT INTO repair_issues (
+                                    id, project_id, contract_id, run_id,
+                                    fingerprint, severity, status, detail_json,
+                                    attempt_id, lease_owner
+                                ) VALUES (?, ?, ?, ?, ?, 'critical', 'open', ?, ?, ?)
+                            `).run(
+                                issueId,
+                                projectId,
+                                latestContract.id,
+                                attemptId,
+                                fingerprint,
+                                JSON.stringify({ issue: issueText }),
+                                attemptId,
+                                effectiveLeaseOwner
+                            );
+                        }
                     }
+                    invalidateProjectCheckpoints(projectId);
+                    db.exec('COMMIT;');
+                } catch (repairError) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                    throw repairError;
                 }
-                invalidateProjectCheckpoints(projectId);
                 if (typeof dag !== 'undefined' && dag && typeof dag.getAllTasks === 'function') {
                     for (const t of dag.getAllTasks()) {
                         await reconcileTaskCache(projectDir, t.id, t);
@@ -884,7 +909,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     const failurePath = failurePaths[failedState.status] || ['verification_failed'];
                     for (const status of failurePath.slice(0, -1)) {
                         failedState.status = status;
-                        await writeProjectState(projectId, failedState);
+                        await workflowWriteState(projectId, failedState);
                     }
 
                     failedState.status = failurePath.at(-1);
@@ -907,7 +932,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         timestamp: `${formattedDate} ${formattedTime}`,
                         created_at: now.toISOString()
                     });
-                    await writeProjectState(projectId, failedState);
+                    await workflowWriteState(projectId, failedState);
                 }
                 return;
             }
@@ -1016,12 +1041,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 artifactId: artifact.id,
                 expectedRevision: (await readProjectState(projectId))?.revision ?? null,
                 complete: true,
+                attemptId,
+                leaseOwner: effectiveLeaseOwner,
                 options: { runId, activeJob: verifyIdentity, archiveBase64: verifyIdentity.archiveBase64, signal: abortController.signal }
             });
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
             }
-            await logEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
+            await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
         }
     } catch (error) {
         if (abortController.signal.aborted) {
@@ -1031,7 +1058,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             terminalStatus = 'failed';
             executionError = error.message;
             const errorLog = logError('workflow.execution_failed', error, { projectId, attemptId });
-            await logEvent(wsHub, projectId, "System", "error", "", `Süreç hatası. Referans: ${errorLog.requestId}`, "system");
+            await workflowLogEvent(wsHub, projectId, "System", "error", "", `Süreç hatası. Referans: ${errorLog.requestId}`, "system");
             const failedState = await readProjectState(projectId);
             if (failedState) {
                 // fail-closed pause check
@@ -1050,7 +1077,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     timestamp: `${errDate} ${errTime}`,
                     created_at: errNow.toISOString()
                 });
-                await writeProjectState(projectId, failedState);
+                await workflowWriteState(projectId, failedState);
             }
         }
     } finally {
@@ -1060,7 +1087,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             terminalStatus = 'paused';
         }
         if (attemptId) {
-            releaseWorkflowLease(attemptId, terminalStatus, { error: executionError });
+            releaseWorkflowLease(attemptId, terminalStatus, {
+                error: executionError,
+                leaseOwner: effectiveLeaseOwner
+            });
         }
     }
 }

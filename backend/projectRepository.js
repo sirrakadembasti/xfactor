@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { db, dbEvents, formatDBDate } from './db.js';
+import { assertWorkflowLease } from './workflowAttempts.js';
 import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
@@ -127,7 +128,9 @@ export function getProject(projectId) {
 export function projectStateTransitionInTransaction({
     projectId,
     expectedRevision,
-    statuses
+    statuses,
+    attemptId = null,
+    leaseOwner = null
 }) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID: "${projectId}"`);
@@ -136,12 +139,12 @@ export function projectStateTransitionInTransaction({
         throw new Error('At least one project status transition is required.');
     }
 
+    if (attemptId !== null || leaseOwner !== null) {
+        assertWorkflowLease(attemptId, leaseOwner, { projectId });
+    }
     const persisted = db.prepare(
         'SELECT status, revision FROM projects WHERE id = ?'
     ).get(projectId);
-    if (!persisted) {
-        throw new Error(`Project ${projectId} does not exist`);
-    }
     if (persisted.revision !== expectedRevision) {
         throw new Error(`CAS Revision conflict on project ${projectId}`);
     }
@@ -206,6 +209,23 @@ function isIsoTimestamp(value) {
         && date.getUTCMinutes() === Number(match[5])
         && date.getUTCSeconds() === Number(match[6])
         && date.getUTCMilliseconds() === Number(match[7] || 0);
+}
+
+function leaseOptionsFrom(...candidates) {
+    return candidates.find(candidate => candidate
+        && (Object.prototype.hasOwnProperty.call(candidate, 'attemptId')
+            || Object.prototype.hasOwnProperty.call(candidate, 'leaseOwner'))) || null;
+}
+
+function assertMutationLease(projectId, options) {
+    if (!options) return;
+    const { attemptId = null, leaseOwner = null } = options;
+    if (!attemptId || !leaseOwner) {
+        const error = new Error('attemptId and leaseOwner are required for fenced workflow mutations.');
+        error.code = 'WORKFLOW_LEASE_FENCED';
+        throw error;
+    }
+    assertWorkflowLease(attemptId, leaseOwner, { projectId });
 }
 
 /**
@@ -293,10 +313,20 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
     return { artifact, run };
 }
-export function completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision }) {
+export function completeVerifiedProject({
+    projectId,
+    contractId,
+    artifactId,
+    expectedRevision,
+    attemptId = null,
+    leaseOwner = null
+}) {
     if (!isValidProjectId(projectId)) throw new Error(`Invalid project ID: "${projectId}"`);
     db.exec('BEGIN IMMEDIATE;');
     try {
+        if (attemptId !== null || leaseOwner !== null) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
+        }
         const persisted = db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(projectId);
         if (!persisted) throw new Error(`Project ${projectId} does not exist.`);
         if (persisted.revision !== Number(expectedRevision || 1)) throw new Error(`CAS Revision conflict on project ${projectId}.`);
@@ -329,15 +359,15 @@ export function completeVerifiedProject({ projectId, contractId, artifactId, exp
             INSERT INTO completion_receipts (
                 id, project_id, contract_id, contract_hash, artifact_id, artifact_hash,
                 run_id, policy_version, mandatory_gate_digests,
-                previous_revision, next_revision, completed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                previous_revision, next_revision, completed_at, attempt_id, lease_owner
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             completionReceiptId, projectId, contractId, contract.contract_hash,
             artifactId, artifact.sha256, run.id, run.policy_version,
-            JSON.stringify(mandatoryGateDigests), previousRevision, nextRevision, completedAt
+            JSON.stringify(mandatoryGateDigests), previousRevision, nextRevision, completedAt,
+            attemptId, leaseOwner
         );
         db.exec('COMMIT;');
-        dbEvents.emit(`stateChange:${projectId}`, PROJECT_STATUS.COMPLETED);
         return { runId: run.id, artifactId, completionReceiptId, ...getProject(projectId) };
     } catch (error) {
         db.exec('ROLLBACK;');
@@ -364,6 +394,9 @@ export function appendProjectChatMessage(projectId, role, textContent, createdAt
 
 export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
+    const leaseOptions = typeof stateOrId === 'object' && stateOrId !== null
+        ? leaseOptionsFrom(stateOrEnv)
+        : leaseOptionsFrom(maybeEnv);
 
     if (!state || !isValidProjectId(state.id)) {
         throw new Error(`Invalid project state or project ID: ${state?.id}`);
@@ -378,6 +411,7 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
 
     db.exec('BEGIN IMMEDIATE;');
     try {
+        assertMutationLease(state.id, leaseOptions);
         const persisted = db.prepare(
             'SELECT status, revision FROM projects WHERE id = ?'
         ).get(state.id);

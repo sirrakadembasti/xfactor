@@ -4,7 +4,7 @@ import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
 import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk } from '../projectRepository.js';
-import { acquireWorkflowLease, releaseWorkflowLease } from '../workflowAttempts.js';
+import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getAllProjects, getProjectLogs, updateProject } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
@@ -444,7 +444,8 @@ export function createProjectRouter({
             state.status = PROJECT_STATUS.CONTRACT_APPROVED;
             await writeProjectState(id, state);
 
-            const lease = acquireWorkflowLease(id, `http-approve-${req.user.id}`);
+            const leaseOwner = `http-approve-${req.user.id}`;
+            const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
                 return res.json({
                     ...state,
@@ -459,7 +460,8 @@ export function createProjectRouter({
                 PROJECT_STATUS.IMPLEMENTING
             )) {
                 releaseWorkflowLease(lease.attempt.id, 'failed', {
-                    error: 'Invalid implementing transition'
+                    error: 'Invalid implementing transition',
+                    leaseOwner
                 });
                 return res.status(409).json({
                     error: 'Proje uygulama durumuna geçirilemedi.'
@@ -467,9 +469,12 @@ export function createProjectRouter({
             }
             approvedState.status = PROJECT_STATUS.IMPLEMENTING;
             approvedState.workflow = normalizeWorkflowState(null);
-            await writeProjectState(id, approvedState);
+            await writeProjectState(id, approvedState, {
+                attemptId: lease.attempt.id,
+                leaseOwner
+            });
 
-            executeProjectTasks(id, wsHub, lease.attempt.id).catch(error => {
+            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner).catch(error => {
                 logError('workflow.background_execution_failed', error, {
                     projectId: id,
                     attemptId: lease.attempt.id
@@ -915,21 +920,28 @@ export function createProjectRouter({
                 return res.status(400).json({ error: `Bu durumdan (${state.status}) çalışır duruma geçilemez.` });
             }
 
-            const lease = acquireWorkflowLease(id, `http-resume-${req.user.id}`);
+            const leaseOwner = `http-resume-${req.user.id}`;
+            const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
                 return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
             }
 
             if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
                 state.status = PROJECT_STATUS.PAUSED;
-                await writeProjectState(id, state);
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner
+                });
             }
 
             state.status = PROJECT_STATUS.IMPLEMENTING;
             state.chatHistory.push({ role: 'model', parts: [{ text: "▶️ Süreç kaldığı yerden devam ettiriliyor..." }] });
-            await writeProjectState(id, state);
+            await writeProjectState(id, state, {
+                attemptId: lease.attempt.id,
+                leaseOwner
+            });
 
-            executeProjectTasks(id, wsHub, lease.attempt.id).catch(error => {
+            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner).catch(error => {
                 logError('workflow.background_execution_failed', error, { projectId: id, attemptId: lease.attempt.id });
             });
             res.json({ ...state, attemptId: lease.attempt.id });
@@ -947,11 +959,18 @@ export function createProjectRouter({
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
 
+            const activeLease = getActiveWorkflowAttempt(id);
             abortProjectExecution(id, 'PAUSED');
 
             state.status = 'paused';
             state.chatHistory.push({ role: 'model', parts: [{ text: "Süreç tarafınızdan duraklatıldı. Hangi ajanların veya mimarinin değişmesini istersiniz?" }] });
-            await writeProjectState(id, state);
+            await writeProjectState(
+                id,
+                state,
+                activeLease
+                    ? { attemptId: activeLease.id, leaseOwner: activeLease.lease_owner }
+                    : null
+            );
 
             res.json(state);
         } catch (err) {
