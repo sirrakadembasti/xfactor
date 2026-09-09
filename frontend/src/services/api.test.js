@@ -54,8 +54,9 @@ describe('API request cancellation and identity handling', () => {
 
     expect(result.kind).toBe('rejected');
     expect(bodyAbortSeen).toBe(true);
-    expect(addListener.mock.calls.some(([type]) => type === 'abort')).toBe(true);
-    expect(removeListener.mock.calls.some(([type]) => type === 'abort')).toBe(true);
+    const addedHandler = addListener.mock.calls.find(([type]) => type === 'abort')?.[1];
+    expect(addedHandler).toEqual(expect.any(Function));
+    expect(removeListener).toHaveBeenCalledWith('abort', addedHandler);
   });
 
   test('encodes every identity used as a URL path segment', async () => {
@@ -70,28 +71,39 @@ describe('API request cancellation and identity handling', () => {
     const projectId = 'project/a b';
     const runId = 'run/a b';
     const checkId = 'check/a b';
+    const contractId = 'contract/a b';
 
     await client.getProject(projectId);
     await client.getProjectFiles(projectId);
     await client.getProjectLogs(projectId);
+    await client.getVerificationRuns(projectId);
+    await client.getVerificationRun(projectId, runId);
+    await client.getVerificationCheckLog(projectId, runId, checkId);
+    await client.getVerificationSummary(projectId, contractId, runId);
+    await client.previewRebuild(projectId, []);
     await client.sendChatMessage(projectId, 'message');
     await client.approveProject(projectId);
     await client.pauseProject(projectId);
     await client.resumeProject(projectId);
     await client.updateProject(projectId, { title: 'renamed' });
     await client.deleteProject(projectId);
-    await client.getVerificationCheckLog(projectId, runId, checkId);
 
     const urls = fetchMock.mock.calls.map(([url]) => url);
-    expect(urls).toEqual(expect.arrayContaining([
+    expect(urls).toEqual([
       'https://api.example.test/api/projects/project%2Fa%20b',
       'https://api.example.test/api/projects/project%2Fa%20b/files',
       'https://api.example.test/api/projects/project%2Fa%20b/logs',
+      'https://api.example.test/api/projects/project%2Fa%20b/verification-runs',
+      'https://api.example.test/api/projects/project%2Fa%20b/verification-runs/run%2Fa%20b',
+      'https://api.example.test/api/projects/project%2Fa%20b/verification-runs/run%2Fa%20b/checks/check%2Fa%20b/log',
+      'https://api.example.test/api/projects/project%2Fa%20b/verification-summary?contractId=contract%2Fa+b&runId=run%2Fa+b',
+      'https://api.example.test/api/projects/project%2Fa%20b/rebuild-preview',
       'https://api.example.test/api/projects/project%2Fa%20b/chat',
       'https://api.example.test/api/projects/project%2Fa%20b/approve',
       'https://api.example.test/api/projects/project%2Fa%20b/pause',
       'https://api.example.test/api/projects/project%2Fa%20b/resume',
-      'https://api.example.test/api/projects/project%2Fa%20b/verification-runs/run%2Fa%20b/checks/check%2Fa%20b/log'
-    ]));
+      'https://api.example.test/api/projects/project%2Fa%20b',
+      'https://api.example.test/api/projects/project%2Fa%20b'
+    ]);
   });
 });

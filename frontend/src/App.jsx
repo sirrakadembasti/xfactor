@@ -81,6 +81,8 @@ export default function App() {
   const authEpochRef = useRef(0);
   const projectEpochRef = useRef(0);
   const requestSeqRef = useRef(new Map());
+  const logoutPendingRef = useRef(null);
+  const [logoutPending, setLogoutPending] = useState(false);
   const wsBatchRef = useRef(null);
   const beginRequest = useCallback(key => {
     const next = (requestSeqRef.current.get(key) || 0) + 1;
@@ -481,6 +483,7 @@ export default function App() {
 
   const handleLogin = async e => {
     e.preventDefault();
+    if (logoutPendingRef.current) return;
     const identity = captureRequest('login', null);
     setLoginError('');
     try {
@@ -503,8 +506,18 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    const token = Symbol('logout');
+    logoutPendingRef.current = token;
+    setLogoutPending(true);
     becomeAnonymous();
-    await api.logout().catch(() => {});
+    try {
+      await api.logout();
+    } finally {
+      if (logoutPendingRef.current === token) {
+        logoutPendingRef.current = null;
+        setLogoutPending(false);
+      }
+    }
   };
 
   const handleCreateProject = async () => {
@@ -752,6 +765,7 @@ export default function App() {
         loginTotp={loginTotp}
         setLoginTotp={setLoginTotp}
         cancelMfa={cancelMfa}
+        logoutPending={logoutPending}
       />
     );
   }

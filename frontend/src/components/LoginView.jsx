@@ -10,7 +10,8 @@ export default function LoginView({
   mfaRequired,
   loginTotp,
   setLoginTotp,
-  cancelMfa
+  cancelMfa,
+  logoutPending = false
 }) {
   return (
     <div className="flex items-center justify-center h-screen bg-indigo-50 font-sans">
@@ -71,7 +72,11 @@ export default function LoginView({
             </>
           )}
           {loginError && <div role="alert" className="text-red-500 text-sm text-center font-medium">{loginError}</div>}
-          <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-semibold transition">
+          <button
+            type="submit"
+            disabled={logoutPending}
+            className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {mfaRequired ? 'Kodu Doğrula' : 'Giriş Yap'}
           </button>
           {mfaRequired && (

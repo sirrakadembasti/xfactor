@@ -227,6 +227,29 @@ describe('P9 project/auth request isolation', () => {
     expect(screen.queryByText('A restored after logout')).not.toBeInTheDocument();
   });
 
+  test('blocks a new login while a delayed logout is still settling', async () => {
+    const delayedLogout = deferred();
+    const spies = setupApi();
+    spies.logout.mockReturnValue(delayedLogout.promise);
+    const login = vi.spyOn(api, 'login').mockResolvedValue({ user: { username: 'admin' } });
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+    await screen.findByRole('button', { name: 'Giriş Yap' });
+
+    fireEvent.change(screen.getByLabelText('Kullanıcı Adı'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: 'password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Giriş Yap' }));
+    expect(login).not.toHaveBeenCalled();
+
+    delayedLogout.resolve({});
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Giriş Yap' })).not.toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Giriş Yap' }));
+    await waitFor(() => expect(login).toHaveBeenCalledTimes(1));
+  });
+
+
   test('drops a queued WebSocket batch when project and auth epochs change', async () => {
     const sockets = installWebSocket();
     setupApi();
@@ -256,7 +279,10 @@ describe('P9 project/auth request isolation', () => {
     const promptMock = vi.fn()
       .mockReturnValueOnce('Gamma')
       .mockReturnValueOnce('Alpha renamed');
-    const spies = setupApi();
+    const projectCState = { id: 'project-c', title: 'Gamma state', status: 'planning', chatHistory: [] };
+    const spies = setupApi({
+      stateFor: id => id === projectA.id ? projectA : id === projectB.id ? projectB : projectCState
+    });
     spies.createProject.mockReturnValue(delayedCreate.promise);
     spies.updateProject.mockReturnValue(delayedRename.promise);
     vi.stubGlobal('prompt', promptMock);
