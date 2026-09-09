@@ -85,6 +85,8 @@ export const buildWebSocketUrl = (apiBaseUrl = DEFAULT_API_URL) => {
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+const encodePathSegment = identity => encodeURIComponent(String(identity));
+
 export class ApiError extends Error {
   constructor(message, status = 500, code = 'API_ERROR', details = null) {
     super(message);
@@ -107,6 +109,10 @@ export const buildSessionRequestOptions = (options = {}) => {
 export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15000) => {
   const request = async (endpoint, options = {}) => {
     const { signal, timeoutMs = defaultTimeoutMs, ...fetchOpts } = options;
+    if (signal?.aborted) {
+      throw signal.reason || new DOMException('The operation was aborted.', 'AbortError');
+    }
+
     const headers = {
       'Content-Type': 'application/json',
       ...(fetchOpts.headers || {})
@@ -116,10 +122,12 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
     let timer;
     let requestSignal = signal;
     let internalController = null;
+    let forwardedAbortHandler = null;
     if (timeoutMs > 0 && typeof AbortController !== 'undefined') {
       internalController = new AbortController();
       if (signal) {
-        signal.addEventListener('abort', () => internalController.abort(signal.reason), { once: true });
+        forwardedAbortHandler = () => internalController.abort(signal.reason);
+        signal.addEventListener('abort', forwardedAbortHandler, { once: true });
       }
       timer = setTimeout(() => {
         internalController.abort(new Error('İstek zaman aşımına uğradı (Timeout)'));
@@ -127,32 +135,35 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       requestSignal = internalController.signal;
     }
 
-    let res;
     try {
-      res = await fetch(url, buildSessionRequestOptions({ ...fetchOpts, headers, signal: requestSignal }));
+      const res = await fetch(url, buildSessionRequestOptions({ ...fetchOpts, headers, signal: requestSignal }));
+      if (res.status === 401) {
+        throw new ApiError('Oturum süresi doldu veya yetkisiz erişim.', 401, 'UNAUTHORIZED');
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: res.statusText }));
+        throw new ApiError(
+          errorData.error || `HTTP error ${res.status}`,
+          res.status,
+          errorData.code || 'HTTP_ERROR',
+          errorData
+        );
+      }
+
+      return await res.json();
     } catch (err) {
       if (err.name === 'AbortError' || err.message?.includes('Timeout')) {
         throw err;
       }
+      if (err instanceof ApiError) throw err;
       throw new ApiError(err.message || 'Ağ bağlantı hatası', 0, 'NETWORK_ERROR');
     } finally {
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
+      if (signal && forwardedAbortHandler) {
+        signal.removeEventListener('abort', forwardedAbortHandler);
+      }
     }
-    if (res.status === 401) {
-      throw new ApiError('Oturum süresi doldu veya yetkisiz erişim.', 401, 'UNAUTHORIZED');
-    }
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: res.statusText }));
-      throw new ApiError(
-        errorData.error || `HTTP error ${res.status}`,
-        res.status,
-        errorData.code || 'HTTP_ERROR',
-        errorData
-      );
-    }
-
-    return res.json();
   };
 
   return {
@@ -168,7 +179,7 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
 
     // Projects
     getProjects: (opts = {}) => request('/projects', opts),
-    getProject: (id, opts = {}) => request(`/projects/${id}`, opts),
+    getProject: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}`, opts),
     createProject: (title, opts = {}) =>
       request('/projects', {
         method: 'POST',
@@ -177,8 +188,8 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       }),
 
     // Project Files & Logs
-    getProjectFiles: (id, opts = {}) => request(`/projects/${id}/files`, opts),
-    getProjectLogs: (id, opts = {}) => request(`/projects/${id}/logs`, opts),
+    getProjectFiles: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/files`, opts),
+    getProjectLogs: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/logs`, opts),
 
     // Read-only quality evidence
     getVerificationRuns: (id, opts = {}) => {
@@ -187,18 +198,18 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       if (cursor) params.set('cursor', cursor);
       if (limit !== undefined) params.set('limit', String(limit));
       const query = params.toString();
-      return request(`/projects/${id}/verification-runs${query ? `?${query}` : ''}`, requestOpts);
+      return request(`/projects/${encodePathSegment(id)}/verification-runs${query ? `?${query}` : ''}`, requestOpts);
     },
     getVerificationRun: (id, runId, opts = {}) =>
-      request(`/projects/${id}/verification-runs/${runId}`, opts),
+      request(`/projects/${encodePathSegment(id)}/verification-runs/${encodePathSegment(runId)}`, opts),
     getVerificationCheckLog: (id, runId, checkId, opts = {}) =>
-      request(`/projects/${id}/verification-runs/${runId}/checks/${checkId}/log`, opts),
+      request(`/projects/${encodePathSegment(id)}/verification-runs/${encodePathSegment(runId)}/checks/${encodePathSegment(checkId)}/log`, opts),
     getVerificationSummary: (id, contractId, runId, opts = {}) => {
       const params = new URLSearchParams({ contractId, runId });
-      return request(`/projects/${id}/verification-summary?${params.toString()}`, opts);
+      return request(`/projects/${encodePathSegment(id)}/verification-summary?${params.toString()}`, opts);
     },
     previewRebuild: (id, changedRequirementKeys, opts = {}) =>
-      request(`/projects/${id}/rebuild-preview`, {
+      request(`/projects/${encodePathSegment(id)}/rebuild-preview`, {
         method: 'POST',
         body: JSON.stringify({ changedRequirementKeys }),
         ...opts
@@ -206,41 +217,42 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
 
     // Execution & Interaction
     sendChatMessage: (id, message, opts = {}) =>
-      request(`/projects/${id}/chat`, {
+      request(`/projects/${encodePathSegment(id)}/chat`, {
         method: 'POST',
         body: JSON.stringify({ message }),
         ...opts
       }),
 
     approveProject: (id, opts = {}) =>
-      request(`/projects/${id}/approve`, {
+      request(`/projects/${encodePathSegment(id)}/approve`, {
         method: 'POST',
         ...opts
       }),
     pauseProject: (id, opts = {}) =>
-      request(`/projects/${id}/pause`, {
+      request(`/projects/${encodePathSegment(id)}/pause`, {
         method: 'POST',
         ...opts
       }),
 
     resumeProject: (id, opts = {}) =>
-      request(`/projects/${id}/resume`, {
+      request(`/projects/${encodePathSegment(id)}/resume`, {
         method: 'POST',
         ...opts
       }),
 
     updateProject: (id, updates, opts = {}) =>
-      request(`/projects/${id}`, {
+      request(`/projects/${encodePathSegment(id)}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
         ...opts
       }),
 
     deleteProject: (id, opts = {}) =>
-      request(`/projects/${id}`, {
+      request(`/projects/${encodePathSegment(id)}`, {
         method: 'DELETE',
         ...opts
       })
+
   };
 };
 export const api = createApiClient();
