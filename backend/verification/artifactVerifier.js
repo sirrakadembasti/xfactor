@@ -6,6 +6,7 @@ import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
+import { db as globalDatabase } from '../db.js';
 
 async function loadRepositoryDefaults() {
     const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
@@ -81,6 +82,23 @@ export async function verifyArtifact(
     { projectId, contractId, artifactId },
     options = {}
 ) {
+    if (options.db && options.db !== globalDatabase) {
+        const requiredCallbacks = [
+            'getArtifact',
+            'getArtifactFiles',
+            'updateArtifactStatus',
+            'createRun',
+            'updateRunStatus',
+            'createCheck',
+            'linkRequirementToCheck'
+        ];
+        const missingCallbacks = requiredCallbacks.filter(name => typeof options[name] !== 'function');
+        if (missingCallbacks.length > 0) {
+            throw new Error(
+                `Alternate verifier database requires connection-bound callbacks: ${missingCallbacks.join(', ')}`
+            );
+        }
+    }
     const runId = options.runId;
     const activeJob = options.activeJob;
     if (!runId) throw new Error('verifyArtifact requires a supplied runId from the execution engine');

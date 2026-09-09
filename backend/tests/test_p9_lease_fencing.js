@@ -464,5 +464,53 @@ await runAsyncTest('12. first verifier persistence write is atomic with lease as
         }
     });
 });
+await runAsyncTest('13. partial alternate-db verifier injection is rejected before callbacks', async () => {
+    await withProject('Alternate verifier database', async project => {
+        const fixture = await makeVerificationFixture(project);
+        const alternateDatabase = new DatabaseSync(isolated.dbPath);
+        let callbackCalls = 0;
+
+        try {
+            await assert.rejects(
+                () => verifyArtifact(
+                    { projectId: project.id, contractId: fixture.contractId, artifactId: fixture.artifactId },
+                    {
+                        ...fixture,
+                        runId: fixture.activeJob.runId,
+                        db: alternateDatabase,
+                        getArtifact: () => {
+                            callbackCalls++;
+                            return fixture.artifact;
+                        },
+                        getArtifactFiles: () => {
+                            callbackCalls++;
+                            return [{
+                                path: 'package.json',
+                                sha256: createHash('sha256').update('lease-fencing-fixture').digest('hex'),
+                                size: Buffer.byteLength('lease-fencing-fixture')
+                            }];
+                        },
+                        createRun: () => { callbackCalls++; },
+                        updateRunStatus: () => { callbackCalls++; },
+                        updateArtifactStatus: () => { callbackCalls++; },
+                        linkRequirementToCheck: () => { callbackCalls++; },
+                        executionClient: {
+                            verifyArtifact: async workerJob => ({
+                                ...workerJob,
+                                status: 'failed',
+                                result: {
+                                    checks: [{ name: 'partial-db-check', status: 'failed', requirementIds: [] }]
+                                }
+                            })
+                        }
+                    }
+                )
+            );
+            assert.equal(callbackCalls, 0, 'Alternate-db validation must precede all repository callbacks');
+        } finally {
+            alternateDatabase.close();
+        }
+    });
+});
 finish();
 await isolated.cleanup();
