@@ -1,4 +1,6 @@
 import { db } from '../db.js';
+import { canonicalizeTaskDependencies } from './dag.js';
+
 
 export function saveCheckpoint({
     projectId,
@@ -180,7 +182,8 @@ export function invalidateDownstreamCheckpoints(projectId, rootTaskIds = [], all
     while (queue.length > 0) {
         const currentId = queue.shift();
         for (const task of allTasks) {
-            if (Array.isArray(task.dependencies) && task.dependencies.includes(currentId)) {
+            const dependencies = canonicalizeTaskDependencies(task?.dependencies || []);
+            if (dependencies.includes(currentId)) {
                 if (!toInvalidate.has(task.id)) {
                     toInvalidate.add(task.id);
                     queue.push(task.id);

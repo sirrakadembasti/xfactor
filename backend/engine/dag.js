@@ -3,6 +3,31 @@
  * Referans: Archon Workflow Engine
  */
 
+/**
+ * Convert any iterable dependency collection into the one canonical identity
+ * sequence used by the DAG and checkpoint code.
+ *
+ * IDs are trimmed, de-duplicated, and sorted without remapping unknown IDs.
+ * A string is rejected rather than being treated as an iterable of characters.
+ */
+export function canonicalizeTaskDependencies(dependencies = []) {
+    if (dependencies === null || dependencies === undefined) {
+        return [];
+    }
+    if (typeof dependencies === 'string' || typeof dependencies[Symbol.iterator] !== 'function') {
+        throw new TypeError('Task dependencies must be an iterable of dependency IDs.');
+    }
+
+    const canonical = new Set();
+    for (const dependencyId of dependencies) {
+        if (typeof dependencyId !== 'string' || dependencyId.trim().length === 0) {
+            throw new TypeError('Task dependency IDs must be non-empty strings.');
+        }
+        canonical.add(dependencyId.trim());
+    }
+    return [...canonical].sort();
+}
+
 export class TaskDAG {
     constructor() {
         this.tasks = new Map(); // id -> { id, title, description, dependencies: Set, targetFiles, status: 'pending'|'running'|'completed'|'blocked'|'failed', result: null }
@@ -19,7 +44,7 @@ export class TaskDAG {
             id,
             title: title || id,
             description: description || '',
-            dependencies: new Set(dependencies),
+            dependencies: new Set(canonicalizeTaskDependencies(dependencies)),
             targetFiles: targetFiles || [],
             meta: { ...meta },
             status: 'pending',

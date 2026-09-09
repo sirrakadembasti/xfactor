@@ -441,16 +441,20 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const coderNodeId = `${tlId}.${taskId}`;
                         const coderDir = path.join(tlDir, taskId);
 
-                        // Bağımlı görevlerin hedef dosyalarını topla
-                        const depTargetFiles = [];
-                        if (Array.isArray(task.dependencies)) {
-                            for (const depId of task.dependencies) {
-                                const depTask = dag.getTask(depId);
-                                if (depTask && Array.isArray(depTask.targetFiles)) {
-                                    depTargetFiles.push(...depTask.targetFiles);
+                        // Bağımlı görevlerin hedef dosyalarını deterministik sırayla topla.
+                        const depTargetFileSet = new Set();
+                        for (const depId of task.dependencies || []) {
+                            const depTask = dag.getTask(depId);
+                            if (!depTask) {
+                                throw new Error(`Görev "${taskId}" tanımsız bağımlılığa sahip: "${depId}"`);
+                            }
+                            for (const targetFile of depTask.targetFiles || []) {
+                                if (typeof targetFile === 'string' && targetFile.length > 0) {
+                                    depTargetFileSet.add(targetFile);
                                 }
                             }
                         }
+                        const depTargetFiles = [...depTargetFileSet].sort();
 
                         const latestContract = db.prepare(`
                             SELECT id, contract_hash FROM project_contracts
@@ -562,11 +566,36 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             return { success: false, taskId, error: failReason };
                         }
 
+                        const expectedTargetFiles = [...new Set(
+                            (Array.isArray(task.targetFiles) ? task.targetFiles : [])
+                                .filter(file => typeof file === 'string' && file.length > 0)
+                                .map(file => path.normalize(file).replace(/\\/g, '/'))
+                        )].sort();
+                        if (expectedTargetFiles.length === 0) {
+                            const writeError = 'Görev tamamlanamadı: kabul edilmiş hedef dosya yok.';
+                            await writeDurum(coderDir, 'BASARISIZ', writeError);
+                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
+                            dag.setTaskStatus(taskId, 'failed', { error: writeError });
+                            await logEvent(wsHub, projectId, "Coder", "failure", "", writeError, coderNodeId, tlId);
+                            return { success: false, taskId, error: writeError };
+                        }
+
                         // Nihai onaylı dosyaları güvenli path guard üzerinden yaz.
                         const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files, task.targetFiles);
-                        const writtenPathSet = new Set(writtenMeta.map(file => file.path));
+                        const writtenPathSet = new Set(
+                            writtenMeta.map(file => path.normalize(file.path).replace(/\\/g, '/'))
+                        );
+                        const missingTargetFiles = expectedTargetFiles.filter(file => !writtenPathSet.has(file));
+                        if (missingTargetFiles.length > 0) {
+                            const writeError = `Görev tamamlanamadı: kabul edilmiş hedef dosyalar yazılmadı (${missingTargetFiles.join(', ')}).`;
+                            await writeDurum(coderDir, 'BASARISIZ', writeError);
+                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
+                            dag.setTaskStatus(taskId, 'failed', { error: writeError });
+                            await logEvent(wsHub, projectId, "Coder", "failure", missingTargetFiles.join(', '), writeError, coderNodeId, tlId);
+                            return { success: false, taskId, error: writeError };
+                        }
                         const writtenFiles = coderOutput.files
-                            .filter(file => writtenPathSet.has(file.path))
+                            .filter(file => writtenPathSet.has(path.normalize(file.path).replace(/\\/g, '/')))
                             .map(file => ({ path: file.path, content: file.content }));
 
                         const statusDetail = `Görev başarıyla tamamlandı ve Reviewer tarafından onaylandı: ${coderOutput.summary}`;

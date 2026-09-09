@@ -2,6 +2,24 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
+import { canonicalizeTaskDependencies } from './dag.js';
+
+function canonicalizeFilePaths(filePaths) {
+    if (filePaths === null || filePaths === undefined || typeof filePaths === 'string') {
+        return [];
+    }
+    if (typeof filePaths[Symbol.iterator] !== 'function') {
+        return [];
+    }
+
+    const canonical = new Set();
+    for (const filePath of filePaths) {
+        if (typeof filePath === 'string' && filePath.length > 0) {
+            canonical.add(filePath);
+        }
+    }
+    return [...canonical].sort();
+}
 
 export function computeTaskSpecHash(task) {
     if (!task || typeof task !== 'object') return '0'.repeat(64);
@@ -10,8 +28,8 @@ export function computeTaskSpecHash(task) {
         id: task.id || '',
         name: task.name || '',
         description: task.description || '',
-        targetFiles: Array.isArray(task.targetFiles) ? [...task.targetFiles].sort() : [],
-        dependencies: Array.isArray(task.dependencies) ? [...task.dependencies].sort() : [],
+        targetFiles: canonicalizeFilePaths(task.targetFiles),
+        dependencies: canonicalizeTaskDependencies(task.dependencies || []),
         domain: task.domain || ''
     };
 
@@ -21,9 +39,7 @@ export function computeTaskSpecHash(task) {
 }
 
 export async function computeInputHash(projectDir, dependencyTargetFiles = []) {
-    const sortedFiles = Array.isArray(dependencyTargetFiles)
-        ? [...dependencyTargetFiles].sort()
-        : [];
+    const sortedFiles = canonicalizeFilePaths(dependencyTargetFiles);
 
     if (sortedFiles.length === 0) {
         return crypto.createHash('sha256').update('EMPTY_INPUT').digest('hex');
@@ -46,9 +62,7 @@ export async function computeInputHash(projectDir, dependencyTargetFiles = []) {
 }
 
 export async function computeOutputHash(projectDir, targetFiles = []) {
-    const sortedFiles = Array.isArray(targetFiles)
-        ? [...targetFiles].sort()
-        : [];
+    const sortedFiles = canonicalizeFilePaths(targetFiles);
 
     if (sortedFiles.length === 0) {
         return crypto.createHash('sha256').update('EMPTY_OUTPUT').digest('hex');
@@ -109,9 +123,25 @@ export async function verifyTaskCheckpoint({
         return false;
     }
 
-    const currentOutputHash = await computeOutputHash(projectDir, task.targetFiles || []);
+    const targetFiles = canonicalizeFilePaths(task?.targetFiles);
+    if (targetFiles.length === 0) {
+        return false;
+    }
+
+    const currentOutputHash = await computeOutputHash(projectDir, targetFiles);
     if (checkpoint.output_hash !== currentOutputHash) {
         return false;
+    }
+
+    for (const relFile of targetFiles) {
+        try {
+            const stat = await fs.stat(path.join(projectDir, relFile));
+            if (!stat.isFile() || stat.size === 0) {
+                return false;
+            }
+        } catch {
+            return false;
+        }
     }
 
     return true;
