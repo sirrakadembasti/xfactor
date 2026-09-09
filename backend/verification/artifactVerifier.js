@@ -4,6 +4,7 @@ import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
+import { inspectZipEntries } from './safeExtractor.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
 
 async function loadRepositoryDefaults() {
@@ -54,6 +55,19 @@ function canonicalArchivePath(value) {
     const canonical = normalized.split('/').filter(Boolean).join('/');
     if (!canonical || canonical === '.') throw new Error(`Invalid archive path: ${value}`);
     return canonical;
+}
+
+function runLeaseTransaction(database, assertLease, write) {
+    database.exec('BEGIN IMMEDIATE;');
+    try {
+        assertLease();
+        const result = write();
+        database.exec('COMMIT;');
+        return result;
+    } catch (error) {
+        try { database.exec('ROLLBACK;'); } catch {}
+        throw error;
+    }
 }
 
 /**
@@ -176,18 +190,21 @@ export async function verifyArtifact(
     compare(submitted, persistedFiles, 'file rows');
     let runCreated = false;
     try {
-        assertLease();
-        createRun({
-            id: runId, projectId, contractId, status: 'queued',
-            policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
+        runLeaseTransaction(database, assertLease, () => {
+            createRun({
+                id: runId, projectId, contractId, status: 'queued',
+                policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
+            });
         });
         runCreated = true;
-        assertLease();
-        updateRunStatus(runId, 'running');
-        assertLease();
-        updateArtifactStatus({
-            projectId, contractId, artifactId,
-            status: 'verification_pending', verificationRunId: runId
+        runLeaseTransaction(database, assertLease, () => {
+            updateRunStatus(runId, 'running');
+        });
+        runLeaseTransaction(database, assertLease, () => {
+            updateArtifactStatus({
+                projectId, contractId, artifactId,
+                status: 'verification_pending', verificationRunId: runId
+            });
         });
 
         const workerJob = {
@@ -204,37 +221,39 @@ export async function verifyArtifact(
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
         for (const check of workerResult.checks || []) {
             const checkId = check.id || crypto.randomUUID();
-            assertLease();
-            createCheck({
-                id: checkId,
-                contractId,
-                runId,
-                gateName: check.gateName || check.name,
-                applicability: check.applicability || 'MANDATORY',
-                status: checkStatus(check.status),
-                command: check.command || null,
-                cwd: check.cwd || null,
-                startedAt: check.startedAt || new Date().toISOString(),
-                exitCode: check.exitCode ?? null,
-                stdoutDigest: check.stdoutDigest || null,
-                stderrDigest: check.stderrDigest || null,
-                evidenceJson: check.evidence ?? check.evidenceJson ?? null,
-                timedOut: Boolean(check.timedOut)
+            runLeaseTransaction(database, assertLease, () => {
+                createCheck({
+                    id: checkId,
+                    contractId,
+                    runId,
+                    gateName: check.gateName || check.name,
+                    applicability: check.applicability || 'MANDATORY',
+                    status: checkStatus(check.status),
+                    command: check.command || null,
+                    cwd: check.cwd || null,
+                    startedAt: check.startedAt || new Date().toISOString(),
+                    exitCode: check.exitCode ?? null,
+                    stdoutDigest: check.stdoutDigest || null,
+                    stderrDigest: check.stderrDigest || null,
+                    evidenceJson: check.evidence ?? check.evidenceJson ?? null,
+                    timedOut: Boolean(check.timedOut)
+                });
             });
             for (const requirementId of check.requirementIds || []) {
-                assertLease();
-                linkRequirementToCheck({ contractId, requirementId, verificationCheckId: checkId });
+                runLeaseTransaction(database, assertLease, () => {
+                    linkRequirementToCheck({ contractId, requirementId, verificationCheckId: checkId });
+                });
             }
         }
         const passed = result.status === 'completed';
-        assertLease();
-        updateArtifactStatus({
-            projectId, contractId, artifactId,
-            status: passed ? 'verified' : 'rejected',
-            verificationRunId: runId
+        runLeaseTransaction(database, assertLease, () => {
+            updateArtifactStatus({
+                projectId, contractId, artifactId,
+                status: passed ? 'verified' : 'rejected',
+                verificationRunId: runId
+            });
+            updateRunStatus(runId, passed ? 'verified' : 'failed');
         });
-        assertLease();
-        updateRunStatus(runId, passed ? 'verified' : 'failed');
         return {
             status: passed ? 'verified' : 'failed',
             passed,
@@ -244,14 +263,16 @@ export async function verifyArtifact(
     } catch (error) {
         if (runCreated) {
             try {
-                assertLease();
-                updateRunStatus(runId, 'failed');
+                runLeaseTransaction(database, assertLease, () => {
+                    updateRunStatus(runId, 'failed');
+                });
             } catch {}
             try {
-                assertLease();
-                updateArtifactStatus({
-                    projectId, contractId, artifactId,
-                    status: 'rejected', verificationRunId: runId
+                runLeaseTransaction(database, assertLease, () => {
+                    updateArtifactStatus({
+                        projectId, contractId, artifactId,
+                        status: 'rejected', verificationRunId: runId
+                    });
                 });
             } catch {}
         }

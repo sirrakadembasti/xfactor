@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import JSZip from 'jszip';
 import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
@@ -15,6 +17,7 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const { createProject, deleteProject, getProject, saveProjectState, projectStateTransitionInTransaction } = await import('../projectRepository.js');
 const { verifyArtifactAndProject } = await import('../verification/verificationCli.js');
+const { verifyArtifact } = await import('../verification/artifactVerifier.js');
 const {
     acquireWorkflowLease,
     getActiveWorkflowAttempt,
@@ -34,6 +37,54 @@ async function withProject(title, fn) {
     } finally {
         await deleteProject(project.id).catch(() => {});
     }
+}
+
+async function makeVerificationFixture(project) {
+    const contractId = `contract-lease-${project.id}`;
+    const contractJson = JSON.stringify({ summary: 'Lease fencing fixture' });
+    const contractHash = createHash('sha256').update(contractJson).digest('hex');
+    db.prepare(`
+        INSERT INTO project_contracts (
+            id, project_id, revision, status, contract_json, contract_hash
+        ) VALUES (?, ?, 1, 'approved', ?, ?)
+    `).run(contractId, project.id, contractJson, contractHash);
+
+    const content = Buffer.from('lease-fencing-fixture');
+    const archive = new JSZip();
+    archive.file('package.json', content);
+    const archiveBytes = await archive.generateAsync({ type: 'nodebuffer' });
+    const archiveSha256 = createHash('sha256').update(archiveBytes).digest('hex');
+    const artifactId = `artifact-lease-${project.id}`;
+    const manifest = [{
+        path: 'package.json',
+        sha256: createHash('sha256').update(content).digest('hex'),
+        size: content.length
+    }];
+
+    return {
+        contractId,
+        artifactId,
+        artifact: {
+            id: artifactId,
+            projectId: project.id,
+            contractId,
+            sha256: archiveSha256,
+            manifestJson: JSON.stringify(manifest)
+        },
+        archiveBase64: archiveBytes.toString('base64'),
+        activeJob: {
+            version: 1,
+            projectId: project.id,
+            contractId,
+            contractHash,
+            revision: 1,
+            artifactId,
+            jobId: `job-${project.id}`,
+            nonce: 'lease-fencing-nonce',
+            runId: `run-${project.id}`,
+            deadline: Date.now() + 60000
+        }
+    };
 }
 
 function runLeaseProcess(projectId, leaseOwner) {
@@ -319,6 +370,99 @@ await runAsyncTest('10. startup stale recovery increments project revision with 
     });
 });
 
+await runAsyncTest('11. verifier accepts a valid archive path without import/runtime errors', async () => {
+    await withProject('Verifier archive path', async project => {
+        const fixture = await makeVerificationFixture(project);
+        const result = await verifyArtifact(
+            { projectId: project.id, contractId: fixture.contractId, artifactId: fixture.artifactId },
+            {
+                ...fixture,
+                runId: fixture.activeJob.runId,
+                db,
+                getArtifact: () => fixture.artifact,
+                getArtifactFiles: () => [{
+                    path: 'package.json',
+                    sha256: createHash('sha256').update('lease-fencing-fixture').digest('hex'),
+                    size: Buffer.byteLength('lease-fencing-fixture')
+                }],
+                executionClient: {
+                    verifyArtifact: async workerJob => ({
+                        ...workerJob,
+                        status: 'failed',
+                        result: { checks: [] }
+                    })
+                },
+                createRun: () => {},
+                updateRunStatus: () => {},
+                updateArtifactStatus: () => {},
+                createCheck: () => {},
+                linkRequirementToCheck: () => {}
+            }
+        );
+        assert.equal(result.status, 'failed');
+        assert.equal(result.passed, false);
+    });
+});
 
+await runAsyncTest('12. first verifier persistence write is atomic with lease assertion', async () => {
+    await withProject('Atomic verifier persistence', async project => {
+        const fixture = await makeVerificationFixture(project);
+        const oldLease = acquireWorkflowLease(project.id, 'verifier-old-owner');
+        const secondConnection = new DatabaseSync(isolated.dbPath);
+        const persistedRuns = [];
+        let replacementLease = null;
+        try {
+            await assert.rejects(
+                () => verifyArtifact(
+                    { projectId: project.id, contractId: fixture.contractId, artifactId: fixture.artifactId },
+                    {
+                        ...fixture,
+                        runId: fixture.activeJob.runId,
+                        db,
+                        attemptId: oldLease.attempt.id,
+                        leaseOwner: 'verifier-old-owner',
+                        getArtifact: () => fixture.artifact,
+                        getArtifactFiles: () => [{
+                            path: 'package.json',
+                            sha256: createHash('sha256').update('lease-fencing-fixture').digest('hex'),
+                            size: Buffer.byteLength('lease-fencing-fixture')
+                        }],
+                        createRun: () => {
+                            secondConnection.prepare(
+                                'UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?'
+                            ).run(sqlUtcTimestamp(Date.now() - 60000), oldLease.attempt.id);
+                            replacementLease = acquireWorkflowLease(project.id, 'verifier-new-owner', {
+                                database: secondConnection
+                            });
+                            if (replacementLease?.acquired) persistedRuns.push('run-created');
+                            throw new Error('stop after first persistence write');
+                        },
+                        updateRunStatus: () => {},
+                        updateArtifactStatus: () => {},
+                        createCheck: () => {},
+                        linkRequirementToCheck: () => {},
+                        executionClient: {
+                            verifyArtifact: async workerJob => ({
+                                ...workerJob,
+                                status: 'failed',
+                                result: { checks: [] }
+                            })
+                        }
+                    }
+                )
+            );
+            assert.equal(persistedRuns.length, 0, 'Stale worker must not persist the first verifier write');
+            assert.equal(getActiveWorkflowAttempt(project.id)?.lease_owner, 'verifier-old-owner');
+        } finally {
+            if (replacementLease?.acquired) {
+                releaseWorkflowLease(replacementLease.attempt.id, 'completed', {
+                    leaseOwner: 'verifier-new-owner',
+                    database: secondConnection
+                });
+            }
+            secondConnection.close();
+        }
+    });
+});
 finish();
 await isolated.cleanup();
