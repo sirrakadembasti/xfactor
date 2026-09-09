@@ -1,14 +1,17 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { isIP } from 'node:net';
+import { normalizeOrigin } from './config.js';
 
 export function isAllowedOrigin(origin, allowedOrigins = []) {
     if (typeof origin !== 'string') {
         return false;
     }
 
-    const normalizedOrigin = origin.trim();
-    if (!normalizedOrigin) {
+    let normalizedOrigin;
+    try {
+        normalizedOrigin = normalizeOrigin(origin);
+    } catch {
         return false;
     }
 
@@ -16,7 +19,13 @@ export function isAllowedOrigin(origin, allowedOrigins = []) {
         ? allowedOrigins
         : String(allowedOrigins || '').split(',').map((value) => value.trim()).filter(Boolean);
 
-    return origins.some((allowed) => allowed === normalizedOrigin);
+    return origins.some((allowed) => {
+        try {
+            return normalizeOrigin(allowed) === normalizedOrigin;
+        } catch {
+            return false;
+        }
+    });
 }
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -52,13 +61,47 @@ export function isSecureTransportRequest(req, { production = false, trustProxy =
         ?.toLowerCase();
     return forwardedProtocol === 'https';
 }
-export function createSecurityHeadersMiddleware({ production = false } = {}) {
+function normalizeConfiguredOrigins(origins, production) {
+    const values = Array.isArray(origins)
+        ? origins
+        : String(origins || '').split(',').map(value => value.trim()).filter(Boolean);
+    const normalized = [];
+    const seen = new Set();
+    for (const value of values) {
+        try {
+            const origin = normalizeOrigin(value, { production });
+            if (!seen.has(origin)) {
+                seen.add(origin);
+                normalized.push(origin);
+            }
+        } catch {
+            // Runtime config rejects invalid values before this middleware is installed.
+        }
+    }
+    return normalized;
+}
+
+function websocketOrigin(origin) {
+    return origin.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+}
+
+export function createSecurityHeadersMiddleware({ production = false, allowedOrigins = null } = {}) {
     return (req, res, next) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('X-Frame-Options', 'DENY');
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        const connectSrc = production ? "'self' wss:" : "'self' ws: wss:";
-        res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; frame-ancestors 'none';`);
+        const configuredOrigins = normalizeConfiguredOrigins(
+            allowedOrigins ?? process.env.ALLOWED_ORIGINS,
+            production
+        );
+        const connectSrc = production
+            ? ["'self'", ...configuredOrigins, ...configuredOrigins.map(websocketOrigin)].join(' ')
+            : "'self' ws: wss:";
+        const workerSrc = production ? " worker-src 'self';" : '';
+        res.setHeader(
+            'Content-Security-Policy',
+            `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc};${workerSrc} frame-ancestors 'none';`
+        );
         if (production && isSecureTransportRequest(req, { production: true, trustProxy: 'loopback' })) {
             res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }

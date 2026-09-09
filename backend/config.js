@@ -4,16 +4,58 @@ function normalize(value) {
     return String(value ?? '').trim();
 }
 
-function parseAllowedOrigins(value) {
-    return normalize(value)
+const BROWSER_ORIGIN_PROTOCOLS = new Set(['http:', 'https:']);
+
+export function normalizeOrigin(value, { production = false } = {}) {
+    const raw = normalize(value);
+    if (!raw) {
+        throw new Error('origin is empty');
+    }
+
+    let parsed;
+    try {
+        parsed = new URL(raw);
+    } catch {
+        throw new Error(`origin "${raw}" is not a valid URL`);
+    }
+
+    if (!BROWSER_ORIGIN_PROTOCOLS.has(parsed.protocol)) {
+        throw new Error(`origin "${raw}" must use HTTP or HTTPS`);
+    }
+    if (production && parsed.protocol !== 'https:') {
+        throw new Error(`origin "${raw}" must use HTTPS in production`);
+    }
+    if (parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+        throw new Error(`origin "${raw}" must contain only scheme, host, and optional port`);
+    }
+
+    const normalized = parsed.origin;
+    if (!normalized || normalized === 'null') {
+        throw new Error(`origin "${raw}" is not a usable origin`);
+    }
+    return normalized;
+}
+
+function parseAllowedOrigins(value, options = {}) {
+    const entries = normalize(value)
         .split(',')
         .map(origin => origin.trim())
         .filter(Boolean);
+    const origins = [];
+    const seen = new Set();
+    for (const entry of entries) {
+        const origin = normalizeOrigin(entry, options);
+        if (!seen.has(origin)) {
+            seen.add(origin);
+            origins.push(origin);
+        }
+    }
+    return origins;
 }
 
 function isHttpsOrigin(origin) {
     try {
-        return new URL(origin).protocol === 'https:';
+        return normalizeOrigin(origin, { production: true }).startsWith('https://');
     } catch {
         return false;
     }
@@ -23,19 +65,26 @@ export function validateRuntimeConfig(env = process.env) {
     const nodeEnvironment = normalize(env.NODE_ENV).toLowerCase() || 'development';
     const production = nodeEnvironment === 'production';
     const trustProxy = normalize(env.TRUST_PROXY).toLowerCase();
-    const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS);
+    const issues = [];
+    let allowedOrigins = [];
+    try {
+        allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS, { production });
+    } catch (error) {
+        issues.push(`ALLOWED_ORIGINS is invalid: ${error.message}`);
+    }
     const artifactsRoot = normalize(env.ARTIFACTS_ROOT);
     const projectsRoot = normalize(env.PROJECTS_ROOT);
     const dbPath = normalize(env.DB_PATH);
     const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8080';
     const workerToken = normalize(env.EXECUTION_WORKER_TOKEN);
-    const issues = [];
 
     if (production) {
         if (trustProxy !== 'loopback') {
             issues.push('TRUST_PROXY must be loopback in production');
         }
-        if (allowedOrigins.length === 0 || allowedOrigins.some(origin => !isHttpsOrigin(origin))) {
+        if (allowedOrigins.length === 0) {
+            issues.push('ALLOWED_ORIGINS must contain at least one HTTPS origin in production');
+        } else if (allowedOrigins.some(origin => !isHttpsOrigin(origin))) {
             issues.push('ALLOWED_ORIGINS must contain only HTTPS origins in production');
         }
     }
@@ -75,3 +124,4 @@ export function validateRuntimeConfig(env = process.env) {
         EXECUTION_WORKER_TOKEN: workerToken,
     };
 }
+
