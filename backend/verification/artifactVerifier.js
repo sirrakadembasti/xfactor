@@ -4,7 +4,7 @@ import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
-import { inspectZipEntries } from './safeExtractor.js';
+import { assertWorkflowLease } from '../workflowAttempts.js';
 
 async function loadRepositoryDefaults() {
     const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
@@ -94,6 +94,11 @@ export async function verifyArtifact(
     const updateRunStatus = options.updateRunStatus || loaded.updateRunStatus;
     const createCheck = options.createCheck || loaded.createCheck;
     const linkRequirementToCheck = options.linkRequirementToCheck || loaded.linkRequirementToCheck;
+    const assertLease = () => {
+        if (options.attemptId !== undefined || options.leaseOwner !== undefined) {
+            assertWorkflowLease(options.attemptId, options.leaseOwner, { projectId, database });
+        }
+    };
     const artifact = getArtifact({ projectId, contractId, artifactId });
     if (!artifact) throw new Error(`Artifact ${artifactId} for project ${projectId} not found.`);
 
@@ -171,12 +176,15 @@ export async function verifyArtifact(
     compare(submitted, persistedFiles, 'file rows');
     let runCreated = false;
     try {
+        assertLease();
         createRun({
             id: runId, projectId, contractId, status: 'queued',
             policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
         });
         runCreated = true;
+        assertLease();
         updateRunStatus(runId, 'running');
+        assertLease();
         updateArtifactStatus({
             projectId, contractId, artifactId,
             status: 'verification_pending', verificationRunId: runId
@@ -188,6 +196,7 @@ export async function verifyArtifact(
             archiveBase64
         };
         const result = await executionClient.verifyArtifact(workerJob, { signal: options.signal });
+        assertLease();
         assertIdentity(result, expected);
         if (!TERMINAL_WORKER_STATES.has(result.status)) {
             throw new Error(`Worker returned illegal terminal status: ${result.status}`);
@@ -195,6 +204,7 @@ export async function verifyArtifact(
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
         for (const check of workerResult.checks || []) {
             const checkId = check.id || crypto.randomUUID();
+            assertLease();
             createCheck({
                 id: checkId,
                 contractId,
@@ -212,15 +222,18 @@ export async function verifyArtifact(
                 timedOut: Boolean(check.timedOut)
             });
             for (const requirementId of check.requirementIds || []) {
+                assertLease();
                 linkRequirementToCheck({ contractId, requirementId, verificationCheckId: checkId });
             }
         }
         const passed = result.status === 'completed';
+        assertLease();
         updateArtifactStatus({
             projectId, contractId, artifactId,
             status: passed ? 'verified' : 'rejected',
             verificationRunId: runId
         });
+        assertLease();
         updateRunStatus(runId, passed ? 'verified' : 'failed');
         return {
             status: passed ? 'verified' : 'failed',
@@ -230,8 +243,12 @@ export async function verifyArtifact(
         };
     } catch (error) {
         if (runCreated) {
-            try { updateRunStatus(runId, 'failed'); } catch {}
             try {
+                assertLease();
+                updateRunStatus(runId, 'failed');
+            } catch {}
+            try {
+                assertLease();
                 updateArtifactStatus({
                     projectId, contractId, artifactId,
                     status: 'rejected', verificationRunId: runId

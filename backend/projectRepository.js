@@ -130,7 +130,8 @@ export function projectStateTransitionInTransaction({
     expectedRevision,
     statuses,
     attemptId = null,
-    leaseOwner = null
+    leaseOwner = null,
+    transactionOpen = false
 }) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID: "${projectId}"`);
@@ -139,49 +140,61 @@ export function projectStateTransitionInTransaction({
         throw new Error('At least one project status transition is required.');
     }
 
-    if (attemptId !== null || leaseOwner !== null) {
-        assertWorkflowLease(attemptId, leaseOwner, { projectId });
-    }
-    const persisted = db.prepare(
-        'SELECT status, revision FROM projects WHERE id = ?'
-    ).get(projectId);
-    if (persisted.revision !== expectedRevision) {
-        throw new Error(`CAS Revision conflict on project ${projectId}`);
-    }
-
-    let currentStatus = persisted.status;
-    for (const nextStatus of statuses) {
-        if (!isValidProjectStatus(nextStatus)) {
-            throw new Error(`Unknown project status: ${nextStatus}`);
+    const ownsTransaction = !transactionOpen;
+    if (ownsTransaction) db.exec('BEGIN IMMEDIATE;');
+    try {
+        if (attemptId !== null || leaseOwner !== null) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
         }
-        if (nextStatus === PROJECT_STATUS.COMPLETED) {
-            throw new Error(
-                'Cannot transition project to completed: required verified lifecycle evidence is missing'
-            );
+        const persisted = db.prepare(
+            'SELECT status, revision FROM projects WHERE id = ?'
+        ).get(projectId);
+        if (!persisted) {
+            throw new Error(`Project ${projectId} does not exist.`);
         }
-        if (!canTransitionProject(currentStatus, nextStatus)) {
-            throw new Error(`Illegal project transition: ${currentStatus} -> ${nextStatus}`);
+        if (persisted.revision !== expectedRevision) {
+            throw new Error(`CAS Revision conflict on project ${projectId}`);
         }
-        currentStatus = nextStatus;
-    }
 
-    const nextRevision = expectedRevision + statuses.length;
-    const result = db.prepare(`
-        UPDATE projects
-        SET status = ?, revision = ?
-        WHERE id = ? AND revision = ? AND status = ?
-    `).run(
-        currentStatus,
-        nextRevision,
-        projectId,
-        expectedRevision,
-        persisted.status
-    );
-    if (result.changes !== 1) {
-        throw new Error(`CAS Revision conflict on project ${projectId}`);
-    }
+        let currentStatus = persisted.status;
+        for (const nextStatus of statuses) {
+            if (!isValidProjectStatus(nextStatus)) {
+                throw new Error(`Unknown project status: ${nextStatus}`);
+            }
+            if (nextStatus === PROJECT_STATUS.COMPLETED) {
+                throw new Error(
+                    'Cannot transition project to completed: required verified lifecycle evidence is missing'
+                );
+            }
+            if (!canTransitionProject(currentStatus, nextStatus)) {
+                throw new Error(`Illegal project transition: ${currentStatus} -> ${nextStatus}`);
+            }
+            currentStatus = nextStatus;
+        }
 
-    return { status: currentStatus, revision: nextRevision };
+        const nextRevision = expectedRevision + statuses.length;
+        const result = db.prepare(`
+            UPDATE projects
+            SET status = ?, revision = ?
+            WHERE id = ? AND revision = ? AND status = ?
+        `).run(
+            currentStatus,
+            nextRevision,
+            projectId,
+            expectedRevision,
+            persisted.status
+        );
+        if (result.changes !== 1) {
+            throw new Error(`CAS Revision conflict on project ${projectId}`);
+        }
+        if (ownsTransaction) db.exec('COMMIT;');
+        return { status: currentStatus, revision: nextRevision };
+    } catch (error) {
+        if (ownsTransaction) {
+            try { db.exec('ROLLBACK;'); } catch {}
+        }
+        throw error;
+    }
 }
 
 const P4_MANDATORY_GATES = [

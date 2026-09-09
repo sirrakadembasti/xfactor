@@ -482,7 +482,8 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
         const projectedState = projectStateTransitionInTransaction({
             projectId,
             expectedRevision: project.revision,
-            statuses: transitionPath
+            statuses: transitionPath,
+            transactionOpen: true
         });
         finalProjectStatus = projectedState.status;
 

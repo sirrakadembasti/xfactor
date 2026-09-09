@@ -248,7 +248,7 @@ export function reconcileStaleWorkflowAttempts({
         `);
         const updateProject = database.prepare(`
             UPDATE projects
-            SET status = 'paused'
+            SET status = 'paused', revision = revision + 1
             WHERE id = ? AND status IN ('implementing', 'running')
         `);
         const insertChat = database.prepare(

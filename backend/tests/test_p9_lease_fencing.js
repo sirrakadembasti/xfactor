@@ -13,7 +13,8 @@ const { runAsyncTest, finish } = createTestHarness();
 
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
-const { createProject, deleteProject, getProject, saveProjectState } = await import('../projectRepository.js');
+const { createProject, deleteProject, getProject, saveProjectState, projectStateTransitionInTransaction } = await import('../projectRepository.js');
+const { verifyArtifactAndProject } = await import('../verification/verificationCli.js');
 const {
     acquireWorkflowLease,
     getActiveWorkflowAttempt,
@@ -188,6 +189,136 @@ await runAsyncTest('7. restart recovery pauses only an interrupted active execut
         }
     });
 });
+await runAsyncTest('8. project transition rejects a replacement lease racing between assertion and CAS update', async () => {
+    await withProject('Transition fencing race', async project => {
+        const oldLease = acquireWorkflowLease(project.id, 'transition-old-owner');
+        const secondConnection = new DatabaseSync(isolated.dbPath);
+        const persistedBefore = db.prepare(
+            'SELECT status, revision FROM projects WHERE id = ?'
+        ).get(project.id);
+        const originalPrepare = db.prepare.bind(db);
+        let injected = false;
+        let replacementLease = null;
+
+        db.prepare = sql => {
+            const statement = originalPrepare(sql);
+            if (injected || !String(sql).includes('SELECT status, revision FROM projects')) {
+                return statement;
+            }
+            return new Proxy(statement, {
+                get(target, property) {
+                    if (property !== 'get') return Reflect.get(target, property, target);
+                    return (...args) => {
+                        injected = true;
+                        secondConnection.prepare(
+                            'UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?'
+                        ).run(sqlUtcTimestamp(Date.now() - 60000), oldLease.attempt.id);
+                        replacementLease = acquireWorkflowLease(project.id, 'transition-new-owner', {
+                            database: secondConnection
+                        });
+                        return target.get(...args);
+                    };
+                }
+            });
+        };
+
+        try {
+            let transitionError = null;
+            try {
+                projectStateTransitionInTransaction({
+                    projectId: project.id,
+                    expectedRevision: persistedBefore.revision,
+                    statuses: ['pending_approval'],
+                    attemptId: oldLease.attempt.id,
+                    leaseOwner: 'transition-old-owner'
+                });
+            } catch (error) {
+                transitionError = error;
+            }
+            assert.equal(injected, true);
+            assert.ok(transitionError, 'A replacement lease must prevent the stale CAS mutation');
+            assert.match(String(transitionError.message), /busy|locked|lease|fenc/i);
+            assert.equal(
+                getActiveWorkflowAttempt(project.id)?.lease_owner,
+                replacementLease?.acquired ? 'transition-new-owner' : 'transition-old-owner'
+            );
+            assert.equal(getProject(project.id).status, persistedBefore.status);
+            assert.equal(getProject(project.id).revision, persistedBefore.revision);
+        } finally {
+            db.prepare = originalPrepare;
+            if (replacementLease?.acquired) {
+                releaseWorkflowLease(replacementLease.attempt.id, 'completed', {
+                    leaseOwner: 'transition-new-owner',
+                    database: secondConnection
+                });
+            }
+            secondConnection.close();
+        }
+    });
+});
+
+await runAsyncTest('9. verification persistence rejects after the worker lease is replaced', async () => {
+    await withProject('Verification persistence fencing', async project => {
+        db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+        const oldLease = acquireWorkflowLease(project.id, 'verification-old-owner');
+        const replacementConnection = new DatabaseSync(isolated.dbPath);
+        let runnerSawLease = false;
+        let replacementLease = null;
+
+        try {
+            await assert.rejects(
+                () => verifyArtifactAndProject({
+                    projectId: project.id,
+                    contractId: 'missing-contract',
+                    artifactId: 'missing-artifact',
+                    expectedRevision: project.revision,
+                    attemptId: oldLease.attempt.id,
+                    leaseOwner: 'verification-old-owner',
+                    verificationRunner: async (_input, runnerOptions) => {
+                        runnerSawLease = runnerOptions?.attemptId === oldLease.attempt.id
+                            && runnerOptions?.leaseOwner === 'verification-old-owner';
+                        replacementConnection.prepare(
+                            'UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?'
+                        ).run(sqlUtcTimestamp(Date.now() - 60000), oldLease.attempt.id);
+                        replacementLease = acquireWorkflowLease(project.id, 'verification-new-owner', {
+                            database: replacementConnection
+                        });
+                        return { runId: 'run-replaced-owner', passed: false, status: 'failed' };
+                    }
+                }),
+                /lease|fenc|owner/i
+            );
+            assert.equal(runnerSawLease, true, 'Verification runner must receive the lease identity');
+            assert.equal(replacementLease?.acquired, true);
+        } finally {
+            if (replacementLease?.acquired) {
+                releaseWorkflowLease(replacementLease.attempt.id, 'completed', {
+                    leaseOwner: 'verification-new-owner',
+                    database: replacementConnection
+                });
+            }
+            replacementConnection.close();
+        }
+    });
+});
+
+await runAsyncTest('10. startup stale recovery increments project revision with its paused transition', async () => {
+    await withProject('Recovery revision fencing', async project => {
+        const lease = acquireWorkflowLease(project.id, 'recovery-owner');
+        db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+        db.prepare('UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?')
+            .run(sqlUtcTimestamp(Date.now() - 60000), lease.attempt.id);
+        const before = getProject(project.id);
+
+        const recovered = reconcileStaleWorkflowAttempts({ staleThresholdSeconds: 30 });
+
+        assert.ok(recovered.recoveredProjectIds.includes(project.id));
+        const after = getProject(project.id);
+        assert.equal(after.status, 'paused');
+        assert.equal(after.revision, before.revision + 1);
+    });
+});
+
 
 finish();
 await isolated.cleanup();

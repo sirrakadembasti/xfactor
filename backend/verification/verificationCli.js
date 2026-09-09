@@ -38,7 +38,11 @@ export async function verifyArtifactAndProject({
         });
     }
 
-    const verification = await verificationRunner({ projectId, contractId, artifactId }, options);
+    const verificationOptions = {
+        ...options,
+        ...(attemptId !== null || leaseOwner !== null ? { attemptId, leaseOwner } : {})
+    };
+    const verification = await verificationRunner({ projectId, contractId, artifactId }, verificationOptions);
     const artifact = getArtifact({ projectId, contractId, artifactId });
     const receipt = { runId: verification.runId, contractId, artifactId };
     db.exec('BEGIN IMMEDIATE');
