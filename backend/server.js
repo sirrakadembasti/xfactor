@@ -28,7 +28,7 @@ import {
     readSessionToken
 } from './sessionAuth.js';
 import { createMaintenanceScheduler } from './maintenance.js';
-import { db, getSchemaVersion, checkpointWAL } from './db.js';
+import { db, dbEvents, getSchemaVersion, checkpointWAL } from './db.js';
 import { getProjectsRoot } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
 import {
@@ -150,21 +150,13 @@ app.use(express.json());
 const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 100,
-    message: { error: "Sunucuya çok fazla istek yapıldı, lütfen biraz bekleyin." },
-    skip: (req) => {
-        const ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress;
-        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    }
+    message: { error: "Sunucuya çok fazla istek yapıldı, lütfen biraz bekleyin." }
 });
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
-    message: { error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." },
-    skip: (req) => {
-        const ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress;
-        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    }
+    message: { error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." }
 });
 
 app.use('/api/login', loginLimiter);
@@ -226,6 +218,8 @@ const wsHub = createProjectWebSocketHub({
     getProjectRole,
     verifySessionId
 });
+const onUserSessionsRevoked = userId => wsHub.closeUserSockets(userId);
+dbEvents.on('userSessionsRevoked', onUserSessionsRevoked);
 
 wss.on('connection', wsHub.handleConnection);
 
@@ -344,6 +338,7 @@ function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
     maintenance?.stop();
+    dbEvents.off('userSessionsRevoked', onUserSessionsRevoked);
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
     // 1. WebSocket istemcilerini kapat

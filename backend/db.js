@@ -559,6 +559,15 @@ export const MIGRATIONS = [
             `);
         }
     },
+    {
+        version: 12,
+        name: '012_totp_replay_protection',
+        up: (database) => {
+            if (!columnExists(database, 'users', 'totp_last_counter')) {
+                database.exec('ALTER TABLE users ADD COLUMN totp_last_counter INTEGER');
+            }
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');
