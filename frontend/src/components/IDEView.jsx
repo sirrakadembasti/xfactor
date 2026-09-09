@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { FileCode } from 'lucide-react';
 import '../monacoSetup.js';
@@ -32,15 +32,26 @@ function languageForPath(filePath = '') {
 }
 
 function BinaryPreview({ file }) {
+  const [previewFailed, setPreviewFailed] = useState(false);
   const extension = `.${String(file.path || '').split('.').pop().toLowerCase()}`;
   const mimeType = IMAGE_MIME_TYPES[extension];
-  if (file.encoding === 'base64' && mimeType && isBase64(file.content)) {
+  const canPreviewImage = file.encoding === 'base64'
+    && mimeType
+    && isBase64(file.content)
+    && !previewFailed;
+
+  useEffect(() => {
+    setPreviewFailed(false);
+  }, [file.path, file.content, file.encoding]);
+
+  if (canPreviewImage) {
     return (
       <div className="flex h-full items-center justify-center overflow-auto bg-[#1e1e1e] p-6">
         <img
           src={`data:${mimeType};base64,${file.content}`}
           alt={`${file.path} görsel önizlemesi`}
           className="max-h-full max-w-full object-contain"
+          onError={() => setPreviewFailed(true)}
         />
       </div>
     );

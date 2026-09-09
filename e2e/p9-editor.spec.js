@@ -8,7 +8,8 @@ const required = [
   'P9_TEXT_FILE',
   'P9_TEXT_MARKER',
   'P9_IMAGE_FILE',
-  'P9_BINARY_FILE'
+  'P9_BINARY_FILE',
+  'P9_ALLOWED_ORIGIN'
 ];
 const missing = required.filter(name => !process.env[name]);
 const baseUrl = process.env.P9_BASE_URL;
@@ -18,6 +19,16 @@ const projectTitle = process.env.P9_PROJECT_TITLE;
 const textFile = process.env.P9_TEXT_FILE;
 const textMarker = process.env.P9_TEXT_MARKER;
 const imageFile = process.env.P9_IMAGE_FILE;
+const corruptImageFile = process.env.P9_CORRUPT_IMAGE_FILE;
+const originOf = value => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return '';
+  }
+};
+const baseOrigin = originOf(baseUrl);
+const allowedOrigin = originOf(process.env.P9_ALLOWED_ORIGIN);
 const binaryFile = process.env.P9_BINARY_FILE;
 
 // The production image is exercised behind its TLS sidecar; local web servers
@@ -25,7 +36,10 @@ const binaryFile = process.env.P9_BINARY_FILE;
 test.use({ ignoreHTTPSErrors: true });
 
 test('production editor uses local Monaco and safe encoded file previews', async ({ page, request }) => {
-  test.skip(missing.length > 0, `Requires production editor harness: missing ${missing.join(', ')}`);
+  test.skip(
+    missing.length > 0 || !baseOrigin || !allowedOrigin || allowedOrigin === baseOrigin,
+    `Requires a valid distinct P9_ALLOWED_ORIGIN (missing: ${missing.join(', ') || 'none'})`
+  );
 
   const externalMonacoRequests = [];
   page.on('request', requestEvent => {
@@ -40,20 +54,22 @@ test('production editor uses local Monaco and safe encoded file previews', async
   await expect(page.getByText(projectTitle, { exact: true })).toBeVisible();
   await page.getByText(projectTitle, { exact: true }).click();
   await page.getByRole('button', { name: /Kod Editörü/i }).click();
-
   await expect(page.locator('.monaco-editor')).toBeVisible();
   await expect(page.locator('.monaco-editor textarea')).toHaveCount(1);
   expect(externalMonacoRequests).toEqual([]);
   await page.getByRole('button', { name: new RegExp(textFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click();
-  await expect(page.locator('.monaco-editor textarea')).toHaveValue(new RegExp(textMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  await expect(page.locator('.monaco-editor .view-lines')).toContainText(textMarker);
 
   await page.getByRole('button', { name: new RegExp(imageFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click();
   await expect(page.locator('img')).toHaveAttribute('src', /^data:image\//);
+  if (corruptImageFile) {
+    await page.getByRole('button', { name: new RegExp(corruptImageFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click();
+    await expect(page.getByRole('status')).toContainText(/Binary dosya önizlenemiyor/i);
+  }
 
   await page.getByRole('button', { name: new RegExp(binaryFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click();
   await expect(page.getByRole('status')).toContainText(/Binary dosya önizlenemiyor/i);
 
-  const allowedOrigin = process.env.P9_ALLOWED_ORIGIN || new URL(baseUrl).origin;
   const allowedResponse = await request.post(`${baseUrl}/api/login`, {
     headers: { Origin: allowedOrigin, 'X-XFactor-CSRF': '1' },
     data: { username: '', password: '' }
