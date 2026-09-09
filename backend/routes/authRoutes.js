@@ -35,12 +35,17 @@ export function createAuthRouter({ requireAuth, production }) {
             if (!user.totpSecret) {
                 return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
             }
-            session = createSessionAfterTotp(user.id, totp, process.env);
+            session = createSessionAfterTotp(user.id, totp, process.env, {
+                passwordHash: user.passwordHash
+            });
             if (!session) {
                 return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
             }
         } else {
-            session = createSession(user.id);
+            session = createSession(user.id, { passwordHash: user.passwordHash });
+            if (!session) {
+                return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
+            }
         }
 
         const existingToken = readSessionToken(req);

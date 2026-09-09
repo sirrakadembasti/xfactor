@@ -218,7 +218,9 @@ const wsHub = createProjectWebSocketHub({
     getProjectRole,
     verifySessionId
 });
-const onUserSessionsRevoked = userId => wsHub.closeUserSockets(userId);
+const onSessionRevoked = ({ sessionId }) => wsHub.closeSessionSockets(sessionId);
+const onUserSessionsRevoked = ({ userId }) => wsHub.closeUserSockets(userId);
+dbEvents.on('sessionRevoked', onSessionRevoked);
 dbEvents.on('userSessionsRevoked', onUserSessionsRevoked);
 
 wss.on('connection', wsHub.handleConnection);
@@ -338,6 +340,7 @@ function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
     maintenance?.stop();
+    dbEvents.off('sessionRevoked', onSessionRevoked);
     dbEvents.off('userSessionsRevoked', onUserSessionsRevoked);
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);

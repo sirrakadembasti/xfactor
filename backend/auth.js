@@ -34,10 +34,24 @@ function withImmediateTransaction(work) {
     }
 }
 
+function emitSessionRevoked(sessionId, userId) {
+    if (sessionId && userId) {
+        dbEvents.emit('sessionRevoked', { sessionId, userId });
+    }
+}
+
 function emitUserSessionsRevoked(userId) {
     if (userId) {
-        dbEvents.emit('userSessionsRevoked', userId);
+        dbEvents.emit('userSessionsRevoked', { userId });
     }
+}
+
+function passwordHashMatches(userId, passwordHash) {
+    if (passwordHash === undefined) {
+        return true;
+    }
+    const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+    return row?.password_hash === passwordHash;
 }
 
 export async function hashPasswordAsync(password) {
@@ -494,12 +508,17 @@ function insertSession(userId, now) {
     return { id: sessionId, userId, token, expiresAt };
 }
 
-export function createSession(userId, { now: nowInput } = {}) {
+export function createSession(userId, { now: nowInput, passwordHash } = {}) {
     const now = normalizeNow(nowInput);
-    return withImmediateTransaction(() => insertSession(userId, now));
+    return withImmediateTransaction(() => {
+        if (!passwordHashMatches(userId, passwordHash)) {
+            return null;
+        }
+        return insertSession(userId, now);
+    });
 }
 
-export function createSessionAfterTotp(userId, token, env = process.env, { now: nowInput } = {}) {
+export function createSessionAfterTotp(userId, token, env = process.env, { now: nowInput, passwordHash } = {}) {
     let keys;
     try {
         keys = getMfaEncryptionKeys(env);
@@ -511,11 +530,16 @@ export function createSessionAfterTotp(userId, token, env = process.env, { now: 
     try {
         return withImmediateTransaction(() => {
             const row = db.prepare(`
-                SELECT totp_secret, totp_last_counter
+                SELECT password_hash, totp_secret, totp_last_counter
                 FROM users
                 WHERE id = ? AND mfa_enabled = 1
             `).get(userId);
-            if (!row || typeof row.totp_secret !== 'string' || !row.totp_secret) {
+            if (
+                !row
+                || (passwordHash !== undefined && row.password_hash !== passwordHash)
+                || typeof row.totp_secret !== 'string'
+                || !row.totp_secret
+            ) {
                 return null;
             }
 
@@ -578,10 +602,10 @@ export function revokeSession(token) {
     if (typeof token !== 'string' || !token.trim()) {
         return false;
     }
-
     const tokenHash = hashSessionToken(token);
+
     const row = db.prepare(
-        'SELECT user_id FROM user_sessions WHERE token_hash = ? AND revoked_at IS NULL LIMIT 1'
+        'SELECT id AS session_id, user_id FROM user_sessions WHERE token_hash = ? AND revoked_at IS NULL LIMIT 1'
     ).get(tokenHash);
     const result = db.prepare(`
         UPDATE user_sessions
@@ -590,7 +614,7 @@ export function revokeSession(token) {
     `).run(tokenHash);
 
     if (result.changes > 0) {
-        emitUserSessionsRevoked(row?.user_id);
+        emitSessionRevoked(row?.session_id, row?.user_id);
     }
     return result.changes > 0;
 }

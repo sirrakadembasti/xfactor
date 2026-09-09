@@ -182,6 +182,17 @@ export function createProjectWebSocketHub({ getProjectRole, verifySessionId }) {
         }
     }
 
+    function closeSessionSockets(sessionId) {
+        if (typeof sessionId !== 'string' || !sessionId.trim()) {
+            return;
+        }
+        for (const client of clients) {
+            if (client.authSessionId === sessionId) {
+                closeInvalidSession(client);
+            }
+        }
+    }
+
     // Periyodik heartbeat & ölü socket temizleme intervali (30 saniye)
     const heartbeatInterval = setInterval(() => {
         for (const client of clients) {
@@ -203,5 +214,5 @@ export function createProjectWebSocketHub({ getProjectRole, verifySessionId }) {
         heartbeatInterval.unref();
     }
 
-    return { clients, handleConnection, publish, closeUserSockets, heartbeatInterval };
+    return { clients, handleConnection, publish, closeUserSockets, closeSessionSockets, heartbeatInterval };
 }
