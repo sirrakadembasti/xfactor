@@ -344,8 +344,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         await workflowLogEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env.example) önceden diske kilitlendi.", "manager");
 
         const generatedProjectFiles = [];
-        const repairTargetFiles = new Set();
-
+        const repairTargetFiles = new Set([
+            'package.json',
+            'tsconfig.json',
+            '.env.example',
+            'prisma/schema.prisma'
+        ]);
         const managerDir = path.join(projectDir, 'manager');
         await ensureDir(managerDir);
         // 2. AŞAMA: DİREKTÖRLER (DIRECTORS - manager/ altında yuvalanır)
@@ -767,7 +771,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const repairMeta = await writeRepairFiles(
                             {
                                 projectDir,
-                                allowedFiles: [...repairTargetFiles]
+                                allowedFiles: [...repairTargetFiles],
+                                allowConfigMutation: true
                             },
                             rawRepair.files
                         );

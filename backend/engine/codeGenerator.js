@@ -401,7 +401,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     };
 
     if (hasPrisma) {
-        baseDependencies['@prisma/client'] = '^5.22.0';
+        baseDependencies['@prisma/client'] = '^6.4.1';
     }
 
     const baseDevDependencies = {
@@ -415,12 +415,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     };
 
     if (hasPrisma) {
-        baseDevDependencies['prisma'] = '^5.22.0';
+        baseDevDependencies['prisma'] = '^6.4.1';
     }
 
     let scripts = {};
     if (isNext) {
-        baseDependencies['next'] = '^14.2.24';
+        baseDependencies['next'] = '^15.2.1';
         baseDependencies['tailwindcss-animate'] = '^1.0.7';
         scripts = {
             dev: 'next dev',
