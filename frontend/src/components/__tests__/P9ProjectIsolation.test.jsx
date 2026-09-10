@@ -249,6 +249,37 @@ describe('P9 project/auth request isolation', () => {
     await waitFor(() => expect(login).toHaveBeenCalledTimes(1));
   });
 
+  test('releases the login gate and remains anonymous when logout rejects', async () => {
+    const rejectedLogout = deferred();
+    const spies = setupApi();
+    spies.logout.mockReturnValue(rejectedLogout.promise);
+    const login = vi.spyOn(api, 'login').mockResolvedValue({ user: { username: 'admin' } });
+    const unhandledRejection = vi.fn(event => event.preventDefault());
+    window.addEventListener('unhandledrejection', unhandledRejection);
+
+    try {
+      render(<App />);
+      await waitForHeading(projectA.title);
+      fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+      const loginButton = await screen.findByRole('button', { name: 'Giriş Yap' });
+      expect(loginButton).toBeDisabled();
+
+      rejectedLogout.reject(new Error('logout unavailable'));
+      await waitFor(() => expect(loginButton).not.toBeDisabled());
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(screen.getByRole('heading', { name: 'XFactor' })).toBeInTheDocument();
+      expect(unhandledRejection).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByLabelText('Kullanıcı Adı'), { target: { value: 'admin' } });
+      fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: 'password' } });
+      fireEvent.click(loginButton);
+      await waitFor(() => expect(login).toHaveBeenCalledTimes(1));
+    } finally {
+      window.removeEventListener('unhandledrejection', unhandledRejection);
+    }
+  });
+
 
   test('drops a queued WebSocket batch when project and auth epochs change', async () => {
     const sockets = installWebSocket();

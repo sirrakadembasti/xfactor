@@ -512,6 +512,8 @@ export default function App() {
     becomeAnonymous();
     try {
       await api.logout();
+    } catch {
+      // Logout is best-effort; local state was invalidated before the request.
     } finally {
       if (logoutPendingRef.current === token) {
         logoutPendingRef.current = null;
