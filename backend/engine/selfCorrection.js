@@ -3,6 +3,7 @@
  * Referans: Archon Self-Correction & Review Gate
  */
 
+import { parse } from '@babel/parser';
 import { getAgent } from '../agents/index.js';
 import { generateLLMResponse } from '../llm.js';
 import { logWarning } from '../observability.js';
@@ -32,15 +33,41 @@ export async function executeCorrectionLoop({
         }
         iterations++;
 
-        // 1. Reviewer İncelemesi
-        const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files);
-        const reviewMessages = [
-            { role: 'system', content: reviewer.systemPrompt },
-            { role: 'user', content: reviewPrompt }
-        ];
+        // 0. Deterministik Sözdizimi Kontrolü (Babel AST)
+        const syntaxIssues = [];
+        for (const file of currentOutput?.files || []) {
+            const ext = typeof file?.path === 'string' ? file.path.toLowerCase() : '';
+            if (ext.endsWith('.ts') || ext.endsWith('.tsx') || ext.endsWith('.js') || ext.endsWith('.jsx')) {
+                const plugins = [];
+                if (ext.endsWith('.jsx') || ext.endsWith('.tsx') || ext.endsWith('.js')) plugins.push('jsx');
+                if (ext.endsWith('.ts') || ext.endsWith('.tsx')) plugins.push('typescript');
+                try {
+                    parse(file.content, { sourceType: 'unambiguous', plugins });
+                } catch (syntaxErr) {
+                    syntaxIssues.push(`Sözdizimi hatası veya yarım kalan kod (${file.path}): ${syntaxErr.message}`);
+                }
+            }
+        }
 
-        const rawReview = await generateLLMResponse(reviewMessages, { signal });
-        const reviewResult = reviewer.parseResponse(rawReview);
+        let reviewResult;
+        if (syntaxIssues.length > 0) {
+            reviewResult = {
+                approved: false,
+                summary: syntaxIssues[0],
+                feedback: `KOD PARSER HATASI / SÖZDİZİMİ KESİLMESİ:\n${syntaxIssues.join('\n')}\nDosyayı token sınırına takılmadan eksiksiz ve geçerli kapat.`
+            };
+        } else {
+            // 1. Reviewer İncelemesi
+            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files);
+            const reviewMessages = [
+                { role: 'system', content: reviewer.systemPrompt },
+                { role: 'user', content: reviewPrompt }
+            ];
+
+            const rawReview = await generateLLMResponse(reviewMessages, { signal });
+            reviewResult = reviewer.parseResponse(rawReview);
+        }
+
         // Onaylandı ise başarıyla çık
         if (reviewResult.approved) {
             return {
