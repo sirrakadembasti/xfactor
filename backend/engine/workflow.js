@@ -730,6 +730,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
             const allDiskFiles = await listProjectTree(projectDir);
             for (const df of allDiskFiles) {
+                const idx = generatedProjectFiles.findIndex(gf => gf.path === df.path);
                 if (idx !== -1) {
                     generatedProjectFiles[idx] = df;
                 } else {
