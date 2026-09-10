@@ -40,7 +40,9 @@ const KNOWN_PACKAGE_VERSIONS = {
     '@types/morgan': '^1.9.9',
     'cookie-parser': '^1.4.7',
     '@types/cookie-parser': '^1.4.8',
-    'class-variance-authority': '^0.7.1'
+    'class-variance-authority': '^0.7.1',
+    'nanoid': '^5.0.9',
+    'jose': '^5.9.6'
 };
 
 const NODE_BUILTINS = new Set([
@@ -586,6 +588,29 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         } catch {
             const viteConfigContent = `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
             await fs.writeFile(viteConfigPath, viteConfigContent, 'utf8');
+        }
+    }
+    // 6. Standart Tailwind & UI Yardımcısı (src/lib/utils.ts)
+    const utilsPath = path.join(projectDir, 'src', 'lib', 'utils.ts');
+    try {
+        await fs.stat(utilsPath);
+    } catch {
+        const utilsDir = path.dirname(utilsPath);
+        await fs.mkdir(utilsDir, { recursive: true });
+        const utilsContent = `import { clsx, type ClassValue } from 'clsx';\nimport { twMerge } from 'tailwind-merge';\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n`;
+        await fs.writeFile(utilsPath, utilsContent, 'utf8');
+    }
+
+    // 7. Standart Prisma Singleton (src/lib/prisma.ts)
+    if (hasPrisma) {
+        const prismaTsPath = path.join(projectDir, 'src', 'lib', 'prisma.ts');
+        try {
+            await fs.stat(prismaTsPath);
+        } catch {
+            const prismaDir = path.dirname(prismaTsPath);
+            await fs.mkdir(prismaDir, { recursive: true });
+            const prismaContent = `import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined;\n};\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient();\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;\n`;
+            await fs.writeFile(prismaTsPath, prismaContent, 'utf8');
         }
     }
 
