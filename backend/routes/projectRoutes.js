@@ -185,6 +185,7 @@ export function createProjectRouter({
     requireAuth,
     projectAccess,
     wsHub,
+    lifecycle = null,
     verificationRunner = runProjectVerification
 }) {
     const router = Router();
@@ -402,6 +403,7 @@ export function createProjectRouter({
     router.post('/:id/approve', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             if (!state || !canTransitionProjectStatus(
                 state.status,
@@ -474,14 +476,22 @@ export function createProjectRouter({
                 leaseOwner
             });
 
-            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner).catch(error => {
-                logError('workflow.background_execution_failed', error, {
-                    projectId: id,
-                    attemptId: lease.attempt.id
-                });
+            const operation = lifecycle?.begin('generation', {
+                cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
+            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner)
+                .catch(error => {
+                    logError('workflow.background_execution_failed', error, {
+                        projectId: id,
+                        attemptId: lease.attempt.id
+                    });
+                })
+                .finally(() => operation?.end());
             res.json({ ...approvedState, attemptId: lease.attempt.id });
         } catch (err) {
+            if (err?.code === 'SERVER_SHUTTING_DOWN') {
+                return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
+            }
             next(err);
         }
     });
@@ -910,6 +920,7 @@ export function createProjectRouter({
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
             const canResume = state.status === PROJECT_STATUS.PAUSED
@@ -941,11 +952,23 @@ export function createProjectRouter({
                 leaseOwner
             });
 
-            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner).catch(error => {
-                logError('workflow.background_execution_failed', error, { projectId: id, attemptId: lease.attempt.id });
+            const operation = lifecycle?.begin('generation', {
+                cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
+
+            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner)
+                .catch(error => {
+                    logError('workflow.background_execution_failed', error, { projectId: id, attemptId: lease.attempt.id });
+                })
+                .finally(() => {
+                    operation?.end();
+                });
+
             res.json({ ...state, attemptId: lease.attempt.id });
         } catch (err) {
+            if (err?.code === 'SERVER_SHUTTING_DOWN') {
+                return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
+            }
             next(err);
         }
     });

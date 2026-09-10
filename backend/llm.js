@@ -1,4 +1,3 @@
-import './networkResolver.js';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logError, logWarning, writeStructuredLog } from './observability.js';

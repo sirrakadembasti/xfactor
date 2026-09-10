@@ -1,4 +1,3 @@
-import './networkResolver.js';
 import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
@@ -36,9 +35,13 @@ import {
     getFrontendDistRoot,
     mountProductionFrontend
 } from './productionStatic.js';
+import { createLifecycleCoordinator } from './lifecycle.js';
 dotenv.config();
 
 const runtimeConfig = validateRuntimeConfig(process.env);
+const lifecycle = createLifecycleCoordinator({
+    timeoutMs: Number(process.env.SHUTDOWN_TIMEOUT_MS) || 3000
+});
 const transportPolicy = {
     production: runtimeConfig.production,
     trustProxy: runtimeConfig.TRUST_PROXY
@@ -266,7 +269,7 @@ app.use('/api', createAuthRouter({
     requireAuth,
     production: runtimeConfig.production
 }));
-app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub }));
+app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub, lifecycle }));
 
 app.use('/api', (req, res) => {
     res.status(404).json({
@@ -340,7 +343,26 @@ evidenceCompactionTimer.unref();
 
 let isShuttingDown = false;
 
-function handleGracefulShutdown(signal) {
+async function closeWebSockets() {
+    for (const client of wss.clients) {
+        try {
+            if (client.readyState === WebSocket.OPEN) client.close(1001, 'Server shutting down');
+            client.terminate();
+        } catch {}
+    }
+    await new Promise(resolve => wss.close(() => resolve()));
+}
+
+function closeHttpServer() {
+    return new Promise((resolve, reject) => {
+        server.close(error => {
+            if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error);
+            else resolve();
+        });
+    });
+}
+
+async function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
     maintenance?.stop();
@@ -348,28 +370,19 @@ function handleGracefulShutdown(signal) {
     dbEvents.off('userSessionsRevoked', onUserSessionsRevoked);
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
-    // 1. WebSocket istemcilerini kapat
-    try {
-        for (const client of wss.clients) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.close(1001, 'Server shutting down');
-            }
-        }
-    } catch {}
-
-    // 2. HTTP sunucusunu durdur
-    server.close(() => {
-        // 3. SQLite WAL checkpoint
-        try {
-            checkpointWAL(db);
-        } catch {}
-        closeDatabase();
-        process.exit(0);
+    const result = await lifecycle.shutdown({
+        closeWebSockets,
+        closeServer: closeHttpServer,
+        checkpointDatabase: () => checkpointWAL(db),
+        closeDatabase,
+        timeoutMs: Number(process.env.SHUTDOWN_TIMEOUT_MS) || 3000
     });
-
-    setTimeout(() => {
-        process.exit(0);
-    }, 3000).unref();
+    if (!result.success) {
+        console.error(`Shutdown ${signal} timed out or failed.`);
+        process.exitCode = 1;
+    } else {
+        process.exitCode = 0;
+    }
 }
 
 process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
