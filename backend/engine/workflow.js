@@ -527,21 +527,27 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         );
 
                         // Yapılandırılmış Proje Bağlamı (Şemalar, Tipler, Route'lar)
-                        const contextFiles = generatedProjectFiles.filter(f => 
-                            f.path.includes('schema.prisma') || 
-                            f.path.endsWith('.d.ts') || 
-                            f.path.includes('types') || 
-                            f.path.includes('validations') ||
-                            f.path.includes('/api/') ||
-                            f.path.includes('service')
+                        // Şema daima en başta ve kesilmeden tam metin olarak verilmelidir!
+                        const schemaFile = generatedProjectFiles.find(f => f.path.includes('schema.prisma'));
+                        const otherContextFiles = generatedProjectFiles.filter(f => 
+                            !f.path.includes('schema.prisma') && (
+                                f.path.endsWith('.d.ts') || 
+                                f.path.includes('types') || 
+                                f.path.includes('validations') ||
+                                f.path.includes('/api/') ||
+                                f.path.includes('service')
+                            )
                         );
-                        let projectContext = '';
-                        if (contextFiles.length > 0) {
-                            projectContext = contextFiles.map(f => {
-                                const snippet = f.content.length > 2000 ? f.content.slice(0, 2000) + '\n// ... [kesildi]' : f.content;
-                                return `Dosya: ${f.path}\n\`\`\`\n${snippet}\n\`\`\``;
-                            }).join('\n\n');
+
+                        const contextParts = [];
+                        if (schemaFile && schemaFile.content) {
+                            contextParts.push(`⚠️ PROJE PRISMA ŞEMASI (Veritabanı modelleri ve ilişki isimleri kesinlikle bu şemaya uymalıdır):\nDosya: ${schemaFile.path}\n\`\`\`prisma\n${schemaFile.content}\n\`\`\``);
                         }
+                        for (const f of otherContextFiles) {
+                            const snippet = f.content.length > 2000 ? f.content.slice(0, 2000) + '\n// ... [kesildi]' : f.content;
+                            contextParts.push(`Dosya: ${f.path}\n\`\`\`\n${snippet}\n\`\`\``);
+                        }
+                        const projectContext = contextParts.join('\n\n');
 
                         // Coder LLM çağrısı
                         const coderAgent = getAgent('coder');
