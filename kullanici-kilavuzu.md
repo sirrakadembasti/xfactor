@@ -77,11 +77,12 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
                │                                   │
                ▼                                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│        BAĞIMSIZ TEMİZ ODA DOĞRULAYICI (CLEAN-ROOM VERIFIER)     │
+│      WEB ORCHESTRATOR & ISOLATED EXECUTION WORKER BOUNDARY      │
 │ - 18 Zorunlu Kalite Kapısı (Aktif Politika 2.0 Fail-Closed Veto)│
-│ - OS Sandbox Yürütmesi (Bubblewrap / Docker / Win Isolation)    │
+│ - OS Sandbox Yürütmesi (Docker --cap-drop ALL, limits)          │
 │ - Sunucu Tarafı ZIP Artefaktı & SHA-256 Hash Bütünlüğü          │
 │ - Değişmez Tamamlama Makbuzu (completion_receipts, Migrasyon 10)│
+│ - HTTP Bearer Token Authenticated İletişim                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
