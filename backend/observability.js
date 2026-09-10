@@ -144,15 +144,20 @@ export function createCorrelatedContext({ attemptId = null, projectId = null, re
     };
 }
 
-export function cleanupStaleLogs(db, retentionDays = 30) {
-    if (!db || typeof db.prepare !== 'function') return 0;
-    const cutoffIso = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
-    try {
-        const result = db.prepare('DELETE FROM project_logs WHERE timestamp < ?').run(cutoffIso);
-        return result.changes;
-    } catch {
-        return 0;
+export function cleanupStaleLogs(database, retentionDays = 30, now = new Date()) {
+    if (!database || typeof database.prepare !== 'function') {
+        throw new TypeError('A writable database connection is required');
     }
+    if (!Number.isFinite(retentionDays) || retentionDays < 0) {
+        throw new RangeError('retentionDays must be a non-negative finite number');
+    }
+    const clock = now instanceof Date ? now : new Date(now);
+    if (!Number.isFinite(clock.getTime())) {
+        throw new RangeError('Retention clock must be a valid date');
+    }
+    const cutoffIso = new Date(clock.getTime() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
+    const result = database.prepare('DELETE FROM project_logs WHERE created_at < ?').run(cutoffIso);
+    return Number(result?.changes || 0);
 }
 
 function findEvidenceExcerptRanges(text) {

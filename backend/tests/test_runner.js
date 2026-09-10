@@ -45,7 +45,7 @@ const testFiles = [
     'test_e2e_simulation.js',
     'test_disk_sync_and_isolation.js',
     'test_p7_reconciliation.js',
-    'test_p7_delete_protection.js',
+    'test_p9_data_recovery.js',
     'test_p2_frontend.js',
     'test_p2_security_auth.js',
     'test_p3_observability.js',
@@ -109,15 +109,18 @@ async function main() {
 
     try {
         for (let i = 0; i < testFiles.length; i++) {
-            const file = testFiles[i];
             const testDbPath = path.join(testTempDir, `test-${i}.db`);
             const testProjectsRoot = path.join(testTempDir, `projects-${i}`);
+            const testArtifactsRoot = path.join(testTempDir, `artifacts-${i}`);
+            const testTrashRoot = path.join(testTempDir, `trash-${i}`);
             await fs.mkdir(testProjectsRoot, { recursive: true });
 
             const testEnv = {
                 NODE_ENV: 'test',
                 DB_PATH: testDbPath,
-                PROJECTS_ROOT: testProjectsRoot
+                PROJECTS_ROOT: testProjectsRoot,
+                ARTIFACTS_ROOT: testArtifactsRoot,
+                TRASH_ROOT: testTrashRoot
             };
 
             const res = await runTestFile(file, testEnv);

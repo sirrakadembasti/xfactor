@@ -8,7 +8,7 @@ import { getProjectsRoot, isValidProjectId } from '../projectPaths.js';
  * project directories. NEVER deletes database rows: projects missing on
  * disk are collected into `missingOnDisk` for the caller to report.
  */
-export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = null } = {}) {
+export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = null, database = db } = {}) {
     const root = projectsRoot || getProjectsRoot(env);
 
     if (!fsSync.existsSync(root)) {
@@ -18,14 +18,30 @@ export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = nu
             syncedCount: 0,
             missingOnDisk: [],
             quarantined: [],
+            unverified: [],
             cleanedOrphans: 0,
             orphansRemoved: 0
         };
     }
 
-    const entries = fsSync.readdirSync(root, { withFileTypes: true });
+    let entries;
+    try {
+        entries = fsSync.readdirSync(root, { withFileTypes: true });
+    } catch (error) {
+        return {
+            success: false,
+            error: `Projects root "${root}" could not be read: ${error.message}`,
+            syncedCount: 0,
+            missingOnDisk: [],
+            quarantined: [],
+            unverified: [],
+            cleanedOrphans: 0,
+            orphansRemoved: 0
+        };
+    }
     const validDiskDirs = [];
     const quarantined = [];
+    const unverified = [];
 
     for (const d of entries) {
         if (!d.isDirectory() || d.name.startsWith('.')) continue;
@@ -36,32 +52,35 @@ export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = nu
         }
     }
 
-    const dbProjects = db.prepare('SELECT id FROM projects').all().map(p => p.id);
+    const dbProjects = database.prepare('SELECT id FROM projects').all().map(p => p.id);
     const dbSet = new Set(dbProjects);
+    for (const diskId of validDiskDirs) {
+        if (!dbSet.has(diskId)) {
+            unverified.push({
+                id: diskId,
+                path: path.join(root, diskId),
+                verified: false,
+                reason: 'directory_not_registered'
+            });
+        }
+    }
 
     let syncedCount = 0;
     const missingOnDisk = [];
 
-    db.exec('BEGIN IMMEDIATE;');
+    database.exec('BEGIN IMMEDIATE;');
     try {
-        for (const diskId of validDiskDirs) {
-            if (!dbSet.has(diskId)) {
-                db.prepare("INSERT INTO projects (id, title, status, plan, workflow_state) VALUES (?, ?, 'completed', NULL, NULL)").run(diskId, diskId);
-                syncedCount++;
-            }
-        }
         for (const dbId of dbProjects) {
             const expectedDir = path.join(root, dbId);
             if (!fsSync.existsSync(expectedDir)) {
                 missingOnDisk.push(dbId);
-                // NEVER DELETE DB ROWS HERE!
             }
         }
-        db.exec('COMMIT;');
-    } catch (e) {
-        db.exec('ROLLBACK;');
-        throw e;
+        database.exec('COMMIT;');
+    } catch (error) {
+        try { database.exec('ROLLBACK;'); } catch {}
+        throw error;
     }
 
-    return { success: true, syncedCount, missingOnDisk, quarantined, cleanedOrphans: 0, orphansRemoved: 0 };
+    return { success: true, syncedCount, missingOnDisk, quarantined, unverified, cleanedOrphans: 0, orphansRemoved: 0 };
 }

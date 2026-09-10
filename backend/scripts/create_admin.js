@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'url';
+import { initializeDatabase, closeDatabase } from '../db.js';
 import { changeUserPassword, promoteUserToAdmin, resetUserPassword } from '../auth.js';
 
 const PASSWORD_MIN_LENGTH = 12;
@@ -156,10 +157,14 @@ export async function runCreateAdmin({
     stdout.write(`Admin hazır: ${user.username}\n`);
     return user;
 }
-
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-    runCreateAdmin().catch(error => {
+    try {
+        initializeDatabase(process.env.DB_PATH ? { path: process.env.DB_PATH } : {});
+        await runCreateAdmin();
+    } catch (error) {
         process.stderr.write(`${error.message}\n`);
         process.exitCode = 1;
-    });
+    } finally {
+        closeDatabase();
+    }
 }

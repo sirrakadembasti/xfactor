@@ -38,7 +38,7 @@ import {
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
 import { validatePlanTasks } from '../agents/director.js';
-import { db, getProjectState, dbEvents, saveProjectLog } from '../db.js';
+import { db, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { generateLLMResponse } from '../llm.js';

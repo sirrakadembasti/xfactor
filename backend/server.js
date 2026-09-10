@@ -28,8 +28,8 @@ import {
     readSessionToken
 } from './sessionAuth.js';
 import { createMaintenanceScheduler } from './maintenance.js';
-import { db, dbEvents, getSchemaVersion, checkpointWAL } from './db.js';
-import { getProjectsRoot } from './projectRepository.js';
+import { db, dbEvents, getSchemaVersion, checkpointWAL, initializeDatabase, closeDatabase } from './db.js';
+import { getProjectsRoot, recoverPendingProjectDeletions } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
 import {
     assertProductionFrontendAvailable,
@@ -303,6 +303,8 @@ const HOST = process.env.HOST || '127.0.0.1';
 let maintenance = null;
 async function startServer() {
     try {
+        initializeDatabase(runtimeConfig.DB_PATH ? { path: runtimeConfig.DB_PATH } : {});
+        await recoverPendingProjectDeletions({ env: process.env });
         await assertProductionFrontendAvailable({
             production: runtimeConfig.production,
             distRoot: getFrontendDistRoot()
@@ -313,6 +315,7 @@ async function startServer() {
         });
     } catch (error) {
         maintenance?.stop();
+        closeDatabase();
         console.error(`Backend startup failed: ${error.message}`);
         process.exitCode = 1;
     }
@@ -323,6 +326,7 @@ startServer();
 const EVIDENCE_RETENTION_DAYS = 30;
 const EVIDENCE_COMPACTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 function runEvidenceCompaction() {
+    if (!db) return;
     try {
         compactStaleEvidencePayloads(db, EVIDENCE_RETENTION_DAYS);
     } catch (error) {
@@ -359,7 +363,7 @@ function handleGracefulShutdown(signal) {
         try {
             checkpointWAL(db);
         } catch {}
-
+        closeDatabase();
         process.exit(0);
     });
 
