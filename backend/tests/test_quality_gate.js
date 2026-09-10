@@ -8,10 +8,11 @@ import { runDeterministicProjectAudit, parseTesterResponse } from '../agents/tes
 import { normalizeReviewResult } from '../agents/schemas.js';
 import { isTaskCompleted } from '../engine/fileProtocol.js';
 import { ensureProjectScaffold } from '../engine/codeGenerator.js';
-import { getProjectState, saveProjectState } from '../db.js';
+import { getProject, saveProjectState } from '../projectRepository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const { db } = await import('../db.js');
 
 console.log("==================================================");
 console.log("⚡ XFactor Faz 0-4 Kalite Kapısı & Deterministik Doğrulama Süiti");
@@ -913,12 +914,12 @@ await asyncTest("4.3 Önceden var olan .env byte-identical kalmalı", async () =
 // ----------------------------------------------------
 console.log("\n--- 5. Workflow State Kalıcılığı ---");
 
-await asyncTest("5.1 state.workflow objesi SQLite'a yazılmalı ve okunmalı", async () => {
+await asyncTest("5.1 state.workflow objesi canonical repository ile SQLite'a yazılmalı ve okunmalı", async () => {
     const projectId = `test-wf-state-${Date.now()}`;
     const testState = {
         id: projectId,
         title: "Workflow Test Projesi",
-        status: "running",
+        status: "pending_approval",
         plan: { summary: "Plan" },
         workflow: {
             directorSpecs: { frontend: { altTalimatname: "Alt" } },
@@ -926,13 +927,14 @@ await asyncTest("5.1 state.workflow objesi SQLite'a yazılmalı ve okunmalı", a
         },
         chatHistory: []
     };
+    db.prepare("INSERT INTO projects (id, title, status, plan, workflow_state, revision) VALUES (?, ?, 'planning', NULL, NULL, 1)").run(projectId, testState.title);
+    await saveProjectState(testState);
 
-    saveProjectState(testState);
-
-    const loadedState = getProjectState(projectId);
+    const loadedState = getProject(projectId);
     assert.ok(loadedState && loadedState.workflow, "loadedState.workflow tanımlı olmalı");
     assert.strictEqual(loadedState.workflow.directorSpecs.frontend.altTalimatname, "Alt");
     assert.strictEqual(loadedState.workflow.teamleaderPlans["frontend.tl"].tasks[0].id, "t1");
+    db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
 });
 
 console.log("\n==================================================");

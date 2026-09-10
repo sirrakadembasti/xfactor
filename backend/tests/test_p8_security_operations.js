@@ -6,12 +6,17 @@ import path from 'node:path';
 import { createTestHarness } from './testHarness.js';
 
 const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-p8-security-operations-'));
-process.env.NODE_ENV = 'test';
 process.env.DB_PATH = path.join(tempRoot, 'projects.db');
+process.env.NODE_ENV = 'test';
 process.env.PROJECTS_ROOT = path.join(tempRoot, 'projects');
+process.env.ARTIFACTS_ROOT = path.join(tempRoot, 'artifacts');
+process.env.TRASH_ROOT = path.join(tempRoot, 'trash');
 
 const { createSecurityHeadersMiddleware } = await import('../security.js');
-const { db, dbEvents } = await import('../db.js');
+const dbModule = await import('../db.js');
+dbModule.closeDatabase();
+dbModule.initializeDatabase({ path: process.env.DB_PATH });
+const { db, dbEvents } = dbModule;
 const { sweepExpiredSessions, createMaintenanceScheduler } = await import('../maintenance.js');
 const { createProject, deleteProject } = await import('../projectRepository.js');
 const { writeProjectState, checkPause } = await import('../engine/workflow.js');
@@ -29,8 +34,10 @@ await runAsyncTest('production and development CSP connect-src directives are ex
         return headers['content-security-policy'];
     };
 
-    assert.match(getCsp(true), /connect-src 'self' wss:/);
-    assert.doesNotMatch(getCsp(true), /connect-src[^;]*\bws:/);
+    const productionCsp = getCsp(true);
+    assert.match(productionCsp, /connect-src 'self'(?:;|$)/);
+    assert.match(productionCsp, /worker-src 'self'(?:;|$)/);
+    assert.doesNotMatch(productionCsp, /connect-src[^;]*\b(?:ws|wss):/);
     assert.match(getCsp(false), /connect-src 'self' ws: wss:/);
 });
 await runAsyncTest('raceWithAbort removes SDK abort listeners after resolve and abort', async () => {
@@ -76,18 +83,23 @@ await runAsyncTest('session maintenance removes only expired and old-revoked row
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 });
 
-await runAsyncTest('maintenance scheduler starts immediately, uses hourly interval, unreferences and stops idempotently', async () => {
+await runAsyncTest('maintenance scheduler executes session and log sweeps and stops idempotently', async () => {
     const timeouts = [];
     const intervals = [];
     const clearedTimeouts = [];
     const clearedIntervals = [];
-    let sweepRuns = 0;
     let shouldThrow = false;
-    const database = { prepare: () => ({ run: () => {
-        if (shouldThrow) throw new Error('maintenance test failure');
-        sweepRuns++;
-        return { changes: 0 };
-    } }) };
+    const operations = { sessions: 0, logs: 0 };
+    const database = {
+        prepare: sql => ({
+            run: () => {
+                if (shouldThrow) throw new Error('maintenance test failure');
+                if (String(sql).includes('project_logs')) operations.logs++;
+                else operations.sessions++;
+                return { changes: 0 };
+            }
+        })
+    };
     const makeTimer = (collection, callback, delay) => {
         const timer = { callback, delay, unrefCalls: 0, unref() { this.unrefCalls++; } };
         collection.push(timer);
@@ -109,18 +121,20 @@ await runAsyncTest('maintenance scheduler starts immediately, uses hourly interv
     assert.equal(intervals[0].unrefCalls, 1);
     timeouts[0].callback();
     intervals[0].callback();
-    assert.equal(sweepRuns, 2);
+    assert.ok(operations.sessions > 0);
+    assert.ok(operations.logs > 0);
 
     shouldThrow = true;
     assert.doesNotThrow(() => intervals[0].callback());
     shouldThrow = false;
+    const operationCountsBeforeStop = { ...operations };
     scheduler.stop();
     scheduler.stop();
     assert.deepEqual(clearedTimeouts, [timeouts[0]]);
     assert.deepEqual(clearedIntervals, [intervals[0]]);
     timeouts[0].callback();
     intervals[0].callback();
-    assert.equal(sweepRuns, 2);
+    assert.deepEqual(operations, operationCountsBeforeStop);
 });
 
 await runAsyncTest('repeated generateLLMResponse operations remove abort listeners after completion and abort', async () => {
@@ -219,5 +233,5 @@ await runAsyncTest('repeated checkPause operations remove abort listeners after 
 
 
 finish();
-db.close();
+dbModule.closeDatabase();
 await fs.rm(tempRoot, { recursive: true, force: true });

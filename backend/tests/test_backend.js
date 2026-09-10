@@ -379,36 +379,31 @@ runTest("1. Package.json Bağımlılıklarının Varlığı ve Formatı", () => 
 // ----------------------------------------------------
 // 2. Veritabanı (db.js) & SQLite Testleri
 // ----------------------------------------------------
-await runAsyncTest("2. SQLite Veritabanı Modülü & Tablo Yapısı", async () => {
+await runAsyncTest("2. SQLite Veritabanı Modülü & Canonical Repository Testleri", async () => {
     const dbModule = await import('../db.js');
-    assert.ok(dbModule.getProjectState, "getProjectState fonksiyonu mevcut");
-    assert.ok(dbModule.getAllProjects, "getAllProjects fonksiyonu mevcut");
-    assert.ok(dbModule.saveProjectLog, "saveProjectLog fonksiyonu mevcut");
-    assert.ok(dbModule.getProjectLogs, "getProjectLogs fonksiyonu mevcut");
+    const repo = await import('../projectRepository.js');
+    const { db } = dbModule;
+    assert.ok(repo.getProject, "getProject canonical function exists");
+    assert.ok(repo.saveProjectState, "saveProjectState canonical function exists");
+    assert.ok(repo.getAllProjects, "getAllProjects canonical function exists");
+    assert.ok(dbModule.saveProjectLog, "saveProjectLog function exists");
+    assert.ok(dbModule.getProjectLogs, "getProjectLogs function exists");
 
-    // Test Projesi Oluştur ve Kaydet
-    const { getProjectsRoot } = await import('../projectPaths.js');
-    const testId = `test-proj-${Date.now()}`;
-    const testProjectDir = path.join(getProjectsRoot(), testId);
-    fs.mkdirSync(testProjectDir, { recursive: true });
-
-    const testState = {
-        id: testId,
-        title: "Test Otomasyon Projesi",
-        status: "planning",
-        chatHistory: [{ role: "user", parts: [{ text: "Merhaba" }] }],
-        plan: { talimatname: "Test Plani", domains: ["frontend"] }
-    };
-
-    dbModule.saveProjectState(testState);
+    // Test Projesi Oluştur ve Canonical Repository ile Kaydet
+    const project = await repo.createProject({ title: 'Test Otomasyon Projesi' });
+    const testId = project.id;
+    const testState = repo.getProject(testId);
+    testState.status = 'pending_approval';
+    testState.chatHistory.push({ role: 'user', parts: [{ text: 'Merhaba' }] });
+    await repo.saveProjectState(testState);
 
     // Kaydedilen State'i Oku ve Doğrula
-    const retrievedState = dbModule.getProjectState(testId);
+    const retrievedState = repo.getProject(testId);
     assert.ok(retrievedState, "Kaydedilen proje DB'den okunamadı");
     assert.strictEqual(retrievedState.id, testId);
     assert.strictEqual(retrievedState.title, "Test Otomasyon Projesi");
-    assert.strictEqual(retrievedState.status, "planning");
-    assert.strictEqual(retrievedState.chatHistory.length, 1);
+    assert.strictEqual(retrievedState.status, "pending_approval");
+    assert.strictEqual(retrievedState.chatHistory.length, 2);
 
     // Log Kaydetme ve Okuma Testi
     const logEntry = {
@@ -428,11 +423,11 @@ await runAsyncTest("2. SQLite Veritabanı Modülü & Tablo Yapısı", async () =
     assert.strictEqual(logs[0].action, "test_action");
 
     // Proje Listesini Kontrol Et
-    const allProjects = dbModule.getAllProjects();
+    const allProjects = repo.getAllProjects();
     assert.ok(allProjects.some(p => p.id === testId), "Yeni proje listeleme sorgusunda görünmüyor");
 
     // Temizlik
-    try { fs.rmSync(testProjectDir, { recursive: true, force: true }); } catch {}
+    await repo.deleteProject(testId);
 });
 
 // ----------------------------------------------------

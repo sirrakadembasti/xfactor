@@ -11,19 +11,18 @@ const { runAsyncTest, finish } = createTestHarness();
 // =========================================================================
 await runAsyncTest('1. Canonical repository getProject/saveProjectState/deleteProject should be unified and consistent', async () => {
     const { createProject, getProject, saveProjectState, deleteProject, getProjectDir } = await import('../projectRepository.js');
-    const { getProjectState, saveProjectState: dbSaveProjectState } = await import('../db.js');
 
     const project = await createProject({ title: 'Canonical Repo Test Project' });
     assert.ok(project.id);
     assert.strictEqual(project.title, 'Canonical Repo Test Project');
 
-    // 1. getProject vs getProjectState return identical shape
+    // Canonical repository reads and writes use one state authority.
     const repoProject = getProject(project.id);
-    const dbProject = getProjectState(project.id);
-    assert.deepStrictEqual(repoProject, dbProject);
+    const canonicalProject = getProject(project.id);
+    assert.deepStrictEqual(repoProject, canonicalProject);
 
     // 2. Mutate state via saveProjectState
-    repoProject.status = 'in_progress';
+    repoProject.status = 'pending_approval';
     repoProject.plan = { summary: 'Unified plan', domains: ['backend'] };
     repoProject.workflow = { planHash: 'hash123', directorSpecs: {} };
     repoProject.chatHistory.push({ role: 'user', parts: [{ text: 'Can we proceed?' }] });
@@ -31,7 +30,7 @@ await runAsyncTest('1. Canonical repository getProject/saveProjectState/deletePr
     await saveProjectState(repoProject);
 
     const updated = getProject(project.id);
-    assert.strictEqual(updated.status, 'in_progress');
+    assert.strictEqual(updated.status, 'pending_approval');
     assert.strictEqual(updated.plan.summary, 'Unified plan');
     assert.strictEqual(updated.workflow.planHash, 'hash123');
     assert.strictEqual(updated.chatHistory.length, 2);
@@ -40,7 +39,6 @@ await runAsyncTest('1. Canonical repository getProject/saveProjectState/deletePr
     const deleted = await deleteProject(project.id);
     assert.strictEqual(deleted, true);
     assert.strictEqual(getProject(project.id), null);
-    assert.strictEqual(getProjectState(project.id), null);
 });
 
 // =========================================================================

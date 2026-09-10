@@ -8,7 +8,7 @@ import {
     projectStateTransitionInTransaction
 } from '../projectRepository.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
-import { db } from '../db.js';
+import { db, initializeDatabase, closeDatabase } from '../db.js';
 export async function verifyArtifactAndProject({
     projectId,
     contractId,
@@ -101,26 +101,35 @@ export const runVerification = verifyArtifactAndProject;
 export const runVerificationCli = verifyArtifactAndProject;
 
 if (process.argv[1] && process.argv[1].endsWith('verificationCli.js')) {
-    const args = process.argv.slice(2);
-    const complete = args.includes('--complete');
-    const revisionIndex = args.indexOf('--expected-revision');
-    const expectedRevision = revisionIndex >= 0 ? Number(args[revisionIndex + 1]) : null;
-    const runIndex = args.indexOf('--run-id');
-    const runId = runIndex >= 0 ? args[runIndex + 1] : null;
-    const positional = args.filter((arg, index) => !['--complete', '--expected-revision', '--run-id'].includes(arg)
-        && index !== revisionIndex && index !== revisionIndex + 1 && index !== runIndex + 1);
-    const [projectId, contractId, artifactId] = positional;
-    if (!projectId || !contractId || !artifactId || !runId) {
-        console.error('Usage: node backend/verification/verificationCli.js <projectId> <contractId> <artifactId> --run-id RUN_ID [--complete --expected-revision N]');
-        process.exitCode = 2;
-    } else {
-        const contract = db.prepare('SELECT id, revision, contract_hash, contract_json FROM project_contracts WHERE project_id = ? AND status = ? ORDER BY revision DESC LIMIT 1').get(projectId, 'approved');
-        const artifact = getArtifact({ projectId, contractId, artifactId });
-        if (!contract || contract.id !== contractId || !artifact) throw new Error('Latest approved contract and artifact are required.');
-        const archiveBytes = await fs.readFile(artifact.path);
-        const activeJob = { version: 1, jobId: crypto.randomUUID(), projectId, contractId, contractHash: contract.contract_hash, revision: contract.revision, artifactId, nonce: crypto.randomBytes(32).toString('hex'), runId, deadline: Date.now() + 15 * 60 * 1000, contract: JSON.parse(contract.contract_json) };
-        verifyArtifactAndProject({ projectId, contractId, artifactId, complete, expectedRevision, options: { runId, activeJob, archiveBase64: archiveBytes.toString('base64') } })
-            .then(receipt => console.log(JSON.stringify(receipt)))
-            .catch(error => { console.error(error.message); process.exitCode = 1; });
-    }
+    await (async () => {
+        try {
+            initializeDatabase(process.env.DB_PATH ? { path: process.env.DB_PATH } : {});
+            const args = process.argv.slice(2);
+            const complete = args.includes('--complete');
+            const revisionIndex = args.indexOf('--expected-revision');
+            const expectedRevision = revisionIndex >= 0 ? Number(args[revisionIndex + 1]) : null;
+            const runIndex = args.indexOf('--run-id');
+            const runId = runIndex >= 0 ? args[runIndex + 1] : null;
+            const positional = args.filter((arg, index) => !['--complete', '--expected-revision', '--run-id'].includes(arg)
+                && index !== revisionIndex && index !== revisionIndex + 1 && index !== runIndex + 1);
+            const [projectId, contractId, artifactId] = positional;
+            if (!projectId || !contractId || !artifactId || !runId) {
+                console.error('Usage: node backend/verification/verificationCli.js <projectId> <contractId> <artifactId> --run-id RUN_ID [--complete --expected-revision N]');
+                process.exitCode = 2;
+                return;
+            }
+            const contract = db.prepare('SELECT id, revision, contract_hash, contract_json FROM project_contracts WHERE project_id = ? AND status = ? ORDER BY revision DESC LIMIT 1').get(projectId, 'approved');
+            const artifact = getArtifact({ projectId, contractId, artifactId });
+            if (!contract || contract.id !== contractId || !artifact) throw new Error('Latest approved contract and artifact are required.');
+            const archiveBytes = await fs.readFile(artifact.path);
+            const activeJob = { version: 1, jobId: crypto.randomUUID(), projectId, contractId, contractHash: contract.contract_hash, revision: contract.revision, artifactId, nonce: crypto.randomBytes(32).toString('hex'), runId, deadline: Date.now() + 15 * 60 * 1000, contract: JSON.parse(contract.contract_json) };
+            const receipt = await verifyArtifactAndProject({ projectId, contractId, artifactId, complete, expectedRevision, options: { runId, activeJob, archiveBase64: archiveBytes.toString('base64') } });
+            console.log(JSON.stringify(receipt));
+        } catch (error) {
+            console.error(error.message);
+            process.exitCode = 1;
+        } finally {
+            closeDatabase();
+        }
+    })();
 }

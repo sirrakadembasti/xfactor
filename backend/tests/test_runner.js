@@ -45,6 +45,7 @@ const testFiles = [
     'test_e2e_simulation.js',
     'test_disk_sync_and_isolation.js',
     'test_p7_reconciliation.js',
+    'test_p7_delete_protection.js',
     'test_p9_data_recovery.js',
     'test_p2_frontend.js',
     'test_p2_security_auth.js',
@@ -58,7 +59,10 @@ const testFiles = [
 async function runTestFile(file, env, timeoutMs = 120000) {
     return new Promise((resolve) => {
         const filePath = path.join(__dirname, file);
-        const proc = spawn(process.execPath, [filePath], {
+        const proc = spawn(process.execPath, [
+            '--import', path.join(__dirname, 'preloadDatabase.js'),
+            filePath
+        ], {
             stdio: 'inherit',
             env: {
                 ...process.env,
@@ -109,6 +113,7 @@ async function main() {
 
     try {
         for (let i = 0; i < testFiles.length; i++) {
+            const file = testFiles[i];
             const testDbPath = path.join(testTempDir, `test-${i}.db`);
             const testProjectsRoot = path.join(testTempDir, `projects-${i}`);
             const testArtifactsRoot = path.join(testTempDir, `artifacts-${i}`);

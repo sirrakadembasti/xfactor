@@ -10,8 +10,8 @@ const { runAsyncTest, finish } = createTestHarness();
 // TEST 1: GET /projects and getAllProjects have zero DB/filesystem mutations
 // =========================================================================
 await runAsyncTest('1. getAllProjects should be a pure query without mutating database or filesystem', async () => {
-    const { getAllProjects, db } = await import('../db.js');
-    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { db } = await import('../db.js');
+    const { getAllProjects, createProject, deleteProject } = await import('../projectRepository.js');
 
     const project = await createProject({ title: 'Pure Read Project' });
     const countBefore = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;

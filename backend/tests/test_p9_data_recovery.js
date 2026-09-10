@@ -158,6 +158,7 @@ process.env.PROJECTS_ROOT = projectsRoot;
 process.env.ARTIFACTS_ROOT = artifactsRoot;
 process.env.TRASH_ROOT = trashRoot;
 dbModule = await import('../db.js');
+dbModule.closeDatabase();
 
 await runAsyncTest('database lifecycle is explicit, live-bound, and closeable', async () => {
     assert.strictEqual(typeof dbModule.initializeDatabase, 'function');

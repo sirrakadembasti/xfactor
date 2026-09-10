@@ -171,6 +171,9 @@ export async function runWithConcurrency(items, limit, workerFn, { signal = null
     if (firstError) {
         throw firstError;
     }
+    return results.filter(r => r !== undefined);
+}
+
 export async function logEvent(
     wsHub,
     projectId,
