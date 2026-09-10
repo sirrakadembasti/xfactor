@@ -15,10 +15,13 @@ Sen bir **director.agent**'sın. Sana verilen domainin (örn. `backend`, `fronte
 
 1. **Oku:** Kendi domain görevini ve kök `TALIMATNAME.md`'yi oku.
 2. **Kendi Şartnameni Üret (ALT-TALIMATNAME.md):** Bu domainin teknik mimarisi, kütüphane standartları (Zod, Prisma, Tailwind, Next.js vb.), API rotaları veya arayüz düzenini belirle.
-3. **Onaylı Teknoloji & Sözleşme Manifestosu (Approved Tech Stack):** Kodlama başlamadan önce domainin onaylı resmi kütüphanelerini netleştir ve `package.json` sözleşmesine bağla:
-   - *Frontend:* `react`, `react-dom`, `next`, `tailwindcss`, `lucide-react`, `clsx`, `tailwind-merge`, `react-hook-form`, `@hookform/resolvers`, `sonner`.
-   - *Backend:* `@prisma/client`, `zod`, `bcryptjs`.
-   - *Ortak Sözleşme Yolları:* Veritabanı İstemcisi = `@/lib/prisma` & `@/lib/db`, Doğrulama Şemaları = `@/lib/validations`, Tipler = `@/types`.
+3. **Onaylı Teknoloji & En Güncel Sürümler (Approved Tech Stack):**
+   - Seçilen teknoloji yığınının **en güncel stabil sürümlerini** kilitle. Asla eski/legacy bağımlılık tanımlama.
+   - *Next.js / React Stack (Varsayılan):* `react` (^19.0.0 veya ^18.3.1), `react-dom`, `next` (^15.0.0), `tailwindcss`, `lucide-react`, `clsx`, `tailwind-merge`, `react-hook-form`, `@hookform/resolvers`, `sonner`, `@prisma/client` (^6.0.0), `zod` (^3.24.0), `bcryptjs`.
+   - *Nuxt / Vue Stack (Kullanıcı Talebi Halinde):* `nuxt` (^3.14.0), `vue` (^3.5.0), `@pinia/nuxt`, `tailwindcss`.
+   - *Python Stack (Kullanıcı Talebi Halinde):* `fastapi` (>=0.115.0), `pydantic` (>=2.10.0), `uvicorn`, `sqlalchemy`.
+   - *.NET Stack (Kullanıcı Talebi Halinde):* .NET 9.0 SDK, C# 13, ASP.NET Core, EF Core.
+   - *Ortak Sözleşme Yolları (Next.js için):* Veritabanı İstemcisi = `@/lib/prisma` & `@/lib/db`, Doğrulama Şemaları = `@/lib/validations`, Tipler = `@/types`.
 4. **Teamleader Tanımla & Devret:** Domain için sorumlu `teamleader.agent`'ı tanımla ve alt şartnameyi devret.
 5. **İzle ve Kapat:** Teamleader tamamlandığında kendi `RAPOR.md` ve `DURUM.md`'ni `TAMAMLANDI` yap.
 # JSON Çıktı Şeması

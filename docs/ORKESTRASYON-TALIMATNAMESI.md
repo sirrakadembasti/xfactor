@@ -61,10 +61,11 @@
 * **Girdi:** Kullanıcının doğal dildeki istekleri ve sohbet geçmişi.
 * **Görevleri:**
   1. İstek analizi yapar, mimari şartnameyi (`manager/TALIMATNAME.md`) üretir.
-  2. Projeyi bağımsız domainlere (`frontend`, `backend` vb.) ayırır.
-  3. Prisma/SQLite projelerinde `.env.example` dosyasında `DATABASE_URL="file:./dev.db"` tanımının yer alacağını şartnameye bağlar.
-  4. Her domain için `<domain>.director/` klasörü açar ve `GOREV.md` yazar.
-  5. Canlı telemetriyi (`getProjectLogs`, `findFailedReports`) analiz ederek kullanıcıya durum bildirir.
+  2. **En Güncel Stabil Sürümler & Çoklu-Stack İlkesi:** Projenin teknoloji yığınında her zaman en güncel stabil sürümleri bağlar (Next.js 15+, React 19/18 son kararlı, Prisma 6+, Node 22 LTS). Kullanıcı Nuxt.js/Vue, Python veya .NET istediğinde zorlamaksızın o stack'in güncel stabil sürümlerini hedefler.
+  3. Projeyi bağımsız domainlere (`frontend`, `backend` vb. veya tam teşekküllü tek monorepo) ayırır.
+  4. Prisma/SQLite projelerinde `.env.example` dosyasında `DATABASE_URL="file:./dev.db"` tanımının yer alacağını şartnameye bağlar.
+  5. Her domain için `<domain>.director/` klasörü açar ve `GOREV.md` yazar.
+  6. Canlı telemetriyi (`getProjectLogs`, `findFailedReports`) analiz ederek kullanıcıya durum bildirir.
 
 ### 2.2. Director Rolü (Seviye 1 — Domain Mimarisi & Standartlar)
 * **Konum:** `projects/<id>/manager/<domain>.director/`
