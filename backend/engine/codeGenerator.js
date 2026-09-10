@@ -464,14 +464,14 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
 
     // Otomatik İthalat Taraması: Dosyalarda kullanılan harici paketleri bul ve ekle
     const scannedPackages = await scanUsedNpmPackages(projectDir);
+    const scannedDeps = {};
+    const scannedDevDeps = {};
     for (const pkg of scannedPackages) {
-        if (!baseDependencies[pkg] && !baseDevDependencies[pkg] && !currentPkg.dependencies?.[pkg] && !currentPkg.devDependencies?.[pkg]) {
-            const version = KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
-            if (pkg.startsWith('@types/')) {
-                baseDevDependencies[pkg] = version;
-            } else {
-                baseDependencies[pkg] = version;
-            }
+        const version = KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
+        if (pkg.startsWith('@types/')) {
+            scannedDevDeps[pkg] = version;
+        } else {
+            scannedDeps[pkg] = version;
         }
     }
 
@@ -485,10 +485,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         },
         dependencies: {
             ...baseDependencies,
+            ...scannedDeps,
             ...(currentPkg.dependencies || {})
         },
         devDependencies: {
             ...baseDevDependencies,
+            ...scannedDevDeps,
             ...(currentPkg.devDependencies || {})
         }
     };

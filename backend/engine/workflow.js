@@ -730,13 +730,15 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
             const allDiskFiles = await listProjectTree(projectDir);
             for (const df of allDiskFiles) {
-                const idx = generatedProjectFiles.findIndex(gf => gf.path === df.path);
                 if (idx !== -1) {
                     generatedProjectFiles[idx] = df;
                 } else {
                     generatedProjectFiles.push(df);
                 }
             }
+
+            // Auto-scaffold: reconcile package.json dependencies with all scanned imports before audit
+            await ensureProjectScaffold(projectDir, state, plan);
 
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
             let buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal, phase: 'generation' });
