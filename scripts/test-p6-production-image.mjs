@@ -18,6 +18,7 @@ const playwrightCli = join(repositoryRoot, 'node_modules', '@playwright', 'test'
 const fixtureRoot = mkdtempSync(join(tmpdir(), `xfactor-p6-${runId}-`));
 const dataRoot = join(fixtureRoot, 'data');
 const projectsRoot = join(fixtureRoot, 'projects');
+// P9 Audit Remediation: p6-container-seed.mjs is preserved strictly as a named surface-only fixture for P6 packaging tests, never as production isolation evidence.
 const seedScript = join(repositoryRoot, 'scripts', 'p6-container-seed.mjs');
 let httpsPort;
 

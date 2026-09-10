@@ -82,7 +82,7 @@ async function bootPipeline() {
   console.log(`Backend running at ${backendUrl}`);
 
   try {
-    const apiCall = async (method, path, body, cookies = []) => {
+    const apiCall = async (method, path, body, cookies = [], isBinary = false) => {
       const res = await fetch(`${backendUrl}${path}`, {
         method,
         headers: {
@@ -94,6 +94,10 @@ async function bootPipeline() {
         },
         body: body ? JSON.stringify(body) : undefined
       });
+      if (isBinary) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        return { status: res.status, headers: res.headers, body: buf };
+      }
       const data = await res.json().catch(() => null);
       return { status: res.status, headers: res.headers, data };
     };
@@ -175,12 +179,17 @@ async function bootPipeline() {
     const completedProject = completeVerifiedProject({ projectId, contractId: contract.id, artifactId, expectedRevision: currentProject.revision });
     
     assert.equal(completedProject.status, 'completed');
+    const receipt = dbModule.db.prepare("SELECT * FROM completion_receipts WHERE project_id = ?").get(projectId);
+    assert.ok(receipt);
+    assert.equal(receipt.run_id, runId);
+    assert.equal(receipt.artifact_id, artifactId);
     console.log('Project marked completed with durable receipt.');
 
-    const verifiedRes = await apiCall('GET', `/api/projects/${projectId}/contracts/${contract.id}/artifacts/${artifactId}/download`, null, [cookie]);
-    assert.equal(verifiedRes.status, 200); 
-    console.log('Verified artifact download succeeded.');
-
+    const verifiedRes = await apiCall('GET', `/api/projects/${projectId}/contracts/${contract.id}/artifacts/${artifactId}/download`, null, [cookie], true);
+    assert.equal(verifiedRes.status, 200);
+    const downloadSha256 = crypto.createHash('sha256').update(verifiedRes.body).digest('hex');
+    assert.equal(downloadSha256, fakeZipSha);
+    console.log('Verified artifact download succeeded with matching SHA-256.');
     console.log('Deterministic verification pipeline smoke proof successful.');
 
     const { closeDatabase } = await import(pathToFileURL(path.join(backendRoot, 'db.js')).href);
