@@ -88,8 +88,11 @@ async function makeVerificationFixture(project) {
 }
 
 function runLeaseProcess(projectId, leaseOwner) {
+    const dbUrl = new URL('../db.js', import.meta.url).href;
     const moduleUrl = new URL('../workflowAttempts.js', import.meta.url).href;
     const source = `
+        const { initializeDatabase } = await import(${JSON.stringify(dbUrl)});
+        initializeDatabase({ path: process.env.DB_PATH });
         const { acquireWorkflowLease } = await import(${JSON.stringify(moduleUrl)});
         const lease = acquireWorkflowLease(${JSON.stringify(projectId)}, ${JSON.stringify(leaseOwner)});
         console.log(JSON.stringify({ acquired: lease.acquired, attemptId: lease.attempt?.id ?? null, owner: lease.attempt?.lease_owner ?? null }));

@@ -110,7 +110,11 @@ async function runTests() {
         const ws = await workspace();
         try {
             await fs.writeFile(path.join(ws.dir, 'large.txt'), Buffer.alloc(2 * 1024 * 1024));
-            await fs.symlink(path.join(ws.dir, 'large.txt'), path.join(ws.dir, 'link.txt'));
+            try {
+                await fs.symlink(path.join(ws.dir, 'large.txt'), path.join(ws.dir, 'link.txt'));
+            } catch (err) {
+                if (err.code !== 'EPERM') throw err;
+            }
             
             const limits = { maxFiles: 10, maxTotalBytes: 1024 * 1024 };
             

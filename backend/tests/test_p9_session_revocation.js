@@ -91,9 +91,12 @@ function currentTotp(secret) {
     return String(binary % 1_000_000).padStart(6, '0');
 }
 function runTotpWorker({ username, password, token, env }) {
+    const dbUrl = new URL('../db.js', import.meta.url).href;
     const authUrl = new URL('../auth.js', import.meta.url).href;
     const source = `
-        import { authenticateUserAsync, createSessionAfterTotp } from ${JSON.stringify(authUrl)};
+        const { initializeDatabase } = await import(${JSON.stringify(dbUrl)});
+        initializeDatabase({ path: process.env.DB_PATH });
+        const { authenticateUserAsync, createSessionAfterTotp } = await import(${JSON.stringify(authUrl)});
         const user = await authenticateUserAsync(${JSON.stringify(username)}, ${JSON.stringify(password)});
         const session = user
             ? createSessionAfterTotp(user.id, ${JSON.stringify(token)}, process.env)

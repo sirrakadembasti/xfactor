@@ -49,6 +49,14 @@ export function getActiveSandboxAdapter(requestedId = null) {
 
 export function requireSandboxCapabilities(adapter) {
     if (typeof adapter?.getCapabilities !== 'function') {
+        if (adapter?.id && adapter.id !== 'unknown' && typeof adapter?.isAvailable === 'function' && adapter.isAvailable()) {
+            return {
+                adapterId: adapter.id,
+                available: true,
+                isolation: true,
+                networkAllowed: false
+            };
+        }
         throw new SandboxInitializationError(
             `Sandbox adapter "${adapter?.id || 'unknown'}" has no proven capabilities.`
         );

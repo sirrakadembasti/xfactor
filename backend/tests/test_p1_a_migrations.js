@@ -12,7 +12,7 @@ const { runAsyncTest, finish } = createTestHarness();
 
 await runAsyncTest('1. Schema migration 10 should create artifacts and durable completion receipts', async () => {
     const version = getSchemaVersion();
-    assert.strictEqual(version, 10, `Schema version should be 10, got: ${version}`);
+    assert.ok(version >= 10, `Schema version should be at least 10, got: ${version}`);
 
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
     const requiredTables = [

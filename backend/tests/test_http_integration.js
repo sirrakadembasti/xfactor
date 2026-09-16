@@ -164,6 +164,7 @@ try {
         DB_PATH: dbPath,
         PROJECTS_ROOT: projectsRoot,
         NODE_ENV: 'production',
+        EXECUTION_WORKER_TOKEN: 'http-test-worker-token',
         MFA_ENCRYPTION_KEY: 'ab'.repeat(32),
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: APP_ORIGIN,
@@ -175,9 +176,12 @@ try {
         GEMINI_API_KEY: ''
     };
 
+    const dbUrl = pathToFileURL(path.join(backendDir, 'db.js')).href;
     const authUrl = pathToFileURL(path.join(backendDir, 'auth.js')).href;
     const seedSource = `
-    import { createUser, promoteUserToAdmin } from ${JSON.stringify(authUrl)};
+    const { initializeDatabase } = await import(${JSON.stringify(dbUrl)});
+    initializeDatabase({ path: process.env.DB_PATH });
+    const { createUser, promoteUserToAdmin } = await import(${JSON.stringify(authUrl)});
     createUser('route-owner-a', 'RouteOwnerA!2026');
     createUser('route-owner-b', 'RouteOwnerB!2026');
     promoteUserToAdmin('integration-admin', 'IntegrationAdmin!2026');

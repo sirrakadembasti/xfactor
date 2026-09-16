@@ -481,12 +481,11 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         }
         const result = db.prepare(`
             UPDATE projects
-            SET title = ?, status = ?, plan = ?, workflow_state = ?, revision = ?
+            SET title = ?, status = ?, plan = NULL, workflow_state = ?, revision = ?
             WHERE id = ? AND revision = ? AND status = ?
         `).run(
             state.title,
             state.status,
-            planStr,
             workflowStr,
             nextRevision,
             state.id,
@@ -497,6 +496,25 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
             throw new Error(`CAS Revision conflict on project ${state.id}`);
         }
         state.revision = nextRevision;
+
+        if (state.plan) {
+            const contractJson = JSON.stringify(state.plan);
+            const contractHash = crypto.createHash('sha256').update(contractJson).digest('hex');
+            const existing = db.prepare('SELECT id FROM project_contracts WHERE project_id = ?').get(state.id);
+            if (existing) {
+                db.prepare(`
+                    UPDATE project_contracts
+                    SET contract_json = ?, contract_hash = ?, revision = ?
+                    WHERE id = ?
+                `).run(contractJson, contractHash, nextRevision, existing.id);
+            } else {
+                const contractId = `contract-${crypto.randomUUID()}`;
+                db.prepare(`
+                    INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
+                    VALUES (?, ?, ?, 'approved', ?, ?)
+                `).run(contractId, state.id, nextRevision, contractJson, contractHash);
+            }
+        }
 
         const existingCount = db.prepare(
             'SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?'

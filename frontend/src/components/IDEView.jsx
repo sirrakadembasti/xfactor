@@ -86,14 +86,14 @@ export default function IDEView({
           Üretilen Dosyalar ({projectFiles.length})
         </div>
         <div className="flex-1 overflow-y-auto">
-          {projectFiles.map((file, index) => (
+          {projectFiles.map((f, index) => (
             <button
-              key={`${file.path}-${index}`}
+              key={`${f.path}-${index}`}
               type="button"
-              onClick={() => setActiveFile(file)}
-              aria-pressed={activeFile?.path === file.path}
+              onClick={() => setActiveFile(f)}
+              aria-pressed={activeFile?.path === f.path}
               className={`w-full text-left p-2.5 text-xs cursor-pointer border-b truncate hover:bg-indigo-50 flex items-center gap-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                activeFile?.path === file.path
+                activeFile?.path === f.path
                   ? 'bg-indigo-100 font-semibold border-l-4 border-indigo-600 text-indigo-900'
                   : 'text-gray-700'
               }`}
@@ -101,9 +101,9 @@ export default function IDEView({
               <FileCode
                 size={15}
                 aria-hidden="true"
-                className={activeFile?.path === file.path ? 'text-indigo-600 shrink-0' : 'text-gray-400 shrink-0'}
+                className={activeFile?.path === f.path ? 'text-indigo-600 shrink-0' : 'text-gray-400 shrink-0'}
               />
-              <span className="truncate">{file.path}</span>
+              <span className="truncate">{f.path}</span>
             </button>
           ))}
         </div>

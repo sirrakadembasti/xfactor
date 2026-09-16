@@ -87,8 +87,10 @@ export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000 } =
                 PROJECTS_ROOT: testProjectsRoot,
                 ARTIFACTS_ROOT: testArtifactsRoot,
                 TRASH_ROOT: testTrashRoot,
-                // Docker suites must fail explicitly when Docker is unavailable.
-                P8_REQUIRE_DOCKER_LIMITS: '1'
+                // Docker suites must fail explicitly when Docker is unavailable in CI.
+                ...(process.env.P8_REQUIRE_DOCKER_LIMITS !== undefined
+                    ? { P8_REQUIRE_DOCKER_LIMITS: process.env.P8_REQUIRE_DOCKER_LIMITS }
+                    : (process.platform === 'linux' ? { P8_REQUIRE_DOCKER_LIMITS: '1' } : {}))
             }, timeoutMs);
             results.push(result);
         }

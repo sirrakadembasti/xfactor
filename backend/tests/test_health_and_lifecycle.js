@@ -66,6 +66,7 @@ async function runTests() {
     const commonEnv = {
         ...process.env,
         NODE_ENV: 'production',
+        EXECUTION_WORKER_TOKEN: 'health-test-worker-token',
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: 'https://xfactor.example',
         MFA_ENCRYPTION_KEY: '55'.repeat(32),
@@ -86,7 +87,7 @@ async function runTests() {
         assert.equal((await health.json()).status, 'ok');
         assert.equal(
             health.headers.get('content-security-policy'),
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss:; frame-ancestors 'none';"
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://xfactor.example wss://xfactor.example; worker-src 'self'; frame-ancestors 'none';"
         );
         const ready = await request(port, '/readyz');
         assert.equal(ready.status, 200);

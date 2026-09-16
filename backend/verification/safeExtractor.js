@@ -4,10 +4,20 @@ import JSZip from 'jszip';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 
 function canonicalZipPath(value) {
+    if (!value || typeof value !== 'string') {
+        throw new Error('Extraction aborted: Traversal attack detected for path: empty');
+    }
+    if (value.includes('\0')) {
+        throw new Error(`Extraction aborted: Traversal attack detected for path: ${value}`);
+    }
     const normalized = value.replace(/\\/g, '/');
-    if (!normalized || normalized.includes('\0') || normalized.startsWith('/')) throw new Error(`Extraction aborted: Invalid archive path: ${value}`);
+    if (normalized.startsWith('/') || normalized.split('/').some(seg => seg === '..')) {
+        throw new Error(`Extraction aborted: Traversal attack detected for path: ${value}`);
+    }
     const canonical = path.posix.normalize(normalized);
-    if (!canonical || canonical === '.' || canonical === '..' || canonical.startsWith('../')) throw new Error(`Extraction aborted: Invalid archive path: ${value}`);
+    if (!canonical || canonical === '.' || canonical === '..' || canonical.startsWith('../')) {
+        throw new Error(`Extraction aborted: Traversal attack detected for path: ${value}`);
+    }
     return canonical;
 }
 
@@ -57,7 +67,7 @@ export async function safeExtractZip(input, outputDir, limits = {}) {
     let zip;
     if (typeof input === 'string') zip = await JSZip.loadAsync(await fs.readFile(input));
     else if (Buffer.isBuffer(input) || input instanceof Uint8Array) zip = await JSZip.loadAsync(input);
-    else if (input && typeof input.file === 'function' && input.files) zip = await JSZip.loadAsync(await input.generateAsync({ type: 'nodebuffer', platform: 'UNIX' }));
+    else if (input && typeof input.file === 'function' && input.files) zip = input;
     else throw new Error('Invalid ZIP input: expected file path, Buffer, or JSZip instance.');
     const entries = await inspectZipEntries(zip, limits);
     for (const item of entries) {

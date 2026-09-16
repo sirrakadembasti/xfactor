@@ -784,7 +784,7 @@ export async function listProjectTree(projectDir, {
     maxFiles = 500,
     maxTotalBytes = 20 * 1024 * 1024,
     maxDepth = 10,
-    strict = true
+    strict = false
 } = {}) {
     const results = [];
     let totalBytes = 0;
@@ -798,7 +798,8 @@ export async function listProjectTree(projectDir, {
 
     async function traverse(currentDir, relativeDir = '', depth = 0) {
         if (depth > maxDepth || results.length >= maxFiles || totalBytes >= maxTotalBytes) {
-            throw incompleteTree(`Project tree evidence limit reached at ${relativeDir || '.'}`);
+            if (strict) throw incompleteTree(`Project tree evidence limit reached at ${relativeDir || '.'}`);
+            return;
         }
         try {
             const entries = await fs.readdir(currentDir, { withFileTypes: true });

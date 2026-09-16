@@ -74,6 +74,7 @@ await runAsyncTest("0b. Runtime config should enforce the production proxy and H
         ARTIFACTS_ROOT: process.cwd(),
         PROJECTS_ROOT: process.cwd(),
         DB_PATH: process.cwd(),
+        EXECUTION_WORKER_TOKEN: 'test-worker-token',
         MFA_ENCRYPTION_KEY: 'ab'.repeat(32)
     }));
 });

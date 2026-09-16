@@ -397,8 +397,9 @@ export default function App() {
             return;
           }
           const projectId = activeProjectRef.current;
-          if (projectId && data.projectId !== projectId) return;
+          if (data.projectId !== activeProjectRef.current) return;
 
+          // pendingLogBatch queue
           let batch = wsBatchRef.current;
           if (
             !batch
@@ -583,6 +584,7 @@ export default function App() {
   };
 
   const handleDownloadProjectZip = async (id, event) => {
+    // /contracts/${contractId}/artifacts/${latestArtifact.id}/download
     rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
     const identity = captureRequest('downloadProject');

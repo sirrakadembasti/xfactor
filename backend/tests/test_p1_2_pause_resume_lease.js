@@ -13,6 +13,10 @@ await runAsyncTest('1. Immediate approve->pause race: abortProjectExecution shou
     const { executeProjectTasks } = await import('../engine/workflow.js');
 
     const project = await createProject({ title: 'Race Approve Pause Project' });
+    const { db, dbEvents } = await import('../db.js');
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('implementing', project.id);
+    project.status = 'implementing';
+
     const lease = acquireWorkflowLease(project.id, 'test-race-worker');
     assert.strictEqual(lease.acquired, true);
 
@@ -38,11 +42,12 @@ await runAsyncTest('1. Immediate approve->pause race: abortProjectExecution shou
 // =========================================================================
 await runAsyncTest('2. checkPause should resolve when state changes from paused to running, and honor abort', async () => {
     const { checkPause } = await import('../engine/workflow.js');
-    const { createProject, saveProjectState, deleteProject } = await import('../projectRepository.js');
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { db, dbEvents } = await import('../db.js');
 
     const project = await createProject({ title: 'CheckPause Resume Test' });
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
     project.status = 'paused';
-    await saveProjectState(project.id, project);
 
     const controller = new AbortController();
 
@@ -50,16 +55,17 @@ await runAsyncTest('2. checkPause should resolve when state changes from paused 
     const checkPromise = checkPause(project.id, controller.signal);
 
     setTimeout(async () => {
-        project.status = 'running';
-        await saveProjectState(project.id, project);
+        db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('implementing', project.id);
+        project.status = 'implementing';
+        dbEvents.emit(`stateChange:${project.id}`, 'implementing');
     }, 50);
 
     const statusAfterResume = await checkPromise;
-    assert.strictEqual(statusAfterResume, 'running');
+    assert.strictEqual(statusAfterResume, 'implementing');
 
     // Test abort while waiting
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
     project.status = 'paused';
-    await saveProjectState(project.id, project);
 
     const abortController = new AbortController();
     const abortPromise = checkPause(project.id, abortController.signal);
