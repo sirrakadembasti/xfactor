@@ -1,7 +1,11 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { validateJob } from './protocol.js';
-
+import { JobStore } from './jobStore.js';
+import { executeJob } from './runtime.js';
 export function createWorkerServer({ config, store, executeJob, responseDelayMs = 0 }) {
   const token = config?.EXECUTION_WORKER_TOKEN || config?.WORKER_TOKEN;
   if (!token || !store || !executeJob) {
@@ -234,4 +238,30 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
   });
 
   return server;
+}
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  const token = process.env.EXECUTION_WORKER_TOKEN || process.env.WORKER_TOKEN || 'dev-worker-token-internal';
+  const port = parseInt(process.env.PORT || process.env.EXECUTION_WORKER_PORT || '8080', 10);
+  const host = process.env.HOST || '127.0.0.1';
+  const dbPath = process.env.EXECUTION_WORKER_DB || path.join(os.tmpdir(), 'xfactor-dev-worker-jobs.json');
+
+  const store = new JobStore(dbPath);
+  const server = createWorkerServer({
+    config: { EXECUTION_WORKER_TOKEN: token },
+    store,
+    executeJob
+  });
+
+  server.listen(port, host, () => {
+    console.log(`[execution-worker] Listening on http://${host}:${port}`);
+  });
+
+  const shutdown = () => {
+    server.close(() => {
+      store.close();
+      process.exit(0);
+    });
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }

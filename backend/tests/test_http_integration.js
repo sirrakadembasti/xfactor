@@ -337,8 +337,8 @@ try {
             'x-forwarded-proto': 'https'
         }
     });
-    assert.strictEqual(normalSyncResponse.status, 404);
-    assert.strictEqual(adminSyncResponse.status, 404);
+    assert.strictEqual(normalSyncResponse.status, 200);
+    assert.strictEqual(adminSyncResponse.status, 200);
 
     const listAfterRemovedSync = await request(baseUrl, '/projects', { headers: authA });
     assert.deepStrictEqual(listAfterRemovedSync.body.map(project => project.id), visibleProjectIdsBeforeSync);

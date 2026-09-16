@@ -97,6 +97,8 @@ test_p9_lease_fencing.js
 test_p9_runner_inventory.js
 test_p9_session_revocation.js
 test_p9_verification_pipeline.js
+test_p1_7_task1_auto_register.js
+test_p1_7_task1_routes.js
 test_package_verifier.js
 test_project_repository.js
 test_quality_gate.js

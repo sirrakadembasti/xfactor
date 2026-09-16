@@ -1370,9 +1370,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             terminalStatus = 'failed';
             executionError = error.message;
             const errorLog = logError('workflow.execution_failed', error, { projectId, attemptId });
-            await workflowLogEvent(wsHub, projectId, "System", "error", "", `Süreç hatası. Referans: ${errorLog.requestId}`, "system");
+            const errStr = `${error?.message || ''} ${error?.code || ''} ${error?.status || ''} ${error?.stack || ''}`;
+            const isQuotaError = /429|RESOURCE_EXHAUSTED|quota|rate limit|rate_limit/i.test(errStr);
+            const errorMessageText = error?.message || 'Bilinmeyen hata';
+            const logMsg = isQuotaError
+                ? `Süreç hatası: LLM Kota / Bütçe Sınırı Aşıldı (${errorMessageText}). Referans: ${errorLog.requestId}`
+                : `Süreç hatası (${errorMessageText}). Referans: ${errorLog.requestId}`;
+            await workflowLogEvent(wsHub, projectId, "System", "error", "", logMsg, "system");
             const failedState = await readProjectState(projectId);
             if (failedState) {
+                failedState.last_error = error?.message || errorMessageText;
                 // fail-closed pause check
                 const immutableStatuses = new Set(['completed', 'artifact_verified', 'acceptance_verified', 'runtime_verified']);
                 if (!immutableStatuses.has(failedState.status)) {

@@ -1,10 +1,16 @@
 import crypto from 'node:crypto';
 const IDENTITY = ['version','jobId','operation','projectId','contractId','contractHash','revision','artifactId','nonce','inputSha256','runId'];
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
-export function createExecutionClient(config) {
-  const workerUrl = (config.EXECUTION_WORKER_URL || config.WORKER_URL || '').replace(/\/$/, '');
-  const workerToken = config.EXECUTION_WORKER_TOKEN || config.WORKER_TOKEN;
-  if (!workerToken) throw new Error('Client requires EXECUTION_WORKER_TOKEN');
+export function createExecutionClient(config = {}) {
+  const isProduction = config.production === true || process.env.NODE_ENV === 'production';
+  let workerToken = config.EXECUTION_WORKER_TOKEN || config.WORKER_TOKEN;
+  if (!workerToken) {
+    if (isProduction) {
+      throw new Error('Client requires EXECUTION_WORKER_TOKEN');
+    }
+    workerToken = 'dev-worker-token-internal';
+  }
+  const workerUrl = (config.EXECUTION_WORKER_URL || config.WORKER_URL || 'http://127.0.0.1:8080').replace(/\/$/, '');
   const parsed = new URL(workerUrl);
   if (parsed.protocol === 'http:' && !['127.0.0.1','localhost'].includes(parsed.hostname)) throw new Error('Insecure HTTP URL must be loopback');
   if (!['http:','https:'].includes(parsed.protocol)) throw new Error('URL must be http (loopback) or https');
