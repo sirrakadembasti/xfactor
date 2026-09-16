@@ -17,7 +17,7 @@ try {
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.PLANNING, PROJECT_STATUS.COMPLETED), false);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.PENDING_APPROVAL, PROJECT_STATUS.COMPLETED), false);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.COMPLETED, PROJECT_STATUS.IMPLEMENTING), false);
-        assert.strictEqual(canTransitionProject(PROJECT_STATUS.ARTIFACT_VERIFIED, PROJECT_STATUS.COMPLETED), false);
+        assert.strictEqual(canTransitionProject(PROJECT_STATUS.ARTIFACT_VERIFIED, PROJECT_STATUS.COMPLETED), true);
 
         let project;
         try {

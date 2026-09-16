@@ -36,13 +36,13 @@ await runAsyncTest('2. saveProjectState should increment revision version on eve
     const project = await createProject({ title: 'Revision Test' });
     const initialRev = project.revision || 1;
 
-    project.status = 'in_progress';
+    project.status = 'pending_approval';
     await saveProjectState(project);
 
     const afterFirstSave = getProject(project.id);
     assert.strictEqual(afterFirstSave.revision, initialRev + 1);
 
-    afterFirstSave.status = 'completed';
+    afterFirstSave.status = 'contract_approved';
     await saveProjectState(afterFirstSave);
 
     const afterSecondSave = getProject(project.id);
@@ -66,12 +66,12 @@ await runAsyncTest('3. Chat appends during workflow state mutation should not be
     appendProjectChatMessage(project.id, 'user', 'Urgent user intervention');
 
     // Workflow finishes task and saves snapshot
-    snapshot.status = 'running';
+    snapshot.status = 'pending_approval';
     snapshot.plan = { summary: 'Running plan' };
     await saveProjectState(snapshot);
 
     const finalProject = getProject(project.id);
-    assert.strictEqual(finalProject.status, 'running');
+    assert.strictEqual(finalProject.status, 'pending_approval');
     assert.ok(
         finalProject.chatHistory.some(c => c.parts[0].text.includes('Urgent user intervention')),
         'User chat message must not be overwritten by workflow checkpoint'

@@ -2,58 +2,139 @@ import crypto from 'crypto';
 import { db } from './db.js';
 
 const activeLeases = new Map(); // projectId -> { attemptId, leaseOwner }
+const DEFAULT_HEARTBEAT_TTL_SECONDS = 30;
+const STALE_ERROR = 'Lease expired before a replacement attempt was acquired';
+const RESTART_ERROR = 'Server restarted while execution was in progress';
+const PAUSE_MESSAGE = "⚠️ Sunucu yeniden başlatıldı; süreç güvenle duraklatıldı. Kaldığı yerden devam ettirmek için 'Devam Et' (Resume) butonuna basabilirsiniz.";
 
-export function getActiveWorkflowAttempt(projectId, { heartbeatTtlSeconds = 30 } = {}) {
+function databaseFor(options = {}) {
+    return options.database || db;
+}
+
+function epochFromTimestamp(value) {
+    if (value === null || value === undefined || value === '') return Number.NaN;
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? (value < 1e12 ? value * 1000 : value) : Number.NaN;
+    }
+    if (value instanceof Date) return value.getTime();
+    const text = String(value).trim();
+    if (/^\d+(?:\.\d+)?$/.test(text)) {
+        const numeric = Number(text);
+        return Number.isFinite(numeric) ? (numeric < 1e12 ? numeric * 1000 : numeric) : Number.NaN;
+    }
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text)) {
+        return Date.parse(`${text.replace(' ', 'T')}Z`);
+    }
+    return Date.parse(text);
+}
+
+function heartbeatValue(row) {
+    const numericEpoch = epochFromTimestamp(row?.heartbeat_epoch);
+    return Number.isFinite(numericEpoch)
+        ? numericEpoch
+        : epochFromTimestamp(row?.heartbeat_at);
+}
+
+function isFreshTimestamp(value, ttlSeconds, now = Date.now()) {
+    const timestamp = epochFromTimestamp(value);
+    if (!Number.isFinite(timestamp)) return false;
+    return now - timestamp <= (Number(ttlSeconds) * 1000);
+}
+
+function sortAttemptsNewestFirst(rows) {
+    return [...rows].sort((a, b) => {
+        const aEpoch = epochFromTimestamp(a.started_epoch ?? a.started_at);
+        const bEpoch = epochFromTimestamp(b.started_epoch ?? b.started_at);
+        if (aEpoch !== bEpoch) return bEpoch - aEpoch;
+        return String(b.id).localeCompare(String(a.id));
+    });
+}
+
+export function getActiveWorkflowAttempt(projectId, {
+    heartbeatTtlSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS,
+    database = db
+} = {}) {
     if (!projectId) return null;
 
-    const row = db.prepare(`
-        SELECT id, project_id, status, lease_owner, started_at, heartbeat_at, ended_at, error
+    const rows = database.prepare(`
+        SELECT id, project_id, status, lease_owner, started_at, started_epoch,
+               heartbeat_at, heartbeat_epoch, ended_at, ended_epoch, error
         FROM workflow_attempts
         WHERE project_id = ? AND status = 'running'
-        ORDER BY started_at DESC
-        LIMIT 1
-    `).get(projectId);
-
+    `).all(projectId);
+    const row = sortAttemptsNewestFirst(rows)[0];
     if (!row) {
         activeLeases.delete(projectId);
         return null;
     }
 
-    const heartbeatMs = new Date(row.heartbeat_at).getTime();
-    const isFresh = (Date.now() - heartbeatMs) <= (heartbeatTtlSeconds * 1000);
-    if (!isFresh) {
+    if (!isFreshTimestamp(heartbeatValue(row), heartbeatTtlSeconds)) {
         activeLeases.delete(projectId);
         return null;
     }
 
+    activeLeases.set(projectId, { attemptId: row.id, leaseOwner: row.lease_owner });
     return row;
 }
 
-export function acquireWorkflowLease(projectId, leaseOwner, { heartbeatTtlSeconds = 30 } = {}) {
+export function acquireWorkflowLease(projectId, leaseOwner, {
+    heartbeatTtlSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS,
+    database = db
+} = {}) {
     if (!projectId || !leaseOwner) {
         throw new Error('projectId and leaseOwner are required to acquire workflow lease.');
     }
 
-    const active = getActiveWorkflowAttempt(projectId, { heartbeatTtlSeconds });
-    if (active) {
-        return { acquired: false, attempt: active };
-    }
-
     const attemptId = `attempt-${crypto.randomUUID()}`;
-    const nowIso = new Date().toISOString();
-
+    const now = Date.now();
+    const nowIso = new Date(now).toISOString();
+    let transactionOpen = false;
     try {
-        db.prepare(`
-            INSERT INTO workflow_attempts (id, project_id, status, lease_owner, started_at, heartbeat_at)
-            VALUES (?, ?, 'running', ?, ?, ?)
-        `).run(attemptId, projectId, leaseOwner, nowIso, nowIso);
+        database.exec('BEGIN IMMEDIATE;');
+        transactionOpen = true;
 
+        const runningRows = database.prepare(`
+            SELECT id, project_id, status, lease_owner, started_at, started_epoch,
+                   heartbeat_at, heartbeat_epoch, ended_at, ended_epoch, error
+            FROM workflow_attempts
+            WHERE project_id = ? AND status = 'running'
+        `).all(projectId);
+        const current = sortAttemptsNewestFirst(runningRows)[0];
+        if (current && isFreshTimestamp(heartbeatValue(current), heartbeatTtlSeconds)) {
+            activeLeases.set(projectId, { attemptId: current.id, leaseOwner: current.lease_owner });
+            database.exec('COMMIT;');
+            transactionOpen = false;
+            return { acquired: false, attempt: current };
+        }
+
+        if (current) {
+            const terminated = database.prepare(`
+                UPDATE workflow_attempts
+                SET status = 'stale_terminated', ended_at = ?, ended_epoch = ?, error = ?
+                WHERE id = ? AND project_id = ? AND status = 'running'
+            `).run(nowIso, now, STALE_ERROR, current.id, projectId);
+            if (terminated.changes === 1) {
+                activeLeases.delete(projectId);
+            }
+        }
+
+        database.prepare(`
+            INSERT INTO workflow_attempts (
+                id, project_id, status, lease_owner, started_at, started_epoch, heartbeat_at, heartbeat_epoch
+            )
+            VALUES (?, ?, 'running', ?, ?, ?, ?, ?)
+        `).run(attemptId, projectId, leaseOwner, nowIso, now, nowIso, now);
+
+        database.exec('COMMIT;');
+        transactionOpen = false;
         activeLeases.set(projectId, { attemptId, leaseOwner });
-        const newAttempt = db.prepare('SELECT * FROM workflow_attempts WHERE id = ?').get(attemptId);
+        const newAttempt = database.prepare('SELECT * FROM workflow_attempts WHERE id = ?').get(attemptId);
         return { acquired: true, attempt: newAttempt };
     } catch (err) {
-        // Unique constraint ihlali veya paralel yarış durumunda aktif attempt'i dön
-        const concurrentActive = getActiveWorkflowAttempt(projectId, { heartbeatTtlSeconds });
+        if (transactionOpen) {
+            try { database.exec('ROLLBACK;'); } catch {}
+        }
+        const concurrentActive = getActiveWorkflowAttempt(projectId, { heartbeatTtlSeconds, database });
         if (concurrentActive) {
             return { acquired: false, attempt: concurrentActive };
         }
@@ -61,93 +142,159 @@ export function acquireWorkflowLease(projectId, leaseOwner, { heartbeatTtlSecond
     }
 }
 
-export function updateAttemptHeartbeat(attemptId, leaseOwner = null) {
-    if (!attemptId) return false;
+export function updateAttemptHeartbeat(attemptId, leaseOwner = null, { database = db } = {}) {
+    if (!attemptId || !leaseOwner) return false;
     try {
-        let query = `
+        const now = Date.now();
+        const result = database.prepare(`
             UPDATE workflow_attempts
-            SET heartbeat_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND status = 'running'
-        `;
-        const params = [attemptId];
-        if (leaseOwner) {
-            query += ' AND lease_owner = ?';
-            params.push(leaseOwner);
+            SET heartbeat_at = ?, heartbeat_epoch = ?
+            WHERE id = ? AND status = 'running' AND lease_owner = ?
+        `).run(new Date(now).toISOString(), now, attemptId, leaseOwner);
+        if (result.changes > 0) {
+            const row = database.prepare('SELECT project_id, lease_owner FROM workflow_attempts WHERE id = ?').get(attemptId);
+            if (row) activeLeases.set(row.project_id, { attemptId, leaseOwner: row.lease_owner });
         }
-        const result = db.prepare(query).run(...params);
         return result.changes > 0;
     } catch (err) {
-        // Heartbeat hatası durumunda process crash yerine kontrollü false dön
         return false;
     }
 }
 
-export function releaseWorkflowLease(attemptId, terminalStatus = 'completed', { error = null } = {}) {
-    if (!attemptId) return false;
+export function releaseWorkflowLease(attemptId, terminalStatus = 'completed', {
+    error = null,
+    leaseOwner = null,
+    database = db
+} = {}) {
+    if (!attemptId || !leaseOwner) return false;
 
-    const attempt = db.prepare('SELECT project_id FROM workflow_attempts WHERE id = ?').get(attemptId);
-    if (attempt) {
-        activeLeases.delete(attempt.project_id);
+    try {
+        const attempt = database.prepare(
+            'SELECT project_id FROM workflow_attempts WHERE id = ? AND lease_owner = ?'
+        ).get(attemptId, leaseOwner);
+        const now = Date.now();
+        const result = database.prepare(`
+            UPDATE workflow_attempts
+            SET status = ?, ended_at = ?, ended_epoch = ?, error = ?
+            WHERE id = ? AND status = 'running' AND lease_owner = ?
+        `).run(
+            terminalStatus,
+            new Date(now).toISOString(),
+            now,
+            error ? String(error) : null,
+            attemptId,
+            leaseOwner
+        );
+        if (result.changes > 0 && attempt) {
+            activeLeases.delete(attempt.project_id);
+        }
+        return result.changes > 0;
+    } catch (err) {
+        return false;
     }
-
-    const result = db.prepare(`
-        UPDATE workflow_attempts
-        SET status = ?, ended_at = CURRENT_TIMESTAMP, error = ?
-        WHERE id = ?
-    `).run(terminalStatus, error ? String(error) : null, attemptId);
-
-    return result.changes > 0;
 }
 
-export function reconcileStaleWorkflowAttempts({ staleThresholdSeconds = 30 } = {}) {
-    const thresholdDate = new Date(Date.now() - (staleThresholdSeconds * 1000)).toISOString();
-    const staleAttempts = db.prepare(`
-        SELECT a.id as attempt_id, a.project_id, p.title as project_title
-        FROM workflow_attempts a
-        JOIN projects p ON p.id = a.project_id
-        WHERE a.status = 'running' AND (a.heartbeat_at <= ? OR a.heartbeat_at IS NULL)
-    `).all(thresholdDate);
 
+export function isWorkflowLeaseCurrent(attemptId, leaseOwner, {
+    projectId = null,
+    heartbeatTtlSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS,
+    database = db
+} = {}) {
+    if (!attemptId || !leaseOwner) return false;
+    const projectClause = projectId ? ' AND project_id = ?' : '';
+    const params = projectId ? [attemptId, projectId, leaseOwner] : [attemptId, leaseOwner];
+    const row = database.prepare(`
+        SELECT id, project_id, lease_owner, heartbeat_at, heartbeat_epoch, status
+        FROM workflow_attempts
+        WHERE id = ?${projectClause} AND status = 'running' AND lease_owner = ?
+    `).get(...params);
+    return Boolean(row && isFreshTimestamp(heartbeatValue(row), heartbeatTtlSeconds));
+}
+
+export function assertWorkflowLease(attemptId, leaseOwner, options = {}) {
+    if (!isWorkflowLeaseCurrent(attemptId, leaseOwner, options)) {
+        const error = new Error('Workflow lease is stale or fenced by a newer owner.');
+        error.code = 'WORKFLOW_LEASE_FENCED';
+        throw error;
+    }
+    return true;
+}
+
+export function reconcileStaleWorkflowAttempts({
+    staleThresholdSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS,
+    database = db
+} = {}) {
+    const now = Date.now();
+    const nowIso = new Date(now).toISOString();
     const recoveredProjectIds = [];
-    const nowIso = new Date().toISOString();
-    const pauseMessage = "⚠️ Sunucu yeniden başlatıldı; süreç güvenle duraklatıldı. Kaldığı yerden devam ettirmek için 'Devam Et' (Resume) butonuna basabilirsiniz.";
+    const seenProjectIds = new Set();
+    let transactionOpen = false;
 
-    const updateAttempt = db.prepare(`
-        UPDATE workflow_attempts
-        SET status = 'stale_terminated', ended_at = ?, error = 'Server restarted while execution was in progress'
-        WHERE id = ?
-    `);
-    const updateProject = db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?");
-    const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
-
-    db.exec('BEGIN');
+    database.exec('BEGIN IMMEDIATE;');
+    transactionOpen = true;
     try {
-        for (const row of staleAttempts) {
-            updateAttempt.run(nowIso, row.attempt_id);
-            updateProject.run(row.project_id);
-            insertChat.run(row.project_id, 'model', pauseMessage, nowIso);
-            recoveredProjectIds.push(row.project_id);
-        }
-
-        // Also reconcile any project that was marked 'running' in projects table without an active attempt
-        const orphanedRunningProjects = db.prepare(`
-            SELECT id FROM projects
-            WHERE status = 'running' AND id NOT IN (
-                SELECT project_id FROM workflow_attempts WHERE status = 'running'
-            )
+        const runningAttempts = database.prepare(`
+            SELECT a.id AS attempt_id, a.project_id,
+                   a.heartbeat_at, a.heartbeat_epoch,
+                   p.status AS project_status
+            FROM workflow_attempts a
+            JOIN projects p ON p.id = a.project_id
+            WHERE a.status = 'running'
         `).all();
+        const updateAttempt = database.prepare(`
+            UPDATE workflow_attempts
+            SET status = 'stale_terminated', ended_at = ?, ended_epoch = ?, error = ?
+            WHERE id = ? AND status = 'running'
+        `);
+        const updateProject = database.prepare(`
+            UPDATE projects
+            SET status = 'paused', revision = revision + 1
+            WHERE id = ? AND status IN ('implementing', 'running')
+        `);
+        const insertChat = database.prepare(
+            'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
+        );
 
-        for (const p of orphanedRunningProjects) {
-            updateProject.run(p.id);
-            insertChat.run(p.id, 'model', pauseMessage, nowIso);
-            if (!recoveredProjectIds.includes(p.id)) {
-                recoveredProjectIds.push(p.id);
+        for (const row of runningAttempts) {
+            if (isFreshTimestamp(heartbeatValue(row), staleThresholdSeconds, now)) continue;
+            const terminated = updateAttempt.run(nowIso, now, RESTART_ERROR, row.attempt_id);
+            if (terminated.changes !== 1) continue;
+            activeLeases.delete(row.project_id);
+
+            if (seenProjectIds.has(row.project_id)) continue;
+            const projectResult = updateProject.run(row.project_id);
+            if (projectResult.changes === 1) {
+                insertChat.run(row.project_id, 'model', PAUSE_MESSAGE, nowIso);
+                recoveredProjectIds.push(row.project_id);
+                seenProjectIds.add(row.project_id);
             }
         }
 
-        db.exec('COMMIT');
+        const orphanedRunningProjects = database.prepare(`
+            SELECT id
+            FROM projects
+            WHERE status IN ('implementing', 'running')
+              AND id NOT IN (
+                  SELECT project_id FROM workflow_attempts WHERE status = 'running'
+              )
+        `).all();
+        for (const project of orphanedRunningProjects) {
+            const projectResult = updateProject.run(project.id);
+            if (projectResult.changes === 1) {
+                insertChat.run(project.id, 'model', PAUSE_MESSAGE, nowIso);
+                if (!seenProjectIds.has(project.id)) {
+                    recoveredProjectIds.push(project.id);
+                    seenProjectIds.add(project.id);
+                }
+            }
+        }
+
+        database.exec('COMMIT;');
+        transactionOpen = false;
     } catch (error) {
-        db.exec('ROLLBACK');
+        if (transactionOpen) {
+            try { database.exec('ROLLBACK;'); } catch {}
+        }
         throw error;
     }
 

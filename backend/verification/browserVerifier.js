@@ -1,170 +1,73 @@
-import http from 'http';
-import https from 'https';
-import { URL } from 'url';
-
-async function fetchHtml(targetUrl, timeoutMs = 5000) {
-    const parsed = new URL(targetUrl);
-    const client = parsed.protocol === 'https:' ? https : http;
-
-    return new Promise((resolve, reject) => {
-        const req = client.get(targetUrl, { timeout: timeoutMs }, (res) => {
-            let body = '';
-            res.on('data', chunk => { body += chunk; });
-            res.on('end', () => {
-                resolve({
-                    statusCode: res.statusCode || 0,
-                    headers: res.headers,
-                    html: body
-                });
-            });
-        });
-
-        req.on('timeout', () => {
-            req.destroy();
-            reject(new Error(`HTML fetch timed out after ${timeoutMs}ms`));
-        });
-
-        req.on('error', (err) => {
-            reject(err);
-        });
-    });
-}
-
-function matchElementInHtml(html, selector) {
-    if (!html || typeof html !== 'string' || !selector || typeof selector !== 'string') {
-        return false;
-    }
-
-    const trimmed = selector.trim();
-
-    // 1. ID selector: #app, #item-input
-    if (trimmed.startsWith('#')) {
-        const id = trimmed.slice(1);
-        const idRegex = new RegExp(`id=["']${id}["']`, 'i');
-        return idRegex.test(html);
-    }
-
-    // 2. Class selector: .btn, .header
-    if (trimmed.startsWith('.')) {
-        const className = trimmed.slice(1);
-        const classRegex = new RegExp(`class=["'][^"']*\\b${className}\\b[^"']*["']`, 'i');
-        return classRegex.test(html);
-    }
-
-    // 3. Tag selector: h1, button, input, div
-    const tagRegex = new RegExp(`<${trimmed}\\b[^>]*>`, 'i');
-    return tagRegex.test(html);
-}
-
-function matchTextInHtml(html, expectedText, selector = null) {
-    if (!html || typeof html !== 'string' || !expectedText) {
-        return false;
-    }
-
-    if (!html.includes(expectedText)) {
-        return false;
-    }
-
-    if (selector) {
-        return matchElementInHtml(html, selector);
-    }
-
-    return true;
-}
-
-export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, options = {}) {
-    const checks = [];
-    const issues = [];
-
-    let currentHtml = '';
-    const timeoutMs = options.timeoutMs || 5000;
-
-    // 1. Sayfa Yükleme Denetimi
-    try {
-        const response = await fetchHtml(frontendUrl, timeoutMs);
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-            currentHtml = response.html;
-            checks.push({
+function matchElement(html, selector) { if (!html || !selector) return false; const s = selector.trim(); if (s.startsWith('#')) return new RegExp(`id=["']${s.slice(1)}["']`, 'i').test(html); if (s.startsWith('.')) return new RegExp(`class=["'][^"']*\\b${s.slice(1)}\\b`, 'i').test(html); return new RegExp(`<${s}\\b`, 'i').test(html); }
+export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, options = undefined) {
+    if (options !== undefined && options !== null && !options.adapter) {
+        return {
+            passed: false,
+            checks: [{
                 name: 'browser_page_load',
-                status: 'passed',
-                reason: `Loaded frontend page at ${frontendUrl} (HTTP ${response.statusCode}).`,
-                statusCode: response.statusCode
-            });
-        } else {
-            checks.push({
-                name: 'browser_page_load',
-                status: 'failed',
-                reason: `Frontend page responded with HTTP ${response.statusCode}.`,
-                statusCode: response.statusCode
-            });
-            issues.push(`Frontend page responded with HTTP ${response.statusCode}.`);
-            return { passed: false, checks, issues };
+                status: 'blocked',
+                reason: 'Browser verification requires supplied sandbox adapter.',
+                evidence: { adapterId: 'none' }
+            }],
+            issues: ['Browser adapter is required.']
+        };
+    }
+    const opts = options || {};
+    const adapter = opts.adapter;
+    const adapterId = adapter?.id || 'direct-fetch';
+    const checks = [], issues = [];
+    let html = '';
+
+    const request = async url => {
+        if (typeof adapter?.request === 'function') {
+            return adapter.request({ url, method: 'GET', timeoutMs: opts.timeoutMs || 5000, signal: opts.signal });
         }
-    } catch (err) {
-        checks.push({
-            name: 'browser_page_load',
-            status: 'failed',
-            reason: `Failed to load frontend at ${frontendUrl}: ${err.message}`
-        });
-        issues.push(`Failed to load frontend at ${frontendUrl}: ${err.message}`);
-        return { passed: false, checks, issues };
+        if (typeof adapter?.execute === 'function') {
+            const result = await adapter.execute({ command: 'node', args: ['-e', `fetch(${JSON.stringify(url)}).then(async r=>process.stdout.write(JSON.stringify({statusCode:r.status,html:await r.text()}))).catch(e=>{console.error(e.message);process.exit(1)})`], workspace: opts.workspace || '/workspace', timeoutMs: opts.timeoutMs || 5000, signal: opts.signal });
+            if (result.exitCode && result.exitCode !== 0) throw new Error(result.stderr || 'Sandbox browser request failed');
+            return JSON.parse(result.stdout || '{}');
+        }
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort('TIMEOUT'), opts.timeoutMs || 5000);
+        try {
+            const res = await fetch(url, {
+                signal: opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal
+            });
+            const text = await res.text();
+            return { statusCode: res.status, html: text, body: text };
+        } finally {
+            clearTimeout(timer);
+        }
+    };
+
+    try {
+        const r = await request(frontendUrl);
+        html = r.html || r.body || r.rawBody || '';
+        const ok = (r.statusCode || 0) >= 200 && (r.statusCode || 0) < 300;
+        checks.push({ name: 'browser_page_load', status: ok ? 'passed' : 'failed', statusCode: r.statusCode, evidence: { adapterId, url: frontendUrl } });
+        if (!ok) issues.push(`Frontend page responded with HTTP ${r.statusCode}`);
+    } catch (e) {
+        checks.push({ name: 'browser_page_load', status: 'failed', reason: e.message, evidence: { adapterId } });
+        issues.push(e.message);
     }
 
-    // 2. Journey Adımları Yürütme ve DOM Doğrulama
-    const steps = Array.isArray(journeySpec.steps) ? journeySpec.steps : [];
-    let allStepsPassed = true;
-
-    for (let idx = 0; idx < steps.length; idx++) {
-        const step = steps[idx];
-        const stepName = `step_${idx + 1}_${step.action || 'action'}`;
-
+    for (const [idx, step] of (Array.isArray(journeySpec.steps) ? journeySpec.steps : []).entries()) {
         if (step.action === 'navigate' || step.action === 'reload') {
             try {
-                const targetUrl = step.url || frontendUrl;
-                const reloadRes = await fetchHtml(targetUrl, timeoutMs);
-                if (reloadRes.statusCode >= 200 && reloadRes.statusCode < 300) {
-                    currentHtml = reloadRes.html;
-                } else {
-                    allStepsPassed = false;
-                    issues.push(`Step ${idx + 1} (${step.action}) failed with HTTP ${reloadRes.statusCode}.`);
-                }
-            } catch (navErr) {
-                allStepsPassed = false;
-                issues.push(`Step ${idx + 1} (${step.action}) network error: ${navErr.message}`);
+                const r = await request(step.url || frontendUrl);
+                html = r.html || r.body || r.rawBody || '';
+                if (!(r.statusCode >= 200 && r.statusCode < 300)) issues.push(`Step ${idx + 1} failed with HTTP ${r.statusCode}`);
+            } catch (e) {
+                issues.push(`Step ${idx + 1}: ${e.message}`);
             }
-        } else if (step.action === 'assert_element') {
-            const exists = matchElementInHtml(currentHtml, step.selector);
-            if (!exists) {
-                allStepsPassed = false;
-                issues.push(`Step ${idx + 1} (assert_element): Element matching selector "${step.selector}" not found in DOM.`);
-            }
-        } else if (step.action === 'assert_text') {
-            const hasText = matchTextInHtml(currentHtml, step.expectedText, step.selector);
-            if (!hasText) {
-                allStepsPassed = false;
-                issues.push(`Step ${idx + 1} (assert_text): Expected text "${step.expectedText}" not found in DOM.`);
-            }
+        } else if (step.action === 'assert_element' && !matchElement(html, step.selector)) {
+            issues.push(`Element ${step.selector} not found`);
+        } else if (step.action === 'assert_text' && (!html.includes(step.expectedText) || (step.selector && !matchElement(html, step.selector)))) {
+            issues.push(`Expected text ${step.expectedText} not found`);
         }
     }
 
-    if (allStepsPassed) {
-        checks.push({
-            name: 'browser_journey_steps',
-            status: 'passed',
-            reason: `All ${steps.length} browser journey DOM assertions and flow steps passed.`
-        });
-    } else {
-        checks.push({
-            name: 'browser_journey_steps',
-            status: 'failed',
-            reason: `Browser journey failed with ${issues.length} issue(s).`
-        });
-    }
-
-    const allPassed = checks.every(c => c.status === 'passed');
-    return {
-        passed: allPassed && issues.length === 0,
-        checks,
-        issues
-    };
+    checks.push({ name: 'browser_journey_steps', status: issues.length ? 'failed' : 'passed', evidence: { adapterId, stepCount: journeySpec.steps?.length || 0 } });
+    return { passed: checks.every(c => c.status === 'passed'), checks, issues };
 }

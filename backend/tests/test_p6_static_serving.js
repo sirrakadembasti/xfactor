@@ -22,7 +22,13 @@ async function runTests() {
     await fs.writeFile(path.join(distRoot, 'assets', 'runtime.js'), 'console.log("runtime")');
     const outsideFile = path.join(root, 'outside.js');
     await fs.writeFile(outsideFile, 'outside distribution root');
-    await fs.symlink(outsideFile, path.join(distRoot, 'assets', 'escape.js'));
+    let symlinkCreated = true;
+    try {
+        await fs.symlink(outsideFile, path.join(distRoot, 'assets', 'escape.js'));
+    } catch (err) {
+        if (err.code === 'EPERM') symlinkCreated = false;
+        else throw err;
+    }
     await fs.writeFile(path.join(distRoot, 'assets', 'app-abc123.css'), 'body{}');
 
     const app = express();
@@ -42,7 +48,9 @@ async function runTests() {
         assert.match(navigation.headers.get('cache-control'), /no-cache/);
         assert.equal((await request('/assets/app-abc123.js')).headers.get('cache-control'), 'public, max-age=31536000, immutable');
         assert.match((await request('/assets/runtime.js')).headers.get('cache-control'), /no-cache/);
-        assert.equal((await request('/assets/escape.js')).status, 404);
+        if (symlinkCreated) {
+            assert.equal((await request('/assets/escape.js')).status, 404);
+        }
         assert.equal((await request('/missing.js', { headers: { accept: 'text/html' } })).status, 404);
 
         const api = await request('/api/does-not-exist', { headers: { accept: 'text/html', 'x-request-id': 'api-request' } });

@@ -1,5 +1,5 @@
 import { db } from './db.js';
-import { logError } from './observability.js';
+import { cleanupStaleLogs, logError } from './observability.js';
 
 const DEFAULT_INTERVAL_MS = 3_600_000;
 const SESSION_SWEEP_SQL = `DELETE FROM user_sessions
@@ -14,10 +14,11 @@ function normalizeNow(now) {
     return value;
 }
 
-export function sweepExpiredSessions(database = db, now = new Date()) {
+export function sweepExpiredSessions(database = db, now = new Date(), retentionDays = 30) {
     const nowIso = normalizeNow(now).toISOString();
     const result = database.prepare(SESSION_SWEEP_SQL).run(nowIso, nowIso);
-    return { sweptCount: Number(result?.changes || 0) };
+    const logsDeleted = cleanupStaleLogs(database, retentionDays, now);
+    return { sweptCount: Number(result?.changes || 0), logsDeleted };
 }
 
 export function createMaintenanceScheduler({

@@ -13,6 +13,10 @@ await runAsyncTest('1. Immediate approve->pause race: abortProjectExecution shou
     const { executeProjectTasks } = await import('../engine/workflow.js');
 
     const project = await createProject({ title: 'Race Approve Pause Project' });
+    const { db, dbEvents } = await import('../db.js');
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('implementing', project.id);
+    project.status = 'implementing';
+
     const lease = acquireWorkflowLease(project.id, 'test-race-worker');
     assert.strictEqual(lease.acquired, true);
 
@@ -25,7 +29,7 @@ await runAsyncTest('1. Immediate approve->pause race: abortProjectExecution shou
     assert.strictEqual(controller.signal.reason, 'PAUSED');
 
     // Run executeProjectTasks; it should quickly exit with paused status
-    await executeProjectTasks(project.id, null, lease.attempt.id);
+    await executeProjectTasks(project.id, null, lease.attempt.id, 'test-race-worker');
 
     const activeAttempt = getActiveWorkflowAttempt(project.id);
     assert.strictEqual(activeAttempt, null, 'Attempt should be released after execution terminates');
@@ -38,11 +42,12 @@ await runAsyncTest('1. Immediate approve->pause race: abortProjectExecution shou
 // =========================================================================
 await runAsyncTest('2. checkPause should resolve when state changes from paused to running, and honor abort', async () => {
     const { checkPause } = await import('../engine/workflow.js');
-    const { createProject, saveProjectState, deleteProject } = await import('../projectRepository.js');
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { db, dbEvents } = await import('../db.js');
 
     const project = await createProject({ title: 'CheckPause Resume Test' });
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
     project.status = 'paused';
-    await saveProjectState(project.id, project);
 
     const controller = new AbortController();
 
@@ -50,16 +55,17 @@ await runAsyncTest('2. checkPause should resolve when state changes from paused 
     const checkPromise = checkPause(project.id, controller.signal);
 
     setTimeout(async () => {
-        project.status = 'running';
-        await saveProjectState(project.id, project);
+        db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('implementing', project.id);
+        project.status = 'implementing';
+        dbEvents.emit(`stateChange:${project.id}`, 'implementing');
     }, 50);
 
     const statusAfterResume = await checkPromise;
-    assert.strictEqual(statusAfterResume, 'running');
+    assert.strictEqual(statusAfterResume, 'implementing');
 
     // Test abort while waiting
+    db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('paused', project.id);
     project.status = 'paused';
-    await saveProjectState(project.id, project);
 
     const abortController = new AbortController();
     const abortPromise = checkPause(project.id, abortController.signal);
@@ -86,7 +92,7 @@ await runAsyncTest('3. Paused worker lease release should record paused/terminal
     const lease = acquireWorkflowLease(project.id, 'test-paused-worker');
     assert.strictEqual(lease.acquired, true);
 
-    const released = releaseWorkflowLease(lease.attempt.id, 'paused');
+    const released = releaseWorkflowLease(lease.attempt.id, 'paused', { leaseOwner: 'test-paused-worker' });
     assert.strictEqual(released, true);
 
     const attemptRow = db.prepare('SELECT status, ended_at FROM workflow_attempts WHERE id = ?').get(lease.attempt.id);
@@ -108,14 +114,14 @@ await runAsyncTest('4. Resume after pause should acquire new lease and not deadl
     assert.strictEqual(lease1.acquired, true);
 
     // Pause worker 1
-    releaseWorkflowLease(lease1.attempt.id, 'paused');
+    releaseWorkflowLease(lease1.attempt.id, 'paused', { leaseOwner: 'worker-1' });
 
     // Worker 2 (resume) acquires lease
     const lease2 = acquireWorkflowLease(project.id, 'worker-2');
     assert.strictEqual(lease2.acquired, true);
     assert.notStrictEqual(lease1.attempt.id, lease2.attempt.id);
 
-    releaseWorkflowLease(lease2.attempt.id, 'completed');
+    releaseWorkflowLease(lease2.attempt.id, 'completed', { leaseOwner: 'worker-2' });
     await deleteProject(project.id);
 });
 
@@ -133,7 +139,7 @@ await runAsyncTest('5. reconcileStaleWorkflowAttempts should transition dead run
 
     // Set heartbeat back in time
     const oldTime = new Date(Date.now() - 60000).toISOString();
-    db.prepare("UPDATE workflow_attempts SET heartbeat_at = ? WHERE id = ?").run(oldTime, lease.attempt.id);
+    db.prepare("UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?").run(oldTime, lease.attempt.id);
     db.prepare("UPDATE projects SET status = 'running' WHERE id = ?").run(project.id);
 
     const reconciled = reconcileStaleWorkflowAttempts({ staleThresholdSeconds: 10 });

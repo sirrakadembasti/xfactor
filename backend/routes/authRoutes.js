@@ -4,9 +4,9 @@ import {
     authenticateUser,
     authenticateUserAsync,
     createSession,
+    createSessionAfterTotp,
     revokeSession,
-    toPublicUser,
-    verifyUserTotp
+    toPublicUser
 } from '../auth.js';
 import {
     readSessionToken,
@@ -27,12 +27,24 @@ export function createAuthRouter({ requireAuth, production }) {
         if (!user) {
             return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
         }
+        let session;
         if (user.mfaEnabled) {
             if (!totp) {
                 return res.status(202).json({ mfaRequired: true });
             }
-            if (!user.totpSecret || !verifyUserTotp(user, totp, process.env)) {
+            if (!user.totpSecret) {
                 return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
+            }
+            session = createSessionAfterTotp(user.id, totp, process.env, {
+                passwordHash: user.passwordHash
+            });
+            if (!session) {
+                return res.status(401).json({ error: 'Çok faktörlü doğrulama kodu geçersiz.' });
+            }
+        } else {
+            session = createSession(user.id, { passwordHash: user.passwordHash });
+            if (!session) {
+                return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
             }
         }
 
@@ -41,7 +53,6 @@ export function createAuthRouter({ requireAuth, production }) {
             revokeSession(existingToken);
         }
 
-        const session = createSession(user.id);
         res.setHeader(
             'Set-Cookie',
             serializeSessionCookie(session.token, session.expiresAt, { production })

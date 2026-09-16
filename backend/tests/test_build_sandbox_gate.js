@@ -62,7 +62,7 @@ await runTest("A. Default (unsandboxed): framework_build blocked + passed=false 
     assert.ok(buildCheck, 'framework_build check mevcut olmalı');
     assert.strictEqual(buildCheck.status, 'blocked', 'framework_build status blocked olmalı');
     assert.ok(
-        buildCheck.reason && /Sandboxed build runner unavailable|restricted-token and Job Object isolation/.test(buildCheck.reason),
+        buildCheck.reason && /Sandboxed build runner unavailable|restricted-token and Job Object isolation|sandbox runtime is not available/.test(buildCheck.reason),
     );
 
     // 3) Build host'ta ÇALIŞTIRILMADI: marker dosyası oluşmamalı.

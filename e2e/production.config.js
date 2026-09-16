@@ -6,7 +6,7 @@ const { defineConfig } = require('@playwright/test');
 // boots backend + Vite and requires installed workspace dependencies).
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: /production-operability\.spec\.js/,
+  testMatch: /(?:production-operability|p9-editor)\.spec\.js/,
   timeout: 90_000,
   fullyParallel: false,
   workers: 1,

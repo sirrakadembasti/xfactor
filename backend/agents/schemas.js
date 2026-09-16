@@ -4,6 +4,7 @@
  */
 import path from 'path';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
+import { canonicalizeTaskDependencies } from '../engine/dag.js';
 
 
 /**
@@ -435,9 +436,10 @@ export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
             };
         }
         const id = normalizeGeneratedIdentifier(t.id || `task-${idx + 1}`);
-        const dependencies = Array.isArray(t.dependencies)
-            ? t.dependencies.map((dep) => normalizeGeneratedIdentifier(dep))
-            : [];
+        const canonicalDependencies = canonicalizeTaskDependencies(t.dependencies || []);
+        const dependencies = [...new Set(
+            canonicalDependencies.map((dep) => normalizeGeneratedIdentifier(dep))
+        )].sort();
         let reqIds = Array.isArray(t.requirementIds)
             ? t.requirementIds
             : (Array.isArray(t.requirements) ? t.requirements : (t.requirementId ? [t.requirementId] : []));
@@ -480,6 +482,9 @@ export function validateTeamleaderTasks(taskList) {
         const reqIds = task.requirementIds || task.requirements;
         if (!Array.isArray(reqIds) || reqIds.length === 0) {
             throw new Error(`Görev "${task.id || task.title}" için en az bir "requirementIds" belirtilmelidir.`);
+        }
+        if (!Array.isArray(task.targetFiles) || task.targetFiles.length !== 1 || typeof task.targetFiles[0] !== 'string' || !task.targetFiles[0].trim()) {
+            throw new Error(`Görev "${task.id || task.title}" atomik tek dosya sözleşmesi için tam olarak bir hedef dosya içermelidir.`);
         }
     }
     return true;
@@ -577,10 +582,21 @@ export function validateTaskDependencies(tasks = []) {
         taskIds.add(t.id);
     }
 
+    const dependencyIdsByTaskId = new Map();
+    for (const t of tasks) {
+        if (!t?.id) continue;
+        try {
+            dependencyIdsByTaskId.set(t.id, canonicalizeTaskDependencies(t.dependencies || []));
+        } catch (error) {
+            errors.push(`Görev "${t.id}" için geçersiz bağımlılıklar: ${error.message}`);
+            dependencyIdsByTaskId.set(t.id, []);
+        }
+    }
+
     // Bağımlılık referans ve self-loop kontrolleri
     for (const t of tasks) {
         if (!t?.id) continue;
-        const deps = Array.isArray(t.dependencies) ? t.dependencies : [];
+        const deps = dependencyIdsByTaskId.get(t.id) || [];
         for (const dep of deps) {
             if (dep === t.id) {
                 errors.push(`Görev "${t.id}" kendine bağımlı (Self-loop) olamaz.`);
@@ -603,7 +619,7 @@ export function validateTaskDependencies(tasks = []) {
 
     for (const t of tasks) {
         if (!t?.id) continue;
-        const deps = Array.isArray(t.dependencies) ? t.dependencies : [];
+        const deps = dependencyIdsByTaskId.get(t.id) || [];
         for (const dep of deps) {
             if (taskIds.has(dep) && dep !== t.id) {
                 adjList.get(dep).push(t.id);
@@ -642,9 +658,9 @@ export function validateTaskDependencies(tasks = []) {
             if (fileOwnerMap.has(normFile)) {
                 const prevTask = fileOwnerMap.get(normFile);
                 // Eğer bu görevler birbirine bağımlı değilse (paralel çalışabilirlerse) çakışma hatası ver
-                const prevDeps = Array.isArray(t.dependencies) ? t.dependencies : [];
+                const prevDeps = dependencyIdsByTaskId.get(t.id) || [];
                 const otherTask = tasks.find(ot => ot.id === prevTask);
-                const otherDeps = otherTask && Array.isArray(otherTask.dependencies) ? otherTask.dependencies : [];
+                const otherDeps = dependencyIdsByTaskId.get(prevTask) || [];
                 if (!prevDeps.includes(prevTask) && !otherDeps.includes(t.id)) {
                     errors.push(`Bağımsız görevler arasında dosya sahipliği çakışması: "${normFile}" dosyası hem "${prevTask}" hem de "${t.id}" tarafından hedefleniyor.`);
                 }

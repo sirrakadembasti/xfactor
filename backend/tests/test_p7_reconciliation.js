@@ -14,7 +14,7 @@ console.log('==================================================');
 console.log('⚡ XFactor P7 Non-Destructive Reconciliation Tests');
 console.log('==================================================');
 
-// Isolate SQLite BEFORE importing backend modules (db.js reads DB_PATH at load).
+// Isolate SQLite before importing backend modules and explicitly initialize it.
 const isolated = await setupIsolatedTestDb('p7-reconciliation');
 process.env.DB_PATH = isolated.dbPath;
 const { runAsyncTest, finish } = createTestHarness();
@@ -65,7 +65,7 @@ try {
         assert.strictEqual(countProjects(), before);
     });
 
-    await runAsyncTest('3. valid unimported on-disk folders are imported as completed', async () => {
+    await runAsyncTest('3. valid unimported on-disk folders are reported unverified without DB fabrication', async () => {
         const root = await makeRoot();
         const id = `p7valid${Date.now()}`;
         await fs.mkdir(path.join(root, id), { recursive: true });
@@ -73,12 +73,10 @@ try {
             assert.strictEqual(db.prepare('SELECT id FROM projects WHERE id = ?').get(id), undefined);
             const result = reconcileProjectsWithDisk({ projectsRoot: root });
             assert.strictEqual(result.success, true);
-            assert.strictEqual(result.syncedCount, 1);
-            const row = db.prepare('SELECT id, status FROM projects WHERE id = ?').get(id);
-            assert.ok(row, 'disk folder must be imported');
-            assert.strictEqual(row.status, 'completed');
+            assert.strictEqual(result.syncedCount, 0);
+            assert.ok(result.unverified.some(entry => entry.id === id && entry.verified === false));
+            assert.strictEqual(db.prepare('SELECT id FROM projects WHERE id = ?').get(id), undefined);
         } finally {
-            deleteRow(id);
             await rmRoot(root);
         }
     });
@@ -107,32 +105,30 @@ try {
 
         // Prove module load performs no sync: a child process imports db.js with
         // a projects root containing an unimported folder, plus a missing root.
-        const root = await makeRoot();
+        const probeContainer = await makeRoot();
+        const root = path.join(probeContainer, 'projects');
+        const probeDbPath = path.join(probeContainer, 'database', 'projects.db');
         const id = `p7side${Date.now()}`;
         await fs.mkdir(path.join(root, id), { recursive: true });
-        const missingRoot = path.join(os.tmpdir(), `p7-missing-side-${Date.now()}`);
-        const before = countProjects();
-        const probeFile = path.join(root, 'probe-import-db.mjs');
+        const probeFile = path.join(probeContainer, 'probe-import-db.mjs');
         await fs.writeFile(probeFile, [
-            `const { db } = await import(${JSON.stringify(pathToFileURL(path.join(__dirname, '..', 'db.js')).href)});`,
-            `const count = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;`,
-            `const found = !!db.prepare('SELECT id FROM projects WHERE id = ?').get(${JSON.stringify(id)});`,
-            `console.log(JSON.stringify({ count, found }));`
+            `import fsSync from 'node:fs';`,
+            `const dbModule = await import(${JSON.stringify(pathToFileURL(path.join(__dirname, '..', 'db.js')).href)});`,
+            `console.log(JSON.stringify({ dbIsNull: dbModule.db === null, databaseExists: fsSync.existsSync(${JSON.stringify(probeDbPath)}), rootExists: fsSync.existsSync(${JSON.stringify(root)}) }));`
         ].join('\n'));
         try {
             const child = spawnSync(process.execPath, [probeFile], {
-                env: { ...process.env, DB_PATH: isolated.dbPath, PROJECTS_ROOT: root },
+                env: { ...process.env, DB_PATH: probeDbPath, PROJECTS_ROOT: root },
                 encoding: 'utf8',
                 timeout: 60000
             });
             assert.strictEqual(child.status, 0, `probe process must exit 0, stderr: ${child.stderr}`);
             const observed = JSON.parse(child.stdout.trim().split('\n').pop());
-            assert.strictEqual(observed.found, false, 'importing db.js must not import disk folders');
-            assert.strictEqual(observed.count, before, 'importing db.js must not mutate projects');
-            assert.strictEqual(countProjects(), before);
-            assert.ok(!(await fs.stat(missingRoot).then(() => true).catch(() => false)), 'missing root must not be created');
+            assert.strictEqual(observed.dbIsNull, true, 'importing db.js must not open a connection');
+            assert.strictEqual(observed.databaseExists, false, 'importing db.js must not create the separate database');
+            assert.strictEqual(observed.rootExists, true, 'probe root was created by the test, not by import');
         } finally {
-            await rmRoot(root);
+            await rmRoot(probeContainer);
         }
     });
 

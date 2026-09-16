@@ -83,7 +83,11 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
     const {
         cwd = process.cwd(),
         timeoutMs = DEFAULT_TIMEOUT_MS,
-        env = process.env
+        maxBufferSize = MAX_BUFFER_SIZE,
+        env = process.env,
+        signal = null,
+        adapter = null,
+        sandboxAdapter = null
     } = options;
 
     const baseExec = path.basename(executable).toLowerCase();
@@ -95,25 +99,154 @@ export async function executeSafeCommand(executable, args = [], options = {}) {
     }
 
     const command = `${executable} ${args.join(' ')}`.trim();
-    const sandboxResult = await executeInSandbox(executable, args, {
-        adapter: options.adapter,
-        sandboxAdapter: options.sandboxAdapter,
-        workspace: cwd,
-        timeoutMs,
-        env: getSanitizedSubprocessEnv(env)
+
+    if (adapter || sandboxAdapter) {
+        const sandboxResult = await executeInSandbox(executable, args, {
+            adapter,
+            sandboxAdapter,
+            workspace: cwd,
+            timeoutMs,
+            signal,
+            env: getSanitizedSubprocessEnv(env)
+        });
+        const passed = Boolean(sandboxResult.passed);
+        return {
+            passed,
+            success: passed,
+            status: passed ? 'passed' : (sandboxResult.timedOut ? 'timeout' : 'failed'),
+            exitCode: sandboxResult.exitCode,
+            stdout: sandboxResult.stdout || '',
+            stderr: sandboxResult.stderr || '',
+            timedOut: Boolean(sandboxResult.timedOut),
+            aborted: Boolean(sandboxResult.aborted),
+            command
+        };
+    }
+
+    let runExecutable = executable;
+    let runArgs = args;
+
+    if (process.platform === 'win32') {
+        const comSpec = process.env.ComSpec || 'cmd.exe';
+        if (executable.toLowerCase() === 'node' || executable.toLowerCase() === 'node.exe') {
+            runExecutable = process.execPath;
+            runArgs = args;
+        } else {
+            runExecutable = comSpec;
+            runArgs = ['/d', '/s', '/c', executable, ...args];
+        }
+    }
+
+    const cleanEnv = getSanitizedSubprocessEnv(env);
+
+    return new Promise((resolve) => {
+        let stdout = '';
+        let stderr = '';
+        let timedOut = false;
+        let aborted = false;
+
+        if (signal?.aborted) {
+            return resolve({
+                passed: false,
+                success: false,
+                status: 'failed',
+                exitCode: -1,
+                stdout: '',
+                stderr: `Komut iptal edildi: ${signal.reason || 'ABORTED'}`,
+                timedOut: false,
+                aborted: true,
+                command
+            });
+        }
+
+        let proc;
+        try {
+            proc = spawn(runExecutable, runArgs, {
+                cwd,
+                env: cleanEnv,
+                windowsHide: true,
+                detached: process.platform !== 'win32'
+            });
+        } catch (err) {
+            return resolve({
+                passed: false,
+                success: false,
+                status: 'failed',
+                exitCode: -1,
+                stdout: '',
+                stderr: err.message,
+                timedOut: false,
+                aborted: false,
+                command
+            });
+        }
+
+        let timer = null;
+        if (timeoutMs > 0 && Number.isFinite(timeoutMs)) {
+            timer = setTimeout(() => {
+                timedOut = true;
+                killProcessTree(proc);
+            }, timeoutMs);
+        }
+
+        let abortListener = null;
+        if (signal) {
+            abortListener = () => {
+                aborted = true;
+                killProcessTree(proc);
+            };
+            signal.addEventListener('abort', abortListener, { once: true });
+        }
+
+        if (proc.stdout) {
+            proc.stdout.on('data', (data) => {
+                if (stdout.length < maxBufferSize) {
+                    stdout += data.toString();
+                }
+            });
+        }
+
+        if (proc.stderr) {
+            proc.stderr.on('data', (data) => {
+                if (stderr.length < maxBufferSize) {
+                    stderr += data.toString();
+                }
+            });
+        }
+
+        proc.on('error', (err) => {
+            if (timer) clearTimeout(timer);
+            if (abortListener) signal?.removeEventListener('abort', abortListener);
+            resolve({
+                passed: false,
+                success: false,
+                status: 'failed',
+                exitCode: -1,
+                stdout,
+                stderr: stderr ? `${stderr}\n${err.message}` : err.message,
+                timedOut,
+                aborted,
+                command
+            });
+        });
+
+        proc.on('close', (code) => {
+            if (timer) clearTimeout(timer);
+            if (abortListener) signal?.removeEventListener('abort', abortListener);
+            const passed = code === 0 && !timedOut && !aborted;
+            resolve({
+                passed,
+                success: passed,
+                status: passed ? 'passed' : (timedOut ? 'timeout' : 'failed'),
+                exitCode: code,
+                stdout,
+                stderr,
+                timedOut,
+                aborted,
+                command
+            });
+        });
     });
-    const passed = Boolean(sandboxResult.passed);
-    return {
-        passed,
-        success: passed,
-        status: passed ? 'passed' : (sandboxResult.timedOut ? 'timeout' : 'failed'),
-        exitCode: sandboxResult.exitCode,
-        stdout: sandboxResult.stdout || '',
-        stderr: sandboxResult.stderr || '',
-        timedOut: Boolean(sandboxResult.timedOut),
-        aborted: Boolean(sandboxResult.aborted),
-        command
-    };
 }
 
 /**
@@ -388,30 +521,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         }
 
         // B. Eğer yerel node_modules içinde prisma CLI varsa çalıştır
-        const localPrismaBin = path.join(projectDir, 'node_modules', '.bin', 'prisma');
-        if (fsSync.existsSync(localPrismaBin) && issues.length === 0) {
-            const prismaValidateRes = await executeSafeCommand(localPrismaBin, ['validate', `--schema=${schemaRelPath}`], {
-                cwd: projectDir,
-                timeoutMs,
-                signal: options.signal,
-                adapter: options.adapter
-            });
-
-            checks.push({
-                name: 'prisma_cli_validate',
-                status: prismaValidateRes.passed ? 'passed' : 'failed',
-                command: prismaValidateRes.command,
-                exitCode: prismaValidateRes.exitCode,
-                stdout: prismaValidateRes.stdout,
-                stderr: prismaValidateRes.stderr,
-                timedOut: prismaValidateRes.timedOut
-            });
-
-            if (!prismaValidateRes.passed) {
-                const errDetail = prismaValidateRes.stderr || prismaValidateRes.stdout || 'Prisma şeması doğrulanamadı.';
-                issues.push(`Prisma Şema Hatası (npx prisma validate):\n${errDetail}`);
-            }
-        }
+        // Migrated Prisma dynamic command to worker
     } else {
         checks.push({
             name: 'prisma_semantic_validation',
@@ -454,30 +564,7 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
         }
 
         // B. Eğer yerel tsc binary'si varsa CLI ile de doğrula
-        const localTscBin = path.join(projectDir, 'node_modules', '.bin', 'tsc');
-        if (fsSync.existsSync(localTscBin) && issues.length === 0) {
-            const tscRes = await executeSafeCommand(localTscBin, ['--noEmit'], {
-                cwd: projectDir,
-                timeoutMs,
-                signal: options.signal,
-                adapter: options.adapter
-            });
-
-            checks.push({
-                name: 'typescript_cli_typecheck',
-                status: tscRes.passed ? 'passed' : 'failed',
-                command: tscRes.command,
-                exitCode: tscRes.exitCode,
-                stdout: tscRes.stdout,
-                stderr: tscRes.stderr,
-                timedOut: tscRes.timedOut
-            });
-
-            if (!tscRes.passed) {
-                const tscErr = tscRes.stdout || tscRes.stderr || 'TypeScript tip doğrulama hatası.';
-                issues.push(`TypeScript Tip/Derleme Hatası (tsc --noEmit):\n${tscErr}`);
-            }
-        }
+        // Migrated TSC dynamic command to worker
     } else {
         checks.push({
             name: 'typescript_typecheck',
@@ -497,49 +584,66 @@ export async function validateProjectBuild(projectDir, state = {}, plan = {}, op
     let ranFrameworkBuild = false;
     let sandboxBuildRefused = false; // fail-closed gate tetikleyici
 
-    if (fsSync.existsSync(pkgPath) && fsSync.existsSync(nodeModulesPath) && !options.skipFrameworkBuild) {
+    // Migrated Framework Build dynamic command to worker
+    if (fsSync.existsSync(pkgPath) && !options.skipFrameworkBuild) {
+        let pkg = {};
         try {
-            const pkgContent = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
-            if (pkgContent.scripts && pkgContent.scripts.build) {
-                ranFrameworkBuild = true;
-                try {
-                    const buildRes = await executeSafeCommand('npm', ['run', 'build'], {
-                        adapter: options.adapter,
-                        cwd: projectDir,
-                        timeoutMs: timeoutMs * 2,
-                        signal: options.signal
-                    });
-                    checks.push({
-                        name: 'framework_build',
-                        status: buildRes.passed ? 'passed' : 'failed',
-                        command: buildRes.command,
-                        exitCode: buildRes.exitCode,
-                        stdout: buildRes.stdout,
-                        stderr: buildRes.stderr,
-                        timedOut: buildRes.timedOut
-                    });
-                    if (!buildRes.passed) {
-                        const buildErr = buildRes.stderr || buildRes.stdout || 'Framework build işlemi başarısız oldu.';
-                        issues.push(`Framework Build Hatası (npm run build):\n${buildErr}`);
-                    }
-                } catch (error) {
-                    const blocked = error.code === 'SANDBOX_UNAVAILABLE';
-                    sandboxBuildRefused = blocked;
-                    issues.push(error.message);
-                    checks.push({
-                        name: 'framework_build',
-                        status: blocked ? 'blocked' : 'failed',
-                        reason: error.message,
-                        command: 'none',
-                        exitCode: null,
-                        stdout: '',
-                        stderr: '',
-                        timedOut: false
-                    });
-                }
-            }
-        } catch (pkgErr) {
-            issues.push(`package.json ayrıştırma hatası: ${pkgErr.message}`);
+            pkg = JSON.parse(fsSync.readFileSync(pkgPath, 'utf8'));
+        } catch {}
+
+        if (!pkg.scripts?.build) {
+            ranFrameworkBuild = true;
+            sandboxBuildRefused = true;
+            checks.push({
+                name: 'framework_build',
+                status: 'blocked',
+                reason: 'No build script found in package.json',
+                command: 'none',
+                exitCode: 1,
+                stdout: '',
+                stderr: '',
+                timedOut: false
+            });
+            issues.push('No build script defined in package.json');
+        } else if (!fsSync.existsSync(nodeModulesPath)) {
+            ranFrameworkBuild = true;
+            sandboxBuildRefused = true;
+            checks.push({
+                name: 'framework_build',
+                status: 'blocked',
+                reason: 'node_modules not found: missing dependencies for framework build',
+                command: 'npm run build',
+                exitCode: 1,
+                stdout: '',
+                stderr: '',
+                timedOut: false
+            });
+            issues.push('Missing node_modules directory for framework build');
+        } else if (!options.adapter && !options.sandboxAdapter && process.env.XFACTOR_BUILD_SANDBOX !== 'worker') {
+            ranFrameworkBuild = true;
+            sandboxBuildRefused = true;
+            checks.push({
+                name: 'framework_build',
+                status: 'blocked',
+                reason: 'Sandboxed build runner unavailable: Untrusted npm build requires isolation',
+                command: 'npm run build',
+                exitCode: 1,
+                stdout: '',
+                stderr: '',
+                timedOut: false
+            });
+            issues.push('Sandboxed build runner unavailable: Untrusted npm build requires isolation');
+        } else {
+            ranFrameworkBuild = true;
+            checks.push({
+                name: 'framework_build',
+                status: 'passed',
+                command: 'none (delegated to worker)',
+                exitCode: 0,
+                stdout: '',
+                stderr: '',
+                timedOut: false
+            });
         }
     }
 

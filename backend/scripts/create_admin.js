@@ -1,5 +1,19 @@
 import { pathToFileURL } from 'url';
+import { initializeDatabase, closeDatabase } from '../db.js';
 import { changeUserPassword, promoteUserToAdmin, resetUserPassword } from '../auth.js';
+
+const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MAX_LENGTH = 256;
+
+function assertPasswordLength(password) {
+    if (
+        typeof password !== 'string'
+        || password.length < PASSWORD_MIN_LENGTH
+        || password.length > PASSWORD_MAX_LENGTH
+    ) {
+        throw new Error(`Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`);
+    }
+}
 
 export function readTerminalLine(prompt, {
     hidden = false,
@@ -91,6 +105,7 @@ export async function runCreateAdmin({
         if (newPassword !== confirmation) {
             throw new Error('Password confirmation does not match.');
         }
+        assertPasswordLength(newPassword);
 
         const user = await reset(username, newPassword);
         stdout.write(`Parola sıfırlandı: ${user.username}\n`);
@@ -116,6 +131,7 @@ export async function runCreateAdmin({
         if (newPassword !== confirmation) {
             throw new Error('Password confirmation does not match.');
         }
+        assertPasswordLength(newPassword);
 
         const user = await renew(username, currentPassword, newPassword);
         stdout.write(`Parola yenilendi: ${user.username}\n`);
@@ -135,15 +151,20 @@ export async function runCreateAdmin({
     if (password !== confirmation) {
         throw new Error('Password confirmation does not match.');
     }
+    assertPasswordLength(password);
 
     const user = await provision(username, password);
     stdout.write(`Admin hazır: ${user.username}\n`);
     return user;
 }
-
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-    runCreateAdmin().catch(error => {
+    try {
+        initializeDatabase(process.env.DB_PATH ? { path: process.env.DB_PATH } : {});
+        await runCreateAdmin();
+    } catch (error) {
         process.stderr.write(`${error.message}\n`);
         process.exitCode = 1;
-    });
+    } finally {
+        closeDatabase();
+    }
 }

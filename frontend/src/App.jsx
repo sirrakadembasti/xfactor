@@ -77,6 +77,31 @@ export default function App() {
   // Request cancellation ref for project switches
   const projectAbortRef = useRef(null);
 
+  const filesAbortRef = useRef(null);
+  const authEpochRef = useRef(0);
+  const projectEpochRef = useRef(0);
+  const requestSeqRef = useRef(new Map());
+  const logoutPendingRef = useRef(null);
+  const [logoutPending, setLogoutPending] = useState(false);
+  const wsBatchRef = useRef(null);
+  const beginRequest = useCallback(key => {
+    const next = (requestSeqRef.current.get(key) || 0) + 1;
+    requestSeqRef.current.set(key, next);
+    return next;
+  }, []);
+  const isCurrentRequest = useCallback(({ authEpoch, projectId, key, sequence }) => (
+    authEpoch === authEpochRef.current
+    && projectId === activeProjectRef.current
+    && requestSeqRef.current.get(key) === sequence
+  ), []);
+  const captureRequest = useCallback((key, projectId = activeProjectRef.current) => ({
+    authEpoch: authEpochRef.current,
+    projectId,
+    key,
+    sequence: beginRequest(key)
+  }), [beginRequest]);
+
+
   // View state: 'chat' | 'dashboard' | 'flow' | 'ide' | 'logs'
   const [viewMode, setViewMode] = useState(() => window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
   useEffect(() => {
@@ -88,13 +113,24 @@ export default function App() {
   const [activeFile, setActiveFile] = useState(null);
 
   const clearAccountState = useCallback(() => {
+    authEpochRef.current += 1;
+    projectEpochRef.current += 1;
+    requestSeqRef.current.clear();
     if (projectAbortRef.current) {
       projectAbortRef.current.abort();
       projectAbortRef.current = null;
     }
+    if (filesAbortRef.current) {
+      filesAbortRef.current.abort();
+      filesAbortRef.current = null;
+    }
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
+    }
+    if (wsBatchRef.current) {
+      clearTimeout(wsBatchRef.current.timer);
+      wsBatchRef.current = null;
     }
     if (ws.current) {
       ws.current.close();
@@ -116,6 +152,7 @@ export default function App() {
     setViewMode('chat');
     setProjectFiles([]);
     setActiveFile(null);
+    setUiError('');
     setLoginPassword('');
     setLoginTotp('');
     setMfaRequired(false);
@@ -130,19 +167,20 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    const identity = captureRequest('session', null);
     api.getSession()
       .then(data => {
-        if (!active) return;
+        if (!active || !isCurrentRequest(identity)) return;
         setCurrentUser(data.user);
         setAuthStatus('authenticated');
       })
       .catch(() => {
-        if (active) becomeAnonymous();
+        if (active && isCurrentRequest(identity)) becomeAnonymous();
       });
     return () => {
       active = false;
     };
-  }, [becomeAnonymous]);
+  }, [becomeAnonymous, captureRequest, isCurrentRequest]);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -155,25 +193,30 @@ export default function App() {
   // Projeleri çek (F-01 Fix: selected-project reconciliation without stale closure, non-overlapping polling)
   const fetchProjects = useCallback(async () => {
     if (authStatus !== 'authenticated' || isPollingRef.current) return;
+    const identity = {
+      authEpoch: authEpochRef.current,
+      projectId: activeProjectRef.current,
+      key: 'projects',
+      sequence: beginRequest('projects')
+    };
     isPollingRef.current = true;
     try {
       const data = await api.getProjects();
+      if (!isCurrentRequest(identity)) return;
       const list = Array.isArray(data) ? data : [];
       setProjects(list);
       setActiveProjectId(currentId => {
-        if (currentId && list.some(p => p.id === currentId)) {
-          return currentId;
-        }
+        if (identity.authEpoch !== authEpochRef.current) return currentId;
+        if (currentId && list.some(p => p.id === currentId)) return currentId;
         return list.length > 0 ? list[0].id : null;
       });
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        becomeAnonymous();
-      }
+      if (!isCurrentRequest(identity)) return;
+      if (e instanceof ApiError && e.status === 401) becomeAnonymous();
     } finally {
       isPollingRef.current = false;
     }
-  }, [authStatus, becomeAnonymous]);
+  }, [authStatus, beginRequest, becomeAnonymous, isCurrentRequest]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
@@ -181,73 +224,110 @@ export default function App() {
     const interval = setInterval(fetchProjects, 4000);
     return () => clearInterval(interval);
   }, [authStatus, fetchProjects]);
+
   // Aktif proje değiştiğinde durumu çek (F-03 Fix: Request cancellation & sequence identity)
   const fetchProjectState = useCallback(async (id, signal) => {
+    const identity = {
+      authEpoch: authEpochRef.current,
+      projectId: id,
+      key: 'projectState',
+      sequence: beginRequest('projectState')
+    };
     try {
       const data = await api.getProject(id, { signal });
+      if (!isCurrentRequest(identity)) return null;
       setProjectState(data);
       return data;
     } catch (e) {
-      if (e.name === 'AbortError') return null;
-      if (e instanceof ApiError && e.status === 401) {
-        becomeAnonymous();
-      }
+      if (e.name === 'AbortError' || !isCurrentRequest(identity)) return null;
+      if (e instanceof ApiError && e.status === 401) becomeAnonymous();
       return null;
     }
-  }, [becomeAnonymous]);
+  }, [beginRequest, becomeAnonymous, isCurrentRequest]);
 
   useEffect(() => {
-    if (projectAbortRef.current) {
-      projectAbortRef.current.abort();
+    projectEpochRef.current += 1;
+    if (projectAbortRef.current) projectAbortRef.current.abort();
+    if (filesAbortRef.current) filesAbortRef.current.abort();
+    projectAbortRef.current = null;
+    filesAbortRef.current = null;
+    if (wsBatchRef.current) {
+      clearTimeout(wsBatchRef.current.timer);
+      wsBatchRef.current = null;
     }
 
-    if (activeProjectId) {
-      const controller = new AbortController();
-      projectAbortRef.current = controller;
+    setProjectState(null);
+    setProjectFiles([]);
+    setActiveFile(null);
+    setIsThinking(false);
+    setLogs([]);
+    const emptyDag = computeHierarchicalDAG([]);
+    setNodes(emptyDag.nodes);
+    setEdges(emptyDag.edges);
 
-      setViewMode(window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
-      fetchProjectState(activeProjectId, controller.signal);
+    if (!activeProjectId) return;
 
-      api.getProjectLogs(activeProjectId, { signal: controller.signal })
-        .then(data => {
-          if (!Array.isArray(data)) return;
-          const sortedLogs = data.slice(-MAX_LOGS).reverse();
-          setLogs(sortedLogs);
-          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs);
-          setNodes(computedNodes);
-          setEdges(computedEdges);
-        })
-        .catch(e => {
-          if (e.name !== 'AbortError') console.error('Logs error:', e);
-        });
+    const controller = new AbortController();
+    projectAbortRef.current = controller;
+    const authEpoch = authEpochRef.current;
+    const projectId = activeProjectId;
+    const logIdentity = {
+      authEpoch,
+      projectId,
+      key: 'logs',
+      sequence: beginRequest('logs')
+    };
+    setViewMode(window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
+    fetchProjectState(projectId, controller.signal);
 
-      return () => {
-        controller.abort();
-      };
-    } else {
-      setProjectState(null);
-      setLogs([]);
-      const { nodes: initNodes, edges: initEdges } = computeHierarchicalDAG([]);
-      setNodes(initNodes);
-      setEdges(initEdges);
-    }
-  }, [activeProjectId, fetchProjectState]);
+    api.getProjectLogs(projectId, { signal: controller.signal })
+      .then(data => {
+        if (!Array.isArray(data) || !isCurrentRequest(logIdentity)) return;
+        const sortedLogs = data.slice(-MAX_LOGS).reverse();
+        setLogs(sortedLogs);
+        const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs);
+        setNodes(computedNodes);
+        setEdges(computedEdges);
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError' && isCurrentRequest(logIdentity)) console.error('Logs error:', e);
+      });
+
+    return () => {
+      controller.abort();
+      if (projectAbortRef.current === controller) projectAbortRef.current = null;
+    };
+  }, [activeProjectId, beginRequest, fetchProjectState, isCurrentRequest]);
 
   // Proje tamamlandığında dosyaları çek
   useEffect(() => {
-    if (projectState?.status === 'completed' && activeProjectId) {
-      api.getProjectFiles(activeProjectId)
-        .then(data => {
-          if (Array.isArray(data)) {
-            setProjectFiles(data);
-            if (data.length > 0) setActiveFile(data[0]);
-          }
-        })
-        .catch(e => {
-          if (e.name !== 'AbortError') console.error('Files error:', e);
-        });
-    }
-  }, [projectState?.status, activeProjectId]);
+    if (filesAbortRef.current) filesAbortRef.current.abort();
+    filesAbortRef.current = null;
+    if (projectState?.status !== 'completed' || !activeProjectId) return;
+
+    const controller = new AbortController();
+    filesAbortRef.current = controller;
+    const identity = {
+      authEpoch: authEpochRef.current,
+      projectId: activeProjectId,
+      key: 'files',
+      sequence: beginRequest('files')
+    };
+    api.getProjectFiles(activeProjectId, { signal: controller.signal })
+      .then(data => {
+        if (!Array.isArray(data) || !isCurrentRequest(identity)) return;
+        setProjectFiles(data);
+        setActiveFile(data[0] || null);
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError' && isCurrentRequest(identity)) console.error('Files error:', e);
+      });
+
+    return () => {
+      controller.abort();
+      if (filesAbortRef.current === controller) filesAbortRef.current = null;
+    };
+  }, [activeProjectId, beginRequest, isCurrentRequest, projectState?.status]);
 
   // WebSocket Canlı Akışı (F-05: State Machine & Bounded Backoff)
   useEffect(() => {
@@ -282,20 +362,25 @@ export default function App() {
         subscribeToActiveProject(socket);
       };
 
-      socket.onerror = () => {
-        // onclose will trigger reconnection
-      };
-
-      let pendingLogBatch = [];
-      let batchFrameId = null;
+      socket.onerror = () => {};
 
       const flushPendingLogs = () => {
-        if (pendingLogBatch.length === 0) return;
-        const batch = [...pendingLogBatch];
-        pendingLogBatch = [];
+        const batch = wsBatchRef.current;
+        wsBatchRef.current = null;
+        if (!batch) return;
+        if (
+          batch.authEpoch !== authEpochRef.current
+          || batch.projectEpoch !== projectEpochRef.current
+          || batch.projectId !== activeProjectRef.current
+        ) return;
 
         setLogs(prev => {
-          const newLogs = [...batch.reverse(), ...prev].slice(0, MAX_LOGS);
+          if (
+            batch.authEpoch !== authEpochRef.current
+            || batch.projectEpoch !== projectEpochRef.current
+            || batch.projectId !== activeProjectRef.current
+          ) return prev;
+          const newLogs = [...batch.items].reverse().concat(prev).slice(0, MAX_LOGS);
           const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs);
           setNodes(computedNodes);
           setEdges(computedEdges);
@@ -311,18 +396,34 @@ export default function App() {
             console.error(`WS protocol error: ${data.code}`);
             return;
           }
-          if (activeProjectRef.current && data.projectId !== activeProjectRef.current) return;
+          const projectId = activeProjectRef.current;
+          if (data.projectId !== activeProjectRef.current) return;
 
-          pendingLogBatch.push(data);
-          if (!batchFrameId) {
-            batchFrameId = setTimeout(() => {
-              batchFrameId = null;
-              flushPendingLogs();
-            }, 100);
+          // pendingLogBatch queue
+          let batch = wsBatchRef.current;
+          if (
+            !batch
+            || batch.authEpoch !== authEpochRef.current
+            || batch.projectEpoch !== projectEpochRef.current
+            || batch.projectId !== projectId
+          ) {
+            if (batch) clearTimeout(batch.timer);
+            batch = {
+              authEpoch: authEpochRef.current,
+              projectEpoch: projectEpochRef.current,
+              projectId,
+              items: [],
+              timer: null
+            };
+            wsBatchRef.current = batch;
+          }
+          batch.items.push(data);
+          if (!batch.timer) {
+            batch.timer = setTimeout(flushPendingLogs, 100);
           }
 
           if (data.action === 'finish' || data.action === 'error' || data.action === 'start') {
-            if (activeProjectRef.current) fetchProjectState(activeProjectRef.current);
+            if (projectId) fetchProjectState(projectId);
             fetchProjects();
           }
         } catch (err) {
@@ -347,6 +448,10 @@ export default function App() {
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
+      }
+      if (wsBatchRef.current) {
+        clearTimeout(wsBatchRef.current.timer);
+        wsBatchRef.current = null;
       }
       if (ws.current) {
         if (ws.current.readyState === WebSocket.OPEN) {
@@ -379,53 +484,69 @@ export default function App() {
 
   const handleLogin = async e => {
     e.preventDefault();
+    if (logoutPendingRef.current) return;
+    const identity = captureRequest('login', null);
     setLoginError('');
     try {
       const data = await api.login(loginUsername, loginPassword, loginTotp);
+      if (!isCurrentRequest(identity)) return;
       if (data.mfaRequired) {
         setLoginTotp('');
         setMfaRequired(true);
         return;
       }
+      authEpochRef.current += 1;
       setLoginPassword('');
       setLoginTotp('');
       setMfaRequired(false);
       setCurrentUser(data.user);
       setAuthStatus('authenticated');
     } catch (err) {
-      setLoginError(err.message);
+      if (isCurrentRequest(identity)) setLoginError(err.message);
     }
   };
 
   const handleLogout = async () => {
+    const token = Symbol('logout');
+    logoutPendingRef.current = token;
+    setLogoutPending(true);
+    becomeAnonymous();
     try {
       await api.logout();
+    } catch {
+      // Logout is best-effort; local state was invalidated before the request.
     } finally {
-      becomeAnonymous();
+      if (logoutPendingRef.current === token) {
+        logoutPendingRef.current = null;
+        setLogoutPending(false);
+      }
     }
   };
 
   const handleCreateProject = async () => {
     const title = prompt('Proje Başlığı Girin:', 'Yeni Otonom Proje');
     if (!title || !title.trim()) return;
+    const identity = captureRequest('createProject');
 
     try {
       const newProj = await api.createProject(title.trim());
+      if (!isCurrentRequest(identity)) return;
       await fetchProjects();
-      setActiveProjectId(newProj.id);
+      if (isCurrentRequest(identity)) setActiveProjectId(newProj.id);
     } catch (e) {
-      alert('Proje oluşturulamadı: ' + e.message);
+      if (isCurrentRequest(identity)) alert('Proje oluşturulamadı: ' + e.message);
     }
   };
 
   const handleTogglePin = async (id, currentPinState, e) => {
     e?.stopPropagation();
     setActiveMenuProjectId(null);
+    const identity = captureRequest('togglePin');
     try {
       await api.updateProject(id, { is_pinned: !currentPinState });
-      fetchProjects();
+      if (isCurrentRequest(identity)) fetchProjects();
     } catch (err) {
-      alert('Sabitleme hatası: ' + err.message);
+      if (isCurrentRequest(identity)) alert('Sabitleme hatası: ' + err.message);
     }
   };
 
@@ -434,13 +555,15 @@ export default function App() {
     setActiveMenuProjectId(null);
     const newTitle = prompt('Yeni Proje Başlığı:', currentTitle);
     if (!newTitle || !newTitle.trim() || newTitle === currentTitle) return;
+    const identity = captureRequest('renameProject');
 
     try {
       await api.updateProject(id, { title: newTitle.trim() });
-      fetchProjects();
-      if (activeProjectId === id) fetchProjectState(id);
+      if (!isCurrentRequest(identity)) return;
+      await fetchProjects();
+      if (isCurrentRequest(identity) && activeProjectRef.current === id) fetchProjectState(id);
     } catch (err) {
-      alert('Yeniden adlandırma hatası: ' + err.message);
+      if (isCurrentRequest(identity)) alert('Yeniden adlandırma hatası: ' + err.message);
     }
   };
 
@@ -448,22 +571,23 @@ export default function App() {
     e?.stopPropagation();
     setActiveMenuProjectId(null);
     if (!confirm(`"${projectTitle}" projesini ve tüm dosyalarını silmek istediğinize emin misiniz?`)) return;
+    const identity = captureRequest('deleteProject');
 
     try {
       await api.deleteProject(id);
-      if (activeProjectId === id) {
-        setActiveProjectId(null);
-        setProjectState(null);
-      }
+      if (!isCurrentRequest(identity)) return;
+      if (activeProjectRef.current === id) setActiveProjectId(null);
       fetchProjects();
     } catch (err) {
-      alert('Silme hatası: ' + err.message);
+      if (isCurrentRequest(identity)) alert('Silme hatası: ' + err.message);
     }
   };
 
   const handleDownloadProjectZip = async (id, event) => {
+    // /contracts/${contractId}/artifacts/${latestArtifact.id}/download
     rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
+    const identity = captureRequest('downloadProject');
     try {
       await requestVerifiedArtifactDownload({
         projectId: id,
@@ -472,14 +596,16 @@ export default function App() {
         getProject: api.getProject,
         navigate: window.location.assign.bind(window.location)
       });
+      if (!isCurrentRequest(identity)) return;
     } catch {
-      setUiError('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');
+      if (isCurrentRequest(identity)) setUiError('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');
     }
   };
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !activeProjectId || isThinking) return;
     const message = chatInput;
+    const identity = captureRequest('chat', activeProjectId);
     setChatInput('');
     setIsThinking(true);
     setProjectState(prev => ({
@@ -489,23 +615,28 @@ export default function App() {
 
     try {
       const data = await api.sendChatMessage(activeProjectId, message);
-      setProjectState(data);
+      if (isCurrentRequest(identity)) setProjectState(data);
     } catch (error) {
-      setProjectState(prev => {
-        const newHistory = (prev?.chatHistory || []).slice(0, -1);
-        newHistory.push({ role: 'user', parts: [{ text: message }] });
-        newHistory.push({ role: 'model', isError: true, parts: [{ text: `⚠️ Mesaj iletilemedi, lütfen tekrar deneyin.` }] });
-        return { ...prev, chatHistory: newHistory };
-      });
+      if (isCurrentRequest(identity)) {
+        setProjectState(prev => {
+          const newHistory = (prev?.chatHistory || []).slice(0, -1);
+          newHistory.push({ role: 'user', parts: [{ text: message }] });
+          newHistory.push({ role: 'model', isError: true, parts: [{ text: '⚠️ Mesaj iletilemedi, lütfen tekrar deneyin.' }] });
+          return { ...prev, chatHistory: newHistory };
+        });
+      }
     } finally {
-      setIsThinking(false);
-      fetchProjects();
+      if (isCurrentRequest(identity)) {
+        setIsThinking(false);
+        fetchProjects();
+      }
     }
   };
 
   const handleApprove = async event => {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
+    const identity = captureRequest('approve', activeProjectId);
     const { nodes: resetNodes, edges: resetEdges } = computeHierarchicalDAG([]);
     setNodes(resetNodes);
     setEdges(resetEdges);
@@ -514,35 +645,43 @@ export default function App() {
 
     try {
       const data = await api.approveProject(activeProjectId);
-      setProjectState(data);
-      fetchProjects();
+      if (isCurrentRequest(identity)) {
+        setProjectState(data);
+        fetchProjects();
+      }
     } catch (err) {
-      setUiError('Başlatma hatası: ' + err.message);
+      if (isCurrentRequest(identity)) setUiError('Başlatma hatası: ' + err.message);
     }
   };
 
   const handleResume = async event => {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
+    const identity = captureRequest('resume', activeProjectId);
     setViewMode('flow');
     try {
       const data = await api.resumeProject(activeProjectId);
-      setProjectState(data);
-      fetchProjects();
+      if (isCurrentRequest(identity)) {
+        setProjectState(data);
+        fetchProjects();
+      }
     } catch (err) {
-      setUiError('Devam ettirme hatası: ' + err.message);
+      if (isCurrentRequest(identity)) setUiError('Devam ettirme hatası: ' + err.message);
     }
   };
 
   const handlePause = async event => {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
+    const identity = captureRequest('pause', activeProjectId);
     try {
       const data = await api.pauseProject(activeProjectId);
-      setProjectState(data);
-      fetchProjects();
+      if (isCurrentRequest(identity)) {
+        setProjectState(data);
+        fetchProjects();
+      }
     } catch (err) {
-      setUiError('Durdurma hatası: ' + err.message);
+      if (isCurrentRequest(identity)) setUiError('Durdurma hatası: ' + err.message);
     }
   };
   const getStatusBadge = status => {
@@ -630,6 +769,7 @@ export default function App() {
         loginTotp={loginTotp}
         setLoginTotp={setLoginTotp}
         cancelMfa={cancelMfa}
+        logoutPending={logoutPending}
       />
     );
   }

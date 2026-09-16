@@ -1,34 +1,26 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-export async function verifyServiceManifest(projectDir, contract = {}) {
+export async function verifyServiceManifest(projectDir, contract = {}, options = {}) {
     const checks = [];
     const issues = [];
-
-    const manifestPath = path.join(projectDir, 'service-manifest.json');
+    const supplied = Array.isArray(options.files) ? options.files : null;
+    const manifestFile = supplied?.find(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith('/service-manifest.json') || String(file.path || '').toLowerCase() === 'service-manifest.json');
     let manifest = null;
-
-    // 1. Manifest Varlık ve JSON Geçerlilik Kontrolü
     try {
-        const content = await fs.readFile(manifestPath, 'utf8');
+        let content;
+        if (supplied) {
+            if (!manifestFile) throw new Error('service-manifest.json is absent from the supplied inventory.');
+            content = String(manifestFile.content || '');
+        } else {
+            content = await fs.readFile(path.join(projectDir, 'service-manifest.json'), 'utf8');
+        }
         manifest = JSON.parse(content);
-        checks.push({
-            name: 'manifest_presence',
-            status: 'passed',
-            reason: 'service-manifest.json exists and is valid JSON.'
-        });
+        checks.push({ name: 'manifest_presence', status: 'passed', reason: 'service-manifest.json exists and is valid JSON.' });
     } catch (err) {
-        checks.push({
-            name: 'manifest_presence',
-            status: 'failed',
-            reason: `service-manifest.json is missing or invalid: ${err.message}`
-        });
+        checks.push({ name: 'manifest_presence', status: 'failed', reason: `service-manifest.json unavailable: ${err.message}` });
         issues.push(`service-manifest.json is missing or invalid: ${err.message}`);
-        return {
-            passed: false,
-            checks,
-            issues
-        };
+        return { passed: false, checks, issues, manifest: null };
     }
 
     // 2. Servis Tanımları ve Port Benzersizliği Kontrolü
@@ -92,6 +84,7 @@ export async function verifyServiceManifest(projectDir, contract = {}) {
     return {
         passed: allPassed && issues.length === 0,
         checks,
-        issues
+        issues,
+        manifest
     };
 }

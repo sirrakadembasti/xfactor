@@ -9,7 +9,7 @@ const { runAsyncTest, finish } = createTestHarness();
 await runAsyncTest('1. Schema migrations should apply all versioned migrations up to version 5', async () => {
     const { getSchemaVersion, db } = await import('../db.js');
     const version = getSchemaVersion();
-    assert.strictEqual(version, 5, `Schema version should be 5, got: ${version}`);
+    assert.ok(version >= 5, `Schema version should be at least 5, got: ${version}`);
 
     // Verify compound indexes exist
     const chatIndexes = db.prepare('PRAGMA index_list(chat_history)').all();

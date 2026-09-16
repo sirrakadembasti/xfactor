@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { db, dbEvents, formatDBDate } from './db.js';
+import { assertWorkflowLease } from './workflowAttempts.js';
 import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
@@ -65,7 +66,7 @@ export function getProject(projectId) {
     if (!isValidProjectId(projectId)) return null;
 
     const project = db.prepare(
-        'SELECT id, title, status, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?'
+        'SELECT id, title, status, plan, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?'
     ).get(projectId);
     if (!project) return null;
 
@@ -91,6 +92,9 @@ export function getProject(projectId) {
     });
 
     let plan = null;
+    if (project.plan) {
+        try { plan = JSON.parse(project.plan); } catch {}
+    }
     if (contractRow?.contract_json) {
         try { plan = JSON.parse(contractRow.contract_json); } catch {}
     }
@@ -123,11 +127,44 @@ export function getProject(projectId) {
         latestArtifact: latestArtifact || null
     };
 }
+export function getAllProjects() {
+    return db.prepare(
+        'SELECT id, title, status, is_pinned, created_at FROM projects ORDER BY is_pinned DESC, created_at DESC'
+    ).all().map(project => ({
+        id: project.id,
+        title: project.title,
+        status: project.status,
+        isPinned: Boolean(project.is_pinned),
+        createdAt: project.created_at
+    }));
+}
+
+export function updateProject(id, updates = {}) {
+    const fields = [];
+    const values = [];
+    if (typeof updates.title === 'string' && updates.title.trim()) {
+        fields.push('title = ?');
+        values.push(updates.title.trim());
+    }
+    if (typeof updates.is_pinned !== 'undefined' || typeof updates.isPinned !== 'undefined') {
+        const pinVal = updates.is_pinned !== undefined ? (updates.is_pinned ? 1 : 0) : (updates.isPinned ? 1 : 0);
+        fields.push('is_pinned = ?');
+        values.push(pinVal);
+    }
+    if (fields.length > 0) {
+        values.push(id);
+        db.prepare(`UPDATE projects SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    }
+    return getProject(id);
+}
 
 export function projectStateTransitionInTransaction({
     projectId,
     expectedRevision,
-    statuses
+    statuses,
+    attemptId = null,
+    leaseOwner = null,
+    transactionOpen = false
 }) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID: "${projectId}"`);
@@ -136,49 +173,61 @@ export function projectStateTransitionInTransaction({
         throw new Error('At least one project status transition is required.');
     }
 
-    const persisted = db.prepare(
-        'SELECT status, revision FROM projects WHERE id = ?'
-    ).get(projectId);
-    if (!persisted) {
-        throw new Error(`Project ${projectId} does not exist`);
-    }
-    if (persisted.revision !== expectedRevision) {
-        throw new Error(`CAS Revision conflict on project ${projectId}`);
-    }
-
-    let currentStatus = persisted.status;
-    for (const nextStatus of statuses) {
-        if (!isValidProjectStatus(nextStatus)) {
-            throw new Error(`Unknown project status: ${nextStatus}`);
+    const ownsTransaction = !transactionOpen;
+    if (ownsTransaction) db.exec('BEGIN IMMEDIATE;');
+    try {
+        if (attemptId !== null || leaseOwner !== null) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
         }
-        if (nextStatus === PROJECT_STATUS.COMPLETED) {
-            throw new Error(
-                'Cannot transition project to completed: required verified lifecycle evidence is missing'
-            );
+        const persisted = db.prepare(
+            'SELECT status, revision FROM projects WHERE id = ?'
+        ).get(projectId);
+        if (!persisted) {
+            throw new Error(`Project ${projectId} does not exist.`);
         }
-        if (!canTransitionProject(currentStatus, nextStatus)) {
-            throw new Error(`Illegal project transition: ${currentStatus} -> ${nextStatus}`);
+        if (persisted.revision !== expectedRevision) {
+            throw new Error(`CAS Revision conflict on project ${projectId}`);
         }
-        currentStatus = nextStatus;
-    }
 
-    const nextRevision = expectedRevision + statuses.length;
-    const result = db.prepare(`
-        UPDATE projects
-        SET status = ?, revision = ?
-        WHERE id = ? AND revision = ? AND status = ?
-    `).run(
-        currentStatus,
-        nextRevision,
-        projectId,
-        expectedRevision,
-        persisted.status
-    );
-    if (result.changes !== 1) {
-        throw new Error(`CAS Revision conflict on project ${projectId}`);
-    }
+        let currentStatus = persisted.status;
+        for (const nextStatus of statuses) {
+            if (!isValidProjectStatus(nextStatus)) {
+                throw new Error(`Unknown project status: ${nextStatus}`);
+            }
+            if (nextStatus === PROJECT_STATUS.COMPLETED) {
+                throw new Error(
+                    'Cannot transition project to completed: required verified lifecycle evidence is missing'
+                );
+            }
+            if (!canTransitionProject(currentStatus, nextStatus)) {
+                throw new Error(`Illegal project transition: ${currentStatus} -> ${nextStatus}`);
+            }
+            currentStatus = nextStatus;
+        }
 
-    return { status: currentStatus, revision: nextRevision };
+        const nextRevision = expectedRevision + statuses.length;
+        const result = db.prepare(`
+            UPDATE projects
+            SET status = ?, revision = ?
+            WHERE id = ? AND revision = ? AND status = ?
+        `).run(
+            currentStatus,
+            nextRevision,
+            projectId,
+            expectedRevision,
+            persisted.status
+        );
+        if (result.changes !== 1) {
+            throw new Error(`CAS Revision conflict on project ${projectId}`);
+        }
+        if (ownsTransaction) db.exec('COMMIT;');
+        return { status: currentStatus, revision: nextRevision };
+    } catch (error) {
+        if (ownsTransaction) {
+            try { db.exec('ROLLBACK;'); } catch {}
+        }
+        throw error;
+    }
 }
 
 const P4_MANDATORY_GATES = [
@@ -206,6 +255,23 @@ function isIsoTimestamp(value) {
         && date.getUTCMinutes() === Number(match[5])
         && date.getUTCSeconds() === Number(match[6])
         && date.getUTCMilliseconds() === Number(match[7] || 0);
+}
+
+function leaseOptionsFrom(...candidates) {
+    return candidates.find(candidate => candidate
+        && (Object.prototype.hasOwnProperty.call(candidate, 'attemptId')
+            || Object.prototype.hasOwnProperty.call(candidate, 'leaseOwner'))) || null;
+}
+
+function assertMutationLease(projectId, options) {
+    if (!options) return;
+    const { attemptId = null, leaseOwner = null } = options;
+    if (!attemptId || !leaseOwner) {
+        const error = new Error('attemptId and leaseOwner are required for fenced workflow mutations.');
+        error.code = 'WORKFLOW_LEASE_FENCED';
+        throw error;
+    }
+    assertWorkflowLease(attemptId, leaseOwner, { projectId });
 }
 
 /**
@@ -293,10 +359,20 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
     if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
     return { artifact, run };
 }
-export function completeVerifiedProject({ projectId, contractId, artifactId, expectedRevision }) {
+export function completeVerifiedProject({
+    projectId,
+    contractId,
+    artifactId,
+    expectedRevision,
+    attemptId = null,
+    leaseOwner = null
+}) {
     if (!isValidProjectId(projectId)) throw new Error(`Invalid project ID: "${projectId}"`);
     db.exec('BEGIN IMMEDIATE;');
     try {
+        if (attemptId !== null || leaseOwner !== null) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId });
+        }
         const persisted = db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(projectId);
         if (!persisted) throw new Error(`Project ${projectId} does not exist.`);
         if (persisted.revision !== Number(expectedRevision || 1)) throw new Error(`CAS Revision conflict on project ${projectId}.`);
@@ -329,15 +405,15 @@ export function completeVerifiedProject({ projectId, contractId, artifactId, exp
             INSERT INTO completion_receipts (
                 id, project_id, contract_id, contract_hash, artifact_id, artifact_hash,
                 run_id, policy_version, mandatory_gate_digests,
-                previous_revision, next_revision, completed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                previous_revision, next_revision, completed_at, attempt_id, lease_owner
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             completionReceiptId, projectId, contractId, contract.contract_hash,
             artifactId, artifact.sha256, run.id, run.policy_version,
-            JSON.stringify(mandatoryGateDigests), previousRevision, nextRevision, completedAt
+            JSON.stringify(mandatoryGateDigests), previousRevision, nextRevision, completedAt,
+            attemptId, leaseOwner
         );
         db.exec('COMMIT;');
-        dbEvents.emit(`stateChange:${projectId}`, PROJECT_STATUS.COMPLETED);
         return { runId: run.id, artifactId, completionReceiptId, ...getProject(projectId) };
     } catch (error) {
         db.exec('ROLLBACK;');
@@ -364,10 +440,14 @@ export function appendProjectChatMessage(projectId, role, textContent, createdAt
 
 export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
+    const leaseOptions = typeof stateOrId === 'object' && stateOrId !== null
+        ? leaseOptionsFrom(stateOrEnv)
+        : leaseOptionsFrom(maybeEnv);
 
     if (!state || !isValidProjectId(state.id)) {
         throw new Error(`Invalid project state or project ID: ${state?.id}`);
     }
+    const planStr = state.plan ? JSON.stringify(state.plan) : null;
 
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
     const expectedRevision = Number(state.revision || 1);
@@ -378,6 +458,7 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
 
     db.exec('BEGIN IMMEDIATE;');
     try {
+        assertMutationLease(state.id, leaseOptions);
         const persisted = db.prepare(
             'SELECT status, revision FROM projects WHERE id = ?'
         ).get(state.id);
@@ -398,7 +479,6 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         if (!canTransitionProject(persisted.status, state.status)) {
             throw new Error(`Illegal project transition: ${persisted.status} -> ${state.status}`);
         }
-
         const result = db.prepare(`
             UPDATE projects
             SET title = ?, status = ?, plan = NULL, workflow_state = ?, revision = ?
@@ -416,6 +496,25 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
             throw new Error(`CAS Revision conflict on project ${state.id}`);
         }
         state.revision = nextRevision;
+
+        if (state.plan) {
+            const contractJson = JSON.stringify(state.plan);
+            const contractHash = crypto.createHash('sha256').update(contractJson).digest('hex');
+            const existing = db.prepare('SELECT id FROM project_contracts WHERE project_id = ?').get(state.id);
+            if (existing) {
+                db.prepare(`
+                    UPDATE project_contracts
+                    SET contract_json = ?, contract_hash = ?, revision = ?
+                    WHERE id = ?
+                `).run(contractJson, contractHash, nextRevision, existing.id);
+            } else {
+                const contractId = `contract-${crypto.randomUUID()}`;
+                db.prepare(`
+                    INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
+                    VALUES (?, ?, ?, 'approved', ?, ?)
+                `).run(contractId, state.id, nextRevision, contractJson, contractHash);
+            }
+        }
 
         const existingCount = db.prepare(
             'SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?'
@@ -435,98 +534,217 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     dbEvents.emit(`stateChange:${state.id}`, state.status);
 }
 
+function parseDeleteOptions(envOrOptions, maybeOptions) {
+    let provided = {};
+    let env = process.env;
+    let force = false;
+    let database = db;
+    if (typeof envOrOptions === 'object' && envOrOptions !== null) {
+        if ('env' in envOrOptions || 'force' in envOrOptions || 'fsOps' in envOrOptions || 'database' in envOrOptions) {
+            env = envOrOptions.env || process.env;
+            force = Boolean(envOrOptions.force);
+            provided = envOrOptions.fsOps || {};
+            database = envOrOptions.database || db;
+        } else {
+            env = envOrOptions;
+            force = Boolean(maybeOptions?.force);
+            provided = maybeOptions?.fsOps || {};
+            database = maybeOptions?.database || db;
+        }
+    } else {
+        force = Boolean(maybeOptions?.force);
+        provided = maybeOptions?.fsOps || {};
+        database = maybeOptions?.database || db;
+    }
+    return { env, force, fsOps: { ...fs, ...provided }, database };
+}
+
+function lockReceiptError() {
+    const error = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
+    error.code = 'PROJECT_LOCKED_RECEIPT';
+    return error;
+}
+
+function trashRootFor(env) {
+    const configured = typeof env?.TRASH_ROOT === 'string' ? env.TRASH_ROOT.trim() : '';
+    return path.resolve(configured || path.join(getProjectsRoot(env), '.trash'));
+}
+
+
+function updateIntent(database, intentId, phase, error = null) {
+    database.prepare(
+        'UPDATE project_deletion_intents SET phase = ?, error = ?, updated_at = ? WHERE id = ?'
+    ).run(phase, error ? String(error.message || error) : null, new Date().toISOString(), intentId);
+}
+
+async function restoreIntentSource(intent, fsOps) {
+    if (!fsSync.existsSync(intent.source_path) && fsSync.existsSync(intent.trash_path)) {
+        await fsOps.rename(intent.trash_path, intent.source_path);
+    }
+}
+
+async function removeOwnedTrash(intent, fsOps) {
+    if (fsSync.existsSync(intent.trash_path)) {
+        await fsOps.rm(intent.trash_path, { recursive: true, force: true });
+    }
+}
+
+async function finalizeDeletion(intent, { env, force, fsOps, database }) {
+    const receipt = database.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(intent.project_id);
+    if (receipt && !force) {
+        await restoreIntentSource(intent, fsOps);
+        database.prepare('UPDATE projects SET status = ? WHERE id = ?').run(intent.original_status, intent.project_id);
+        try {
+            database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+        } catch {}
+        throw lockReceiptError();
+    }
+
+    database.exec('BEGIN IMMEDIATE;');
+    try {
+        const lockedReceipt = database.prepare(
+            'SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1'
+        ).get(intent.project_id);
+        if (lockedReceipt && !force) throw lockReceiptError();
+        if (force) {
+            database.exec('DROP TRIGGER IF EXISTS completion_receipts_immutable_delete');
+            try {
+                database.prepare('DELETE FROM completion_receipts WHERE project_id = ?').run(intent.project_id);
+            } finally {
+                database.exec(`CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_delete
+                    BEFORE DELETE ON completion_receipts
+                    BEGIN
+                        SELECT RAISE(ABORT, 'completion receipts are immutable');
+                    END`);
+            }
+        }
+        database.prepare('DELETE FROM chat_history WHERE project_id = ?').run(intent.project_id);
+        database.prepare('DELETE FROM project_logs WHERE project_id = ?').run(intent.project_id);
+        database.prepare('DELETE FROM project_owners WHERE project_id = ?').run(intent.project_id);
+        database.prepare('DELETE FROM workflow_attempts WHERE project_id = ?').run(intent.project_id);
+        database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+        database.prepare('DELETE FROM projects WHERE id = ?').run(intent.project_id);
+        database.exec('COMMIT;');
+    } catch (error) {
+        try { database.exec('ROLLBACK;'); } catch {}
+        if (error.code === 'PROJECT_LOCKED_RECEIPT') {
+            try {
+                await restoreIntentSource(intent, fsOps);
+                database.prepare('UPDATE projects SET status = ? WHERE id = ?').run(intent.original_status, intent.project_id);
+                database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+            } catch {}
+        } else {
+            try { updateIntent(database, intent.id, 'trashed', error); } catch {}
+        }
+        throw error;
+    }
+
+    try {
+        updateIntent(database, intent.id, 'cleanup_pending');
+        await removeOwnedTrash(intent, fsOps);
+        database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+    } catch (error) {
+        try { updateIntent(database, intent.id, 'cleanup_pending', error); } catch {}
+        throw error;
+    }
+    return true;
+}
+
 export async function deleteProject(projectId, envOrOptions = process.env, maybeOptions = {}) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID format: "${projectId}"`);
     }
-    // Signature support: legacy raw env object, options object, or legacy string env.
-    let env = process.env;
-    let force = false;
-    if (typeof envOrOptions === 'object' && envOrOptions !== null) {
-        if ('env' in envOrOptions || 'force' in envOrOptions) {
-            env = envOrOptions.env || process.env;
-            force = Boolean(envOrOptions.force);
-        } else {
-            env = envOrOptions;
-            force = Boolean(maybeOptions?.force);
-        }
-    } else if (typeof envOrOptions === 'string') {
-        env = envOrOptions;
-        force = Boolean(maybeOptions?.force);
-    }
-    // RESTRICT: a project with a verified delivery receipt cannot be deleted
-    // unless explicitly forced. Checked before any state change or disk move.
-    const receipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
-    if (receipt && !force) {
-        const err = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
-        err.code = 'PROJECT_LOCKED_RECEIPT';
-        throw err;
-    }
-    const { abortProjectExecution } = await import('./engine/cancellation.js');
-    // 1. Aktif in-flight workflow varsa derhal durdur
-    abortProjectExecution(projectId, 'DELETED');
+    const options = parseDeleteOptions(envOrOptions, maybeOptions);
+    const database = options.database;
+    const project = database.prepare('SELECT status FROM projects WHERE id = ?').get(projectId);
+    if (!project) return false;
+    const receipt = database.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+    if (receipt && !options.force) throw lockReceiptError();
 
-    const projectDir = getProjectDir(projectId, env);
-    const root = getProjectsRoot(env);
-    const trashDir = path.join(root, `.trash-${projectId}-${Date.now()}`);
-
-    // 2. DB durumunu 'deleting' olarak işaretle
-    db.prepare("UPDATE projects SET status = 'deleting' WHERE id = ?").run(projectId);
-
-    // 3. Atomik directory rename (varsa trash'e taşı)
-    let movedToTrash = false;
-    if (fsSync.existsSync(projectDir)) {
-        try {
-            await fs.rename(projectDir, trashDir);
-            movedToTrash = true;
-        } catch (renameErr) {
-            // rename başarısız olursa doğrudan silmeyi dene
-        }
-    }
-
-    // 4. DB kayıtlarını temizle
-    db.exec('BEGIN IMMEDIATE;');
+    const projectDir = getProjectDir(projectId, options.env);
+    const root = trashRootFor(options.env);
+    const trashDir = path.join(root, `.trash-${projectId}-${Date.now()}-${crypto.randomUUID()}`);
+    await options.fsOps.mkdir?.(root, { recursive: true });
+    const now = new Date().toISOString();
+    const intent = {
+        id: `deletion-${crypto.randomUUID()}`,
+        project_id: projectId,
+        source_path: projectDir,
+        trash_path: trashDir,
+        original_status: project.status,
+        phase: 'prepared'
+    };
+    database.exec('BEGIN IMMEDIATE;');
     try {
-        // Re-verify inside the transaction: closes the race between the early
-        // check and the deletes, so a concurrent receipt insert degrades to a
-        // clean RESTRICT error instead of a raw FOREIGN KEY failure.
-        const lockedReceipt = db.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
-        if (lockedReceipt && !force) {
-            const lockedErr = new Error('RESTRICT: Cannot delete project with verified delivery receipt');
-            lockedErr.code = 'PROJECT_LOCKED_RECEIPT';
-            throw lockedErr;
-        }
-        if (force) {
-            // Forced deletes are an explicit admin override: remove the project's
-            // delivery receipts as well. Receipts are otherwise immutable
-            // (FK RESTRICT + immutable-delete trigger), so the trigger is
-            // dropped and recreated inside this transaction.
-            db.exec('DROP TRIGGER IF EXISTS completion_receipts_immutable_delete');
-            try {
-                db.prepare('DELETE FROM completion_receipts WHERE project_id = ?').run(projectId);
-            } finally {
-                db.exec(`CREATE TRIGGER IF NOT EXISTS completion_receipts_immutable_delete
-                BEFORE DELETE ON completion_receipts
-                BEGIN
-                    SELECT RAISE(ABORT, 'completion receipts are immutable');
-                END`);
-            }
-        }
-        db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(projectId);
-        db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(projectId);
-        db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(projectId);
-        db.prepare('DELETE FROM workflow_attempts WHERE project_id = ?').run(projectId);
-        db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
-        db.exec('COMMIT;');
+        const currentReceipt = database.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(projectId);
+        if (currentReceipt && !options.force) throw lockReceiptError();
+        database.prepare(`
+            INSERT INTO project_deletion_intents
+                (id, project_id, source_path, trash_path, original_status, phase, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(intent.id, intent.project_id, intent.source_path, intent.trash_path, intent.original_status, intent.phase, now, now);
+        database.prepare("UPDATE projects SET status = 'deleting' WHERE id = ?").run(projectId);
+        database.exec('COMMIT;');
     } catch (error) {
-        db.exec('ROLLBACK;');
+        try { database.exec('ROLLBACK;'); } catch {}
         throw error;
     }
 
-    // 5. Disk temizliğini tamamla
-    const dirToRemove = movedToTrash ? trashDir : projectDir;
-    await fs.rm(dirToRemove, { recursive: true, force: true }).catch(() => {});
-    return true;
+    const { abortProjectExecution } = await import('./engine/cancellation.js');
+    abortProjectExecution(projectId, 'DELETED');
+    if (fsSync.existsSync(projectDir)) {
+        try {
+            await options.fsOps.rename(projectDir, trashDir);
+            updateIntent(database, intent.id, 'trashed');
+        } catch (error) {
+            try {
+                database.prepare('UPDATE projects SET status = ? WHERE id = ?').run(intent.original_status, projectId);
+                updateIntent(database, intent.id, 'rename_failed', error);
+            } catch {}
+            throw error;
+        }
+    } else {
+        updateIntent(database, intent.id, 'trashed');
+    }
+    return finalizeDeletion(intent, options);
+}
+
+export async function recoverPendingProjectDeletions({ env = process.env, database = db, fsOps = fs, force = false } = {}) {
+    const intents = database.prepare(`
+        SELECT id, project_id, source_path, trash_path, original_status, phase, error
+        FROM project_deletion_intents ORDER BY created_at, id
+    `).all();
+    const results = [];
+    for (const intent of intents) {
+        const project = database.prepare('SELECT id FROM projects WHERE id = ?').get(intent.project_id);
+        const receipt = database.prepare('SELECT id FROM completion_receipts WHERE project_id = ? LIMIT 1').get(intent.project_id);
+        if (receipt && !force) {
+            await restoreIntentSource(intent, fsOps);
+            database.prepare('UPDATE projects SET status = ? WHERE id = ?').run(intent.original_status, intent.project_id);
+            database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+            results.push({ projectId: intent.project_id, status: 'protected' });
+            continue;
+        }
+        if (!project) {
+            await removeOwnedTrash(intent, fsOps);
+            database.prepare('DELETE FROM project_deletion_intents WHERE id = ?').run(intent.id);
+            results.push({ projectId: intent.project_id, status: 'cleaned' });
+            continue;
+        }
+        if (fsSync.existsSync(intent.source_path) && !fsSync.existsSync(intent.trash_path)) {
+            try {
+                await fsOps.mkdir?.(path.dirname(intent.trash_path), { recursive: true });
+                await fsOps.rename(intent.source_path, intent.trash_path);
+                updateIntent(database, intent.id, 'trashed');
+            } catch (error) {
+                updateIntent(database, intent.id, 'rename_failed', error);
+                results.push({ projectId: intent.project_id, status: 'failed', error: error.message });
+                continue;
+            }
+        }
+        results.push({ projectId: intent.project_id, status: await finalizeDeletion(intent, { env, force, fsOps, database }) ? 'deleted' : 'unknown' });
+    }
+    return results;
 }
 
 export { reconcileProjectsWithDisk };

@@ -1,151 +1,122 @@
 /**
- * ⚡ XFactor Master Test Runner
- * Tüm backend test süitlerini sırayla çalıştırır ve tek bir özet raporlar.
+ * Exhaustive backend test runner.
+ * Every test*.js file is classified in testInventory.js; support modules are
+ * inventory-only and all real suites are executed in isolated roots.
  */
-
-import { spawn } from 'child_process';
-import fs from 'fs/promises';
-import os from 'os';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertCompleteTestInventory, getRunnableTestFiles } from './testInventory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const testFiles = [
-    'test_test_harness.js',
-    'test_http_integration.js',
-    'test_websocket_integration.js',
-    'test_backend.js',
-    'test_admin_cli.js',
-    'test_project_repository.js',
-    'test_workflow_attempts.js',
-    'test_cancellation_and_deadlines.js',
-    'test_generation_isolation.js',
-    'test_subprocess_sandbox.js',
-    'test_p5_execution_boundary.js',
-    'test_p8_sandbox_limits.js',
-    'test_p5_artifact_completion.js',
-    'test_p6_archive_ownership.js',
-    'test_p6_static_serving.js',
-    'test_agent_contract_schemas.js',
-    'test_p5_mfa_login.js',
-    'test_p8_mfa_crypto.js',
-    'test_p8_security_operations.js',
-    'test_database_migrations.js',
-    'test_health_and_lifecycle.js',
-    'test_concurrency_pool.js',
-    'test_build_validator.js',
-    'test_quality_gate.js',
-    'test_docs_agent_sync.js',
-    'test_p8_ci_contract.js',
-    'test_deep_verification.js',
-    'test_tur2_edge_cases.js',
-    'test_runtime_verification.js',
-    'test_e2e_simulation.js',
-    'test_disk_sync_and_isolation.js',
-    'test_p7_reconciliation.js',
-    'test_p7_delete_protection.js',
-    'test_p2_frontend.js',
-    'test_p2_security_auth.js',
-    'test_p3_observability.js',
-    'test_p7_sqlite_durability.js',
-    'test_p7_approve_state.js',
-    'test_p7_files_api.js',
-    'test_p7_readme_generator.js'
-];
+function selectedTestFiles() {
+    const override = String(process.env.XFACTOR_TEST_RUNNER_FILES || '').trim();
+    if (!override) return getRunnableTestFiles().map(entry => entry.file);
+    return override.split(',').map(file => file.trim()).filter(Boolean);
+}
 
-async function runTestFile(file, env, timeoutMs = 120000) {
+export function runTestFile(file, env, timeoutMs = 120000) {
     return new Promise((resolve) => {
         const filePath = path.join(__dirname, file);
-        const proc = spawn(process.execPath, [filePath], {
-            stdio: 'inherit',
-            env: {
-                ...process.env,
-                ...env
-            }
-        });
-
         let settled = false;
+        let proc;
+        try {
+            proc = spawn(process.execPath, [
+                '--import', pathToFileURL(path.join(__dirname, 'preloadDatabase.js')).href,
+                filePath
+            ], {
+                stdio: 'inherit',
+                env: { ...process.env, ...env }
+            });
+        } catch (error) {
+            resolve({ file, passed: false, error: `STARTUP_ERROR: ${error.message}` });
+            return;
+        }
+
         const timer = setTimeout(() => {
-            if (!settled) {
-                settled = true;
-                console.error(`\n[TIMEOUT] Test süiti zaman aşımına uğradı (${timeoutMs / 1000} sn): ${file}`);
-                try {
-                    proc.kill('SIGKILL');
-                } catch {}
-                resolve({ file, passed: false, error: 'TIMEOUT' });
-            }
+            if (settled) return;
+            settled = true;
+            console.error(`\n[TIMEOUT] Test suite timed out (${timeoutMs / 1000}s): ${file}`);
+            try { proc.kill('SIGKILL'); } catch {}
+            resolve({ file, passed: false, error: 'TIMEOUT' });
         }, timeoutMs);
 
-        proc.on('error', (err) => {
-            if (!settled) {
-                settled = true;
-                clearTimeout(timer);
-                console.error(`\n[ERROR] Alt süreç başlatma hatası (${file}):`, err.message);
-                resolve({ file, passed: false, error: err.message });
-            }
+        proc.on('error', (error) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            console.error(`\n[ERROR] Test suite failed to start (${file}): ${error.message}`);
+            resolve({ file, passed: false, error: `STARTUP_ERROR: ${error.message}` });
         });
-
-        proc.on('close', (code) => {
-            if (!settled) {
-                settled = true;
-                clearTimeout(timer);
-                resolve({ file, passed: code === 0 });
-            }
+        proc.on('close', (code, signal) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve({ file, passed: code === 0, exitCode: code, signal });
         });
     });
 }
 
-async function main() {
-    console.log("==================================================");
-    console.log("🚀 XFactor Tüm Test Süitleri Çalıştırılıyor...");
-    console.log("==================================================\n");
+export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000 } = {}) {
+    const inventory = await assertCompleteTestInventory(testsDir);
+    const files = selectedTestFiles();
+    const listed = new Set(inventory.discovered);
+    const missing = files.filter(file => !listed.has(file));
+    if (missing.length) {
+        throw new Error(`Requested test file does not exist: ${missing.join(', ')}`);
+    }
 
     const testTempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-test-runner-'));
-
-    const startTime = Date.now();
     const results = [];
-
+    const startTime = Date.now();
     try {
-        for (let i = 0; i < testFiles.length; i++) {
-            const file = testFiles[i];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             const testDbPath = path.join(testTempDir, `test-${i}.db`);
             const testProjectsRoot = path.join(testTempDir, `projects-${i}`);
+            const testArtifactsRoot = path.join(testTempDir, `artifacts-${i}`);
+            const testTrashRoot = path.join(testTempDir, `trash-${i}`);
             await fs.mkdir(testProjectsRoot, { recursive: true });
-
-            const testEnv = {
+            const result = await runTestFile(file, {
                 NODE_ENV: 'test',
                 DB_PATH: testDbPath,
-                PROJECTS_ROOT: testProjectsRoot
-            };
-
-            const res = await runTestFile(file, testEnv);
-            results.push(res);
+                PROJECTS_ROOT: testProjectsRoot,
+                ARTIFACTS_ROOT: testArtifactsRoot,
+                TRASH_ROOT: testTrashRoot,
+                // Docker suites must fail explicitly when Docker is unavailable in CI.
+                ...(process.env.P8_REQUIRE_DOCKER_LIMITS !== undefined
+                    ? { P8_REQUIRE_DOCKER_LIMITS: process.env.P8_REQUIRE_DOCKER_LIMITS }
+                    : (process.platform === 'linux' ? { P8_REQUIRE_DOCKER_LIMITS: '1' } : {}))
+            }, timeoutMs);
+            results.push(result);
         }
     } finally {
         await fs.rm(testTempDir, { recursive: true, force: true }).catch(() => {});
     }
 
+    const failed = results.filter(result => !result.passed);
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    const failedFiles = results.filter(r => !r.passed).map(r => r.file);
-    const failedCount = failedFiles.length;
-    const passedCount = results.filter(r => r.passed).length;
-
-    if (failedFiles.length > 0) {
-        console.log("\n❌ Başarısız Süitler:");
-        for (const f of failedFiles) {
-            console.log(`  - ${f}`);
-        }
+    console.log(`\nTest summary: ${results.length - failed.length} suites passed, ${failed.length} failed (${duration}s)`);
+    if (failed.length) {
+        console.error(`Failed suites: ${failed.map(result => result.file).join(', ')}`);
     }
+    return { results, failed, duration };
+}
 
-    console.log("\n==================================================");
-    console.log(`📊 Test Özeti: ${passedCount} Süit Başarılı, ${failedCount} Süit Hatalı (${duration} sn)`);
-    console.log("==================================================");
-
-    if (failedCount > 0) {
-        process.exit(1);
+export async function main() {
+    try {
+        const { failed } = await runAllTests();
+        if (failed.length) process.exitCode = 1;
+    } catch (error) {
+        console.error(`Test runner failed: ${error.stack || error.message}`);
+        process.exitCode = 1;
     }
 }
 
-main().catch(console.error);
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+    await main();
+}

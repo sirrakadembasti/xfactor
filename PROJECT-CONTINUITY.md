@@ -160,11 +160,10 @@ Implement the approved project-quality pipeline redesign without relying on chat
 ## Dirty Worktree
 
 Clean.
+
 ## Exact Next Action
 
 Roadmap P0–P8 is verified; perform no new source implementation until a new approved design/plan exists.
-
-## Do Not Do
 
 - Do not edit the audited Todo artifact.
 - Do not mark roadmap units complete without `status: verified` evidence.

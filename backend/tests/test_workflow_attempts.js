@@ -34,10 +34,10 @@ await runAsyncTest('1. acquireWorkflowLease should create attempt, block duplica
     assert.strictEqual(leaseB.acquired, false, 'Second worker must be blocked while active lease is held');
     assert.strictEqual(leaseB.attempt.id, leaseA.attempt.id);
 
-    const heartbeatUpdated = updateAttemptHeartbeat(leaseA.attempt.id);
+    const heartbeatUpdated = updateAttemptHeartbeat(leaseA.attempt.id, workerA);
     assert.strictEqual(heartbeatUpdated, true);
 
-    const released = releaseWorkflowLease(leaseA.attempt.id, 'completed');
+    const released = releaseWorkflowLease(leaseA.attempt.id, 'completed', { leaseOwner: workerA });
     assert.strictEqual(released, true);
     assert.strictEqual(getActiveWorkflowAttempt(project.id), null, 'Released attempt must no longer be active');
 
@@ -56,7 +56,7 @@ await runAsyncTest('2. reconcileStaleWorkflowAttempts should transition stale ru
     const lease = acquireWorkflowLease(project.id, 'worker-crashed');
 
     db.prepare("UPDATE projects SET status = 'running' WHERE id = ?").run(project.id);
-    db.prepare("UPDATE workflow_attempts SET heartbeat_at = '2020-01-01 00:00:00' WHERE id = ?").run(lease.attempt.id);
+    db.prepare("UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = '2020-01-01 00:00:00' WHERE id = ?").run(lease.attempt.id);
 
     const recovery = reconcileStaleWorkflowAttempts({ staleThresholdSeconds: 1 });
     assert.strictEqual(recovery.reconciledCount >= 1, true);
@@ -85,7 +85,7 @@ await runAsyncTest('3. Duplicate approve/resume calls should be idempotent and p
     assert.strictEqual(lease2.acquired, false, 'Duplicate concurrent execution must be suppressed');
     assert.strictEqual(lease2.attempt.id, lease1.attempt.id);
 
-    releaseWorkflowLease(lease1.attempt.id, 'completed');
+    releaseWorkflowLease(lease1.attempt.id, 'completed', { leaseOwner: 'request-1' });
     await deleteProject(project.id);
 });
 
@@ -106,7 +106,7 @@ await runAsyncTest('4. executeProjectTasks should manage attempt heartbeat, comp
     const lease = acquireWorkflowLease(project.id, 'engine-test');
     assert.strictEqual(lease.acquired, true);
 
-    releaseWorkflowLease(lease.attempt.id, 'completed');
+    releaseWorkflowLease(lease.attempt.id, 'completed', { leaseOwner: 'engine-test' });
 
     const finished = db.prepare('SELECT status, ended_at FROM workflow_attempts WHERE id = ?').get(lease.attempt.id);
     assert.strictEqual(finished.status, 'completed');

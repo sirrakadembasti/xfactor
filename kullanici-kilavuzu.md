@@ -77,11 +77,12 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
                │                                   │
                ▼                                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│        BAĞIMSIZ TEMİZ ODA DOĞRULAYICI (CLEAN-ROOM VERIFIER)     │
+│      WEB ORCHESTRATOR & ISOLATED EXECUTION WORKER BOUNDARY      │
 │ - 18 Zorunlu Kalite Kapısı (Aktif Politika 2.0 Fail-Closed Veto)│
-│ - OS Sandbox Yürütmesi (Bubblewrap / Docker / Win Isolation)    │
+│ - OS Sandbox Yürütmesi (Docker --cap-drop ALL, limits)          │
 │ - Sunucu Tarafı ZIP Artefaktı & SHA-256 Hash Bütünlüğü          │
 │ - Değişmez Tamamlama Makbuzu (completion_receipts, Migrasyon 10)│
+│ - HTTP Bearer Token Authenticated İletişim                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -156,10 +157,10 @@ npm run dev
 |---|---|---|---|
 | **Manager** | Baş Mimar & Proje Yöneticisi | Boss ile görüşür, gereksinimleri netleştirir, mimariyi çizer, domainlere böler ve Prisma/SQLite projelerinde `.env.example` güvencesini şartnameye bağlar. | `docs/manager.md` |
 | **Director** | Domain Direktörü | Kendisine atanan domainin teknik mimarisini, kütüphane ve bileşen standartlarını belirler. | `docs/director.md` |
-| **Teamleader** | Takım Lideri | Direktörün şartnamesini atomik DAG görevlerine böler. **Maksimum 1-2 dosya (Atomik Limit)** kuralını uygular. | `docs/teamleader.md` |
+| **Teamleader** | Takım Lideri | Direktörün şartnamesini atomik DAG görevlerine böler. **Katı Tek Dosya Atomik Limit (`targetFiles.length === 1`)** kuralını uygular. | `docs/teamleader.md` |
 | **Coder** | Yazılım Geliştirici | Kendisine verilen atomik görevi alır, hedef dosyaları eksiksiz kodlar. **Bileşen Kompozisyonu** (`@/components` import etme) kuralını uygular. | `docs/coder.md` |
 | **Reviewer** | Kod İnceleme & Kalite Kapısı | Üretilen kodları sözdizimi, eksik importlar ve güvenlik açısından inceler; 2 tur sonunda onay vermezse görevi fail-closed olarak **VETO** eder. | `docs/reviewer.md` |
-| **Tester** | Test & Kabul Uzmanı | `stripStringsAndComments` ile sözdizim denetimi, Prisma model-route tutarlılığı denetimi yapar; hata varsa Coder'a otomatik onarım başlatır, `RAPOR.md` ve `README.md` üretir. | `docs/tester.md` |
+| **Tester** | Test & Kabul Uzmanı | Babel AST (`@babel/parser`) ile deterministik sentaks denetimi, secret fallback tespiti, `executeStaticRepairLoop` ile sıralı hedefli dosya onarımı yapar; `RAPOR.md` ve dinamik `README.md` üretir. | `docs/tester.md` |
 
 ---
 
@@ -241,15 +242,15 @@ projects/<proje_id>/
 │   └── backend.director/           # Backend Direktörü
 │       └── backend.teamleader/
 │
-├── src/                            # Üretilen Temiz Uygulama Kaynak Kodları
+├── src/                            # Üretilen Temiz Uygulama Kaynak Kodları (app/layout.tsx, app/page.tsx, components, lib)
 ├── prisma/                         # schema.prisma & seed.ts
-├── .env.example                  # Güvenli örnek yapılandırma şablonu
-├── package.json                    # Güncel Bağımlılıklar (Next 14.2+, React 18.3+, Prisma 5.22+)
+├── .env.example                    # Güvenli örnek yapılandırma şablonu
+├── package.json                    # Kilitli Kararlı Sürümler (Next 15+, React 18.3+, Prisma 6.4+, Zod 3.24+, Tailwind 3.4+)
 ├── tsconfig.json                   # Path Alias (@/* -> ./src/*) Konfigürasyonu
-├── tailwind.config.ts              # Stil Yapılandırması
+├── tailwind.config.ts              # Stil Yapılandırması (darkMode: 'class')
+├── service-manifest.json           # Otomatik Üretilen Servis & Port Sözleşmesi
 ├── README.md                       # Otomatik Üretilen Kurulum & Çalıştırma Rehberi
 └── RAPOR.md                        # Tester Nihai Kabul Raporu
-```
 
 ---
 
@@ -344,8 +345,8 @@ XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamaml
 | 5 | `typecheck` | Gerçek framework derleyicisi (`tsc --noEmit`) ile tip kontrolü; eksik tip veya kırık export derhal reddedilir. |
 | 6 | `framework_build` | Gerçek framework derleme betiğinin (`npm run build`) sandbox içinde başarıyla sonuçlanması. |
 | 7 | `requirement_traceability` | Sözleşmedeki her zorunlu gereksinimin (`requirements`) en az bir PASS alan kontrolle kanıtlanması. |
-| 8 | `service_manifest` | Frontend/backend port, base URL, proxy ve CORS sözleşmesinin çakışmasız yapılandırılması. |
-| 9 | `database_verification` | Prisma şemasının (`npx prisma validate`), migration dosyalarının ve veritabanı bağlantısının doğrulanması. |
+| 8 | `service_manifest` | Frontend/backend port, base URL, proxy ve CORS sözleşmesinin `service-manifest.json` ile çakışmasız yapılandırılması. |
+| 9 | `database_verification` | Prisma şemasının (`npx prisma validate`), client üretiminin (`prisma generate`), migration/push (`prisma db push`), tohumlama (`prisma db seed`) ve kullanıcı hesabı varlığının (`prisma_seed_accounts`) izole worker'da doğrulanması. |
 | 10 | `api_contract` | Üretilen HTTP API rotalarının gerçek HTTP istekleriyle ve veritabanı yan etkileriyle doğrulanması. |
 | 11 | `browser_journey` | Headless Chromium tarayıcısıyla kritik kullanıcı yolculuklarının (form doldurma, CRUD, sayfa yenileme) testi. |
 | 12 | `smoke_gate` | Projenin bağımsız servis başlatıcı ve sağlık kontrolleriyle uçtan uca ayağa kalktığının doğrulanması. |

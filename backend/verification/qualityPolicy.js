@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
 import { listProjectTree } from '../engine/codeGenerator.js';
+import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { db, dbEvents } from '../db.js';
 import {
     getProject,
@@ -9,15 +10,12 @@ import {
     saveProjectState
 } from '../projectRepository.js';
 import { createRun, updateRunStatus } from '../repositories/verificationRepository.js';
-import { verifyDependencies } from './packageVerifier.js';
-import { verifyBuild } from './buildVerifier.js';
-import { verifyProjectSmoke } from './smokeVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
 import { verifyPlaceholders } from './placeholderVerifier.js';
-import { verifyReadmeCommands } from './readmeVerifier.js';
+import { runVerificationChecks } from './runChecks.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 
-export const ACTIVE_POLICY_VERSION = '2.0';
+export { ACTIVE_POLICY_VERSION };
 
 export const MANDATORY_GATES = [
     'package_json',
@@ -51,7 +49,7 @@ const STATUS_PRIORITY = {
     FAIL: 3
 };
 
-const RUNTIME_GATE_MEMBERS = {
+export const RUNTIME_GATE_MEMBERS = {
     service_manifest: new Set([
         'manifest_presence',
         'service_definitions',
@@ -96,8 +94,7 @@ function normalizeGateStatus(status) {
 }
 
 function computeDigest(text) {
-    if (!text) return null;
-    return crypto.createHash('sha256').update(String(text)).digest('hex');
+    return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
 function normalizeCheck(check, index) {
@@ -485,7 +482,8 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
         const projectedState = projectStateTransitionInTransaction({
             projectId,
             expectedRevision: project.revision,
-            statuses: transitionPath
+            statuses: transitionPath,
+            transactionOpen: true
         });
         finalProjectStatus = projectedState.status;
 
@@ -508,7 +506,7 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
     return { passed: evaluation.passed, runStatus };
 }
 
-function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
+export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
     const members = checks.filter(check => RUNTIME_GATE_MEMBERS[gateName].has(check.name));
     const requirementIds = new Set(members.flatMap(check => (
         Array.isArray(check.requirementIds) ? check.requirementIds.map(String) : []
@@ -572,7 +570,7 @@ async function captureVerifier(run, fallbackGate) {
     }
 }
 
-async function captureHardeningGate(name, run) {
+export async function captureHardeningGate(name, run) {
     try {
         const result = await run();
         const issues = Array.isArray(result?.issues) ? result.issues : [];
@@ -610,7 +608,10 @@ function stageVerificationRunning(project) {
     }
     const paths = {
         implementation_finished: ['verification_pending', 'verification_running'],
-        verification_pending: ['verification_running']
+        verification_pending: ['verification_running'],
+        paused: ['verification_pending', 'verification_running'],
+        implementing: ['implementation_finished', 'verification_pending', 'verification_running'],
+        verification_failed: ['paused', 'verification_pending', 'verification_running']
     };
     const path = paths[project.status];
     if (!path) {
@@ -654,92 +655,45 @@ export async function runProjectVerification({
         ORDER BY stable_key
     `).all(contractRow.id).map(row => row.id);
     const injectedVerifiers = options.verifiers || {};
-    const dependencyVerifier = injectedVerifiers.dependencies || verifyDependencies;
-    const buildVerifier = injectedVerifiers.build || verifyBuild;
-    const smokeVerifier = injectedVerifiers.smoke || verifyProjectSmoke;
     const domainVerifier = injectedVerifiers.domain || verifyDomainCompliance;
     const placeholderVerifier = injectedVerifiers.placeholders || verifyPlaceholders;
     const contaminationVerifier = injectedVerifiers.contamination || verifyContamination;
     const securityVerifier = injectedVerifiers.security || verifySecurityBaseline;
-    const readmeVerifier = injectedVerifiers.readme || verifyReadmeCommands;
     const verifierOptions = { ...options };
     delete verifierOptions.verifiers;
 
     await stageVerificationRunning(project);
-    const runId = `verification-${crypto.randomUUID()}`;
-    createRun({
-        id: runId,
-        projectId,
-        contractId: contractRow.id,
-        status: 'queued',
-        policyVersion: ACTIVE_POLICY_VERSION
-    });
+    const runId = options.runId || `verification-${crypto.randomUUID()}`;
+    createRun({ id: runId, projectId, contractId: contractRow.id, status: 'queued', policyVersion: ACTIVE_POLICY_VERSION });
     updateRunStatus(runId, 'running');
 
     const workspace = projectDir || getProjectDir(projectId);
-    let projectFiles;
-    let projectFilesError = null;
-    try {
-        projectFiles = Array.isArray(options.files)
-            ? options.files
-            : await listProjectTree(workspace, { strict: true });
-    } catch (error) {
-        projectFiles = [];
-        projectFilesError = error;
-    }
+    const projectFiles = Array.isArray(options.files) ? options.files : [];
     const sandboxAdapter = verifierOptions.adapter ?? null;
     const hardeningRuns = [
         ['domain_entity_check', () => domainVerifier(contract, projectFiles)],
         ['placeholder_check', () => placeholderVerifier(projectFiles)],
         ['contamination_check', () => contaminationVerifier(contract, projectFiles)],
-        ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)],
-        ['readme_check', () => readmeVerifier(contract, projectFiles, { adapter: sandboxAdapter, workspace })]
+        ['security_baseline', () => securityVerifier(contract, projectFiles, sandboxAdapter)]
     ];
-    const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) =>
-        captureHardeningGate(name, () => {
-            if (projectFilesError) throw projectFilesError;
-            return run();
-        })
+    const hardeningChecks = await Promise.all(hardeningRuns.map(([name, run]) => captureHardeningGate(name, run)));
+    const workerResult = options.workerResult || await runVerificationChecks({
+        workspace: '/workspace',
+        contract,
+        requirementIds: mandatoryRequirementIds,
+        adapter: verifierOptions.adapter,
+        signal: verifierOptions.signal,
+        env: verifierOptions.env,
+        runId,
+        files: projectFiles,
+        verifiers: injectedVerifiers
+    });
+    const workerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
+    const runtimeChecks = Object.keys(RUNTIME_GATE_MEMBERS).map(gateName => (
+        combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds)
     ));
-    const dependencyResult = await captureVerifier(
-        () => dependencyVerifier(workspace, contract, verifierOptions),
-        'package_json'
-    );
-    const buildResult = dependencyResult.passed
-        ? await captureVerifier(
-            () => buildVerifier(workspace, contract, verifierOptions),
-            'framework_build'
-        )
-        : { passed: false, checks: [] };
-    const smokeResult = dependencyResult.passed && buildResult.passed
-        ? await captureVerifier(
-            () => smokeVerifier(workspace, contract, verifierOptions),
-            'smoke_gate'
-        )
-        : { passed: false, checks: [] };
+    const policyChecks = [...workerChecks, ...runtimeChecks, ...hardeningChecks];
 
-    const dependencyChecks = Array.isArray(dependencyResult.checks)
-        ? dependencyResult.checks
-        : [];
-    const buildChecks = Array.isArray(buildResult.checks) ? buildResult.checks : [];
-    const smokeChecks = Array.isArray(smokeResult.checks) ? smokeResult.checks : [];
-    const policyChecks = [
-        ...dependencyChecks,
-        ...buildChecks,
-        ...hardeningChecks,
-        ...Object.keys(RUNTIME_GATE_MEMBERS).map(gateName => (
-            combineRuntimeGate(
-                gateName,
-                smokeChecks,
-                gateName === 'smoke_gate' ? mandatoryRequirementIds : []
-            )
-        )),
-        ...smokeChecks.map(check => ({
-            ...check,
-            gateName: `detail:${check.name}`,
-            applicability: 'OPTIONAL'
-        }))
-    ];
 
     const result = await aggregateVerificationRun(
         projectId,

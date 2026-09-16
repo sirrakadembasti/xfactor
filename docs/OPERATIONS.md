@@ -4,36 +4,30 @@ Single-node deployment boundary, production prerequisites, and the scaling
 contract. Everything below describes observed runtime behavior — see the
 referenced source files for the authoritative implementation.
 
-## 1. Deployment boundary: single node
+## 1. Deployment boundary: Split architecture (Web & Execution Worker)
 
-The backend is a single Node.js process backed by a file SQLite database
-(WAL mode, `PRAGMA busy_timeout = 5000`, `foreign_keys = ON`) and local
-filesystem state:
+The platform operates across two distinct trust boundaries:
+1. **Web Orchestrator (`backend/server.js`)**: A Node.js process backed by a SQLite database (WAL mode). Handles authentication, project state, and the DAG engine.
+2. **Execution Worker (`execution/server.js`)**: An isolated boundary running in a separate environment (or dedicated host). Executes untrusted generated code under rigid OS sandbox constraints (Docker/Bubblewrap).
+
+The Web Orchestrator connects to the Execution Worker via an authenticated HTTP API.
 
 - Database: `DB_PATH` (default `<backend>/data/projects.db`).
 - Projects: `PROJECTS_ROOT` (default `<backend>/../projects`).
 - Artifacts: `ARTIFACTS_ROOT` (default `<backend>/data/artifacts`).
-- Sessions live in the `user_sessions` table but are only valid on the node
-  that holds the database and filesystem; WebSocket connections are in-process
-  (`backend/server.js`, `backend/projectRepository.js`,
-  `backend/artifactPaths.js`, `backend/db.js`).
+- Worker Token: `EXECUTION_WORKER_TOKEN` (Shared secret between Web and Worker).
+- Worker URL: `EXECUTION_WORKER_URL` (Points to the isolated worker).
 
-Do not run two backend instances against the same paths without the
-prerequisites in section 8 — there is no leader election, shared locking
-beyond SQLite, or cross-node fanout.
-
+Do not run two web instances against the same paths without the prerequisites in section 8.
 ## 2. Prerequisites
 
 - Node.js `22.23.2`, `npm@10.9.8` (see `engines` in `package.json`).
+- `EXECUTION_WORKER_URL` and `EXECUTION_WORKER_TOKEN` pointing to a trusted execution worker instance.
 - `GOOGLE_API_KEY` for LLM-backed generation.
 - `JWT_SECRET` (session/token signing material).
 - `MFA_ENCRYPTION_KEY` (32-byte hex): encrypts stored TOTP secrets.
-  `MFA_PREVIOUS_ENCRYPTION_KEYS` (comma-separated 32-byte hex) keeps
-  pre-rotation keys readable.
 - Reverse proxy terminating TLS in front of the backend (section 6).
-- Persistent storage for `DB_PATH`, `PROJECTS_ROOT`, `ARTIFACTS_ROOT`
-  (section 5). The production image declares
-  `VOLUME ["/app/backend/data", "/app/projects"]` (`Dockerfile`).
+- Persistent storage for `DB_PATH`, `PROJECTS_ROOT`, `ARTIFACTS_ROOT`.
 
 ## 3. Authentication and sessions
 
@@ -66,23 +60,11 @@ beyond SQLite, or cross-node fanout.
 
 ## 5. Execution sandbox and generated code
 
-- Generated/build code executes only inside a proven sandbox adapter
-  (`XFACTOR_BUILD_SANDBOX`, Docker or Bubblewrap). Without a proven
-  capability the run is `BLOCKED` — there is no host fallback
-  (`PortableSandboxAdapter.execute`, `backend/engine/buildValidator.js`).
-- Docker isolation enforces exactly:
-  `--cpus 2.0`, `--memory 1g`, `--memory-swap 1g`, `--pids-limit 100`,
-  `--security-opt no-new-privileges:true`, `--cap-drop ALL`,
-  `--tmpfs /tmp:rw,noexec,nosuid,size=64m`, and loopback-only port
-  publishing (`-p 127.0.0.1:<port>:<port>`; wildcard `0.0.0.0` binding is
-  rejected). See `buildDockerIsolationArgs` and `DEFAULT_SANDBOX_LIMITS`.
-- Sandboxed processes start with a scrubbed environment and a 60-second
-  default execution bound.
-- CI enforces real Docker evidence: the backend suite runs with
-  `P8_REQUIRE_DOCKER_LIMITS=1`, so the cgroup-limits test fails instead of
-  skipping when no Docker daemon is available
-  (`backend/tests/test_p8_sandbox_limits.js`, `.github/workflows/ci.yml`).
-
+- Generated/build code executes exclusively inside the isolated Execution Worker boundary. The web backend NEVER executes generated code.
+- The worker utilizes a proven sandbox adapter (`XFACTOR_BUILD_SANDBOX`, Docker or Bubblewrap). Without a proven capability the run is `BLOCKED`.
+- Docker isolation enforces exactly: `--cpus 2.0`, `--memory 1g`, `--memory-swap 1g`, `--pids-limit 100`, `--security-opt no-new-privileges:true`, `--cap-drop ALL`, `--tmpfs /tmp:rw,noexec,nosuid,size=64m`, and loopback-only port publishing.
+- Sandboxed processes start with a scrubbed environment and a strict execution deadline bounded by the worker.
+- CI enforces real Docker evidence.
 ## 6. Artifacts and verified ZIP downloads
 
 - ZIP artifacts are produced server-side and recorded with SHA-256 hashes;
@@ -91,15 +73,12 @@ beyond SQLite, or cross-node fanout.
   (`requireAuth` + `projectAccess('viewer')`), served with `res.download`
   from the server-side artifact path — never reconstructed from a client
   file list (`backend/routes/projectRoutes.js`).
-- Release gating uses the isolated `artifactVerifier` clean room plus
-  durable completion receipts (migration 10) before an artifact becomes
-  downloadable.
+- Release gating requires the execution worker to complete all mandatory gates (e.g., `clean_install`, `typecheck`), and provide durable completion receipts with strictly validated `evidence_json` and `stdout/stderr` digests before an artifact becomes downloadable. Unverified requests strictly return `409 Conflict`.
 
 ## 7. Persistence, proxy/TLS, and maintenance
 
-- **Persistence:** back up `DB_PATH` together with `PROJECTS_ROOT` and
-  `ARTIFACTS_ROOT`. SQLite checkpoints WAL on graceful shutdown
-  (`checkpointWAL`).
+- **Persistence & Recovery:** Back up `DB_PATH` together with `PROJECTS_ROOT` and `ARTIFACTS_ROOT`. SQLite checkpoints WAL on graceful shutdown (`checkpointWAL`). Recovery tools are provided to safely restore backups and invalidate stale workflow leases without data corruption.
+- **Graceful Bounded Shutdown:** The web orchestrator catches `SIGTERM/SIGINT` and executes a bounded shutdown (default `SHUTDOWN_TIMEOUT_MS=3000`), ensuring websockets are closed, pending DB transactions are finalized, and the SQLite connection is safely terminated.
 - **Reverse proxy / TLS contract:** production requires `TRUST_PROXY=loopback`
   and HTTPS-only `ALLOWED_ORIGINS` (`validateRuntimeConfig` in
   `backend/config.js`). `trust proxy` is enabled only in production; every

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { db } from './db.js';
+import { db, dbEvents } from './db.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 import { decryptMfaSecret, encryptMfaSecret, getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
 
@@ -7,10 +7,55 @@ function normalizeUsername(username) {
     return String(username ?? '').trim();
 }
 
-export async function hashPasswordAsync(password) {
-    if (typeof password !== 'string' || password.length < 12) {
-        throw new Error('Password must be a non-empty string with at least 12 characters.');
+const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MAX_LENGTH = 256;
+
+function assertPasswordLength(password) {
+    if (
+        typeof password !== 'string'
+        || password.length < PASSWORD_MIN_LENGTH
+        || password.length > PASSWORD_MAX_LENGTH
+    ) {
+        throw new Error(`Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`);
     }
+}
+
+function withImmediateTransaction(work) {
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+        const result = work();
+        db.exec('COMMIT;');
+        return result;
+    } catch (error) {
+        try {
+            db.exec('ROLLBACK;');
+        } catch {}
+        throw error;
+    }
+}
+
+function emitSessionRevoked(sessionId, userId) {
+    if (sessionId && userId) {
+        dbEvents.emit('sessionRevoked', { sessionId, userId });
+    }
+}
+
+function emitUserSessionsRevoked(userId) {
+    if (userId) {
+        dbEvents.emit('userSessionsRevoked', { userId });
+    }
+}
+
+function passwordHashMatches(userId, passwordHash) {
+    if (passwordHash === undefined) {
+        return true;
+    }
+    const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+    return row?.password_hash === passwordHash;
+}
+
+export async function hashPasswordAsync(password) {
+    assertPasswordLength(password);
     const salt = crypto.randomBytes(16).toString('hex');
     const derivedKey = await new Promise((resolve, reject) => {
         crypto.scrypt(password, salt, 64, (err, derived) => {
@@ -22,9 +67,7 @@ export async function hashPasswordAsync(password) {
 }
 
 export function hashPassword(password) {
-    if (typeof password !== 'string' || password.length < 12) {
-        throw new Error('Password must be a non-empty string with at least 12 characters.');
-    }
+    assertPasswordLength(password);
 
     const salt = crypto.randomBytes(16).toString('hex');
     const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -103,6 +146,41 @@ export function generateTotpSecret(userId, env = process.env) {
     return secret;
 }
 
+function decodeTotpSecret(storedSecret, keys) {
+    if (/^[0-9a-fA-F]{40}$/.test(storedSecret)) {
+        return { plaintext: storedSecret, keyIndex: -1 };
+    }
+    return decryptMfaSecret(storedSecret, keys);
+}
+
+function matchingTotpCounter(secret, token, nowMs = Date.now()) {
+    if (typeof secret !== 'string' || typeof token !== 'string') {
+        return null;
+    }
+    const cleanToken = token.trim();
+    if (!/^\d{6}$/.test(cleanToken)) {
+        return null;
+    }
+
+    const currentCounter = Math.floor(nowMs / 1000 / 30);
+    for (let offset = -1; offset <= 1; offset++) {
+        const counter = currentCounter + offset;
+        const counterBuf = Buffer.alloc(8);
+        counterBuf.writeBigInt64BE(BigInt(counter));
+        const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'hex')).update(counterBuf).digest();
+        const codeOffset = hmac[hmac.length - 1] & 0x0f;
+        const binary = ((hmac[codeOffset] & 0x7f) << 24)
+            | ((hmac[codeOffset + 1] & 0xff) << 16)
+            | ((hmac[codeOffset + 2] & 0xff) << 8)
+            | (hmac[codeOffset + 3] & 0xff);
+        const otp = (binary % 1000000).toString().padStart(6, '0');
+        if (crypto.timingSafeEqual(Buffer.from(otp), Buffer.from(cleanToken))) {
+            return counter;
+        }
+    }
+    return null;
+}
+
 export function verifyUserTotp(user, token, env = process.env) {
     if (!user || typeof user.totpSecret !== 'string') {
         return false;
@@ -114,16 +192,12 @@ export function verifyUserTotp(user, token, env = process.env) {
     let keys;
     try {
         keys = getMfaEncryptionKeys(env);
-        if (/^[0-9a-fA-F]{40}$/.test(storedSecret)) {
-            plaintext = storedSecret;
-        } else {
-            ({ plaintext, keyIndex } = decryptMfaSecret(storedSecret, keys));
-        }
+        ({ plaintext, keyIndex } = decodeTotpSecret(storedSecret, keys));
     } catch {
         return false;
     }
 
-    if (!verifyTotpToken(plaintext, token)) {
+    if (matchingTotpCounter(plaintext, token) === null) {
         return false;
     }
 
@@ -139,35 +213,9 @@ export function verifyUserTotp(user, token, env = process.env) {
 }
 
 export function verifyTotpToken(secret, token) {
-    if (typeof secret !== 'string' || typeof token !== 'string') {
-        return false;
-    }
-    const cleanToken = token.trim();
-    if (!/^\d{6}$/.test(cleanToken)) {
-        return false;
-    }
-    // Deterministic HMAC-SHA1 TOTP window verification (RFC 6238)
-    const timeStep = 30;
-    const currentEpoch = Math.floor(Date.now() / 1000);
-    const currentCounter = Math.floor(currentEpoch / timeStep);
-
-    for (let offset = -1; offset <= 1; offset++) {
-        const counter = currentCounter + offset;
-        const counterBuf = Buffer.alloc(8);
-        counterBuf.writeBigInt64BE(BigInt(counter));
-        const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'hex')).update(counterBuf).digest();
-        const codeOffset = hmac[hmac.length - 1] & 0x0f;
-        const binary = ((hmac[codeOffset] & 0x7f) << 24) |
-            ((hmac[codeOffset + 1] & 0xff) << 16) |
-            ((hmac[codeOffset + 2] & 0xff) << 8) |
-            (hmac[codeOffset + 3] & 0xff);
-        const otp = (binary % 1000000).toString().padStart(6, '0');
-        if (crypto.timingSafeEqual(Buffer.from(otp), Buffer.from(cleanToken))) {
-            return true;
-        }
-    }
-    return false;
+    return matchingTotpCounter(secret, token) !== null;
 }
+
 
 function mapUserRow(row) {
     if (!row) {
@@ -215,9 +263,7 @@ export function createUser(username, password) {
         throw new Error('Username must be 3-32 chars and contain only letters, numbers, underscore or hyphen.');
     }
 
-    if (typeof password !== 'string' || password.length < 12) {
-        throw new Error('Password must be at least 12 characters long.');
-    }
+    assertPasswordLength(password);
 
     const existing = findUserByUsername(cleanUsername);
     if (existing) {
@@ -258,24 +304,43 @@ export function promoteUserToAdmin(username, password) {
 }
 
 export function changeUserPassword(username, currentPassword, newPassword) {
-    const user = findUserByUsername(username);
-    if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
-        throw new Error('Existing user credentials do not match.');
-    }
+    assertPasswordLength(newPassword);
     const passwordHash = hashPassword(newPassword);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
-    return toPublicUser(user);
+    const result = withImmediateTransaction(() => {
+        const user = findUserByUsername(username);
+        if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
+            throw new Error('Existing user credentials do not match.');
+        }
+
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+        const revoked = revokeAllSessionsForUserInTransaction(user.id);
+        return { user: toPublicUser(user), revoked, userId: user.id };
+    });
+    if (result.revoked) {
+        emitUserSessionsRevoked(result.userId);
+    }
+    return result.user;
 }
 
 export function resetUserPassword(username, newPassword) {
-    const user = findUserByUsername(username);
-    if (!user) {
-        throw new Error('User not found.');
-    }
+    assertPasswordLength(newPassword);
     const passwordHash = hashPassword(newPassword);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
-    return toPublicUser(user);
+    const result = withImmediateTransaction(() => {
+        const user = findUserByUsername(username);
+        if (!user) {
+            throw new Error('User not found.');
+        }
+
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+        const revoked = revokeAllSessionsForUserInTransaction(user.id);
+        return { user: toPublicUser(user), revoked, userId: user.id };
+    });
+    if (result.revoked) {
+        emitUserSessionsRevoked(result.userId);
+    }
+    return result.user;
 }
+
 
 export const PROJECT_LIFECYCLE = Object.values(PROJECT_STATUS);
 
@@ -429,8 +494,7 @@ function readSession(whereClause, value, now) {
     return mapSessionRow(row, now.getTime());
 }
 
-export function createSession(userId, { now: nowInput } = {}) {
-    const now = normalizeNow(nowInput);
+function insertSession(userId, now) {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(now.getTime() + SESSION_TTL_MS).toISOString();
     const sessionId = crypto.randomUUID();
@@ -442,6 +506,78 @@ export function createSession(userId, { now: nowInput } = {}) {
     `).run(sessionId, userId, hashSessionToken(token), expiresAt);
 
     return { id: sessionId, userId, token, expiresAt };
+}
+
+export function createSession(userId, { now: nowInput, passwordHash } = {}) {
+    const now = normalizeNow(nowInput);
+    return withImmediateTransaction(() => {
+        if (!passwordHashMatches(userId, passwordHash)) {
+            return null;
+        }
+        return insertSession(userId, now);
+    });
+}
+
+export function createSessionAfterTotp(userId, token, env = process.env, { now: nowInput, passwordHash } = {}) {
+    let keys;
+    try {
+        keys = getMfaEncryptionKeys(env);
+    } catch {
+        return null;
+    }
+
+    const now = normalizeNow(nowInput);
+    try {
+        return withImmediateTransaction(() => {
+            const row = db.prepare(`
+                SELECT password_hash, totp_secret, totp_last_counter
+                FROM users
+                WHERE id = ? AND mfa_enabled = 1
+            `).get(userId);
+            if (
+                !row
+                || (passwordHash !== undefined && row.password_hash !== passwordHash)
+                || typeof row.totp_secret !== 'string'
+                || !row.totp_secret
+            ) {
+                return null;
+            }
+
+            const { plaintext, keyIndex } = decodeTotpSecret(row.totp_secret, keys);
+            const counter = matchingTotpCounter(plaintext, token, now.getTime());
+            if (counter === null) {
+                return null;
+            }
+
+            const lastCounter = row.totp_last_counter === null
+                || row.totp_last_counter === undefined
+                ? null
+                : Number(row.totp_last_counter);
+            if (lastCounter !== null && (!Number.isSafeInteger(lastCounter) || counter <= lastCounter)) {
+                return null;
+            }
+
+            const storedSecret = row.totp_secret;
+            const nextSecret = keyIndex === 0
+                ? storedSecret
+                : encryptMfaSecret(plaintext, keys.current);
+            const result = db.prepare(`
+                UPDATE users
+                SET totp_last_counter = ?, totp_secret = ?
+                WHERE id = ?
+                  AND mfa_enabled = 1
+                  AND totp_secret = ?
+                  AND (totp_last_counter IS NULL OR totp_last_counter < ?)
+            `).run(counter, nextSecret, userId, storedSecret, counter);
+            if (result.changes !== 1) {
+                return null;
+            }
+
+            return insertSession(userId, now);
+        });
+    } catch {
+        return null;
+    }
 }
 
 export function verifySessionToken(token, { now: nowInput } = {}) {
@@ -466,25 +602,40 @@ export function revokeSession(token) {
     if (typeof token !== 'string' || !token.trim()) {
         return false;
     }
+    const tokenHash = hashSessionToken(token);
 
+    const row = db.prepare(
+        'SELECT id AS session_id, user_id FROM user_sessions WHERE token_hash = ? AND revoked_at IS NULL LIMIT 1'
+    ).get(tokenHash);
     const result = db.prepare(`
         UPDATE user_sessions
         SET revoked_at = CURRENT_TIMESTAMP
         WHERE token_hash = ? AND revoked_at IS NULL
-    `).run(hashSessionToken(token));
+    `).run(tokenHash);
 
+    if (result.changes > 0) {
+        emitSessionRevoked(row?.session_id, row?.user_id);
+    }
     return result.changes > 0;
 }
 
-export function revokeAllSessionsForUser(userId) {
+function revokeAllSessionsForUserInTransaction(userId) {
     const result = db.prepare(`
         UPDATE user_sessions
         SET revoked_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND revoked_at IS NULL
     `).run(userId);
-
     return result.changes > 0;
 }
+
+export function revokeAllSessionsForUser(userId) {
+    const revoked = revokeAllSessionsForUserInTransaction(userId);
+    if (revoked) {
+        emitUserSessionsRevoked(userId);
+    }
+    return revoked;
+}
+
 
 export function cleanupExpiredSessions(now = new Date()) {
     const nowIso = (now instanceof Date ? now : new Date(now)).toISOString();

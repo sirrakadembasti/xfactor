@@ -7,8 +7,12 @@ import { pathToFileURL } from 'node:url';
 
 const backend = process.env.P6_BACKEND_ROOT || '/app/backend';
 const load = file => import(pathToFileURL(path.join(backend, file)).href);
-const [{ createUser }, { createProject }, { db }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus, createArtifact }, { completeVerifiedProject }] = await Promise.all([
-  load('auth.js'), load('projectRepository.js'), load('db.js'), load('utils/archive.js'),
+
+const { initializeDatabase } = await load('db.js');
+const db = initializeDatabase({ path: process.env.DB_PATH || '/app/backend/data/projects.db' });
+
+const [{ createUser }, { createProject }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus, createArtifact }, { completeVerifiedProject }] = await Promise.all([
+  load('auth.js'), load('projectRepository.js'), load('utils/archive.js'),
   load('verification/safeExtractor.js'), load('repositories/artifactRepository.js'), load('projectRepository.js')
 ]);
 

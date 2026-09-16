@@ -157,6 +157,149 @@ function unwrapExpression(node) {
     }
     return current;
 }
+function memberPropertyName(node) {
+    const member = unwrapExpression(node);
+    if (!member || (member.type !== 'MemberExpression' && member.type !== 'OptionalMemberExpression')) return null;
+    if (!member.computed && member.property?.type === 'Identifier') return member.property.name;
+    if (member.computed && (member.property?.type === 'StringLiteral' || member.property?.type === 'Literal')) return String(member.property.value);
+    return null;
+}
+
+function propNamesFromTypeBody(body) {
+    const props = new Set();
+    for (const member of body?.body || []) {
+        if (member?.type !== 'TSPropertySignature') continue;
+        if (member.key?.type === 'Identifier') props.add(member.key.name);
+        else if (member.key?.type === 'StringLiteral') props.add(member.key.value);
+    }
+    return props;
+}
+
+function collectComponentPropContracts(generatedFiles, scriptParseCache) {
+    const contracts = new Map();
+    for (const file of generatedFiles) {
+        const source = typeof file?.content === 'string' ? file.content : '';
+        // Keep a narrow source fallback for TS prop declarations. Babel's
+        // declaration shape varies across TypeScript syntax/plugin versions;
+        // JSX contract checking must not silently become a no-op when it does.
+        for (const match of source.matchAll(/(?:export\s+)?(?:interface|type)\s+([A-Za-z_$][\w$]*Props)\s*(?:=\s*)?\{([\s\S]*?)\}/g)) {
+            const props = new Set();
+            for (const property of match[2].matchAll(/(?:^\s*|[;,]\s*|\n\s*)([A-Za-z_$][\w$]*)\??\s*:/g)) {
+                props.add(property[1]);
+            }
+            if (props.size > 0) contracts.set(match[1].slice(0, -5), props);
+        }
+
+        const record = getScriptParseRecord(file, scriptParseCache);
+        if (!record?.ast || record.error) continue;
+        walkAst(record.ast, node => {
+            if (node.type === 'TSInterfaceDeclaration' && /Props$/.test(node.id?.name || '')) {
+                const props = propNamesFromTypeBody(node.body);
+                if (props.size > 0) contracts.set(node.id.name.slice(0, -5), props);
+            }
+            if (
+                node.type === 'TSTypeAliasDeclaration'
+                && /Props$/.test(node.id?.name || '')
+                && node.typeAnnotation?.type === 'TSTypeLiteral'
+            ) {
+                const props = propNamesFromTypeBody(node.typeAnnotation);
+                if (props.size > 0) contracts.set(node.id.name.slice(0, -5), props);
+            }
+        });
+    }
+    return contracts;
+}
+
+function recordIssue(issues, issueDetails, filePath, message, code = 'AUDIT_ISSUE') {
+    issues.push(message);
+    if (Array.isArray(issueDetails)) {
+        issueDetails.push({
+            filePath: filePath || null,
+            path: filePath || null,
+            issue: message,
+            message,
+            code
+        });
+    }
+}
+
+function collectZodAndComponentContractIssues(generatedFiles, scriptParseCache, issues, issueDetails = null) {
+    const componentContracts = collectComponentPropContracts(generatedFiles, scriptParseCache);
+    const reported = new Set();
+    let count = 0;
+    for (const file of generatedFiles) {
+        const record = getScriptParseRecord(file, scriptParseCache);
+        if (!record?.ast || record.error) continue;
+        const localComponentNames = new Map();
+
+        walkAst(record.ast, node => {
+            if (node.type !== 'ImportDeclaration') return;
+            const source = String(node.source?.value || '');
+            if (!source.startsWith('.') && !source.startsWith('@/')) return;
+            for (const specifier of node.specifiers || []) {
+                const importedName = specifier.type === 'ImportSpecifier'
+                    ? specifier.imported?.name
+                    : specifier.local?.name;
+                const localName = specifier.local?.name;
+                if (localName && componentContracts.has(importedName)) {
+                    localComponentNames.set(localName, componentContracts.get(importedName));
+                }
+            }
+        });
+
+        walkAst(record.ast, node => {
+            if (
+                node.type === 'CallExpression'
+                && memberPropertyName(node.callee) === 'partial'
+            ) {
+                const precedingCall = unwrapExpression(node.callee?.object);
+                const precedingMethod = memberPropertyName(precedingCall?.callee);
+                if (precedingCall?.type === 'CallExpression' && ['refine', 'superRefine'].includes(precedingMethod)) {
+                    const key = `${file.path}:zod-effects-partial`;
+                    if (!reported.has(key)) {
+                        reported.add(key);
+                        recordIssue(
+                            issues,
+                            issueDetails,
+                            file.path,
+                            `Zod güncelleme şeması hatası: "${file.path}" içinde .partial() zod refine/effects sonrasında çağrılamaz; temel z.object() üzerinde partial uygula, ardından refine et.`,
+                            'ZOD_SCHEMA_ERROR'
+                        );
+                        count++;
+                    }
+                }
+            }
+
+            if (node.type !== 'JSXOpeningElement' || node.name?.type !== 'JSXIdentifier') return;
+            const expectedProps = localComponentNames.get(node.name.name) || componentContracts.get(node.name.name);
+            if (!expectedProps || expectedProps.size === 0) return;
+            for (const attribute of node.attributes || []) {
+                if (attribute?.type !== 'JSXAttribute' || attribute.name?.type !== 'JSXIdentifier') continue;
+                const propName = attribute.name.name;
+                if (
+                    expectedProps.has(propName)
+                    || ['children', 'key', 'ref'].includes(propName)
+                    || propName.startsWith('aria-')
+                    || propName.startsWith('data-')
+                ) continue;
+                const key = `${file.path}:${node.name.name}:${propName}`;
+                if (!reported.has(key)) {
+                    reported.add(key);
+                    recordIssue(
+                        issues,
+                        issueDetails,
+                        file.path,
+                        `Bileşen prop sözleşmesi uyumsuz: "${file.path}" içindeki <${node.name.name} ${propName}> prop'u ${node.name.name}Props tarafından tanımlanmıyor.`,
+                        'COMPONENT_PROP_MISMATCH'
+                    );
+                    count++;
+                }
+            }
+        });
+    }
+    return count;
+}
+
 function isSecretEnvMember(node) {
     const access = unwrapExpression(node);
     if (!access || (access.type !== 'MemberExpression' && access.type !== 'OptionalMemberExpression') || access.computed) return null;
@@ -183,7 +326,10 @@ function describeFallbackNode(node) {
     return unwrapped.type;
 }
 
-function buildSecretFallbackIssue(envName, operator, fallbackNode) {
+function buildSecretFallbackIssue(filePath, envName, operator, fallbackNode) {
+    if (filePath) {
+        return `Güvensiz fallback tespit edildi: "${filePath}" dosyasında process.env.${envName} ${operator} ${describeFallbackNode(fallbackNode)}.`;
+    }
     return `Güvensiz fallback tespit edildi: process.env.${envName} ${operator} ${describeFallbackNode(fallbackNode)}.`;
 }
 
@@ -538,7 +684,7 @@ function walkAuthFunctionBody(rootNode, visitor, parameterNames, shadowedNames) 
     visit(rootNode, shadowedNames);
 }
 
-function inspectAuthFunctionNode(filePath, functionName, functionNode, issues) {
+function inspectAuthFunctionNode(filePath, functionName, functionNode, issues, issueDetails = null) {
     const body = functionNode.body;
     if (!body) return 0;
 
@@ -548,7 +694,13 @@ function inspectAuthFunctionNode(filePath, functionName, functionNode, issues) {
 
     walkAuthFunctionBody(body, (node, parent, key, activeParameterNames, activeShadowedNames) => {
         if (isPrismaUserFindFirstCall(node) && !callHasIdentityBoundWhere(node, activeParameterNames, activeShadowedNames)) {
-            issues.push(buildIdentityFreeUserIssue(filePath, functionName));
+            recordIssue(
+                issues,
+                issueDetails,
+                filePath,
+                buildIdentityFreeUserIssue(filePath, functionName),
+                'IDENTITY_FREE_USER'
+            );
             count++;
         }
     }, parameterNames, rootShadowedNames);
@@ -580,11 +732,14 @@ function buildIdentityFreeUserIssue(filePath, functionName) {
     return `Güvensiz varsayılan kullanıcı sorgusu tespit edildi: "${filePath}" içindeki ${functionName} identity-bound id lookup olmadan prisma.user.findFirst kullanıyor.`;
 }
 
-function buildProviderMismatchIssue(provider, databaseUrl, datasourceName) {
+function buildProviderMismatchIssue(filePath, provider, databaseUrl, datasourceName) {
+    if (filePath) {
+        return `Uyumsuz provider/DATABASE_URL eşleşmesi: "${filePath}" içindeki datasource "${datasourceName}" için provider="${provider}" ve DATABASE_URL="${databaseUrl}" geçersiz.`;
+    }
     return `Uyumsuz provider/DATABASE_URL eşleşmesi: datasource "${datasourceName}" için provider="${provider}" ve DATABASE_URL="${databaseUrl}" geçersiz.`;
 }
 
-function collectEnvProviderAudit(generatedFiles, issues) {
+function collectEnvProviderAudit(generatedFiles, issues, issueDetails = null) {
     const envAssignments = readEnvAssignments(generatedFiles);
     const databaseUrl = envAssignments.get('DATABASE_URL');
     if (!databaseUrl) return 0;
@@ -596,7 +751,13 @@ function collectEnvProviderAudit(generatedFiles, issues) {
             if (datasource.urlEnvName !== 'DATABASE_URL') continue;
             if (!datasource.provider) continue;
             if (!isCompatibleDatabaseUrl(datasource.provider, databaseUrl)) {
-                issues.push(buildProviderMismatchIssue(datasource.provider, databaseUrl, datasource.name));
+                recordIssue(
+                    issues,
+                    issueDetails,
+                    file.path,
+                    buildProviderMismatchIssue(file.path, datasource.provider, databaseUrl, datasource.name),
+                    'PROVIDER_MISMATCH'
+                );
                 count++;
             }
         }
@@ -604,7 +765,7 @@ function collectEnvProviderAudit(generatedFiles, issues) {
     return count;
 }
 
-function collectRawAuthAudit(generatedFiles, issues, scriptParseCache) {
+function collectRawAuthAudit(generatedFiles, issues, issueDetails = null, scriptParseCache = null) {
     let count = 0;
     for (const file of generatedFiles) {
         if (!isScriptFilePath(file?.path) || typeof file.content !== 'string') continue;
@@ -615,12 +776,18 @@ function collectRawAuthAudit(generatedFiles, issues, scriptParseCache) {
         walkAst(record.ast, node => {
             const fallback = getSecretFallbackMatch(node);
             if (!fallback) return;
-            issues.push(buildSecretFallbackIssue(fallback.envName, fallback.operator, fallback.fallbackNode));
+            recordIssue(
+                issues,
+                issueDetails,
+                file.path,
+                buildSecretFallbackIssue(file.path, fallback.envName, fallback.operator, fallback.fallbackNode),
+                'SECRET_FALLBACK'
+            );
             count++;
         });
 
         for (const authFunction of collectAuthFunctionNodes(record.ast)) {
-            count += inspectAuthFunctionNode(file.path, authFunction.name, authFunction.node, issues);
+            count += inspectAuthFunctionNode(file.path, authFunction.name, authFunction.node, issues, issueDetails);
         }
     }
     return count;
@@ -631,14 +798,17 @@ function collectRawAuthAudit(generatedFiles, issues, scriptParseCache) {
  */
 export function runDeterministicProjectAudit(generatedFiles = []) {
     const issues = [];
+    const issueDetails = [];
     let passedCount = 0;
     let failedCount = 0;
     const scriptParseCache = new Map();
 
     if (!Array.isArray(generatedFiles) || generatedFiles.length === 0) {
+        recordIssue(issues, issueDetails, null, 'Hiçbir proje dosyası üretilmemiş.', 'NO_FILES');
         return {
             passed: false,
-            issues: ['Hiçbir proje dosyası üretilmemiş.'],
+            issues,
+            issueDetails,
             passedCount: 0,
             failedCount: 1
         };
@@ -651,14 +821,18 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                 JSON.parse(file.content);
                 passedCount++;
             } catch (err) {
-                issues.push(`Geçersiz JSON dosyası: "${file.path}" -> ${err.message}`);
+                recordIssue(
+                    issues,
+                    issueDetails,
+                    file.path,
+                    `Geçersiz JSON dosyası: "${file.path}" -> ${err.message}`,
+                    'INVALID_JSON'
+                );
                 failedCount++;
             }
         }
     }
-    failedCount += collectEnvProviderAudit(generatedFiles, issues);
-
-
+    failedCount += collectEnvProviderAudit(generatedFiles, issues, issueDetails);
 
     // 2. Prisma Şeması & API Route Bütünlük Kontrolü
     const prismaFile = generatedFiles.find(f => f.path && f.path.endsWith('schema.prisma'));
@@ -672,7 +846,13 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                 for (const call of prismaCalls) {
                     const usedModel = call[1].toLowerCase();
                     if (!definedModels.has(usedModel) && usedModel !== '$queryraw' && usedModel !== '$executeRaw') {
-                        issues.push(`Prisma Şema Uyumsuzluğu: "${file.path}" dosyasında "prisma.${call[1]}" çağrısı yapılmış ancak schema.prisma içinde "${call[1]}" modeli tanımlı değil!`);
+                        recordIssue(
+                            issues,
+                            issueDetails,
+                            file.path,
+                            `Prisma Şema Uyumsuzluğu: "${file.path}" dosyasında "prisma.${call[1]}" çağrısı yapılmış ancak schema.prisma içinde "${call[1]}" modeli tanımlı değil!`,
+                            'PRISMA_MODEL_MISMATCH'
+                        );
                         failedCount++;
                     }
                 }
@@ -690,7 +870,13 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
 
         if (record.error) {
             if (!record.reported) {
-                issues.push(buildScriptParseIssue(file.path, record.error));
+                recordIssue(
+                    issues,
+                    issueDetails,
+                    file.path,
+                    buildScriptParseIssue(file.path, record.error),
+                    'SCRIPT_PARSE_ERROR'
+                );
                 record.reported = true;
             }
             failedCount++;
@@ -699,7 +885,9 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
 
         passedCount++;
     }
-    failedCount += collectRawAuthAudit(generatedFiles, issues, scriptParseCache);
+    failedCount += collectRawAuthAudit(generatedFiles, issues, issueDetails, scriptParseCache);
+    failedCount += collectZodAndComponentContractIssues(generatedFiles, scriptParseCache, issues, issueDetails);
+
     // 4. Statik Yerel İthalat ve Dosya Varlık Denetimi (Dead Import / Path Resolution Check)
     const existingLookup = new Set();
     for (const f of generatedFiles) {
@@ -755,10 +943,18 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                 if (!specifier) continue;
 
                 // A. Yerel İthalat Denetimi (@/... veya ./... veya ../...)
-                if (specifier.startsWith('@/') || specifier.startsWith('./') || specifier.startsWith('../')) {
+                if (specifier.startsWith('@/') || specifier.startsWith('@lib/') || specifier.startsWith('@components/') || specifier.startsWith('@app/') || specifier.startsWith('@actions/') || specifier.startsWith('./') || specifier.startsWith('../')) {
                     let targetPath = '';
                     if (specifier.startsWith('@/')) {
                         targetPath = 'src/' + specifier.slice(2);
+                    } else if (specifier.startsWith('@lib/')) {
+                        targetPath = 'src/lib/' + specifier.slice(5);
+                    } else if (specifier.startsWith('@components/')) {
+                        targetPath = 'src/components/' + specifier.slice(12);
+                    } else if (specifier.startsWith('@app/')) {
+                        targetPath = 'src/app/' + specifier.slice(5);
+                    } else if (specifier.startsWith('@actions/')) {
+                        targetPath = 'src/actions/' + specifier.slice(9);
                     } else {
                         targetPath = path.posix.normalize(path.posix.join(currentFileDir, specifier));
                     }
@@ -766,7 +962,13 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                     // CSS veya font dosyası değilse varlık kontrolü yap
                     if (!specifier.endsWith('.css') && !specifier.endsWith('.svg') && !specifier.endsWith('.png') && !specifier.endsWith('.ico')) {
                         if (!existingLookup.has(targetPath) && !existingLookup.has(targetPath + '.ts') && !existingLookup.has(targetPath + '.tsx') && !existingLookup.has(targetPath + '.js') && !existingLookup.has(targetPath + '.jsx')) {
-                            issues.push(`Kırık Yerel İthalat (Dosya Yok): "${file.path}" dosyasında "${specifier}" import edilmiş ancak hedef dosya (${targetPath}) diskte mevcut değil!`);
+                            recordIssue(
+                                issues,
+                                issueDetails,
+                                file.path,
+                                `Kırık Yerel İthalat (Dosya Yok): "${file.path}" dosyasında "${specifier}" import edilmiş ancak hedef dosya (${targetPath}) diskte mevcut değil!`,
+                                'BROKEN_LOCAL_IMPORT'
+                            );
                             failedCount++;
                         } else {
                             passedCount++;
@@ -784,7 +986,13 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
 
                     if (pkgName && !NODE_BUILTIN_MODULES.has(pkgName) && !!pkgFile) {
                         if (!declaredPackages.has(pkgName)) {
-                            issues.push(`Eksik NPM Bağımlılığı: "${file.path}" dosyasında "${pkgName}" paketi kullanılmış ancak package.json içinde tanımlı değil!`);
+                            recordIssue(
+                                issues,
+                                issueDetails,
+                                file.path,
+                                `Eksik NPM Bağımlılığı: "${file.path}" dosyasında "${pkgName}" paketi kullanılmış ancak package.json içinde tanımlı değil!`,
+                                'MISSING_NPM_PACKAGE'
+                            );
                             failedCount++;
                         } else {
                             passedCount++;
@@ -798,7 +1006,13 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
     // 6. Dosya Boyut ve İçerik Kontrolü
     for (const file of generatedFiles) {
         if (!file.content || file.content.trim().length === 0) {
-            issues.push(`Boş dosya tespit edildi: "${file.path}"`);
+            recordIssue(
+                issues,
+                issueDetails,
+                file.path,
+                `Boş dosya tespit edildi: "${file.path}"`,
+                'EMPTY_FILE'
+            );
             failedCount++;
         } else {
             passedCount++;
@@ -808,9 +1022,50 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
     return {
         passed: issues.length === 0,
         issues,
+        issueDetails,
         passedCount,
         failedCount
     };
+}
+
+/**
+ * Deterministik denetim sonuçlarındaki sorunları dosya bazında ve genel olarak gruplar.
+ */
+export function groupAuditIssuesByFile(auditResult) {
+    const fileIssuesMap = new Map();
+    const generalIssues = [];
+    if (!auditResult) return { fileIssuesMap, generalIssues };
+
+    if (Array.isArray(auditResult.issueDetails) && auditResult.issueDetails.length > 0) {
+        for (const detail of auditResult.issueDetails) {
+            const rawPath = detail.filePath || detail.path;
+            const issueText = detail.issue || detail.message;
+            if (rawPath && typeof rawPath === 'string') {
+                const normalized = rawPath.replace(/\\/g, '/');
+                if (!fileIssuesMap.has(normalized)) {
+                    fileIssuesMap.set(normalized, []);
+                }
+                fileIssuesMap.get(normalized).push(issueText);
+            } else {
+                generalIssues.push(issueText);
+            }
+        }
+    } else if (Array.isArray(auditResult.issues)) {
+        for (const issue of auditResult.issues) {
+            const match = typeof issue === 'string' && issue.match(/["']([^"']+\.[a-zA-Z0-9_-]+)["']/);
+            if (match && match[1]) {
+                const normalized = match[1].replace(/\\/g, '/');
+                if (!fileIssuesMap.has(normalized)) {
+                    fileIssuesMap.set(normalized, []);
+                }
+                fileIssuesMap.get(normalized).push(issue);
+            } else {
+                generalIssues.push(issue);
+            }
+        }
+    }
+
+    return { fileIssuesMap, generalIssues };
 }
 
 /**
@@ -978,11 +1233,19 @@ F. Bağımlılık ve Paket Grafiği (Dependency Graph):
 - Başarılı Kontroller: ${audit.passedCount}, Başarısız Kontroller: ${audit.failedCount}
 ${audit.issues.length > 0 ? `Tespit Edilen Kritik Sorunlar:\n${audit.issues.map(i => `- ${i}`).join('\n')}` : '- Kritik şema/JSON/import hatası tespit edilmedi.'}
 
-4. COMPILER / BUILD DOĞRULAMA SONUÇLARI:
+4. İZOLE RUNTIME / BUILD DOĞRULAMA SONUÇLARI:
 --------------------------------------------------
-${buildResults ? (buildResults.passed ? '- Derleyici / Tip Denetimi: BAŞARILI (TypeScript/Prisma/Build hatasız).' : `- Derleyici / Tip Denetimi Hataları:\n${buildResults.issues.map(i => `- ${i}`).join('\n')}`) : '- Derleyici ve sözdizimi denetimi tamamlandı.'}
+${buildResults?.isolatedWorker === true ? (buildResults.passed ? '- İzole worker gerçek clean-install, Prisma ve build kapılarını geçti.' : `- İzole worker doğrulama hataları:\n${buildResults.issues.map(i => `- ${i}`).join('\n')}`) : '- İzole worker doğrulaması henüz üretilmedi. Bu deterministik statik denetim gerçek TypeScript, Prisma veya framework build kanıtı değildir.'}
+Gerçek clean install, Prisma generate/db push/seed, TypeScript typecheck, framework build ve runtime smoke yalnızca izole worker kapılarında başarı sayılır.
 
-Lütfen yukarıdaki kapsamlı Proje Manifestosu, Derleyici Sonuçları ve Kabul Kriterlerini karşılaştırarak projenin fonksiyonel bütünlüğünü, semantik uyumunu ve çalışabilirliğini JSON formatında nihai QA kararı olarak raporla.`;
+Lütfen yanıtını YALNIZCA aşağıdaki JSON formatında üret (kesinlikle markdown metin veya README üretme, yalnızca JSON döndür):
+\`\`\`json
+{
+  "approved": true,
+  "summary": "Statik kabul kriterleri ve kaynak sözleşmesi doğrulandı.",
+  "issues": []
+}
+\`\`\``;
 }
 
 export function parseTesterResponse(rawText, deterministicAudit = null) {

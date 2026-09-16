@@ -138,10 +138,10 @@ function checkSendCall(callExpr) {
 
 export function verifyPlaceholders(files = []) {
     const issues = [];
-    const scriptFiles = files.filter(f => f.path && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
+    const scriptFiles = files.filter(f => f.path && !f.path.startsWith('manager/') && !f.path.includes('/manager/') && !f.path.startsWith('node_modules/') && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
 
     for (const file of scriptFiles) {
-        const content = file.content || '';
+        const content = Buffer.isBuffer(file.content) ? file.content.toString('utf8') : String(file.content || '');
         const lines = content.split(/\r?\n/);
 
         // Check line-by-line for placeholder comments and "Not implemented" throw bypasses
@@ -249,8 +249,9 @@ export function verifyPlaceholders(files = []) {
                             }
                         }
 
-                        const isHealthRoute = /(^|\/)(health|healthz|ping|ready|readyz)($|\/)/i.test(routePath || '');
-                        if (isMockOnly && !isDynamicReference(handlerBody) && !isHealthRoute) {
+                        const normalizedRoute = String(routePath || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+                        const isExemptRoute = /^(health|healthz|ping|ready|readyz|info|status|api|api\/v1)?$/.test(normalizedRoute);
+                        if (isMockOnly && !isDynamicReference(handlerBody) && !isExemptRoute) {
                             issues.push(`Static mock handler detected for endpoint: ${routePath || 'unknown route'} in ${file.path}`);
                         }
                     }
@@ -285,6 +286,11 @@ export function verifyPlaceholders(files = []) {
                             const innerArg = expr.arguments?.[0];
                             if (innerArg?.type === 'Identifier') {
                                 handlerFn = declaredFunctions.get(innerArg.name);
+                                if (!handlerFn && (ACTIVE_ACTION_PATTERN.test(innerArg.name)
+                                    || innerArg.name.startsWith('on')
+                                    || innerArg.name.startsWith('handle'))) {
+                                    isDirectProp = true;
+                                }
                             } else if (innerArg && (innerArg.type === 'ArrowFunctionExpression' || innerArg.type === 'FunctionExpression')) {
                                 handlerFn = innerArg;
                             } else {

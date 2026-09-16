@@ -3,8 +3,9 @@
  * Referans: Archon Self-Correction & Review Gate
  */
 
+import { parse } from '@babel/parser';
 import { getAgent } from '../agents/index.js';
-import { generateLLMResponse } from '../llm.js';
+import { runLLMTaskWithRetry } from './llmTaskRetry.js';
 import { logWarning } from '../observability.js';
 import { validateCoderFiles } from '../agents/schemas.js';
 
@@ -19,6 +20,7 @@ export async function executeCorrectionLoop({
     coderPrompt,
     maxRetries = 2,
     onFeedback,
+    onLLMDiagnostic = null,
     signal = null
 }) {
     let currentOutput = initialCoderOutput;
@@ -32,15 +34,45 @@ export async function executeCorrectionLoop({
         }
         iterations++;
 
-        // 1. Reviewer İncelemesi
-        const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files);
-        const reviewMessages = [
-            { role: 'system', content: reviewer.systemPrompt },
-            { role: 'user', content: reviewPrompt }
-        ];
+        // 0. Deterministik Sözdizimi Kontrolü (Babel AST)
+        const syntaxIssues = [];
+        for (const file of currentOutput?.files || []) {
+            const ext = typeof file?.path === 'string' ? file.path.toLowerCase() : '';
+            if (ext.endsWith('.ts') || ext.endsWith('.tsx') || ext.endsWith('.js') || ext.endsWith('.jsx')) {
+                const plugins = [];
+                if (ext.endsWith('.jsx') || ext.endsWith('.tsx') || ext.endsWith('.js')) plugins.push('jsx');
+                if (ext.endsWith('.ts') || ext.endsWith('.tsx')) plugins.push('typescript');
+                try {
+                    parse(file.content, { sourceType: 'unambiguous', plugins });
+                } catch (syntaxErr) {
+                    syntaxIssues.push(`Sözdizimi hatası veya yarım kalan kod (${file.path}): ${syntaxErr.message}`);
+                }
+            }
+        }
 
-        const rawReview = await generateLLMResponse(reviewMessages, { signal });
-        const reviewResult = reviewer.parseResponse(rawReview);
+        let reviewResult;
+        if (syntaxIssues.length > 0) {
+            reviewResult = {
+                approved: false,
+                summary: syntaxIssues[0],
+                feedback: `KOD PARSER HATASI / SÖZDİZİMİ KESİLMESİ:\n${syntaxIssues.join('\n')}\nDosyayı token sınırına takılmadan eksiksiz ve geçerli kapat.`
+            };
+        } else {
+            // 1. Reviewer İncelemesi
+            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files);
+            reviewResult = await runLLMTaskWithRetry({
+                agentRole: 'reviewer',
+                taskId: `${taskId}.review.${iterations}`,
+                signal,
+                onDiagnostic: onLLMDiagnostic || undefined,
+                messages: [
+                    { role: 'system', content: reviewer.systemPrompt },
+                    { role: 'user', content: reviewPrompt }
+                ],
+                parseResponse: rawReview => reviewer.parseResponse(rawReview)
+            });
+        }
+
         // Onaylandı ise başarıyla çık
         if (reviewResult.approved) {
             return {
@@ -71,23 +103,26 @@ export async function executeCorrectionLoop({
         }
 
         const fixPrompt = `${coderPrompt}\n\nÖnceki İnceleme Geri Bildirimi (${iterations}. Tur):\n"""\n${reviewResult.feedback || reviewResult.summary}\n"""\n\nKRİTİK VE ZORUNLU TALİMAT:\n1. Belirtilen eksiklikleri, kapanmamış JSX etiketlerini ve sözdizimi hatalarını düzelterek hedef dosyaları (${JSON.stringify(targetFiles)}) eksiksiz kodla.\n2. TOKEN KORUMA & KOMPAKT KOD KURALI: Formu veya bileşeni gereksiz uzunlukta şişirme (maksimum 120-180 satır). Temiz, modern, tip-güvenli, çalışan ve kompakt bir bileşen yaz. Kodun ASLA token sınırına takılıp yarım kesilmesine (truncation) izin verme; tüm fonksiyon ve JSX kapanış etiketlerini mutlaka eksiksiz kapat.\n3. Yanıtını KESİNLİKLE \`\`\`json { "summary": "...", "files": [ { "path": "...", "content": "..." } ] } \`\`\` formatında döndür. Asla boş "files": [] döndürme!`;
-        const coderMessages = [
-            { role: 'system', content: coder.systemPrompt },
-            { role: 'user', content: fixPrompt }
-        ];
-
         try {
-            const rawCoder = await generateLLMResponse(coderMessages, { signal });
-            const newOutput = coder.parseResponse(rawCoder);
-            if (newOutput && Array.isArray(newOutput.files) && newOutput.files.length > 0) {
-                validateCoderFiles(newOutput, targetFiles);
-                currentOutput = newOutput;
-            }
+            const newOutput = await runLLMTaskWithRetry({
+                agentRole: 'coder',
+                taskId: `${taskId}.repair.${iterations}`,
+                signal,
+                onDiagnostic: onLLMDiagnostic || undefined,
+                messages: [
+                    { role: 'system', content: coder.systemPrompt },
+                    { role: 'user', content: fixPrompt }
+                ],
+                parseResponse: rawCoder => {
+                    const parsed = coder.parseResponse(rawCoder);
+                    validateCoderFiles(parsed, targetFiles);
+                    return parsed;
+                }
+            });
+            currentOutput = newOutput;
         } catch (error) {
-            if (signal?.aborted || error.name === 'AbortError' || error.name === 'TimeoutError') {
-                throw error;
-            }
-            logWarning('workflow.coder_output_parse_failed', error, { iteration: iterations });
+            logWarning('workflow.coder_output_failed', error, { iteration: iterations });
+            throw error;
         }
     }
 

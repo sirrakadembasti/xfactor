@@ -6,6 +6,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { logWarning } from '../observability.js';
+import { canonicalizeTaskDependencies } from './dag.js';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
 import { db } from '../db.js';
 import { getLatestCheckpoint } from './checkpointRepository.js';
@@ -108,7 +109,7 @@ export async function setupTeamleaderProtocol(directorDir, tlName, gorevContent,
     // TODO.md (Teamleader Seviyesi)
     let todoContent = `# TODO — ${tlName}\n\n| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n`;
     tasks.forEach((t, i) => {
-        const deps = t.dependencies && t.dependencies.length > 0 ? t.dependencies.join(', ') : '—';
+        const deps = canonicalizeTaskDependencies(t.dependencies || []).join(', ') || '—';
         todoContent += `| ${i + 1} | ${t.id} | ${t.title} | ${deps} | bekliyor |\n`;
     });
     todoContent += `\n## Checkbox Görünümü\n`;

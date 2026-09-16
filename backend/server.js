@@ -1,4 +1,3 @@
-import './networkResolver.js';
 import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
@@ -28,17 +27,21 @@ import {
     readSessionToken
 } from './sessionAuth.js';
 import { createMaintenanceScheduler } from './maintenance.js';
-import { db, getSchemaVersion, checkpointWAL } from './db.js';
-import { getProjectsRoot } from './projectRepository.js';
+import { db, dbEvents, getSchemaVersion, checkpointWAL, initializeDatabase, closeDatabase } from './db.js';
+import { getProjectsRoot, recoverPendingProjectDeletions } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
 import {
     assertProductionFrontendAvailable,
     getFrontendDistRoot,
     mountProductionFrontend
 } from './productionStatic.js';
+import { createLifecycleCoordinator } from './lifecycle.js';
 dotenv.config();
 
 const runtimeConfig = validateRuntimeConfig(process.env);
+const lifecycle = createLifecycleCoordinator({
+    timeoutMs: Number(process.env.SHUTDOWN_TIMEOUT_MS) || 3000
+});
 const transportPolicy = {
     production: runtimeConfig.production,
     trustProxy: runtimeConfig.TRUST_PROXY
@@ -92,13 +95,28 @@ app.get('/readyz', async (req, res) => {
         });
 
         const schemaVersion = getSchemaVersion();
+        
+        let executionStatus = 'unknown';
+        try {
+            const { createExecutionClient } = await import('./executionClient.js');
+            const client = createExecutionClient(runtimeConfig);
+            const caps = await client.getCapabilities();
+            const supported = Array.isArray(caps.supportedTypes)
+                && caps.supportedTypes.includes('prepare_dependencies')
+                && caps.supportedTypes.includes('verify_artifact');
+            executionStatus = caps.executionCapacity === true && supported ? 'ready' : 'unavailable';
+        } catch (e) {
+            executionStatus = 'unavailable';
+        }
+
         res.status(200).json({
             status: 'ready',
             database: 'connected',
             projectsRoot: 'accessible',
             artifactsRoot: 'accessible',
             frontend: runtimeConfig.production ? 'available' : 'not_required',
-            schemaVersion
+            schemaVersion,
+            executionCapacity: executionStatus
         });
     } catch (err) {
         logError('readyz.failed', err, { requestId: req.requestId });
@@ -135,21 +153,13 @@ app.use(express.json());
 const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 100,
-    message: { error: "Sunucuya çok fazla istek yapıldı, lütfen biraz bekleyin." },
-    skip: (req) => {
-        const ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress;
-        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    }
+    message: { error: "Sunucuya çok fazla istek yapıldı, lütfen biraz bekleyin." }
 });
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
-    message: { error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." },
-    skip: (req) => {
-        const ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress;
-        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    }
+    message: { error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." }
 });
 
 app.use('/api/login', loginLimiter);
@@ -211,6 +221,10 @@ const wsHub = createProjectWebSocketHub({
     getProjectRole,
     verifySessionId
 });
+const onSessionRevoked = ({ sessionId }) => wsHub.closeSessionSockets(sessionId);
+const onUserSessionsRevoked = ({ userId }) => wsHub.closeUserSockets(userId);
+dbEvents.on('sessionRevoked', onSessionRevoked);
+dbEvents.on('userSessionsRevoked', onUserSessionsRevoked);
 
 wss.on('connection', wsHub.handleConnection);
 
@@ -255,7 +269,7 @@ app.use('/api', createAuthRouter({
     requireAuth,
     production: runtimeConfig.production
 }));
-app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub }));
+app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub, lifecycle }));
 
 app.use('/api', (req, res) => {
     res.status(404).json({
@@ -292,6 +306,8 @@ const HOST = process.env.HOST || '127.0.0.1';
 let maintenance = null;
 async function startServer() {
     try {
+        initializeDatabase(runtimeConfig.DB_PATH ? { path: runtimeConfig.DB_PATH } : {});
+        await recoverPendingProjectDeletions({ env: process.env });
         await assertProductionFrontendAvailable({
             production: runtimeConfig.production,
             distRoot: getFrontendDistRoot()
@@ -302,6 +318,7 @@ async function startServer() {
         });
     } catch (error) {
         maintenance?.stop();
+        closeDatabase();
         console.error(`Backend startup failed: ${error.message}`);
         process.exitCode = 1;
     }
@@ -312,6 +329,7 @@ startServer();
 const EVIDENCE_RETENTION_DAYS = 30;
 const EVIDENCE_COMPACTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 function runEvidenceCompaction() {
+    if (!db) return;
     try {
         compactStaleEvidencePayloads(db, EVIDENCE_RETENTION_DAYS);
     } catch (error) {
@@ -325,34 +343,46 @@ evidenceCompactionTimer.unref();
 
 let isShuttingDown = false;
 
-function handleGracefulShutdown(signal) {
+async function closeWebSockets() {
+    for (const client of wss.clients) {
+        try {
+            if (client.readyState === WebSocket.OPEN) client.close(1001, 'Server shutting down');
+            client.terminate();
+        } catch {}
+    }
+    await new Promise(resolve => wss.close(() => resolve()));
+}
+
+function closeHttpServer() {
+    return new Promise((resolve, reject) => {
+        server.close(error => {
+            if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error);
+            else resolve();
+        });
+    });
+}
+
+async function handleGracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
     maintenance?.stop();
+    dbEvents.off('sessionRevoked', onSessionRevoked);
+    dbEvents.off('userSessionsRevoked', onUserSessionsRevoked);
     clearTimeout(initialEvidenceCompactionTimer);
     clearInterval(evidenceCompactionTimer);
-    // 1. WebSocket istemcilerini kapat
-    try {
-        for (const client of wss.clients) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.close(1001, 'Server shutting down');
-            }
-        }
-    } catch {}
-
-    // 2. HTTP sunucusunu durdur
-    server.close(() => {
-        // 3. SQLite WAL checkpoint
-        try {
-            checkpointWAL(db);
-        } catch {}
-
-        process.exit(0);
+    const result = await lifecycle.shutdown({
+        closeWebSockets,
+        closeServer: closeHttpServer,
+        checkpointDatabase: () => checkpointWAL(db),
+        closeDatabase,
+        timeoutMs: Number(process.env.SHUTDOWN_TIMEOUT_MS) || 3000
     });
-
-    setTimeout(() => {
-        process.exit(0);
-    }, 3000).unref();
+    if (!result.success) {
+        console.error(`Shutdown ${signal} timed out or failed.`);
+        process.exitCode = 1;
+    } else {
+        process.exitCode = 0;
+    }
 }
 
 process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));

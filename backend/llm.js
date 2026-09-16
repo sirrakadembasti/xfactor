@@ -1,4 +1,3 @@
-import './networkResolver.js';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logError, logWarning, writeStructuredLog } from './observability.js';
@@ -142,6 +141,26 @@ export async function generateLLMResponse(messages, options = {}) {
     // API Key Kontrolü: güvenli fail-closed davranışı; yalnızca açıkça allowMockFallback=true ise mock döner.
     if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.startsWith('your_')) {
         if (allowMockFallback) {
+            const allText = messages.map(m => String(m.content || '')).join(' ');
+            if (/reviewer/i.test(allText)) {
+                return JSON.stringify({
+                    approved: true,
+                    summary: "Simüle Edilen LLM Yanıtı: Reviewer onayladı.",
+                    feedback: "Kod inceleme onaylandı.",
+                    issues: []
+                });
+            }
+            if (/coder/i.test(allText)) {
+                const targetFilesMatch = allText.match(/Hedef Dosyalar:\s*(\[[^\]]*\])/);
+                let targetFiles = ['src/valid.js'];
+                if (targetFilesMatch) {
+                    try { targetFiles = JSON.parse(targetFilesMatch[1]); } catch {}
+                }
+                return JSON.stringify({
+                    summary: "Simüle Edilen LLM Yanıtı: Coder çıktısı.",
+                    files: targetFiles.map(tf => ({ path: tf, content: '// Simüle Edilen LLM Yanıtı: Kod içeriği' }))
+                });
+            }
             return "(Simüle Edilen LLM Yanıtı: Geçerli bir API_KEY bulunamadığı için simülasyon olarak kod üretilmiştir. console.log('Hello Boss!');)";
         }
         throw new Error(`Missing or invalid ${provider.toUpperCase()} API key. Set the provider secret in the environment or enable ALLOW_MOCK_FALLBACK=true for explicit local testing only.`);

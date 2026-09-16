@@ -14,10 +14,9 @@ test.beforeAll(async () => {
   process.env.DB_PATH = process.env.E2E_DB_PATH;
   process.env.PROJECTS_ROOT = process.env.E2E_PROJECTS_ROOT;
 
-  const [{ createUser, createProjectForUser }, { db }] = await Promise.all([
-    import('../backend/auth.js'),
-    import('../backend/db.js')
-  ]);
+  const { initializeDatabase } = await import('../backend/db.js');
+  const db = initializeDatabase({ path: process.env.DB_PATH });
+  const { createUser, createProjectForUser } = await import('../backend/auth.js');
   const user = createUser(username, password);
   const project = createProjectForUser(user.id, 'Read-Only Quality Dashboard');
   projectId = project.id;

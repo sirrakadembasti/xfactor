@@ -19,8 +19,10 @@ await runAsyncTest('1. acquireWorkflowLease eşzamanlı çağrılarda yalnızca 
     const acquiredCount = (lease1.acquired ? 1 : 0) + (lease2.acquired ? 1 : 0);
     assert.strictEqual(acquiredCount, 1, 'Yalnızca bir process lease alabilmelidir.');
 
-    const activeAttemptId = lease1.acquired ? lease1.attempt.id : lease2.attempt.id;
-    releaseWorkflowLease(activeAttemptId, 'completed');
+    const activeLease = lease1.acquired ? lease1 : lease2;
+    releaseWorkflowLease(activeLease.attempt.id, 'completed', {
+        leaseOwner: activeLease.attempt.lease_owner
+    });
 
     await deleteProject(project.id);
 });
@@ -73,7 +75,7 @@ await runAsyncTest('3. updateAttemptHeartbeat lease owner ve attempt id doğrula
     const failed = updateAttemptHeartbeat(lease.attempt.id, 'imposter-owner');
     assert.strictEqual(failed, false);
 
-    releaseWorkflowLease(lease.attempt.id, 'completed');
+    releaseWorkflowLease(lease.attempt.id, 'completed', { leaseOwner: 'legitimate-owner' });
     await deleteProject(project.id);
 });
 

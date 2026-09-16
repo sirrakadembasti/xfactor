@@ -17,29 +17,83 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
-import { logError } from './observability.js';
 
-import { reconcileStaleWorkflowAttempts } from './workflowAttempts.js';
 export const dbEvents = new EventEmitter();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
+const DEFAULT_DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'projects.db');
 
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+export let db = null;
+
+function configureDatabase(database) {
+    database.exec('PRAGMA busy_timeout = 5000;');
+    database.exec('PRAGMA foreign_keys = ON;');
+    database.exec('PRAGMA journal_mode = WAL;');
+    database.exec('PRAGMA synchronous = NORMAL;');
 }
 
-const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'projects.db');
-export const db = new DatabaseCtor(DB_PATH, { create: true });
+export function initializeDatabase({ path: databasePath = DEFAULT_DB_PATH } = {}) {
+    if (db) return db;
+    if (typeof databasePath !== 'string' || !databasePath.trim()) {
+        throw new Error('A database path is required.');
+    }
+    if (databasePath !== ':memory:') {
+        fs.mkdirSync(path.dirname(path.resolve(databasePath)), { recursive: true });
+    }
+    const database = new DatabaseCtor(databasePath, { create: true });
+    try {
+        configureDatabase(database);
+        runMigrations(database);
+        database.exec('CREATE INDEX IF NOT EXISTS idx_project_owners_user_id ON project_owners(user_id)');
+    } catch (error) {
+        try { database.close(); } catch {}
+        throw error;
+    }
+    db = database;
+    return db;
+}
 
-db.exec('PRAGMA busy_timeout = 5000;');
-db.exec('PRAGMA foreign_keys = ON;');
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA synchronous = NORMAL;');
+export function closeDatabase() {
+    if (!db) return;
+    const current = db;
+    db = null;
+    current.close();
+}
 
 export function setBusyTimeout(timeoutMs, targetDb = db) {
     targetDb.exec(`PRAGMA busy_timeout = ${parseInt(timeoutMs, 10)};`);
+}
+function leaseTimestamp(value) {
+    if (value === null || value === undefined) return Number.NaN;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric < 1e12 ? numeric * 1000 : numeric;
+    return Date.parse(String(value).includes(' ') && !String(value).includes('T')
+        ? `${String(value).replace(' ', 'T')}Z`
+        : String(value));
+}
+
+function assertWorkflowLease(attemptId, leaseOwner, { projectId = null, database = db } = {}) {
+    if (!attemptId || !leaseOwner || !database) {
+        const error = new Error('Workflow lease is stale or fenced by a newer owner.');
+        error.code = 'WORKFLOW_LEASE_FENCED';
+        throw error;
+    }
+    const projectClause = projectId ? ' AND project_id = ?' : '';
+    const params = projectId ? [attemptId, projectId, leaseOwner] : [attemptId, leaseOwner];
+    const row = database.prepare(`
+        SELECT heartbeat_at, heartbeat_epoch
+        FROM workflow_attempts
+        WHERE id = ?${projectClause} AND status = 'running' AND lease_owner = ?
+    `).get(...params);
+    const heartbeat = leaseTimestamp(row?.heartbeat_epoch ?? row?.heartbeat_at);
+    if (!row || !Number.isFinite(heartbeat) || Date.now() - heartbeat > 30_000) {
+        const error = new Error('Workflow lease is stale or fenced by a newer owner.');
+        error.code = 'WORKFLOW_LEASE_FENCED';
+        throw error;
+    }
+    return true;
 }
 
 function columnExists(database, tableName, columnName) {
@@ -515,7 +569,80 @@ export const MIGRATIONS = [
                 END;
             `);
         }
-    }
+    },
+    {
+        version: 11,
+        name: '011_workflow_lease_fencing',
+        up: (database) => {
+            for (const column of ['started_epoch', 'heartbeat_epoch', 'ended_epoch']) {
+                if (!columnExists(database, 'workflow_attempts', column)) {
+                    database.exec(`ALTER TABLE workflow_attempts ADD COLUMN ${column} INTEGER`);
+                }
+            }
+            if (!columnExists(database, 'project_logs', 'attempt_id')) {
+                database.exec('ALTER TABLE project_logs ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'project_logs', 'lease_owner')) {
+                database.exec('ALTER TABLE project_logs ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'task_checkpoints', 'attempt_id')) {
+                database.exec('ALTER TABLE task_checkpoints ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'task_checkpoints', 'lease_owner')) {
+                database.exec('ALTER TABLE task_checkpoints ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'repair_issues', 'attempt_id')) {
+                database.exec('ALTER TABLE repair_issues ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'repair_issues', 'lease_owner')) {
+                database.exec('ALTER TABLE repair_issues ADD COLUMN lease_owner TEXT');
+            }
+            if (!columnExists(database, 'completion_receipts', 'attempt_id')) {
+                database.exec('ALTER TABLE completion_receipts ADD COLUMN attempt_id TEXT');
+            }
+            if (!columnExists(database, 'completion_receipts', 'lease_owner')) {
+                database.exec('ALTER TABLE completion_receipts ADD COLUMN lease_owner TEXT');
+            }
+            database.exec(`
+                CREATE INDEX IF NOT EXISTS idx_workflow_attempts_heartbeat_epoch
+                    ON workflow_attempts(status, heartbeat_epoch);
+                CREATE INDEX IF NOT EXISTS idx_project_logs_attempt
+                    ON project_logs(project_id, attempt_id);
+                CREATE INDEX IF NOT EXISTS idx_completion_receipts_attempt
+                    ON completion_receipts(project_id, attempt_id);
+            `);
+        }
+    },
+    {
+        version: 12,
+        name: '012_totp_replay_protection',
+        up: (database) => {
+            if (!columnExists(database, 'users', 'totp_last_counter')) {
+                database.exec('ALTER TABLE users ADD COLUMN totp_last_counter INTEGER');
+            }
+        }
+    },
+    {
+        version: 13,
+        name: '013_project_deletion_intents',
+        up: (database) => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS project_deletion_intents (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL UNIQUE,
+                    source_path TEXT NOT NULL,
+                    trash_path TEXT NOT NULL,
+                    original_status TEXT NOT NULL,
+                    phase TEXT NOT NULL,
+                    error TEXT,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_project_deletion_intents_phase
+                    ON project_deletion_intents(phase, updated_at);
+            `);
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');
@@ -574,8 +701,6 @@ export function checkpointWAL(targetDb = db) {
     }
 }
 
-// Veritabanını başlat ve migration'ları uygula
-runMigrations(db);
 export function formatDBDate(dateVal) {
     if (!dateVal) return '';
     try {
@@ -601,178 +726,43 @@ export function formatDBDate(dateVal) {
         return String(dateVal);
     }
 }
-db.exec('CREATE INDEX IF NOT EXISTS idx_project_owners_user_id ON project_owners(user_id)');
 
-export function getProjectState(id) {
-    const project = db.prepare(
-        'SELECT id, title, status, is_pinned, workflow_state, revision, created_at FROM projects WHERE id = ?'
-    ).get(id);
-    if (!project) return null;
 
-    const contractRow = db.prepare(`
-        SELECT contract_json FROM project_contracts
-        WHERE project_id = ?
-        ORDER BY
-            CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
-            revision DESC
-        LIMIT 1
-    `).get(id);
-
-    let plan = null;
-    if (contractRow?.contract_json) {
-        try {
-            plan = JSON.parse(contractRow.contract_json);
-        } catch {}
-    }
-
-    const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(id);
-    const chatHistory = chats.map(c => {
-        const timestamp = formatDBDate(c.created_at);
-        return {
-            id: c.id,
-            role: c.role,
-            parts: [{ text: c.text_content }],
-            timestamp: timestamp,
-            created_at: c.created_at
-        };
-    });
-
-    let workflow = null;
-    if (project.workflow_state) {
-        try {
-            workflow = JSON.parse(project.workflow_state);
-        } catch {}
-    }
-
-    return {
-        id: project.id,
-        title: project.title,
-        status: project.status,
-        isPinned: Boolean(project.is_pinned),
-        createdAt: project.created_at,
-        revision: project.revision || 1,
-        plan,
-        workflow,
-        chatHistory
-    };
-}
-
-export function saveProjectState(state) {
-    const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
-    const currentRevision = Number(state.revision || 1);
-    const nextRevision = currentRevision + 1;
-
-    const upsertProjectStmt = db.prepare(`
-        INSERT INTO projects (id, title, status, plan, workflow_state, revision)
-        VALUES (?, ?, ?, NULL, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            title = excluded.title,
-            status = excluded.status,
-            plan = NULL,
-            workflow_state = excluded.workflow_state,
-            revision = excluded.revision
-    `);
-
-    const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
+export function saveProjectLog(logData, leaseOptions = null) {
+    const options = leaseOptions || (
+        logData?.attemptId || logData?.leaseOwner
+            ? { attemptId: logData.attemptId, leaseOwner: logData.leaseOwner }
+            : null
+    );
+    const attemptId = options?.attemptId ?? null;
+    const leaseOwner = options?.leaseOwner ?? null;
+    db.exec('BEGIN IMMEDIATE;');
     try {
-        db.exec('BEGIN IMMEDIATE;');
-        upsertProjectStmt.run(
-            state.id,
-            state.title,
-            state.status,
-            workflowStr,
-            nextRevision
-        );
-        state.revision = nextRevision;
-
-        const existingCount = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(state.id).count;
-        const chatsToSave = (state.chatHistory || []);
-
-        for (let i = existingCount; i < chatsToSave.length; i++) {
-            const chat = chatsToSave[i];
-            const text = chat?.parts?.[0]?.text || '';
-            const createdAt = chat.created_at || new Date().toISOString();
-            insertChat.run(state.id, chat.role, text, createdAt);
+        if (options) {
+            assertWorkflowLease(attemptId, leaseOwner, { projectId: logData.projectId, database: db });
         }
+        db.prepare(`
+            INSERT INTO project_logs (
+                project_id, agent, action, file, message, node_id, parent_node_id, created_at, attempt_id, lease_owner
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            logData.projectId,
+            logData.agent || null,
+            logData.action || null,
+            logData.file || null,
+            logData.message || '',
+            logData.node_id || null,
+            logData.parent_node_id || null,
+            logData.created_at || new Date().toISOString(),
+            attemptId,
+            leaseOwner
+        );
         db.exec('COMMIT;');
     } catch (error) {
         db.exec('ROLLBACK;');
         throw error;
     }
-    dbEvents.emit(`stateChange:${state.id}`, state.status);
-}
-
-export function getAllProjects() {
-    return db.prepare('SELECT id, title, status, is_pinned, created_at FROM projects ORDER BY is_pinned DESC, created_at DESC').all().map(p => ({
-        id: p.id,
-        title: p.title,
-        status: p.status,
-        isPinned: Boolean(p.is_pinned),
-        createdAt: p.created_at
-    }));
-}
-
-export function updateProject(id, updates = {}) {
-    const fields = [];
-    const values = [];
-    if (typeof updates.title === 'string' && updates.title.trim()) {
-        fields.push('title = ?');
-        values.push(updates.title.trim());
-    }
-    if (typeof updates.is_pinned !== 'undefined' || typeof updates.isPinned !== 'undefined') {
-        const pinVal = updates.is_pinned !== undefined ? (updates.is_pinned ? 1 : 0) : (updates.isPinned ? 1 : 0);
-        fields.push('is_pinned = ?');
-        values.push(pinVal);
-    }
-    if (fields.length > 0) {
-        values.push(id);
-        db.prepare(`UPDATE projects SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-    }
-    return getProjectState(id);
-}
-
-export function deleteProject(id) {
-    db.exec('BEGIN');
-    try {
-        db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(id);
-        db.prepare('DELETE FROM project_logs WHERE project_id = ?').run(id);
-        db.prepare('DELETE FROM project_owners WHERE project_id = ?').run(id);
-        db.prepare('DELETE FROM projects WHERE id = ?').run(id);
-        db.exec('COMMIT');
-    } catch (e) {
-        db.exec('ROLLBACK');
-        throw e;
-    }
-
-    // Disk üzerindeki klasörü de temizle
-    try {
-        const PROJECTS_DIR = path.join(__dirname, '../projects');
-        const projectFolder = path.join(PROJECTS_DIR, id);
-        if (fs.existsSync(projectFolder)) {
-            fs.rmSync(projectFolder, { recursive: true, force: true });
-        }
-    } catch (error) {
-        logError('db.project_directory_delete_failed', error, { projectId: id });
-    }
-    return true;
-}
-
-export function saveProjectLog(logData) {
-    const insertLog = db.prepare(`
-        INSERT INTO project_logs (project_id, agent, action, file, message, node_id, parent_node_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    insertLog.run(
-        logData.projectId,
-        logData.agent || null,
-        logData.action || null,
-        logData.file || null,
-        logData.message || '',
-        logData.node_id || null,
-        logData.parent_node_id || null,
-        logData.created_at || new Date().toISOString()
-    );
 }
 
 export function getProjectLogs(projectId, { cursor = null, limit = 100 } = {}) {
@@ -827,9 +817,3 @@ export function getProjectChatHistory(projectId, { cursor = null, limit = 100 } 
     }));
 }
 
-// Başlangıçta çökme kurtarmayı çalıştır
-try {
-    reconcileStaleWorkflowAttempts();
-} catch (error) {
-    logError('db.startup_reconciliation_failed', error);
-}
