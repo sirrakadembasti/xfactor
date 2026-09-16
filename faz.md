@@ -124,3 +124,113 @@ Bu doküman, XFactor mimarisinin **P0'dan P9'a** kadar geçirdiği tüm kalite, 
    - Kapatma anında yeni işleri reddeden, WebSocket'leri ve DB'yi kontrollü kapatan `lifecycle.js` koordinatörü devreye alındı.
 7. **Deterministik Üretim Kanıtı (Task 12):**
    - `scripts/test-p9-production-pipeline.mjs` ile Web API ve Execution Worker arasındaki deterministik entegrasyon kanıtlandı; sahte başarılar temizlenip `implementation-evidence/P9.md` dokümanı oluşturuldu.
+   --------------------------------------------------------------
+    ### Yapılan Kök Neden Düzeltmeleri ve Geliştirmeler
+
+ 1. Docker Worker Seed-Account Probe Düzeltildi (backend/verification/buildVerifier.js):
+   - Probe betiğinin sonundaki // seed-account-count yorumu, Windows/MSYS argüman ayrıştırmasında node: bad option:
+     --seed-account-count hatasına yol açıyordu. Yorum temizlendi; probe betiği deterministik olarak
+     PrismaClient.user.count() sonucunu döndürecek şekilde izole edildi.
+   - Doğrulama: test_quiz_runtime_remediation.js içinde prisma_seed_accounts başarıyla doğrulandı.
+ 2. Zod & React Sürüm Uyumluluğu Kilitlendi (backend/engine/codeGenerator.js):
+   - Ajanların ürettiği şemalar Zod 3 API (baseQuizSchema.partial().extend(...)) sözleşmesine dayanırken latest etiketi
+     Zod 4'e çözümlenerek required_error TypeScript hatası üretiyordu. zod sürümü ^3.24.1 olarak sabitlendi.
+   - Next.js ve ekosistem paketlerinin (next-auth@4, @hookform/resolvers) peer-dependency çakışmalarını önlemek için
+     react, react-dom, @types/react, @types/react-dom sürümleri ^18.3.1 olarak kilitlendi. baseDependencies önceliği
+     sağlandı.
+ 3. Tailwind CSS v3 Sürümü ve Yapılandırma Düzeltildi (backend/engine/codeGenerator.js):
+   - tailwindcss sürümü ^3.4.17 olarak kilitlendi. Böylece Tailwind v4'ün PostCSS ayrıştırma hatası
+     (@tailwindcss/postcss zorunluluğu) engellendi.
+   - tailwind.config.ts şablonundaki darkMode: ['class'] tek elemanlı tuple hatası (TS2322: Type '["class"]' is not
+     assignable to type 'DarkModeStrategy'), darkMode: 'class' olarak düzeltildi.
+ 4. Service Manifest Otomasyonu ve Smoke Doğrulaması (codeGenerator.js, serviceManifestVerifier.js, smokeVerifier.js):
+   - ensureProjectScaffold içine otomatik service-manifest.json üretimi eklendi (Next.js için port 3000, npm run start,
+     / sağlık ucu).
+   - verifyProjectSmoke servis manifesti üzerinden servisi ayağa kaldırıp (spawnService) sağlık ucunu
+     (probeServiceHealth) test edecek şekilde bağlandı.
+   - Next.js üretim sunucusunun ilk açılış gecikmesi için liveness timeout'u 30 saniyeye (30000ms) çıkarıldı.
+ 5. App Router Root Layout ve Landing Sayfası Eklendi (codeGenerator.js):
+   - Next.js App Router kök URL'sinin (/) HTTP 404 dönmesini engellemek için src/app/layout.tsx ve src/app/page.tsx
+     eksik olduğunda otomatik scaffold edilmesi sağlandı.
+ 6. Worker Kaynak Sınırları ve Proxy Sıkıştırması (execution/runtime.js, execution/registryProxy.js,
+    execution/jobExecutor.js):
+   - /workspace bir tmpfs olduğundan ve node_modules RAM tükettiğinden, gerçek çok katmanlı uygulamalar için dinamik
+     bellek tahsisi (4g RAM, 250 PID, 2g tmpfs) getirildi; fixture testleri için 1g katı sınırı korundu.
+   - NPM_CONFIG_CACHE, 64MB'lık kısıtlı /tmp yerine 1GB'lık /workspace/.npm-cache dizinine yönlendirilerek ENOSPC
+     hatası engellendi.
+   - registryProxy.js içindeki sabit accept-encoding: identity zorlaması kaldırılarak paket meta verilerinin gzip
+     sıkıştırmasıyla 10-20 kat daha hızlı ve kotayı aşmadan indirilmesi sağlandı.
+   - spawn metodundaki tanımsız p referans hatası giderildi.
+ 7. Doğrulama ve Hardening Kapıları Senkronizasyonu (artifactVerifier.js, verificationCli.js, placeholderVerifier.js,
+    artifactInventory.js):
+   - collectArtifactFiles ve placeholderVerifier.js içinden orkestrasyon metadata dizini (manager/) hariç tutuldu.
+   - placeholderVerifier.js içinde file.content Buffer/String güvenliği sağlandı; React Hook Form
+     handleSubmit(onSubmit) doğrudan prop aktarımı false-positive tespitinden muaf tutuldu.
+   - artifactVerifier.js izole worker'dan gelen sonuçları P4_MANDATORY_GATES (18 zorunlu kapı) ile senkronize ederek
+     kanonik aggregateVerificationRun formatına bağladı.
+   - verificationCli.js içinde implementation_finished durumundan gelen başarılı doğrulamalar için tam durum geçiş
+     zinciri (verification_pending → ... → artifact_verified) sağlandı.
+
+ ────────────────────────────────────────────────────────────────────────────────
+
+ ### Doğrulama Kanıtları
+
+ - Platform Testleri:
+   - node backend/tests/test_quiz_runtime_remediation.js: 14/14 BAŞARILI
+   - Backend Regresyon Süiti (11 süit: quality_gate, artifact_verifier, smoke, manifest, placeholder, pipeline,
+     schemas, docs_sync, build_verifier vb.): 11/11 BAŞARILI (0 HATA)
+   - Worker Unit Testleri (runtime.test.js, jobBoundary.test.js): 28/28 BAŞARILI (0 HATA)
+   - Gerçek Docker Worker Entegrasyonu (runtime.integration.test.js): 12/12 BAŞARILI (0 HATA)
+   - Süreklilik Doğrulaması (node scripts/validate-continuity.mjs): CONTINUITY PASS (13 units)
+   - Git Whitespace Kontrolü (git diff --check): SIFIR UYARI (TEMİZ)
+ - İzole Docker Worker Üzerinde Quiz-Master Doğrulama Kanıtı:
+   - clean_install: PASS (exit code 0)
+   - prisma_validate: PASS (exit code 0)
+   - prisma_generate: PASS (exit code 0)
+   - prisma_db_push: PASS (exit code 0)
+   - prisma_seed: PASS (exit code 0)
+   - prisma_seed_accounts: PASS (exit code 0, 2 hesap doğrulandı)
+   - typecheck: PASS (exit code 0)
+   - framework_build (next build): PASS (exit code 0)
+   - service_spawn (next start): PASS
+   - smoke_liveness_probe (http://127.0.0.1:3000/): PASS (HTTP 200 OK)
+   - smoke_gate: PASS
+   - test_suite_execution: PASS (exit code 0)
+   - projects/ Dizin Bütünlüğü: git status --short -- projects çıktısı boş; 0 el ile müdahale.
+ - SDD ve Review:
+   - Task5Reviewer alt ajanı diff ve gereksinimleri inceledi: Overall correctness: correct, 0 findings.
+   -----------------------------------------------------------------------------
+   ### Gerçekleştirilen İşlemler
+
+ 1. Kök Neden Düzeltmeleri ve Doğrulamalar:
+   - Docker Worker Probe: buildVerifier.js içindeki node: bad option: --seed-account-count hatası giderildi; probe
+     doğrudan PrismaClient.user.count() çalıştıracak şekilde izole edildi.
+   - Sürüm Uyumluluğu: react, react-dom, @types/react, @types/react-dom sürümleri ^18.3.1 (React 18), zod sürümü
+     ^3.24.1 (Zod 3), tailwindcss sürümü ^3.4.17 (Tailwind 3) olarak sabitlendi; ERESOLVE ve PostCSS Turbopack derleme
+     hataları önlendi.
+   - Tailwind Yapılandırması: tailwind.config.ts şablonundaki darkMode: ['class'] TypeScript hatası (TS2322), darkMode:
+     'class' olarak düzeltildi.
+   - App Router Kök Desteği: Next.js App Router kök URL'sinin (/) 404 dönmesini engellemek için src/app/layout.tsx ve
+     src/app/page.tsx scaffold korumasına eklendi.
+   - Worker Kaynak ve Proxy İyileştirmeleri: Gerçek çok katmanlı uygulamalar için dinamik 4GB bellek tahsisi getirildi;
+     npm önbelleği 1GB'lık /workspace/.npm-cache dizinine taşınarak ENOSPC önlendi; proxy'deki zorunlu identity başlığı
+     kaldırılarak sıkıştırılmış akış sağlandı; spawn içindeki tanımsız p hatası düzeltildi.
+   - Hardening ve Doğrulama Kapıları: collectArtifactFiles ve placeholderVerifier.js içinden orkestrasyon metadata
+     dizini (manager/) hariç tutuldu; React Hook Form handleSubmit(onSubmit) doğrudan prop aktarımı false-positive
+     tespitinden muaf tutuldu; artifactVerifier.js tüm 18 zorunlu P4_MANDATORY_GATES kapısını kanonik olarak
+     sentezleyecek şekilde bağlandı.
+ 2. İzole Docker Worker Üzerinde Uçtan Uca Doğrulama:
+   - clean_install: PASS (exit 0)
+   - prisma_validate, prisma_generate, prisma_db_push, prisma_seed: PASS (exit 0)
+   - prisma_seed_accounts: PASS (2 hesap doğrulandı)
+   - typecheck & framework_build (next build): PASS (exit 0)
+   - service_spawn & smoke_liveness_probe (http://127.0.0.1:3000/): PASS (HTTP 200 OK)
+   - smoke_gate & test_suite_execution: PASS (exit 0)
+   - projects/ dizininde 0 el ile müdahale.
+ 3. Geliştirme Dalının Yerel Olarak Birleştirilmesi (Option 1):
+   - Tüm platform değişiklikleri fix/quiz-runtime-remediation dalında commit edildi (f28249e).
+   - master dalına geçilerek fast-forward ile birleştirildi (Updating 6b11df0..f28249e).
+   - master üzerinde 11 süitlik tam regresyon testi çalıştırıldı: 11/11 BAŞARILI (0 HATA).
+   - İzole worktree (.worktrees/quiz-runtime-remediation) temizlendi ve silindi (git worktree prune).
+   - fix/quiz-runtime-remediation geliştirme dalı yerel olarak silindi.
+   - master dalı üzerinde test_quiz_runtime_remediation.js (14/14 test) başarıyla doğrulandı.
