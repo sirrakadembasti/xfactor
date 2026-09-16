@@ -19,6 +19,8 @@ const mandatoryGates = [
 let secret;
 let unverifiedProjectId;
 let verifiedProjectId;
+let db;
+let user;
 
 function currentTotp(totpSecret) {
   const counter = Math.floor(Math.floor(Date.now() / 1000) / 30);
@@ -40,13 +42,13 @@ test.beforeAll(async () => {
   process.env.DB_PATH = process.env.E2E_DB_PATH;
   process.env.PROJECTS_ROOT = process.env.E2E_PROJECTS_ROOT;
   const { initializeDatabase } = await import('../backend/db.js');
-  const db = initializeDatabase({ path: process.env.DB_PATH });
+  db = initializeDatabase({ path: process.env.DB_PATH });
   const [{ createUser, createProjectForUser, generateTotpSecret }, { createArtifact }, { completeVerifiedProject }] = await Promise.all([
     import('../backend/auth.js'),
     import('../backend/repositories/artifactRepository.js'),
     import('../backend/projectRepository.js')
   ]);
-  const user = createUser(username, password);
+  user = createUser(username, password);
   secret = generateTotpSecret(user.id);
   const unverifiedProject = createProjectForUser(user.id, unverifiedTitle);
   unverifiedProjectId = unverifiedProject.id;
@@ -77,6 +79,12 @@ test.beforeAll(async () => {
   completeVerifiedProject({ projectId: verifiedProjectId, contractId, artifactId, expectedRevision: 1 });
 });
 
+test.beforeEach(async () => {
+  if (db && user?.id) {
+    db.prepare('UPDATE users SET totp_last_counter = NULL WHERE id = ?').run(user.id);
+  }
+});
+
 test('MFA user needs TOTP before dashboard access', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Kullanıcı Adı').fill(username);
@@ -94,6 +102,7 @@ test('only the completed verified project exposes a Header ZIP download', async 
   await page.getByLabel('Kullanıcı Adı').fill(username);
   await page.getByLabel('Şifre').fill(password);
   await page.getByRole('button', { name: 'Giriş Yap' }).click();
+  await expect(page.getByLabel('Doğrulama Kodu')).toBeVisible();
   await page.getByLabel('Doğrulama Kodu').fill(currentTotp(secret));
   await page.getByRole('button', { name: 'Kodu Doğrula' }).click();
   await expect(page.getByText(/XFactor Projeler/)).toBeVisible();
