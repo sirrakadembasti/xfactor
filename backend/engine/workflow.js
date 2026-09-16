@@ -486,7 +486,7 @@ export async function executeStaticRepairLoop({
                 "feedback",
                 targetPath,
                 `[Hedef Onarım ${totalAttempts} - Tur ${round}] "${targetPath}" dosyasındaki hatalar gideriliyor (${targetIssues.slice(0, 2).join(' | ')})...`,
-                "tester",
+                "tester-qa",
                 "manager"
             );
 
@@ -1112,6 +1112,17 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             let allQualityIssues = !deterministicAudit.passed ? [...deterministicAudit.issues] : [];
             const isQualityPassed = deterministicAudit.passed;
 
+            await workflowLogEvent(
+                wsHub,
+                projectId,
+                "Tester",
+                "start",
+                "",
+                "Proje kabul testleri ve statik denetim başlatılıyor...",
+                "tester-qa",
+                "manager"
+            );
+
             const testerAgent = getAgent('tester');
             const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles, {
                 deterministicAudit
@@ -1141,14 +1152,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     'BASARISIZ',
                     `Proje kabul testlerini geçemedi: ${testResult.summary}`
                 );
-                await workflowLogEvent(wsHub,
-                projectId,
-                "Tester",
-                "error",
-                "",
-                `Proje kabul testlerini geçemedi: ${testResult.summary}`,
-                "tester",
-                "manager");
+                await workflowLogEvent(
+                    wsHub,
+                    projectId,
+                    "Tester",
+                    "error",
+                    "",
+                    `Proje kabul testlerini geçemedi: ${testResult.summary}`,
+                    "tester-qa",
+                    "manager"
+                );
 
                 db.exec('BEGIN IMMEDIATE;');
                 try {
@@ -1247,6 +1260,17 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 }
                 return;
             }
+
+            await workflowLogEvent(
+                wsHub,
+                projectId,
+                "Tester",
+                "finish",
+                "",
+                `Proje kabul testleri başarıyla tamamlandı: ${testResult.summary}`,
+                "tester-qa",
+                "manager"
+            );
 
             // Product completion is evidence-authorized exclusively by completeVerifiedProject.
             // Workflow output remains advisory until artifact verification supplies these IDs.

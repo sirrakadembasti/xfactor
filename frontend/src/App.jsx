@@ -59,6 +59,10 @@ export default function App() {
   }, [uiError]);
 
   const [projectState, setProjectState] = useState(null);
+  const projectStateRef = useRef(projectState);
+  useEffect(() => {
+    projectStateRef.current = projectState;
+  }, [projectState]);
   const [chatInput, setChatInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [activeMenuProjectId, setActiveMenuProjectId] = useState(null);
@@ -237,6 +241,14 @@ export default function App() {
       const data = await api.getProject(id, { signal });
       if (!isCurrentRequest(identity)) return null;
       setProjectState(data);
+      if (data?.plan) {
+        setLogs(currentLogs => {
+          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(currentLogs, data.plan);
+          setNodes(computedNodes);
+          setEdges(computedEdges);
+          return currentLogs;
+        });
+      }
       return data;
     } catch (e) {
       if (e.name === 'AbortError' || !isCurrentRequest(identity)) return null;
@@ -285,7 +297,7 @@ export default function App() {
         if (!Array.isArray(data) || !isCurrentRequest(logIdentity)) return;
         const sortedLogs = data.slice(-MAX_LOGS).reverse();
         setLogs(sortedLogs);
-        const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs);
+        const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs, projectStateRef.current?.plan);
         setNodes(computedNodes);
         setEdges(computedEdges);
       })
@@ -381,7 +393,7 @@ export default function App() {
             || batch.projectId !== activeProjectRef.current
           ) return prev;
           const newLogs = [...batch.items].reverse().concat(prev).slice(0, MAX_LOGS);
-          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs);
+          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs, projectStateRef.current?.plan);
           setNodes(computedNodes);
           setEdges(computedEdges);
           return newLogs;
@@ -637,7 +649,7 @@ export default function App() {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
     const identity = captureRequest('approve', activeProjectId);
-    const { nodes: resetNodes, edges: resetEdges } = computeHierarchicalDAG([]);
+    const { nodes: resetNodes, edges: resetEdges } = computeHierarchicalDAG([], projectState?.plan || projectStateRef.current?.plan);
     setNodes(resetNodes);
     setEdges(resetEdges);
     setLogs([]);
