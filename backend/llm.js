@@ -1,8 +1,14 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logError, logWarning, writeStructuredLog } from './observability.js';
+import { initNetworkResolver } from './networkResolver.js';
 
+const backendDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(backendDir, '.env') });
 dotenv.config();
+initNetworkResolver();
 
 function sleepAbortable(ms, signal) {
     if (!signal) {

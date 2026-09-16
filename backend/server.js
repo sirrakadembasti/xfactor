@@ -36,7 +36,9 @@ import {
     mountProductionFrontend
 } from './productionStatic.js';
 import { createLifecycleCoordinator } from './lifecycle.js';
+import { initNetworkResolver } from './networkResolver.js';
 dotenv.config();
+initNetworkResolver();
 
 const runtimeConfig = validateRuntimeConfig(process.env);
 const lifecycle = createLifecycleCoordinator({
