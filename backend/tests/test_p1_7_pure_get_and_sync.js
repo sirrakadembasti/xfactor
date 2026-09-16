@@ -1,11 +1,17 @@
 import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
+import { setupIsolatedTestDb } from './isolatedDb.js';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 
+const isolated = await setupIsolatedTestDb('p1-7-pure-get-and-sync');
+process.env.DB_PATH = isolated.dbPath;
 const { runAsyncTest, finish } = createTestHarness();
 
+try {
+    const { db } = await import('../db.js');
+    isolated.registerDatabase(db);
 // =========================================================================
 // TEST 1: GET /projects and getAllProjects have zero DB/filesystem mutations
 // =========================================================================
@@ -68,4 +74,7 @@ await runAsyncTest('3. syncProjectsWithDisk should quarantine invalid project ID
         await fs.rm(customRoot, { recursive: true, force: true }).catch(() => {});
     }
 });
+} finally {
+    await isolated.cleanup();
+}
 finish();

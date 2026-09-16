@@ -12,7 +12,7 @@ import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactR
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
-import { reconcileProjectsWithDisk } from './services/reconciliationService.js';
+import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects } from './services/reconciliationService.js';
 
 
 export async function createProject({ title, ownerUserId = null, env = process.env } = {}) {
@@ -747,8 +747,11 @@ export async function recoverPendingProjectDeletions({ env = process.env, databa
     return results;
 }
 
-export { reconcileProjectsWithDisk };
+export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects };
 
-export function syncProjectsWithDisk(env = process.env) {
-    return reconcileProjectsWithDisk({ env });
+export function syncProjectsWithDisk(optionsOrEnv = process.env) {
+    if (optionsOrEnv && typeof optionsOrEnv === 'object' && (optionsOrEnv.autoRegister !== undefined || optionsOrEnv.projectsRoot !== undefined || optionsOrEnv.database !== undefined)) {
+        return reconcileProjectsWithDisk(optionsOrEnv);
+    }
+    return reconcileProjectsWithDisk({ env: optionsOrEnv });
 }

@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
-import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject } from '../projectRepository.js';
+import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot } from '../projectRepository.js';
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
@@ -193,9 +193,21 @@ export function createProjectRouter({
     // 1. Projeleri Listele (Korumalı - Saf GET, yan etki yok)
     router.get('/', requireAuth, async (req, res, next) => {
         try {
-            const projects = req.user.isAdmin
+            const rawProjects = req.user.isAdmin
                 ? getAllProjects()
                 : getUserProjects(req.user.id);
+            const projectsRoot = getProjectsRoot(process.env);
+            const projects = rawProjects.map(p => {
+                const existsOnDisk = fsSync.existsSync(path.join(projectsRoot, p.id));
+                const enriched = {
+                    ...p,
+                    existsOnDisk
+                };
+                if (!existsOnDisk) {
+                    enriched.missingOnDisk = true;
+                }
+                return enriched;
+            });
             res.json(projects);
         } catch (error) {
             next(error);
@@ -216,6 +228,16 @@ export function createProjectRouter({
                 return res.status(400).json({ error: err.message });
             }
             next(err);
+        }
+    });
+
+    // 3. Proje Senkronizasyonu (Disk ile İki Yönlü Reconcile & Auto-register)
+    router.post('/sync', requireAuth, async (req, res, next) => {
+        try {
+            const syncResult = syncProjectsWithDisk({ autoRegister: true, env: process.env });
+            res.json(syncResult);
+        } catch (error) {
+            next(error);
         }
     });
 
