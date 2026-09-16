@@ -119,35 +119,57 @@ ALLOW_MOCK_FALLBACK=false
 GOOGLE_API_KEY=...GeminiAnahtariniz...
 ```
 
-### 2. Adım: Yönetici Hesabını Oluşturup Backend'i Başlatma
+### 2. Adım: Bağımlılıklar ve Yönetici Hesabı
 ```bash
+# Backend bağımlılıkları ve yönetici hesabı
 cd backend
 npm install
 npm run create-admin -- admin
-npm run dev
+cd ..
+
+# Frontend bağımlılıkları
+cd frontend
+npm install
+cd ..
 ```
-`create-admin` parolayı ve doğrulamasını terminalde göstermeden sorar. Mevcut kullanıcıyı yöneticiye yükseltmek için o kullanıcının geçerli parolası gerekir.
+`create-admin` parolayı ve doğrulamasını terminalde göstermeden sorar (en az 12 karakter olmalıdır). Mevcut kullanıcıyı yöneticiye yükseltmek için o kullanıcının geçerli parolası gerekir.
 
 #### Yönetici parolası yenileme ve sıfırlama
 Parola en az 12 karakter olmalı (en fazla 256); terminal kriteri önceden basar ve parolayı göstermeden sorar.
 ```bash
+cd backend
 npm run create-admin -- admin            # yeni yönetici oluşturur
 npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
 npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+cd ..
 ```
 `Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
-> Backend sunucusu `http://127.0.0.1:8000` adresinde hazır olacaktır.
+
+### 3. Adım: Uygulamayı Başlatma
+
+#### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
+Proje kök dizininde tek bir komutla hem Backend sunucusunu (`8000`) hem de Vite Web Panelini (`5173`) aynı anda başlatabilirsiniz:
+```bash
+npm run dev
+```
+> Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
+
+#### Seçenek B: Ayrı Terminallerde Başlatma
+* **1. Terminal (Backend):**
+  ```bash
+  cd backend
+  npm run dev
+  ```
+  > Backend sunucusu `http://127.0.0.1:8000` adresinde hazır olacaktır.
+* **2. Terminal (Frontend):**
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+  > Tarayıcınızda `http://localhost:5173` adresine giderek uygulamayı kullanmaya başlayabilirsiniz.
 
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS veya sunucu ortamında backend'i (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kurunuz. Oturum çerezlerinin güvenliği için HTTPS zorunludur.
-
-### 3. Adım: Frontend'i Başlatma
-```bash
-cd frontend
-npm install
-npm run dev
-```
-> Tarayıcınızda `http://localhost:5173` adresine gidin.
 
 ---
 
@@ -304,11 +326,17 @@ Tüm testler merkezi **`backend/tests/test_runner.js`** altındaki master koşuc
 ### S: `error: Environment variable not found: DATABASE_URL` hatası alırsam ne yapmalıyım?
 **C:** XFactor'ın güncel sürümünde `.env.example` dosyası üretilir ve ZIP paketine eklenir; `.env` dosyasını siz oluşturup `NEXTAUTH_SECRET` ile `DATABASE_URL` gibi değerleri doldurmalısınız.
 
+### S: Manager ile konuşurken "Mesaj iletilemedi, lütfen tekrar deneyin" hatası alıyorum, nedeni nedir?
+**C:** Bu durum iki nedenden kaynaklanabilir:
+1. `backend/.env` dosyasında geçerli bir `GOOGLE_API_KEY` tanımlı değildir veya model adı (`AI_MODEL`) hatalıdır.
+2. İşletim sistemi veya kısıtlı kurumsal ağ ortamlarında Node.js varsayılan `dns.lookup` sistem çağrısı harici API host'larını (`generativelanguage.googleapis.com`) doğrudan çözümleyemeyebilir. XFactor içinde yerleşik `backend/networkResolver.js` modülü `ENOTFOUND` durumunda doğrudan aktif DNS sunucusundan IPv4 (`dns.resolve4`) çözümlemesine otomatik düşer. Sorun devam ederse yerel DNS veya proxy ayarlarınızı kontrol ediniz.
+
 ### S: LLM çıktısı token sınırına takılırsa veya Reviewer veto ederse ne olur?
 **C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Eğer bir görev 2 tur sonunda tamamlanamazsa Reviewer güvenli modda **VETO** verir ve projeyi `PAUSED` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuna basarak orkestrasyonu güvenle sürdürebilirsiniz.
 
 ### S: Tamamlanmış bir projeyi sohbetten değiştirebilir miyim?
 **C:** Evet. Tamamlanmış bir projede sohbet paneline girip revizyon istediğinizde Manager yeni planı oluşturur ve onay butonunu açar; onayladığınızda gerçek DAG motoru projeyi sıfırdan revize eder.
+
 
 ---
 

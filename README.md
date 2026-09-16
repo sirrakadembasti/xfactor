@@ -23,42 +23,57 @@
 
 ---
 
-## 🚀 Hızlı Başlangıç (3 Adımda Kurulum)
+## 🚀 Hızlı Başlangıç
 
-### 1. Backend'i Hazırlayın ve Başlatın
+### 1. Hazırlık ve Yönetici Hesabı
 ```bash
+# 1. Backend yapılandırması
 cd backend
 copy .env.example .env    # Linux/macOS: cp .env.example .env
 
 # .env dosyasına GOOGLE_API_KEY değerinizi girin
 npm install
-npm run create-admin -- admin    # Yönetici hesabını oluşturun (parolayı sorar)
-npm run dev                      # Backend hazır: http://127.0.0.1:8000
+npm run create-admin -- admin    # Yönetici hesabını oluşturun (parolayı en az 12 karakter sorar)
+
+# 2. Frontend bağımlılıkları
+cd ../frontend
+npm install
+cd ..
 ```
 
 #### Yönetici parolası işlemleri
 Parola en az 12 karakter olmalı (en fazla 256); terminal parolayı göstermeden sorar ve kriteri önceden basar.
 ```bash
+cd backend
 npm run create-admin -- admin            # yeni yönetici oluşturur
 npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
 npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+cd ..
 ```
 `Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
 
+### 2. Uygulamayı Başlatma
+
+#### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
+Proje kök dizinindeyken tek komutla hem Backend API'yi (`http://127.0.0.1:8000`) hem de Vite Web Arayüzünü (`http://localhost:5173`) eşzamanlı başlatabilirsiniz:
+```bash
+npm run dev
+```
+> Kısıtlı Windows kurumsal ortamlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
+
+#### Seçenek B: Ayrı Terminallerde Başlatma
+İki ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
+* **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
+* **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
+
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS ortamında backend portunu (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kullanınız.
-
-### 2. Frontend Web Panelini Başlatın
-```bash
-cd ../frontend
-npm install
-npm run dev                      # Web Arayüzü: http://localhost:5173
-```
 
 ### 3. Kullanmaya Başlayın
 1. Tarayıcınızda `http://localhost:5173` adresini açın ve oluşturduğunuz yönetici hesabıyla giriş yapın.
 2. Sol menüden **`+ Yeni Proje`** oluşturun.
 3. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
+
 
 ---
 
