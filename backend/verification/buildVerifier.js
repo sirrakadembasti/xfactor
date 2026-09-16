@@ -329,7 +329,9 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
             checks.push({
                 name: 'framework_build',
                 status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
-                reason: `Build execution error: ${err.message}`
+                reason: err.code === 'SANDBOX_UNAVAILABLE'
+                    ? `Sandboxed build runner unavailable: ${err.message}`
+                    : `Build execution error: ${err.message}`
             });
         }
     }
