@@ -26,7 +26,7 @@ const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', 
 function extractPackageName(importPath) {
     if (!importPath || typeof importPath !== 'string') return null;
     const trimmed = importPath.trim();
-    if (trimmed.startsWith('.') || trimmed.startsWith('/') || trimmed.startsWith('\\') || trimmed.startsWith('@/') || trimmed.startsWith('~/') || trimmed === '@') {
+    if (trimmed.startsWith('.') || trimmed.startsWith('/') || trimmed.startsWith('\\') || trimmed.startsWith('@/') || trimmed.startsWith('~/') || trimmed === '@' || trimmed.startsWith('@lib/') || trimmed.startsWith('@components/') || trimmed.startsWith('@app/') || trimmed.startsWith('@actions/')) {
         return null;
     }
 
@@ -222,12 +222,12 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
             reason: 'Clean install blocked by undeclared imports.'
         });
     } else {
-        const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        const installArgs = ['ci', '--ignore-scripts'];
+        const npmCmd = (options.adapter?.id === 'docker-worker' || options.adapter?.getCapabilities?.().adapterId === 'docker-worker') ? 'npm' : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
+        const installArgs = ['ci', '--ignore-scripts', '--no-audit', '--no-fund'];
         try {
             const installRes = await executeInSandbox(npmCmd, installArgs, {
                 workspace: projectDir,
-                timeoutMs: options.timeoutMs || 120000,
+                timeoutMs: options.timeoutMs || 600000,
                 adapter: options.adapter,
                 signal: options.signal,
                 env: options.env

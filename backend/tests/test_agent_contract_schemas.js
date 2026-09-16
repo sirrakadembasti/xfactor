@@ -55,7 +55,7 @@ function runTests() {
         assert.throws(() => validateTeamleaderTasks({ tasks: [] }), /en az bir atomik coder görevi/);
         assert.throws(() => validateTeamleaderTasks({ tasks: [{ id: 't1', title: 'No reqs' }] }), /requirementIds/);
         assert.strictEqual(validateTeamleaderTasks({
-            tasks: [{ id: 'task-1', title: 'Setup DB', description: 'Setup', dependencies: [], requirementIds: ['REQ-1'] }]
+            tasks: [{ id: 'task-1', title: 'Setup DB', description: 'Setup', dependencies: [], targetFiles: ['prisma/schema.prisma'], requirementIds: ['REQ-1'] }]
         }), true);
 
         // 1d. Coder Output Validation & Target Allowlist

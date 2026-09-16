@@ -100,6 +100,7 @@ test_p9_verification_pipeline.js
 test_package_verifier.js
 test_project_repository.js
 test_quality_gate.js
+test_quiz_runtime_remediation.js
 test_quality_policy_integration.js
 test_runner.js
 test_runtime_verification.js

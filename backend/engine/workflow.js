@@ -27,7 +27,7 @@ import {
     isTaskCheckpointValid,
     writeGeneratedFiles as writeRepairFiles
 } from './fileProtocol.js';
-import { getAgent, runDeterministicProjectAudit } from '../agents/index.js';
+import { getAgent, runDeterministicProjectAudit, groupAuditIssuesByFile } from '../agents/index.js';
 import {
     validateManagerPlan,
     validateDirectorSpec,
@@ -39,10 +39,9 @@ import {
 } from '../agents/schemas.js';
 import { validatePlanTasks } from '../agents/director.js';
 import { db, dbEvents, saveProjectLog } from '../db.js';
-import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas } from './codeGenerator.js';
+import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas, detectProjectStack } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
-import { generateLLMResponse } from '../llm.js';
-import { validateProjectBuild } from './buildValidator.js';
+import { runLLMTaskWithRetry } from './llmTaskRetry.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
 import {
     updateAttemptHeartbeat,
@@ -57,7 +56,6 @@ import {
     saveProjectState as writeProjectState
 } from '../projectRepository.js';
 import { verifyArtifactAndProject } from '../verification/verificationCli.js';
-import { evaluateVerificationRun } from '../verification/qualityPolicy.js';
 import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
@@ -119,8 +117,110 @@ export function normalizeWorkflowState(value) {
         teamleaderPlans
     };
 }
+export function mergeGeneratedProjectFiles(generatedFiles = [], diskFiles = []) {
+    const filesByPath = new Map();
+    for (const file of generatedFiles) {
+        if (file?.path) filesByPath.set(file.path.replace(/\\/g, '/'), file);
+    }
+    for (const file of diskFiles) {
+        if (file?.path) filesByPath.set(file.path.replace(/\\/g, '/'), file);
+    }
+    return [...filesByPath.values()];
+}
 
- 
+const NEXT_ROOT_CONFIG_FILES = new Set([
+    'package.json',
+    'package-lock.json',
+    'pnpm-lock.yaml',
+    'yarn.lock',
+    'bun.lockb',
+    'bun.lock',
+    'tsconfig.json',
+    'jsconfig.json',
+    'next.config.js',
+    'next.config.mjs',
+    'next.config.ts',
+    'next.config.cjs',
+    'tailwind.config.js',
+    'tailwind.config.ts',
+    'tailwind.config.mjs',
+    'tailwind.config.cjs',
+    'postcss.config.js',
+    'postcss.config.mjs',
+    'postcss.config.ts',
+    'postcss.config.cjs',
+    'next-env.d.ts',
+    'components.json'
+]);
+
+const NEXT_ROOT_DIR_PREFIXES = [
+    'src/',
+    'prisma/',
+    'public/',
+    'node_modules/',
+    '.next/',
+    '.git/',
+    'manager/'
+];
+
+export function canonicalizeNextTaskPath(filePath) {
+    if (typeof filePath !== 'string') return filePath;
+    let normalized = filePath.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
+    if (!normalized) return normalized;
+
+    for (const prefix of NEXT_ROOT_DIR_PREFIXES) {
+        if (normalized === prefix.slice(0, -1) || normalized.startsWith(prefix)) {
+            return normalized;
+        }
+    }
+
+    const lower = normalized.toLowerCase();
+    if (NEXT_ROOT_CONFIG_FILES.has(lower)) {
+        return normalized;
+    }
+    if (lower.startsWith('tsconfig.') && lower.endsWith('.json')) {
+        return normalized;
+    }
+    if (lower.startsWith('.env') || lower.startsWith('.git') || lower.startsWith('.eslint') || lower.startsWith('eslint.config.') || lower.startsWith('.prettier') || lower.startsWith('prettier.config.')) {
+        return normalized;
+    }
+    if (lower === 'readme.md' || lower === 'readme' || lower === 'talimatname.md' || lower === 'todo.md' || lower === 'rapor.md' || lower === 'durum.md') {
+        return normalized;
+    }
+
+    return `src/${normalized}`;
+}
+
+export function normalizeTeamleaderPlanForStack(taskPlan, stack = {}) {
+    if (!taskPlan || typeof taskPlan !== 'object') return taskPlan;
+    const isNext = typeof stack === 'boolean'
+        ? stack
+        : Boolean(stack.isNext ?? (stack.framework === 'nextjs' || stack.framework === undefined));
+
+    if (!isNext) return taskPlan;
+
+    const tasks = Array.isArray(taskPlan.tasks)
+        ? taskPlan.tasks.map(task => {
+            if (!task || typeof task !== 'object') return task;
+            const targetFiles = Array.isArray(task.targetFiles)
+                ? task.targetFiles.map(canonicalizeNextTaskPath)
+                : task.targetFiles;
+            return {
+                ...task,
+                ...(targetFiles !== undefined ? { targetFiles } : {})
+            };
+        })
+        : taskPlan.tasks;
+
+    return {
+        ...taskPlan,
+        ...(tasks !== undefined ? { tasks } : {})
+    };
+}
+
+
+
+
 
 
 /**
@@ -214,6 +314,29 @@ export async function logEvent(
         wsHub.publish(event);
     }
 }
+export function createWorkflowLogEvent(leaseOptions, eventLogger = logEvent) {
+    return (
+        wsHub,
+        projectId,
+        agentType,
+        action,
+        filePath,
+        message,
+        nodeId,
+        parentNodeId = null
+    ) => eventLogger(
+        wsHub,
+        projectId,
+        agentType,
+        action,
+        filePath,
+        message,
+        nodeId,
+        parentNodeId,
+        leaseOptions
+    );
+}
+
 
 function isExecutionActive(status) {
     return status === 'implementing' || status === 'running';
@@ -260,15 +383,200 @@ export async function checkPause(projectId, signal = null) {
 /**
  * Güvenli LLM Ajan Çağrısı
  */
-async function callAgentLLM(agentRole, userPrompt, { signal = null } = {}) {
+async function callAgentLLM(agentRole, userPrompt, {
+    signal = null,
+    taskId = null,
+    onDiagnostic = null
+} = {}) {
     const agent = getAgent(agentRole);
-    const messages = [
-        { role: 'system', content: agent.systemPrompt },
-        { role: 'user', content: userPrompt }
-    ];
+    return runLLMTaskWithRetry({
+        agentRole,
+        taskId,
+        signal,
+        onDiagnostic: onDiagnostic || undefined,
+        messages: [
+            { role: 'system', content: agent.systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        parseResponse: rawResponse => agent.parseResponse(rawResponse)
+    });
+}
 
-    const rawResponse = await generateLLMResponse(messages, { signal });
-    return agent.parseResponse(rawResponse);
+/**
+ * Deterministik statik kaynak denetimi sonrası hedefli (path-aware) onarım döngüsü.
+ * Her LLM çağrısı tek bir hatalı dosyayı, mevcut içeriği ve o dosyaya ait hatalarla hedefler.
+ */
+export async function executeStaticRepairLoop({
+    projectId,
+    projectDir = null,
+    projectTitle = '',
+    generatedProjectFiles = [],
+    repairTargetFiles = [],
+    plan = {},
+    state = {},
+    callAgent = callAgentLLM,
+    wsHub = null,
+    workflowLog = workflowLogEvent,
+    recordDiagnostic = null,
+    signal = null,
+    maxRounds = 5,
+    maxTotalAttempts = 15
+}) {
+    const repairTargetSet = new Set(
+        (repairTargetFiles || []).map(f => (typeof f === 'string' ? f.replace(/\\/g, '/') : ''))
+    );
+
+    let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
+    if (deterministicAudit.passed) {
+        return {
+            success: true,
+            attempts: 0,
+            rounds: 0,
+            audit: deterministicAudit,
+            generatedFiles: generatedProjectFiles
+        };
+    }
+
+    let round = 0;
+    let totalAttempts = 0;
+
+    while (!deterministicAudit.passed && round < maxRounds && totalAttempts < maxTotalAttempts) {
+        round++;
+        const { fileIssuesMap } = groupAuditIssuesByFile(deterministicAudit);
+        const failingFilePaths = Array.from(fileIssuesMap.keys())
+            .filter(p => p && p !== 'unknown')
+            .sort();
+
+        if (failingFilePaths.length === 0) {
+            break;
+        }
+
+        let progressMadeInRound = false;
+        const initialIssuesCount = deterministicAudit.issues.length;
+
+        for (const targetPath of failingFilePaths) {
+            if (totalAttempts >= maxTotalAttempts) break;
+            if (signal?.aborted) break;
+
+            if (!repairTargetSet.has(targetPath)) {
+                logWarning('workflow.repair_target_not_allowed', null, { projectId, targetPath });
+                continue;
+            }
+
+            let currentContent = '';
+            if (projectDir) {
+                try {
+                    currentContent = await fs.readFile(path.join(projectDir, targetPath), 'utf8');
+                } catch {
+                    const memFile = generatedProjectFiles.find(f => f.path?.replace(/\\/g, '/') === targetPath);
+                    currentContent = memFile?.content || '';
+                }
+            } else {
+                const memFile = generatedProjectFiles.find(f => f.path?.replace(/\\/g, '/') === targetPath);
+                currentContent = memFile?.content || '';
+            }
+
+            const targetIssues = fileIssuesMap.get(targetPath) || [];
+            totalAttempts++;
+
+            await workflowLog(
+                wsHub,
+                projectId,
+                "Tester",
+                "feedback",
+                targetPath,
+                `[Hedef Onarım ${totalAttempts} - Tur ${round}] "${targetPath}" dosyasındaki hatalar gideriliyor (${targetIssues.slice(0, 2).join(' | ')})...`,
+                "tester",
+                "manager"
+            );
+
+            const title = projectTitle || state.title || 'Proje';
+            const repairPrompt = `# HEDEF DOSYA STATİK ONARIM GÖREVİ (Dosya: ${targetPath})\nProje: ${title}\n\n"${targetPath}" dosyasında deterministik kaynak denetiminde aşağıdaki kritik hatalar tespit edildi:\n"""\n${targetIssues.map(i => `- ${i}`).join('\n')}\n"""\n\nDOSYANIN MEVCUT İÇERİĞİ:\n"""\n${currentContent}\n"""\n\nLütfen YALNIZCA "${targetPath}" dosyasını hataları düzelterek (tip sözleşmesi, Prisma şeması, hardcoded fallback veya sözdizimi hatalarını gidererek) eksiksiz ve hatasız biçimde JSON formatında yeniden üret. Başka hiçbir dosya üretme veya değiştirme. Gerçek clean-install/typecheck/build doğrulaması yalnızca izole worker tarafından yapılacaktır.`;
+
+            try {
+                const rawRepair = await callAgent('coder', repairPrompt, {
+                    signal,
+                    taskId: `generation.repair.${totalAttempts}`,
+                    onDiagnostic: recordDiagnostic
+                });
+
+                if (rawRepair && Array.isArray(rawRepair.files) && rawRepair.files.length > 0) {
+                    const matchingFiles = rawRepair.files.filter(
+                        f => f && typeof f.path === 'string' && f.path.replace(/\\/g, '/') === targetPath && typeof f.content === 'string'
+                    );
+
+                    if (matchingFiles.length === 0) {
+                        logWarning('workflow.repair_file_mismatch', null, { projectId, targetPath, returnedFiles: rawRepair.files.map(f => f.path) });
+                        continue;
+                    }
+
+                    const repairFile = { path: targetPath, content: matchingFiles[0].content };
+                    if (projectDir) {
+                        await writeRepairFiles(
+                            {
+                                projectDir,
+                                allowedFiles: [targetPath],
+                                allowConfigMutation: true
+                            },
+                            [repairFile]
+                        );
+                    }
+
+                    const existingIdx = generatedProjectFiles.findIndex(f => f.path?.replace(/\\/g, '/') === targetPath);
+                    if (existingIdx !== -1) {
+                        generatedProjectFiles[existingIdx] = repairFile;
+                    } else {
+                        generatedProjectFiles.push(repairFile);
+                    }
+
+                    if (projectDir) {
+                        await ensureProjectScaffold(projectDir, state, plan);
+                        generatedProjectFiles.splice(
+                            0,
+                            generatedProjectFiles.length,
+                            ...mergeGeneratedProjectFiles(generatedProjectFiles, await listProjectTree(projectDir))
+                        );
+                    }
+
+                    const nextAudit = runDeterministicProjectAudit(generatedProjectFiles);
+                    if (nextAudit.issues.length < initialIssuesCount || nextAudit.passed) {
+                        progressMadeInRound = true;
+                    } else {
+                        const { fileIssuesMap: nextFileIssues } = groupAuditIssuesByFile(nextAudit);
+                        const remainingForTarget = nextFileIssues.get(targetPath) || [];
+                        if (remainingForTarget.length < targetIssues.length) {
+                            progressMadeInRound = true;
+                        }
+                    }
+
+                    deterministicAudit = nextAudit;
+                    if (deterministicAudit.passed) {
+                        return {
+                            success: true,
+                            attempts: totalAttempts,
+                            rounds: round,
+                            audit: deterministicAudit,
+                            generatedFiles: generatedProjectFiles
+                        };
+                    }
+                }
+            } catch (error) {
+                logWarning('workflow.auto_repair_failed', error, { projectId, attempt: totalAttempts, targetPath });
+            }
+        }
+
+        if (!progressMadeInRound && deterministicAudit.issues.length >= initialIssuesCount) {
+            break;
+        }
+    }
+
+    return {
+        success: deterministicAudit.passed,
+        attempts: totalAttempts,
+        rounds: round,
+        audit: deterministicAudit,
+        generatedFiles: generatedProjectFiles
+    };
 }
 
 /**
@@ -289,7 +597,20 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         ? { attemptId, leaseOwner: effectiveLeaseOwner }
         : null;
     const workflowWriteState = (id, nextState) => writeProjectState(id, nextState, leaseOptions);
-    const workflowLogEvent = (...args) => logEvent(...args, leaseOptions);
+    const workflowLogEvent = createWorkflowLogEvent(leaseOptions);
+    const recordLLMDiagnostic = async diagnostic => {
+        const task = diagnostic.taskId || `${diagnostic.agentRole}.task`;
+        await workflowLogEvent(
+            wsHub,
+            projectId,
+            'LLM',
+            diagnostic.disposition,
+            `llm/${task}`,
+            `agent=${diagnostic.agentRole}; task=${task}; attempt=${diagnostic.attempt}/${diagnostic.maxAttempts}; elapsedMs=${diagnostic.elapsedMs}; retry=${diagnostic.retry}; disposition=${diagnostic.disposition}${diagnostic.error ? `; error=${diagnostic.error}` : ''}`,
+            `llm-${diagnostic.agentRole}`,
+            'manager'
+        );
+    };
 
     let heartbeatTimer = null;
     let terminalStatus = 'completed';
@@ -315,7 +636,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         if (!plan || !plan.domains || plan.domains.length === 0) {
             const managerAgent = getAgent('manager');
             const managerPrompt = managerAgent.buildPrompt(state.title, state.chatHistory ? state.chatHistory.map(m => ({ role: m.role, content: m.parts ? m.parts[0].text : '' })) : []);
-            plan = await callAgentLLM('manager', managerPrompt, { signal: abortController.signal });
+            plan = await callAgentLLM('manager', managerPrompt, {
+                signal: abortController.signal,
+                taskId: 'manager.plan',
+                onDiagnostic: recordLLMDiagnostic
+            });
             state.plan = plan;
             await workflowWriteState(projectId, state);
         }
@@ -341,9 +666,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
         // Architecture-First (Önce Mimari Sözleşme): Kodlama başlamadan önce onaylı paketler, .env.example ve köprüler kilitlenir!
         await ensureProjectScaffold(projectDir, state, plan);
-        await workflowLogEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını (package.json, tsconfig, .env.example) önceden diske kilitlendi.", "manager");
+        await workflowLogEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını diske kilitlendi; package-lock yalnızca izole worker tarafından hazırlanacaktır.", "manager");
+        const stack = await detectProjectStack(projectDir, state, plan);
 
-        const generatedProjectFiles = [];
+        const generatedProjectFiles = mergeGeneratedProjectFiles([], await listProjectTree(projectDir));
         const repairTargetFiles = new Set([
             'package.json',
             'tsconfig.json',
@@ -371,7 +697,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 await workflowLogEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
                 const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
-                const rawSpec = await callAgentLLM('director', directorPrompt, { signal: abortController.signal });
+                const rawSpec = await callAgentLLM('director', directorPrompt, {
+                    signal: abortController.signal,
+                    taskId: `${directorId}.spec`,
+                    onDiagnostic: recordLLMDiagnostic
+                });
                 directorSpec = normalizeDirectorSpec(rawSpec, domain.prefix);
 
                 state.workflow.directorSpecs[domain.prefix] = directorSpec;
@@ -409,12 +739,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     await workflowLogEvent(wsHub, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
                     const tlAgent = getAgent('teamleader');
                     const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || []);
-                    taskPlan = await callAgentLLM('teamleader', tlPrompt, { signal: abortController.signal });
-
-                    state.workflow.teamleaderPlans[tlId] = taskPlan;
-                    await workflowWriteState(projectId, state);
+                    taskPlan = await callAgentLLM('teamleader', tlPrompt, {
+                        signal: abortController.signal,
+                        taskId: `${tlId}.plan`,
+                        onDiagnostic: recordLLMDiagnostic
+                    });
                 }
                 taskPlan = normalizeTeamleaderTasks(taskPlan, plan.requirements || []);
+                taskPlan = normalizeTeamleaderPlanForStack(taskPlan, stack);
+                state.workflow.teamleaderPlans[tlId] = taskPlan;
+                await workflowWriteState(projectId, state);
                 validateTeamleaderTasks(taskPlan);
                 const depCheck = validateTaskDependencies(taskPlan.tasks);
                 if (!depCheck.valid) {
@@ -529,10 +863,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         // Yapılandırılmış Proje Bağlamı (Şemalar, Tipler, Route'lar)
                         // Şema daima en başta ve kesilmeden tam metin olarak verilmelidir!
                         const schemaFile = generatedProjectFiles.find(f => f.path.includes('schema.prisma'));
-                        const otherContextFiles = generatedProjectFiles.filter(f => 
+                        const otherContextFiles = generatedProjectFiles.filter(f =>
                             !f.path.includes('schema.prisma') && (
-                                f.path.endsWith('.d.ts') || 
-                                f.path.includes('types') || 
+                                f.path.endsWith('.d.ts') ||
+                                f.path.includes('types') ||
                                 f.path.includes('validations') ||
                                 f.path.includes('/api/') ||
                                 f.path.includes('service')
@@ -552,7 +886,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         // Coder LLM çağrısı
                         const coderAgent = getAgent('coder');
                         const coderPrompt = coderAgent.buildPrompt(taskId, task.title, task.description, task.targetFiles, projectContext);
-                        let coderOutput = await callAgentLLM('coder', coderPrompt, { signal: abortController.signal });
+                        let coderOutput = await callAgentLLM('coder', coderPrompt, {
+                            signal: abortController.signal,
+                            taskId,
+                            onDiagnostic: recordLLMDiagnostic
+                        });
 
                         await workflowLogEvent(wsHub, projectId, "Coder", "write", task.targetFiles.join(', '), `İlk kod bloğu üretildi. Reviewer denetim döngüsü başlatılıyor...`, coderNodeId, tlId);
 
@@ -565,6 +903,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             coderPrompt,
                             maxRetries: 2,
                             signal: abortController.signal,
+                            onLLMDiagnostic: recordLLMDiagnostic,
                             onFeedback: async ({ iteration, feedback, summary }) => {
                                 await workflowLogEvent(wsHub,
                                 projectId,
@@ -735,110 +1074,65 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         if (isExecutionActive(await checkPause(projectId, abortController.signal))) {
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
             const allDiskFiles = await listProjectTree(projectDir);
-            for (const df of allDiskFiles) {
-                const idx = generatedProjectFiles.findIndex(gf => gf.path === df.path);
-                if (idx !== -1) {
-                    generatedProjectFiles[idx] = df;
-                } else {
-                    generatedProjectFiles.push(df);
-                }
-            }
+            generatedProjectFiles.splice(
+                0,
+                generatedProjectFiles.length,
+                ...mergeGeneratedProjectFiles(generatedProjectFiles, allDiskFiles)
+            );
 
-            // Auto-scaffold: reconcile package.json dependencies with all scanned imports before audit
+            // Scaffold package.json ve yardımcı dosyaları değiştirebilir; denetim her
+            // zaman diskten yeniden yüklenmiş en güncel içerikle yapılır.
             await ensureProjectScaffold(projectDir, state, plan);
+            generatedProjectFiles.splice(
+                0,
+                generatedProjectFiles.length,
+                ...mergeGeneratedProjectFiles(generatedProjectFiles, await listProjectTree(projectDir))
+            );
 
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
-            let buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal, phase: 'generation' });
 
-            let allQualityIssues = [
-                ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
-                ...(!buildAudit.passed ? buildAudit.issues : [])
-            ];
-
-            // Eğer deterministik veya compiler/build hataları varsa Coder'a maksimum 2 tur otomatik onarım uygula
-            let repairAttempts = 0;
-            const MAX_REPAIR_ATTEMPTS = 2;
-
-            while (allQualityIssues.length > 0 && repairAttempts < MAX_REPAIR_ATTEMPTS) {
-                repairAttempts++;
-                await workflowLogEvent(wsHub,
-                projectId,
-                "Tester",
-                "feedback",
-                "",
-                `[Kalite Kapısı Uyarısı - Onarım ${repairAttempts}/${MAX_REPAIR_ATTEMPTS}] Hatalar tespit edildi (${allQualityIssues.slice(0, 2).join(' | ')}). Coder otomatik onarım döngüsü başlatılıyor...`,
-                "tester",
-                "manager");
-
-                const coderAgent = getAgent('coder');
-                const existingFilesList = generatedProjectFiles.map(f => f.path).join(', ');
-                const repairPrompt = `# PROJE GENELİ ONARIM GÖREVİ (Tur ${repairAttempts}): ${state.title}\n\nCompiler ve Kalite Denetiminde Aşağıdaki Kritik Hatalar Tespit Edildi:\n"""\n${allQualityIssues.map(i => `- ${i}`).join('\n')}\n"""\n\nPROJEDE MEVCUT DOSYALAR:\n${existingFilesList}\n\nLütfen yalnızca hatalı olan dosyaları (TypeScript tip hatalarını, Prisma şema uyumsuzluklarını ve sözdizimi hatalarını düzelterek) eksiksiz ve hatasız biçimde JSON formatında yeniden üret.`;
-                
-                try {
-                    const rawRepair = await callAgentLLM('coder', repairPrompt, { signal: abortController.signal });
-                    if (rawRepair && Array.isArray(rawRepair.files) && rawRepair.files.length > 0) {
-                        const repairMeta = await writeRepairFiles(
-                            {
-                                projectDir,
-                                allowedFiles: [...repairTargetFiles],
-                                allowConfigMutation: true
-                            },
-                            rawRepair.files
-                        );
-                        const repairPathSet = new Set(repairMeta.map(file => file.path));
-                        for (const file of rawRepair.files.filter(file => repairPathSet.has(file.path))) {
-                            const existingIdx = generatedProjectFiles.findIndex(f => f.path === file.path);
-                            if (existingIdx !== -1) {
-                                generatedProjectFiles[existingIdx] = { path: file.path, content: file.content };
-                            } else {
-                                generatedProjectFiles.push({ path: file.path, content: file.content });
-                            }
-                        }
-                        // Yeniden denetle: Hem statik denetim hem compiler doğrulaması
-                        deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
-                        buildAudit = await validateProjectBuild(projectDir, state, plan, { signal: abortController.signal, phase: 'generation' });
-                        allQualityIssues = [
-                            ...(!deterministicAudit.passed ? deterministicAudit.issues : []),
-                            ...(!buildAudit.passed ? buildAudit.issues : [])
-                        ];
-                    } else {
-                        break;
-                    }
-                } catch (error) {
-                    logWarning('workflow.auto_repair_failed', error, { projectId, attempt: repairAttempts });
-                    break;
-                }
+            if (!deterministicAudit.passed) {
+                const repairResult = await executeStaticRepairLoop({
+                    projectId,
+                    projectDir,
+                    projectTitle: state.title,
+                    generatedProjectFiles,
+                    repairTargetFiles: [...repairTargetFiles],
+                    plan,
+                    state,
+                    callAgent: callAgentLLM,
+                    wsHub,
+                    workflowLog: workflowLogEvent,
+                    recordDiagnostic: recordLLMDiagnostic,
+                    signal: abortController.signal
+                });
+                deterministicAudit = repairResult.audit;
             }
 
-            const isQualityPassed = deterministicAudit.passed && buildAudit.passed;
+            let allQualityIssues = !deterministicAudit.passed ? [...deterministicAudit.issues] : [];
+            const isQualityPassed = deterministicAudit.passed;
 
             const testerAgent = getAgent('tester');
             const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles, {
-                buildResults: buildAudit,
                 deterministicAudit
             });
-            let testerAdvisory = await callAgentLLM('tester', testerPrompt, { signal: abortController.signal });
+            let testerAdvisory = await callAgentLLM('tester', testerPrompt, {
+                signal: abortController.signal,
+                taskId: 'tester.static-audit',
+                onDiagnostic: recordLLMDiagnostic
+            });
             if (!testerAdvisory || typeof testerAdvisory !== 'object') {
                 testerAdvisory = { approved: false, summary: "Tester geri bildirimi alınamadı.", issues: [] };
             }
             testerAdvisory.issues = Array.isArray(testerAdvisory.issues) ? testerAdvisory.issues : [];
 
-            const verificationEvaluation = evaluateVerificationRun({
-                checks: [
-                    ...(deterministicAudit?.checks || []),
-                    ...(buildAudit?.checks || [])
-                ],
-                agentApproved: testerAdvisory.approved,
-                agentSummary: testerAdvisory.summary
-            });
-
             const testResult = {
                 approved: isQualityPassed && (testerAdvisory.approved !== false),
-                summary: isQualityPassed ? (testerAdvisory.summary || 'Tüm kalite denetimleri başarıyla tamamlandı.') : `[Kritik Kalite Hataları]: ${allQualityIssues.join(' | ')}`,
+                summary: isQualityPassed ? (testerAdvisory.summary || 'Deterministik kaynak denetimi tamamlandı; izole runtime doğrulaması bekliyor.') : `[Kritik Statik Kalite Hataları]: ${allQualityIssues.join(' | ')}`,
                 issues: isQualityPassed ? testerAdvisory.issues : [...testerAdvisory.issues, ...allQualityIssues]
             };
 
-            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary || state.title}\n\n## 2. Test & Kalite Doğrulaması\n- Sonuç: ${testResult.approved ? 'BAŞARILI' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n${testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
+            const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary || state.title}\n\n## 2. Statik Üretim Denetimi\n- Sonuç: ${testResult.approved ? 'STATİK DENETİM GEÇTİ — İZOLE RUNTIME DOĞRULAMASI BEKLİYOR' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n- Sınır: Bu aşama yalnızca JSON, AST, ithalat ve sözleşme denetimidir; gerçek clean install, Prisma generate/db push/seed, TypeScript, framework build ve runtime smoke başarısını iddia etmez.\n${testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
             await writeRapor(projectDir, finalRapor);
 
             if (!testResult.approved) {
@@ -1048,6 +1342,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 ...activeJob,
                 jobId: crypto.randomUUID(),
                 nonce: crypto.randomBytes(32).toString('hex'),
+                deadline: Date.now() + 15 * 60 * 1000,
                 artifactId: artifact.id,
                 inputSha256: artifactSha256,
                 archiveBase64: archiveBytes.toString('base64')

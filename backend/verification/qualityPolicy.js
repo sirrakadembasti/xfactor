@@ -49,7 +49,7 @@ const STATUS_PRIORITY = {
     FAIL: 3
 };
 
-const RUNTIME_GATE_MEMBERS = {
+export const RUNTIME_GATE_MEMBERS = {
     service_manifest: new Set([
         'manifest_presence',
         'service_definitions',
@@ -506,7 +506,7 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
     return { passed: evaluation.passed, runStatus };
 }
 
-function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
+export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
     const members = checks.filter(check => RUNTIME_GATE_MEMBERS[gateName].has(check.name));
     const requirementIds = new Set(members.flatMap(check => (
         Array.isArray(check.requirementIds) ? check.requirementIds.map(String) : []
@@ -570,7 +570,7 @@ async function captureVerifier(run, fallbackGate) {
     }
 }
 
-async function captureHardeningGate(name, run) {
+export async function captureHardeningGate(name, run) {
     try {
         const result = await run();
         const issues = Array.isArray(result?.issues) ? result.issues : [];
@@ -685,10 +685,14 @@ export async function runProjectVerification({
         signal: verifierOptions.signal,
         env: verifierOptions.env,
         runId,
-        files: projectFiles
+        files: projectFiles,
+        verifiers: injectedVerifiers
     });
     const workerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
-    const policyChecks = [...workerChecks, ...hardeningChecks];
+    const runtimeChecks = Object.keys(RUNTIME_GATE_MEMBERS).map(gateName => (
+        combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds)
+    ));
+    const policyChecks = [...workerChecks, ...runtimeChecks, ...hardeningChecks];
 
 
     const result = await aggregateVerificationRun(

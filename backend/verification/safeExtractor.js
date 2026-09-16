@@ -34,9 +34,13 @@ export async function inspectZipEntries(zip, limits = {}, { readContent = true }
         seen.add(name);
         const entry = zip.files[rawName];
         if (entry.unixPermissions && (entry.unixPermissions & 0xf000) === 0xa000) throw new Error(`Extraction aborted: Symbolic link detected in zip: ${rawName}`);
-        const uncompressedSize = entry._data?.uncompressedSize;
-        const compressedSize = entry._data?.compressedSize;
-        if (!Number.isSafeInteger(uncompressedSize) || !Number.isSafeInteger(compressedSize)) throw new Error(`Extraction aborted: Missing size metadata for ${rawName}`);
+        let uncompressedSize = entry._data?.uncompressedSize;
+        let compressedSize = entry._data?.compressedSize;
+        if (!Number.isSafeInteger(uncompressedSize) || !Number.isSafeInteger(compressedSize)) {
+            const contentBuffer = await entry.async('nodebuffer');
+            uncompressedSize = contentBuffer.length;
+            compressedSize = contentBuffer.length;
+        }
         if (uncompressedSize > maxFileBytes) throw new Error(`Extraction aborted: File size limit exceeded for ${name}`);
         total += uncompressedSize;
         if (total > maxTotalBytes) throw new Error('Extraction aborted: Exceeded total decompressed size limit');

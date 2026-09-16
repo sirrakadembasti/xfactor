@@ -37,7 +37,7 @@ if (mode === 'serve') {
 } else {
   let executable = process.argv[2];
   if (executable && executable.endsWith('.cmd')) executable = executable.slice(0, -4);
-  const allowlist = ['NODE_ENV', 'PATH', 'CI', 'NPM_CONFIG_REGISTRY', 'NPM_CONFIG_IGNORE_SCRIPTS', 'NPM_CONFIG_CACHE'];
+  const allowlist = ['NODE_ENV', 'PATH', 'CI', 'NODE_OPTIONS', 'NPM_CONFIG_REGISTRY', 'NPM_CONFIG_IGNORE_SCRIPTS', 'NPM_CONFIG_CACHE', 'PRISMA_ENGINES_MIRROR', 'DATABASE_URL', 'AUTH_SECRET', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL'];
   const safeEnv = {};
   for (const key of allowlist) if (process.env[key] !== undefined) safeEnv[key] = process.env[key];
   const args = process.argv.slice(3);

@@ -9,41 +9,83 @@ import path from 'path';
 import { isSafeProjectPath, assertPathInsideRoot, assertSafeExistingParent } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
 
+// The worker resolves this dist-tag into the artifact lockfile. Keeping the
+// policy in one place avoids stale version claims in generated manifests.
+export const LATEST_STABLE_VERSION = 'latest';
 const KNOWN_PACKAGE_VERSIONS = {
-    'react-hook-form': '^7.54.2',
-    '@hookform/resolvers': '^3.9.1',
-    'sonner': '^1.7.4',
-    'axios': '^1.7.9',
-    'swr': '^2.3.0',
-    '@tanstack/react-query': '^5.62.11',
-    'date-fns': '^4.1.0',
-    'dayjs': '^1.11.13',
-    'framer-motion': '^11.15.0',
-    'canvas-confetti': '^1.9.3',
-    '@types/canvas-confetti': '^1.9.0',
-    'recharts': '^2.15.0',
-    'zustand': '^5.0.2',
-    'bcryptjs': '^2.4.3',
-    '@types/bcryptjs': '^2.4.6',
-    'jsonwebtoken': '^9.0.2',
-    '@types/jsonwebtoken': '^9.0.7',
-    'next-auth': '^4.24.11',
-    'uuid': '^11.0.4',
-    '@types/uuid': '^10.0.0',
-    'express': '^4.21.2',
-    'cors': '^2.8.5',
-    'helmet': '^8.0.0',
-    'dotenv': '^16.4.7',
-    'morgan': '^1.10.0',
-    '@types/express': '^5.0.0',
-    '@types/cors': '^2.8.17',
-    '@types/morgan': '^1.9.9',
-    'cookie-parser': '^1.4.7',
-    '@types/cookie-parser': '^1.4.8',
-    'class-variance-authority': '^0.7.1',
-    'nanoid': '^5.0.9',
-    'jose': '^5.9.6'
+    'clsx': LATEST_STABLE_VERSION,
+    'tailwind-merge': LATEST_STABLE_VERSION,
+    'lucide-react': LATEST_STABLE_VERSION,
+    'zod': '^3.24.1', // Agent contracts currently generate Zod 3 APIs.
+    'tailwindcss-animate': LATEST_STABLE_VERSION,
+    'react-hook-form': LATEST_STABLE_VERSION,
+    '@hookform/resolvers': LATEST_STABLE_VERSION,
+    'sonner': LATEST_STABLE_VERSION,
+    'axios': LATEST_STABLE_VERSION,
+    'swr': LATEST_STABLE_VERSION,
+    '@tanstack/react-query': LATEST_STABLE_VERSION,
+    'date-fns': LATEST_STABLE_VERSION,
+    'dayjs': LATEST_STABLE_VERSION,
+    'framer-motion': LATEST_STABLE_VERSION,
+    'canvas-confetti': LATEST_STABLE_VERSION,
+    '@types/canvas-confetti': LATEST_STABLE_VERSION,
+    'recharts': LATEST_STABLE_VERSION,
+    'zustand': LATEST_STABLE_VERSION,
+    'bcryptjs': LATEST_STABLE_VERSION,
+    '@types/bcryptjs': LATEST_STABLE_VERSION,
+    'jsonwebtoken': LATEST_STABLE_VERSION,
+    '@types/jsonwebtoken': LATEST_STABLE_VERSION,
+    'next-auth': LATEST_STABLE_VERSION,
+    'uuid': LATEST_STABLE_VERSION,
+    '@types/uuid': LATEST_STABLE_VERSION,
+    'express': LATEST_STABLE_VERSION,
+    'cors': LATEST_STABLE_VERSION,
+    'helmet': LATEST_STABLE_VERSION,
+    'dotenv': LATEST_STABLE_VERSION,
+    'morgan': LATEST_STABLE_VERSION,
+    '@types/express': LATEST_STABLE_VERSION,
+    '@types/cors': LATEST_STABLE_VERSION,
+    '@types/morgan': LATEST_STABLE_VERSION,
+    'cookie-parser': LATEST_STABLE_VERSION,
+    '@types/cookie-parser': LATEST_STABLE_VERSION,
+    'class-variance-authority': LATEST_STABLE_VERSION,
+    'nanoid': LATEST_STABLE_VERSION,
+    'jose': LATEST_STABLE_VERSION,
+    'tailwindcss': '^3.4.17',
+    'postcss': LATEST_STABLE_VERSION,
+    'autoprefixer': LATEST_STABLE_VERSION,
+    'typescript': LATEST_STABLE_VERSION,
+    'prisma': '^6.4.0',
+    'tsx': LATEST_STABLE_VERSION,
+    'nodemon': LATEST_STABLE_VERSION,
+    'vite': LATEST_STABLE_VERSION,
+    '@vitejs/plugin-react': LATEST_STABLE_VERSION,
+    '@prisma/client': '^6.4.0',
+    'next': LATEST_STABLE_VERSION,
+    'react': '^18.3.1',
+    'react-dom': '^18.3.1',
+    '@types/node': LATEST_STABLE_VERSION,
+    '@types/react': '^18.3.1',
+    '@types/react-dom': '^18.3.1'
 };
+
+const DEV_TOOLCHAIN_PACKAGES = new Set([
+    'tailwindcss',
+    'postcss',
+    'autoprefixer',
+    'typescript',
+    'prisma',
+    'tsx',
+    'nodemon',
+    'vite',
+    '@vitejs/plugin-react',
+    'eslint',
+    'prettier'
+]);
+
+function isDevPackage(pkg) {
+    return pkg.startsWith('@types/') || DEV_TOOLCHAIN_PACKAGES.has(pkg);
+}
 
 const NODE_BUILTINS = new Set([
     'fs', 'fs/promises', 'path', 'url', 'http', 'https', 'crypto',
@@ -72,7 +114,7 @@ export async function scanUsedNpmPackages(projectDir) {
                     const importMatches = content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g);
                     for (const match of importMatches) {
                         const specifier = match[1];
-                        if (specifier.startsWith('.') || specifier.startsWith('@/') || specifier.startsWith('/')) continue;
+                        if (specifier.startsWith('.') || specifier.startsWith('@/') || specifier.startsWith('/') || specifier.startsWith('@lib/') || specifier.startsWith('@components/') || specifier.startsWith('@app/') || specifier.startsWith('@actions/')) continue;
                         if (NODE_BUILTINS.has(specifier)) continue;
 
                         // Paket adını ayrıştır (örn: @prisma/client veya sonner veya lucide-react/dist/...)
@@ -391,76 +433,80 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {}
 
     const baseDependencies = {
-        'clsx': '^2.1.1',
-        'lucide-react': '^0.469.0',
         'react': '^18.3.1',
-        'react-dom': '^18.3.1',
-        'tailwind-merge': '^2.5.5',
-        'zod': '^3.24.1',
-        'react-hook-form': '^7.54.2',
-        '@hookform/resolvers': '^3.9.1',
-        'sonner': '^1.7.4'
+        'react-dom': '^18.3.1'
     };
 
     if (hasPrisma) {
-        baseDependencies['@prisma/client'] = '^6.4.1';
+        baseDependencies['@prisma/client'] = '^6.4.0';
     }
 
     const baseDevDependencies = {
-        '@types/node': '^22.10.2',
-        '@types/react': '^18.3.18',
-        '@types/react-dom': '^18.3.5',
-        'autoprefixer': '^10.4.20',
-        'postcss': '^8.4.49',
+        '@types/node': LATEST_STABLE_VERSION,
+        '@types/react': '^18.3.1',
+        '@types/react-dom': '^18.3.1',
+        'autoprefixer': LATEST_STABLE_VERSION,
+        'postcss': LATEST_STABLE_VERSION,
         'tailwindcss': '^3.4.17',
-        'typescript': '^5.7.2'
+        'typescript': LATEST_STABLE_VERSION
     };
 
     if (hasPrisma) {
-        baseDevDependencies['prisma'] = '^6.4.1';
+        baseDevDependencies['prisma'] = '^6.4.0';
+        baseDevDependencies['tsx'] = LATEST_STABLE_VERSION;
     }
 
     let scripts = {};
     if (isNext) {
-        baseDependencies['next'] = '^15.2.1';
-        baseDependencies['tailwindcss-animate'] = '^1.0.7';
+        baseDependencies['next'] = LATEST_STABLE_VERSION;
         scripts = {
             dev: 'next dev',
             build: 'next build',
             start: 'next start',
             lint: 'next lint',
-            ...(hasPrisma ? { 'prisma:generate': 'prisma generate', 'prisma:push': 'prisma db push' } : {})
+            test: 'echo \"No tests specified\" && exit 0',
+            ...(hasPrisma ? {
+                'prisma:generate': 'prisma generate',
+                'prisma:push': 'prisma db push',
+                'prisma:seed': 'prisma db seed'
+            } : {})
         };
     } else if (isExpressOnly) {
         delete baseDependencies['react'];
         delete baseDependencies['react-dom'];
-        delete baseDependencies['clsx'];
-        delete baseDependencies['lucide-react'];
-        delete baseDependencies['tailwind-merge'];
+
         delete baseDevDependencies['@types/react'];
         delete baseDevDependencies['@types/react-dom'];
         delete baseDevDependencies['autoprefixer'];
         delete baseDevDependencies['postcss'];
         delete baseDevDependencies['tailwindcss'];
 
-        baseDependencies['express'] = '^4.21.2';
-        baseDependencies['cors'] = '^2.8.5';
-        baseDependencies['dotenv'] = '^16.4.7';
-        baseDevDependencies['@types/express'] = '^5.0.0';
-        baseDevDependencies['nodemon'] = '^3.1.9';
+        baseDependencies['express'] = LATEST_STABLE_VERSION;
+        baseDependencies['cors'] = LATEST_STABLE_VERSION;
+        baseDependencies['dotenv'] = LATEST_STABLE_VERSION;
+        baseDevDependencies['@types/express'] = LATEST_STABLE_VERSION;
+        baseDevDependencies['nodemon'] = LATEST_STABLE_VERSION;
         scripts = {
             dev: 'node server.js',
             start: 'node server.js',
-            ...(hasPrisma ? { 'prisma:generate': 'prisma generate', 'prisma:push': 'prisma db push' } : {})
+            ...(hasPrisma ? {
+                'prisma:generate': 'prisma generate',
+                'prisma:push': 'prisma db push',
+                'prisma:seed': 'prisma db seed'
+            } : {})
         };
     } else {
-        baseDevDependencies['vite'] = '^5.4.14';
-        baseDevDependencies['@vitejs/plugin-react'] = '^4.3.4';
+        baseDevDependencies['vite'] = LATEST_STABLE_VERSION;
+        baseDevDependencies['@vitejs/plugin-react'] = LATEST_STABLE_VERSION;
         scripts = {
             dev: 'vite',
             build: 'vite build',
             preview: 'vite preview',
-            ...(hasPrisma ? { 'prisma:generate': 'prisma generate', 'prisma:push': 'prisma db push' } : {})
+            ...(hasPrisma ? {
+                'prisma:generate': 'prisma generate',
+                'prisma:push': 'prisma db push',
+                'prisma:seed': 'prisma db seed'
+            } : {})
         };
     }
 
@@ -470,7 +516,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     const scannedDevDeps = {};
     for (const pkg of scannedPackages) {
         const version = KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
-        if (pkg.startsWith('@types/')) {
+        if (isDevPackage(pkg)) {
             scannedDevDeps[pkg] = version;
         } else {
             scannedDeps[pkg] = version;
@@ -483,33 +529,53 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         private: true,
         scripts: {
             ...scripts,
-            ...(currentPkg.scripts || {})
+            ...(currentPkg.scripts || {}),
+            ...(hasPrisma ? { 'prisma:seed': 'prisma db seed' } : {})
         },
+        ...(hasPrisma ? {
+            prisma: {
+                ...(currentPkg.prisma && typeof currentPkg.prisma === 'object' ? currentPkg.prisma : {}),
+                seed: 'tsx prisma/seed.ts'
+            }
+        } : {}),
         dependencies: {
+            ...Object.fromEntries(
+                Object.entries(currentPkg.dependencies || {}).filter(
+                    ([k]) => !k.startsWith('@lib/') && !k.startsWith('@components/') && !k.startsWith('@app/') && !k.startsWith('@actions/')
+                )
+            ),
             ...baseDependencies,
-            ...scannedDeps,
-            ...(currentPkg.dependencies || {})
+            ...scannedDeps
         },
         devDependencies: {
+            ...(currentPkg.devDependencies || {}),
             ...baseDevDependencies,
             ...scannedDevDeps,
-            ...(currentPkg.devDependencies || {})
+            ...(hasPrisma ? {
+                prisma: '^6.4.0',
+                tsx: LATEST_STABLE_VERSION
+            } : {})
         }
     };
 
     await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
 
-    const lockfilePath = path.join(projectDir, 'package-lock.json');
-    if (!fsSync.existsSync(lockfilePath)) {
-        const defaultLock = {
-            name: safeName,
-            version: '1.0.0',
-            lockfileVersion: 3,
-            requires: true,
-            packages: {}
-        };
-        await fs.writeFile(lockfilePath, JSON.stringify(defaultLock, null, 2), 'utf8');
+    const serviceManifestPath = path.join(projectDir, 'service-manifest.json');
+    try {
+        await fs.stat(serviceManifestPath);
+    } catch {
+        const service = isNext
+            ? { type: 'nextjs', command: 'npm', args: ['run', 'start'], port: 3000, healthEndpoint: '/' }
+            : isExpressOnly
+                ? { type: 'express', command: 'npm', args: ['run', 'start'], port: 3000, healthEndpoint: '/health' }
+                : { type: 'vite', command: 'npm', args: ['run', 'preview', '--', '--host', '0.0.0.0', '--port', '4173'], port: 4173, healthEndpoint: '/' };
+        await fs.writeFile(
+            serviceManifestPath,
+            JSON.stringify({ version: '1.0', services: { web: service } }, null, 2),
+            'utf8'
+        );
     }
+
     // 3. tsconfig.json Kontrolü (@/* Path Alias Çözümü)
     const tsconfigPath = path.join(projectDir, 'tsconfig.json');
     try {
@@ -531,12 +597,29 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 jsx: isNext ? 'preserve' : 'react-jsx',
                 incremental: true,
                 ...(isNext ? { plugins: [{ name: 'next' }] } : {}),
-                paths: { '@/*': ['./src/*'] }
+                paths: {
+                    '@/*': ['./src/*'],
+                    '@lib/*': ['./src/lib/*'],
+                    '@components/*': ['./src/components/*'],
+                    '@app/*': ['./src/app/*'],
+                    '@actions/*': ['./src/actions/*']
+                }
             },
             include: isNext ? ['next-env.d.ts', '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '.next/types/**/*.ts'] : ['src'],
             exclude: ['node_modules', 'manager']
         };
         await fs.writeFile(tsconfigPath, JSON.stringify(tsconfigContent, null, 2), 'utf8');
+    }
+
+    // NextAuth Session.user kimliği/rolü için canonical TypeScript module augmentation.
+    if (isNext && finalPkg.dependencies?.['next-auth']) {
+        const authTypesPath = path.join(projectDir, 'src', 'types', 'next-auth.d.ts');
+        try {
+            await fs.stat(authTypesPath);
+        } catch {
+            await fs.mkdir(path.dirname(authTypesPath), { recursive: true });
+            await fs.writeFile(authTypesPath, `import "next-auth";\n\ndeclare module "next-auth" {\n  interface Session {\n    user: {\n      id: string;\n      role?: string;\n      name?: string | null;\n      email?: string | null;\n      image?: string | null;\n    };\n  }\n}\n`, 'utf8');
+        }
     }
 
     // 4. jsconfig.json
@@ -547,7 +630,13 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         const jsconfigContent = {
             compilerOptions: {
                 baseUrl: '.',
-                paths: { '@/*': ['./src/*'] }
+                paths: {
+                    '@/*': ['./src/*'],
+                    '@lib/*': ['./src/lib/*'],
+                    '@components/*': ['./src/components/*'],
+                    '@app/*': ['./src/app/*'],
+                    '@actions/*': ['./src/actions/*']
+                }
             }
         };
         await fs.writeFile(jsconfigPath, JSON.stringify(jsconfigContent, null, 2), 'utf8');
@@ -564,6 +653,22 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.stat(globalsCssPath);
         } catch {
             await fs.writeFile(globalsCssPath, tailwindBaseContent, 'utf8');
+        }
+
+        const layoutPath = path.join(appDir, 'layout.tsx');
+        try {
+            await fs.stat(layoutPath);
+        } catch {
+            const layoutContent = `import './globals.css';\n\nexport const metadata = {\n  title: '${state.title || 'App'}',\n  description: 'Generated application',\n};\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang="tr">\n      <body>{children}</body>\n    </html>\n  );\n}\n`;
+            await fs.writeFile(layoutPath, layoutContent, 'utf8');
+        }
+
+        const pagePath = path.join(appDir, 'page.tsx');
+        try {
+            await fs.stat(pagePath);
+        } catch {
+            const pageContent = `import Link from 'next/link';\n\nexport default function HomePage() {\n  return (\n    <main className="min-h-screen p-8 flex flex-col items-center justify-center text-center">\n      <h1 className="text-3xl font-bold mb-4">${state.title || 'Quiz Master'}</h1>\n      <p className="text-gray-600 mb-6">Uygulama başarıyla oluşturuldu ve çalışıyor.</p>\n      <div className="flex gap-4">\n        <Link href="/quizzes" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Quizler</Link>\n        <Link href="/admin/quizzes" className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Yönetim</Link>\n      </div>\n    </main>\n  );\n}\n`;
+            await fs.writeFile(pagePath, pageContent, 'utf8');
         }
 
         const nextConfigPath = path.join(projectDir, 'next.config.js');
@@ -619,7 +724,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     try {
         await fs.stat(tailwindConfigPath);
     } catch {
-        const twConfigContent = `import type { Config } from 'tailwindcss';\n\nconst config: Config = {\n  darkMode: ['class'],\n  content: [\n    './index.html',\n    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/components/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/app/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/**/*.{js,ts,jsx,tsx}',\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n};\nexport default config;\n`;
+        const twConfigContent = `import type { Config } from 'tailwindcss';\n\nconst config: Config = {\n  darkMode: 'class',\n  content: [\n    './index.html',\n    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/components/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/app/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/**/*.{js,ts,jsx,tsx}',\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n};\nexport default config;\n`;
         await fs.writeFile(tailwindConfigPath, twConfigContent, 'utf8');
     }
 

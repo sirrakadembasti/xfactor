@@ -1,6 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { ARTIFACT_LIMITS } from './artifactLimits.js';
+const IGNORED_DIRS = new Set([
+    'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
+    'manager', 'frontend.director', 'backend.director'
+]);
 
 export async function collectArtifactFiles(root, options = {}) {
     const maxFiles = options.maxFiles ?? ARTIFACT_LIMITS.maxFiles;
@@ -16,6 +20,10 @@ export async function collectArtifactFiles(root, options = {}) {
         const stats = await fs.lstat(currentPath);
         if (stats.isSymbolicLink()) throw new Error(`Symlink not allowed: ${relativePath || root}`);
         if (stats.isDirectory()) {
+            const dirName = path.basename(currentPath);
+            if (IGNORED_DIRS.has(dirName) || (relativePath && IGNORED_DIRS.has(relativePath.split('/')[0]))) {
+                return;
+            }
             const entries = (await fs.readdir(currentPath)).sort();
             for (const entry of entries) await walk(path.join(currentPath, entry), path.posix.join(relativePath, entry));
             return;

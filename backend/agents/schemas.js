@@ -483,6 +483,9 @@ export function validateTeamleaderTasks(taskList) {
         if (!Array.isArray(reqIds) || reqIds.length === 0) {
             throw new Error(`Görev "${task.id || task.title}" için en az bir "requirementIds" belirtilmelidir.`);
         }
+        if (!Array.isArray(task.targetFiles) || task.targetFiles.length !== 1 || typeof task.targetFiles[0] !== 'string' || !task.targetFiles[0].trim()) {
+            throw new Error(`Görev "${task.id || task.title}" atomik tek dosya sözleşmesi için tam olarak bir hedef dosya içermelidir.`);
+        }
     }
     return true;
 }

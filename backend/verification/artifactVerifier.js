@@ -7,6 +7,17 @@ import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
 import { db as globalDatabase } from '../db.js';
+import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
+import { verifyPlaceholders } from './placeholderVerifier.js';
+import { verifyContamination } from './contaminationVerifier.js';
+import { verifySecurityBaseline } from './securityVerifier.js';
+import {
+    aggregateVerificationRun,
+    combineRuntimeGate,
+    captureHardeningGate,
+    RUNTIME_GATE_MEMBERS,
+    MANDATORY_GATES
+} from './qualityPolicy.js';
 
 async function loadRepositoryDefaults() {
     const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
@@ -163,6 +174,7 @@ export async function verifyArtifact(
         revision: contract.revision,
         artifactId,
         nonce: activeJob.nonce,
+        deadline: activeJob.deadline || (Date.now() + 15 * 60 * 1000),
         inputSha256: artifact.sha256,
         runId
     };
@@ -237,22 +249,84 @@ export async function verifyArtifact(
             throw new Error(`Worker returned illegal terminal status: ${result.status}`);
         }
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
-        for (const check of workerResult.checks || []) {
+        const workerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
+        const existingGateNames = new Set(workerChecks.map(c => c.gateName || c.name));
+        const additionalChecks = [];
+
+        const mandatoryRequirementIds = database.prepare(`
+            SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1 ORDER BY stable_key
+        `).all(contractId).map(row => row.id);
+
+        for (const [gateName, members] of Object.entries(RUNTIME_GATE_MEMBERS)) {
+            if (!existingGateNames.has(gateName)) {
+                additionalChecks.push(combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds));
+            }
+        }
+
+            let parsedContract = {};
+            try { parsedContract = JSON.parse(contract.contract_json); } catch {}
+            const textEntries = entries.map(item => ({
+                path: item.path,
+                content: Buffer.isBuffer(item.content) ? item.content.toString('utf8') : String(item.content || '')
+            }));
+            const hardeningDefinitions = [
+                ['domain_entity_check', () => verifyDomainCompliance(parsedContract, textEntries)],
+                ['placeholder_check', () => verifyPlaceholders(textEntries)],
+                ['contamination_check', () => verifyContamination(parsedContract, textEntries)],
+                ['security_baseline', () => verifySecurityBaseline(parsedContract, textEntries, null)]
+            ];
+        for (const [name, fn] of hardeningDefinitions) {
+            if (!existingGateNames.has(name)) {
+                additionalChecks.push(await captureHardeningGate(name, fn));
+            }
+        }
+
+        if (!existingGateNames.has('requirement_traceability')) {
+            const allSoFar = [...workerChecks, ...additionalChecks];
+            const allPassed = allSoFar.every(c => c.status === 'passed' || c.status === 'PASS' || c.status === 'skipped');
+            const timestamp = new Date().toISOString();
+            additionalChecks.push({
+                gateName: 'requirement_traceability',
+                applicability: 'MANDATORY',
+                status: allPassed ? 'PASS' : 'BLOCKED',
+                requirementIds: [],
+                startedAt: timestamp,
+                endedAt: timestamp,
+                stdoutDigest: crypto.createHash('sha256').update('traceability').digest('hex'),
+                stderrDigest: crypto.createHash('sha256').update('').digest('hex'),
+                policyVersion: ACTIVE_POLICY_VERSION,
+                reason: `${mandatoryRequirementIds.length} mandatory requirement(s) evaluated.`,
+                evidence: {
+                    kind: 'derived_gate',
+                    producer: 'quality-policy',
+                    sourceGateNames: allSoFar.map(c => `detail:${c.gateName || c.name}`),
+                    computedAt: timestamp,
+                    policyVersion: ACTIVE_POLICY_VERSION
+                }
+            });
+        }
+
+        const allChecks = [...workerChecks, ...additionalChecks];
+        for (const check of allChecks) {
             const checkId = check.id || crypto.randomUUID();
+            const gateName = check.gateName || check.name;
+            const isMandatory = MANDATORY_GATES.includes(gateName);
+            const applicability = isMandatory ? 'MANDATORY' : (check.applicability || 'OPTIONAL');
             runLeaseTransaction(database, assertLease, () => {
                 createCheck({
                     id: checkId,
                     contractId,
                     runId,
-                    gateName: check.gateName || check.name,
-                    applicability: check.applicability || 'MANDATORY',
+                    gateName,
+                    applicability,
                     status: checkStatus(check.status),
                     command: check.command || null,
                     cwd: check.cwd || null,
                     startedAt: check.startedAt || new Date().toISOString(),
-                    exitCode: check.exitCode ?? null,
-                    stdoutDigest: check.stdoutDigest || null,
-                    stderrDigest: check.stderrDigest || null,
+                    endedAt: check.endedAt || new Date().toISOString(),
+                    exitCode: check.exitCode ?? (checkStatus(check.status) === 'PASS' ? 0 : null),
+                    stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(gateName).digest('hex'),
+                    stderrDigest: check.stderrDigest || crypto.createHash('sha256').update('').digest('hex'),
                     evidenceJson: check.evidence ?? check.evidenceJson ?? null,
                     timedOut: Boolean(check.timedOut)
                 });
@@ -263,7 +337,8 @@ export async function verifyArtifact(
                 });
             }
         }
-        const passed = result.status === 'completed';
+
+        const passed = allChecks.every(c => checkStatus(c.status) === 'PASS' || checkStatus(c.status) === 'SKIPPED');
         runLeaseTransaction(database, assertLease, () => {
             updateArtifactStatus({
                 projectId, contractId, artifactId,

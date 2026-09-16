@@ -70,11 +70,19 @@ export async function verifyArtifactAndProject({
     if (!complete) return { ...receipt, passed: true, completed: false };
 
     let project = getProject(projectId);
-    const statuses = project.status === 'runtime_verified'
-        ? ['acceptance_verified', 'artifact_verified']
-        : project.status === 'acceptance_verified'
-            ? ['artifact_verified']
-            : project.status === 'artifact_verified' ? [] : null;
+    const statuses = project.status === 'implementation_finished'
+        ? ['verification_pending', 'verification_running', 'build_verified', 'runtime_verified', 'acceptance_verified', 'artifact_verified']
+        : project.status === 'verification_pending'
+            ? ['verification_running', 'build_verified', 'runtime_verified', 'acceptance_verified', 'artifact_verified']
+            : project.status === 'verification_running'
+                ? ['build_verified', 'runtime_verified', 'acceptance_verified', 'artifact_verified']
+                : project.status === 'build_verified'
+                    ? ['runtime_verified', 'acceptance_verified', 'artifact_verified']
+                    : project.status === 'runtime_verified'
+                        ? ['acceptance_verified', 'artifact_verified']
+                        : project.status === 'acceptance_verified'
+                            ? ['artifact_verified']
+                            : project.status === 'artifact_verified' ? [] : null;
     if (!statuses) throw new Error(`Project ${projectId} cannot complete from state ${project.status}.`);
     if (statuses.length > 0) {
         projectStateTransitionInTransaction({

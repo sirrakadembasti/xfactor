@@ -1,4 +1,8 @@
 node_modules/
+node_modules
+backend/node_modules/
+backend/node_modules
+test-sandbox/
 .DS_Store
 dist/
 frontend/dist/

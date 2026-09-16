@@ -8,14 +8,19 @@ export async function verifyServiceManifest(projectDir, contract = {}, options =
     const manifestFile = supplied?.find(file => String(file.path || '').replace(/\\/g, '/').toLowerCase().endsWith('/service-manifest.json') || String(file.path || '').toLowerCase() === 'service-manifest.json');
     let manifest = null;
     try {
-        const content = manifestFile ? String(manifestFile.content || '') : await fs.readFile(path.join(projectDir, 'service-manifest.json'), 'utf8');
+        let content;
+        if (supplied) {
+            if (!manifestFile) throw new Error('service-manifest.json is absent from the supplied inventory.');
+            content = String(manifestFile.content || '');
+        } else {
+            content = await fs.readFile(path.join(projectDir, 'service-manifest.json'), 'utf8');
+        }
         manifest = JSON.parse(content);
         checks.push({ name: 'manifest_presence', status: 'passed', reason: 'service-manifest.json exists and is valid JSON.' });
     } catch (err) {
-        const applicable = contract.serviceManifest === true || contract.process || contract.service;
-        checks.push({ name: 'manifest_presence', status: applicable ? (supplied ? 'blocked' : 'failed') : 'skipped', reason: applicable ? `service-manifest.json unavailable: ${err.message}` : 'Service manifest is not applicable.' });
-        if (applicable) issues.push(`service-manifest.json is missing or invalid: ${err.message}`);
-        return { passed: !applicable, checks, issues };
+        checks.push({ name: 'manifest_presence', status: 'failed', reason: `service-manifest.json unavailable: ${err.message}` });
+        issues.push(`service-manifest.json is missing or invalid: ${err.message}`);
+        return { passed: false, checks, issues, manifest: null };
     }
 
     // 2. Servis Tanımları ve Port Benzersizliği Kontrolü
@@ -79,6 +84,7 @@ export async function verifyServiceManifest(projectDir, contract = {}, options =
     return {
         passed: allPassed && issues.length === 0,
         checks,
-        issues
+        issues,
+        manifest
     };
 }

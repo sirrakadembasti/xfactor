@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertCompleteTestInventory, getRunnableTestFiles } from './testInventory.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +26,7 @@ export function runTestFile(file, env, timeoutMs = 120000) {
         let proc;
         try {
             proc = spawn(process.execPath, [
-                '--import', path.join(__dirname, 'preloadDatabase.js'),
+                '--import', pathToFileURL(path.join(__dirname, 'preloadDatabase.js')).href,
                 filePath
             ], {
                 stdio: 'inherit',

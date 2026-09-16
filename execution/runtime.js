@@ -5,7 +5,35 @@ import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
 const MAX_JOB_MS = 15 * 60 * 1000;
-const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI)$/;
+const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI|NODE_OPTIONS|PRISMA_ENGINES_MIRROR|DATABASE_URL|AUTH_SECRET|NEXTAUTH_SECRET|NEXTAUTH_URL)$/;
+export function getIsolationArgs(job = {}) {
+  const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
+  if (isFullApp) {
+    return [
+      '--cpus', '2.0',
+      '--memory', '4g',
+      '--memory-swap', '4g',
+      '--pids-limit', '250',
+      '--read-only',
+      '--cap-drop', 'ALL',
+      '--security-opt', 'no-new-privileges=true',
+      '--tmpfs', '/tmp:rw,size=2g,exec,mode=1777',
+      '--tmpfs', '/workspace:rw,size=2g,exec,mode=1777',
+      '--tmpfs', '/home/worker:rw,size=512m,exec,mode=1777'
+    ];
+  }
+  return [
+    '--cpus', '2.0',
+    '--memory', '1g',
+    '--memory-swap', '1g',
+    '--pids-limit', '100',
+    '--read-only',
+    '--cap-drop', 'ALL',
+    '--security-opt', 'no-new-privileges=true',
+    '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m',
+    '--tmpfs', '/workspace:rw,size=1g,exec,mode=1777'
+  ];
+}
 
 function safeId(jobId) {
   const raw = String(jobId ?? '');
@@ -33,6 +61,14 @@ function docker(args, { signal, deadline, timeout = 120000 } = {}) {
     proc.once('error', e => finish(reject, e));
     proc.once('close', (code, sig) => { const stdout = Buffer.concat(out).toString(); const stderr = Buffer.concat(err).toString(); if (code === 0) finish(resolve, { stdout, stderr }); else { const e = new Error(stderr || `docker exited ${code}${sig ? ` (${sig})` : ''}`); e.stdout = stdout; e.stderr = stderr; e.code = code; e.signal = sig; finish(reject, e); } });
   });
+}
+
+export function buildContainerExecArgs({ containerName, command, args = [], cwd = null, env = {} }) {
+  const dockerArgs = ['exec', '-i'];
+  if (cwd) dockerArgs.push('--workdir', cwd);
+  for (const [key, value] of Object.entries(env)) dockerArgs.push('--env', `${key}=${value}`);
+  dockerArgs.push(containerName, 'node', '/opt/worker/entrypoint.js', command, ...args);
+  return dockerArgs;
 }
 
 export async function ownedContainerExists(jobId, options = {}) {
@@ -185,18 +221,13 @@ export async function executeJob(job, { signal, onResource } = {}) {
   const opts = () => ({ signal, deadline });
   try {
     let proxyAddress;
-    if (install) {
-      await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.install], opts());
-      proxy = names.proxy;
-      await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128})})"], opts());
-      await docker(['network','connect','bridge',proxy], opts()); const inspected = await docker(['inspect','--format',`{{(index .NetworkSettings.Networks "${names.install}").IPAddress}}`,proxy], opts()); proxyAddress = inspected.stdout.trim(); if (!proxyAddress) throw new Error('Registry proxy did not receive an install-network address'); onResource?.({ type:'proxy', name:proxy, network:names.install });
-    }
-    if (!install) {
-      await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.build], opts());
-      onResource?.({ type: 'network', name: names.build, internal: true, phase: 'build' });
-    }
-    const net = install ? names.install : names.build;
-    const runArgs = ['run','-d','--rm','--name',names.container,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,'--cpus','2.0','--memory','1g','--memory-swap','1g','--pids-limit','100','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges=true','--network',net,'--tmpfs','/tmp:rw,size=64m,exec,mode=1777','--tmpfs','/workspace:rw,size=1g,exec,mode=1777',IMAGE_NAME,'serve'];
+    await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.install], opts());
+    proxy = names.proxy;
+    const isolationArgs = getIsolationArgs(job);
+    await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128})})"], opts());
+    await docker(['network','connect','bridge',proxy], opts()); const inspected = await docker(['inspect','--format',`{{(index .NetworkSettings.Networks "${names.install}").IPAddress}}`,proxy], opts()); proxyAddress = inspected.stdout.trim(); if (!proxyAddress) throw new Error('Registry proxy did not receive an install-network address'); onResource?.({ type:'proxy', name:proxy, network:names.install });
+    const net = names.install;
+    const runArgs = ['run','-d','--rm','--name',names.container,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,'--network',net,IMAGE_NAME,'serve'];
     await docker(runArgs, opts()); onResource?.({ type:'container', name:names.container, phase:install?'install':'build' }); await waitForReadiness(names.container, deadline, signal);
     const checkPaths = async () => {
       for (const relative of declaredPaths) {
@@ -214,26 +245,43 @@ export async function executeJob(job, { signal, onResource } = {}) {
           args = request.args || [];
           options = { ...request, ...options };
         }
+        if (typeof command === 'string' && command.endsWith('.cmd')) {
+          command = command.slice(0, -4);
+        }
         await checkPaths();
         return new Promise((resolve, reject) => {
           const cwd = sandboxCwd(options.cwd);
           const env = {};
           for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
-          if (installPhase && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
+          const isNpmInstallCmd = command === 'npm' && (args.includes('install') || args.includes('ci'));
+          if ((installPhase || isNpmInstallCmd) && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/workspace/.npm-cache' });
+          const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
+          if (command === 'npm' || command === 'npx') env.NODE_OPTIONS = isFullApp ? '--max-old-space-size=2048' : '--max-old-space-size=512';
+          if (command === 'npx' && proxyAddress) env.PRISMA_ENGINES_MIRROR = `http://${proxyAddress}:3128/prisma-binaries`;
           const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
-          da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...(Array.isArray(args) ? args : []));
+          if (command === 'npm' || command === 'npx') {
+            da.push(names.container, command, ...(Array.isArray(args) ? args : []));
+          } else {
+            da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...(Array.isArray(args) ? args : []));
+          }
           const p = cp.spawn('docker', da, { stdio: ['ignore', 'pipe', 'pipe'] });
           let done = false;
           const finish = (fn, value) => { if (done) return; done = true; clearTimeout(timer); signal?.removeEventListener('abort', abort); fn(value); };
           const captured = captureChildOutput(p);
-          const ms = Math.max(1, Math.min(options.timeout || options.timeoutMs || 120000, deadline - Date.now()));
+          const ms = Math.max(1, Math.min(options.timeout || options.timeoutMs || 900000, Math.max(900000, deadline - Date.now())));
           const timer = setTimeout(() => { finish(reject, new Error('Command timed out')); try { p.kill('SIGKILL'); } catch {} }, ms);
           const abort = () => { finish(reject, new Error('Cancelled by user')); try { p.kill('SIGKILL'); } catch {} };
           signal?.addEventListener('abort', abort, { once: true });
           captured.then(r => {
             const normalized = { ...r, exitCode: r.code ?? null, passed: r.code === 0 && !r.stdoutTruncated && !r.stderrTruncated };
             if (normalized.passed) finish(resolve, normalized);
-            else { const e = new Error(r.stdoutTruncated || r.stderrTruncated ? 'Output exceeded fixed ceiling' : `Command failed with code ${r.code}${r.signal ? ` (signal ${r.signal})` : ''}`); e.result = normalized; finish(reject, e); }
+            else {
+              const detail = (r.stderr || r.stdout || '').trim();
+              const msg = detail ? `Command failed with code ${r.code}: ${detail.slice(0, 500)}` : `Command failed with code ${r.code}${r.signal ? ` (signal ${r.signal})` : ''}`;
+              const e = new Error(r.stdoutTruncated || r.stderrTruncated ? 'Output exceeded fixed ceiling' : msg);
+              e.result = normalized;
+              finish(reject, e);
+            }
           });
         });
       },
@@ -259,12 +307,14 @@ export async function executeJob(job, { signal, onResource } = {}) {
         const cwd = sandboxCwd(options.cwd); const env = {};
         if (!/^[a-zA-Z0-9_.-]+$/.test(command) || command.startsWith('.')) throw new Error('Unsafe executable path');
         for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
-        if (installPhase && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/tmp/npm-cache' });
-        const da = ['exec', '-i']; if (cwd) da.push('--workdir', cwd); for (const [k, v] of Object.entries(env)) da.push('--env', `${k}=${v}`);
-        da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...args);
-        const p = cp.spawn('docker', da, { stdio: options.stdio || 'pipe', windowsHide: true });
+        const isNpmInstallCmd = command === 'npm' && (args.includes('install') || args.includes('ci'));
+        const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
+        if (command === 'npm' || command === 'npx') env.NODE_OPTIONS = isFullApp ? '--max-old-space-size=2048' : '--max-old-space-size=512';
+        if ((installPhase || isNpmInstallCmd) && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/workspace/.npm-cache' });
+        const da = buildContainerExecArgs({ containerName: names.container, command, args, cwd, env });
+        const p = cp.spawn('docker', da, { stdio: options.stdio || ['ignore', 'pipe', 'pipe'], windowsHide: true });
         ownedProcesses.set(p.pid, p);
-        const timeoutMs = Math.max(1, Math.min(options.timeout || options.timeoutMs || 120000, deadline - Date.now()));
+        const timeoutMs = Math.max(1, Math.min(options.timeout || options.timeoutMs || 600000, deadline - Date.now()));
         let cleaned = false;
         const cleanup = () => { if (cleaned) return; cleaned = true; ownedProcesses.delete(p.pid); clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); };
         const abort = () => { try { p.kill('SIGKILL'); } catch {} cleanup(); };

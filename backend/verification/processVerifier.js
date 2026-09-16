@@ -1,5 +1,11 @@
-import { scrubEnvironmentVariables } from './sandboxRunner.js';
-function requireAdapter(adapter) { if (!adapter || typeof adapter.spawn !== 'function') throw Object.assign(new Error('SANDBOX_UNAVAILABLE: service adapter is required.'), { code: 'SANDBOX_UNAVAILABLE' }); return adapter; }
+import { requireSandboxCapabilities, scrubEnvironmentVariables } from './sandboxRunner.js';
+function requireAdapter(adapter) {
+    if (!adapter || typeof adapter.spawn !== 'function') {
+        throw Object.assign(new Error('SANDBOX_UNAVAILABLE: service adapter is required.'), { code: 'SANDBOX_UNAVAILABLE' });
+    }
+    requireSandboxCapabilities(adapter);
+    return adapter;
+}
 export async function killService(handle) { if (!handle) return; const adapter = handle.adapter || handle.processTreeHandle?.adapter; if (typeof adapter?.kill === 'function') return adapter.kill(handle.pid || handle.processTreeHandle?.pid, { signal: 'SIGTERM' }); if (typeof adapter?.killProcessTree === 'function') return adapter.killProcessTree(handle.pid || handle.processTreeHandle?.pid); }
 export function killProcessTree() { throw Object.assign(new Error('SANDBOX_UNAVAILABLE: host process termination is prohibited.'), { code: 'SANDBOX_UNAVAILABLE' }); }
 export async function spawnService(serviceId, config = {}, env = {}, options = {}) {

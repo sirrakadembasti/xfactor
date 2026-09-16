@@ -4,7 +4,7 @@ import tls from 'node:tls';
 import { isIP } from 'node:net';
 import dns from 'node:dns/promises';
 
-const REGISTRY_HOST = 'registry.npmjs.org';
+const REGISTRY_HOSTS = new Set(['registry.npmjs.org', 'binaries.prisma.sh']);
 
 // Resolve and validate before connecting. IPv4-mapped IPv6 values are
 // canonicalized so ::ffff:127.0.0.1 cannot bypass the IPv4 checks.
@@ -77,19 +77,19 @@ export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, conn
       if (/^[a-z][a-z0-9+.-]*:\/\//i.test(rawTarget)) {
         targetUrl = new URL(rawTarget);
         if (targetUrl.protocol !== 'https:' ||
-            targetUrl.hostname.toLowerCase() !== REGISTRY_HOST ||
+            !REGISTRY_HOSTS.has(targetUrl.hostname.toLowerCase()) ||
             (targetUrl.port && targetUrl.port !== '443')) {
           res.writeHead(403);
           res.end('Host not allowlisted');
           return;
         }
+      } else if (rawTarget.startsWith('/prisma-binaries/')) {
+        targetUrl = new URL(rawTarget.slice('/prisma-binaries'.length), 'https://binaries.prisma.sh');
       } else {
-        // Origin-form proxy requests carry the proxy address in Host. That
-        // header is never used for authorization; this listener is a fixed
-        // registry endpoint and always targets the approved registry.
-        targetUrl = new URL(rawTarget, `https://${REGISTRY_HOST}`);
+        // Origin-form proxy requests use the npm registry endpoint.
+        targetUrl = new URL(rawTarget, 'https://registry.npmjs.org');
       }
-      const targetHost = REGISTRY_HOST;
+      const targetHost = targetUrl.hostname.toLowerCase();
       const addresses = await resolver.resolve(targetHost);
       const safeAddress = addresses.find(isSafeIP);
       if (!safeAddress) {

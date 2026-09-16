@@ -33,7 +33,7 @@ export async function prepareDependencies({ packageJsonBytes, workspace = '/work
     if (workspace !== '/workspace') throw new Error('worker workspace is fixed /workspace');
     const manifest = asBytes(packageJsonBytes);
     await writeBytes(adapter, '/workspace/package.json', manifest, { signal });
-    const install = await adapter.execute('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], { signal, cwd: '/workspace', env: { ...env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } });
+    const install = await adapter.execute('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], { signal, cwd: '/workspace', timeout: 900000, env: { ...env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } });
     if ((install.exitCode ?? 0) !== 0) throw new Error('npm lockfile preparation failed');
     const lock = await readBytes(adapter, '/workspace/package-lock.json', { signal });
     if (!lock.length) throw new Error('npm lockfile preparation produced no lockfile');

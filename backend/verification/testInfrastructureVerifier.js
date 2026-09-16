@@ -45,7 +45,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     });
 
     // 2. Sandboxed Test Suite Execution
-    const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const isDocker = options.adapter?.id === 'docker-worker' || options.adapter?.getCapabilities?.().adapterId === 'docker-worker';
+    const npmCmd = isDocker ? 'npm' : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
     try {
         const testRes = await executeInSandbox(npmCmd, ['test'], {
             workspace: options.workspace || projectDir,

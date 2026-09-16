@@ -205,6 +205,22 @@ if (!filteredTest || filteredTest === 'dead-forms') {
                         );
                     }
                 `
+            },
+            {
+                path: 'src/components/ReusableQuizForm.tsx',
+                content: `
+                    import React from 'react';
+                    import { useForm } from 'react-hook-form';
+
+                    export default function ReusableQuizForm({ onSubmit }) {
+                        const { handleSubmit } = useForm();
+                        return (
+                            <form onSubmit={handleSubmit(onSubmit)}>
+                                <button type="submit">Save</button>
+                            </form>
+                        );
+                    }
+                `
             }
         ];
 

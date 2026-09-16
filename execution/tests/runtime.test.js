@@ -6,6 +6,7 @@ import EventEmitter from 'node:events';
 import { createHash } from 'node:crypto';
 import { createProxy, isSafeIP } from '../registryProxy.js';
 import { captureChildOutput, cleanupContainer, executeJob, ownedContainerExists, validateDependencySources, validateWorkspacePath, validateOwnedPath } from '../runtime.js';
+import * as runtime from '../runtime.js';
 
 function fakeChild() {
   const proc = new EventEmitter();
@@ -121,6 +122,26 @@ test('registry proxy denies unsafe DNS answers before outbound connect', async (
     const status = await new Promise((resolve, reject) => { const request = http.get({ host: '127.0.0.1', port, path: '/is-number' }, response => { response.resume(); response.once('end', () => resolve(response.statusCode)); }); request.once('error', reject); });
     await new Promise(resolve => proxy.close(resolve)); assert.equal(status, 403); assert.equal(outbound, 0);
   }
+});
+
+test('container exec arguments preserve node eval source as one argument', () => {
+  assert.equal(typeof runtime.buildContainerExecArgs, 'function');
+  const source = "console.log('ready');";
+  const args = runtime.buildContainerExecArgs({
+    containerName: 'owned-container',
+    command: 'node',
+    args: ['-e', source],
+    cwd: '/workspace',
+    env: { NODE_ENV: 'test' }
+  });
+  assert.deepStrictEqual(args, [
+    'exec', '-i',
+    '--workdir', '/workspace',
+    '--env', 'NODE_ENV=test',
+    'owned-container',
+    'node', '/opt/worker/entrypoint.js',
+    'node', '-e', source
+  ]);
 });
 
 test('workspace paths reject host and traversal forms', () => {

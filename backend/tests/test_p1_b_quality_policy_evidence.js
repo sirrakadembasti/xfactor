@@ -314,7 +314,13 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
         }
     });
 
-    assert.strictEqual(result.passed, true);
+    const producedChecks = db.prepare('SELECT gate_name, status FROM verification_checks WHERE run_id = ? ORDER BY gate_name').all(result.runId);
+    const missingGates = MANDATORY_GATES.filter(gate => !producedChecks.some(check => check.gate_name === gate));
+    assert.strictEqual(result.passed, true, JSON.stringify({
+        result,
+        missingGates,
+        failingChecks: producedChecks.filter(check => check.status !== 'PASS')
+    }));
     const linkedGates = db.prepare(`
         SELECT verification_checks.gate_name
         FROM requirement_check_links

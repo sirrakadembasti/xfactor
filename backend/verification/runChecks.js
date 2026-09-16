@@ -2,6 +2,7 @@ import { verifyDependencies } from './packageVerifier.js';
 import { verifyBuild } from './buildVerifier.js';
 import { verifyReadmeCommands } from './readmeVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
+import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 
 async function collectFiles(adapter, supplied = null) {
     if (Array.isArray(supplied)) {
@@ -20,19 +21,32 @@ async function collectFiles(adapter, supplied = null) {
 function withEvidence(check, runId, requirementIds) {
     return { ...check, runId, requirementIds: [...new Set([...(check.requirementIds || []), ...requirementIds])], evidence: { ...(check.evidence || {}), runId, requirementIds: [...requirementIds] } };
 }
-export async function runVerificationChecks({ workspace = '/workspace', contract = {}, requirementIds = [], adapter, signal, env = {}, runId = null, files = null } = {}) {
+export async function runVerificationChecks({ workspace = '/workspace', contract = {}, requirementIds = [], adapter, signal, env = {}, runId = null, files = null, verifiers = {} } = {}) {
     const inventory = await collectFiles(adapter, files);
     const options = { adapter, signal, env, workspace, files: inventory };
     const checks = [];
-    const dependency = await verifyDependencies(workspace, contract, options);
-    checks.push(...dependency.checks);
-    const build = await verifyBuild(workspace, contract, { ...options, dependencyResult: dependency });
-    checks.push(...build.checks);
-    const readme = await verifyReadmeCommands(contract, inventory, { ...options });
+    const dependency = await (verifiers.dependencies || verifyDependencies)(workspace, contract, options);
+    checks.push(...(dependency.checks || []));
+    const build = await (verifiers.build || verifyBuild)(workspace, contract, { ...options, dependencyResult: dependency });
+    checks.push(...(build.checks || []));
+    const readme = await (verifiers.readme || verifyReadmeCommands)(contract, inventory, { ...options });
     checks.push(...(readme.checks || []));
+    checks.push({
+        name: 'readme_check',
+        status: readme.passed === true ? 'passed' : 'failed',
+        reason: (readme.issues || []).join('; ') || 'README commands and runtime contract are consistent.',
+        evidence: readme.passed === true ? {
+            kind: 'derived_gate',
+            producer: 'aggregate-verification',
+            sourceGateNames: (readme.checks || []).map(check => `detail:${check.name || check.gateName}`)
+                .concat('detail:readme-contract'),
+            computedAt: new Date().toISOString(),
+            policyVersion: ACTIVE_POLICY_VERSION
+        } : { issues: readme.issues || [] }
+    });
     // Smoke is the single runtime orchestrator; it owns service lifecycle and all
     // applicable database/API/browser/process/health/test-infrastructure gates.
-    const applicable = [[verifyProjectSmoke, 'smoke_gate']];
+    const applicable = [[verifiers.smoke || verifyProjectSmoke, 'smoke_gate']];
     for (const [verifier] of applicable) {
         try { const result = await verifier(workspace, contract, options); checks.push(...(result.checks || [])); }
         catch (error) { checks.push({ name: 'verification_runtime', status: 'blocked', reason: error.message }); }
