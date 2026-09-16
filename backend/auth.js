@@ -1,11 +1,7 @@
 import crypto from 'crypto';
-import { db, dbEvents, initializeDatabase } from './db.js';
+import { db, dbEvents } from './db.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 import { decryptMfaSecret, encryptMfaSecret, getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
-
-if (!db && process.env.DB_PATH) {
-    try { initializeDatabase({ path: process.env.DB_PATH }); } catch {}
-}
 
 function normalizeUsername(username) {
     return String(username ?? '').trim();

@@ -55,10 +55,6 @@ export function initializeDatabase({ path: databasePath = DEFAULT_DB_PATH } = {}
     return db;
 }
 
-if (!db && process.env.DB_PATH) {
-    try { initializeDatabase({ path: process.env.DB_PATH }); } catch {}
-}
-
 export function closeDatabase() {
     if (!db) return;
     const current = db;

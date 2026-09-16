@@ -86,6 +86,8 @@ await runAsyncTest('4. executeCorrectionLoop coder düzeltme çıktısında hede
     const { executeCorrectionLoop } = await import('../engine/selfCorrection.js');
 
     // allowMockFallback ortamında test edelim
+    const prevKey = process.env.GOOGLE_API_KEY;
+    process.env.GOOGLE_API_KEY = 'your_gemini_api_key_here';
     process.env.ALLOW_MOCK_FALLBACK = 'true';
     try {
         const loopResult = await executeCorrectionLoop({
@@ -101,6 +103,11 @@ await runAsyncTest('4. executeCorrectionLoop coder düzeltme çıktısında hede
 
         assert.ok(typeof loopResult === 'object');
     } finally {
+        if (prevKey !== undefined) {
+            process.env.GOOGLE_API_KEY = prevKey;
+        } else {
+            delete process.env.GOOGLE_API_KEY;
+        }
         delete process.env.ALLOW_MOCK_FALLBACK;
     }
 });

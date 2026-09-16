@@ -118,7 +118,7 @@ async function runTests() {
         console.log('P6 health and lifecycle tests passed');
     } finally {
         if (child?.exitCode === null) child.kill('SIGKILL');
-        await fs.rm(tempRoot, { recursive: true, force: true });
+        await fs.rm(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
     }
 }
 
