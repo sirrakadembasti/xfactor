@@ -56,11 +56,17 @@ function startApplication() {
     '--env', 'NODE_ENV=production', '--env', 'TRUST_PROXY=loopback',
     '--env', 'MFA_ENCRYPTION_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
     '--env', `ALLOWED_ORIGINS=https://localhost:${httpsPort}`,
+    '--env', 'EXECUTION_WORKER_TOKEN=p6-production-worker-token',
     '--env', 'DB_PATH=/app/backend/data/projects.db', '--env', 'ARTIFACTS_ROOT=/app/backend/data/artifacts',
     '--env', 'PROJECTS_ROOT=/app/projects', imageTag
   ]));
 }
 function startProxy() {
+  const appStatus = run('docker', ['inspect', '--format', '{{.State.Status}}', appName]);
+  if (appStatus.status === 0 && appStatus.stdout.trim() !== 'running') {
+    const logs = run('docker', ['logs', appName]);
+    throw new Error(`Application container is not running (status: ${appStatus.stdout.trim()}):\n${logs.stdout}\n${logs.stderr}`);
+  }
   success('TLS proxy start', run('docker', [
     'run', '--detach', '--name', proxyName, '--network', `container:${appName}`,
     '--mount', `type=bind,readonly,source=${join(fixtureRoot, 'Caddyfile')},target=/etc/caddy/Caddyfile`,
@@ -79,6 +85,12 @@ function waitForHealth() {
 function seed() {
   const seeded = success('in-container seed', run('docker', [
     'run', '--rm', '--network', `container:${appName}`, '--volumes-from', appName,
+    '--env', 'NODE_ENV=production',
+    '--env', 'DB_PATH=/app/backend/data/projects.db',
+    '--env', 'PROJECTS_ROOT=/app/projects',
+    '--env', 'ARTIFACTS_ROOT=/app/backend/data/artifacts',
+    '--env', 'MFA_ENCRYPTION_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+    '--env', 'EXECUTION_WORKER_TOKEN=p6-production-worker-token',
     '--mount', `type=bind,readonly,source=${seedScript},target=/tmp/p6-container-seed.mjs`,
     imageTag, 'node', '/tmp/p6-container-seed.mjs'
   ]));
@@ -138,6 +150,7 @@ try {
   chmodSync(projectsRoot, 0o777);
   writeFileSync(join(fixtureRoot, 'Caddyfile'), `{\n  skip_install_trust\n}\n\nhttps://localhost:${httpsPort} {\n  bind 0.0.0.0\n  tls internal\n  reverse_proxy 127.0.0.1:8000 {\n    header_up X-Forwarded-Proto https\n  }\n}\n`);
   success('production image build', run('docker', ['build', '--tag', imageTag, '.']));
+  success('proxy image pull', run('docker', ['pull', PROXY_IMAGE]));
   startApplication();
   startProxy();
   waitForHealth();

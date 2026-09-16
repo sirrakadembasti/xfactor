@@ -7,10 +7,12 @@ import { pathToFileURL } from 'node:url';
 
 const backend = process.env.P6_BACKEND_ROOT || '/app/backend';
 const load = file => import(pathToFileURL(path.join(backend, file)).href);
-const [{ createUser }, { createProject }, { db }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus, createArtifact }, { completeVerifiedProject }] = await Promise.all([
+const [{ createUser }, { createProject }, { db, initializeDatabase }, { createProjectZip }, { safeExtractZip }, { updateArtifactStatus, createArtifact }, { completeVerifiedProject }] = await Promise.all([
   load('auth.js'), load('projectRepository.js'), load('db.js'), load('utils/archive.js'),
   load('verification/safeExtractor.js'), load('repositories/artifactRepository.js'), load('projectRepository.js')
 ]);
+
+initializeDatabase({ path: process.env.DB_PATH || '/app/backend/data/projects.db' });
 
 const mandatoryGates = [
   'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
