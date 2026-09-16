@@ -131,6 +131,33 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
 `;
     }
 
+    let attempt = null;
+    if (state?.id) {
+        try {
+            attempt = db.prepare(`
+                SELECT id, status, error, started_at, ended_at 
+                FROM workflow_attempts 
+                WHERE project_id = ? 
+                ORDER BY id DESC LIMIT 1
+            `).get(state.id);
+        } catch {}
+    }
+
+    const realError = attempt?.error || state?.last_error;
+    let errorSection = '';
+    if (realError) {
+        const attemptStatus = attempt?.status || state?.status || 'unknown';
+        errorSection = `
+### ⚠️ SON GERÇEK MOTOR HATASI VE TEKNİK DETAY (DOĞRULANMIŞ SİSTEM TELEMETRİSİ):
+- Son İş Akışı Durumu: ${attemptStatus}
+- Gerçek Hata: ${realError}
+
+KRİTİK TALİMAT VE DÜRÜSTLÜK KURALI (HALÜSİNASYON YASAKTIR):
+Boss sana süreç hatası veya duraklatma hakkında soru sorduğunda; ASLA "TypeScript tipi uyuşmazlığı", "Prisma şeması uyuşmazlığı" gibi hayali ezbere teoriler uydurma.
+YUKARIDAKİ GERÇEK HATAYI temel alarak konuş. Hata mesajını şeffafça açıkla ve gerçek teknik kök nedeni belirt.
+`;
+    }
+
     // Canlı Telemetri, Son Loglar ve Alt Ajan Raporları
     const logs = state?.id ? getProjectLogs(state.id) : [];
     const failedReports = findFailedReports(projectDir, projectDir);
@@ -165,6 +192,7 @@ ${orkestrasyonDoc ? `### PLATFORM ORKESTRASYON ANAYASASI (docs/ORKESTRASYON-TALI
 
 ### GÜNCEL PROJE DURUMU VE TALİMATLAR:
 ${extraContext}
+${errorSection}
 ${telemetrySection}
 
 ### 💬 MANAGER SOHBET VE İLETİŞİM PROTOKOLÜ:
@@ -414,6 +442,21 @@ export function createProjectRouter({
                     const oldRapor = path.join(projectDir, 'RAPOR.md');
                     if (fsSync.existsSync(oldRapor)) fsSync.unlinkSync(oldRapor);
                 } catch {}
+                await writeProjectState(id, freshState);
+            }
+
+            const remediationKeywords = [
+                'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
+                'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
+            ];
+            const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
+
+            if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested) {
+                freshState.remediation = {
+                    ready: true,
+                    instruction: message,
+                    timestamp: new Date().toISOString()
+                };
                 await writeProjectState(id, freshState);
             }
 

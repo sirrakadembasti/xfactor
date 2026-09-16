@@ -122,6 +122,7 @@ export function getProject(projectId) {
         revision: project.revision || 1,
         plan,
         workflow,
+        remediation: workflow?.remediation || null,
         chatHistory,
         contractId: contractRow?.id || null,
         latestArtifact: latestArtifact || null
@@ -449,6 +450,10 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     }
     const planStr = state.plan ? JSON.stringify(state.plan) : null;
 
+    if (state.remediation) {
+        state.workflow = state.workflow || {};
+        state.workflow.remediation = state.remediation;
+    }
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
     const expectedRevision = Number(state.revision || 1);
     const nextRevision = expectedRevision + 1;
