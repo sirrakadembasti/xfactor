@@ -71,6 +71,12 @@ export default function LoginView({
               </div>
             </>
           )}
+          {!mfaRequired && (
+            <div className="bg-indigo-50/80 border border-indigo-100 rounded-lg p-2.5 text-center text-xs text-indigo-800">
+              <span className="font-medium text-gray-500">Varsayılan Giriş:</span>{' '}
+              <span className="font-semibold text-indigo-900">admin</span> / <span className="font-semibold text-indigo-900">xfactor</span>
+            </div>
+          )}
           {loginError && <div role="alert" className="text-red-500 text-sm text-center font-medium">{loginError}</div>}
           <button
             type="submit"

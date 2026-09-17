@@ -25,8 +25,8 @@ const MAX_LOGS = 500;
 export default function App() {
   const [authStatus, setAuthStatus] = useState('checking');
   const [currentUser, setCurrentUser] = useState(null);
-  const [loginUsername, setLoginUsername] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginUsername, setLoginUsername] = useState('admin');
+  const [loginPassword, setLoginPassword] = useState('xfactor');
   const [loginTotp, setLoginTotp] = useState('');
   const [mfaRequired, setMfaRequired] = useState(false);
   const [loginError, setLoginError] = useState('');

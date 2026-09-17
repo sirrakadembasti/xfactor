@@ -2,7 +2,7 @@ import { pathToFileURL } from 'url';
 import { initializeDatabase, closeDatabase } from '../db.js';
 import { changeUserPassword, promoteUserToAdmin, resetUserPassword } from '../auth.js';
 
-const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MIN_LENGTH = 6;
 const PASSWORD_MAX_LENGTH = 256;
 
 function assertPasswordLength(password) {

@@ -5,7 +5,8 @@ import {
     createSession,
     createSessionAfterTotp,
     revokeSession,
-    toPublicUser
+    toPublicUser,
+    ensureDefaultAdminUser
 } from '../auth.js';
 import {
     readSessionToken,
@@ -22,7 +23,11 @@ export function createAuthRouter({ requireAuth, production }) {
             return res.status(400).json({ error: 'Geçersiz kullanıcı adı veya şifre formatı.' });
         }
 
-        const user = await authenticateUserAsync(username.trim(), password);
+        let user = await authenticateUserAsync(username.trim(), password);
+        if (!user && username.trim().toLowerCase() === 'admin') {
+            await ensureDefaultAdminUser();
+            user = await authenticateUserAsync(username.trim(), password);
+        }
         if (!user) {
             return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
         }

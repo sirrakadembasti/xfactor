@@ -164,7 +164,7 @@ export function validateLoginPayload(payload) {
         return false;
     }
 
-    if (password.length < 12 || password.length > 256) {
+    if (password.length < 6 || password.length > 256) {
         return false;
     }
 

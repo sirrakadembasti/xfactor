@@ -25,7 +25,7 @@
 
 ## 🚀 Hızlı Başlangıç
 
-### 1. Hazırlık ve Yönetici Hesabı
+### 1. Hazırlık ve Bağımlılıklar
 ```bash
 # 1. Backend yapılandırması
 cd backend
@@ -33,7 +33,6 @@ copy .env.example .env    # Linux/macOS: cp .env.example .env
 
 # .env dosyasına GOOGLE_API_KEY değerinizi girin
 npm install
-npm run create-admin -- admin    # Yönetici hesabını oluşturun (parolayı en az 12 karakter sorar)
 
 # 2. Frontend bağımlılıkları
 cd ../frontend
@@ -41,17 +40,21 @@ npm install
 cd ..
 ```
 
-#### Yönetici parolası işlemleri
-Parola en az 12 karakter olmalı (en fazla 256); terminal parolayı göstermeden sorar ve kriteri önceden basar.
+> 🔑 **Varsayılan Yönetici Girişi:** XFactor, hazır tanımlı bir geliştirici hesabı ile gelir:
+> - **Kullanıcı Adı:** `admin`
+> - **Şifre:** `xfactor`
+> 
+> Tarayıcı giriş ekranında bu bilgiler otomatik doldurulmuş olarak gelir; doğrudan **"Giriş Yap"** butonuna basarak başlayabilirsiniz.
+
+#### (Opsiyonel) Parola Değiştirme veya Yeni Yönetici Ekleme
+Parolanızı değiştirmek veya sıfırlamak isterseniz (asgari 6 karakter):
 ```bash
 cd backend
 npm run create-admin -- admin            # yeni yönetici oluşturur
 npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
-npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+npm run create-admin -- admin --reset    # unutulan parolayı sıfırlar
 cd ..
 ```
-`Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
-
 ### 2. Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
@@ -73,16 +76,11 @@ npm run dev
 İki ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
 * **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
-
-> [!CAUTION]
-> **Production / VPS Uyarısı:** VPS ortamında backend portunu (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kullanınız.
-
 ### 3. Kullanmaya Başlayın
-1. Tarayıcınızda `http://localhost:5173` adresini açın ve oluşturduğunuz yönetici hesabıyla giriş yapın.
-2. Sol menüden **`+ Yeni Proje`** oluşturun.
-3. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
-
-
+1. Tarayıcınızda `http://localhost:5173` adresini açın.
+2. Otomatik doldurulmuş varsayılan bilgilerle (`admin` / `xfactor`) doğrudan **`Giriş Yap`** butonuna tıklayın.
+3. Sol menüden **`+ Yeni Proje`** oluşturun.
+4. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
 ---
 
 ## 🧪 Test Süiti & Güvenlik Doğrulaması

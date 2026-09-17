@@ -119,12 +119,11 @@ ALLOW_MOCK_FALLBACK=false
 GOOGLE_API_KEY=...GeminiAnahtariniz...
 ```
 
-### 2. Adım: Bağımlılıklar ve Yönetici Hesabı
+### 2. Adım: Bağımlılıklar ve Varsayılan Giriş Hesabı
 ```bash
-# Backend bağımlılıkları ve yönetici hesabı
+# Backend bağımlılıkları
 cd backend
 npm install
-npm run create-admin -- admin
 cd ..
 
 # Frontend bağımlılıkları
@@ -132,19 +131,23 @@ cd frontend
 npm install
 cd ..
 ```
-`create-admin` parolayı ve doğrulamasını terminalde göstermeden sorar (en az 12 karakter olmalıdır). Mevcut kullanıcıyı yöneticiye yükseltmek için o kullanıcının geçerli parolası gerekir.
 
-#### Yönetici parolası yenileme ve sıfırlama
-Parola en az 12 karakter olmalı (en fazla 256); terminal kriteri önceden basar ve parolayı göstermeden sorar.
+> 🔑 **Hazır Varsayılan Giriş Hesabı:**  
+> XFactor, kurulum sonrasında herhangi bir kullanıcı oluşturma komutuna ihtiyaç bırakmaksızın otomatik tanımlanan bir yönetici hesabı ile gelir:
+> - **Kullanıcı Adı:** `admin`
+> - **Şifre:** `xfactor`
+> 
+> Giriş ekranı açıldığında bu bilgiler otomatik olarak kutucuklarda hazır gelir.
+
+#### (Opsiyonel) Yönetici Parolasını Değiştirme veya Sıfırlama
+Parolanızı dilediğiniz zaman terminalden güncelleyebilirsiniz (asgari 6 karakter):
 ```bash
 cd backend
-npm run create-admin -- admin            # yeni yönetici oluşturur
+npm run create-admin -- admin            # yeni yönetici ekler
 npm run create-admin -- admin --renew    # mevcut parolayı doğrulayıp yenisiyle değiştirir
-npm run create-admin -- admin --reset    # unutulan parolayı mevcut parolayı sormadan sıfırlar
+npm run create-admin -- admin --reset    # unutulan parolayı sıfırlar
 cd ..
 ```
-`Password confirmation does not match.` iki girişin farklı yazıldığı; `Existing user credentials do not match.` girilen parolanın kayıtlı parola olmadığı anlamına gelir (yenileme için `--renew`, unuttuysanız `--reset` kullanın).
-
 ### 3. Adım: Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
@@ -196,11 +199,10 @@ npm run dev
 
 ## 4. Uçtan Uca Kullanım Adımları (A'dan Z'ye)
 
-### Adım 1: Güvenli Giriş Yapma (Authentication)
+### Adım 1: Hızlı ve Güvenli Giriş Yapma (Authentication)
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
-2. `npm run create-admin -- <kullanıcı-adı>` ile oluşturduğunuz DB hesabını girin.
-3. **Giriş Yap** butonuna tıklayın. Tarayıcı 24 saatlik HttpOnly sunucu oturumu kullanır; credential `localStorage` içinde tutulmaz. **Çıkış** yalnız mevcut oturumu iptal eder.
-
+2. Karşınıza gelen ekranda varsayılan bilgiler (**admin** / **xfactor**) otomatik doldurulmuş olarak sizi karşılar.
+3. Doğrudan **Giriş Yap** butonuna tıklayarak yönetim paneline anında erişebilirsiniz. Tarayıcı 24 saatlik HttpOnly sunucu oturumu kullanır; credential `localStorage` içinde tutulmaz.
 ### Adım 2: Yeni Proje Başlatma ve Disk Senkronizasyonu
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan pencerede projenize bir isim verin (Örn: `araba-kiralama-otomasyonu`).
