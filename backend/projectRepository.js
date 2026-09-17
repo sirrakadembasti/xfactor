@@ -124,6 +124,7 @@ export function getProject(projectId) {
         plan,
         workflow,
         remediation: workflow?.remediation || null,
+        last_error: workflow?.last_error || null,
         chatHistory,
         contractId: contractRow?.id || null,
         latestArtifact: latestArtifact || null
@@ -451,9 +452,19 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     }
     const planStr = state.plan ? JSON.stringify(state.plan) : null;
 
-    if (state.remediation) {
-        state.workflow = state.workflow || {};
-        state.workflow.remediation = state.remediation;
+    if (state.remediation !== undefined) {
+        if (state.workflow) {
+            state.workflow.remediation = state.remediation;
+        } else if (state.remediation) {
+            state.workflow = { remediation: state.remediation };
+        }
+    }
+    if (state.last_error !== undefined) {
+        if (state.workflow) {
+            state.workflow.last_error = state.last_error;
+        } else if (state.last_error) {
+            state.workflow = { last_error: state.last_error };
+        }
     }
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
     const expectedRevision = Number(state.revision || 1);

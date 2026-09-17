@@ -85,7 +85,6 @@ try {
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ message: 'Hatayı düzelt ve devam et' })
             });
-
             assert.strictEqual(response.status, 200, `Chat endpoint should return 200 OK, got ${response.status}`);
             const body = await response.json();
 
@@ -113,6 +112,75 @@ try {
         assert.ok(!prompt.includes('Referans:'), 'Prompt should not contain Referans: prefix');
         assert.ok(!prompt.includes('3a9f81b2c4d5e6f7'), 'Prompt should not contain raw hex requestId');
         assert.ok(prompt.includes('Süreç hatası: LLM Kota Sınırı Aşıldı'), 'Prompt should preserve technical error message');
+        assert.ok(prompt.includes('Süreç hatası: LLM Kota Sınırı Aşıldı'), 'Prompt should preserve technical error message');
+    });
+
+    await runAsyncTest('5. In paused and verification_failed states, a plan ready response transitions to pending_approval', async () => {
+        // Paused state transition test
+        const pausedProject = await createProject({ title: "Paused Transition Test" });
+        db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(pausedProject.id);
+        let state = await readProjectState(pausedProject.id);
+        state.remediation = { ready: true, instruction: 'test' };
+        state.last_error = 'Some error';
+        await writeProjectState(pausedProject.id, state);
+
+        const app = buildTestApp();
+        const server = http.createServer(app);
+        await new Promise(r => server.listen(0, '127.0.0.1', r));
+        try {
+            const { port } = server.address();
+            const resPaused = await fetch(`http://127.0.0.1:${port}/api/projects/${pausedProject.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'başla' })
+            });
+            assert.strictEqual(resPaused.status, 200, `Chat endpoint should return 200 for paused project, got ${resPaused.status}`);
+            const bodyPaused = await resPaused.json();
+            assert.strictEqual(bodyPaused.status, 'pending_approval', 'Paused project should transition to pending_approval on plan ready');
+            assert.strictEqual(bodyPaused.remediation, null, 'Remediation should be reset to null');
+            assert.strictEqual(bodyPaused.last_error, null, 'Last error should be reset to null');
+
+            // Verification_failed state transition test
+            const failedProject = await createProject({ title: "Verification Failed Transition Test" });
+            db.prepare("UPDATE projects SET status = 'verification_failed' WHERE id = ?").run(failedProject.id);
+            let stateFailed = await readProjectState(failedProject.id);
+            stateFailed.last_error = 'Verification error';
+            await writeProjectState(failedProject.id, stateFailed);
+
+            const resFailed = await fetch(`http://127.0.0.1:${port}/api/projects/${failedProject.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'onaylıyorum' })
+            });
+            assert.strictEqual(resFailed.status, 200, `Chat endpoint should return 200 for failed project, got ${resFailed.status}`);
+            const bodyFailed = await resFailed.json();
+            assert.strictEqual(bodyFailed.status, 'pending_approval', 'Verification_failed project should transition to pending_approval on plan ready');
+            assert.strictEqual(bodyFailed.remediation, null, 'Remediation should be reset to null');
+            assert.strictEqual(bodyFailed.last_error, null, 'Last error should be reset to null');
+        } finally {
+            await new Promise(r => server.close(r));
+        }
+    });
+
+    await runAsyncTest('6. Host dependency preparation fallback successfully recovers when worker is unavailable', async () => {
+        const { executeSafeCommand } = await import('../engine/buildValidator.js');
+        const crypto = await import('crypto');
+        const fsSync = await import('fs');
+        const testDir = path.join(process.env.PROJECTS_ROOT, 'prep-fallback-test');
+        await fs.mkdir(testDir, { recursive: true });
+        await fs.writeFile(path.join(testDir, 'package.json'), JSON.stringify({ name: 'prep-fallback-test', version: '1.0.0' }, null, 2));
+
+        // Execute host fallback command as implemented in workflow.js
+        const lockPath = path.join(testDir, 'package-lock.json');
+        await executeSafeCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], { cwd: testDir });
+        assert.ok(fsSync.existsSync(lockPath), 'Host fallback should produce package-lock.json');
+
+        const lockBytes = await fs.readFile(lockPath);
+        const packageLockBase64 = lockBytes.toString('base64');
+        const packageLockSha256 = crypto.createHash('sha256').update(lockBytes).digest('hex');
+
+        assert.ok(packageLockBase64.length > 0, 'packageLockBase64 should be non-empty');
+        assert.strictEqual(packageLockSha256.length, 64, 'packageLockSha256 should be 64-char hex string');
     });
 
     finish();

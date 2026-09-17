@@ -423,7 +423,10 @@ export function createProjectRouter({
             const revisableStatuses = new Set([
                 PROJECT_STATUS.PLANNING,
                 PROJECT_STATUS.PENDING_APPROVAL,
-                PROJECT_STATUS.CAPABILITY_BLOCKED
+                PROJECT_STATUS.CAPABILITY_BLOCKED,
+                PROJECT_STATUS.PAUSED,
+                PROJECT_STATUS.VERIFICATION_FAILED,
+                PROJECT_STATUS.FAILED
             ]);
 
             const isPlanReady = !!parsedPlan ||
@@ -450,6 +453,9 @@ export function createProjectRouter({
 
                 freshState.status = PROJECT_STATUS.PENDING_APPROVAL;
                 freshState.plan = draftPlan;
+                freshState.remediation = null;
+                if (freshState.workflow) freshState.workflow.remediation = null;
+                freshState.last_error = null;
                 try {
                     const oldRapor = path.join(projectDir, 'RAPOR.md');
                     if (fsSync.existsSync(oldRapor)) fsSync.unlinkSync(oldRapor);

@@ -65,6 +65,7 @@ import { collectArtifactFiles } from '../artifactInventory.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
+import { executeSafeCommand } from './buildValidator.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -1342,12 +1343,39 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 inputSha256: crypto.createHash('sha256').update(packageJsonBytes).digest('hex'),
                 packageJsonBytes
             };
-            const prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
-            if (prepResult.status !== 'completed' || !prepResult.result?.packageLockBase64) {
+            let prepResult = null;
+            let prepError = null;
+            try {
+                prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
+            } catch (err) {
+                prepError = err;
+            }
+
+            let packageLockBase64 = null;
+            let packageLockSha256 = null;
+
+            if (prepResult?.status === 'completed' && prepResult.result?.packageLockBase64) {
+                packageLockBase64 = prepResult.result.packageLockBase64;
+                packageLockSha256 = prepResult.result.packageLockSha256;
+            } else {
+                const lockPath = path.join(projectDir, 'package-lock.json');
+                await executeSafeCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], { cwd: projectDir }).catch(() => {});
+                if (fsSync.existsSync(lockPath)) {
+                    const lockBytes = await fs.readFile(lockPath);
+                    packageLockBase64 = lockBytes.toString('base64');
+                    packageLockSha256 = crypto.createHash('sha256').update(lockBytes).digest('hex');
+                } else {
+                    const errorMsg = prepError?.message || 'Dependency preparation did not produce a package-lock.json.';
+                    throw new Error(errorMsg);
+                }
+            }
+
+            if (!packageLockBase64) {
                 throw new Error('Dependency preparation did not produce a package-lock.json.');
             }
-            const lockContent = Buffer.from(prepResult.result.packageLockBase64, 'base64');
-            if (crypto.createHash('sha256').update(lockContent).digest('hex') !== prepResult.result.packageLockSha256) {
+
+            const lockContent = Buffer.from(packageLockBase64, 'base64');
+            if (packageLockSha256 && crypto.createHash('sha256').update(lockContent).digest('hex') !== packageLockSha256) {
                 throw new Error('Worker returned a package-lock digest mismatch.');
             }
             const existingLockIndex = files.findIndex(f => f.path === 'package-lock.json');

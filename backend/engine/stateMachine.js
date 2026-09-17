@@ -8,6 +8,7 @@ export const PROJECT_STATUS = {
     VERIFICATION_RUNNING: 'verification_running',
     VERIFICATION_FAILED: 'verification_failed',
     PAUSED: 'paused',
+    FAILED: 'failed',
     BUILD_VERIFIED: 'build_verified',
     RUNTIME_VERIFIED: 'runtime_verified',
     ACCEPTANCE_VERIFIED: 'acceptance_verified',
@@ -55,7 +56,13 @@ export function canTransitionProject(fromStatus, toStatus) {
         ],
         [PROJECT_STATUS.VERIFICATION_FAILED]: [
             PROJECT_STATUS.PAUSED,
-            PROJECT_STATUS.PLANNING
+            PROJECT_STATUS.PLANNING,
+            PROJECT_STATUS.PENDING_APPROVAL
+        ],
+        [PROJECT_STATUS.FAILED]: [
+            PROJECT_STATUS.PAUSED,
+            PROJECT_STATUS.PLANNING,
+            PROJECT_STATUS.PENDING_APPROVAL
         ],
         [PROJECT_STATUS.BUILD_VERIFIED]: [
             PROJECT_STATUS.RUNTIME_VERIFIED,
@@ -70,7 +77,8 @@ export function canTransitionProject(fromStatus, toStatus) {
         [PROJECT_STATUS.PAUSED]: [
             PROJECT_STATUS.IMPLEMENTING,
             PROJECT_STATUS.VERIFICATION_PENDING,
-            PROJECT_STATUS.PLANNING
+            PROJECT_STATUS.PLANNING,
+            PROJECT_STATUS.PENDING_APPROVAL
         ],
         [PROJECT_STATUS.CAPABILITY_BLOCKED]: [
             PROJECT_STATUS.PLANNING,
