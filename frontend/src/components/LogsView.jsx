@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Play, Search, Filter } from 'lucide-react';
+import { Terminal, Play, Search } from 'lucide-react';
 
 export default function LogsView({
   logs = [],

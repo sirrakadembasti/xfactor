@@ -354,13 +354,28 @@ Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik o
 - **Kalite Kapıları & Denetim:** `agents/tester.js` ➔ `engine/buildValidator.js` ➔ `engine/selfCorrection.js`
 - **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js` ➔ `migrations/`
 
-### 2. Bilgi Grafiği (Graphify) ile Kod İnceleme
-XFactor mimarisini bir bilgi grafiğine (Knowledge Graph) dönüştürmek için:
-1. `backend/` ve `frontend/` dizinlerindeki ES Module import ağacını analiz edin.
-2. `backend/agents/index.js` ve `docs/*.md` eşleşmelerini `test_docs_agent_sync.js` test süitiyle doğrulayın.
-3. ReactFlow DAG bileşenini (`frontend/src/components/DAGFlowView.jsx`) inceleyerek dalga seviyelendirme (wave execution) mantığını genişletin.
+### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
+XFactor, projenin kaynak kodlarını, yaşayan dokümanlarını, ajan sözleşmelerini ve test süitlerini AST seviyesinde analiz eden yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır.
 
+#### Grafiği Üretme ve Güncelleme:
+Kök dizinde tek bir komutla tüm bilgi grafiğini ve görsel HTML haritalarını tazeleyebilirsiniz:
+```bash
+npm run graph
+```
 
+Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
+1. **`graphify-out/graph.json`:** 69 düğüm (node) ve 92 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
+2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif, sürüklenebilir ve filtrelenebilir **2D/3D Kod Ağ Haritası**.
+3. **`graphify-out/GRAPH_TREE.html`:** Renk kodlu rozetlerle (Docs, Agents, Engine, Backend, Frontend, Tests) modül hiyerarşisini gösteren **Hiyerarşik Ağaç Görünümü**.
+4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
+
+#### Çekirdek Odak Düğümleri ("God Nodes"):
+- `backend/tests/test_runner.js` — 25 bağlantı ile tüm test ekosisteminin merkez koşucusu.
+- `backend/engine/workflow.js` — 12 bağlantı ile DAG dalgalarını yürüten master orkestratör.
+- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 10 bağlantı ile platform anayasası.
+- `backend/agents/index.js` — 9 bağlantı ile ajan fabrikası ve kayıt defteri.
+- `backend/routes/projectRoutes.js` — 8 bağlantı ile REST API ve revizyon merkezi.
+- `frontend/src/App.jsx` — 8 bağlantı ile React 18 kullanıcı arayüzü kökü.
 ---
 
 ## 11. 18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)

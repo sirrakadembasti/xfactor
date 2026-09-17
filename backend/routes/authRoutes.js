@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { validateLoginPayload } from '../security.js';
 import {
-    authenticateUser,
     authenticateUserAsync,
     createSession,
     createSessionAfterTotp,

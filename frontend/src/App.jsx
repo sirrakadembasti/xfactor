@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { applyNodeChanges, applyEdgeChanges, MarkerType } from 'reactflow';
+import { applyNodeChanges, applyEdgeChanges } from 'reactflow';
 import {
   LayoutDashboard,
   Plus,
@@ -10,7 +10,7 @@ import {
   Clock
 } from 'lucide-react';
 import { api, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
-import { computeHierarchicalDAG, getAgentVisualTheme } from './utils/dagLayout';
+import { computeHierarchicalDAG } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';

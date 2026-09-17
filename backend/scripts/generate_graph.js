@@ -5,7 +5,6 @@
  */
 
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -49,6 +48,8 @@ async function extractCodeGraph() {
         { id: 'docs/coder.md', label: 'docs/coder.md', desc: 'Coder Ajanı bileşen kompozisyonu ve kodlama kuralları' },
         { id: 'docs/reviewer.md', label: 'docs/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
         { id: 'docs/tester.md', label: 'docs/tester.md', desc: 'Tester Ajanı deterministik sentaks ve auto-repair kuralları' },
+        { id: 'docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md', label: '2026-09-16 Orkestrasyon Planı', desc: 'Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı' },
+        { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
     ];
 
@@ -91,6 +92,7 @@ async function extractCodeGraph() {
     const engine = [
         { id: 'backend/engine/workflow.js', label: 'workflow.js (Master Orchestrator)', desc: 'Paralel DAG dalgalarını yürüten ana iş akışı komutanı' },
         { id: 'backend/engine/dag.js', label: 'dag.js (TaskDAG & Execution Waves)', desc: 'Topolojik sıra ve seviyeli dalga (wave) algoritması' },
+        { id: 'backend/engine/stateMachine.js', label: 'stateMachine.js (Lifecycle & Revisions)', desc: 'Proje durum makinesi, CAS geçişleri ve revizyon kilit yönetimi' },
         { id: 'backend/engine/fileProtocol.js', label: 'fileProtocol.js (Agent=Klasör)', desc: 'projects/<id> altında canlı protokol dosyalarını yöneten motor' },
         { id: 'backend/engine/codeGenerator.js', label: 'codeGenerator.js (Scaffold Guard)', desc: '.env, Next 14.2, Vite ve Express şablon koruması' },
         { id: 'backend/engine/selfCorrection.js', label: 'selfCorrection.js (Review Loop)', desc: 'Coder-Reviewer 2 turlu denetim ve veto döngüsü' }
@@ -105,11 +107,16 @@ async function extractCodeGraph() {
     addLink('backend/engine/workflow.js', 'backend/engine/codeGenerator.js', 'triggers_scaffold');
     addLink('backend/engine/workflow.js', 'backend/engine/selfCorrection.js', 'runs_review_loop');
     addLink('backend/engine/workflow.js', 'backend/agents/index.js', 'dispatches_agents');
+    addLink('backend/engine/workflow.js', 'backend/engine/stateMachine.js', 'guards_states');
 
     // 4. Server & Backend Services (Group 4: Green)
     const backendServices = [
         { id: 'backend/server.js', label: 'server.js (Express & WSS)', desc: 'REST API sunucusu ve Sec-WebSocket-Protocol yayıncısı' },
         { id: 'backend/db.js', label: 'db.js (SQLite WAL & State)', desc: 'SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı' },
+        { id: 'backend/projectRepository.js', label: 'projectRepository.js (Canonical Store)', desc: 'Kanonik proje CRUD, atomik SQLite işlemleri, disk-varlık kontrolleri ve .trash izolasyonu' },
+        { id: 'backend/services/reconciliationService.js', label: 'services/reconciliationService.js (Disk-DB Sync)', desc: 'Disk ve SQLite arasında çift yönlü senkronizasyon, eksik klasör tespiti ve otomatik proje kaydı' },
+        { id: 'backend/executionClient.js', label: 'executionClient.js (Worker Client & Host Fallback)', desc: 'İzole execution worker HTTP istemcisi ve yerel host derleyici fallback köprüsü' },
+        { id: 'execution/server.js', label: 'execution/server.js (Execution Worker)', desc: 'Ayrık mimari derleme/test çalıştırma worker servisi' },
         { id: 'backend/auth.js', label: 'auth.js (Scrypt & RBAC)', desc: 'Scrypt parola hashleme, timingSafeEqual ve rol erişim kontrolü' },
         { id: 'backend/security.js', label: 'security.js (Security Guard)', desc: 'Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama' },
         { id: 'backend/llm.js', label: 'llm.js (Multi-Provider AI)', desc: 'Gemini 3.7 Flash, OpenAI ve SDK/REST fallback yönlendirici' },
@@ -130,14 +137,20 @@ async function extractCodeGraph() {
     addLink('backend/engine/workflow.js', 'backend/db.js', 'persists_state');
     addLink('backend/server.js', 'backend/auth.js', 'authenticates');
     addLink('backend/server.js', 'backend/security.js', 'secures');
+    addLink('backend/routes/projectRoutes.js', 'backend/projectRepository.js', 'persists_projects');
+    addLink('backend/routes/projectRoutes.js', 'backend/services/reconciliationService.js', 'reconciles_disk');
+    addLink('backend/routes/projectRoutes.js', 'backend/engine/stateMachine.js', 'validates_revisions');
+    addLink('backend/engine/workflow.js', 'backend/executionClient.js', 'delegates_execution');
+    addLink('backend/executionClient.js', 'execution/server.js', 'dispatches_jobs');
 
     // 5. Frontend UI & Components (Group 5: Amber/Orange)
     const frontend = [
         { id: 'frontend/src/App.jsx', label: 'App.jsx (Main Container)', desc: 'React 18 ana panel koordinatörü ve WebSocket canlı istemcisi' },
-        { id: 'frontend/src/components/Sidebar.jsx', label: 'Sidebar.jsx', desc: 'Sol menü, arama, pin, rename ve proje işlemleri' },
+        { id: 'frontend/src/components/Sidebar.jsx', label: 'Sidebar.jsx', desc: 'Sol menü, arama, pin, ZIP indirme ve güvenli silme işlemleri' },
         { id: 'frontend/src/components/Header.jsx', label: 'Header.jsx', desc: 'Üst menü, sekme geçişleri ve süreç kontrol butonları' },
         { id: 'frontend/src/components/ChatView.jsx', label: 'ChatView.jsx', desc: 'Manager Sohbet, beyin fırtınası ve revizyon paneli' },
         { id: 'frontend/src/components/DAGFlowView.jsx', label: 'DAGFlowView.jsx', desc: 'ReactFlow canlı DAG akış şeması ve log tablosu' },
+        { id: 'frontend/src/utils/dagLayout.js', label: 'utils/dagLayout.js (6-Agent DAG Layout)', desc: '6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru' },
         { id: 'frontend/src/components/IDEView.jsx', label: 'IDEView.jsx', desc: 'Monaco Editor kaynak kod inceleyici' },
         { id: 'frontend/src/services/api.js', label: 'services/api.js', desc: 'HttpOnly server-session ve CSRF uyumlu API istemcisi' }
     ];
@@ -149,6 +162,7 @@ async function extractCodeGraph() {
 
     addLink('frontend/src/App.jsx', 'frontend/src/services/api.js', 'uses');
     addLink('frontend/src/services/api.js', 'backend/server.js', 'http_and_ws');
+    addLink('frontend/src/components/DAGFlowView.jsx', 'frontend/src/utils/dagLayout.js', 'computes_layout');
 
     // 6. Test Suites (Group 6: Red)
     const tests = [
@@ -174,7 +188,9 @@ async function extractCodeGraph() {
         { id: 'backend/tests/test_tur2_edge_cases.js', label: 'test_tur2_edge_cases.js (8 Test)', desc: 'Döngü stresi, ayrık graf ve path traversal' },
         { id: 'backend/tests/test_runtime_verification.js', label: 'test_runtime_verification.js (6 Test)', desc: 'Sentaks denetimi, checkpoint veto ve dalga' },
         { id: 'backend/tests/test_e2e_simulation.js', label: 'test_e2e_simulation.js (1 Test)', desc: 'Uçtan uca otonom pipeline simülasyonu' },
-        { id: 'backend/tests/test_disk_sync_and_isolation.js', label: 'test_disk_sync_and_isolation.js (4 Test)', desc: 'Çift yönlü disk senkronizasyonu ve sandbox izolasyonu' }
+        { id: 'backend/tests/test_disk_sync_and_isolation.js', label: 'test_disk_sync_and_isolation.js (4 Test)', desc: 'Çift yönlü disk senkronizasyonu ve sandbox izolasyonu' },
+        { id: 'backend/tests/test_manager_error_telemetry.js', label: 'test_manager_error_telemetry.js', desc: 'Manager hata telemetrisi, revizyon kilit açma ve host fallback testleri' },
+        { id: 'frontend/src/utils/__tests__/dagLayout.test.js', label: 'dagLayout.test.js', desc: 'DAG layout 6-ajan hiyerarşisi ve dummy düğüm temizlik testleri' }
     ];
 
     tests.forEach(t => {
@@ -192,9 +208,29 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_build_validator.js', 'backend/engine/buildValidator.js', 'verifies');
     addLink('backend/tests/test_workflow_attempts.js', 'backend/engine/workflowAttempts.js', 'verifies');
     addLink('backend/tests/test_cancellation_and_deadlines.js', 'backend/engine/cancellation.js', 'verifies');
+    addLink('backend/tests/test_runner.js', 'backend/tests/test_manager_error_telemetry.js', 'runs');
+    addLink('backend/tests/test_manager_error_telemetry.js', 'backend/engine/workflow.js', 'verifies');
+    addLink('backend/tests/test_manager_error_telemetry.js', 'backend/routes/projectRoutes.js', 'verifies');
+    addLink('frontend/src/utils/__tests__/dagLayout.test.js', 'frontend/src/utils/dagLayout.js', 'verifies');
 
     const graphData = { nodes, links };
     await fs.writeFile(path.join(OUT_DIR, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf8');
+
+    // Calculate node degrees dynamically
+    const degreeMap = new Map();
+    links.forEach(l => {
+        degreeMap.set(l.source, (degreeMap.get(l.source) || 0) + 1);
+        degreeMap.set(l.target, (degreeMap.get(l.target) || 0) + 1);
+    });
+
+    const topNodes = [...nodes]
+        .map(n => ({ ...n, degree: degreeMap.get(n.id) || 0 }))
+        .sort((a, b) => b.degree - a.degree)
+        .slice(0, 6);
+
+    const godNodesText = topNodes
+        .map((n, i) => `${i + 1}. **${n.id}**: ${n.degree} bağlantı — ${n.description || n.label}`)
+        .join('\n');
 
     // Generate GRAPH_REPORT.md
     const reportMd = `# 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
@@ -207,12 +243,7 @@ async function extractCodeGraph() {
 ---
 
 ## 🌟 Çekirdek Odak Düğümleri ("God Nodes" & Merkez Bileşenler)
-1. **backend/engine/workflow.js**: 8 bağlantı — Master orkestratör, DAG dalga yürütme ve veto yöneticisi.
-2. **backend/agents/agentLoader.js**: 7 bağlantı — Canlı Markdown anayasasını (docs/*.md) yapay zekâ promptlarına bağlayan çekirdek köprü.
-3. **backend/server.js**: 6 bağlantı — Express REST API ve Sec-WebSocket-Protocol sunucusu.
-4. **docs/ORKESTRASYON-TALIMATNAMESI.md**: 8 bağlantı — Platform anayasası ve tüm ajan kurallarının kaynağı.
-5. **frontend/src/App.jsx**: 7 bağlantı — Canlı DAG görselleştirmesi, Monaco IDE ve Chat koordinatörü.
-6. **backend/tests/test_runner.js**: 7 bağlantı — 71 testlik merkezi test koşucusu.
+${godNodesText}
 
 ---
 
@@ -220,12 +251,12 @@ async function extractCodeGraph() {
 
 | Renk Kodu | Topluluk | Dosya Sayısı | Açıklama |
 |:---:|---|:---:|---|
-| 🟣 **Mor** | **Docs & Anayasa** | 8 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md ve ajan kural Markdown dosyaları. |
-| 🟣 **Eflatun** | **Agents** | 9 Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
-| 🔵 **Mavi** | **Engine** | 5 Dosya | DAG motoru, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
-| 🟢 **Yeşil** | **Backend & API** | 7 Dosya | Express server, SQLite WAL, Scrypt, revocable session, CSRF, RBAC ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | 7 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, Monaco IDE. |
-| 🔴 **Kırmızı** | **Tests** | Süit bazlı | Merkezi backend/tests davranış süitleri ve master koşucu. |
+| 🟣 **Mor** | **Docs & Anayasa** | ${docs.length} Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
+| 🟣 **Eflatun** | **Agents** | ${agents.length} Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
+| 🔵 **Mavi** | **Engine** | ${engine.length} Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
+| 🟢 **Yeşil** | **Backend & API** | ${backendServices.length} Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
+| 🟠 **Turuncu** | **Frontend** | ${frontend.length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout, Monaco IDE. |
+| 🔴 **Kırmızı** | **Tests** | ${tests.length} Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
 
@@ -561,6 +592,12 @@ async function extractCodeGraph() {
           <li><span class="file">📄 coder.md</span> <span class="tag tag-doc">Coder Kuralı</span></li>
           <li><span class="file">📄 reviewer.md</span> <span class="tag tag-doc">Reviewer Veto Kuralı</span></li>
           <li><span class="file">📄 tester.md</span> <span class="tag tag-doc">Tester QA Kuralı</span></li>
+          <li><span class="folder">📁 superpowers/plans/</span>
+            <ul>
+              <li><span class="file">📄 2026-09-16-orchestration-remediation-plan.md</span> <span class="tag tag-doc">Orkestrasyon İyileştirme Planı</span></li>
+              <li><span class="file">📄 2026-09-17-remediation-refinement-plan.md</span> <span class="tag tag-doc">İyileştirme Rafine Planı</span></li>
+            </ul>
+          </li>
         </ul>
       </li>
       <li><span class="folder">📁 backend/</span>
@@ -582,6 +619,7 @@ async function extractCodeGraph() {
             <ul>
               <li><span class="file">📄 workflow.js</span> <span class="tag tag-engine">Master Orchestrator</span></li>
               <li><span class="file">📄 dag.js</span> <span class="tag tag-engine">DAG & Waves</span></li>
+              <li><span class="file">📄 stateMachine.js</span> <span class="tag tag-engine">Lifecycle & Revisions</span></li>
               <li><span class="file">📄 fileProtocol.js</span> <span class="tag tag-engine">Agent=Klasör</span></li>
               <li><span class="file">📄 codeGenerator.js</span> <span class="tag tag-engine">Scaffold Guard (.env)</span></li>
               <li><span class="file">📄 selfCorrection.js</span> <span class="tag tag-engine">2 Turlu Veto Döngüsü</span></li>
@@ -593,6 +631,13 @@ async function extractCodeGraph() {
               <li><span class="file">📄 authRoutes.js</span> <span class="tag tag-backend">Login & Session</span></li>
             </ul>
           </li>
+          <li><span class="folder">📁 services/</span>
+            <ul>
+              <li><span class="file">📄 reconciliationService.js</span> <span class="tag tag-backend">Disk-DB Çift Yönlü Sync</span></li>
+            </ul>
+          </li>
+          <li><span class="file">📄 projectRepository.js</span> <span class="tag tag-backend">Kanonik Proje Deposu</span></li>
+          <li><span class="file">📄 executionClient.js</span> <span class="tag tag-backend">Worker Client & Host Fallback</span></li>
           <li><span class="folder">📁 tests/</span>
             <ul>
               <li><span class="file">📄 test_runner.js</span> <span class="tag tag-test">Master Koşucu (npm test)</span></li>
@@ -618,6 +663,7 @@ async function extractCodeGraph() {
               <li><span class="file">📄 test_runtime_verification.js</span> <span class="tag tag-test">6 Testlik Çalışma Zamanı</span></li>
               <li><span class="file">📄 test_e2e_simulation.js</span> <span class="tag tag-test">Uçtan Uca Otonom Pipeline</span></li>
               <li><span class="file">📄 test_disk_sync_and_isolation.js</span> <span class="tag tag-test">Disk Senkronizasyonu & İzolasyon</span></li>
+              <li><span class="file">📄 test_manager_error_telemetry.js</span> <span class="tag tag-test">Manager Hata & Host Fallback</span></li>
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>
@@ -627,13 +673,23 @@ async function extractCodeGraph() {
           <li><span class="file">📄 llm.js</span> <span class="tag tag-backend">Gemini 3.7 Flash</span></li>
         </ul>
       </li>
+      <li><span class="folder">📁 execution/</span>
+        <ul>
+          <li><span class="file">📄 server.js</span> <span class="tag tag-engine">Execution Worker Servisi</span></li>
+        </ul>
+      </li>
       <li><span class="folder">📁 frontend/src/</span>
         <ul>
           <li><span class="file">📄 App.jsx</span> <span class="tag tag-ui">Ana Koordinatör & WS</span></li>
-          <li><span class="file">📄 components/Sidebar.jsx</span> <span class="tag tag-ui">Sol Menü & Pin</span></li>
+          <li><span class="file">📄 components/Sidebar.jsx</span> <span class="tag tag-ui">Sol Menü, Pin & ZIP İndir</span></li>
           <li><span class="file">📄 components/Header.jsx</span> <span class="tag tag-ui">Üst Menü & Sekmeler</span></li>
           <li><span class="file">📄 components/ChatView.jsx</span> <span class="tag tag-ui">Sohbet & Revizyon</span></li>
           <li><span class="file">📄 components/DAGFlowView.jsx</span> <span class="tag tag-ui">Canlı ReactFlow DAG</span></li>
+          <li><span class="folder">📁 utils/</span>
+            <ul>
+              <li><span class="file">📄 dagLayout.js</span> <span class="tag tag-ui">6-Ajan Hiyerarşik DAG Motoru</span></li>
+            </ul>
+          </li>
           <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
           <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
         </ul>

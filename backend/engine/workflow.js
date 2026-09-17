@@ -7,7 +7,6 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { TaskDAG } from './dag.js';
 import {
     ensureDir,
@@ -18,9 +17,6 @@ import {
     writeDurum,
     writeRapor,
     checkTodoItem,
-    uncheckTodoItem,
-    isTaskCompleted,
-    isFolderCompleted,
     readAltTalimatname,
     readTasksFromTodoFile,
     reconcileTaskCache,
@@ -39,7 +35,7 @@ import {
 } from '../agents/schemas.js';
 import { validatePlanTasks } from '../agents/director.js';
 import { db, dbEvents, saveProjectLog } from '../db.js';
-import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, validateGenerationQuotas, detectProjectStack } from './codeGenerator.js';
+import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { runLLMTaskWithRetry } from './llmTaskRetry.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';

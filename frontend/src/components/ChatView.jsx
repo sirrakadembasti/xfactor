@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Play, Pause, Send, Clock, Sparkles, Loader2, Bot, User } from 'lucide-react';
+import { Play, Pause, Send, Clock, Sparkles, Loader2, User } from 'lucide-react';
 
 export default function ChatView({
   projectState,

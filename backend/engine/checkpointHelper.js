@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { canonicalizeTaskDependencies } from './dag.js';
 

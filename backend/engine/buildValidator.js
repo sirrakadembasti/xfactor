@@ -7,7 +7,6 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
-import { isSafeProjectPath } from '../security.js';
 import { detectProjectStack } from './codeGenerator.js';
 
 import { executeInSandbox } from '../verification/sandboxRunner.js';

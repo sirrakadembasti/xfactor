@@ -1,19 +1,19 @@
 # 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
 
 **Oluşturulma Tarihi:** 2026-09-17  
-**Toplam Düğüm (Nodes):** 59  
-**Toplam Bağlantı (Edges):** 76  
+**Toplam Düğüm (Nodes):** 69  
+**Toplam Bağlantı (Edges):** 92  
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
 
 ---
 
 ## 🌟 Çekirdek Odak Düğümleri ("God Nodes" & Merkez Bileşenler)
-1. **backend/engine/workflow.js**: 8 bağlantı — Master orkestratör, DAG dalga yürütme ve veto yöneticisi.
-2. **backend/agents/agentLoader.js**: 7 bağlantı — Canlı Markdown anayasasını (docs/*.md) yapay zekâ promptlarına bağlayan çekirdek köprü.
-3. **backend/server.js**: 6 bağlantı — Express REST API ve Sec-WebSocket-Protocol sunucusu.
-4. **docs/ORKESTRASYON-TALIMATNAMESI.md**: 8 bağlantı — Platform anayasası ve tüm ajan kurallarının kaynağı.
-5. **frontend/src/App.jsx**: 7 bağlantı — Canlı DAG görselleştirmesi, Monaco IDE ve Chat koordinatörü.
-6. **backend/tests/test_runner.js**: 7 bağlantı — 71 testlik merkezi test koşucusu.
+1. **backend/tests/test_runner.js**: 25 bağlantı — npm test master koşucusu
+2. **backend/engine/workflow.js**: 12 bağlantı — Paralel DAG dalgalarını yürüten ana iş akışı komutanı
+3. **docs/ORKESTRASYON-TALIMATNAMESI.md**: 10 bağlantı — Platformun en üst master orkestrasyon anayasası
+4. **backend/agents/index.js**: 9 bağlantı — Merkezi Ajan Kayıt Defteri ve getAgent() fabrikası
+5. **backend/routes/projectRoutes.js**: 8 bağlantı — Proje CRUD, Chat, Onay ve Revizyon uç noktaları
+6. **frontend/src/App.jsx**: 8 bağlantı — React 18 ana panel koordinatörü ve WebSocket canlı istemcisi
 
 ---
 
@@ -21,12 +21,12 @@
 
 | Renk Kodu | Topluluk | Dosya Sayısı | Açıklama |
 |:---:|---|:---:|---|
-| 🟣 **Mor** | **Docs & Anayasa** | 8 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md ve ajan kural Markdown dosyaları. |
+| 🟣 **Mor** | **Docs & Anayasa** | 10 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
 | 🟣 **Eflatun** | **Agents** | 9 Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
-| 🔵 **Mavi** | **Engine** | 5 Dosya | DAG motoru, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
-| 🟢 **Yeşil** | **Backend & API** | 7 Dosya | Express server, SQLite WAL, Scrypt, revocable session, CSRF, RBAC ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | 7 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, Monaco IDE. |
-| 🔴 **Kırmızı** | **Tests** | Süit bazlı | Merkezi backend/tests davranış süitleri ve master koşucu. |
+| 🔵 **Mavi** | **Engine** | 6 Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
+| 🟢 **Yeşil** | **Backend & API** | 11 Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
+| 🟠 **Turuncu** | **Frontend** | 8 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout, Monaco IDE. |
+| 🔴 **Kırmızı** | **Tests** | 25 Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
 

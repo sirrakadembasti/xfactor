@@ -94,9 +94,24 @@ npm run test:e2e
 
 ---
 
+## 🧠 Mimari Bilgi Grafiği (Graphify)
+
+XFactor, projedeki tüm kaynak kodları, yaşayan anayasa dokümanlarını (`docs/*.md`), ajan modüllerini ve test süitlerini AST seviyesinde analiz eden yerel bir Graphify bilgi grafiği motoruna sahiptir:
+
+```bash
+npm run graph
+```
+
+Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir:
+- **İnteraktif 2D/3D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
+- **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (Renk kodlu hiyerarşi görünümü)
+- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (69 düğüm, 92 bağlantı ve God Node analizleri)
+---
+
 ## 📚 Kapsamlı Dokümantasyon
 
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
 * 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
+* 🧹 **[Refactor & Kod Temizliği Raporu (refactor-rapor.md)](refactor-rapor.md)** — Graphify destekli ölü kod analizi, temizlik envanteri ve doğrulama metrikleri.
 

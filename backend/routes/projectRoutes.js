@@ -13,10 +13,6 @@ import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agent
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
-    getProjectRole,
-    canViewProject,
-    canEditProject,
-    canDeleteProject,
     canTransitionProjectStatus,
     getUserProjects
 } from '../auth.js';

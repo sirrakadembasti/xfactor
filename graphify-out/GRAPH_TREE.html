@@ -67,6 +67,12 @@
           <li><span class="file">📄 coder.md</span> <span class="tag tag-doc">Coder Kuralı</span></li>
           <li><span class="file">📄 reviewer.md</span> <span class="tag tag-doc">Reviewer Veto Kuralı</span></li>
           <li><span class="file">📄 tester.md</span> <span class="tag tag-doc">Tester QA Kuralı</span></li>
+          <li><span class="folder">📁 superpowers/plans/</span>
+            <ul>
+              <li><span class="file">📄 2026-09-16-orchestration-remediation-plan.md</span> <span class="tag tag-doc">Orkestrasyon İyileştirme Planı</span></li>
+              <li><span class="file">📄 2026-09-17-remediation-refinement-plan.md</span> <span class="tag tag-doc">İyileştirme Rafine Planı</span></li>
+            </ul>
+          </li>
         </ul>
       </li>
       <li><span class="folder">📁 backend/</span>
@@ -88,6 +94,7 @@
             <ul>
               <li><span class="file">📄 workflow.js</span> <span class="tag tag-engine">Master Orchestrator</span></li>
               <li><span class="file">📄 dag.js</span> <span class="tag tag-engine">DAG & Waves</span></li>
+              <li><span class="file">📄 stateMachine.js</span> <span class="tag tag-engine">Lifecycle & Revisions</span></li>
               <li><span class="file">📄 fileProtocol.js</span> <span class="tag tag-engine">Agent=Klasör</span></li>
               <li><span class="file">📄 codeGenerator.js</span> <span class="tag tag-engine">Scaffold Guard (.env)</span></li>
               <li><span class="file">📄 selfCorrection.js</span> <span class="tag tag-engine">2 Turlu Veto Döngüsü</span></li>
@@ -99,6 +106,13 @@
               <li><span class="file">📄 authRoutes.js</span> <span class="tag tag-backend">Login & Session</span></li>
             </ul>
           </li>
+          <li><span class="folder">📁 services/</span>
+            <ul>
+              <li><span class="file">📄 reconciliationService.js</span> <span class="tag tag-backend">Disk-DB Çift Yönlü Sync</span></li>
+            </ul>
+          </li>
+          <li><span class="file">📄 projectRepository.js</span> <span class="tag tag-backend">Kanonik Proje Deposu</span></li>
+          <li><span class="file">📄 executionClient.js</span> <span class="tag tag-backend">Worker Client & Host Fallback</span></li>
           <li><span class="folder">📁 tests/</span>
             <ul>
               <li><span class="file">📄 test_runner.js</span> <span class="tag tag-test">Master Koşucu (npm test)</span></li>
@@ -124,6 +138,7 @@
               <li><span class="file">📄 test_runtime_verification.js</span> <span class="tag tag-test">6 Testlik Çalışma Zamanı</span></li>
               <li><span class="file">📄 test_e2e_simulation.js</span> <span class="tag tag-test">Uçtan Uca Otonom Pipeline</span></li>
               <li><span class="file">📄 test_disk_sync_and_isolation.js</span> <span class="tag tag-test">Disk Senkronizasyonu & İzolasyon</span></li>
+              <li><span class="file">📄 test_manager_error_telemetry.js</span> <span class="tag tag-test">Manager Hata & Host Fallback</span></li>
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>
@@ -133,13 +148,23 @@
           <li><span class="file">📄 llm.js</span> <span class="tag tag-backend">Gemini 3.7 Flash</span></li>
         </ul>
       </li>
+      <li><span class="folder">📁 execution/</span>
+        <ul>
+          <li><span class="file">📄 server.js</span> <span class="tag tag-engine">Execution Worker Servisi</span></li>
+        </ul>
+      </li>
       <li><span class="folder">📁 frontend/src/</span>
         <ul>
           <li><span class="file">📄 App.jsx</span> <span class="tag tag-ui">Ana Koordinatör & WS</span></li>
-          <li><span class="file">📄 components/Sidebar.jsx</span> <span class="tag tag-ui">Sol Menü & Pin</span></li>
+          <li><span class="file">📄 components/Sidebar.jsx</span> <span class="tag tag-ui">Sol Menü, Pin & ZIP İndir</span></li>
           <li><span class="file">📄 components/Header.jsx</span> <span class="tag tag-ui">Üst Menü & Sekmeler</span></li>
           <li><span class="file">📄 components/ChatView.jsx</span> <span class="tag tag-ui">Sohbet & Revizyon</span></li>
           <li><span class="file">📄 components/DAGFlowView.jsx</span> <span class="tag tag-ui">Canlı ReactFlow DAG</span></li>
+          <li><span class="folder">📁 utils/</span>
+            <ul>
+              <li><span class="file">📄 dagLayout.js</span> <span class="tag tag-ui">6-Ajan Hiyerarşik DAG Motoru</span></li>
+            </ul>
+          </li>
           <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
           <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
         </ul>
