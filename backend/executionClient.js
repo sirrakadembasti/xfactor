@@ -10,7 +10,7 @@ export function createExecutionClient(config = {}) {
     }
     workerToken = 'dev-worker-token-internal';
   }
-  const workerUrl = (config.EXECUTION_WORKER_URL || config.WORKER_URL || 'http://127.0.0.1:8080').replace(/\/$/, '');
+  const workerUrl = (config.EXECUTION_WORKER_URL || config.WORKER_URL || 'http://127.0.0.1:8099').replace(/\/$/, '');
   const parsed = new URL(workerUrl);
   if (parsed.protocol === 'http:' && !['127.0.0.1','localhost'].includes(parsed.hostname)) throw new Error('Insecure HTTP URL must be loopback');
   if (!['http:','https:'].includes(parsed.protocol)) throw new Error('URL must be http (loopback) or https');

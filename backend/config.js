@@ -75,7 +75,7 @@ export function validateRuntimeConfig(env = process.env) {
     const artifactsRoot = normalize(env.ARTIFACTS_ROOT);
     const projectsRoot = normalize(env.PROJECTS_ROOT);
     const dbPath = normalize(env.DB_PATH);
-    const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8080';
+    const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8099';
     let workerToken = normalize(env.EXECUTION_WORKER_TOKEN);
     if (!production && !workerToken) {
         workerToken = 'dev-worker-token-internal';

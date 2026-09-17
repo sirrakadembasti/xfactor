@@ -39,7 +39,7 @@ function startBackend() {
             ...process.env,
             FORCE_COLOR: '1',
             EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN || 'dev-worker-token-internal',
-            EXECUTION_WORKER_URL: process.env.EXECUTION_WORKER_URL || 'http://127.0.0.1:8080'
+            EXECUTION_WORKER_URL: process.env.EXECUTION_WORKER_URL || 'http://127.0.0.1:8099'
         },
         stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -90,7 +90,7 @@ function startWorker() {
             ...process.env,
             FORCE_COLOR: '1',
             EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN || 'dev-worker-token-internal',
-            PORT: process.env.PORT || '8080'
+            PORT: process.env.PORT || '8099'
         },
         stdio: ['ignore', 'pipe', 'pipe']
     });

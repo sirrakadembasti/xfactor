@@ -241,7 +241,7 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const token = process.env.EXECUTION_WORKER_TOKEN || process.env.WORKER_TOKEN || 'dev-worker-token-internal';
-  const port = parseInt(process.env.PORT || process.env.EXECUTION_WORKER_PORT || '8080', 10);
+  const port = parseInt(process.env.PORT || process.env.EXECUTION_WORKER_PORT || '8099', 10);
   const host = process.env.HOST || '127.0.0.1';
   const dbPath = process.env.EXECUTION_WORKER_DB || path.join(os.tmpdir(), 'xfactor-dev-worker-jobs.json');
 
