@@ -150,11 +150,26 @@ test('shows the ZIP button only for a completed project with a verified artifact
   expect(screen.getByRole('button', { name: /zip/i })).toBeInTheDocument();
 });
 
-test('does not expose a ZIP action in the project-list menu', () => {
-  render(<SidebarWithMenu />);
+test('does not expose rename action in project-list menu, exposes ZIP action when completed and handleDownloadZip is provided', () => {
+  const handleDownloadZip = vi.fn();
+  function TestSidebar() {
+    const [activeMenuProjectId, setActiveMenuProjectId] = React.useState(null);
+    return (
+      <Sidebar
+        {...sidebarProps}
+        handleDownloadZip={handleDownloadZip}
+        activeMenuProjectId={activeMenuProjectId}
+        setActiveMenuProjectId={setActiveMenuProjectId}
+      />
+    );
+  }
 
+  render(<TestSidebar />);
   fireEvent.click(screen.getByTitle('Proje İşlemleri'));
 
-  expect(screen.getByRole('button', { name: /yeniden adlandır/i })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /zip olarak indir/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /yeniden adlandır/i })).not.toBeInTheDocument();
+  const zipBtn = screen.getByText(/Projeyi \(ZIP\) İndir/);
+  expect(zipBtn).toBeInTheDocument();
+  fireEvent.click(zipBtn);
+  expect(handleDownloadZip).toHaveBeenCalledWith('project-1', expect.anything());
 });

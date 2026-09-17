@@ -5,7 +5,7 @@ import {
   FolderGit2,
   Pin,
   PinOff,
-  Edit2,
+  Download,
   Trash2,
   MoreVertical
 } from 'lucide-react';
@@ -22,11 +22,14 @@ export default function Sidebar({
   handleTogglePin,
   handleRenameProject,
   handleDeleteProject,
+  handleDownloadZip,
+  handleDownloadProjectZip,
   loginUsername,
   handleLogout,
   getStatusBadge,
   readOnly = false
 }) {
+  const onDownloadZip = handleDownloadZip || handleDownloadProjectZip;
   const filteredProjects = projects.filter(p =>
     (p.title || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -91,7 +94,14 @@ export default function Sidebar({
                     {p.title}
                   </span>
                 </div>
-                <div>{getStatusBadge(p.status)}</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <div>{getStatusBadge(p.status)}</div>
+                  {p.missingOnDisk && (
+                    <span className="text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 font-medium">
+                      (Diskte Bulunamadı)
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 3-Dots Menu Button */}
@@ -114,9 +124,11 @@ export default function Sidebar({
                         {p.isPinned ? <PinOff size={14} className="text-gray-500" /> : <Pin size={14} className="text-amber-500" />}
                         {p.isPinned ? 'Sabitlemeyi Kaldır' : 'Başa Sabitle'}
                       </button>
-                      <button onClick={(e) => handleRenameProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
-                        <Edit2 size={14} className="text-blue-500" /> Yeniden Adlandır
-                      </button>
+                      {p.status === 'completed' && onDownloadZip && (
+                        <button onClick={(e) => { e.stopPropagation(); onDownloadZip(p.id, e); }} className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-emerald-700 flex items-center gap-2">
+                          <Download size={14} className="text-emerald-600" /> Projeyi (ZIP) İndir
+                        </button>
+                      )}
                       <div className="border-t border-gray-100 my-1"></div>
                       <button onClick={(e) => handleDeleteProject(p.id, p.title, e)} className="w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2">
                         <Trash2 size={14} /> Projeyi Sil

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
+import os from 'os';
 import { db, dbEvents, formatDBDate } from './db.js';
 import { assertWorkflowLease } from './workflowAttempts.js';
 import { validateProjectTitle } from './security.js';
@@ -571,8 +572,18 @@ function lockReceiptError() {
 }
 
 function trashRootFor(env) {
+    try {
+        const legacyTrash = path.join(getProjectsRoot(env), '.trash');
+        if (fsSync.existsSync(legacyTrash)) {
+            const entries = fsSync.readdirSync(legacyTrash);
+            if (entries.length === 0) {
+                fsSync.rmdirSync(legacyTrash);
+            }
+        }
+    } catch {}
+
     const configured = typeof env?.TRASH_ROOT === 'string' ? env.TRASH_ROOT.trim() : '';
-    return path.resolve(configured || path.join(getProjectsRoot(env), '.trash'));
+    return path.resolve(configured || path.join(os.tmpdir(), 'xfactor-trash'));
 }
 
 
@@ -582,9 +593,25 @@ function updateIntent(database, intentId, phase, error = null) {
     ).run(phase, error ? String(error.message || error) : null, new Date().toISOString(), intentId);
 }
 
+async function movePath(source, target, fsOps = fs) {
+    const renameFn = fsOps.rename || fs.rename;
+    try {
+        await renameFn(source, target);
+    } catch (err) {
+        if (err && (err.code === 'EXDEV' || String(err.message || '').includes('EXDEV'))) {
+            const cpFn = fsOps.cp || fs.cp;
+            const rmFn = fsOps.rm || fs.rm;
+            await cpFn(source, target, { recursive: true });
+            await rmFn(source, { recursive: true, force: true });
+        } else {
+            throw err;
+        }
+    }
+}
+
 async function restoreIntentSource(intent, fsOps) {
     if (!fsSync.existsSync(intent.source_path) && fsSync.existsSync(intent.trash_path)) {
-        await fsOps.rename(intent.trash_path, intent.source_path);
+        await movePath(intent.trash_path, intent.source_path, fsOps);
     }
 }
 
@@ -699,7 +726,7 @@ export async function deleteProject(projectId, envOrOptions = process.env, maybe
     abortProjectExecution(projectId, 'DELETED');
     if (fsSync.existsSync(projectDir)) {
         try {
-            await options.fsOps.rename(projectDir, trashDir);
+            await movePath(projectDir, trashDir, options.fsOps);
             updateIntent(database, intent.id, 'trashed');
         } catch (error) {
             try {
@@ -739,7 +766,7 @@ export async function recoverPendingProjectDeletions({ env = process.env, databa
         if (fsSync.existsSync(intent.source_path) && !fsSync.existsSync(intent.trash_path)) {
             try {
                 await fsOps.mkdir?.(path.dirname(intent.trash_path), { recursive: true });
-                await fsOps.rename(intent.source_path, intent.trash_path);
+                await movePath(intent.source_path, intent.trash_path, fsOps);
                 updateIntent(database, intent.id, 'trashed');
             } catch (error) {
                 updateIntent(database, intent.id, 'rename_failed', error);

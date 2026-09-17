@@ -226,7 +226,13 @@ export function createProjectRouter({
                 : getUserProjects(req.user.id);
             const projectsRoot = getProjectsRoot(process.env);
             const projects = rawProjects.map(p => {
-                const existsOnDisk = fsSync.existsSync(path.join(projectsRoot, p.id));
+                let existsOnDisk = false;
+                try {
+                    const projectDir = getProjectDir(p.id, process.env);
+                    existsOnDisk = fsSync.existsSync(projectDir);
+                } catch {
+                    existsOnDisk = fsSync.existsSync(path.join(projectsRoot, p.id));
+                }
                 const enriched = {
                     ...p,
                     existsOnDisk

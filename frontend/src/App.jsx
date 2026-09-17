@@ -801,6 +801,8 @@ export default function App() {
         handleTogglePin={handleTogglePin}
         handleRenameProject={handleRenameProject}
         handleDeleteProject={handleDeleteProject}
+        handleDownloadZip={handleDownloadProjectZip}
+        handleDownloadProjectZip={handleDownloadProjectZip}
         loginUsername={currentUser?.username || loginUsername}
         handleLogout={handleLogout}
         getStatusBadge={getStatusBadge}

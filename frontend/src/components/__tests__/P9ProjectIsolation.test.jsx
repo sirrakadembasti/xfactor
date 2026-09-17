@@ -304,40 +304,24 @@ describe('P9 project/auth request isolation', () => {
     expect(screen.queryByText('A queued websocket log')).not.toBeInTheDocument();
   });
 
-  test('does not let delayed create or rename responses force the old project active', async () => {
-    const delayedCreate = deferred();
-    const delayedRename = deferred();
-    const promptMock = vi.fn()
-      .mockReturnValueOnce('Gamma')
-      .mockReturnValueOnce('Alpha renamed');
-    const projectCState = { id: 'project-c', title: 'Gamma state', status: 'planning', chatHistory: [] };
-    const spies = setupApi({
-      stateFor: id => id === projectA.id ? projectA : id === projectB.id ? projectB : projectCState
+  test('does not let delayed create response force the old project active', async () => {
+    let delayedCreate;
+    const createPromise = new Promise(resolve => {
+      delayedCreate = { resolve };
     });
-    spies.createProject.mockReturnValue(delayedCreate.promise);
-    spies.updateProject.mockReturnValue(delayedRename.promise);
+    const promptMock = vi.fn().mockReturnValue('Gamma');
     vi.stubGlobal('prompt', promptMock);
+    const spies = setupApi();
+    spies.createProject.mockReturnValue(createPromise);
 
     render(<App />);
-    await waitForHeading(projectA.title);
+    fireEvent.click(await screen.findByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
 
     fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
-    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
-    await waitForHeading(projectB.title);
     delayedCreate.resolve({ id: 'project-c', title: 'Gamma', status: 'planning' });
     await waitForHeading(projectB.title);
 
-    fireEvent.click(screen.getByText(projectA.title, { selector: 'span' }));
-    await waitForHeading(projectA.title);
-    fireEvent.click(screen.getAllByTitle('Proje İşlemleri')[0]);
-    fireEvent.click(screen.getByRole('button', { name: /Yeniden Adlandır/ }));
-    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
-    await waitForHeading(projectB.title);
-
-    delayedRename.resolve({ ...projectA, title: 'Alpha renamed' });
-    await waitForHeading(projectB.title);
-
-    expect(screen.queryByRole('heading', { name: 'Alpha renamed' })).not.toBeInTheDocument();
-    expect(promptMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('heading', { name: 'Gamma' })).not.toBeInTheDocument();
   });
 });

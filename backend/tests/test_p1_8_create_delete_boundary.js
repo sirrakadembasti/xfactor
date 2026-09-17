@@ -1,11 +1,18 @@
 import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
+import { setupIsolatedTestDb } from './isolatedDb.js';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 
+const isolated = await setupIsolatedTestDb('p1-8-create-delete-boundary');
+process.env.DB_PATH = isolated.dbPath;
+
 const { runAsyncTest, finish } = createTestHarness();
 
+try {
+    const { db } = await import('../db.js');
+    isolated.registerDatabase(db);
 // =========================================================================
 // TEST 1: Concurrent project creation race condition
 // =========================================================================
@@ -70,5 +77,8 @@ await runAsyncTest('3. syncProjectsWithDisk should not re-import .trash or delet
         await fs.rm(trashDir, { recursive: true, force: true }).catch(() => {});
     }
 });
+} finally {
+    await isolated.cleanup();
+}
 
 finish();
