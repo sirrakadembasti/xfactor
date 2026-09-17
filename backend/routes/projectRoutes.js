@@ -143,7 +143,13 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
         } catch {}
     }
 
-    const realError = attempt?.error || state?.last_error;
+    const rawError = attempt?.error || state?.last_error;
+    const realError = rawError
+        ? String(rawError)
+            .replace(/\s*\.?\s*Referans:\s*[a-f0-9\-]+/gi, '')
+            .replace(/\[[a-f0-9]{8,}\]/gi, '')
+            .trim()
+        : null;
     let errorSection = '';
     if (realError) {
         const attemptStatus = attempt?.status || state?.status || 'unknown';

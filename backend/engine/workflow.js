@@ -1396,10 +1396,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const errorLog = logError('workflow.execution_failed', error, { projectId, attemptId });
             const errStr = `${error?.message || ''} ${error?.code || ''} ${error?.status || ''} ${error?.stack || ''}`;
             const isQuotaError = /429|RESOURCE_EXHAUSTED|quota|rate limit|rate_limit/i.test(errStr);
+            const isDepError = /dependency|package-lock|bağımlılık|package\.json|package-lock\.json/i.test(errStr);
             const errorMessageText = error?.message || 'Bilinmeyen hata';
-            const logMsg = isQuotaError
-                ? `Süreç hatası: LLM Kota / Bütçe Sınırı Aşıldı (${errorMessageText}). Referans: ${errorLog.requestId}`
-                : `Süreç hatası (${errorMessageText}). Referans: ${errorLog.requestId}`;
+            let logMsg;
+            if (isQuotaError) {
+                logMsg = `[Hata] LLM Kota ve Bütçe Sınırı Aşıldı: ${errorMessageText}`;
+            } else if (isDepError) {
+                logMsg = `[Hata] Bağımlılık Hazırlığı Başarısız: ${errorMessageText}`;
+            } else {
+                logMsg = `[Süreç Hatası] ${errorMessageText}`;
+            }
             await workflowLogEvent(wsHub, projectId, "System", "error", "", logMsg, "system");
             const failedState = await readProjectState(projectId);
             if (failedState) {

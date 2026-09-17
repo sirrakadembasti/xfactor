@@ -102,6 +102,19 @@ try {
         }
     });
 
+    await runAsyncTest('4. buildManagerChatSystemPrompt strips hex reference strings from error telemetry', async () => {
+        const project = await createProject({ title: "Hex Stripping Test Project" });
+        const rawErrorWithHex = 'Süreç hatası: LLM Kota Sınırı Aşıldı. Referans: 3a9f81b2c4d5e6f7';
+
+        const state = await readProjectState(project.id);
+        state.last_error = rawErrorWithHex;
+        const prompt = buildManagerChatSystemPrompt(state, process.env.PROJECTS_ROOT);
+
+        assert.ok(!prompt.includes('Referans:'), 'Prompt should not contain Referans: prefix');
+        assert.ok(!prompt.includes('3a9f81b2c4d5e6f7'), 'Prompt should not contain raw hex requestId');
+        assert.ok(prompt.includes('Süreç hatası: LLM Kota Sınırı Aşıldı'), 'Prompt should preserve technical error message');
+    });
+
     finish();
 } finally {
     isolated.cleanup();
