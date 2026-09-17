@@ -204,7 +204,7 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
     children: []
   });
 
-  // 1. Plan varsa önceden doldur (Pre-population)
+  // 1. Plan varsa önceden doldur (Pre-population - Yalnızca gerçek yapı; uydurma tl_ / req_ yok)
   if (plan && typeof plan === 'object') {
     const rawDomains = plan.domains || plan.domain_list || plan.subdomains || [];
     const domainList = Array.isArray(rawDomains) && rawDomains.length > 0
@@ -212,7 +212,8 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
           if (typeof d === 'string') return { name: d, prefix: d.toLowerCase().replace(/\s+/g, '-') };
           return {
             name: d.name || `domain-${idx + 1}`,
-            prefix: (d.prefix || d.name || `domain-${idx + 1}`).toLowerCase().replace(/\s+/g, '-')
+            prefix: (d.prefix || d.name || `domain-${idx + 1}`).toLowerCase().replace(/\s+/g, '-'),
+            teamleaders: d.teamleaders || d.teamleader_list || []
           };
         })
       : [];
@@ -231,56 +232,30 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
         rawEdges.add(`manager->${dirId}`);
       }
 
-      const tlId = `${domain.prefix}.tl_${domain.prefix}`;
-      if (!nodeMap.has(tlId)) {
-        nodeMap.set(tlId, {
-          id: tlId,
-          agent: 'Teamleader',
-          parent_id: dirId,
-          label: formatNodeTitle(tlId, 'Teamleader', domain.name),
-          action: 'planned',
-          children: []
-        });
-        rawEdges.add(`${dirId}->${tlId}`);
-      }
-
-      if (Array.isArray(plan.requirements) && plan.requirements.length > 0) {
-        plan.requirements.forEach((req, rIdx) => {
-          const reqId = typeof req === 'string' ? req : (req.id || `REQ-${rIdx + 1}`);
-          const reqStatement = typeof req === 'object' && req.statement ? req.statement : reqId;
-          const taskId = `${tlId}.req_${rIdx + 1}`;
-          if (!nodeMap.has(taskId)) {
-            nodeMap.set(taskId, {
-              id: taskId,
-              agent: 'Coder',
-              parent_id: tlId,
-              label: reqStatement.length > 25 ? reqStatement.substring(0, 25) + '...' : reqStatement,
+      // Yalnızca planda açıkça belirtilen Teamleader'ları ekle (uydurma tl_ ekleme)
+      const rawTLs = domain.teamleaders || plan.teamleaders || [];
+      if (Array.isArray(rawTLs) && rawTLs.length > 0) {
+        rawTLs.forEach((tl, tlIdx) => {
+          const tlPrefix = typeof tl === 'string' ? tl.toLowerCase().replace(/\s+/g, '-') : (tl.prefix || tl.name || `tl-${tlIdx + 1}`).toLowerCase().replace(/\s+/g, '-');
+          const tlId = `${domain.prefix}.${tlPrefix}`;
+          const tlName = typeof tl === 'string' ? tl : (tl.name || tlId);
+          if (!nodeMap.has(tlId)) {
+            nodeMap.set(tlId, {
+              id: tlId,
+              agent: 'Teamleader',
+              parent_id: dirId,
+              label: formatNodeTitle(tlId, 'Teamleader', tlName),
               action: 'planned',
               children: []
             });
-            rawEdges.add(`${tlId}->${taskId}`);
+            rawEdges.add(`${dirId}->${tlId}`);
           }
         });
       }
     }
   }
 
-  // Tester QA Node (Pre-populated)
-  const testerNodeId = 'tester-qa';
-  if (!nodeMap.has(testerNodeId)) {
-    nodeMap.set(testerNodeId, {
-      id: testerNodeId,
-      agent: 'Tester',
-      parent_id: 'manager',
-      label: 'Tester: Doğrulama & QA',
-      action: 'planned',
-      children: []
-    });
-    rawEdges.add(`manager->${testerNodeId}`);
-  }
-
   // 2. Canlı Log Katmanlarını İşle
-  // Logların kronolojik sırasını tespit et (id/timestamp veya dizi yönü)
   const logList = Array.isArray(logs) ? logs : [];
   let chronological = [...logList];
   if (logList.length > 1 && logList[0].id && logList[logList.length - 1].id && logList[0].id > logList[logList.length - 1].id) {
@@ -291,14 +266,14 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
     if (!log) continue;
     let nodeId = log.node_id;
     if (!nodeId && log.agent === 'Tester') {
-      nodeId = testerNodeId;
+      nodeId = 'tester-qa';
     }
     if (!nodeId) continue;
 
-    const canonicalNodeId = (nodeId === 'tester') ? testerNodeId : nodeId;
+    const canonicalNodeId = (nodeId === 'tester') ? 'tester-qa' : nodeId;
     let parentId = log.parent_node_id;
     if (!parentId) {
-      if (log.agent === 'Director' || log.agent === 'Tester' || canonicalNodeId === testerNodeId) {
+      if (log.agent === 'Director' || log.agent === 'Tester' || canonicalNodeId === 'tester-qa') {
         parentId = 'manager';
       }
     }
@@ -323,7 +298,7 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
     } else {
       const existing = nodeMap.get(canonicalNodeId);
       if (log.agent === 'Reviewer') {
-        existing.reviewerState = log.action; // 'feedback' or 'veto'
+        existing.reviewerState = log.action;
         existing.reviewerMessage = log.message;
         if (log.action === 'veto') existing.action = 'veto';
         else if (log.action === 'feedback') existing.action = 'reviewer_feedback';
@@ -360,8 +335,9 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
   }
 
   // 4. 2 Sütunlu Hiyerarşik Koordinat Düzeni
-  const directors = (nodeMap.get('manager')?.children || []).filter(id => nodeMap.has(id) && id !== testerNodeId);
-  const isMultiDomain = directors.length > 1;
+  const directors = Array.from(nodeMap.values())
+    .filter(n => n.id !== 'manager' && (n.agent === 'Director' || n.id.endsWith('.director')) && n.agent !== 'Tester' && n.id !== 'tester-qa' && n.id !== 'tester')
+    .map(n => n.id);
 
   const domainColumns = {};
   if (directors.length === 0) {
@@ -374,7 +350,7 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
     });
   }
 
-  const managerCenterX = isMultiDomain
+  const managerCenterX = directors.length > 1
     ? (domainColumns[directors[0]] + domainColumns[directors[directors.length - 1]]) / 2
     : 350;
 
@@ -426,15 +402,27 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
       }
     });
 
-    const tlList = (dirNode.children || []).filter(id => nodeMap.has(id));
-    tlList.forEach((tlId, tlIdx) => {
+    const tlList = (dirNode.children || []).filter(id => {
+      if (!nodeMap.has(id)) return false;
+      const childNode = nodeMap.get(id);
+      return childNode.agent === 'Teamleader' || id.includes('.tl_') || id.endsWith('.teamleader');
+    });
+
+    for (const [nId, nObj] of nodeMap.entries()) {
+      if (nObj.parent_id === dirId && nObj.agent === 'Teamleader' && !tlList.includes(nId)) {
+        tlList.push(nId);
+      }
+    }
+
+    let currentY = 200;
+    tlList.forEach((tlId) => {
       const tlNode = nodeMap.get(tlId);
       if (!tlNode) return;
 
       const tlTheme = getAgentVisualTheme('Teamleader', tlNode.action);
       finalNodes.push({
         id: tlId,
-        position: { x: colX - 90, y: 200 + (tlIdx * 45) },
+        position: { x: colX - 90, y: currentY },
         data: { label: `${tlTheme.icon} ${tlNode.label}` },
         style: {
           background: tlTheme.bg,
@@ -452,6 +440,13 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
       });
 
       const tasks = (tlNode.children || []).filter(id => nodeMap.has(id));
+      for (const [nId, nObj] of nodeMap.entries()) {
+        if (nObj.parent_id === tlId && nObj.agent !== 'Teamleader' && nObj.agent !== 'Director' && nObj.agent !== 'Tester' && !tasks.includes(nId)) {
+          tasks.push(nId);
+        }
+      }
+
+      const taskStartY = currentY + 45;
       tasks.forEach((taskId, taskIdx) => {
         const taskNode = nodeMap.get(taskId);
         if (!taskNode) return;
@@ -460,7 +455,7 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
         const subRow = Math.floor(taskIdx / 2);
 
         const taskX = subCol === 0 ? (colX - 185) : (colX + 5);
-        const taskY = 285 + (subRow * 65);
+        const taskY = taskStartY + (subRow * 65);
 
         const taskTheme = getAgentVisualTheme(taskNode.agent, taskNode.action, { reviewerState: taskNode.reviewerState });
         let labelPrefix = taskTheme.icon;
@@ -491,12 +486,69 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
           }
         });
       });
+
+      const taskRows = Math.ceil(tasks.length / 2);
+      currentY += 45 + (taskRows * 65) + 10;
     });
+
+    const directTasks = (dirNode.children || []).filter(id => {
+      if (!nodeMap.has(id)) return false;
+      const node = nodeMap.get(id);
+      return !tlList.includes(id) && node.agent !== 'Teamleader' && node.agent !== 'Director' && node.agent !== 'Tester';
+    });
+
+    if (directTasks.length > 0) {
+      const taskStartY = currentY;
+      directTasks.forEach((taskId, taskIdx) => {
+        const taskNode = nodeMap.get(taskId);
+        if (!taskNode) return;
+
+        const subCol = taskIdx % 2;
+        const subRow = Math.floor(taskIdx / 2);
+
+        const taskX = subCol === 0 ? (colX - 185) : (colX + 5);
+        const taskY = taskStartY + (subRow * 65);
+
+        const taskTheme = getAgentVisualTheme(taskNode.agent, taskNode.action, { reviewerState: taskNode.reviewerState });
+        let labelPrefix = taskTheme.icon;
+        let displayLabel = taskNode.label;
+        if (taskNode.reviewerState === 'feedback' && taskNode.action !== 'finish' && taskNode.action !== 'completed') {
+          displayLabel = `[Reviewer Denetiminde] ${taskNode.label}`;
+        } else if (taskNode.reviewerState === 'veto') {
+          displayLabel = `[Veto] ${taskNode.label}`;
+        }
+
+        finalNodes.push({
+          id: taskId,
+          position: { x: taskX, y: taskY },
+          data: { label: `${labelPrefix} ${displayLabel}` },
+          style: {
+            background: taskTheme.bg,
+            border: taskTheme.border,
+            color: taskTheme.text,
+            boxShadow: taskTheme.shadow,
+            borderRadius: '6px',
+            padding: '6px 8px',
+            fontWeight: '500',
+            fontSize: '10px',
+            width: '175px',
+            textAlign: 'center',
+            wordBreak: 'break-word',
+            opacity: taskTheme.opacity
+          }
+        });
+      });
+    }
   });
 
-  // Tester Node (Doğrulama ve QA)
-  const testerNode = nodeMap.get(testerNodeId);
-  if (testerNode) {
+  // Tester Node (Sadece loglarda veya nesnede varsa gösterilir)
+  const testerNodeId = Array.from(nodeMap.keys()).find(id => {
+    const node = nodeMap.get(id);
+    return node && (node.agent === 'Tester' || id === 'tester-qa' || id === 'tester');
+  });
+
+  if (testerNodeId && nodeMap.has(testerNodeId)) {
+    const testerNode = nodeMap.get(testerNodeId);
     const testerTheme = getAgentVisualTheme('Tester', testerNode.action);
     const testerX = directors.length > 0
       ? (Math.max(...Object.values(domainColumns)) + 210)
@@ -527,42 +579,8 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
     });
   }
 
-  // Yerleşmemiş Ek Düğümler Fallback
-  const placedNodeIds = new Set(finalNodes.map(n => n.id));
-  let extraIdx = 0;
-  const maxPlacedY = finalNodes.reduce((max, n) => Math.max(max, n.position.y), 115);
-
-  for (const [nodeId, node] of nodeMap.entries()) {
-    if (!placedNodeIds.has(nodeId)) {
-      const extraX = 100 + ((extraIdx % 4) * 200);
-      const extraY = maxPlacedY + 90 + (Math.floor(extraIdx / 4) * 60);
-      const theme = getAgentVisualTheme(node.agent, node.action, { reviewerState: node.reviewerState });
-
-      finalNodes.push({
-        id: nodeId,
-        position: { x: extraX, y: extraY },
-        data: { label: `${theme.icon} ${node.label}` },
-        style: {
-          background: theme.bg,
-          border: theme.border,
-          color: theme.text,
-          boxShadow: theme.shadow,
-          borderRadius: '6px',
-          padding: '6px 8px',
-          fontWeight: '500',
-          fontSize: '10px',
-          width: '175px',
-          textAlign: 'center',
-          wordBreak: 'break-word',
-          opacity: theme.opacity
-        }
-      });
-      placedNodeIds.add(nodeId);
-      extraIdx++;
-    }
-  }
-
   // Kenarlar (Edges)
+  const placedNodeIds = new Set(finalNodes.map(n => n.id));
   const finalEdges = [];
   for (const edgeStr of rawEdges) {
     const [source, target] = edgeStr.split('->');

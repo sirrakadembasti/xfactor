@@ -2,14 +2,17 @@ import { describe, test, expect } from 'vitest';
 import { computeHierarchicalDAG, getAgentVisualTheme, formatNodeTitle } from '../dagLayout';
 
 describe('computeHierarchicalDAG and 6-agent role visual sync', () => {
-  test('returns default 6-agent structure with Manager and Tester pre-populated when logs and plan are empty', () => {
+  test('returns clean structure with only Manager when logs and plan are empty', () => {
     const result = computeHierarchicalDAG([]);
     expect(result.nodes).toBeDefined();
-    expect(result.nodes.some(n => n.id === 'manager')).toBe(true);
-    expect(result.nodes.some(n => n.id === 'tester-qa')).toBe(true);
+    expect(result.nodes.length).toBe(1);
+    expect(result.nodes[0].id).toBe('manager');
+    expect(result.nodes.some(n => n.id.includes('tl_'))).toBe(false);
+    expect(result.nodes.some(n => n.id.includes('req_'))).toBe(false);
+    expect(result.nodes.some(n => n.id === 'tester-qa')).toBe(false);
   });
 
-  test('pre-populates planned tree structure when plan is provided with domains and requirements', () => {
+  test('pre-populates planned tree structure without fabricated dummy IDs when plan is provided', () => {
     const plan = {
       domains: [
         { name: 'Backend', prefix: 'backend' },
@@ -27,9 +30,10 @@ describe('computeHierarchicalDAG and 6-agent role visual sync', () => {
     expect(nodeIds).toContain('manager');
     expect(nodeIds).toContain('backend.director');
     expect(nodeIds).toContain('frontend.director');
-    expect(nodeIds).toContain('backend.tl_backend');
-    expect(nodeIds).toContain('frontend.tl_frontend');
-    expect(nodeIds).toContain('tester-qa');
+    expect(nodeIds).not.toContain('backend.tl_backend');
+    expect(nodeIds).not.toContain('frontend.tl_frontend');
+    expect(nodeIds.some(id => id.includes('req_'))).toBe(false);
+    expect(nodeIds).not.toContain('tester-qa');
 
     const backendDirNode = result.nodes.find(n => n.id === 'backend.director');
     expect(backendDirNode.style.border).toContain('dashed');
