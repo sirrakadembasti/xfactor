@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "graph": "node backend/scripts/generate_graph.js",
     "test:e2e": "playwright test",
     "test:production-image": "node scripts/test-p6-production-image.mjs"
   },

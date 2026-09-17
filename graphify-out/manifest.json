@@ -1,2052 +1,2702 @@
 {
   "backend/db.js": {
-    "mtime": 1786950168.0958278,
-    "ast_hash": "f5872531aeba2bc4694ad9ef4be7f3f3",
+    "mtime": 1789060176.6903706,
+    "seen": 1789588258.5331538,
+    "ast_hash": "3c548026c920656b40e941ca397b84bb",
     "semantic_hash": ""
   },
   "backend/llm.js": {
-    "mtime": 1786950168.1206436,
-    "ast_hash": "b4465f4e27f13b0d89317fa096544821",
-    "semantic_hash": ""
-  },
-  "backend/orchestrator.js": {
-    "mtime": 1786950168.130738,
-    "ast_hash": "511e74e35ceacf4cb90818475c320e17",
+    "mtime": 1789587379.1365159,
+    "seen": 1789588258.533238,
+    "ast_hash": "fe08ff44955c8dc5d61e471e52ea33ea",
     "semantic_hash": ""
   },
   "backend/package.json": {
-    "mtime": 1786950168.1385322,
-    "ast_hash": "fa3205118cea09242e904f571c3360e2",
+    "mtime": 1789060177.0211513,
+    "seen": 1789588258.533258,
+    "ast_hash": "12434129ac46435ca4e0f3a33041b048",
     "semantic_hash": ""
   },
   "backend/server.js": {
-    "mtime": 1786950168.1410818,
-    "ast_hash": "e1fc3decf5f8ce97cee8645766ebbf09",
-    "semantic_hash": ""
-  },
-  "backend/test_backend.js": {
-    "mtime": 1786950168.143098,
-    "ast_hash": "ba5d841c607d251a91f116a2283ad2c2",
+    "mtime": 1789587379.1799438,
+    "seen": 1789588258.533332,
+    "ast_hash": "3d79ec68f575f6f74707c532bb03d6b3",
     "semantic_hash": ""
   },
   "frontend/package.json": {
-    "mtime": 1786950168.1533277,
-    "ast_hash": "d7609a7ab99126b2d90bb90e94987f70",
+    "mtime": 1789060179.442254,
+    "seen": 1789588258.5341694,
+    "ast_hash": "a6ecbee1322fd3c661e3e5607e0f56c4",
     "semantic_hash": ""
   },
   "frontend/postcss.config.js": {
-    "mtime": 1785752447.6953194,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5341773,
     "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
     "semantic_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
   },
   "frontend/src/App.jsx": {
-    "mtime": 1786950168.1567254,
-    "ast_hash": "132b17aa106a6e7d6a058b73330dbdc2",
+    "mtime": 1789587379.4130478,
+    "seen": 1789588258.5341833,
+    "ast_hash": "eeb176cfe20456f4bcfbb8ad86c9a5e7",
     "semantic_hash": ""
   },
   "frontend/src/main.jsx": {
-    "mtime": 1786950168.1577306,
-    "ast_hash": "d4b6f6ffa44fb6508fea3b5531e92614",
+    "mtime": 1787805876.0,
+    "seen": 1789588258.534297,
+    "ast_hash": "3c5e94be43104a3948dc5963c68d43db",
     "semantic_hash": ""
   },
   "frontend/src/services/api.js": {
-    "mtime": 1786950168.1597378,
-    "ast_hash": "5a4912ee15c953827b9e54fe2aa615aa",
+    "mtime": 1789060179.5696547,
+    "seen": 1789588258.5343072,
+    "ast_hash": "fdfab97e9fac34cd45e91317a582d4ab",
     "semantic_hash": ""
   },
   "frontend/tailwind.config.js": {
-    "mtime": 1785752447.6526706,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5343297,
     "ast_hash": "3346df3fd0a1ea3f84440703bf8fd2cb",
     "semantic_hash": "3346df3fd0a1ea3f84440703bf8fd2cb"
   },
   "frontend/vite.config.js": {
-    "mtime": 1786950168.1612544,
-    "ast_hash": "f61f36e235bf71bf91d4dea7c426fec8",
-    "semantic_hash": ""
-  },
-  "GEMINI.md": {
-    "mtime": 1786107767.9515574,
-    "ast_hash": "8728c588f239130d37e30082d689481f",
+    "mtime": 1789060179.57521,
+    "seen": 1789588258.534335,
+    "ast_hash": "13b610e9686b9c2c3216df7a7209c6e5",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786950168.0109358,
-    "ast_hash": "6205f55c3b430d9f3b8d9b557aadd731",
+    "mtime": 1789587379.0839999,
+    "seen": 1789588258.534687,
+    "ast_hash": "31ff14083f7230e55954917c5c77c224",
     "semantic_hash": ""
   },
   "docs/ALT-TALIMATNAME.md": {
-    "mtime": 1785749518.7026136,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5346923,
     "ast_hash": "c13c4ce5c44f1abda0bcb2e075de9ba2",
     "semantic_hash": ""
   },
-  "docs/CLAUDE.md": {
-    "mtime": 1785749518.5662305,
-    "ast_hash": "f0d4bf2f31bba39e4b9808611a35c301",
-    "semantic_hash": ""
-  },
   "docs/DURUM.md": {
-    "mtime": 1785749518.7479198,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5346985,
     "ast_hash": "ed839a783509b4b349035f98599d88ed",
     "semantic_hash": ""
   },
   "docs/GOREV.md": {
-    "mtime": 1785749518.6804454,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5347042,
     "ast_hash": "22f4881ce6dcbcc213a62b1032538686",
     "semantic_hash": ""
   },
   "docs/ORKESTRASYON-TALIMATNAMESI.md": {
-    "mtime": 1786950168.1501143,
-    "ast_hash": "72f51c0de11373552476c2dcbbd60a7c",
+    "mtime": 1789069141.5244515,
+    "seen": 1789588258.5347145,
+    "ast_hash": "bcdb94287589f759c45194de37ab771f",
     "semantic_hash": ""
   },
   "docs/RAPOR.md": {
-    "mtime": 1785749518.7704713,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5347197,
     "ast_hash": "070eafc0d504cb81538573efacc66950",
     "semantic_hash": ""
   },
   "docs/TODO.md": {
-    "mtime": 1785749518.7278495,
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5347254,
     "ast_hash": "b83d8828ca441064cbfda02d8f9db934",
     "semantic_hash": ""
   },
   "docs/coder.md": {
-    "mtime": 1785749518.6551163,
-    "ast_hash": "e6ffe7dab4335d8231d080a625e44671",
+    "mtime": 1789530620.4834006,
+    "seen": 1789588258.5347302,
+    "ast_hash": "4890853c2e5243d94cddeaf04e2f3b01",
     "semantic_hash": ""
   },
   "docs/director.md": {
-    "mtime": 1785749518.607189,
-    "ast_hash": "f88ff2b66c47a6f3495005b7a5b2601e",
+    "mtime": 1789530620.515145,
+    "seen": 1789588258.5347352,
+    "ast_hash": "add3c58aee39cca8fb570ac66d816c23",
     "semantic_hash": ""
   },
   "docs/manager.md": {
-    "mtime": 1785749518.5863693,
-    "ast_hash": "aff7afe6052cbec4ed698684853fa36d",
+    "mtime": 1789530620.5476735,
+    "seen": 1789588258.5347402,
+    "ast_hash": "1f1a52616bce485d7c00d65fb5828d2c",
     "semantic_hash": ""
   },
   "docs/teamleader.md": {
-    "mtime": 1785749518.6308763,
-    "ast_hash": "bec1d659cfd55be6b997e9bc8f37eede",
+    "mtime": 1789530620.5637748,
+    "seen": 1789588258.534777,
+    "ast_hash": "67750d60bb6cef7653c3089e2b228fda",
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1785752429.5733094,
-    "ast_hash": "63df0f545eed7582f2ca4efff4ba65af",
-    "semantic_hash": ""
-  },
-  "graphify-bilgi-notu.md": {
-    "mtime": 1786102487.106761,
-    "ast_hash": "1d690ff6960cd3f4081c053a5f1a856b",
+    "mtime": 1787861854.593971,
+    "seen": 1789588258.5347965,
+    "ast_hash": "838c3e2ef527bd9a6f318005d99620e8",
     "semantic_hash": ""
   },
   "backend/agents/coder.js": {
-    "mtime": 1786950168.039987,
-    "ast_hash": "5a370c04fde52da0552e87729ffc40be",
+    "mtime": 1789530619.4993994,
+    "seen": 1789588258.5329633,
+    "ast_hash": "d289ca658425db45e2bad7577a9c11bb",
     "semantic_hash": ""
   },
   "backend/agents/director.js": {
-    "mtime": 1786950168.0414503,
-    "ast_hash": "38e37c5b4a037700d99e8097739d4ef3",
+    "mtime": 1789530619.5138478,
+    "seen": 1789588258.5329707,
+    "ast_hash": "034bc2535d081f1f280009aa8f2bcfc4",
     "semantic_hash": ""
   },
   "backend/agents/index.js": {
-    "mtime": 1786950168.0424664,
-    "ast_hash": "40800dc2de3494b0e6aa0027d4ab6bef",
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5329762,
+    "ast_hash": "a603731425d630ecb6681883a68c3719",
     "semantic_hash": ""
   },
   "backend/agents/manager.js": {
-    "mtime": 1786950168.0434673,
-    "ast_hash": "0e43de761b5de63b478d0b982f510a25",
+    "mtime": 1789530619.5453763,
+    "seen": 1789588258.532982,
+    "ast_hash": "86bcc18915dc7dd7e6ebdfc5fa85a3d4",
     "semantic_hash": ""
   },
   "backend/agents/reviewer.js": {
-    "mtime": 1786950168.044076,
-    "ast_hash": "e0cbb76b88400ca507412cf7af7ab74c",
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5329869,
+    "ast_hash": "29fe3a8bb9d2ac5684c2be3336329d74",
     "semantic_hash": ""
   },
   "backend/agents/schemas.js": {
-    "mtime": 1786950168.0456,
-    "ast_hash": "d1161577e0fd912e2607fe301e6a71b0",
+    "mtime": 1789530619.6074996,
+    "seen": 1789588258.5329924,
+    "ast_hash": "4d23cec6363948e6eb15ffbf5adfe708",
     "semantic_hash": ""
   },
   "backend/agents/teamleader.js": {
-    "mtime": 1786950168.047153,
-    "ast_hash": "53d3f8064ad40829d41380f2048639ba",
+    "mtime": 1789530619.62206,
+    "seen": 1789588258.5329976,
+    "ast_hash": "f308ec9cee3df0f59391196556635c98",
     "semantic_hash": ""
   },
   "backend/agents/tester.js": {
-    "mtime": 1786950168.0481615,
-    "ast_hash": "d30b7b9a9da76355a3ce8c253a98b986",
+    "mtime": 1789530619.6700337,
+    "seen": 1789588258.533003,
+    "ast_hash": "9f638a92a92d5017a3504a8176f2a90b",
     "semantic_hash": ""
   },
   "backend/auth.js": {
-    "mtime": 1786950168.0674703,
-    "ast_hash": "3b24089118a7b05c0a80b43e35c25402",
+    "mtime": 1789060176.605784,
+    "seen": 1789588258.5331163,
+    "ast_hash": "978fea131dff61590ad7491c12a1a00c",
     "semantic_hash": ""
   },
   "backend/config.js": {
-    "mtime": 1786950168.07005,
-    "ast_hash": "977f56b691492e46de713932c05e146e",
+    "mtime": 1789060176.6423388,
+    "seen": 1789588258.533128,
+    "ast_hash": "65f94d3568a7bfd13eb913bd917b89e8",
     "semantic_hash": ""
   },
   "backend/engine/codeGenerator.js": {
-    "mtime": 1786950168.097865,
-    "ast_hash": "fd2b9ef7e4124e50c4c73783cf71a50c",
+    "mtime": 1789587379.123867,
+    "seen": 1789588258.533179,
+    "ast_hash": "f6ec4ace24fe8467e8aba84cc0b5ba68",
     "semantic_hash": ""
   },
   "backend/engine/dag.js": {
-    "mtime": 1786950168.0988636,
-    "ast_hash": "a13ff01478519573f43cb0dad68141f8",
+    "mtime": 1789060176.8107564,
+    "seen": 1789588258.533184,
+    "ast_hash": "b02f4b55cee72ffca3a831a797f4b9f7",
     "semantic_hash": ""
   },
   "backend/engine/fileProtocol.js": {
-    "mtime": 1786950168.0998662,
-    "ast_hash": "880cffa984cc5c8df7beb04a16dc2531",
+    "mtime": 1789060176.8368268,
+    "seen": 1789588258.5331893,
+    "ast_hash": "17f7b69509b404eeb44151ca3c7af6fd",
     "semantic_hash": ""
   },
   "backend/engine/index.js": {
-    "mtime": 1786950168.1013782,
-    "ast_hash": "d1e5f265b11250a6cff7edc709502e2e",
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5331943,
+    "ast_hash": "3d421dada0d4605d0888c183e125f5f0",
     "semantic_hash": ""
   },
   "backend/engine/selfCorrection.js": {
-    "mtime": 1786950168.1031518,
-    "ast_hash": "a3791d422b450a9f22647eefe5b20bc4",
+    "mtime": 1789530619.975928,
+    "seen": 1789588258.533209,
+    "ast_hash": "78da19c52f341b0372cc07f5e0b064d2",
     "semantic_hash": ""
   },
   "backend/engine/workflow.js": {
-    "mtime": 1786950168.1049292,
-    "ast_hash": "722e47f0c992f10e229eaaaacc5c7d3b",
+    "mtime": 1789530620.0397027,
+    "seen": 1789588258.5332186,
+    "ast_hash": "c5e2df039017ac06ed24098694f62af5",
     "semantic_hash": ""
   },
   "backend/observability.js": {
-    "mtime": 1786950168.1287415,
-    "ast_hash": "489e67f694ddd70e9ec3142ca88878d6",
+    "mtime": 1789060177.0013745,
+    "seen": 1789588258.533253,
+    "ast_hash": "d9d6fea43c60f39e4f9d36463b152260",
     "semantic_hash": ""
   },
   "backend/security.js": {
-    "mtime": 1786950168.1395297,
-    "ast_hash": "7d5fc1694f7ba962d6312caef5f3fd8f",
+    "mtime": 1789060177.2266176,
+    "seen": 1789588258.533327,
+    "ast_hash": "c5eb1b21b245ddd2bd6be0e6fe9b236f",
     "semantic_hash": ""
   },
-  "backend/test_deep_verification.js": {
-    "mtime": 1786950168.144099,
-    "ast_hash": "14dd17097c86988596b4a2c65bec0dd1",
+  "backend/agents/agentLoader.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5329468,
+    "ast_hash": "ab391cc35a6d84ef1d81bac052c8884f",
     "semantic_hash": ""
   },
-  "backend/test_e2e_simulation.js": {
-    "mtime": 1786950168.1457393,
-    "ast_hash": "a08dbc46c53d9b6b817d8a0f21ccd204",
+  "backend/artifactInventory.js": {
+    "mtime": 1789530619.6700337,
+    "seen": 1789588258.5330088,
+    "ast_hash": "76299f091871fc44a16d6bd1ca5e6ecd",
     "semantic_hash": ""
   },
-  "backend/test_tur2_edge_cases.js": {
-    "mtime": 1786950168.1467593,
-    "ast_hash": "2d1f6e151e25aa2fcc5b6407234dc0f6",
+  "backend/artifactLimits.js": {
+    "mtime": 1789060176.5895944,
+    "seen": 1789588258.5330956,
+    "ast_hash": "90acf112764f0d06f0bd3038a8b20ea0",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-1-prisma-schema/prisma.ts": {
-    "mtime": 1786950168.1907308,
-    "ast_hash": "a8257fb1cb6a6120662ea8d24843cf0d",
+  "backend/artifactPaths.js": {
+    "mtime": 1788634963.1636627,
+    "seen": 1789588258.5331097,
+    "ast_hash": "508ef8be5709b6d616a5c663d6e6c056",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/api-response.ts": {
-    "mtime": 1786950168.2043529,
-    "ast_hash": "c61502b05c33a6eebde9d75884647e69",
+  "backend/backupRestore.js": {
+    "mtime": 1789060176.6322875,
+    "seen": 1789588258.533122,
+    "ast_hash": "1e3fa5ba7b14d86777665468eff9b2e9",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/auth.ts": {
-    "mtime": 1786950168.2058566,
-    "ast_hash": "2a8793297afa0162fb0a8db08aeaaa0e",
+  "backend/contracts/domainPolicy.js": {
+    "mtime": 1788113437.3124568,
+    "seen": 1789588258.5331333,
+    "ast_hash": "bc1aaa3b45ec7f2afd25c29638f6cb2a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/book.ts": {
-    "mtime": 1786950168.2058566,
-    "ast_hash": "b83f82a09232c03527d0bc07ee1cf5fb",
+  "backend/contracts/projectContract.js": {
+    "mtime": 1788098128.5619187,
+    "seen": 1789588258.5331385,
+    "ast_hash": "252c6562cbd10414aee74f87e930400b",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/borrow.ts": {
-    "mtime": 1786950168.2068634,
-    "ast_hash": "4503c19755edbaff87c4a4dcc57fa97d",
+  "backend/contracts/traceability.js": {
+    "mtime": 1788098257.4425437,
+    "seen": 1789588258.5331435,
+    "ast_hash": "2cd9f9a6771cfa44559102fd986aab60",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/student.ts": {
-    "mtime": 1786950168.207862,
-    "ast_hash": "6d7b8ed1239b56f42630a386273e239d",
+  "backend/crypto/mfaCrypto.js": {
+    "mtime": 1788684400.0959568,
+    "seen": 1789588258.533148,
+    "ast_hash": "b419db7f8e8a348a8c34b3cb691f3200",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-3-auth-and-rbac-core/auth.ts": {
-    "mtime": 1786950168.2118595,
-    "ast_hash": "f7b0a07dff89a8477d907f5661f0bd6b",
+  "backend/engine/buildValidator.js": {
+    "mtime": 1789587379.1132083,
+    "seen": 1789588258.5331595,
+    "ast_hash": "0939a615be99edc06ce58e81d3e9bbd1",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-3-auth-and-rbac-core/route.ts": {
-    "mtime": 1786950168.2128587,
-    "ast_hash": "74a1b61bc56036ca39aaba6600edd2ff",
+  "backend/engine/cancellation.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5331643,
+    "ast_hash": "3a94d75965cdbeb9a50faa506a91553d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-4-auth-and-user-endpoints/route.ts": {
-    "mtime": 1786950168.219505,
-    "ast_hash": "1b7352afb34a367058b8e6d10159d358",
+  "backend/engine/checkpointHelper.js": {
+    "mtime": 1789060176.7575848,
+    "seen": 1789588258.5331693,
+    "ast_hash": "68b1179d5e4fb61e99af672edd272dae",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-5-book-endpoints/route.ts": {
-    "mtime": 1786950168.2258112,
-    "ast_hash": "e49c7021cdb16928e58497d8594ce861",
+  "backend/engine/checkpointRepository.js": {
+    "mtime": 1789060176.7736843,
+    "seen": 1789588258.5331743,
+    "ast_hash": "fbf6cc412d47288cc4aef32a8a4508a7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-6-student-endpoints/route.ts": {
-    "mtime": 1786950168.2308207,
-    "ast_hash": "5f9378194904aa01d796b2ee9048cf7d",
+  "backend/engine/llmTaskRetry.js": {
+    "mtime": 1789530619.943174,
+    "seen": 1789588258.533199,
+    "ast_hash": "3036275c95b035d501cc62074708800c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-7-borrow-endpoints/route.ts": {
-    "mtime": 1786950168.2376769,
-    "ast_hash": "b8a9e20eeaca9ea7d647e7f658de304c",
+  "backend/engine/readmeGenerator.js": {
+    "mtime": 1788642647.0941153,
+    "seen": 1789588258.5332036,
+    "ast_hash": "70231dfc4d285b68ebc1c72e36caea53",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/AuthContext.jsx": {
-    "mtime": 1786950168.2593253,
-    "ast_hash": "c283ddcdd64c5c0925993615c8d49acf",
+  "backend/engine/stateMachine.js": {
+    "mtime": 1788112421.9863012,
+    "seen": 1789588258.5332136,
+    "ast_hash": "e299a211944c12c5d210524a1487dd9f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/auth.js": {
-    "mtime": 1786950168.2633226,
-    "ast_hash": "2aec13589b2ff4afa5eae01c55bf5af0",
+  "backend/executionClient.js": {
+    "mtime": 1789060176.8825445,
+    "seen": 1789588258.5332232,
+    "ast_hash": "a977684b81e83a4b1b0c74c711794fb7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/badge.jsx": {
-    "mtime": 1786950168.2643247,
-    "ast_hash": "5818497e23f52cefea129e2d25d5b076",
+  "backend/generatedIdentifiers.js": {
+    "mtime": 1787853751.512853,
+    "seen": 1789588258.5332277,
+    "ast_hash": "3b4f8100c79726c072cee997b4b706ec",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/book.js": {
-    "mtime": 1786950168.2653236,
-    "ast_hash": "6a3ec06a202e1a77cee0a63164c68670",
+  "backend/lifecycle.js": {
+    "mtime": 1789060176.8953161,
+    "seen": 1789588258.5332327,
+    "ast_hash": "8abdf89fc15e244b8df371850478d77f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/borrow.js": {
-    "mtime": 1786950168.2866225,
-    "ast_hash": "0fdae32b8b9f99e5995d6b0074811121",
+  "backend/maintenance.js": {
+    "mtime": 1789060176.9409933,
+    "seen": 1789588258.533243,
+    "ast_hash": "cd5af1254253e4d1fba5b911ea2f8223",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/button.jsx": {
-    "mtime": 1786950168.2876203,
-    "ast_hash": "64073d3b7721cb6bb7ee656cfd4822cb",
+  "backend/networkResolver.js": {
+    "mtime": 1789587379.1536849,
+    "seen": 1789588258.5332477,
+    "ast_hash": "3acfe17f74d778181f519f51390cf97e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/card.jsx": {
-    "mtime": 1786950168.2896192,
-    "ast_hash": "930477e37fab7fff6beb0c1ec4b8df11",
+  "backend/productionStatic.js": {
+    "mtime": 1788634963.2218966,
+    "seen": 1789588258.5332625,
+    "ast_hash": "e19a6fa38be1252e41e6428d474da4ec",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/combobox.jsx": {
-    "mtime": 1786950168.2896192,
-    "ast_hash": "46262e96972fcca2fe6000661bc3d4fc",
+  "backend/projectPaths.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.533268,
+    "ast_hash": "6432cbad5287a750ff93f7ecf13af742",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/dialog.jsx": {
-    "mtime": 1786950168.2906196,
-    "ast_hash": "43768f4024a2e107ee632041360915b7",
+  "backend/projectRepository.js": {
+    "mtime": 1789587379.162913,
+    "seen": 1789588258.5332723,
+    "ast_hash": "3a48877ae65a6a0cfb4b550a88267516",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/input.jsx": {
-    "mtime": 1786950168.291618,
-    "ast_hash": "224013252ae68d1f77a49e9eda2fc537",
+  "backend/repositories/artifactRepository.js": {
+    "mtime": 1789060177.09433,
+    "seen": 1789588258.5332773,
+    "ast_hash": "d3277c0727b96aeff611090789d80462",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/select.jsx": {
-    "mtime": 1786950168.2926188,
-    "ast_hash": "636c419f8f55fea3c021f195853d84f9",
+  "backend/repositories/verificationRepository.js": {
+    "mtime": 1788453813.8351204,
+    "seen": 1789588258.5332823,
+    "ast_hash": "46c4cb0aab593e177b1c1207cae43652",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/sonner.jsx": {
-    "mtime": 1786950168.2936163,
-    "ast_hash": "190b00dc5ec807a0b20dac778f9dc604",
+  "backend/routes/artifactDownloadAuthorization.js": {
+    "mtime": 1789060177.126222,
+    "seen": 1789588258.5332875,
+    "ast_hash": "07389e7674d8324c80f292e2ca78b1a8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/student.js": {
-    "mtime": 1786950168.2946167,
-    "ast_hash": "ee268c34f7db5b90e44708764be1ad6d",
+  "backend/routes/authRoutes.js": {
+    "mtime": 1789060177.1474898,
+    "seen": 1789588258.5332925,
+    "ast_hash": "4086b59897ac2b335d5a2dfc3dc4d7c1",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/table.jsx": {
-    "mtime": 1786950168.2956164,
-    "ast_hash": "320a7fc9354b84cc7039c9a873c2addd",
+  "backend/routes/projectRoutes.js": {
+    "mtime": 1789060177.1762085,
+    "seen": 1789588258.5332973,
+    "ast_hash": "c3ab6f8107f1eb562717323bd13c21a3",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/LoginForm.jsx": {
-    "mtime": 1786950168.2986143,
-    "ast_hash": "50c9399a5c4f68dca1c39746556efefd",
+  "backend/scripts/backup.js": {
+    "mtime": 1789060177.193161,
+    "seen": 1789588258.5333023,
+    "ast_hash": "5a611029766d5919ebbb7bece2765be5",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/RegisterForm.jsx": {
-    "mtime": 1786950168.3026128,
-    "ast_hash": "8a46395f6271d07aeb3d30519e39fc5b",
+  "backend/scripts/create_admin.js": {
+    "mtime": 1789060177.210553,
+    "seen": 1789588258.5333068,
+    "ast_hash": "1c42f65fcb78f44e2f578f811e59c6fc",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/page.jsx": {
-    "mtime": 1786950168.3037715,
-    "ast_hash": "6e5a5db695e60e69088d441c03bbf3a7",
+  "backend/scripts/final_quiz_validation.mjs": {
+    "mtime": 1789069141.4414673,
+    "seen": 1789588258.5333118,
+    "ast_hash": "465e10010a25c58b92893b81cdaba19c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/Header.jsx": {
-    "mtime": 1786950168.3406353,
-    "ast_hash": "735b87bcceb25cae24a0e7e1a9dd6fdf",
+  "backend/scripts/generate_graph.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5333169,
+    "ast_hash": "4f8ec9c762f2e3bdb21d8909ca86d606",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/MobileNav.jsx": {
-    "mtime": 1786950168.341633,
-    "ast_hash": "a0819920df593ee9110e4ef654233fc0",
+  "backend/scripts/restore.js": {
+    "mtime": 1789060177.210553,
+    "seen": 1789588258.5333216,
+    "ast_hash": "6f7f09f6f4470a961233b3924693a1e7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/Sidebar.jsx": {
-    "mtime": 1786950168.343631,
-    "ast_hash": "7338b0be7e0d96faf1c746de6f7046ec",
+  "backend/services/reconciliationService.js": {
+    "mtime": 1789060177.2580004,
+    "seen": 1789588258.5333376,
+    "ast_hash": "fb48f3d1b5da94bbcb48d757e4930da8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/UserMenu.jsx": {
-    "mtime": 1786950168.3446317,
-    "ast_hash": "964e4a5d3c1c797e05cb860a162d7c94",
+  "backend/sessionAuth.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5333428,
+    "ast_hash": "fa76dcfa166c1dad770465fcf1371bd5",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/layout.jsx": {
-    "mtime": 1786950168.345631,
-    "ast_hash": "178bfbd8c886eb6ee98cb7c645aaa39d",
+  "backend/tests/isolatedDb.js": {
+    "mtime": 1789060177.2811,
+    "seen": 1789588258.533348,
+    "ast_hash": "073cc359d42b67c59d5d4dbb1e575f5e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/MetricsCard.jsx": {
-    "mtime": 1786950168.3495088,
-    "ast_hash": "5bb45dbbc849ea3570391b8c98c0c7d2",
+  "backend/tests/preloadDatabase.js": {
+    "mtime": 1789060177.2811,
+    "seen": 1789588258.533354,
+    "ast_hash": "42cc51fea3a4adaa897015872af06159",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/QuickActions.jsx": {
-    "mtime": 1786950168.3516364,
-    "ast_hash": "70f03c0fa0d2d247af0bbe9a98b933c7",
+  "backend/tests/testHarness.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5333593,
+    "ast_hash": "35b09619fc0f295b8f6fda3047c25783",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/page.jsx": {
-    "mtime": 1786950168.352638,
-    "ast_hash": "ecf5072d1b27d410c246a09050f23145",
+  "backend/tests/testInventory.js": {
+    "mtime": 1789530620.0849636,
+    "seen": 1789588258.5333643,
+    "ast_hash": "951119031ebe56cc796d27f68d514367",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/BookDeleteDialog.jsx": {
-    "mtime": 1786950168.374014,
-    "ast_hash": "b97b3e25ed4d5b492b6dc458195d4477",
+  "backend/tests/test_admin_cli.js": {
+    "mtime": 1788687079.0772524,
+    "seen": 1789588258.5333693,
+    "ast_hash": "758f42ccbbd159adf4b50cfd5972055a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/BookFormModal.jsx": {
-    "mtime": 1786950168.38969,
-    "ast_hash": "ba1964b2f599cf26eba2c4cdac179bb8",
+  "backend/tests/test_agent_contract_schemas.js": {
+    "mtime": 1789530620.1209414,
+    "seen": 1789588258.5333745,
+    "ast_hash": "118af65ea3f2b93ff7fd673fef4ab630",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/BookSearchFilter.jsx": {
-    "mtime": 1786950168.3916938,
-    "ast_hash": "1f2b3550949e705d78e733323c204b23",
+  "backend/tests/test_backend.js": {
+    "mtime": 1789587379.183474,
+    "seen": 1789588258.5333796,
+    "ast_hash": "29d1bd4fcce7944e43a8e2adabd12d2a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/BookTable.jsx": {
-    "mtime": 1786950168.3926935,
-    "ast_hash": "0803d2846e81762bc813e4d782baa501",
+  "backend/tests/test_build_sandbox_gate.js": {
+    "mtime": 1789587379.196643,
+    "seen": 1789588258.5333846,
+    "ast_hash": "0d0f2b3a59ef77704d8d194e39b853d7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/page.jsx": {
-    "mtime": 1786950168.3966928,
-    "ast_hash": "24e80cd99edf2727d52a36a665e17279",
+  "backend/tests/test_build_validator.js": {
+    "mtime": 1788603002.8838055,
+    "seen": 1789588258.5333898,
+    "ast_hash": "195d6ba11b9262fe7d849cb82b019b0c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/StudentDetailModal.jsx": {
-    "mtime": 1786950168.4030542,
-    "ast_hash": "6bfea6f8bf867ed56f7e00ec38f24a02",
+  "backend/tests/test_build_verifier.js": {
+    "mtime": 1789060177.3613162,
+    "seen": 1789588258.5334003,
+    "ast_hash": "ad160e48a830c56af7e2c9bbb6b6e181",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/StudentModal.jsx": {
-    "mtime": 1786950168.4040532,
-    "ast_hash": "20c36d8979274de94d5e9d3fa745aaeb",
+  "backend/tests/test_cancellation_and_deadlines.js": {
+    "mtime": 1789060177.4007938,
+    "seen": 1789588258.533406,
+    "ast_hash": "e17c30e70b00eae5b24b530c65edb4db",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/StudentsManagement.jsx": {
-    "mtime": 1786950168.4129639,
-    "ast_hash": "69a5e5ea52a8672289c68f8be536a7ca",
+  "backend/tests/test_concurrency_pool.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.533411,
+    "ast_hash": "68395d9299ef469baaab08d0e7543de1",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/mockStudents.js": {
-    "mtime": 1786950168.4149702,
-    "ast_hash": "cc3ec3f8c04380fc5c537022b12bdf1a",
+  "backend/tests/test_database_migrations.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5334163,
+    "ast_hash": "b1b3b85712a22efcdd9616d052efd12a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/package.json": {
-    "mtime": 1786950168.416361,
-    "ast_hash": "28a9ffff4e37bbb56b92d99bfcca6658",
+  "backend/tests/test_deep_verification.js": {
+    "mtime": 1788099535.9506524,
+    "seen": 1789588258.5334213,
+    "ast_hash": "525a11ab50d805dcf0c8bca44938d5f5",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/(auth)/login/page.jsx": {
-    "mtime": 1786950168.4224875,
-    "ast_hash": "6f825d1062beafab11e5a728ca6cfbad",
+  "backend/tests/test_disk_sync_and_isolation.js": {
+    "mtime": 1789060177.4321845,
+    "seen": 1789588258.5334265,
+    "ast_hash": "ce43a8c344cb43da710868d340244d70",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/(auth)/pending-approval/page.jsx": {
-    "mtime": 1786950168.4244852,
-    "ast_hash": "aa733ae3d78a4861749b5bc8641da61e",
+  "backend/tests/test_docs_agent_sync.js": {
+    "mtime": 1788099082.4152207,
+    "seen": 1789588258.5334315,
+    "ast_hash": "2d18f2758022154b5326eed034f70db7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/(auth)/register/page.jsx": {
-    "mtime": 1786950168.425485,
-    "ast_hash": "cdd8b3fb91b22110c500e8bfb66d6b53",
+  "backend/tests/test_domain_policy.js": {
+    "mtime": 1788098401.066472,
+    "seen": 1789588258.5334368,
+    "ast_hash": "27525260c518e7fcc01135c21a8f84ec",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/admin/users/[id]/approve/route.ts": {
-    "mtime": 1786950168.4429824,
-    "ast_hash": "52db3a5d1c12c4492a48f80d3adcb945",
+  "backend/tests/test_e2e_simulation.js": {
+    "mtime": 1788099550.4754965,
+    "seen": 1789588258.5334415,
+    "ast_hash": "7a4d4eae13553986dee47de7ff652047",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/admin/users/pending/route.ts": {
-    "mtime": 1786950168.4450865,
-    "ast_hash": "354894769876745b9002cf5c703408a3",
+  "backend/tests/test_generation_isolation.js": {
+    "mtime": 1787853894.7223918,
+    "seen": 1789588258.5334466,
+    "ast_hash": "5c2b1b5af9fe2f2e7d1a403e04a99e86",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/auth/[...nextauth]/route.ts": {
-    "mtime": 1786950168.4470847,
-    "ast_hash": "74a1b61bc56036ca39aaba6600edd2ff",
+  "backend/tests/test_health_and_lifecycle.js": {
+    "mtime": 1789587379.1992548,
+    "seen": 1789588258.5334518,
+    "ast_hash": "487fe6f264841c018e6d70bb1e826da3",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/auth/login/route.ts": {
-    "mtime": 1786950168.4480832,
-    "ast_hash": "dfe83905178044cc8af215a09056fbc6",
+  "backend/tests/test_http_integration.js": {
+    "mtime": 1789587379.2042644,
+    "seen": 1789588258.533457,
+    "ast_hash": "754582cde3fca0d4a8ec9de76c2a3992",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/auth/register/route.ts": {
-    "mtime": 1786950168.451061,
-    "ast_hash": "3d394f7b66bfddd6bdeb0ff4509ef28a",
+  "backend/tests/test_p0_a_capability_check.js": {
+    "mtime": 1788076882.4677818,
+    "seen": 1789588258.5334623,
+    "ast_hash": "2cd11d293f7aa7fbf08049d882bd05f7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/books/[id]/route.ts": {
-    "mtime": 1786950168.4543612,
-    "ast_hash": "e49c7021cdb16928e58497d8594ce861",
+  "backend/tests/test_p0_a_contract_flow.js": {
+    "mtime": 1788075323.1216507,
+    "seen": 1789588258.5334673,
+    "ast_hash": "f560f0fc989e2ccd7c9c38da6311337b",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/books/route.ts": {
-    "mtime": 1786950168.4553616,
-    "ast_hash": "7c78f3c470644c2fb330f9f5df9d609d",
+  "backend/tests/test_p0_a_cutover.js": {
+    "mtime": 1788078788.0038526,
+    "seen": 1789588258.5334725,
+    "ast_hash": "620b70696844f4a6d473af2de8b7c14a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/borrow/return/route.ts": {
-    "mtime": 1786950168.5546868,
-    "ast_hash": "b8a9e20eeaca9ea7d647e7f658de304c",
+  "backend/tests/test_p0_a_migrations.js": {
+    "mtime": 1789587379.227669,
+    "seen": 1789588258.5334775,
+    "ast_hash": "2269448b97e20b49517d71c95c9b2109",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/borrow/route.ts": {
-    "mtime": 1786950168.5552454,
-    "ast_hash": "72470cc3cd53d55897e7e9005d3f5611",
+  "backend/tests/test_p0_a_rejections.js": {
+    "mtime": 1789060177.464399,
+    "seen": 1789588258.533483,
+    "ast_hash": "036b507706981509e3470395df3fafde",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/students/[id]/route.ts": {
-    "mtime": 1786950168.561078,
-    "ast_hash": "5f9378194904aa01d796b2ee9048cf7d",
+  "backend/tests/test_p0_a_state_transitions.js": {
+    "mtime": 1789587379.2292192,
+    "seen": 1789588258.5334878,
+    "ast_hash": "b78d3f71f6412bf6b14c0928e1d164a8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/api/students/route.ts": {
-    "mtime": 1786950168.5620775,
-    "ast_hash": "13fd5f8668c4004e4c11162afcc121df",
+  "backend/tests/test_p0_b_migrations.js": {
+    "mtime": 1788453813.8965094,
+    "seen": 1789588258.5334928,
+    "ast_hash": "143b3a18a8d666a2e2f1cc04c3b3ddfa",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/dashboard/books/page.jsx": {
-    "mtime": 1786950168.5650752,
-    "ast_hash": "24e80cd99edf2727d52a36a665e17279",
+  "backend/tests/test_p0_c_cas_invalidation.js": {
+    "mtime": 1788090828.5865924,
+    "seen": 1789588258.5334976,
+    "ast_hash": "6fe7506a3ccfaa797813fb5944fb1122",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/dashboard/layout.jsx": {
-    "mtime": 1786950168.5660748,
-    "ast_hash": "178bfbd8c886eb6ee98cb7c645aaa39d",
+  "backend/tests/test_p0_c_checkpoint_repository.js": {
+    "mtime": 1788085404.6401434,
+    "seen": 1789588258.533502,
+    "ast_hash": "23ffcdd7974480df0e5b2f8f4e7a1967",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/dashboard/layout.tsx": {
-    "mtime": 1786950168.5680747,
-    "ast_hash": "b211515a44d952b62ad74c38a5b361e4",
+  "backend/tests/test_p0_c_selective_rejection.js": {
+    "mtime": 1788095700.7720003,
+    "seen": 1789588258.5335069,
+    "ast_hash": "630e637ef520c85c62a306c6fd325268",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/dashboard/page.jsx": {
-    "mtime": 1786950168.5720718,
-    "ast_hash": "ecf5072d1b27d410c246a09050f23145",
+  "backend/tests/test_p0_c_workflow_integration.js": {
+    "mtime": 1788092232.7298646,
+    "seen": 1789588258.5335114,
+    "ast_hash": "62ee511cc5bb0dd94b5903c13d923a75",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/app/layout.tsx": {
-    "mtime": 1786950168.5756264,
-    "ast_hash": "cf74984f3feb87d3db6707c1b15cacc3",
+  "backend/tests/test_p1_10_db_constraints_indexes.js": {
+    "mtime": 1789587379.2495244,
+    "seen": 1789588258.533516,
+    "ast_hash": "7caaf1fd91d889764c13a1483cd8c39f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/admin/students/StudentDetailModal.jsx": {
-    "mtime": 1786950168.58664,
-    "ast_hash": "6bfea6f8bf867ed56f7e00ec38f24a02",
+  "backend/tests/test_p1_11_generation_quotas.js": {
+    "mtime": 1787860234.9561565,
+    "seen": 1789588258.5335214,
+    "ast_hash": "fc4583136e6e7c4cdbce2ba9106f6f81",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/admin/students/StudentModal.jsx": {
-    "mtime": 1786950168.58764,
-    "ast_hash": "20c36d8979274de94d5e9d3fa745aaeb",
+  "backend/tests/test_p1_12_pagination_limits.js": {
+    "mtime": 1787860445.0695012,
+    "seen": 1789588258.533527,
+    "ast_hash": "54f49482f0db3ecf2e1541cab8cd6ef1",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/auth/LoginForm.jsx": {
-    "mtime": 1786950168.5896397,
-    "ast_hash": "036d1b22a21b1a8ef7ddde95184fbca9",
+  "backend/tests/test_p1_13_async_error_propagation.js": {
+    "mtime": 1787860730.8478744,
+    "seen": 1789588258.5335321,
+    "ast_hash": "10546d5e3bf247e00962abf2bf551da8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/auth/ProtectedRoute.tsx": {
-    "mtime": 1786950168.5912187,
-    "ast_hash": "6cf275434bc491d61dfefa29f94aeba3",
+  "backend/tests/test_p1_14_websocket_limits.js": {
+    "mtime": 1787861070.065647,
+    "seen": 1789588258.5335374,
+    "ast_hash": "697482e24beeea76c97dd8004ca8d3c3",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/auth/RegisterForm.jsx": {
-    "mtime": 1786950168.592227,
-    "ast_hash": "7bb5ce3e43f08fc2bb47db7490a70edb",
+  "backend/tests/test_p1_1_abort_signal.js": {
+    "mtime": 1787857622.2517128,
+    "seen": 1789588258.5335422,
+    "ast_hash": "37698dc7fb613585865e530a5d78c8fc",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/books/BookDeleteDialog.jsx": {
-    "mtime": 1786950168.5942252,
-    "ast_hash": "b97b3e25ed4d5b492b6dc458195d4477",
+  "backend/tests/test_p1_2_pause_resume_lease.js": {
+    "mtime": 1789587379.2515223,
+    "seen": 1789588258.5335472,
+    "ast_hash": "c8dcd785e6c9a20584956079c283f44e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/books/BookFormModal.jsx": {
-    "mtime": 1786950168.595224,
-    "ast_hash": "ba1964b2f599cf26eba2c4cdac179bb8",
+  "backend/tests/test_p1_3_concurrency_rejection.js": {
+    "mtime": 1787858021.2721815,
+    "seen": 1789588258.5335524,
+    "ast_hash": "bfdc4d2453b0fc10c4a0cdb23ba66efb",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/books/BookSearchFilter.jsx": {
-    "mtime": 1786950168.5962224,
-    "ast_hash": "1f2b3550949e705d78e733323c204b23",
+  "backend/tests/test_p1_4_file_ownership.js": {
+    "mtime": 1789587379.2753303,
+    "seen": 1789588258.5335574,
+    "ast_hash": "87973740eaf291a5bb44c48e5fb0def9",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/books/BookTable.jsx": {
-    "mtime": 1786950168.5972233,
-    "ast_hash": "0803d2846e81762bc813e4d782baa501",
+  "backend/tests/test_p1_5_multi_process_lease.js": {
+    "mtime": 1789060177.4958746,
+    "seen": 1789588258.533563,
+    "ast_hash": "869ea8c67544c3f5dfe302f010c1c177",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/Header.jsx": {
-    "mtime": 1786950168.5992215,
-    "ast_hash": "735b87bcceb25cae24a0e7e1a9dd6fdf",
+  "backend/tests/test_p1_6_canonical_repository.js": {
+    "mtime": 1789060177.5137904,
+    "seen": 1789588258.5335677,
+    "ast_hash": "1a0779b9548375a216dd68b295c7479f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/MetricsCard.jsx": {
-    "mtime": 1786950168.6002223,
-    "ast_hash": "5bb45dbbc849ea3570391b8c98c0c7d2",
+  "backend/tests/test_p1_7_pure_get_and_sync.js": {
+    "mtime": 1789060177.527506,
+    "seen": 1789588258.533573,
+    "ast_hash": "69fde884343cd26fc309c60b276b4c23",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/MobileNav.jsx": {
-    "mtime": 1786950168.6012206,
-    "ast_hash": "a0819920df593ee9110e4ef654233fc0",
+  "backend/tests/test_p1_8_create_delete_boundary.js": {
+    "mtime": 1787859362.4606094,
+    "seen": 1789588258.533578,
+    "ast_hash": "84a24c0feaf593df89a506a97aad9463",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/QuickActions.jsx": {
-    "mtime": 1786950168.6029716,
-    "ast_hash": "70f03c0fa0d2d247af0bbe9a98b933c7",
+  "backend/tests/test_p1_9_optimistic_revision.js": {
+    "mtime": 1789587379.2773297,
+    "seen": 1789588258.5335832,
+    "ast_hash": "560c7ec925a1b0a9ba7f1f228120e2fd",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/Sidebar.jsx": {
-    "mtime": 1786950168.6053884,
-    "ast_hash": "7338b0be7e0d96faf1c746de6f7046ec",
+  "backend/tests/test_p1_a_migrations.js": {
+    "mtime": 1789587379.2793288,
+    "seen": 1789588258.5335882,
+    "ast_hash": "53af6a08f2b93f899b1d7a30371678d9",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/dashboard/UserMenu.jsx": {
-    "mtime": 1786950168.606386,
-    "ast_hash": "964e4a5d3c1c797e05cb860a162d7c94",
+  "backend/tests/test_p1_a_pipeline_allowlist.js": {
+    "mtime": 1788099288.4613273,
+    "seen": 1789588258.5335932,
+    "ast_hash": "68668c1b96b7f952b7be3467f39fdd79",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/layout/Navbar.tsx": {
-    "mtime": 1786950168.6083846,
-    "ast_hash": "21b511432240eb82bb517108c8765412",
+  "backend/tests/test_p1_b_api.js": {
+    "mtime": 1788100709.069905,
+    "seen": 1789588258.5335982,
+    "ast_hash": "eef0db8733ad97b5b81c4338ae04f4ad",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/layout/Sidebar.tsx": {
-    "mtime": 1786950168.6093855,
-    "ast_hash": "9f4bcc043eda7f9672bd4c1548cb436f",
+  "backend/tests/test_p1_b_browser.js": {
+    "mtime": 1788100864.2194006,
+    "seen": 1789588258.533604,
+    "ast_hash": "0169cf70aa4e8cd388bdf2bd16eccb1b",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/layout/UserProfileMenu.tsx": {
-    "mtime": 1786950168.6103837,
-    "ast_hash": "385608c01e1e909d55cbbb06ef15950b",
+  "backend/tests/test_p1_b_database.js": {
+    "mtime": 1788100393.8767447,
+    "seen": 1789588258.533609,
+    "ast_hash": "23d4aab650cb8d1c10305c8f506ed768",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/badge.jsx": {
-    "mtime": 1786950168.611384,
-    "ast_hash": "5818497e23f52cefea129e2d25d5b076",
+  "backend/tests/test_p1_b_health_prober.js": {
+    "mtime": 1788100219.8502288,
+    "seen": 1789588258.533614,
+    "ast_hash": "3002ad733b92fe1f43c8fa700ef06952",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/badge.tsx": {
-    "mtime": 1786950168.6123822,
-    "ast_hash": "f45ba12e070622797512ff9ef1f2824a",
+  "backend/tests/test_p1_b_manifest.js": {
+    "mtime": 1788099868.4001527,
+    "seen": 1789588258.5336185,
+    "ast_hash": "6ff19dbd1489aa8d9f79d1eb70f8a5b8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/button.jsx": {
-    "mtime": 1786950168.6133828,
-    "ast_hash": "64073d3b7721cb6bb7ee656cfd4822cb",
+  "backend/tests/test_p1_b_process.js": {
+    "mtime": 1788100043.1137016,
+    "seen": 1789588258.5336232,
+    "ast_hash": "518ec8e42959eb1fe357e9bd9a5e3e91",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/button.tsx": {
-    "mtime": 1786950168.614381,
-    "ast_hash": "4636f2016eaa091af1a209fc9ef83b35",
+  "backend/tests/test_p1_b_quality_policy_evidence.js": {
+    "mtime": 1789530620.1652117,
+    "seen": 1789588258.5336282,
+    "ast_hash": "409f5dce3b465865aff2f2d32f22e294",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/card.jsx": {
-    "mtime": 1786950168.6153824,
-    "ast_hash": "930477e37fab7fff6beb0c1ec4b8df11",
+  "backend/tests/test_p1_b_smoke.js": {
+    "mtime": 1789530620.1832573,
+    "seen": 1789588258.5336325,
+    "ast_hash": "fb3a78e06af12c55672cbb8940391091",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/card.tsx": {
-    "mtime": 1786950168.6163802,
-    "ast_hash": "d6ba3e1fbfad1586ab396c9c8b5ecd5f",
+  "backend/tests/test_p1_b_test_infra.js": {
+    "mtime": 1788101071.9880588,
+    "seen": 1789588258.533637,
+    "ast_hash": "dde1c30e0dc718c53e5d3077ff7e0b35",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/combobox.jsx": {
-    "mtime": 1786950168.6183805,
-    "ast_hash": "46262e96972fcca2fe6000661bc3d4fc",
+  "backend/tests/test_p1_c_archive.js": {
+    "mtime": 1788634963.3636813,
+    "seen": 1789588258.5336423,
+    "ast_hash": "1a7f297892d733898c494d106c560d02",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/dialog.jsx": {
-    "mtime": 1786950168.6203783,
-    "ast_hash": "43768f4024a2e107ee632041360915b7",
+  "backend/tests/test_p1_c_artifact_verifier.js": {
+    "mtime": 1789060177.5752728,
+    "seen": 1789588258.5336473,
+    "ast_hash": "a24289cc78036388cfd66c40788903f7",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/dialog.tsx": {
-    "mtime": 1786950168.6203783,
-    "ast_hash": "a9ab5c42a45b861ffe77e658e1631141",
+  "backend/tests/test_p1_c_frontend.js": {
+    "mtime": 1788112719.9652472,
+    "seen": 1789588258.533652,
+    "ast_hash": "d5c9e6b2f24a8eed0636ccf209817a9b",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/input.jsx": {
-    "mtime": 1786950168.6281273,
-    "ast_hash": "224013252ae68d1f77a49e9eda2fc537",
+  "backend/tests/test_p1_c_repository.js": {
+    "mtime": 1788603003.0293157,
+    "seen": 1789588258.5336564,
+    "ast_hash": "20c58d91dfdacee95d7cc8aa41a1dd95",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/input.tsx": {
-    "mtime": 1786950168.6301258,
-    "ast_hash": "d25fefe894a6f54ae91d01b219fac2ee",
+  "backend/tests/test_p1_c_safe_extraction.js": {
+    "mtime": 1788634963.9890604,
+    "seen": 1789588258.5336611,
+    "ast_hash": "58f69bc9d5a5e8a07d42766b642b3290",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/select.jsx": {
-    "mtime": 1786950168.6311228,
-    "ast_hash": "636c419f8f55fea3c021f195853d84f9",
+  "backend/tests/test_p1_c_state_invalidation.js": {
+    "mtime": 1788453813.9473865,
+    "seen": 1789588258.5336661,
+    "ast_hash": "a9d8b89a7d87e4a61e0118a86f543e91",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/select.tsx": {
-    "mtime": 1786950168.6321223,
-    "ast_hash": "e8db54d7cb244f5ee402c132618c35e8",
+  "backend/tests/test_p2_completion_report.js": {
+    "mtime": 1788194086.2258518,
+    "seen": 1789588258.5336704,
+    "ast_hash": "b93c96c0c8f227698fe7011edf43b833",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/sonner.jsx": {
-    "mtime": 1786950168.63412,
-    "ast_hash": "190b00dc5ec807a0b20dac778f9dc604",
+  "backend/tests/test_p2_contamination.js": {
+    "mtime": 1788114609.8019466,
+    "seen": 1789588258.5336747,
+    "ast_hash": "9dadec59bcf4ca26d78c3b974a7ad9dd",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/table.jsx": {
-    "mtime": 1786950168.6361184,
-    "ast_hash": "320a7fc9354b84cc7039c9a873c2addd",
+  "backend/tests/test_p2_domain_policy.js": {
+    "mtime": 1788113449.918096,
+    "seen": 1789588258.5336792,
+    "ast_hash": "19f030ef327ce0fbbd482863780db508",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/components/ui/table.tsx": {
-    "mtime": 1786950168.6371162,
-    "ast_hash": "e2a415853c4accf257d28a1aec5e3e5e",
+  "backend/tests/test_p2_frontend.js": {
+    "mtime": 1788603003.032502,
+    "seen": 1789588258.5336845,
+    "ast_hash": "d200c17c43d42a8aae7ab8a3d9256aab",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/context/AuthContext.jsx": {
-    "mtime": 1786950168.6395113,
-    "ast_hash": "c283ddcdd64c5c0925993615c8d49acf",
+  "backend/tests/test_p2_placeholder.js": {
+    "mtime": 1789530620.2022421,
+    "seen": 1789588258.5337064,
+    "ast_hash": "6687c64e273afc557338fceb2e2f59aa",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/context/AuthContext.tsx": {
-    "mtime": 1786950168.6406686,
-    "ast_hash": "845373c08fac41b87a462224adeeddce",
+  "backend/tests/test_p2_readme.js": {
+    "mtime": 1789060177.597185,
+    "seen": 1789588258.5337117,
+    "ast_hash": "7c9ba75329d7234a40f12509c886abe3",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/data/mockStudents.js": {
-    "mtime": 1786950168.6421335,
-    "ast_hash": "cd9873d44e49b59fe0376817ac03ddc0",
+  "backend/tests/test_p2_repair_allowlist.js": {
+    "mtime": 1788148726.0160952,
+    "seen": 1789588258.5337164,
+    "ast_hash": "98fa4b0141f3dce2c80c81f38a6ea2e6",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/hooks/useAuth.ts": {
-    "mtime": 1786950168.6436458,
-    "ast_hash": "def8138598e122c0eefb7da6800ce005",
+  "backend/tests/test_p2_scope_priority.js": {
+    "mtime": 1788147581.8675005,
+    "seen": 1789588258.533721,
+    "ast_hash": "1cf2fbb80a7af65d0aa40ed031d90933",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/api-response.ts": {
-    "mtime": 1786950168.6540153,
-    "ast_hash": "58a20a6eb119d66f15dacc22ae5492b6",
+  "backend/tests/test_p2_security_auth.js": {
+    "mtime": 1788684400.1381025,
+    "seen": 1789588258.5337257,
+    "ast_hash": "6e14d109edbbd38c9f4635b212294b28",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/auth.ts": {
-    "mtime": 1786950168.6553268,
-    "ast_hash": "f7b0a07dff89a8477d907f5661f0bd6b",
+  "backend/tests/test_p2_security_baseline.js": {
+    "mtime": 1788125208.0168316,
+    "seen": 1789588258.5337298,
+    "ast_hash": "ef833cdcd0cd1a90b4ee6d7ab297ee5e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/prisma.ts": {
-    "mtime": 1786950168.6563294,
-    "ast_hash": "a8257fb1cb6a6120662ea8d24843cf0d",
+  "backend/tests/test_p3_observability.js": {
+    "mtime": 1788603003.0647578,
+    "seen": 1789588258.5337343,
+    "ast_hash": "fef296ab0197592bc4b906d7f07d5b23",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/utils.ts": {
-    "mtime": 1786950168.6573274,
-    "ast_hash": "29c67c84102cf3701e729022d0bef191",
+  "backend/tests/test_p4_production_safety.js": {
+    "mtime": 1788453813.9514186,
+    "seen": 1789588258.533739,
+    "ast_hash": "e9f2b5154fd4f6772caa2714d8ed953d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/auth.js": {
-    "mtime": 1786950168.6593268,
-    "ast_hash": "2aec13589b2ff4afa5eae01c55bf5af0",
+  "backend/tests/test_p5_artifact_completion.js": {
+    "mtime": 1788603003.0820043,
+    "seen": 1789588258.5337439,
+    "ast_hash": "161e7ba4c72b7fb4d5c6a9b87328ef9a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/auth.ts": {
-    "mtime": 1786950168.6603253,
-    "ast_hash": "91e457a665b9b0a26f9bddfb064aeddf",
+  "backend/tests/test_p5_execution_boundary.js": {
+    "mtime": 1788603003.1015823,
+    "seen": 1789588258.5337481,
+    "ast_hash": "cc6fc2591ec84731b2a42665949f1bb2",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/book.js": {
-    "mtime": 1786950168.6603253,
-    "ast_hash": "6a3ec06a202e1a77cee0a63164c68670",
+  "backend/tests/test_p5_mfa_login.js": {
+    "mtime": 1788684400.1457186,
+    "seen": 1789588258.5337527,
+    "ast_hash": "a5a4d2b337cf362870ac7eeec578a7ab",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/book.ts": {
-    "mtime": 1786950168.6623251,
-    "ast_hash": "4173dbf6709edd832050301aa4c80a0c",
+  "backend/tests/test_p6_archive_ownership.js": {
+    "mtime": 1788634964.0070255,
+    "seen": 1789588258.5337572,
+    "ast_hash": "e5f4a08021b27921af2042f29f45d509",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/borrow.js": {
-    "mtime": 1786950168.6633248,
-    "ast_hash": "0fdae32b8b9f99e5995d6b0074811121",
+  "backend/tests/test_p6_static_serving.js": {
+    "mtime": 1789587379.2969415,
+    "seen": 1789588258.5337613,
+    "ast_hash": "a67f261c25ea8624dd244410db34c6f2",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/borrow.ts": {
-    "mtime": 1786950168.6643245,
-    "ast_hash": "21e1121a9586eb9957a935dd228d4eab",
+  "backend/tests/test_p7_approve_state.js": {
+    "mtime": 1788642647.1192539,
+    "seen": 1789588258.533766,
+    "ast_hash": "d27065c6029a07fbb64706212782b6c8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/student.js": {
-    "mtime": 1786950168.665323,
-    "ast_hash": "ee268c34f7db5b90e44708764be1ad6d",
+  "backend/tests/test_p7_delete_protection.js": {
+    "mtime": 1788642647.1212249,
+    "seen": 1789588258.5337708,
+    "ast_hash": "c6b225b9cfb1189b1f1d126a757597ab",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/lib/validations/student.ts": {
-    "mtime": 1786950168.6663222,
-    "ast_hash": "ca592c905e22adcc0efcd89eb6b599f9",
+  "backend/tests/test_p7_files_api.js": {
+    "mtime": 1788642647.1232502,
+    "seen": 1789588258.533775,
+    "ast_hash": "8e73e1575b186c654e78bb4a3a2bd7b8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/src/pages/admin/StudentsManagement.jsx": {
-    "mtime": 1786950168.668783,
-    "ast_hash": "69a5e5ea52a8672289c68f8be536a7ca",
+  "backend/tests/test_p7_readme_generator.js": {
+    "mtime": 1788642647.1252296,
+    "seen": 1789588258.5337796,
+    "ast_hash": "b0468481e746582934d0164d6fa448e6",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/tailwind.config.ts": {
-    "mtime": 1786950168.6702294,
-    "ast_hash": "6434f6b5cdc22bbf984ba8f4cceacf1d",
+  "backend/tests/test_p7_reconciliation.js": {
+    "mtime": 1789060177.63009,
+    "seen": 1789588258.5337846,
+    "ast_hash": "8070010dabc7d24efc9d64ceb82e0117",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/jsconfig.json": {
-    "mtime": 1786950168.6750357,
-    "ast_hash": "04308bb21ed1e6db6eaedb73ef33540c",
+  "backend/tests/test_p7_sqlite_durability.js": {
+    "mtime": 1788642647.1272297,
+    "seen": 1789588258.5337896,
+    "ast_hash": "316dbe92688714281f0dcf7082bd418b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-1-prisma-setup/prisma.ts": {
-    "mtime": 1786950168.7124,
-    "ast_hash": "a8257fb1cb6a6120662ea8d24843cf0d",
+  "backend/tests/test_p8_ci_contract.js": {
+    "mtime": 1788684400.1487532,
+    "seen": 1789588258.5337946,
+    "ast_hash": "ad4b6acca6a535f5fdb6cb9c8f414b71",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-2-validations-and-utils/turkish-utils.ts": {
-    "mtime": 1786950168.7183948,
-    "ast_hash": "8be4e5a7d040a6e85701d2bb91d2d9f4",
+  "backend/tests/test_p8_mfa_crypto.js": {
+    "mtime": 1788684400.1516302,
+    "seen": 1789588258.5337994,
+    "ast_hash": "b81358496be09055a8a3f0ffcc3ad8fb",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-2-validations-and-utils/validations.ts": {
-    "mtime": 1786950168.7189243,
-    "ast_hash": "e287f098fbb6d676e6ae07076c41b39d",
+  "backend/tests/test_p8_sandbox_limits.js": {
+    "mtime": 1788684400.1516302,
+    "seen": 1789588258.5338042,
+    "ast_hash": "0bd82e4a2f8b74175a64972b325f13a8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-3-leaderboard-api/route.ts": {
-    "mtime": 1786950168.7252505,
-    "ast_hash": "803da8423cd52d4acfdf523aa332e788",
+  "backend/tests/test_p8_security_operations.js": {
+    "mtime": 1789060178.0029924,
+    "seen": 1789588258.5338092,
+    "ast_hash": "660cdfb6c0d31934e6281f01b17c3e63",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-4-words-api/route.ts": {
-    "mtime": 1786950168.7294395,
-    "ast_hash": "9cd33317de6b0aa2c01459d34fcb9a75",
+  "backend/tests/test_p9_artifact_pipeline.js": {
+    "mtime": 1789587379.3114572,
+    "seen": 1789588258.5338137,
+    "ast_hash": "f9c670cd56f4634ad8ce51249979038a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/Button.tsx": {
-    "mtime": 1786950168.7595894,
-    "ast_hash": "c546264da0083b818dbd36d0a88eeb6d",
+  "backend/tests/test_p9_backup_restore.js": {
+    "mtime": 1789060178.064719,
+    "seen": 1789588258.5338185,
+    "ast_hash": "e7c22cbd509f76f0d98bc86174e5bb30",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/Card.tsx": {
-    "mtime": 1786950168.76059,
-    "ast_hash": "4b35fbb1629ee5bf958d6f4795e5856c",
+  "backend/tests/test_p9_checkpoint_dependencies.js": {
+    "mtime": 1789060178.1243186,
+    "seen": 1789588258.533823,
+    "ast_hash": "98da6713ae5461ca18ba9798a868b3aa",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/Modal.tsx": {
-    "mtime": 1786950168.7635884,
-    "ast_hash": "081fe222ec61fb30b0f8220bfbfe030e",
+  "backend/tests/test_p9_data_recovery.js": {
+    "mtime": 1789060178.1421223,
+    "seen": 1789588258.533828,
+    "ast_hash": "bcfc7d5af44f1fe0d8a906ea7f874103",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/Switch.tsx": {
-    "mtime": 1786950168.765904,
-    "ast_hash": "72aa41f3ca43d3c29ff433be4fe3cd55",
+  "backend/tests/test_p9_lease_fencing.js": {
+    "mtime": 1789587379.3138852,
+    "seen": 1789588258.5338428,
+    "ast_hash": "d1e6e09f81d14ff959b5d6cf5dfa2da0",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/constants.ts": {
-    "mtime": 1786950168.7669032,
-    "ast_hash": "92ec931f95f9497615d6699b0cff9160",
+  "backend/tests/test_p9_runner_inventory.js": {
+    "mtime": 1789530620.2293193,
+    "seen": 1789588258.5338476,
+    "ast_hash": "f3ac4625a3bed19ced23dd82c0cdb6e7",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/layout.tsx": {
-    "mtime": 1786950168.7679052,
-    "ast_hash": "e1ef3d14def94af28f2e0637415d38c3",
+  "backend/tests/test_p9_session_revocation.js": {
+    "mtime": 1789587379.315889,
+    "seen": 1789588258.5338526,
+    "ast_hash": "7c9028a646d802bc3ac02d3dbac5f052",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/utils.ts": {
-    "mtime": 1786950168.76892,
-    "ast_hash": "084e5341706e684e37af86f59eb2c474",
+  "backend/tests/test_p9_verification_pipeline.js": {
+    "mtime": 1789060178.1938467,
+    "seen": 1789588258.5338576,
+    "ast_hash": "34e374a43d3502d2d918b90d8d193f3e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/AudioPlayer.tsx": {
-    "mtime": 1786950168.7709193,
-    "ast_hash": "7fc94a4b418d682a27d2fbc80402b1c8",
+  "backend/tests/test_package_verifier.js": {
+    "mtime": 1788083408.0398047,
+    "seen": 1789588258.5338628,
+    "ast_hash": "fc4c5413de2a5135f3b0f58f390ff1f1",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/Footer.tsx": {
-    "mtime": 1786950168.7724266,
-    "ast_hash": "e0164eccc61af3352b95cdf70b269542",
+  "backend/tests/test_project_repository.js": {
+    "mtime": 1788079167.0932786,
+    "seen": 1789588258.533868,
+    "ast_hash": "45f662e28045b4843923f62a5b51c4f8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/Header.tsx": {
-    "mtime": 1786950168.7744336,
-    "ast_hash": "d7910a7460e5e7731367cde0f50e8822",
+  "backend/tests/test_quality_gate.js": {
+    "mtime": 1789060178.214512,
+    "seen": 1789588258.533873,
+    "ast_hash": "2a4b2cf98c9b41ef515898b2f5114efa",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/Navbar.tsx": {
-    "mtime": 1786950168.7789323,
-    "ast_hash": "7571ee75b77694baebdad2ae1fb51b78",
+  "backend/tests/test_quality_policy_integration.js": {
+    "mtime": 1788453813.9750829,
+    "seen": 1789588258.5338786,
+    "ast_hash": "b9d946e9882ef16379ae40203a46bed6",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/ThemeToggle.tsx": {
-    "mtime": 1786950168.7809372,
-    "ast_hash": "37b862b7de36b0f036659f9d13612725",
+  "backend/tests/test_quiz_runtime_remediation.js": {
+    "mtime": 1789530620.245275,
+    "seen": 1789588258.5338833,
+    "ast_hash": "03f5e245719680fbfff31e160869d8f5",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/useAudio.ts": {
-    "mtime": 1786950168.7819364,
-    "ast_hash": "8d8427e2dfeb4efcdde34a14d7951fab",
+  "backend/tests/test_runner.js": {
+    "mtime": 1789587379.3421607,
+    "seen": 1789588258.533889,
+    "ast_hash": "51dc430e23ec84b055272fd2f1c45586",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/useKeyPress.ts": {
-    "mtime": 1786950168.7819364,
-    "ast_hash": "105a31cde3d9abc135911abed8aae166",
+  "backend/tests/test_runtime_verification.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.533894,
+    "ast_hash": "c9f30aced57070335fde54aa8eff9cb7",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/useLeaderboardStore.ts": {
-    "mtime": 1786950168.784409,
-    "ast_hash": "8c6a005efb2e2cfe95fa33b8edf00faf",
+  "backend/tests/test_sandbox_adapters.js": {
+    "mtime": 1788684400.182195,
+    "seen": 1789588258.5338993,
+    "ast_hash": "6474421109e8127ad20b7f3a267d4435",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/useSettingsStore.ts": {
-    "mtime": 1786950168.785415,
-    "ast_hash": "e8347dbbfc840970a58777fe9e2d06f7",
+  "backend/tests/test_sandbox_security.js": {
+    "mtime": 1788081870.9967487,
+    "seen": 1789588258.533904,
+    "ast_hash": "91e3dee24ba3968724ffeea782155ba4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/useWindowSize.ts": {
-    "mtime": 1786950168.7864156,
-    "ast_hash": "ebf677cd828f00c9de483a575dd960ca",
+  "backend/tests/test_subprocess_sandbox.js": {
+    "mtime": 1788603003.145724,
+    "seen": 1789588258.5339093,
+    "ast_hash": "5944d3eaee99e03d0c1fb49322e482c9",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/Card.jsx": {
-    "mtime": 1786950168.7884138,
-    "ast_hash": "7e3789410b293f4daa6feafc04c031cb",
+  "backend/tests/test_symlink_isolation.js": {
+    "mtime": 1787855184.2967813,
+    "seen": 1789588258.533914,
+    "ast_hash": "e4c02d6a4ab4aea2f70c0dffd9e94fef",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/GameStats.jsx": {
-    "mtime": 1786950168.7904134,
-    "ast_hash": "6874381b6375901ae7ae41a9b0a3689b",
+  "backend/tests/test_test_harness.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5339193,
+    "ast_hash": "ef748ec16bba3cc287eb054ada2cc7b4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/soundEffects.js": {
-    "mtime": 1786950168.7924109,
-    "ast_hash": "504a0a6309701b918b1b083a1d995420",
+  "backend/tests/test_traceability_capabilities.js": {
+    "mtime": 1788098111.0813468,
+    "seen": 1789588258.5339243,
+    "ast_hash": "ceb5233c6a519afd6798533188de55f4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/themes.js": {
-    "mtime": 1786950168.793411,
-    "ast_hash": "0b41a6e82128f13d9a102416f9c47309",
+  "backend/tests/test_traceability_matrix.js": {
+    "mtime": 1788098240.4635038,
+    "seen": 1789588258.533929,
+    "ast_hash": "8d90ed067201f97d254e139f9998ccfc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/GameStats.jsx": {
-    "mtime": 1786950168.7984066,
-    "ast_hash": "adc74486c3a77999934c67061a7cef6a",
+  "backend/tests/test_tur2_edge_cases.js": {
+    "mtime": 1788079167.1325736,
+    "seen": 1789588258.5339339,
+    "ast_hash": "7e0f81d47a313c112b851f5e9d6a4505",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/RockPaperScissorsGame.jsx": {
-    "mtime": 1786950168.8092742,
-    "ast_hash": "8a7b810385c40024edc392fa36296eaa",
+  "backend/tests/test_websocket_integration.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5339386,
+    "ast_hash": "3f4c9d47437eb11e1430c61946b96327",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/RulesModal.jsx": {
-    "mtime": 1786950168.810273,
-    "ast_hash": "5eb2cb783a32006fd801c3f3c9524fee",
+  "backend/tests/test_workflow_attempts.js": {
+    "mtime": 1789060178.2458625,
+    "seen": 1789588258.5339441,
+    "ast_hash": "c5cec21c5a178567293c3b0cbeb9c592",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/gameLogic.js": {
-    "mtime": 1786950168.8112757,
-    "ast_hash": "eecad635e0973d8c03b4d0df9509d010",
+  "backend/tests/test_workflow_state_initialization.js": {
+    "mtime": 1787852419.8184083,
+    "seen": 1789588258.5339491,
+    "ast_hash": "029e8d31c8ca29ceece65d06d6ce810e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/sound.js": {
-    "mtime": 1786950168.812791,
-    "ast_hash": "8f7058026ec2140e18cbebcfc0704afd",
+  "backend/utils/archive.js": {
+    "mtime": 1789060178.2575505,
+    "seen": 1789588258.5339544,
+    "ast_hash": "3cb7588a7705c82df5832f84c8ec3b1a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/ConfettiEffect.jsx": {
-    "mtime": 1786950168.8148055,
-    "ast_hash": "e1fccef79b9c0ac4f18b37661792faef",
+  "backend/verification/adapters/portableSandbox.js": {
+    "mtime": 1788684400.185511,
+    "seen": 1789588258.533959,
+    "ast_hash": "9f2a2706e6e7f41db861e8e92cd0c450",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/XoxGame.jsx": {
-    "mtime": 1786950168.8217993,
-    "ast_hash": "ebd043ebb0ae4ccc90b285860cc85e2e",
+  "backend/verification/adapters/windowsSandbox.js": {
+    "mtime": 1788453814.107841,
+    "seen": 1789588258.5339637,
+    "ast_hash": "b5fa5f7d0b5084c236a9e885898394dd",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/xoxUtils.js": {
-    "mtime": 1786950168.8235369,
-    "ast_hash": "c38bcd2441f47736038f2fab81ed846e",
+  "backend/verification/apiVerifier.js": {
+    "mtime": 1789587379.3540752,
+    "seen": 1789588258.533969,
+    "ast_hash": "b4c4da452ce592e381ac7985ade12a53",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/GameBoard.jsx": {
-    "mtime": 1786950168.835652,
-    "ast_hash": "9238e312d2be5630f312bd74fed56d89",
+  "backend/verification/artifactVerifier.js": {
+    "mtime": 1789530620.2978635,
+    "seen": 1789588258.533974,
+    "ast_hash": "187c9cdbb423e44f2bca9206eb4fbd91",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/soundEffects.js": {
-    "mtime": 1786950168.8380308,
-    "ast_hash": "8919086dbe43a670a0f4ccc501ec20b7",
+  "backend/verification/browserVerifier.js": {
+    "mtime": 1789587379.3568194,
+    "seen": 1789588258.5339787,
+    "ast_hash": "fd0a49bf3f4fa24652a037200a80d4c8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/useSnakeGame.js": {
-    "mtime": 1786950168.839025,
-    "ast_hash": "016e537ee3d15b9d6f8af992e9ec37d4",
+  "backend/verification/buildVerifier.js": {
+    "mtime": 1789587379.3636045,
+    "seen": 1789588258.533984,
+    "ast_hash": "248517763a74da37906037c3bfbd7ca0",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/Keyboard.jsx": {
-    "mtime": 1786950168.8430252,
-    "ast_hash": "e7f70d5d86b44fedc63f2cbdcb9cc78e",
+  "backend/verification/contaminationVerifier.js": {
+    "mtime": 1788114362.6469624,
+    "seen": 1789588258.5339887,
+    "ast_hash": "648a68a76394d1793a8e61d06f8ce474",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/Row.jsx": {
-    "mtime": 1786950168.8653595,
-    "ast_hash": "80d7c903783025768af9b9609f0819ad",
+  "backend/verification/databaseVerifier.js": {
+    "mtime": 1789587379.3656442,
+    "seen": 1789588258.5339937,
+    "ast_hash": "c089c82b898035dff7c297d81d738488",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/StatsModal.jsx": {
-    "mtime": 1786950168.867362,
-    "ast_hash": "66bccb248dc741790784ac66ae47f7fb",
+  "backend/verification/healthProber.js": {
+    "mtime": 1789587379.3686502,
+    "seen": 1789588258.5339985,
+    "ast_hash": "f5f7b5ff6c2c94b26cc2d8442cf52fbc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/Tile.jsx": {
-    "mtime": 1786950168.8692005,
-    "ast_hash": "53ddb2a0d3cc7769c0673f565268af67",
+  "backend/verification/packageVerifier.js": {
+    "mtime": 1789530620.369441,
+    "seen": 1789588258.5340035,
+    "ast_hash": "85bbe0aa1fbd78a183777d1431e08534",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/wordleWords.js": {
-    "mtime": 1786950168.8703249,
-    "ast_hash": "cc430e32ca0379975ee891df6991f0f8",
+  "backend/verification/placeholderVerifier.js": {
+    "mtime": 1789530620.3792021,
+    "seen": 1789588258.5340083,
+    "ast_hash": "6d64ad0cfeac6f53396a66e679ce040d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/DailyChallengeCard.jsx": {
-    "mtime": 1786950168.87332,
-    "ast_hash": "b820f1c10374f867ab8980c94a70bd33",
+  "backend/verification/policyVersion.js": {
+    "mtime": 1789060178.3871317,
+    "seen": 1789588258.5340133,
+    "ast_hash": "05124588a8a6c3238b93fee6776b305d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/HeroSection.jsx": {
-    "mtime": 1786950168.8749876,
-    "ast_hash": "f1b2dc08cab2f69af24f0328db42e5c0",
+  "backend/verification/processVerifier.js": {
+    "mtime": 1789587379.388359,
+    "seen": 1789588258.534018,
+    "ast_hash": "6fd516dd35b02d1ea4adc40b30100273",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/HomePage.jsx": {
-    "mtime": 1786950168.875994,
-    "ast_hash": "205d9210490f1e79f797eda44bc0bcb9",
+  "backend/verification/qualityPolicy.js": {
+    "mtime": 1789530620.4202669,
+    "seen": 1789588258.5340233,
+    "ast_hash": "8dd5109fed3f3686733c9a99a48ec25f",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/LeaderboardFilters.jsx": {
-    "mtime": 1786950168.8769941,
-    "ast_hash": "86834c200520bfa9a86f85f51c853bfe",
+  "backend/verification/readmeVerifier.js": {
+    "mtime": 1789530620.4202669,
+    "seen": 1789588258.5340283,
+    "ast_hash": "3f197f0f4781f8400632720c7a1082f4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/LeaderboardPodium.jsx": {
-    "mtime": 1786950168.8779926,
-    "ast_hash": "bd32ffbf43a5ee22d18d37e944afed31",
+  "backend/verification/reportGenerator.js": {
+    "mtime": 1788327119.5357943,
+    "seen": 1789588258.5340333,
+    "ast_hash": "06be9d7461b5b5f65255131ec4cdc40c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/LeaderboardTable.jsx": {
-    "mtime": 1786950168.8799927,
-    "ast_hash": "5d5af46d0dd353230ff25b4fe4bd8ab5",
+  "backend/verification/runChecks.js": {
+    "mtime": 1789530620.4369245,
+    "seen": 1789588258.5340385,
+    "ast_hash": "0c202a15135a0e7f965d90da0decf1bc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/QuickStats.jsx": {
-    "mtime": 1786950168.880994,
-    "ast_hash": "9c5c9f85d1a0cd88531d0ca2b0227cbc",
+  "backend/verification/safeExtractor.js": {
+    "mtime": 1789587379.3906977,
+    "seen": 1789588258.534043,
+    "ast_hash": "804fce23761d0c64b81cbfdc529a95ad",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/RecentActivity.jsx": {
-    "mtime": 1786950168.8895292,
-    "ast_hash": "434663f185018c61e2138748fb184720",
+  "backend/verification/sandboxRunner.js": {
+    "mtime": 1789587379.3931806,
+    "seen": 1789588258.5340478,
+    "ast_hash": "2a6b2e942b4a112e10081a956bececc2",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/leaderboardService.js": {
-    "mtime": 1786950168.8905299,
-    "ast_hash": "627435538e479e003409b3eedba045a9",
+  "backend/verification/securityVerifier.js": {
+    "mtime": 1788125233.3912303,
+    "seen": 1789588258.534053,
+    "ast_hash": "d648c7a79c73c9f77a722e77dc625b40",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/next-env.d.ts": {
-    "mtime": 1786950168.8915274,
-    "ast_hash": "76f7fea45182bd8068912539cc4633a5",
+  "backend/verification/serviceManifestVerifier.js": {
+    "mtime": 1789530620.4410596,
+    "seen": 1789588258.5340576,
+    "ast_hash": "9d52c1992e8b7500b778c21640436212",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/package.json": {
-    "mtime": 1786950168.8925276,
-    "ast_hash": "005bd5af89cf283a2a1839212cf5c924",
+  "backend/verification/smokeVerifier.js": {
+    "mtime": 1789530620.455673,
+    "seen": 1789588258.534063,
+    "ast_hash": "353e5ff804110a0db1a45cbe54cf9a06",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/api/leaderboard/route.ts": {
-    "mtime": 1786950168.9025245,
-    "ast_hash": "803da8423cd52d4acfdf523aa332e788",
+  "backend/verification/testInfrastructureVerifier.js": {
+    "mtime": 1789530620.4675586,
+    "seen": 1789588258.534068,
+    "ast_hash": "c797bfcd76002000cfe7352e866fb806",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/api/words/random/route.ts": {
-    "mtime": 1786950168.9131901,
-    "ast_hash": "9705f969ce8cddaf0cab222fca727aa9",
+  "backend/verification/verificationCli.js": {
+    "mtime": 1789530620.4834006,
+    "seen": 1789588258.5340729,
+    "ast_hash": "207d45eb1d9a2625e51d98d0ad609cca",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/api/words/seed/route.ts": {
-    "mtime": 1786950168.9162278,
-    "ast_hash": "9cd33317de6b0aa2c01459d34fcb9a75",
+  "backend/websocketHub.js": {
+    "mtime": 1789060178.6305017,
+    "seen": 1789588258.534078,
+    "ast_hash": "282346d8f4b9f6198cd0f8cf78e83a62",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/api/words/validate/route.ts": {
-    "mtime": 1786950168.9187615,
-    "ast_hash": "8f5074653c8c754862412bce1e1097e7",
+  "backend/workflowAttempts.js": {
+    "mtime": 1789060178.6658077,
+    "seen": 1789588258.5340834,
+    "ast_hash": "bf70516e55ab2a62c8fc2a97d07f6219",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/layout.tsx": {
-    "mtime": 1786950168.921281,
-    "ast_hash": "e1ef3d14def94af28f2e0637415d38c3",
+  "e2e/dashboard.spec.js": {
+    "mtime": 1789587379.3943467,
+    "seen": 1789588258.5340886,
+    "ast_hash": "b685b9852ab8ca6e3f744f5585c07e58",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/app/page.jsx": {
-    "mtime": 1786950168.9222825,
-    "ast_hash": "ad178cf8a5c4e7d07b546e1aab62f8a1",
+  "e2e/p9-editor.spec.js": {
+    "mtime": 1789060178.6994572,
+    "seen": 1789588258.5340939,
+    "ast_hash": "320dfa27d981a58c805a88ee3f88961b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/SnakeGame/GameBoard.jsx": {
-    "mtime": 1786950168.92428,
-    "ast_hash": "361672c288e637165d3c292ca2b419db",
+  "e2e/production-operability.spec.js": {
+    "mtime": 1788634964.0308425,
+    "seen": 1789588258.5340986,
+    "ast_hash": "561eaf1beb9cf892c642238ead36a684",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/SnakeGame/ScoreBoard.jsx": {
-    "mtime": 1786950168.9252782,
-    "ast_hash": "b6af9ec8384e412f9d84e33963208103",
+  "e2e/production.config.js": {
+    "mtime": 1789060178.7015443,
+    "seen": 1789588258.5341034,
+    "ast_hash": "97746cccfe0fba6b8f7f4fd843b0b3b6",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/SnakeGame/soundEffects.js": {
-    "mtime": 1786950168.92628,
-    "ast_hash": "8919086dbe43a670a0f4ccc501ec20b7",
+  "e2e/trust-chain.spec.js": {
+    "mtime": 1789587379.399886,
+    "seen": 1789588258.5341077,
+    "ast_hash": "499492c3b18af3c4e1f69f1f64308754",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/SnakeGame/useSnakeGame.js": {
-    "mtime": 1786950168.9272778,
-    "ast_hash": "016e537ee3d15b9d6f8af992e9ec37d4",
+  "execution/entrypoint.js": {
+    "mtime": 1789530620.5705745,
+    "seen": 1789588258.5341125,
+    "ast_hash": "7b6c1dcbb75c768f3d441740445d783f",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/SnakeGame/useSoundEffects.js": {
-    "mtime": 1786950168.9284327,
-    "ast_hash": "d7f984a5091f63678636fc5dfe7c530d",
+  "execution/jobExecutor.js": {
+    "mtime": 1789530620.595908,
+    "seen": 1789588258.5341165,
+    "ast_hash": "30e13c7146a1aa08134ceba6d034b70a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/Keyboard.jsx": {
-    "mtime": 1786950168.929431,
-    "ast_hash": "e7f70d5d86b44fedc63f2cbdcb9cc78e",
+  "execution/jobStore.js": {
+    "mtime": 1789060178.7604866,
+    "seen": 1789588258.5341213,
+    "ast_hash": "c26df9800dd080f0253b199711c6bf7e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/Row.jsx": {
-    "mtime": 1786950168.9300175,
-    "ast_hash": "80d7c903783025768af9b9609f0819ad",
+  "execution/package.json": {
+    "mtime": 1789060178.81303,
+    "seen": 1789588258.5341258,
+    "ast_hash": "8e357def127643848d11aea8feae05bf",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/StatsModal.jsx": {
-    "mtime": 1786950168.9323435,
-    "ast_hash": "30fc7018a1b467a154f9e2bb92ebf8ea",
+  "execution/protocol.js": {
+    "mtime": 1789060178.8222003,
+    "seen": 1789588258.5341313,
+    "ast_hash": "64a875ebbf8b40005e8ce287d208888d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/Tile.jsx": {
-    "mtime": 1786950168.9346228,
-    "ast_hash": "53ddb2a0d3cc7769c0673f565268af67",
+  "execution/registryProxy.js": {
+    "mtime": 1789530620.595908,
+    "seen": 1789588258.5341353,
+    "ast_hash": "928bae666cf89d7dabf52e3c750b670c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/Wordle.jsx": {
-    "mtime": 1786950168.9356284,
-    "ast_hash": "80e55ad84e681f78ac3ac69b4dc3ba61",
+  "execution/runtime.js": {
+    "mtime": 1789530620.62796,
+    "seen": 1789588258.53414,
+    "ast_hash": "44714c6813b523ea32113d4325eb5aaf",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/WordleGrid.jsx": {
-    "mtime": 1786950168.9366293,
-    "ast_hash": "7f276349e1d3795895bb29ab141d6896",
+  "execution/server.js": {
+    "mtime": 1789060178.872465,
+    "seen": 1789588258.5341444,
+    "ast_hash": "e49fb412b5734872977e63392c2096c8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/WordleKeyboard.jsx": {
-    "mtime": 1786950168.9381385,
-    "ast_hash": "213b63e6b5f60aa0a556799b81551bad",
+  "execution/tests/jobBoundary.test.js": {
+    "mtime": 1789060178.8932574,
+    "seen": 1789588258.534149,
+    "ast_hash": "c11b40065a483a92836a9a0532053689",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/Wordle/wordleWords.js": {
-    "mtime": 1786950168.9391463,
-    "ast_hash": "f3341c8e6a8a2204fafad93ddabb6fc2",
+  "execution/tests/jobRoundtrip.integration.test.js": {
+    "mtime": 1789060178.9219136,
+    "seen": 1789588258.5341537,
+    "ast_hash": "604a2f5a138295178769c30fe541dd8c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/common/AudioPlayer.tsx": {
-    "mtime": 1786950168.9401464,
-    "ast_hash": "7fc94a4b418d682a27d2fbc80402b1c8",
+  "execution/tests/runtime.integration.test.js": {
+    "mtime": 1789060178.933141,
+    "seen": 1789588258.5341587,
+    "ast_hash": "106b9ff56ae0875985502cab90c4b9bc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/common/ThemeToggle.tsx": {
-    "mtime": 1786950168.941146,
-    "ast_hash": "37b862b7de36b0f036659f9d13612725",
+  "execution/tests/runtime.test.js": {
+    "mtime": 1789530620.62796,
+    "seen": 1789588258.5341632,
+    "ast_hash": "fc0aabb4747f40755dfd3f03cba4e041",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/MemoryGame/Card.jsx": {
-    "mtime": 1786950168.9431434,
-    "ast_hash": "7e3789410b293f4daa6feafc04c031cb",
+  "frontend/src/components/ChatView.jsx": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5341883,
+    "ast_hash": "12449db8b1939d647f0ec559c338fbde",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/MemoryGame/GameStats.jsx": {
-    "mtime": 1786950168.9441435,
-    "ast_hash": "6874381b6375901ae7ae41a9b0a3689b",
+  "frontend/src/components/ConnectionStatus.jsx": {
+    "mtime": 1788684400.1900637,
+    "seen": 1789588258.5341938,
+    "ast_hash": "3a70ed05bfb5f34df6db0ced39fa8e39",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/MemoryGame/MemoryGame.jsx": {
-    "mtime": 1786950168.9451418,
-    "ast_hash": "8af9bedba847c0eb416233a66d860ec6",
+  "frontend/src/components/DAGFlowView.jsx": {
+    "mtime": 1788459173.4700465,
+    "seen": 1789588258.5342321,
+    "ast_hash": "818d58869d1d98bee12232c91fb1685a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/MemoryGame/soundEffects.js": {
-    "mtime": 1786950168.9459252,
-    "ast_hash": "504a0a6309701b918b1b083a1d995420",
+  "frontend/src/components/DashboardView.jsx": {
+    "mtime": 1788459147.0872974,
+    "seen": 1789588258.5342376,
+    "ast_hash": "c24a2035455a15831729e632e9d9e76e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/MemoryGame/themes.js": {
-    "mtime": 1786950168.9469326,
-    "ast_hash": "0b41a6e82128f13d9a102416f9c47309",
+  "frontend/src/components/Header.jsx": {
+    "mtime": 1789587379.4178722,
+    "seen": 1789588258.5342429,
+    "ast_hash": "e1eb7d1fb0957f597d0c6a7890cb8ffd",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/GameStats.jsx": {
-    "mtime": 1786950168.9489312,
-    "ast_hash": "adc74486c3a77999934c67061a7cef6a",
+  "frontend/src/components/IDEView.jsx": {
+    "mtime": 1789587379.4367256,
+    "seen": 1789588258.534248,
+    "ast_hash": "7135354ef3c7caf50a688d2f25d90c12",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/RockPaperScissorsGame.jsx": {
-    "mtime": 1786950168.9492643,
-    "ast_hash": "8a7b810385c40024edc392fa36296eaa",
+  "frontend/src/components/LoginView.jsx": {
+    "mtime": 1789060179.5199306,
+    "seen": 1789588258.534253,
+    "ast_hash": "73744d3f212715a98ad315109f1c7c92",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/RulesModal.jsx": {
-    "mtime": 1786950168.9609368,
-    "ast_hash": "5eb2cb783a32006fd801c3f3c9524fee",
+  "frontend/src/components/LogsView.jsx": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5342577,
+    "ast_hash": "59038a97cc9bb65da1057098aab0884a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/gameLogic.js": {
-    "mtime": 1786950168.9619367,
-    "ast_hash": "e442f7340778f3222379a7dfa8a2c3b1",
+  "frontend/src/components/Sidebar.jsx": {
+    "mtime": 1788603003.773674,
+    "seen": 1789588258.5342631,
+    "ast_hash": "b6a9b1e868715f9cc81f1812d85eca22",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/utils/gameLogic.js": {
-    "mtime": 1786950168.9640255,
-    "ast_hash": "eecad635e0973d8c03b4d0df9509d010",
+  "frontend/src/components/__tests__/DAGFlowView.test.jsx": {
+    "mtime": 1788459249.2745943,
+    "seen": 1789588258.534268,
+    "ast_hash": "a454e61120fd71f397ecc1a29538e066",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/RockPaperScissors/utils/sound.js": {
-    "mtime": 1786950168.96506,
-    "ast_hash": "8f7058026ec2140e18cbebcfc0704afd",
+  "frontend/src/components/__tests__/DashboardView.test.jsx": {
+    "mtime": 1788459256.2082095,
+    "seen": 1789588258.5342727,
+    "ast_hash": "d4b8be0c72ab37404b2f513536a82930",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/XoxGame.jsx": {
-    "mtime": 1786950168.9670599,
-    "ast_hash": "3ac4590689dbdf8843ead603a14f1ed0",
+  "frontend/src/components/__tests__/P5DownloadPolicy.test.jsx": {
+    "mtime": 1788603003.7839735,
+    "seen": 1789588258.5342777,
+    "ast_hash": "34933dd8b86ebc99a9ad2150485af3b4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/xox/ConfettiEffect.jsx": {
-    "mtime": 1786950168.9699903,
-    "ast_hash": "e1fccef79b9c0ac4f18b37661792faef",
+  "frontend/src/components/__tests__/P5MfaLogin.test.jsx": {
+    "mtime": 1788603003.7994096,
+    "seen": 1789588258.5342822,
+    "ast_hash": "65fdca829c28404b2cb1145bc41d411c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/games/xox/xoxUtils.js": {
-    "mtime": 1786950168.9720025,
-    "ast_hash": "c38bcd2441f47736038f2fab81ed846e",
+  "frontend/src/components/__tests__/P8UiStatus.test.jsx": {
+    "mtime": 1788684400.1957,
+    "seen": 1789588258.5342872,
+    "ast_hash": "90a1a4a13a7d4b9559fa062a528d727d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/home/DailyChallengeCard.jsx": {
-    "mtime": 1786950168.9749982,
-    "ast_hash": "b820f1c10374f867ab8980c94a70bd33",
+  "frontend/src/components/__tests__/P9ProjectIsolation.test.jsx": {
+    "mtime": 1789060179.542368,
+    "seen": 1789588258.5342917,
+    "ast_hash": "5cf02ca6f5734eb93d7732334d0b4291",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/home/HeroSection.jsx": {
-    "mtime": 1786950168.975999,
-    "ast_hash": "f1b2dc08cab2f69af24f0328db42e5c0",
+  "frontend/src/monacoSetup.js": {
+    "mtime": 1789060179.542368,
+    "seen": 1789588258.5343018,
+    "ast_hash": "bfa9c0c3442a0f43dbcd1f483cb32f4c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/home/QuickStats.jsx": {
-    "mtime": 1786950168.9809966,
-    "ast_hash": "9c5c9f85d1a0cd88531d0ca2b0227cbc",
+  "frontend/src/services/api.test.js": {
+    "mtime": 1789060179.5714073,
+    "seen": 1789588258.5343122,
+    "ast_hash": "cb4e201308ba065c13ab4b6669fa52ad",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/home/RecentActivity.jsx": {
-    "mtime": 1786950168.9819927,
-    "ast_hash": "434663f185018c61e2138748fb184720",
+  "frontend/src/setupTests.js": {
+    "mtime": 1789587379.4377487,
+    "seen": 1789588258.5343177,
+    "ast_hash": "bb11fd6a61dc662a1beab93b97b408cf",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/layout/Footer.tsx": {
-    "mtime": 1786950168.9839928,
-    "ast_hash": "e0164eccc61af3352b95cdf70b269542",
+  "frontend/src/utils/dagLayout.js": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5343225,
+    "ast_hash": "c6319b21a3879fc6bcd5399a0121e1cd",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/layout/Header.tsx": {
-    "mtime": 1786950168.9849906,
-    "ast_hash": "d7910a7460e5e7731367cde0f50e8822",
+  "frontend/vitest.config.js": {
+    "mtime": 1789060179.5773103,
+    "seen": 1789588258.53434,
+    "ast_hash": "7d5838156a13e1368fe40e5ff019b297",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/layout/Navbar.tsx": {
-    "mtime": 1786950168.9862652,
-    "ast_hash": "7571ee75b77694baebdad2ae1fb51b78",
+  "package.json": {
+    "mtime": 1789587379.4521337,
+    "seen": 1789588258.5343451,
+    "ast_hash": "33edcf9d9f3c84a5de3ba2dacef11697",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/leaderboard/LeaderboardFilters.jsx": {
-    "mtime": 1786950168.9885228,
-    "ast_hash": "6cd8c5d6b63aedff42db3c7c79bcd2d7",
+  "playwright.config.js": {
+    "mtime": 1788278424.0111108,
+    "seen": 1789588258.5343509,
+    "ast_hash": "77106bb3f64ae2bb5a3f58c6dd36cea8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/leaderboard/LeaderboardPodium.jsx": {
-    "mtime": 1786950168.98952,
-    "ast_hash": "bd32ffbf43a5ee22d18d37e944afed31",
+  "project-out-sandbox/todo-app/jsconfig.json": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534356,
+    "ast_hash": "bc3b7b3f87dd80c2bb23315ef5ed5dfd",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/leaderboard/LeaderboardTable.jsx": {
-    "mtime": 1786950168.9905207,
-    "ast_hash": "5d5af46d0dd353230ff25b4fe4bd8ab5",
+  "project-out-sandbox/todo-app/next.config.js": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343614,
+    "ast_hash": "3aacf20b66d1a4bc3319cbb049968310",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/ui/Button.tsx": {
-    "mtime": 1786950168.9925277,
-    "ast_hash": "c546264da0083b818dbd36d0a88eeb6d",
+  "project-out-sandbox/todo-app/package.json": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343661,
+    "ast_hash": "820e66fde47e70a09f29131db4a7d57e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/ui/Card.tsx": {
-    "mtime": 1786950168.993525,
-    "ast_hash": "4b35fbb1629ee5bf958d6f4795e5856c",
+  "project-out-sandbox/todo-app/postcss.config.js": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343714,
+    "ast_hash": "8640f9b2e6475cc3f5b1ff4548925765",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/ui/Modal.tsx": {
-    "mtime": 1786950168.9940765,
-    "ast_hash": "081fe222ec61fb30b0f8220bfbfe030e",
+  "project-out-sandbox/todo-app/src/app.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343764,
+    "ast_hash": "e9d88b3e2dbd06c07e009446b1d808cd",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/components/ui/Switch.tsx": {
-    "mtime": 1786950168.995102,
-    "ast_hash": "72aa41f3ca43d3c29ff433be4fe3cd55",
+  "project-out-sandbox/todo-app/src/app/(auth)/login/page.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343814,
+    "ast_hash": "c74430b460f95f6f7015a028fbac5797",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/hooks/useAudio.ts": {
-    "mtime": 1786950168.9960992,
-    "ast_hash": "8d8427e2dfeb4efcdde34a14d7951fab",
+  "project-out-sandbox/todo-app/src/app/layout.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343866,
+    "ast_hash": "b3990059e43d73e4f0eaa8c544862553",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/hooks/useKeyPress.ts": {
-    "mtime": 1786950168.997981,
-    "ast_hash": "105a31cde3d9abc135911abed8aae166",
+  "project-out-sandbox/todo-app/src/components/auth/login-form.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343919,
+    "ast_hash": "fde6f51348b64bb06ba576c81179bc3e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/hooks/useWindowSize.ts": {
-    "mtime": 1786950168.9993234,
-    "ast_hash": "ebf677cd828f00c9de483a575dd960ca",
+  "project-out-sandbox/todo-app/src/components/providers/toast-provider.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5343964,
+    "ast_hash": "5f1feedd826939fa0f96cb1c75e8f768",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/lib/constants.ts": {
-    "mtime": 1786950169.0018816,
-    "ast_hash": "92ec931f95f9497615d6699b0cff9160",
+  "project-out-sandbox/todo-app/src/components/ui/button.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344012,
+    "ast_hash": "6adad122602dde73f321b9e51b1279be",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/lib/prisma.ts": {
-    "mtime": 1786950169.0028775,
-    "ast_hash": "a8257fb1cb6a6120662ea8d24843cf0d",
+  "project-out-sandbox/todo-app/src/components/ui/input.tsx": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344064,
+    "ast_hash": "b65d12e1e9b6467ba8f1cbc9687fbd55",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/lib/turkish-utils.ts": {
-    "mtime": 1786950169.003875,
-    "ast_hash": "8be4e5a7d040a6e85701d2bb91d2d9f4",
+  "project-out-sandbox/todo-app/src/lib/api.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344114,
+    "ast_hash": "bf577ee16dbf2ebf92b4e592ca6a5879",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/lib/utils.ts": {
-    "mtime": 1786950169.005236,
-    "ast_hash": "084e5341706e684e37af86f59eb2c474",
+  "project-out-sandbox/todo-app/src/lib/db.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534416,
+    "ast_hash": "a6b2fa6f1f1a14747abb6f8e0387dab8",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/lib/validations.ts": {
-    "mtime": 1786950169.0057445,
-    "ast_hash": "e287f098fbb6d676e6ae07076c41b39d",
+  "project-out-sandbox/todo-app/src/lib/prisma.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534421,
+    "ast_hash": "3e338b694ee44f49a2db91c52433cc90",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/pages/HomePage.jsx": {
-    "mtime": 1786950169.0077496,
-    "ast_hash": "0778b35a338fa04d217239647941f5c7",
+  "project-out-sandbox/todo-app/src/lib/utils.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534426,
+    "ast_hash": "243e33177eeb18ce9c777d1740809236",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/services/leaderboardService.js": {
-    "mtime": 1786950169.0103278,
-    "ast_hash": "627435538e479e003409b3eedba045a9",
+  "project-out-sandbox/todo-app/src/lib/validations/auth.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344307,
+    "ast_hash": "2ffc84585f72344209eb0174b8a36603",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/store/useLeaderboardStore.ts": {
-    "mtime": 1786950169.0126069,
-    "ast_hash": "8c6a005efb2e2cfe95fa33b8edf00faf",
+  "project-out-sandbox/todo-app/src/middlewares/errorHandler.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344353,
+    "ast_hash": "a01219f5738d75cdd8c03414fea67cfa",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/store/useSettingsStore.ts": {
-    "mtime": 1786950169.0136037,
-    "ast_hash": "e8347dbbfc840970a58777fe9e2d06f7",
+  "project-out-sandbox/todo-app/src/middlewares/validateRequest.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344403,
+    "ast_hash": "818ab15b85c6106b82ebe2766547047c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/src/utils/wordleWords.js": {
-    "mtime": 1786950169.0146058,
-    "ast_hash": "cc430e32ca0379975ee891df6991f0f8",
+  "project-out-sandbox/todo-app/src/server.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534445,
+    "ast_hash": "51787b487f9548dd85f0b1ae5680b982",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/tsconfig.json": {
-    "mtime": 1786950169.0214727,
-    "ast_hash": "a7727f2bbd5211410d6555d674ab454b",
+  "project-out-sandbox/todo-app/tailwind.config.ts": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5344503,
+    "ast_hash": "1100c14f12e06e3f41944a37361c5b1b",
     "semantic_hash": ""
   },
-  "KULLANIM-KILAVUZU.md": {
-    "mtime": 1786950168.008939,
-    "ast_hash": "eb2833db70351141b3da708c1679d5dd",
+  "project-out-sandbox/todo-app/tsconfig.json": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.534455,
+    "ast_hash": "4301cfd34141976d936632fa7cd8f718",
     "semantic_hash": ""
   },
-  "TODO.md": {
-    "mtime": 1786950168.011937,
-    "ast_hash": "e8946a69d1c06b041a6c8d460b9c19b3",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/jsconfig.json": {
+    "mtime": 1787866125.1934075,
+    "seen": 1789588258.5344598,
+    "ast_hash": "bc3b7b3f87dd80c2bb23315ef5ed5dfd",
     "semantic_hash": ""
   },
-  "docs/KULLANIM-KILAVUZU.md": {
-    "mtime": 1786950168.1477585,
-    "ast_hash": "eb2833db70351141b3da708c1679d5dd",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-1-tsconfig/tsconfig.json": {
+    "mtime": 1787866967.0727906,
+    "seen": 1789588258.5344653,
+    "ast_hash": "4301cfd34141976d936632fa7cd8f718",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/RAPOR.md": {
-    "mtime": 1786950168.168341,
-    "ast_hash": "0b635d4cd3bc95edf7396b3cb437bb69",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-3-prisma-client/src__lib__prisma.ts": {
+    "mtime": 1787866999.3973618,
+    "seen": 1789588258.5344698,
+    "ast_hash": "3e338b694ee44f49a2db91c52433cc90",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/README.md": {
-    "mtime": 1786950168.1693373,
-    "ast_hash": "e0f6cf211838f30a36721ec3382b438e",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-4-error-middleware/src__middlewares__errorHandler.ts": {
+    "mtime": 1787866979.6346688,
+    "seen": 1789588258.5344748,
+    "ast_hash": "a01219f5738d75cdd8c03414fea67cfa",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/DURUM.md": {
-    "mtime": 1786950168.1713333,
-    "ast_hash": "01eeb3fd6909b3c656aed70054005d39",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-5-validate-middleware/src__middlewares__validateRequest.ts": {
+    "mtime": 1787866980.3640642,
+    "seen": 1789588258.5344799,
+    "ast_hash": "818ab15b85c6106b82ebe2766547047c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/GOREV.md": {
-    "mtime": 1786950168.1723354,
-    "ast_hash": "859bca7765b7279fa933b36875371f32",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-6-app-entry/src__app.ts": {
+    "mtime": 1787867019.9925795,
+    "seen": 1789588258.5344853,
+    "ast_hash": "e9d88b3e2dbd06c07e009446b1d808cd",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/TALIMATNAME.md": {
-    "mtime": 1786950168.173333,
-    "ast_hash": "892093d452db391bad338098dfea47ef",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-7-server-listen/src__server.ts": {
+    "mtime": 1787867027.4915042,
+    "seen": 1789588258.5344903,
+    "ast_hash": "51787b487f9548dd85f0b1ae5680b982",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/TODO.md": {
-    "mtime": 1786950168.1739955,
-    "ast_hash": "ae16a0a4bb091a14919e0ba38aca02da",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-1-utils/src__lib__utils.ts": {
+    "mtime": 1787867048.3915355,
+    "seen": 1789588258.5344956,
+    "ast_hash": "243e33177eeb18ce9c777d1740809236",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/ALT-TALIMATNAME.md": {
-    "mtime": 1786950168.1760032,
-    "ast_hash": "acae129c37cbe1b9a0b74b0d997aafdf",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-2-api-client/src__lib__api.ts": {
+    "mtime": 1787867048.801807,
+    "seen": 1789588258.5345001,
+    "ast_hash": "bf577ee16dbf2ebf92b4e592ca6a5879",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/DURUM.md": {
-    "mtime": 1786950168.1770015,
-    "ast_hash": "a047c18fd21306a96c7e6cae5a4ad5a6",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-3-auth-schema/src__lib__validations__auth.ts": {
+    "mtime": 1787867057.5250971,
+    "seen": 1789588258.5345051,
+    "ast_hash": "2ffc84585f72344209eb0174b8a36603",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/GOREV.md": {
-    "mtime": 1786950168.1779995,
-    "ast_hash": "337078790336199036ab7c545cc4d471",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-4-ui-button/src__components__ui__button.tsx": {
+    "mtime": 1787867076.9196885,
+    "seen": 1789588258.5345101,
+    "ast_hash": "b03ad7ebf2a5b7600445148d9a1c8ad6",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/RAPOR.md": {
-    "mtime": 1786950168.1794589,
-    "ast_hash": "eef2487b60ec3c4df59deb398a3a1a0e",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-5-ui-input/src__components__ui__input.tsx": {
+    "mtime": 1787867082.0374942,
+    "seen": 1789588258.5345147,
+    "ast_hash": "b65d12e1e9b6467ba8f1cbc9687fbd55",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/TODO.md": {
-    "mtime": 1786950168.180479,
-    "ast_hash": "7908fa96ac870ebd43d70affbf380496",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-6-toast-provider/src__components__providers__toast-provider.tsx": {
+    "mtime": 1787867065.518524,
+    "seen": 1789588258.53452,
+    "ast_hash": "5f1feedd826939fa0f96cb1c75e8f768",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/DURUM.md": {
-    "mtime": 1786950168.1827984,
-    "ast_hash": "1225a1d1bb2a6edfa4798ff74e7fd68a",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-7-login-form/src__components__auth__login-form.tsx": {
+    "mtime": 1787867097.6325867,
+    "seen": 1789588258.5345244,
+    "ast_hash": "fde6f51348b64bb06ba576c81179bc3e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/GOREV.md": {
-    "mtime": 1786950168.1839085,
-    "ast_hash": "5d8e79bb07ad31ee0290d44c0fc7ab08",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-8-login-page/src__app__(auth)__login__page.tsx": {
+    "mtime": 1787867106.5534914,
+    "seen": 1789588258.5345292,
+    "ast_hash": "c74430b460f95f6f7015a028fbac5797",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/RAPOR.md": {
-    "mtime": 1786950168.185213,
-    "ast_hash": "27139b428608b3806f0078589a7cdbed",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-9-root-layout/src__app__layout.tsx": {
+    "mtime": 1787867085.1110425,
+    "seen": 1789588258.5345345,
+    "ast_hash": "b3990059e43d73e4f0eaa8c544862553",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/TODO.md": {
-    "mtime": 1786950168.1862185,
-    "ast_hash": "c7e3d2c38a937340ef916a4f7a0c7e6e",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/next.config.js": {
+    "mtime": 1787866125.1996105,
+    "seen": 1789588258.5345392,
+    "ast_hash": "3aacf20b66d1a4bc3319cbb049968310",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-1-prisma-schema/DURUM.md": {
-    "mtime": 1786950168.1877239,
-    "ast_hash": "deccfb2f870d4e42c30458f3463cd409",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/package.json": {
+    "mtime": 1787867366.7764635,
+    "seen": 1789588258.5345442,
+    "ast_hash": "820e66fde47e70a09f29131db4a7d57e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-1-prisma-schema/GOREV.md": {
-    "mtime": 1786950168.1887307,
-    "ast_hash": "39a369ca60fccdc924a963cf39a3d6a9",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/postcss.config.js": {
+    "mtime": 1787866125.203624,
+    "seen": 1789588258.5345492,
+    "ast_hash": "8640f9b2e6475cc3f5b1ff4548925765",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-1-prisma-schema/RAPOR.md": {
-    "mtime": 1786950168.1897311,
-    "ast_hash": "fd76703dae5d4a1f4551d214ae30d572",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/app.ts": {
+    "mtime": 1787867019.9925795,
+    "seen": 1789588258.5345538,
+    "ast_hash": "e9d88b3e2dbd06c07e009446b1d808cd",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/DURUM.md": {
-    "mtime": 1786950168.193728,
-    "ast_hash": "73ea9da6cf3a9cdec394f80839dc0c3d",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/app/(auth)/login/page.tsx": {
+    "mtime": 1787867106.5524867,
+    "seen": 1789588258.534559,
+    "ast_hash": "c74430b460f95f6f7015a028fbac5797",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/GOREV.md": {
-    "mtime": 1786950168.1947324,
-    "ast_hash": "6261748e011a196cee564bc833df64d0",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/app/layout.tsx": {
+    "mtime": 1787867085.11004,
+    "seen": 1789588258.5345638,
+    "ast_hash": "b3990059e43d73e4f0eaa8c544862553",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-2-api-helpers-and-validations/RAPOR.md": {
-    "mtime": 1786950168.203352,
-    "ast_hash": "3b5383050d36b7c39318e76993e99d2a",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/components/auth/login-form.tsx": {
+    "mtime": 1787867097.6319454,
+    "seen": 1789588258.5345688,
+    "ast_hash": "fde6f51348b64bb06ba576c81179bc3e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-3-auth-and-rbac-core/DURUM.md": {
-    "mtime": 1786950168.209862,
-    "ast_hash": "baea3ff1274e3582f427d6ceeb4bd456",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/components/providers/toast-provider.tsx": {
+    "mtime": 1787867065.517522,
+    "seen": 1789588258.5345738,
+    "ast_hash": "5f1feedd826939fa0f96cb1c75e8f768",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-3-auth-and-rbac-core/GOREV.md": {
-    "mtime": 1786950168.209862,
-    "ast_hash": "89e3e318782db9e380b9b46d2080f447",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/components/ui/button.tsx": {
+    "mtime": 1787867112.9733622,
+    "seen": 1789588258.5345783,
+    "ast_hash": "6adad122602dde73f321b9e51b1279be",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-3-auth-and-rbac-core/RAPOR.md": {
-    "mtime": 1786950168.2108617,
-    "ast_hash": "acf8fdd1ade2a42d5104e041ca052ac3",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/components/ui/input.tsx": {
+    "mtime": 1787867082.0328646,
+    "seen": 1789588258.5345836,
+    "ast_hash": "b65d12e1e9b6467ba8f1cbc9687fbd55",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-4-auth-and-user-endpoints/DURUM.md": {
-    "mtime": 1786950168.2148585,
-    "ast_hash": "239c47a4bb0b3305716f1f1a19449e80",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/lib/api.ts": {
+    "mtime": 1787867048.7998369,
+    "seen": 1789588258.5345883,
+    "ast_hash": "bf577ee16dbf2ebf92b4e592ca6a5879",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-4-auth-and-user-endpoints/GOREV.md": {
-    "mtime": 1786950168.216114,
-    "ast_hash": "290bab607095f7c6a1f81091afc72426",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/lib/db.ts": {
+    "mtime": 1787866125.20863,
+    "seen": 1789588258.534593,
+    "ast_hash": "a6b2fa6f1f1a14747abb6f8e0387dab8",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-4-auth-and-user-endpoints/RAPOR.md": {
-    "mtime": 1786950168.2165053,
-    "ast_hash": "65f1d500a36000f53a1a840719516a32",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/lib/prisma.ts": {
+    "mtime": 1787866999.3963783,
+    "seen": 1789588258.5345979,
+    "ast_hash": "3e338b694ee44f49a2db91c52433cc90",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-5-book-endpoints/DURUM.md": {
-    "mtime": 1786950168.2205048,
-    "ast_hash": "f6c6f29db1caaa1ad6ce654801dd8679",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/lib/utils.ts": {
+    "mtime": 1787867048.3905525,
+    "seen": 1789588258.5346026,
+    "ast_hash": "243e33177eeb18ce9c777d1740809236",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-5-book-endpoints/GOREV.md": {
-    "mtime": 1786950168.223847,
-    "ast_hash": "746078a26167439e547eec765dd176f1",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/lib/validations/auth.ts": {
+    "mtime": 1787867057.5229418,
+    "seen": 1789588258.534608,
+    "ast_hash": "2ffc84585f72344209eb0174b8a36603",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-5-book-endpoints/RAPOR.md": {
-    "mtime": 1786950168.225304,
-    "ast_hash": "56762ed5185ab80d03dc1757af91e8ff",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/middlewares/errorHandler.ts": {
+    "mtime": 1787866979.63366,
+    "seen": 1789588258.5346124,
+    "ast_hash": "a01219f5738d75cdd8c03414fea67cfa",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-6-student-endpoints/DURUM.md": {
-    "mtime": 1786950168.2278187,
-    "ast_hash": "44c1fa33bbc06ad3f73e64e335bd2296",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/middlewares/validateRequest.ts": {
+    "mtime": 1787866980.3630617,
+    "seen": 1789588258.5346177,
+    "ast_hash": "818ab15b85c6106b82ebe2766547047c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-6-student-endpoints/GOREV.md": {
-    "mtime": 1786950168.228816,
-    "ast_hash": "dc930c8c42a7168bcf1bcd054b1ee890",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/src/server.ts": {
+    "mtime": 1787867027.4904964,
+    "seen": 1789588258.534623,
+    "ast_hash": "51787b487f9548dd85f0b1ae5680b982",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-6-student-endpoints/RAPOR.md": {
-    "mtime": 1786950168.2298186,
-    "ast_hash": "2bdb527b4fc7011e25f5583c530bd817",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/tailwind.config.ts": {
+    "mtime": 1787866125.2016249,
+    "seen": 1789588258.5346277,
+    "ast_hash": "1100c14f12e06e3f41944a37361c5b1b",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-7-borrow-endpoints/DURUM.md": {
-    "mtime": 1786950168.2328157,
-    "ast_hash": "df35abd7418a442ea01deefe672139e5",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/tsconfig.json": {
+    "mtime": 1787866967.0717847,
+    "seen": 1789588258.5346327,
+    "ast_hash": "4301cfd34141976d936632fa7cd8f718",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-7-borrow-endpoints/GOREV.md": {
-    "mtime": 1786950168.2346213,
-    "ast_hash": "66c72e30ec2fd050955b4bf1d3a5148f",
+  "scripts/dev.mjs": {
+    "mtime": 1789587379.4531338,
+    "seen": 1789588258.5346372,
+    "ast_hash": "2bb5270180cc6fc98f1db672e37e6772",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/backend.director/backend.teamleader/task-7-borrow-endpoints/RAPOR.md": {
-    "mtime": 1786950168.2356699,
-    "ast_hash": "e58b1016133d94a93cff68074fec4d88",
+  "scripts/export-and-extract-quiz-snapshot.mjs": {
+    "mtime": 1789530620.7036135,
+    "seen": 1789588258.5346422,
+    "ast_hash": "eaaf5c386da99b833e6d8651ec8c2e5a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/ALT-TALIMATNAME.md": {
-    "mtime": 1786950168.23968,
-    "ast_hash": "e4572199496f4d3de0849db4a7b6b648",
+  "scripts/p6-container-seed.mjs": {
+    "mtime": 1789587379.4612274,
+    "seen": 1789588258.5346467,
+    "ast_hash": "2032e5d0625cc1b16afcd65ab5e96752",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/DURUM.md": {
-    "mtime": 1786950168.2430167,
-    "ast_hash": "47f8c44b744530d6319131d092eebf30",
+  "scripts/test-p6-image-contract.mjs": {
+    "mtime": 1788634964.225176,
+    "seen": 1789588258.534652,
+    "ast_hash": "b8222a39d56a3fbf5ecc649f621f0a76",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/GOREV.md": {
-    "mtime": 1786950168.2440243,
-    "ast_hash": "4c7a719b746cc601794d4f3120ab83af",
+  "scripts/test-p6-production-image.mjs": {
+    "mtime": 1789587379.4628382,
+    "seen": 1789588258.534657,
+    "ast_hash": "1256f2281a7138dec8c75e9f9ea9f162",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/RAPOR.md": {
-    "mtime": 1786950168.245024,
-    "ast_hash": "6e9cd5ed8060126a62ddbe0967410ed8",
+  "scripts/test-p9-production-pipeline.mjs": {
+    "mtime": 1789060179.7233894,
+    "seen": 1789588258.5346618,
+    "ast_hash": "6dca480256f6a4a2a91e07bef8546d8f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/TODO.md": {
-    "mtime": 1786950168.2460303,
-    "ast_hash": "be114705ecb06ee31b6aafa4c368b355",
+  "scripts/validate-continuity.mjs": {
+    "mtime": 1788684400.2292862,
+    "seen": 1789588258.5346668,
+    "ast_hash": "38737299fff5517af15c4b7bfe477dbe",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/DURUM.md": {
-    "mtime": 1786950168.247538,
-    "ast_hash": "ce3546f09ab6d3bdfb0d5ce1b19a5d33",
+  ".github/workflows/ci.yml": {
+    "mtime": 1788684399.995913,
+    "seen": 1789588258.5346715,
+    "ast_hash": "9d2e98b12d9fadc353d3442858f81925",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/GOREV.md": {
-    "mtime": 1786950168.2540212,
-    "ast_hash": "5dcc1afceadaf07b1933b236cd4b04a8",
+  "PROJECT-CONTINUITY.md": {
+    "mtime": 1789530619.461999,
+    "seen": 1789588258.5346766,
+    "ast_hash": "b05face96de12ad59a06f5c7e3b8da3f",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/RAPOR.md": {
-    "mtime": 1786950168.2563224,
-    "ast_hash": "8010350b9a509a99b57932f82055b26c",
+  "PROJECT-QUALITY-IMPROVEMENT-PLAN.md": {
+    "mtime": 1787895161.7946434,
+    "seen": 1789588258.5346816,
+    "ast_hash": "dfdb3638afeedce8577605b91259f58a",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/TODO.md": {
-    "mtime": 1786950168.2573268,
-    "ast_hash": "05aca463a9f577636b4ad1c9e41c6eb6",
+  "docs/OPERATIONS.md": {
+    "mtime": 1789060178.6833203,
+    "seen": 1789588258.534709,
+    "ast_hash": "329d6bb8a1ed46ffb8a85c7e208e6d44",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/DURUM.md": {
-    "mtime": 1786950168.2603264,
-    "ast_hash": "8a1f4d349545bf9873d5dbc9de54b028",
+  "docs/reviewer.md": {
+    "mtime": 1789069141.659804,
+    "seen": 1789588258.5347455,
+    "ast_hash": "9f85e7a53c417e2a47943541195dec2d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/GOREV.md": {
-    "mtime": 1786950168.2613242,
-    "ast_hash": "e848e4f01eba0743aafc38b02dfa1fc5",
+  "docs/superpowers/plans/2026-09-10-quiz-master-orchestration.md": {
+    "mtime": 1789062249.4924557,
+    "seen": 1789588258.5347505,
+    "ast_hash": "451e707255f8988ec82873aaa444ae96",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-1-setup-ui/RAPOR.md": {
-    "mtime": 1786950168.2623248,
-    "ast_hash": "bad12c5f348244b27d81591ae8ffbd7d",
+  "docs/superpowers/specs/2026-08-27-session-continuity-design.md": {
+    "mtime": 1787896710.0101812,
+    "seen": 1789588258.5347555,
+    "ast_hash": "2ec953f816f068c88bc5d89239d4b4e3",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/DURUM.md": {
-    "mtime": 1786950168.2966168,
-    "ast_hash": "24c47b4316929fcd07552a7a203e7cf9",
+  "docs/superpowers/specs/2026-09-02-p4-production-safety-design.md": {
+    "mtime": 1788367250.4621701,
+    "seen": 1789588258.5347607,
+    "ast_hash": "b6831fe65374eecbb76c640cf6456274",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/GOREV.md": {
-    "mtime": 1786950168.2976155,
-    "ast_hash": "7e76e2e29b8e62be06365a22189cf6db",
+  "docs/superpowers/specs/2026-09-04-current-remediation-design.md": {
+    "mtime": 1788544818.2403698,
+    "seen": 1789588258.5347655,
+    "ast_hash": "1a95ea7cc6177d04d48904b4058e0cdc",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-2-auth-pages/RAPOR.md": {
-    "mtime": 1786950168.3006153,
-    "ast_hash": "b64f643f66942a789ab8cb29699424db",
+  "docs/superpowers/specs/2026-09-10-quiz-master-design.md": {
+    "mtime": 1789062198.1797292,
+    "seen": 1789588258.5347714,
+    "ast_hash": "e039ae647ade044f16cad3f7e1b69018",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/DURUM.md": {
-    "mtime": 1786950168.3386283,
-    "ast_hash": "e928e81aa9e6c4f069c79f1b408bceb4",
+  "docs/tester.md": {
+    "mtime": 1787805876.0,
+    "seen": 1789588258.5347817,
+    "ast_hash": "6abd27b8a7028909f84f6509b17d75bf",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/GOREV.md": {
-    "mtime": 1786950168.3396342,
-    "ast_hash": "0e9dfe9fb1cc1f22af598afe3eb8d230",
+  "eski-todo.md": {
+    "mtime": 1787864161.8601487,
+    "seen": 1789588258.5347865,
+    "ast_hash": "4b84f456a1be74a4ee3be67238ebaf2e",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-3-dashboard-layout/RAPOR.md": {
-    "mtime": 1786950168.342633,
-    "ast_hash": "6e6f4226e064fd78659e1eb310359d9c",
+  "faz.md": {
+    "mtime": 1789531046.941681,
+    "seen": 1789588258.5347915,
+    "ast_hash": "10fcd502b926e7ffaff8b9cbfa22191c",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/DURUM.md": {
-    "mtime": 1786950168.3476284,
-    "ast_hash": "1d343c4b514f7db7c0a749e2681fbf53",
+  "guncel-todo.md": {
+    "mtime": 1788684400.1984577,
+    "seen": 1789588258.5348017,
+    "ast_hash": "4275546d8b9cbd19edd53c38052f421d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/GOREV.md": {
-    "mtime": 1786950168.348629,
-    "ast_hash": "f0160edebdf1e424f1f9f2f73324c085",
+  "implementation-evidence/INDEX.md": {
+    "mtime": 1788454209.580112,
+    "seen": 1789588258.534807,
+    "ast_hash": "98889b9a9771034e9eef1998f8b6afe2",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-4-dashboard-home/RAPOR.md": {
-    "mtime": 1786950168.3516364,
-    "ast_hash": "dc02829af9b5562d69af6b67529ba3cf",
+  "implementation-evidence/P0-A.md": {
+    "mtime": 1788080981.4485223,
+    "seen": 1789588258.534812,
+    "ast_hash": "59bdb37522a9f4938219e6c9a2780639",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/DURUM.md": {
-    "mtime": 1786950168.3936925,
-    "ast_hash": "2de51410dc81bb15b5584900f54f5af8",
+  "implementation-evidence/P0-B.md": {
+    "mtime": 1788084740.6941712,
+    "seen": 1789588258.5348172,
+    "ast_hash": "3013fbccef4428c0b1e63cff8f3a21bd",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/GOREV.md": {
-    "mtime": 1786950168.394694,
-    "ast_hash": "7985039ba48d03d890e59377234414d8",
+  "implementation-evidence/P0-C.md": {
+    "mtime": 1788096551.745686,
+    "seen": 1789588258.5348222,
+    "ast_hash": "5fa0462333352c4a270942dce3989164",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-5-books-management/RAPOR.md": {
-    "mtime": 1786950168.3956926,
-    "ast_hash": "db4a07088731fd20674af573d4534e9d",
+  "implementation-evidence/P1-A.md": {
+    "mtime": 1788099723.4808238,
+    "seen": 1789588258.534827,
+    "ast_hash": "df3b173b0de8e5f3985930eaa429e16d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/DURUM.md": {
-    "mtime": 1786950168.3990166,
-    "ast_hash": "6b0d514649beb203c50b6e8fd1883bff",
+  "implementation-evidence/P1-B.md": {
+    "mtime": 1788107774.8128333,
+    "seen": 1789588258.534847,
+    "ast_hash": "e89d55bb974897f92567507b8e6f74ec",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/GOREV.md": {
-    "mtime": 1786950168.4000568,
-    "ast_hash": "0ba67617c03b50fda81778964d56f961",
+  "implementation-evidence/P1-C.md": {
+    "mtime": 1788112869.692873,
+    "seen": 1789588258.5348518,
+    "ast_hash": "29a36c75596f89daad86f161798d211d",
     "semantic_hash": ""
   },
-  "projects/project-1786924708852/manager/frontend.director/frontend.teamleader/task-6-students-management/RAPOR.md": {
-    "mtime": 1786950168.4020562,
-    "ast_hash": "2ade08ecc3956c86e7afb92060725be1",
+  "implementation-evidence/P2.md": {
+    "mtime": 1788194340.2959511,
+    "seen": 1789588258.534857,
+    "ast_hash": "e2f79a2d9fa17ce0b27db002e050da88",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/KULLANIM-KILAVUZU.md": {
-    "mtime": 1786950168.6730323,
-    "ast_hash": "0a7e3553307efbd2085a9109bf8995ba",
+  "implementation-evidence/P3.md": {
+    "mtime": 1788328547.9121997,
+    "seen": 1789588258.534862,
+    "ast_hash": "d2584268d2a547f9ed928fab01e7fbdb",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/README.md": {
-    "mtime": 1786950168.6740315,
-    "ast_hash": "685d7b1636717d7ec7e62045a3c2fe92",
+  "implementation-evidence/P4.md": {
+    "mtime": 1788453814.2451887,
+    "seen": 1789588258.534867,
+    "ast_hash": "dcafbe2a0f121d3a169c10d3cff884bf",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/DURUM.md": {
-    "mtime": 1786950168.6780438,
-    "ast_hash": "e938e0d0e25702188a1497656e2c1966",
+  "implementation-evidence/P5.md": {
+    "mtime": 1788603003.8810017,
+    "seen": 1789588258.5348718,
+    "ast_hash": "efa83999de6f953b465506c5c95fb6a7",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/GOREV.md": {
-    "mtime": 1786950168.6800435,
-    "ast_hash": "859bca7765b7279fa933b36875371f32",
+  "implementation-evidence/P6.md": {
+    "mtime": 1788634964.105787,
+    "seen": 1789588258.5348768,
+    "ast_hash": "f7d34abb59ac5a524f8032959bab718b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/TALIMATNAME.md": {
-    "mtime": 1786950168.681041,
-    "ast_hash": "b823f8464952f82dfd23410005070434",
+  "implementation-evidence/P7.md": {
+    "mtime": 1788642647.147516,
+    "seen": 1789588258.534882,
+    "ast_hash": "4dc5ce6fda6c3c36a0086c22166fee3f",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/TODO.md": {
-    "mtime": 1786950168.682041,
-    "ast_hash": "1279dc7b0a75fd8fc6815b0517600206",
+  "implementation-evidence/P8.md": {
+    "mtime": 1788684400.2004702,
+    "seen": 1789588258.5348868,
+    "ast_hash": "e925075f9028ac4ad0c066fae10ad99e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/ALT-TALIMATNAME.md": {
-    "mtime": 1786950168.685039,
-    "ast_hash": "6df1c18b2b7d45159d62dc30d609a31a",
+  "implementation-evidence/P9.md": {
+    "mtime": 1789060179.5856948,
+    "seen": 1789588258.5348918,
+    "ast_hash": "e299fa694e410d33831671c75474b279",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/DURUM.md": {
-    "mtime": 1786950168.68804,
-    "ast_hash": "42a120f0f8fa95bbf22cf1e0aaa7d8bb",
+  "implementation-evidence/QUIZ-MASTER.md": {
+    "mtime": 1789530620.686252,
+    "seen": 1789588258.5348969,
+    "ast_hash": "ba00d84bd829a6b38c2252c7a70fce48",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/GOREV.md": {
-    "mtime": 1786950168.6890392,
-    "ast_hash": "337078790336199036ab7c545cc4d471",
+  "implementation-plans/00-MASTER-EXECUTION-PLAN.md": {
+    "mtime": 1788684400.2118316,
+    "seen": 1789588258.5349023,
+    "ast_hash": "c9a19858c8148cbab46d7f5a218fe622",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/RAPOR.md": {
-    "mtime": 1786950168.6900415,
-    "ast_hash": "eef2487b60ec3c4df59deb398a3a1a0e",
+  "implementation-plans/01-P0-A-state-contract-safety.md": {
+    "mtime": 1788014901.2398903,
+    "seen": 1789588258.534907,
+    "ast_hash": "0e5143e599f99a7aa80d2932d02456ea",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/TODO.md": {
-    "mtime": 1786950168.705405,
-    "ast_hash": "a823030933a1e9af810871060f8d22d6",
+  "implementation-plans/02-P0-B-sandbox-verification.md": {
+    "mtime": 1788014664.1920547,
+    "seen": 1789588258.534912,
+    "ast_hash": "8d76e0273f55a73127f7c67ea1df6051",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/DURUM.md": {
-    "mtime": 1786950168.7064047,
-    "ast_hash": "a55ab7611c14e9ac1bde4dc98ee87ada",
+  "implementation-plans/03-P0-C-checkpoint-safety.md": {
+    "mtime": 1787931455.2056081,
+    "seen": 1789588258.534917,
+    "ast_hash": "d0625960addd69f7c3647b9ef7c35a3a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/GOREV.md": {
-    "mtime": 1786950168.707404,
-    "ast_hash": "74c9ad4a8a04c2e7a0d210811550865e",
+  "implementation-plans/04-P1-A-contract-traceability.md": {
+    "mtime": 1788014705.6231217,
+    "seen": 1789588258.5349216,
+    "ast_hash": "79a569b9bfeef95d7f770d8bc989d7cf",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/RAPOR.md": {
-    "mtime": 1786950168.708403,
-    "ast_hash": "48133d1214228a5f134686a19db10306",
+  "implementation-plans/05-P1-B-runtime-verifier.md": {
+    "mtime": 1787931290.4324903,
+    "seen": 1789588258.534927,
+    "ast_hash": "fbce6f92ee867ab01e67381684cc24d2",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/TODO.md": {
-    "mtime": 1786950168.708403,
-    "ast_hash": "edd11c1a08937c00efa515d3c697f6d5",
+  "implementation-plans/06-P1-C-artifact-validation.md": {
+    "mtime": 1787995229.51453,
+    "seen": 1789588258.534932,
+    "ast_hash": "5a36a1ab8268bbe60834362c1ce4d89a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-1-prisma-setup/DURUM.md": {
-    "mtime": 1786950168.7104013,
-    "ast_hash": "1d263b6d216105637db34facf870fc2e",
+  "implementation-plans/07-P2-quality-hardening.md": {
+    "mtime": 1788193739.9440923,
+    "seen": 1789588258.5349371,
+    "ast_hash": "e7ae27a6f34ddd9aea09af38de90b5ec",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-1-prisma-setup/GOREV.md": {
-    "mtime": 1786950168.7114,
-    "ast_hash": "87cb8474e840934aa91c0c1dc65465d0",
+  "implementation-plans/08-P3-observability-metrics.md": {
+    "mtime": 1788328513.8933115,
+    "seen": 1789588258.5349422,
+    "ast_hash": "115c68e87c552b082768688225d992fa",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-1-prisma-setup/RAPOR.md": {
-    "mtime": 1786950168.7124,
-    "ast_hash": "c697986ab25654857e99428975b43095",
+  "implementation-plans/09-P4-production-safety.md": {
+    "mtime": 1788453814.281574,
+    "seen": 1789588258.5349476,
+    "ast_hash": "a6510e4e901b2e533a88bf5c93bc24d7",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-2-validations-and-utils/DURUM.md": {
-    "mtime": 1786950168.7153988,
-    "ast_hash": "f262304df09c92a8c523c1cecfaa11ee",
+  "implementation-plans/10-P5-critical-trust-chain.md": {
+    "mtime": 1788603003.9525712,
+    "seen": 1789588258.5349524,
+    "ast_hash": "8b391d678f42499ee7e5b7f80f957a2f",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-2-validations-and-utils/GOREV.md": {
-    "mtime": 1786950168.716398,
-    "ast_hash": "e8e45e6e11840c53ad06a65fdf9e70ea",
+  "implementation-plans/11-P6-production-operability.md": {
+    "mtime": 1788634964.1719978,
+    "seen": 1789588258.5349574,
+    "ast_hash": "dddb66c99a97cf847e830d7125dde8c3",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-2-validations-and-utils/RAPOR.md": {
-    "mtime": 1786950168.716398,
-    "ast_hash": "2bcf8cb5c1228564ccce693aab58fdb9",
+  "implementation-plans/12-P7-data-architecture.md": {
+    "mtime": 1788642647.1515143,
+    "seen": 1789588258.5349624,
+    "ast_hash": "4025b5b97d93b13cafe15694b2009c9a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-3-leaderboard-api/DURUM.md": {
-    "mtime": 1786950168.7209902,
-    "ast_hash": "3e071d2e00dba16f720bb2fa0695ed35",
+  "implementation-plans/13-P8-security-operations.md": {
+    "mtime": 1788684400.2128663,
+    "seen": 1789588258.5349672,
+    "ast_hash": "369630428e6617c4f7acc294181dc67a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-3-leaderboard-api/GOREV.md": {
-    "mtime": 1786950168.7232525,
-    "ast_hash": "47107e6868d7afbae1e9aa396f41983f",
+  "implementation-plans/14-P9-audit-remediation.md": {
+    "mtime": 1789060179.628039,
+    "seen": 1789588258.5349722,
+    "ast_hash": "ade90feb7cbd7c8b90f7fc5fe86e053c",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-3-leaderboard-api/RAPOR.md": {
-    "mtime": 1786950168.7242508,
-    "ast_hash": "1c50adabfad3bd430a6519e90334f7b6",
+  "kullanici-kilavuzu.md": {
+    "mtime": 1789587379.4501185,
+    "seen": 1789588258.5349777,
+    "ast_hash": "30d66aeba36cc1cc7118ef917cacf8ed",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-4-words-api/DURUM.md": {
-    "mtime": 1786950168.7262495,
-    "ast_hash": "57045558e6f1f80d75edd0f46512a21d",
+  "project-out-sandbox/todo-app/README.md": {
+    "mtime": 1787858350.0,
+    "seen": 1789588258.5349827,
+    "ast_hash": "1db62850c468c193f898487424ce2a67",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-4-words-api/GOREV.md": {
-    "mtime": 1786950168.7272494,
-    "ast_hash": "95cabbd937091ce0cc713e4fd4a96dd7",
+  "project-out-sandbox/todo-app/sonuc-raporu.md": {
+    "mtime": 1787869948.2781322,
+    "seen": 1789588258.5349884,
+    "ast_hash": "abe2728d2434434b9ac3c56fd4cb973e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/backend.director/domain.teamleader/backend-4-words-api/RAPOR.md": {
-    "mtime": 1786950168.7282484,
-    "ast_hash": "d9ee101a9b743bafa2bc3e91a763c0c8",
+  "project-out-sandbox/todo-app/taslak-analiz.md": {
+    "mtime": 1787869347.6593516,
+    "seen": 1789588258.534993,
+    "ast_hash": "59a1fbfa56ce496edf893793b2f01c39",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/ALT-TALIMATNAME.md": {
-    "mtime": 1786950168.7304459,
-    "ast_hash": "d89805b1b48ebbeda2a0e03efe2e0f7b",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/DURUM.md": {
+    "mtime": 1787867366.7534292,
+    "seen": 1789588258.534998,
+    "ast_hash": "ec5326225f479439d447f7acadb6894a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/DURUM.md": {
-    "mtime": 1786950168.7314453,
-    "ast_hash": "e3f276728b76e90c33df431d32da30d3",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/RAPOR.md": {
+    "mtime": 1787867366.751087,
+    "seen": 1789588258.5350037,
+    "ast_hash": "52de8134c46364e7148aeb5695b6d4c7",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/GOREV.md": {
-    "mtime": 1786950168.7324445,
-    "ast_hash": "4c7a719b746cc601794d4f3120ab83af",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/README.md": {
+    "mtime": 1787867366.9707737,
+    "seen": 1789588258.535009,
+    "ast_hash": "1db62850c468c193f898487424ce2a67",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/RAPOR.md": {
-    "mtime": 1786950168.7324445,
-    "ast_hash": "6e9cd5ed8060126a62ddbe0967410ed8",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/DURUM.md": {
+    "mtime": 1787867362.0927336,
+    "seen": 1789588258.5350142,
+    "ast_hash": "c2d7d7310f52fa3ce674c70b23c980cc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/TODO.md": {
-    "mtime": 1786950168.7334452,
-    "ast_hash": "be114705ecb06ee31b6aafa4c368b355",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/GOREV.md": {
+    "mtime": 1787867362.090744,
+    "seen": 1789588258.5350196,
+    "ast_hash": "a60a7b3e05771793aacb8232e6dc532b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/DURUM.md": {
-    "mtime": 1786950168.7351918,
-    "ast_hash": "968ca85787451d6c4b92a0373b83e9f5",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/TALIMATNAME.md": {
+    "mtime": 1787867362.0897446,
+    "seen": 1789588258.5350244,
+    "ast_hash": "7d42b578a1deeaa45e3973acaddfcddc",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/GOREV.md": {
-    "mtime": 1786950168.7368093,
-    "ast_hash": "8bb034838a958c150628203a925618b5",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/TODO.md": {
+    "mtime": 1787867363.982183,
+    "seen": 1789588258.5350294,
+    "ast_hash": "afc90bfc5c99a76938471f9296d6a83e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/RAPOR.md": {
-    "mtime": 1786950168.738781,
-    "ast_hash": "8010350b9a509a99b57932f82055b26c",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/ALT-TALIMATNAME.md": {
+    "mtime": 1787866954.720191,
+    "seen": 1789588258.535035,
+    "ast_hash": "d5db64a919d84a0301b38da2b1032178",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/TODO.md": {
-    "mtime": 1786950168.7585907,
-    "ast_hash": "fa78c8c73f0869c50c0a87c1f0401d2a",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/DURUM.md": {
+    "mtime": 1787867363.0358672,
+    "seen": 1789588258.5350401,
+    "ast_hash": "79cb6551519748f2bc3317524a167b6b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/DURUM.md": {
-    "mtime": 1786950168.761588,
-    "ast_hash": "b8d58668e2aaf59a2eb8eabef4d8cabf",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/GOREV.md": {
+    "mtime": 1787866954.7134655,
+    "seen": 1789588258.535046,
+    "ast_hash": "184436929c22bb755eae7ff2248e2711",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/GOREV.md": {
-    "mtime": 1786950168.762589,
-    "ast_hash": "eb01593cb9c4901535cb96c82a6fc065",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/RAPOR.md": {
+    "mtime": 1787867363.0411253,
+    "seen": 1789588258.5350516,
+    "ast_hash": "0d45d25e025b6f526b0c53421c471ba4",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-1-setup-ui-core/RAPOR.md": {
-    "mtime": 1786950168.764897,
-    "ast_hash": "a02046cabf8bb48b1054055764065e21",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/TODO.md": {
+    "mtime": 1787867363.0335934,
+    "seen": 1789588258.5350566,
+    "ast_hash": "f5de3025c7f059757ebf969dff650587",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/DURUM.md": {
-    "mtime": 1786950168.7719195,
-    "ast_hash": "991218893743b57be638557d93b22338",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/DURUM.md": {
+    "mtime": 1787867363.0305717,
+    "seen": 1789588258.5350618,
+    "ast_hash": "ee13f08d27a5ac404118e641c8148d51",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/GOREV.md": {
-    "mtime": 1786950168.7734315,
-    "ast_hash": "2ee31234a2b30f007f942232d7d33b6c",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/GOREV.md": {
+    "mtime": 1787866959.8907213,
+    "seen": 1789588258.535067,
+    "ast_hash": "5fd6e5aa83e5167776b884166847d51b",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-2-stores-and-hooks/RAPOR.md": {
-    "mtime": 1786950168.779939,
-    "ast_hash": "d96e38cea81a9ad5b56c920c64483e6d",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/RAPOR.md": {
+    "mtime": 1787867363.0315816,
+    "seen": 1789588258.5350718,
+    "ast_hash": "bf068881029ad305ed13e1c15fc2e460",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/DURUM.md": {
-    "mtime": 1786950168.789413,
-    "ast_hash": "e9c4fa4d24ea783b551e50ffefb106a6",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/TODO.md": {
+    "mtime": 1787867027.4954958,
+    "seen": 1789588258.5350766,
+    "ast_hash": "0c749cfd07bdf3e5918e1f5204d7fe0d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/GOREV.md": {
-    "mtime": 1786950168.7904134,
-    "ast_hash": "0e9e4ebe6025de790586a124b29a2e8e",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-1-tsconfig/DURUM.md": {
+    "mtime": 1787866967.0748117,
+    "seen": 1789588258.535082,
+    "ast_hash": "f972917b408ab387314e80cae5609f1f",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-3-game-hafiza/RAPOR.md": {
-    "mtime": 1786950168.7924109,
-    "ast_hash": "6a2d7e8e8f860c42d829f375c07a2f84",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-1-tsconfig/GOREV.md": {
+    "mtime": 1787866960.2240715,
+    "seen": 1789588258.5350873,
+    "ast_hash": "e725786f33b2135f1ca29c9495c169c6",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/DURUM.md": {
-    "mtime": 1786950168.7964087,
-    "ast_hash": "5c314b21adcc24396f6a818df872021c",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-1-tsconfig/RAPOR.md": {
+    "mtime": 1787866967.0757844,
+    "seen": 1789588258.5350928,
+    "ast_hash": "8f68c4510fbbebe0c67d77c5a5505003",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/GOREV.md": {
-    "mtime": 1786950168.797409,
-    "ast_hash": "d868c6ecf2e6110d08858b813fc53843",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-2-prisma-schema/DURUM.md": {
+    "mtime": 1787866971.6999762,
+    "seen": 1789588258.535098,
+    "ast_hash": "bb49ffc63411d4702f2849d2da99b338",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-4-game-tkm/RAPOR.md": {
-    "mtime": 1786950168.807268,
-    "ast_hash": "7705ea4db94fe38ac3233dadebbc5db0",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-2-prisma-schema/GOREV.md": {
+    "mtime": 1787866960.2250683,
+    "seen": 1789588258.5351033,
+    "ast_hash": "363417b627e6c25385b15451ea6ab841",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/DURUM.md": {
-    "mtime": 1786950168.8158033,
-    "ast_hash": "b73d679bd52f254df11e593a5a6a3e9c",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-2-prisma-schema/RAPOR.md": {
+    "mtime": 1787866971.7019715,
+    "seen": 1789588258.5351083,
+    "ast_hash": "f75c8b05eec28c97a286bed180cc139e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/GOREV.md": {
-    "mtime": 1786950168.818806,
-    "ast_hash": "cead382cf5a2e9f2b000ea7aa9ef6bc5",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-3-prisma-client/DURUM.md": {
+    "mtime": 1787866999.3983521,
+    "seen": 1789588258.5351136,
+    "ast_hash": "7456892293be31a04e160a288b078714",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-5-game-xox/RAPOR.md": {
-    "mtime": 1786950168.8208022,
-    "ast_hash": "15ca4a042338b84c4c1118614a406d27",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-3-prisma-client/GOREV.md": {
+    "mtime": 1787866979.9528644,
+    "seen": 1789588258.5351183,
+    "ast_hash": "38b15ecc5f6f3dabcc3ad7147fea3621",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/DURUM.md": {
-    "mtime": 1786950168.831987,
-    "ast_hash": "57616f405a958a2c2e81b0d60398d41e",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-3-prisma-client/RAPOR.md": {
+    "mtime": 1787866999.399379,
+    "seen": 1789588258.5351238,
+    "ast_hash": "89cd4c5986288defd2cdf8f5d1716743",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/GOREV.md": {
-    "mtime": 1786950168.8333144,
-    "ast_hash": "5bf14c4cdc84b6e5ad2de64a65314bb6",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-4-error-middleware/DURUM.md": {
+    "mtime": 1787866979.6356833,
+    "seen": 1789588258.535129,
+    "ast_hash": "e596d4ece904cad9ef1722d6352918a0",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-6-game-yilan/RAPOR.md": {
-    "mtime": 1786950168.8365107,
-    "ast_hash": "3dfe5f9e8b990b00a5936152ca3833dd",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-4-error-middleware/GOREV.md": {
+    "mtime": 1787866971.9725356,
+    "seen": 1789588258.5351338,
+    "ast_hash": "caa39ecb7f7392befa6341185436554e",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/DURUM.md": {
-    "mtime": 1786950168.8410242,
-    "ast_hash": "beddbde884d74676e74a1aa3e8460523",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-4-error-middleware/RAPOR.md": {
+    "mtime": 1787866979.636685,
+    "seen": 1789588258.5351388,
+    "ast_hash": "ac456f7ba89fe9d733b7d767c2299154",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/GOREV.md": {
-    "mtime": 1786950168.8420277,
-    "ast_hash": "2203c81548dd5245f7b7ea0c45a6d1d3",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-5-validate-middleware/DURUM.md": {
+    "mtime": 1787866980.3650613,
+    "seen": 1789588258.5351436,
+    "ast_hash": "25c838b0c8084de2f2b7c546307fc702",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-7-game-kelime/RAPOR.md": {
-    "mtime": 1786950168.8643627,
-    "ast_hash": "1d785853971c62179f858d2683f148af",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-5-validate-middleware/GOREV.md": {
+    "mtime": 1787866971.9725356,
+    "seen": 1789588258.5351489,
+    "ast_hash": "251d71f4f9a22b285269344612a4445a",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/DURUM.md": {
-    "mtime": 1786950168.872322,
-    "ast_hash": "1095c5db5eead0ea095a49d57c779dd4",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-5-validate-middleware/RAPOR.md": {
+    "mtime": 1787866980.3660665,
+    "seen": 1789588258.535154,
+    "ast_hash": "e7a530a06a706d5a60ae59b9de5ab2b5",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/GOREV.md": {
-    "mtime": 1786950168.8743217,
-    "ast_hash": "97878e146d7657625b00d0a83b702aa1",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-6-app-entry/DURUM.md": {
+    "mtime": 1787867019.9945843,
+    "seen": 1789588258.5351593,
+    "ast_hash": "ed8b0ba0ac019e48d61b4a17bc932d1d",
     "semantic_hash": ""
   },
-  "projects/project-1786929691579/manager/frontend.director/frontend.teamleader/gorev-8-home-and-leaderboard/RAPOR.md": {
-    "mtime": 1786950168.8885217,
-    "ast_hash": "11da2cac63803029b1ff43de2f523012",
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-6-app-entry/GOREV.md": {
+    "mtime": 1787867000.0191019,
+    "seen": 1789588258.5351644,
+    "ast_hash": "66efee53fc0b773f463b7bd8c088b077",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-6-app-entry/RAPOR.md": {
+    "mtime": 1787867019.995571,
+    "seen": 1789588258.5351703,
+    "ast_hash": "8abd3b739ed167a1b3dc5df769eefe2f",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-7-server-listen/DURUM.md": {
+    "mtime": 1787867027.4924977,
+    "seen": 1789588258.5351748,
+    "ast_hash": "4a9a61976298f6eb93ccde2e1e40bee4",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-7-server-listen/GOREV.md": {
+    "mtime": 1787867020.3153899,
+    "seen": 1789588258.5351796,
+    "ast_hash": "0eae43b1db09fa1d56c922d67bb5e993",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/backend.director/domain/gorev-7-server-listen/RAPOR.md": {
+    "mtime": 1787867027.4935124,
+    "seen": 1789588258.5351844,
+    "ast_hash": "5c03ae4eb3e8beffa5c88212da98385f",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/ALT-TALIMATNAME.md": {
+    "mtime": 1787867032.870317,
+    "seen": 1789588258.5351892,
+    "ast_hash": "c1693d832f36adb8d8469f5bdfb1b28b",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/DURUM.md": {
+    "mtime": 1787867363.9801834,
+    "seen": 1789588258.5351944,
+    "ast_hash": "491698497a5830a46d9b07cf132c37e4",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/GOREV.md": {
+    "mtime": 1787867032.8682992,
+    "seen": 1789588258.5351992,
+    "ast_hash": "58ab93420990b2d548d9807d1694694a",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/RAPOR.md": {
+    "mtime": 1787867363.9811797,
+    "seen": 1789588258.5352051,
+    "ast_hash": "ebed8f1bc69907a6d517562955f6baae",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/TODO.md": {
+    "mtime": 1787867363.979187,
+    "seen": 1789588258.5356994,
+    "ast_hash": "3aad3657b9437445c73a55da6c684b9f",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/DURUM.md": {
+    "mtime": 1787867363.9761825,
+    "seen": 1789588258.535712,
+    "ast_hash": "dcab1f6568e8e2133376704e6dc29552",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/GOREV.md": {
+    "mtime": 1787867042.0930004,
+    "seen": 1789588258.535718,
+    "ast_hash": "5fd6e5aa83e5167776b884166847d51b",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/RAPOR.md": {
+    "mtime": 1787867363.9771793,
+    "seen": 1789588258.5357227,
+    "ast_hash": "bf068881029ad305ed13e1c15fc2e460",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/TODO.md": {
+    "mtime": 1787867106.5579963,
+    "seen": 1789588258.535728,
+    "ast_hash": "bf0033d7b41fc3d4fa7e603d2b6b031d",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-1-utils/DURUM.md": {
+    "mtime": 1787867048.3937478,
+    "seen": 1789588258.535733,
+    "ast_hash": "060b117c6af4f9504c40795fc36f475f",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-1-utils/GOREV.md": {
+    "mtime": 1787867042.3161197,
+    "seen": 1789588258.5357382,
+    "ast_hash": "4e8000589ffe5c4669f7ce0000b2e76f",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-1-utils/RAPOR.md": {
+    "mtime": 1787867048.3947766,
+    "seen": 1789588258.535743,
+    "ast_hash": "f51765e5a994bae48ecdd2da5f0223d7",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-2-api-client/DURUM.md": {
+    "mtime": 1787867048.802817,
+    "seen": 1789588258.5357482,
+    "ast_hash": "455b5bc2df8b3a79057e014db169a721",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-2-api-client/GOREV.md": {
+    "mtime": 1787867042.3161197,
+    "seen": 1789588258.5357535,
+    "ast_hash": "a3cc020fe99bd0b57ad2ee1bc949dec4",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-2-api-client/RAPOR.md": {
+    "mtime": 1787867048.8038127,
+    "seen": 1789588258.5357583,
+    "ast_hash": "4f2dd3fd59004466cfcf3b1dc5739d49",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-3-auth-schema/DURUM.md": {
+    "mtime": 1787867057.5271144,
+    "seen": 1789588258.5357635,
+    "ast_hash": "d1b818694387b93d9560a0a25ead5008",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-3-auth-schema/GOREV.md": {
+    "mtime": 1787867048.6292405,
+    "seen": 1789588258.5357685,
+    "ast_hash": "294c90f10d9f1885ecb020e9644fb659",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-3-auth-schema/RAPOR.md": {
+    "mtime": 1787867057.5291352,
+    "seen": 1789588258.5357742,
+    "ast_hash": "2c84ffabb16be3831fa8daedc95f9590",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-4-ui-button/DURUM.md": {
+    "mtime": 1787867076.9212866,
+    "seen": 1789588258.5357795,
+    "ast_hash": "1e786ba587525d8946bf225b882809fc",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-4-ui-button/GOREV.md": {
+    "mtime": 1787867065.8753026,
+    "seen": 1789588258.5357847,
+    "ast_hash": "ab7b4fd68f4e0c4ad9d1341433735182",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-4-ui-button/RAPOR.md": {
+    "mtime": 1787867076.92231,
+    "seen": 1789588258.5357897,
+    "ast_hash": "eff541926813ffe84f2ec53862d3edb2",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-5-ui-input/DURUM.md": {
+    "mtime": 1787867082.038504,
+    "seen": 1789588258.5357952,
+    "ast_hash": "f12f309442f4b24ad0b4af0af6b5a138",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-5-ui-input/GOREV.md": {
+    "mtime": 1787867065.8879642,
+    "seen": 1789588258.5358005,
+    "ast_hash": "c1655660e15a382e8388ce0df06a8e12",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-5-ui-input/RAPOR.md": {
+    "mtime": 1787867082.039493,
+    "seen": 1789588258.5358057,
+    "ast_hash": "18a58f2eed4e54c48e865c3503aa28c3",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-6-toast-provider/DURUM.md": {
+    "mtime": 1787867065.5195246,
+    "seen": 1789588258.5358107,
+    "ast_hash": "6df6fbecc244733ae9399570313dba4a",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-6-toast-provider/GOREV.md": {
+    "mtime": 1787867048.9821794,
+    "seen": 1789588258.5358157,
+    "ast_hash": "61afa6346fec832dd553ede0bf1e02e6",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-6-toast-provider/RAPOR.md": {
+    "mtime": 1787867065.5240455,
+    "seen": 1789588258.5358202,
+    "ast_hash": "f4da717726fa1cc514ef895284312f91",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-7-login-form/DURUM.md": {
+    "mtime": 1787867097.634348,
+    "seen": 1789588258.535825,
+    "ast_hash": "1ab8351f61e772527b9fc0185bf1ea83",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-7-login-form/GOREV.md": {
+    "mtime": 1787867085.3325534,
+    "seen": 1789588258.5358295,
+    "ast_hash": "770dae34b6290eab7373bef9cabff7a6",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-7-login-form/RAPOR.md": {
+    "mtime": 1787867097.635383,
+    "seen": 1789588258.5358343,
+    "ast_hash": "ec81df1cec551d6afc2b5c4bae347138",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-8-login-page/DURUM.md": {
+    "mtime": 1787867106.5544882,
+    "seen": 1789588258.5358393,
+    "ast_hash": "3fec247f7a11cfb02688ba0b8bf91ab5",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-8-login-page/GOREV.md": {
+    "mtime": 1787867097.9049048,
+    "seen": 1789588258.5358446,
+    "ast_hash": "6b00a64cef5d6a7ad7ba6885797dfffb",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-8-login-page/RAPOR.md": {
+    "mtime": 1787867106.5554836,
+    "seen": 1789588258.5358496,
+    "ast_hash": "fe3ff7224fe8c169059c529581103008",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-9-root-layout/DURUM.md": {
+    "mtime": 1787867085.1120667,
+    "seen": 1789588258.5358548,
+    "ast_hash": "1e5a096dd90eac701931af45757c5da8",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-9-root-layout/GOREV.md": {
+    "mtime": 1787867077.4055643,
+    "seen": 1789588258.5358608,
+    "ast_hash": "65445f48383c137030a66f76db78ef22",
+    "semantic_hash": ""
+  },
+  "projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/manager/frontend.director/domain/task-9-root-layout/RAPOR.md": {
+    "mtime": 1787867085.1130445,
+    "seen": 1789588258.535866,
+    "ast_hash": "a3a534cd1e5c1f666b635cc796e2b7d8",
+    "semantic_hash": ""
+  },
+  "superpowers/specs/2026-09-05-p6-production-operability-design.md": {
+    "mtime": 1788634964.269786,
+    "seen": 1789588258.5358715,
+    "ast_hash": "9b3836b04b6e1b9ca729a67040111476",
+    "semantic_hash": ""
+  },
+  "superpowers/specs/2026-09-05-p7-data-architecture-design.md": {
+    "mtime": 1788642647.1565218,
+    "seen": 1789588258.5358765,
+    "ast_hash": "bd26464c133b5d8c5bb4d2707c54698a",
+    "semantic_hash": ""
+  },
+  "superpowers/specs/2026-09-06-p8-security-operations-design.md": {
+    "mtime": 1788684400.229976,
+    "seen": 1789588258.535882,
+    "ast_hash": "fa5bdd2a46003774ed1117603cbba009",
+    "semantic_hash": ""
+  },
+  "superpowers/specs/2026-09-06-p9-audit-remediation-design.md": {
+    "mtime": 1789060179.7273836,
+    "seen": 1789588258.535887,
+    "ast_hash": "dba965bcee9f925a641ce85f6c9dc63c",
+    "semantic_hash": ""
+  },
+  "yol-haitasi-todo.md": {
+    "mtime": 1788684400.232519,
+    "seen": 1789588258.5358927,
+    "ast_hash": "14779e34407a0cee9d592f8be4b8922b",
     "semantic_hash": ""
   }
 }

@@ -1,0 +1,917 @@
+{
+  "nodes": [
+    {
+      "id": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "label": "ORKESTRASYON-TALIMATNAMESI (Anayasa v3)",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "description": "Platformun en üst master orkestrasyon anayasası",
+      "val": 5
+    },
+    {
+      "id": "docs/manager.md",
+      "label": "docs/manager.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/manager.md",
+      "description": "Manager Ajanı canlı kural ve mimari şartname dosyası",
+      "val": 2
+    },
+    {
+      "id": "docs/director.md",
+      "label": "docs/director.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/director.md",
+      "description": "Director Ajanı canlı domain şartname kuralları",
+      "val": 2
+    },
+    {
+      "id": "docs/teamleader.md",
+      "label": "docs/teamleader.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/teamleader.md",
+      "description": "Teamleader Ajanı atomik görev ve DAG kuralları",
+      "val": 2
+    },
+    {
+      "id": "docs/coder.md",
+      "label": "docs/coder.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/coder.md",
+      "description": "Coder Ajanı bileşen kompozisyonu ve kodlama kuralları",
+      "val": 2
+    },
+    {
+      "id": "docs/reviewer.md",
+      "label": "docs/reviewer.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/reviewer.md",
+      "description": "Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları",
+      "val": 2
+    },
+    {
+      "id": "docs/tester.md",
+      "label": "docs/tester.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/tester.md",
+      "description": "Tester Ajanı deterministik sentaks ve auto-repair kuralları",
+      "val": 2
+    },
+    {
+      "id": "kullanici-kilavuzu.md",
+      "label": "kullanici-kilavuzu.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "kullanici-kilavuzu.md",
+      "description": "A'dan Z'ye operasyon ve kullanıcı kılavuzu",
+      "val": 1.5
+    },
+    {
+      "id": "backend/agents/agentLoader.js",
+      "label": "agentLoader.js (Living Docs Bridge)",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/agentLoader.js",
+      "description": "docs/*.md dosyalarını canlı yükleyip LLM promptlarına bağlayan köprü",
+      "val": 3.5
+    },
+    {
+      "id": "backend/agents/index.js",
+      "label": "agents/index.js (Registry & Factory)",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/index.js",
+      "description": "Merkezi Ajan Kayıt Defteri ve getAgent() fabrikası",
+      "val": 5
+    },
+    {
+      "id": "backend/agents/schemas.js",
+      "label": "schemas.js (Parser & Truncation Repair)",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/schemas.js",
+      "description": "JSON kurtarıcı, regex parser ve şema doğrulayıcıları",
+      "val": 2
+    },
+    {
+      "id": "backend/agents/manager.js",
+      "label": "manager.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/manager.js",
+      "description": "Manager Ajanı motoru",
+      "val": 2.5
+    },
+    {
+      "id": "backend/agents/director.js",
+      "label": "director.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/director.js",
+      "description": "Director Ajanı motoru",
+      "val": 2
+    },
+    {
+      "id": "backend/agents/teamleader.js",
+      "label": "teamleader.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/teamleader.js",
+      "description": "Teamleader Ajanı motoru",
+      "val": 2
+    },
+    {
+      "id": "backend/agents/coder.js",
+      "label": "coder.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/coder.js",
+      "description": "Coder Ajanı motoru",
+      "val": 2.5
+    },
+    {
+      "id": "backend/agents/reviewer.js",
+      "label": "reviewer.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/reviewer.js",
+      "description": "Reviewer Ajanı motoru",
+      "val": 2
+    },
+    {
+      "id": "backend/agents/tester.js",
+      "label": "tester.agent",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/tester.js",
+      "description": "Tester Ajanı motoru",
+      "val": 2
+    },
+    {
+      "id": "backend/engine/workflow.js",
+      "label": "workflow.js (Master Orchestrator)",
+      "type": "EngineCore",
+      "group": "engine",
+      "file": "backend/engine/workflow.js",
+      "description": "Paralel DAG dalgalarını yürüten ana iş akışı komutanı",
+      "val": 5.5
+    },
+    {
+      "id": "backend/engine/dag.js",
+      "label": "dag.js (TaskDAG & Execution Waves)",
+      "type": "EngineCore",
+      "group": "engine",
+      "file": "backend/engine/dag.js",
+      "description": "Topolojik sıra ve seviyeli dalga (wave) algoritması",
+      "val": 2
+    },
+    {
+      "id": "backend/engine/fileProtocol.js",
+      "label": "fileProtocol.js (Agent=Klasör)",
+      "type": "EngineCore",
+      "group": "engine",
+      "file": "backend/engine/fileProtocol.js",
+      "description": "projects/<id> altında canlı protokol dosyalarını yöneten motor",
+      "val": 1.5
+    },
+    {
+      "id": "backend/engine/codeGenerator.js",
+      "label": "codeGenerator.js (Scaffold Guard)",
+      "type": "EngineCore",
+      "group": "engine",
+      "file": "backend/engine/codeGenerator.js",
+      "description": ".env, Next 14.2, Vite ve Express şablon koruması",
+      "val": 1.5
+    },
+    {
+      "id": "backend/engine/selfCorrection.js",
+      "label": "selfCorrection.js (Review Loop)",
+      "type": "EngineCore",
+      "group": "engine",
+      "file": "backend/engine/selfCorrection.js",
+      "description": "Coder-Reviewer 2 turlu denetim ve veto döngüsü",
+      "val": 1.5
+    },
+    {
+      "id": "backend/server.js",
+      "label": "server.js (Express & WSS)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/server.js",
+      "description": "REST API sunucusu ve Sec-WebSocket-Protocol yayıncısı",
+      "val": 4
+    },
+    {
+      "id": "backend/db.js",
+      "label": "db.js (SQLite WAL & State)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/db.js",
+      "description": "SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı",
+      "val": 1.5
+    },
+    {
+      "id": "backend/auth.js",
+      "label": "auth.js (Scrypt & RBAC)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/auth.js",
+      "description": "Scrypt parola hashleme, timingSafeEqual ve rol erişim kontrolü",
+      "val": 1.5
+    },
+    {
+      "id": "backend/security.js",
+      "label": "security.js (Security Guard)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/security.js",
+      "description": "Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama",
+      "val": 1.5
+    },
+    {
+      "id": "backend/llm.js",
+      "label": "llm.js (Multi-Provider AI)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/llm.js",
+      "description": "Gemini 3.7 Flash, OpenAI ve SDK/REST fallback yönlendirici",
+      "val": 2
+    },
+    {
+      "id": "backend/routes/projectRoutes.js",
+      "label": "routes/projectRoutes.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/routes/projectRoutes.js",
+      "description": "Proje CRUD, Chat, Onay ve Revizyon uç noktaları",
+      "val": 3
+    },
+    {
+      "id": "backend/routes/authRoutes.js",
+      "label": "routes/authRoutes.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/routes/authRoutes.js",
+      "description": "Login ve session yetkilendirme rotaları",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/App.jsx",
+      "label": "App.jsx (Main Container)",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/App.jsx",
+      "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
+      "val": 4.5
+    },
+    {
+      "id": "frontend/src/components/Sidebar.jsx",
+      "label": "Sidebar.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/Sidebar.jsx",
+      "description": "Sol menü, arama, pin, rename ve proje işlemleri",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/components/Header.jsx",
+      "label": "Header.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/Header.jsx",
+      "description": "Üst menü, sekme geçişleri ve süreç kontrol butonları",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/components/ChatView.jsx",
+      "label": "ChatView.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/ChatView.jsx",
+      "description": "Manager Sohbet, beyin fırtınası ve revizyon paneli",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/components/DAGFlowView.jsx",
+      "label": "DAGFlowView.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/DAGFlowView.jsx",
+      "description": "ReactFlow canlı DAG akış şeması ve log tablosu",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/components/IDEView.jsx",
+      "label": "IDEView.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/IDEView.jsx",
+      "description": "Monaco Editor kaynak kod inceleyici",
+      "val": 1.5
+    },
+    {
+      "id": "frontend/src/services/api.js",
+      "label": "services/api.js",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/services/api.js",
+      "description": "HttpOnly server-session ve CSRF uyumlu API istemcisi",
+      "val": 2.5
+    },
+    {
+      "id": "backend/tests/test_runner.js",
+      "label": "test_runner.js (Master Runner)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_runner.js",
+      "description": "npm test master koşucusu",
+      "val": 12
+    },
+    {
+      "id": "backend/tests/test_test_harness.js",
+      "label": "test_test_harness.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_test_harness.js",
+      "description": "Asenkron test koşucu altyapısı",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_http_integration.js",
+      "label": "test_http_integration.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_http_integration.js",
+      "description": "HTTP REST, Cookie ve Session testleri",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_websocket_integration.js",
+      "label": "test_websocket_integration.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_websocket_integration.js",
+      "description": "WebSocket project-scoped telemetri testleri",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_backend.js",
+      "label": "test_backend.js (31 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_backend.js",
+      "description": "Scrypt, revocable session, CSRF, RBAC ve RateLimit",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_admin_cli.js",
+      "label": "test_admin_cli.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_admin_cli.js",
+      "description": "CLI admin provisioning ve parola doğrulama",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_project_repository.js",
+      "label": "test_project_repository.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_project_repository.js",
+      "description": "Kanonik proje deposu ve SQLite işlemleri",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_workflow_attempts.js",
+      "label": "test_workflow_attempts.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_workflow_attempts.js",
+      "description": "Lease recovery ve dayanıklı iş akışı kilitleri",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_cancellation_and_deadlines.js",
+      "label": "test_cancellation_and_deadlines.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_cancellation_and_deadlines.js",
+      "description": "Kooperatif iptal ve 60s LLM deadline",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_generation_isolation.js",
+      "label": "test_generation_isolation.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_generation_isolation.js",
+      "description": "Kod üretim kotası ve metadata guard",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_subprocess_sandbox.js",
+      "label": "test_subprocess_sandbox.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_subprocess_sandbox.js",
+      "description": "İzole alt süreç sandbox ve gizli anahtar temizliği",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_agent_contract_schemas.js",
+      "label": "test_agent_contract_schemas.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_agent_contract_schemas.js",
+      "description": "Ajan JSON sözleşme şemaları ve tip denetimi",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_database_migrations.js",
+      "label": "test_database_migrations.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_database_migrations.js",
+      "description": "SQLite WAL sıralı migration motoru",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_health_and_lifecycle.js",
+      "label": "test_health_and_lifecycle.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_health_and_lifecycle.js",
+      "description": "Liveness /readyz probları ve graceful shutdown",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_concurrency_pool.js",
+      "label": "test_concurrency_pool.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_concurrency_pool.js",
+      "description": "LLM eşzamanlılık havuzu (limit=2)",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_build_validator.js",
+      "label": "test_build_validator.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_build_validator.js",
+      "description": "tsc --noEmit ve prisma validate derleyici",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_quality_gate.js",
+      "label": "test_quality_gate.js (40 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_quality_gate.js",
+      "description": "Prisma şema uyumu ve fail-closed kalite kapısı",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_docs_agent_sync.js",
+      "label": "test_docs_agent_sync.js (8 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_docs_agent_sync.js",
+      "description": "Docs/*.md ile canlı ajan prompt senkronizasyonu",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_deep_verification.js",
+      "label": "test_deep_verification.js (17 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_deep_verification.js",
+      "description": "DAG motoru, dalga seviyeleme ve JSON onarım",
+      "val": 2
+    },
+    {
+      "id": "backend/tests/test_tur2_edge_cases.js",
+      "label": "test_tur2_edge_cases.js (8 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_tur2_edge_cases.js",
+      "description": "Döngü stresi, ayrık graf ve path traversal",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_runtime_verification.js",
+      "label": "test_runtime_verification.js (6 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_runtime_verification.js",
+      "description": "Sentaks denetimi, checkpoint veto ve dalga",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_e2e_simulation.js",
+      "label": "test_e2e_simulation.js (1 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_e2e_simulation.js",
+      "description": "Uçtan uca otonom pipeline simülasyonu",
+      "val": 1.5
+    },
+    {
+      "id": "backend/tests/test_disk_sync_and_isolation.js",
+      "label": "test_disk_sync_and_isolation.js (4 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_disk_sync_and_isolation.js",
+      "description": "Çift yönlü disk senkronizasyonu ve sandbox izolasyonu",
+      "val": 2
+    }
+  ],
+  "links": [
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/manager.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/director.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/teamleader.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/coder.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/reviewer.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/tester.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "kullanici-kilavuzu.md",
+      "label": "defines"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/agentLoader.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/schemas.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/manager.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/director.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/teamleader.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/coder.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/reviewer.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/tester.js",
+      "label": "registers"
+    },
+    {
+      "source": "backend/agents/agentLoader.js",
+      "target": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "label": "reads"
+    },
+    {
+      "source": "backend/agents/manager.js",
+      "target": "docs/manager.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/director.js",
+      "target": "docs/director.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/teamleader.js",
+      "target": "docs/teamleader.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/coder.js",
+      "target": "docs/coder.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/reviewer.js",
+      "target": "docs/reviewer.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/tester.js",
+      "target": "docs/tester.md",
+      "label": "loads"
+    },
+    {
+      "source": "backend/agents/manager.js",
+      "target": "backend/agents/agentLoader.js",
+      "label": "uses"
+    },
+    {
+      "source": "backend/agents/coder.js",
+      "target": "backend/agents/schemas.js",
+      "label": "uses"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/engine/dag.js",
+      "label": "executes_waves"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/engine/fileProtocol.js",
+      "label": "manages_files"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/engine/codeGenerator.js",
+      "label": "triggers_scaffold"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/engine/selfCorrection.js",
+      "label": "runs_review_loop"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/agents/index.js",
+      "label": "dispatches_agents"
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/routes/projectRoutes.js",
+      "label": "mounts"
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/routes/authRoutes.js",
+      "label": "mounts"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/engine/workflow.js",
+      "label": "triggers_workflow"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/agents/agentLoader.js",
+      "label": "reads_docs"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/llm.js",
+      "label": "calls_ai"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/llm.js",
+      "label": "calls_ai"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/db.js",
+      "label": "persists_state"
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/auth.js",
+      "label": "authenticates"
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/security.js",
+      "label": "secures"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/Sidebar.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/Header.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/ChatView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/DAGFlowView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/IDEView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/services/api.js",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/services/api.js",
+      "label": "uses"
+    },
+    {
+      "source": "frontend/src/services/api.js",
+      "target": "backend/server.js",
+      "label": "http_and_ws"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_test_harness.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_http_integration.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_websocket_integration.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_backend.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_admin_cli.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_project_repository.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_workflow_attempts.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_cancellation_and_deadlines.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_generation_isolation.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_subprocess_sandbox.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_agent_contract_schemas.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_database_migrations.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_health_and_lifecycle.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_concurrency_pool.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_build_validator.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_quality_gate.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_docs_agent_sync.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_deep_verification.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_tur2_edge_cases.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runtime_verification.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_e2e_simulation.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_disk_sync_and_isolation.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_backend.js",
+      "target": "backend/server.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_quality_gate.js",
+      "target": "backend/engine/workflow.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_deep_verification.js",
+      "target": "backend/engine/dag.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_docs_agent_sync.js",
+      "target": "backend/agents/agentLoader.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_disk_sync_and_isolation.js",
+      "target": "backend/projectPaths.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_build_validator.js",
+      "target": "backend/engine/buildValidator.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_workflow_attempts.js",
+      "target": "backend/engine/workflowAttempts.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_cancellation_and_deadlines.js",
+      "target": "backend/engine/cancellation.js",
+      "label": "verifies"
+    }
+  ]
+}
