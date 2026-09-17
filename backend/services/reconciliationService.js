@@ -49,6 +49,23 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
 
     return defaultTitle;
 }
+function detectProjectStatusFromDisk(dirPath) {
+    try {
+        const statePath = path.join(dirPath, 'state.json');
+        if (fsSync.existsSync(statePath)) {
+            const state = JSON.parse(fsSync.readFileSync(statePath, 'utf8'));
+            if (state && typeof state.status === 'string' && state.status.trim()) {
+                return state.status.trim();
+            }
+        }
+        const raporPath = path.join(dirPath, 'RAPOR.md');
+        if (fsSync.existsSync(raporPath)) {
+            return 'completed';
+        }
+    } catch {}
+    return 'planning';
+}
+
 
 /**
  * Safely registers valid unimported directories found in projectsRoot into SQLite projects table.
@@ -87,10 +104,19 @@ export function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot
     const dbSet = new Set(dbProjects);
     const registered = [];
     const nowIso = new Date().toISOString();
-
     const insertStmt = database.prepare(
         'INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)'
     );
+    let adminUser = null;
+    let insertOwnerStmt = null;
+    try {
+        adminUser = database.prepare('SELECT id FROM users WHERE is_admin = 1 LIMIT 1').get();
+        if (adminUser) {
+            insertOwnerStmt = database.prepare(
+                'INSERT OR IGNORE INTO project_owners (project_id, user_id, role, created_at) VALUES (?, ?, "owner", ?)'
+            );
+        }
+    } catch {}
 
     database.exec('BEGIN IMMEDIATE;');
     try {
@@ -98,9 +124,22 @@ export function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot
             if (!dbSet.has(diskId)) {
                 const dirPath = path.join(root, diskId);
                 const title = readProjectTitleFromDisk(dirPath, diskId);
-                insertStmt.run(diskId, title, 'planning', nowIso);
-                registered.push({ id: diskId, title, status: 'planning' });
+                const status = detectProjectStatusFromDisk(dirPath);
+                insertStmt.run(diskId, title, status, nowIso);
+                if (insertOwnerStmt && adminUser) {
+                    insertOwnerStmt.run(diskId, adminUser.id, nowIso);
+                }
+                registered.push({ id: diskId, title, status });
             }
+        }
+        if (adminUser) {
+            database.prepare(`
+                INSERT OR IGNORE INTO project_owners (project_id, user_id, role, created_at)
+                SELECT p.id, ?, 'owner', ?
+                FROM projects p
+                LEFT JOIN project_owners po ON po.project_id = p.id
+                WHERE po.project_id IS NULL
+            `).run(adminUser.id, nowIso);
         }
         database.exec('COMMIT;');
     } catch (error) {

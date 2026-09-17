@@ -221,10 +221,25 @@ export default function App() {
       isPollingRef.current = false;
     }
   }, [authStatus, beginRequest, becomeAnonymous, isCurrentRequest]);
+  const [isSyncingProjects, setIsSyncingProjects] = useState(false);
+  const handleSyncProjects = useCallback(async () => {
+    if (isSyncingProjects) return;
+    setIsSyncingProjects(true);
+    try {
+      await api.syncProjects();
+      await fetchProjects();
+    } catch (err) {
+      console.error('Disk sync error:', err);
+    } finally {
+      setIsSyncingProjects(false);
+    }
+  }, [isSyncingProjects, fetchProjects]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
-    fetchProjects();
+    api.syncProjects().catch(() => {}).finally(() => {
+      fetchProjects();
+    });
     const interval = setInterval(fetchProjects, 4000);
     return () => clearInterval(interval);
   }, [authStatus, fetchProjects]);
@@ -798,6 +813,8 @@ export default function App() {
         activeMenuProjectId={activeMenuProjectId}
         setActiveMenuProjectId={setActiveMenuProjectId}
         handleCreateProject={handleCreateProject}
+        handleSyncProjects={handleSyncProjects}
+        isSyncing={isSyncingProjects}
         handleTogglePin={handleTogglePin}
         handleRenameProject={handleRenameProject}
         handleDeleteProject={handleDeleteProject}

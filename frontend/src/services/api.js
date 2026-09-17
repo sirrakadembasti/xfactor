@@ -186,6 +186,11 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
         body: JSON.stringify({ title }),
         ...opts
       }),
+    syncProjects: (opts = {}) =>
+      request('/projects/sync', {
+        method: 'POST',
+        ...opts
+      }),
 
     // Project Files & Logs
     getProjectFiles: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/files`, opts),

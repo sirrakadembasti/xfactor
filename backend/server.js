@@ -29,7 +29,7 @@ import {
 } from './sessionAuth.js';
 import { createMaintenanceScheduler } from './maintenance.js';
 import { db, dbEvents, getSchemaVersion, checkpointWAL, initializeDatabase, closeDatabase } from './db.js';
-import { getProjectsRoot, recoverPendingProjectDeletions } from './projectRepository.js';
+import { getProjectsRoot, recoverPendingProjectDeletions, syncProjectsWithDisk } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
 import {
     assertProductionFrontendAvailable,
@@ -312,6 +312,11 @@ async function startServer() {
         initializeDatabase(runtimeConfig.DB_PATH ? { path: runtimeConfig.DB_PATH } : {});
         await ensureDefaultAdminUser();
         await recoverPendingProjectDeletions({ env: process.env });
+        try {
+            syncProjectsWithDisk({ autoRegister: true, env: process.env });
+        } catch (e) {
+            console.warn('Initial disk sync warning:', e.message);
+        }
         await assertProductionFrontendAvailable({
             production: runtimeConfig.production,
             distRoot: getFrontendDistRoot()

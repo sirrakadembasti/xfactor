@@ -7,7 +7,8 @@ import {
   PinOff,
   Download,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  RefreshCw
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -27,7 +28,9 @@ export default function Sidebar({
   loginUsername,
   handleLogout,
   getStatusBadge,
-  readOnly = false
+  readOnly = false,
+  handleSyncProjects,
+  isSyncing = false
 }) {
   const onDownloadZip = handleDownloadZip || handleDownloadProjectZip;
   const filteredProjects = projects.filter(p =>
@@ -44,7 +47,19 @@ export default function Sidebar({
         </div>
         {!readOnly && (
           <div className="flex items-center gap-1">
+            {handleSyncProjects && (
+              <button
+                type="button"
+                onClick={handleSyncProjects}
+                disabled={isSyncing}
+                title="Diskle Senkronize Et (Projeleri Tara)"
+                className="p-1.5 bg-gray-50 hover:bg-gray-100 rounded text-gray-600 hover:text-indigo-600 transition disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={isSyncing ? 'animate-spin text-indigo-600' : ''} />
+              </button>
+            )}
             <button
+              type="button"
               onClick={handleCreateProject}
               title="Yeni Proje Başlat"
               className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded text-indigo-600 transition"
