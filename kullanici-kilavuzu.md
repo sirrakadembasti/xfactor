@@ -148,12 +148,20 @@ cd ..
 ### 3. Adım: Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
-Proje kök dizininde tek bir komutla hem Backend sunucusunu (`8000`) hem de Vite Web Panelini (`5173`) aynı anda başlatabilirsiniz:
+Proje kök dizininde tek bir `npm run dev` komutuyla platformun 3 ana servisi birlikte ayağa kalkar:
 ```bash
 npm run dev
 ```
-> Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 
+| Port | Servis | Açıklama |
+|:---:|---|---|
+| **`5173`** | **Frontend (Vite / React)** | **Kullanıcı Paneli:** Tarayıcınızda açtığınız ana ekran (`http://localhost:5173`). |
+| **`8000`** | **Backend (Web Orchestrator)** | **Yönetim Beyni:** REST API, SQLite veritabanı, WebSocket telemetrisi ve 6 yapay zekâ ajanı. |
+| **`8099`** | **Execution Worker** | **İzole Derleyici:** Güvensiz kodları ana sistemden ayrı sandbox içinde derleyen ve test eden iç RPC işçisi. |
+
+> ℹ️ **Önemli Not:** `8099` portu doğrudan kullanıcıların tarayıcıdan gezinmesi için değil; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile izole kod çalıştırma işlerini devrettiği korumalı bir iç servistir. Tarayıcıdan girildiğinde `{"error":"Unauthorized"}` dönmesi bu güvenlik önleminin gereğidir.
+
+> Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 * **1. Terminal (Backend):**
   ```bash
@@ -340,6 +348,12 @@ Tüm testler merkezi **`backend/tests/test_runner.js`** altındaki master koşuc
 
 ### S: Log ekranındaki hataları nasıl yorumlamalıyım?
 **C:** XFactor'da log ekranında anlamsız hexadecimal referans kodları gösterilmez; doğrudan insan tarafından anlaşılabilir net Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) basılır. Ayrıca Docker'ın çalışmadığı geliştirme ortamlarında sistem otomatik olarak yerel host üzerinden kilit dosyası (`package-lock.json`) üretme fallback'ini devreye sokarak döngüsel kilitlenmeleri engeller.
+
+### S: 8099 portu nedir? Tarayıcıdan açtığımda neden `{"error":"Unauthorized"}` hatası alıyorum?
+**C:** XFactor, **Bölünmüş Güvenlik Mimarisi (Split Architecture)** ile çalışır. Yapay zekânın yazdığı kodların derlenmesi (`tsc`), paketlenmesi (`npm install`) ve çalıştırılması ana Backend sürecinde (`8000`) değil, izole bir **Execution Worker (`8099`)** servisinde yürütülür.
+- Bu port bir web sitesi veya kullanıcı arayüzü değildir; yalnızca Backend ile Worker arasındaki makine seviyesinde şifreli bir API'dir.
+- Tarayıcınızla doğrudan bu porta istek attığınızda, sistem güvenlik amacıyla isteği reddeder ve `{"error":"Unauthorized"}` cevabı döner.
+- Kullanıcının bu portu doğrudan ziyaret etmesi gerekmez; Worker'ın yürüttüğü tüm işlemler (derleme logları, test sonuçları, 18 kalite kapısı kontrolleri) anlık olarak ana ön yüzdeki (`5173`) **Loglar**, **DAG Akış Şeması** ve **Kalite Paneli** ekranlarına canlı olarak yansıtılır.
 
 ---
 

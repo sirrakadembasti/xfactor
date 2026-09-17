@@ -55,12 +55,20 @@ cd ..
 ### 2. Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
-Proje kök dizinindeyken tek komutla hem Backend API'yi (`http://127.0.0.1:8000`) hem de Vite Web Arayüzünü (`http://localhost:5173`) eşzamanlı başlatabilirsiniz:
+Proje kök dizinindeyken tek bir `npm run dev` komutuyla sistemin 3 temel servisi eşzamanlı başlatılır:
 ```bash
 npm run dev
 ```
-> Kısıtlı Windows kurumsal ortamlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 
+| Port | Servis | Rolü ve Erişimi |
+|:---:|---|---|
+| **`5173`** | **Frontend (Vite/React)** | **Kullanıcı Arayüzü:** Tarayıcınızda açacağınız ana panel (`http://localhost:5173`). |
+| **`8000`** | **Backend (Web Orchestrator)** | **Platform Beyni:** REST API, SQLite WAL, WebSocket telemetrisi ve 6 yapay zekâ ajanı. |
+| **`8099`** | **Execution Worker** | **İzole Derleyici/Test:** Yapay zekânın ürettiği kodları izole çalıştıran iç servis. |
+
+> ℹ️ **Execution Worker (`8099`) Hakkında:** Bu port tarayıcıyla açılacak bir web sayfası değildir; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile iletişim kurduğu korumalı bir iç RPC servisidir. Tarayıcıdan açıldığında `{"error":"Unauthorized"}` dönmesi güvenlik kalkanının çalıştığını gösterir. Worker'ın derleme ve test logları doğrudan Frontend arayüzündeki **Loglar**, **DAG Akışı** ve **Kalite Paneli** sekmelerine canlı yansıtılır.
+
+> Kısıtlı Windows kurumsal ortamlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 İki ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
