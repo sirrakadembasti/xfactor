@@ -15,13 +15,74 @@ export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
 import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects } from './services/reconciliationService.js';
 
+export function slugifyTitle(title) {
+    if (!title || typeof title !== 'string') return 'proje';
+    const trMap = {
+        'ç': 'c', 'Ç': 'c',
+        'ğ': 'g', 'Ğ': 'g',
+        'ı': 'i', 'İ': 'i', 'I': 'i',
+        'ö': 'o', 'Ö': 'o',
+        'ş': 's', 'Ş': 's',
+        'ü': 'u', 'Ü': 'u'
+    };
+    let slug = String(title)
+        .replace(/[çÇğĞıİIöÖşŞüÜ]/g, ch => trMap[ch] || ch)
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    if (!slug) slug = 'proje';
+    return slug.slice(0, 48);
+}
 
-export async function createProject({ title, ownerUserId = null, env = process.env } = {}) {
+export function generateNextProjectId(title, { database = db, env = process.env } = {}) {
+    const slug = slugifyTitle(title);
+    const root = getProjectsRoot(env);
+    let maxSeq = 0;
+
+    try {
+        if (database) {
+            const rows = database.prepare('SELECT id FROM projects WHERE id = ? OR id LIKE ?').all(slug, `${slug}-%`);
+            for (const r of rows) {
+                if (r.id === slug) {
+                    maxSeq = Math.max(maxSeq, 1);
+                } else {
+                    const match = r.id.match(new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`));
+                    if (match) {
+                        maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
+                    }
+                }
+            }
+        }
+    } catch {}
+
+    try {
+        if (fsSync.existsSync(root)) {
+            const entries = fsSync.readdirSync(root, { withFileTypes: true });
+            for (const d of entries) {
+                if (!d.isDirectory()) continue;
+                if (d.name === slug) {
+                    maxSeq = Math.max(maxSeq, 1);
+                } else {
+                    const match = d.name.match(new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`));
+                    if (match) {
+                        maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
+                    }
+                }
+            }
+        }
+    } catch {}
+
+    const nextSeq = maxSeq + 1;
+    return `${slug}-${nextSeq}`;
+}
+
+export async function createProject({ title, ownerUserId = null, env = process.env, customId = null } = {}) {
     if (!validateProjectTitle(title || '')) {
         throw new Error('Geçerli bir proje başlığı (title) gerekli.');
     }
     const cleanTitle = title.replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ\s-_]/g, '').trim() || 'İsimsiz Proje';
-    const id = `project-${crypto.randomUUID()}`;
+    const id = customId || generateNextProjectId(cleanTitle, { database: db, env });
     const projectDir = getProjectDir(id, env);
 
     const initialWelcomeMessage = `Merhaba Boss! "${cleanTitle}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;

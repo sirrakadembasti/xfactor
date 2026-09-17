@@ -48,7 +48,7 @@ await runAsyncTest('2. Path containment must strictly reject path traversal, nul
 
 await runAsyncTest('3. createProject should generate UUIDv4 ID, write SQLite transaction and create disk directory', async () => {
     const repo = await import('../projectRepository.js');
-    const { createProject, getProjectDir } = repo;
+    const { createProject, getProjectDir, isValidProjectId } = repo;
     const { createUser } = await import('../auth.js');
     const customRoot = await import('fs/promises').then(fs => fs.mkdtemp(path.join(os.tmpdir(), 'create-test-')));
     const env = { PROJECTS_ROOT: customRoot };
@@ -56,8 +56,8 @@ await runAsyncTest('3. createProject should generate UUIDv4 ID, write SQLite tra
     const owner = createUser(`owner${Date.now()}`, 'StrongPassword!2026');
     const project = await createProject({ title: 'Otonom E-Ticaret Projesi', ownerUserId: owner.id, env });
 
-    assert.match(project.id, /^project-[a-f0-9-]{36}$/, 'Project ID must use UUIDv4 format');
-    assert.strictEqual(project.title, 'Otonom E-Ticaret Projesi');
+    assert.ok(isValidProjectId(project.id), 'Project ID must be valid format');
+    assert.ok(project.id.startsWith('otonom-e-ticaret-projesi-'), 'Project ID must use readable title slug format');
     assert.strictEqual(project.status, 'planning');
     assert.ok(Array.isArray(project.chatHistory) && project.chatHistory.length > 0);
 

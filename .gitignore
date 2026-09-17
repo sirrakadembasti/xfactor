@@ -6,7 +6,7 @@ test-sandbox/
 
 # Generated project workspaces
 projects/*/
-!projects/project-f2226560-c4b5-4147-a7b5-aeb9f7df95fb/
+!projects/todo-app-1/
 .DS_Store
 dist/
 frontend/dist/
