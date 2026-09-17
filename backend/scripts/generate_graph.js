@@ -214,7 +214,6 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/engine/workflow.js', 'verifies');
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('frontend/src/utils/__tests__/dagLayout.test.js', 'frontend/src/utils/dagLayout.js', 'verifies');
-    addLink('backend/tests/test_runner.js', 'backend/tests/test_scaffold_auth_standards.js', 'runs');
     addLink('backend/tests/test_scaffold_auth_standards.js', 'backend/engine/codeGenerator.js', 'verifies');
 
     const graphData = { nodes, links };

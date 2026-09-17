@@ -412,7 +412,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 14.5
+      "val": 14
     },
     {
       "id": "backend/tests/test_test_harness.js",
@@ -637,7 +637,7 @@
       "group": "tests",
       "file": "backend/tests/test_scaffold_auth_standards.js",
       "description": "Pragmatik auth ve seed iskele standartları birim testleri",
-      "val": 2.5
+      "val": 2
     }
   ],
   "links": [
@@ -1110,11 +1110,6 @@
       "source": "frontend/src/utils/__tests__/dagLayout.test.js",
       "target": "frontend/src/utils/dagLayout.js",
       "label": "verifies"
-    },
-    {
-      "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_scaffold_auth_standards.js",
-      "label": "runs"
     },
     {
       "source": "backend/tests/test_scaffold_auth_standards.js",

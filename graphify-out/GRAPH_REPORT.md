@@ -2,13 +2,13 @@
 
 **Oluşturulma Tarihi:** 2026-09-17  
 **Toplam Düğüm (Nodes):** 71  
-**Toplam Bağlantı (Edges):** 96  
+**Toplam Bağlantı (Edges):** 95  
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
 
 ---
 
 ## 🌟 Çekirdek Odak Düğümleri ("God Nodes" & Merkez Bileşenler)
-1. **backend/tests/test_runner.js**: 27 bağlantı — npm test master koşucusu
+1. **backend/tests/test_runner.js**: 26 bağlantı — npm test master koşucusu
 2. **backend/engine/workflow.js**: 12 bağlantı — Paralel DAG dalgalarını yürüten ana iş akışı komutanı
 3. **docs/ORKESTRASYON-TALIMATNAMESI.md**: 11 bağlantı — Platformun en üst master orkestrasyon anayasası
 4. **backend/agents/index.js**: 9 bağlantı — Merkezi Ajan Kayıt Defteri ve getAgent() fabrikası
