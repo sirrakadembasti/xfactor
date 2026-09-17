@@ -380,7 +380,7 @@ npm run graph
 ```
 
 Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
-1. **`graphify-out/graph.json`:** 69 düğüm (node) ve 92 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
+1. **`graphify-out/graph.json`:** 71 düğüm (node) ve 95 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
 2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif, sürüklenebilir ve filtrelenebilir **2D/3D Kod Ağ Haritası**.
 3. **`graphify-out/GRAPH_TREE.html`:** Renk kodlu rozetlerle (Docs, Agents, Engine, Backend, Frontend, Tests) modül hiyerarşisini gösteren **Hiyerarşik Ağaç Görünümü**.
 4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
@@ -392,7 +392,90 @@ Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktıl
 - `backend/agents/index.js` — 9 bağlantı ile ajan fabrikası ve kayıt defteri.
 - `backend/routes/projectRoutes.js` — 8 bağlantı ile REST API ve revizyon merkezi.
 - `frontend/src/App.jsx` — 8 bağlantı ile React 18 kullanıcı arayüzü kökü.
+
 ---
+
+### 3. Ön Yüz (Frontend) Dosya ve Bileşen Mimarisi Tablosu
+
+XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilmiş olup aşağıdaki modüler bileşenlerden oluşur:
+
+| Dosya / Yol | Türü / Katman | İşlev ve Mimari Sorumluluğu |
+|---|:---:|---|
+| `frontend/src/App.jsx` | Ana Koordinatör | React uygulamasının kök bileşenidir. Kimlik durumu kontrolü, WebSocket canlı telemetri dinleyicisi, proje seçimi, hata banner'ı ve sekmelerin orkestrasyonunu yürütür. |
+| `frontend/src/components/Sidebar.jsx` | Gezinme Menüsü | Sol proje listesi; arama çubuğu, başa sabitleme (`Pin`), tamamlanan projeler için doğrulanmış ZIP indirme butonu, disk senkronizasyon butonu ve güvenli proje silme işlemlerini barındırır. |
+| `frontend/src/components/Header.jsx` | Üst Çubuk | Aktif projenin durumunu, sekme butonlarını (Sohbet, Akış Şeması, Kod Editörü, Loglar, Kalite Paneli), doğrulanmış ZIP indirme rozetini ve SHA-256 hash özetini sunar. |
+| `frontend/src/components/ChatView.jsx` | Sohbet Paneli | Manager (Kıdemli Mimar) ile yapılan gerçek zamanlı sohbet ekranıdır. Beyin fırtınası, şartname oluşturma, plan onaylama (`Planı Onayla ve Başlat`) ve duraklatılmış projede revizyon taleplerini yönetir. |
+| `frontend/src/components/DAGFlowView.jsx` | Canlı Graf | ReactFlow tabanlı canlı DAG (Directed Acyclic Graph) görselleştiricisidir. Görevlerin hiyerarşik durumlarını (`bekliyor`, `çalışıyor`, `tamamlandı`, `veto`) renkli düğümler halinde çizer. |
+| `frontend/src/utils/dagLayout.js` | Layout Motoru | 6 gerçek ajan rolünün (`Manager`, `Director`, `Teamleader`, `Coder`, `Reviewer`, `Tester`) ve atomik görevlerin hiyerarşik x/y koordinatlarını hesaplar; dummy düğümleri filtreler. |
+| `frontend/src/components/IDEView.jsx` | Kod Editörü | Üretilen projenin dosya ağacını ve kaynak kodlarını Monaco Editor üzerinden syntax highlighting ile inceleme imkânı sağlar. |
+| `frontend/src/components/LogsView.jsx` | Canlı Loglar | Orkestrasyon sırasında ajanların ürettiği satır satır tüm terminal ve eylem loglarını gösterir; ajan ve eyleme göre anlık filtreleme sunar. |
+| `frontend/src/components/DashboardView.jsx` | Kalite Paneli | 18 Kalite kapısının makine tarafından doğrulanmış bağımsız kanıtlarını, SHA-256 çıktı özetlerini ve sürelerini salt-okunur olarak listeler. |
+| `frontend/src/components/LoginView.jsx` | Giriş Ekranı | Varsayılan `admin` / `xfactor` bilgileriyle hazır gelen, MFA/TOTP adımlarını destekleyen ve tek tıkla girişe olanak tanıyan kullanıcı giriş panelidir. |
+| `frontend/src/services/api.js` | API İstemcisi | Backend ile iletişim kuran, 24 saatlik HttpOnly oturum çerezi ve CSRF token yönetimini sağlayan, istek zaman aşımı (timeout) korumalı merkezi fetch modülüdür. |
+
+---
+
+### 4. Arka Yüz (Backend) Ana Dizin Dosya Mimarisi Tablosu
+
+`backend/` ana dizininde yer alan 22 adet JavaScript kaynak dosyası ve rolleri:
+
+| Dosya Adı | Kategori / Katman | Detaylı İşlev ve Mimari Sorumluluğu |
+|---|:---:|---|
+| `server.js` | Sunucu / Giriş | REST API ve WebSocket sunucusunu ayağa kaldırır, veritabanını başlatır, `admin/xfactor` kullanıcısını garanti eder ve diskteki projeleri otomatik senkronize eder. |
+| `lifecycle.js` | Yaşam Döngüsü | `SIGINT`/`SIGTERM` anında WebSocket bağlantılarını, HTTP sunucusunu kapatan ve SQLite WAL checkpoint'ini diske yazan zarif kapanma (graceful shutdown) koordinatörüdür. |
+| `maintenance.js` | Bakım Zamanlayıcı | 15 dakikalık periyotlarla süresi dolmuş veya iptal edilmiş oturumları veritabanından temizleyerek şişmeyi önler. |
+| `productionStatic.js` | Statik Sunucu | Üretim ortamında Vite ile derlenmiş ön yüz dosyalarını sunar; SPA yönlendirmelerini (`isSpaNavigation`) yönetir. |
+| `websocketHub.js` | Gerçek Zamanlı İletişim | Proje bazlı WebSocket odaları yönetir; yapay zekâ kod yazarken logları ve DAG durumlarını ön yüze anında canlı akıtır. |
+| `networkResolver.js` | Ağ & DNS Kurtarma | Kurumsal veya kısıtlı ağlarda Node.js varsayılan IPv6 DNS çözümü tıkandığında doğrudan yerel IPv4 (`dns.resolve4`) çözümlemesine düşerek LLM bağlantısını korur. |
+| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; 1'den 13'e kadar sıralı ve geriye dönük uyumlu 13 adet şema göçünü (migrations) ve olay yayıncısını (`dbEvents`) barındırır. |
+| `projectRepository.js` | Kanonik Depo | Projelerin oluşturulması, okunması, güncellenmesi ve güvenli silinmesi işlemlerinin tek otoritesidir; başlıktan temiz klasör adı ve kısa numara (`slug-no`) üretir. |
+| `workflowAttempts.js` | Kilit & Heartbeat | Bir projede birden fazla motorun aynı anda çalışmasını engellemek için `workflow_attempts` üzerinde kiralama (lease) alır ve kalp atışı gönderir; çöken süreçleri kurtarır. |
+| `backupRestore.js` | Yedekleme & Kurtarma | Veritabanı ve `projects/` dizinini sıkıştırılmış `.tar.gz` arşivi olarak yedekleyen veya geri yükleyen felaket kurtarma motorudur. |
+| `auth.js` | Kimlik & RBAC | Parolaları Scrypt ile tuzlayarak hash'ler; Google Authenticator uyumlu RFC-6238 TOTP üretir ve doğrular; proje sahiplik rollerini (`owner`, `editor`, `viewer`) denetler. |
+| `security.js` | Güvenlik Kalkanı | Path traversal sızma girişimlerini, CSRF saldırılarını, güvensiz WebSocket isteklerini ve XSS içeriklerini engeller; CSP, Frameguard ve HSTS başlıklarını ekler. |
+| `sessionAuth.js` | Oturum Yönetimi | 24 saat geçerli, HttpOnly ve SameSite nitelikli `xfactor_session` çerezini üretir; `createRequireAuth` middleware'i ile yetkisiz istekleri 401 ile keser. |
+| `llm.js` | AI Yönlendirici | Google Gemini 3.8 Flash (ve OpenAI) modelleriyle konuşur; 60 saniyelik zaman aşımı ve kooperatif iptal (`AbortSignal`) ile takılan çağrıları güvenle keser. |
+| `executionClient.js` | Worker İstemcisi | Bağımlılık hazırlığı ve temiz oda testlerini `http://127.0.0.1:8099` portundaki izole Execution Worker servisine Bearer token ile delege eder. |
+| `config.js` | Yapılandırma | Çalışma zamanı çevre değişkenlerini doğrular; port, veritabanı yolu, sandbox modu ve CORS izin listesini standardize eder. |
+| `projectPaths.js` | Dosya Yolu Muhafızı | `projects/` kök dizinini yönetir; proje kimlik formatını (`/^[a-zA-Z0-9_-]{3,64}$/`) denetler ve klasör dışına taşma ihlallerini engeller. |
+| `artifactPaths.js` | Artefakt Yolu | Kalite kapılarından geçen onaylı ZIP paketlerinin saklandığı `backend/data/artifacts/` dizinini izole eder. |
+| `artifactInventory.js` | Paket Envanteri | Proje dosyalarını tarayarak temiz oda testleri için gereken göreceli dosya yollarını ve boyutlarını listeler. |
+| `artifactLimits.js` | Boyut Sınırları | Üretilen ZIP dosyalarının maksimum boyutunu (24MB arşiv, 20MB açılmış içerik, 500 dosya sınırı) sabitleyen kuralları içerir. |
+| `generatedIdentifiers.js` | İsim Normalizatörü | Yapay zekânın ürettiği domain ve görev isimlerindeki geçersiz karakterleri temizleyerek dosya sisteminde güvenle klasör açılmasını sağlar. |
+| `observability.js` | Telemetri & Redaction | Sistemdeki tüm logları yapılandırılmış JSON olarak yazar; loglardaki şifreleri, API anahtarlarını ve token'ları `[REDACTED]` olarak otomatik maskeler. |
+
+---
+
+### 5. Arka Yüz (Backend) Alt Klasör Mimarisi Tablosu
+
+`backend/` altında bulunan 12 işlevsel modül klasörü:
+
+| Klasör Adı | Dosya Sayısı | Katman / Görev | Mimari Sorumluluğu |
+|---|:---:|:---:|---|
+| `backend/agents/` | 9 Dosya | Yapay Zekâ Rolleri | 6 seviyeli ajan personelleri (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), şema kurtarıcı (`schemas.js`) ve yaşayan anayasa köprüsü (`agentLoader.js`). |
+| `backend/engine/` | 13 Dosya | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), deterministik DAG (`dag.js`), durum makinesi (`stateMachine.js`), scaffold koruması (`codeGenerator.js`), veto döngüsü (`selfCorrection.js`) ve derleyici denetleyicisi (`buildValidator.js`). |
+| `backend/routes/` | 3 Dosya | REST API Rotaları | Ön yüzün konuştuğu HTTP uç noktaları: `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz onaylı ZIP indirme). |
+| `backend/verification/` | 24 Dosya | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
+| `backend/services/` | 1 Dosya | Senkronizasyon Servisi | `reconciliationService.js`: `projects/` dizinindeki klasörleri tarayarak SQLite veritabanı ve admin kullanıcısıyla anlık çift yönlü senkronize eden servis. |
+| `backend/contracts/` | 3 Dosya | Sözleşme & İzlenebilirlik | Sürümlü sözleşmeler (`projectContract.js`), kullanıcı isterlerinin kodla 1:1 eşleştirilmesi (`traceability.js`) ve şablon kirliliği denetimi (`domainPolicy.js`). |
+| `backend/repositories/` | 2 Dosya | Veri Deposu | Kalite koşuları (`verificationRepository.js`) ve onaylı ZIP paketlerini (`artifactRepository.js`) veritabanına bağlayan veri erişim katmanı. |
+| `backend/crypto/` | 1 Dosya | Şifreleme | `mfaCrypto.js`: TOTP gizli anahtarlarını AES-256-GCM ile şifreleyen ve çözen kriptografik modül. |
+| `backend/utils/` | 1 Dosya | Arşiv Yöneticisi | `archive.js`: Projeleri güvenli biçimde ZIP paketine dönüştüren ve Zip-Slip saldırılarını engelleyen arşivleme aracı. |
+| `backend/scripts/` | 4 Dosya | CLI Araçları | `generate_graph.js` (Graphify motoru), `create_admin.js` (yönetici parola aracı), `backup.js` & `restore.js` (yedekleme araçları). |
+| `backend/data/` | 3 Dosya | Canlı Veri | SQLite veritabanı dosyaları: `projects.db`, WAL (`projects.db-wal`) ve paylaşımlı bellek (`projects.db-shm`). |
+| `backend/tests/` | 120 Dosya | Test Ekosistemi | Sistemin tüm parçalarını gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde doğrulayan 114 test süiti ve master test koşucusu (`test_runner.js`). |
+
+---
+
+### 6. Diğer Kritik Sistem Klasörleri Tablosu
+
+| Klasör / Yol | Katman | Açıklama ve Görevi |
+|---|:---:|---|
+| `execution/` | İzole Execution Worker | Port `8099` üzerinde çalışan; yapay zekânın ürettiği kodları ana backend'den tamamen ayrı bir sandbox/container içinde güvenle derleyen ve test eden bağımsız işçi servisi. |
+| `e2e/` | Playwright E2E Testleri | Sistemin kullanıcı arayüzünü gerçek Chromium tarayıcısı açarak (giriş yapma, TOTP doğrulama, DAG çizimi, Monaco IDE, gerçek ZIP indirme) uçtan uca test eden senaryo süitleri. |
+| `scripts/` | Operasyonel Betikler | `dev.mjs` (tüm servisleri tek komutla başlatan dev koşucusu) ve CI üretim imaj sözleşme test betikleri (`test-p6-production-image.mjs`). |
+| `projects/` | Proje Çalışma Alanı | Kullanıcıların ürettiği tüm uygulamaların fiziksel olarak yaşadığı klasör (`projects/<uygulama-adi>-<no>/`). |
+| `docs/` | Canlı Anayasa & Dokümanlar | `ORKESTRASYON-TALIMATNAMESI.md` ve 6 ajan için çalışma zamanında doğrudan LLM sistem istemlerine enjekte edilen yaşayan kural dosyaları (`manager.md`, `coder.md` vb.). |
 
 ## 11. 18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)
 
