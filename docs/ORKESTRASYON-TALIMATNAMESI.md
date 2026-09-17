@@ -105,6 +105,16 @@
   1. Proje manifestosunu (rotalar, modeller, şemalar, tipler, ortam değişkenleri, bağımlılık grafiği) kabul kriterleriyle karşılaştırır.
   2. Compiler ve tip denetimi sonuçlarını değerlendirerek nihai `RAPOR.md` ve son kullanıcıya yönelik temiz `README.md` dosyasını üretir.
 
+### Pragmatic Application Auth Standard
+
+Uygulama kimlik doğrulama mimarisinde tüm katmanlar (Manager, Director, Teamleader, Coder) için geçerli olan standartlar:
+1. **Standart Auth Rotaları:** Giriş/Kayıt gerektiren uygulamalarda `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` rotaları esastır.
+2. **JWT & Oturum Çerezi:** Kimlik doğrulamada standart JWT (`Authorization: Bearer <token>`) veya sade session cookie tercih edilir. Kullanıcıyı kilitleyen aşırı karmaşık TOTP/MFA veya ağır CSRF kısıtları konulmaz.
+3. **Parola Güvenliği:** Parolalar açık metin saklanmaz; Node.js yerleşik `crypto.scryptSync` veya `bcrypt` / `bcryptjs` ile hash'lenir.
+4. **Sade Rol Yapısı:** Rol mekanizması sade tutulur (`admin` ve `user`, `user.role === 'admin'`).
+5. **Varsayılan Seed Hesabı:** Başlangıç veritabanı seed işleminde varsayılan yönetici hesabı `admin` / `admin123` olarak tanımlanır.
+6. **Yalnızca Talep Edildiğinde Karmaşıklık:** Kullanıcı spesifik olarak istemediği sürece zorunlu 2FA/MFA, SMS doğrulama veya karmaşık ABAC altyapıları kurulmaz.
+
 ---
 
 ## 3. Çok Katmanlı Kalite Kapıları ve Derleme Denetimi

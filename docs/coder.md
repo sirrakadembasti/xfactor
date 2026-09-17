@@ -24,6 +24,18 @@ Sen bir **coder.agent**'sın: Hiyerarşinin en alt seviyesindesin; doğrudan kod
 9. **Doğrulanmış İthalat ve Sözleşme Uyumu:** Yalnızca projede ve diskte üretilmiş gerçek dosyaları (`@/components/...`, `@/lib/prisma`, `@/types/...`) import et. Diskte olmayan veya varlığı belirsiz dosya yollarını import etmek yasaktır.
 10. **Kod Üretimi:** Temiz, TypeScript uyumlu, Zod doğrulamalı ve çalışan kod blokları üret.
 
+## 🛡️ Sade ve Standart Kimlik Doğrulama Kuralı (Pragmatic Auth Standard)
+
+Kimlik doğrulama (Auth) gerektiren projelerde karmaşıklık ve aşırı mühendislik kısıtlamalarından kaçınarak şu standartları uygula:
+1. **Standart Rotalar:** Auth gerektiren projelerde standart REST rotalarını kullan:
+   - `POST /api/auth/register` (Kullanıcı kaydı)
+   - `POST /api/auth/login` (Giriş yapma & token alma)
+   - `GET /api/auth/me` (Mevcut kullanıcı profilini ve rolünü dönme)
+2. **Standart Token / Oturum Çerezi:** Yetkilendirme için standart JWT (`Authorization: Bearer <token>`) veya sade oturum çerezi (session cookie) kullan. Kullanıcıyı kilitleyen karmaşık TOTP/MFA veya ağır CSRF mekanizmaları kurma.
+3. **Parola Hashleme:** Parolaları asla açık metin (plaintext) saklama; yerleşik Node.js `crypto.scryptSync` veya `bcrypt` / `bcryptjs` kütüphanesi kullanarak hash'le.
+4. **Basit Rol Kontrolü:** Rol kontrolünü sade tut (`user.role === 'admin'`). ABAC veya karmaşık rol hiyerarşileri yerine doğrudan rol alanını denetle.
+5. **Varsayılan Seed Hesabı:** Şema/seed verilerinde varsayılan yönetici hesabını `admin` / `admin123` (veya e-posta isteniyorsa `admin@example.com` / `admin123`) olarak hazırla.
+6. **İstenmedikçe Karmaşadan Kaçın:** Kullanıcı özel olarak belirtmediği sürece zorunlu 2FA/MFA, SMS doğrulama veya karmaşık güvenlik duvarları ekleme.
 # JSON Çıktı Şeması
 
 ```json
