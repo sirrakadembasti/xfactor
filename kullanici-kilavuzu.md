@@ -235,10 +235,11 @@ npm run dev
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
 Sol kenar çubuğunda her proje kartının yanında üç nokta (`...`) işlem butonu yer alır:
-- 📌 **Başa Sabitle / Sabitlemeyi Kaldır (`Pin / Unpin`)**
-- ✏️ **Yeniden Adlandır (`Rename`)**
-- ⬇️ **Projeyi (ZIP) İndir (`Download ZIP`)**
-- 🗑️ **Projeyi Sil (`Delete`)**
+- 📌 **Başa Sabitle / Sabitlemeyi Kaldır (`Pin / Unpin`):** Projeyi listenin en üstüne sabitler veya sabitlemeyi kaldırır.
+- ⬇️ **Projeyi (ZIP) İndir (`Download ZIP`):** Tamamlanmış (`COMPLETED`) projeleri doğrudan yan menüden doğrulanmış ZIP paketi olarak bilgisayarınıza indirir.
+- 🗑️ **Uygulamayı Kaldır / Projeyi Sil (`Delete`):** Projeyi veritabanı ve diskten güvenle kaldırır; çöp işlemleri işletim sisteminin geçici dizininde (`os.tmpdir()`) izole edilir, `projects/` dizininde gereksiz boş `.trash` klasörü bırakılmaz.
+
+> **Not:** Diskte fiziksel klasörü bulunmayan projeler yan menüde `(Diskte Bulunamadı)` uyarısıyla anlık olarak tespit edilir ve güvenle temizlenebilir.
 
 ---
 
@@ -334,9 +335,11 @@ Tüm testler merkezi **`backend/tests/test_runner.js`** altındaki master koşuc
 ### S: LLM çıktısı token sınırına takılırsa veya Reviewer veto ederse ne olur?
 **C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Eğer bir görev 2 tur sonunda tamamlanamazsa Reviewer güvenli modda **VETO** verir ve projeyi `PAUSED` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuna basarak orkestrasyonu güvenle sürdürebilirsiniz.
 
-### S: Tamamlanmış bir projeyi sohbetten değiştirebilir miyim?
-**C:** Evet. Tamamlanmış bir projede sohbet paneline girip revizyon istediğinizde Manager yeni planı oluşturur ve onay butonunu açar; onayladığınızda gerçek DAG motoru projeyi sıfırdan revize eder.
+### S: Tamamlanmış veya duraklatılmış bir projeyi sohbetten değiştirebilir miyim?
+**C:** Evet. Tamamlanmış, duraklatılmış (`PAUSED`) veya doğrulama hatası almış (`VERIFICATION_FAILED`) bir projede sohbet paneline girip revizyon istediğinizde (örn: *"1"*, *"baştan başla"*, *"şunu ekle"*); Manager yeni mimari şartnameyi hazırlar, yeni bir sözleşme revizyonu açar ve sohbetin altında yeşil **"Planı Onayla ve Başlat"** onay kartını sunar. Onayladığınızda otonom motor yeni plan doğrultusunda temiz üretime geçer.
 
+### S: Log ekranındaki hataları nasıl yorumlamalıyım?
+**C:** XFactor'da log ekranında anlamsız hexadecimal referans kodları gösterilmez; doğrudan insan tarafından anlaşılabilir net Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) basılır. Ayrıca Docker'ın çalışmadığı geliştirme ortamlarında sistem otomatik olarak yerel host üzerinden kilit dosyası (`package-lock.json`) üretme fallback'ini devreye sokarak döngüsel kilitlenmeleri engeller.
 
 ---
 
