@@ -2,9 +2,16 @@ import { parse } from '@babel/parser';
 
 const SECRET_NAME_PATTERN = /(?:JWT_SECRET|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_PASSWORD|AUTH_SECRET|ACCESS_TOKEN_SECRET|REFRESH_TOKEN_SECRET)/i;
 const MUTATION_METHODS = new Set(['post', 'put', 'delete', 'patch']);
-const AUTH_MIDDLEWARE_PATTERN = /(?:auth|jwt|protect|token|user|session|guard)/i;
+const AUTH_MIDDLEWARE_PATTERN = /(?:auth|jwt|protect|token|user|session|guard|passport|verify|security)/i;
 const AUTH_FILE_TOKENS = new Set(['auth', 'authentication', 'login', 'jwt']);
 const AUTH_LOGIC_PATTERN = /(?:from\s+['"]jsonwebtoken['"]|require\s*\(\s*['"]jsonwebtoken['"]\s*\)|['"`]\/(?:api\/)?(?:auth|login|logout|register|session)\b|type\s*=\s*['"]password['"]|\b(?:jwt|jsonwebtoken)\s*\.|\b(?:signIn|logIn|authenticateUser)\s*\()/i;
+const PUBLIC_AUTH_ROUTE_PATTERN = /^(?:\/api)?(?:\/v\d+)?\/(?:auth(?:\/(?:login|register|signin|signup|token|refresh|logout|forgot-password|reset-password|verify|session)?)?|login|register|signin|signup|token|refresh)$/i;
+
+function isPublicAuthRoute(routePath) {
+    if (!routePath || typeof routePath !== 'string') return false;
+    const normalized = routePath.split('?')[0].replace(/\/+$/, '');
+    return PUBLIC_AUTH_ROUTE_PATTERN.test(normalized);
+}
 
 function hasAuthFileToken(filePath) {
     const basename = filePath.split(/[\\/]/).pop() || '';
@@ -38,6 +45,9 @@ function checkAuthNode(node) {
     if (node.type === 'ArrayExpression') {
         const elements = node.elements || [];
         return elements.some(checkAuthNode);
+    }
+    if (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') {
+        return containsNodeType(node.body, checkAuthNode);
     }
     return false;
 }
@@ -190,8 +200,14 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
                 const propLower = prop ? prop.toLowerCase() : '';
                 if (MUTATION_METHODS.has(propLower) && Array.isArray(node.arguments) && node.arguments.length >= 2) {
                     const firstArg = node.arguments[0];
-                    const routePath = (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') ? firstArg.value : '';
-                    if (!hasAuthMiddleware(node.arguments)) {
+                    let routePath = '';
+                    if (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') {
+                        routePath = String(firstArg.value || '');
+                    } else if (firstArg.type === 'TemplateLiteral') {
+                        routePath = firstArg.quasis.map(q => q.value?.cooked || q.value?.raw || '').join('');
+                    }
+
+                    if (!isPublicAuthRoute(routePath) && !hasAuthMiddleware(node.arguments)) {
                         issues.push(`Mandatory authentication missing on mutate route ${propLower.toUpperCase()} ${routePath || 'unknown'} in ${file.path}`);
                     }
                 }

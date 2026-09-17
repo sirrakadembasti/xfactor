@@ -266,6 +266,49 @@ if (!filteredTest || filteredTest === 'missing-auth') {
         assert.strictEqual(res.passed, true);
         assert.strictEqual(res.issues.length, 0);
     });
+
+    await runAsyncTest('P2.4.3: verifySecurityBaseline permits public auth mutate routes (POST /api/auth/login, POST /api/auth/register) without requiring auth middleware', async () => {
+        const contract = {
+            name: 'Protected Application',
+            authentication: { required: true }
+        };
+
+        const files = [
+            {
+                path: 'src/routes/auth.js',
+                content: `
+                    import express from 'express';
+                    const router = express.Router();
+
+                    router.post('/api/auth/login', (req, res) => res.json({ token: 'xyz' }));
+                    router.post('/api/auth/register', (req, res) => res.json({ id: 1 }));
+
+                    export default router;
+                `
+            },
+            {
+                path: 'src/routes/todos.js',
+                content: `
+                    import express from 'express';
+                    import { authenticateToken } from '../middleware/auth.js';
+                    const router = express.Router();
+
+                    router.post('/api/todos', authenticateToken, (req, res) => res.json({ created: true }));
+                    router.post('/api/todos/unprotected', (req, res) => res.json({ error: true }));
+
+                    export default router;
+                `
+            }
+        ];
+
+        const res = verifySecurityBaseline(contract, files);
+        assert.strictEqual(res.passed, false, 'Expected baseline check to fail due to /api/todos/unprotected');
+        assert.strictEqual(res.issues.length, 1);
+        assert.ok(res.issues[0].includes('POST /api/todos/unprotected'));
+        assert.ok(!res.issues.some(i => i.includes('/api/auth/login')), 'Public login route should not trigger issue');
+        assert.ok(!res.issues.some(i => i.includes('/api/auth/register')), 'Public register route should not trigger issue');
+        assert.ok(!res.issues.some(i => i.includes('POST /api/todos ')), 'Protected business route with middleware should not trigger issue');
+    });
 }
 
 if (!filteredTest || filteredTest === 'unsolicited-auth') {
