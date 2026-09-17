@@ -7,7 +7,7 @@
       "group": "docs",
       "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "description": "Platformun en üst master orkestrasyon anayasası",
-      "val": 6
+      "val": 6.5
     },
     {
       "id": "docs/manager.md",
@@ -79,6 +79,15 @@
       "group": "docs",
       "file": "docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md",
       "description": "Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği",
+      "val": 1.5
+    },
+    {
+      "id": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
+      "label": "2026-09-17 Pragmatik Auth Standart Planı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
+      "description": "Sade auth, seed ve login esneklik planı",
       "val": 1.5
     },
     {
@@ -214,7 +223,7 @@
       "group": "engine",
       "file": "backend/engine/codeGenerator.js",
       "description": ".env, Next 14.2, Vite ve Express şablon koruması",
-      "val": 1.5
+      "val": 2
     },
     {
       "id": "backend/engine/selfCorrection.js",
@@ -403,7 +412,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 13.5
+      "val": 14.5
     },
     {
       "id": "backend/tests/test_test_harness.js",
@@ -620,6 +629,15 @@
       "file": "frontend/src/utils/__tests__/dagLayout.test.js",
       "description": "DAG layout 6-ajan hiyerarşisi ve dummy düğüm temizlik testleri",
       "val": 2
+    },
+    {
+      "id": "backend/tests/test_scaffold_auth_standards.js",
+      "label": "test_scaffold_auth_standards.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_scaffold_auth_standards.js",
+      "description": "Pragmatik auth ve seed iskele standartları birim testleri",
+      "val": 2.5
     }
   ],
   "links": [
@@ -661,6 +679,11 @@
     {
       "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
       "label": "defines"
     },
     {
@@ -1024,6 +1047,11 @@
       "label": "runs"
     },
     {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_scaffold_auth_standards.js",
+      "label": "runs"
+    },
+    {
       "source": "backend/tests/test_backend.js",
       "target": "backend/server.js",
       "label": "verifies"
@@ -1081,6 +1109,16 @@
     {
       "source": "frontend/src/utils/__tests__/dagLayout.test.js",
       "target": "frontend/src/utils/dagLayout.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_scaffold_auth_standards.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_scaffold_auth_standards.js",
+      "target": "backend/engine/codeGenerator.js",
       "label": "verifies"
     }
   ]
