@@ -1,3 +1,4 @@
+import fsSync from 'fs';
 import assert from 'assert';
 import path from 'path';
 import fs from 'fs/promises';
@@ -46,7 +47,7 @@ try {
         await fs.writeFile(path.join(projectDir, 'RAPOR.md'), raporContent, 'utf8');
 
         // Execute rehydration
-        const result = rehydrateProjectStateFromDisk(projectDir, { projectId, database });
+        const result = await rehydrateProjectStateFromDisk(projectDir, { projectId, database });
 
         assert.strictEqual(result.success, true, 'rehydrateProjectStateFromDisk must return success: true');
         assert.strictEqual(result.status, 'completed', 'Project status must be completed');
@@ -94,7 +95,7 @@ try {
         await fs.writeFile(path.join(tlDir, 'TODO.md'), '| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n| 1 | task-1 | Init DB | — | bekliyor |\n', 'utf8');
 
         // Run autoRegisterDiscoveredProjects
-        const regRes = autoRegisterDiscoveredProjects({ projectsRoot: root, database });
+        const regRes = await autoRegisterDiscoveredProjects({ projectsRoot: root, database });
         assert.strictEqual(regRes.success, true);
         assert.ok(regRes.registered.some(p => p.id === diskId), 'Project should be registered');
 
@@ -108,7 +109,7 @@ try {
 
         // Test reconciliation rehydrating missing plan
         database.prepare('UPDATE projects SET plan = NULL, workflow_state = NULL WHERE id = ?').run(diskId);
-        const recRes = reconcileProjectsWithDisk({ projectsRoot: root, database });
+        const recRes = await reconcileProjectsWithDisk({ projectsRoot: root, database });
         assert.strictEqual(recRes.success, true);
 
         const restoredRow = database.prepare('SELECT plan, workflow_state FROM projects WHERE id = ?').get(diskId);
@@ -202,7 +203,7 @@ try {
         await fs.writeFile(path.join(projectDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\nTüm testler onaylandı.', 'utf8');
 
         // 6. Execute rehydrateProjectLogsFromDisk
-        const result = rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        const result = await rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
         assert.strictEqual(result.success, true, 'rehydrateProjectLogsFromDisk must return success: true');
         assert.strictEqual(result.rehydrated, true, 'Must report rehydrated: true');
         assert.ok(result.count >= 8, `Rehydrated log count should be >= 8, got ${result.count}`);
@@ -225,7 +226,7 @@ try {
         assert.ok(task1Logs[0].message.includes('Database Setup'), 'Teamleader log message must include task title');
 
         // Test duplicate invocation protection
-        const dupResult = rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        const dupResult = await rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
         assert.strictEqual(dupResult.rehydrated, false, 'Second rehydration should return rehydrated: false');
         assert.strictEqual(dupResult.count, 0, 'Second rehydration count should be 0');
 
@@ -243,7 +244,7 @@ try {
         await fs.writeFile(path.join(pendingManagerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
         await fs.writeFile(path.join(pendingManagerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
 
-        const pendingResult = rehydrateProjectStateFromDisk(pendingDir, { projectId: pendingId, database });
+        const pendingResult = await rehydrateProjectStateFromDisk(pendingDir, { projectId: pendingId, database });
         assert.strictEqual(pendingResult.success, true);
         assert.strictEqual(pendingResult.status, 'pending_approval', 'Project status must be pending_approval');
 
@@ -263,13 +264,53 @@ try {
         await fs.writeFile(path.join(completedManagerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
         await fs.writeFile(path.join(completedDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\nTüm testler onaylandı.', 'utf8');
 
-        const completedResult = rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
+        const completedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
         assert.strictEqual(completedResult.success, true);
         assert.strictEqual(completedResult.status, 'completed', 'Project status must be completed');
 
         const completedChats = database.prepare('SELECT role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(completedId);
         assert.strictEqual(completedChats.length, 3, 'Completed project must have 3 chat messages (welcome + plan presentation + RAPOR message)');
         assert.ok(completedChats[2].text_content.includes('🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**'), 'Third message must be completion RAPOR');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+    await runAsyncTest('6. completed project rehydrates with a verified artifact and getProject(projectId).latestArtifact is populated with status verified', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-artifact-test-'));
+        const completedId = `proj-art-completed-${Date.now()}`;
+        const completedDir = path.join(tmpDir, completedId);
+        const managerDir = path.join(completedDir, 'manager');
+        await fs.mkdir(managerDir, { recursive: true });
+
+        await fs.writeFile(path.join(completedDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'package.json'), JSON.stringify({ name: 'test-app', version: '1.0.0' }), 'utf8');
+        await fs.writeFile(path.join(completedDir, 'index.js'), 'console.log("hello world");', 'utf8');
+        await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\nTüm testler onaylandı.', 'utf8');
+
+        const completedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
+        assert.strictEqual(completedResult.success, true);
+        assert.strictEqual(completedResult.status, 'completed');
+
+        // Check SQLite artifacts table
+        const artifactRow = database.prepare("SELECT * FROM artifacts WHERE project_id = ? AND status = 'verified'").get(completedId);
+        assert.ok(artifactRow, 'Verified artifact row must exist in database');
+        assert.strictEqual(artifactRow.status, 'verified');
+        assert.ok(artifactRow.sha256, 'Artifact must have sha256 hash');
+        assert.ok(artifactRow.path, 'Artifact must have path');
+        assert.ok(artifactRow.verification_run_id, 'Artifact must have verification_run_id');
+
+        // Verify ZIP file exists on disk
+        assert.strictEqual(fsSync.existsSync(artifactRow.path), true, 'Artifact ZIP file must exist on disk');
+
+        // Check getProject(completedId) returns latestArtifact
+        process.env.PROJECTS_ROOT = tmpDir;
+        const project = getProject(completedId);
+        assert.ok(project, 'getProject must return project');
+        assert.ok(project.latestArtifact, 'project.latestArtifact must be populated');
+        assert.strictEqual(project.latestArtifact.status, 'verified');
+        assert.strictEqual(project.latestArtifact.id, artifactRow.id);
+        assert.strictEqual(project.latestArtifact.sha256, artifactRow.sha256);
+        assert.strictEqual(project.latestArtifact.size, artifactRow.size);
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });

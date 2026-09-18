@@ -131,13 +131,22 @@ export function listArtifacts({ projectId }) {
 }
 
 export function getLatestVerifiedArtifact({ projectId, contractId }) {
+    if (contractId) {
+        return mapArtifactRow(db.prepare(`
+            SELECT *
+            FROM artifacts
+            WHERE project_id = ? AND contract_id = ? AND status = 'verified'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        `).get(projectId, contractId));
+    }
     return mapArtifactRow(db.prepare(`
         SELECT *
         FROM artifacts
-        WHERE project_id = ? AND contract_id = ? AND status = 'verified'
+        WHERE project_id = ? AND status = 'verified'
         ORDER BY created_at DESC, id DESC
         LIMIT 1
-    `).get(projectId, contractId));
+    `).get(projectId));
 }
 
 export function supersedeArtifacts({ projectId, contractId, exceptArtifactId = null }) {

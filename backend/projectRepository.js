@@ -187,7 +187,8 @@ export function getProject(projectId) {
         try { workflow = JSON.parse(project.workflow_state); } catch {}
     }
 
-    const artifact = contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id });
+    const artifact = (contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id }))
+        || getLatestVerifiedArtifact({ projectId });
     const latestArtifact = artifact && {
         id: artifact.id,
         status: artifact.status,
@@ -874,9 +875,9 @@ export async function recoverPendingProjectDeletions({ env = process.env, databa
 
 export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk, rehydrateProjectChatHistoryFromDisk, rehydrateProjectLogsFromDisk };
 
-export function syncProjectsWithDisk(optionsOrEnv = process.env) {
+export async function syncProjectsWithDisk(optionsOrEnv = process.env) {
     if (optionsOrEnv && typeof optionsOrEnv === 'object' && (optionsOrEnv.autoRegister !== undefined || optionsOrEnv.projectsRoot !== undefined || optionsOrEnv.database !== undefined)) {
-        return reconcileProjectsWithDisk(optionsOrEnv);
+        return await reconcileProjectsWithDisk(optionsOrEnv);
     }
-    return reconcileProjectsWithDisk({ env: optionsOrEnv });
+    return await reconcileProjectsWithDisk({ env: optionsOrEnv });
 }
