@@ -142,7 +142,7 @@ export function getProject(projectId) {
     `).get(projectId);
 
     const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
-    const chatHistory = chats.map(c => {
+    let chatHistory = chats.map(c => {
         const timestamp = formatDBDate(c.created_at);
         return {
             id: c.id,
@@ -152,6 +152,19 @@ export function getProject(projectId) {
             created_at: c.created_at
         };
     });
+
+    if (chatHistory.length === 0) {
+        const welcomeText = project.status === 'completed'
+            ? `Merhaba Boss! "${project.title}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
+            : `Merhaba Boss! "${project.title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
+        chatHistory = [{
+            id: 0,
+            role: 'model',
+            parts: [{ text: welcomeText }],
+            timestamp: formatDBDate(project.created_at),
+            created_at: project.created_at
+        }];
+    }
 
     let plan = null;
     if (project.plan) {

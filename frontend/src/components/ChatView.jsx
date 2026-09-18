@@ -114,6 +114,25 @@ export default function ChatView({
 
       {/* SOHBET MESAJ LİSTESİ */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {chatHistory.length === 0 && !isThinking && (
+          <div className="flex gap-3 justify-start">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-1 text-xs">
+              🏛️
+            </div>
+            <div className="max-w-[80%] bg-cream-50 text-stone-800 border border-cream-200 rounded-2xl rounded-tl-none p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <div className="text-[11px] font-semibold text-indigo-600">
+                  Manager (Kıdemli Mimar)
+                </div>
+              </div>
+              <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed break-words">
+                {projectState?.status === 'completed'
+                  ? `Merhaba Boss! "${projectState?.title || 'Proje'}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
+                  : `Merhaba Boss! "${projectState?.title || 'Proje'}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`}
+              </div>
+            </div>
+          </div>
+        )}
         {chatHistory.map((msg, i) => {
           const isUser = msg.role === 'user';
           const isCopied = copiedIndex === i;

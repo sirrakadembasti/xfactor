@@ -107,6 +107,9 @@ export function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot
     const insertStmt = database.prepare(
         'INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)'
     );
+    const insertChatStmt = database.prepare(
+        'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
+    );
     let adminUser = null;
     let insertOwnerStmt = null;
     try {
@@ -129,6 +132,10 @@ export function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot
                 if (insertOwnerStmt && adminUser) {
                     insertOwnerStmt.run(diskId, adminUser.id, nowIso);
                 }
+                const welcomeText = status === 'completed'
+                    ? `Merhaba Boss! "${title}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
+                    : `Merhaba Boss! "${title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
+                insertChatStmt.run(diskId, 'model', welcomeText, nowIso);
                 registered.push({ id: diskId, title, status });
             }
         }
