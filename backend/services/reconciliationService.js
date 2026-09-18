@@ -591,7 +591,7 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
 /**
  * Rehydrates project_logs from disk protocol files (manager/DURUM.md, director DURUM.md, task GOREV.md/TODO.md/RAPOR.md, root RAPOR.md).
  */
-export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = db } = {}) {
+export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = db, force = false } = {}) {
     if (!projectDir || !fsSync.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
@@ -606,18 +606,31 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
             return { success: true, rehydrated: true, count: checkRow.cnt };
         }
     }
-
-    let existingLogsCount = 0;
+    let currentStatus = null;
     try {
-        const row = database.prepare('SELECT COUNT(*) as cnt FROM project_logs WHERE project_id = ?').get(pId);
-        existingLogsCount = row ? row.cnt : 0;
+        currentStatus = database.prepare('SELECT status FROM projects WHERE id = ?').get(pId)?.status;
+    } catch {}
+    if (!currentStatus) {
+        currentStatus = detectProjectStatusFromDisk(projectDir);
+    }
+
+    let existingLogs = [];
+    try {
+        existingLogs = database.prepare('SELECT id, node_id, action FROM project_logs WHERE project_id = ?').all(pId);
     } catch {}
 
-    if (existingLogsCount > 0) {
-        return { success: true, rehydrated: false, count: 0 };
+    const hasTaskLogs = existingLogs.some(l => l.node_id !== null || ['delegate', 'write', 'finish', 'reject'].includes(l.action));
+
+    if (existingLogs.length > 0) {
+        if (force || (currentStatus !== 'completed' && hasTaskLogs)) {
+            try {
+                database.prepare('DELETE FROM project_logs WHERE project_id = ?').run(pId);
+            } catch {}
+        } else {
+            return { success: true, rehydrated: false, count: 0 };
+        }
     }
     const logsToInsert = [];
-
     // 1. Manager DURUM.md -> Manager start log
     const managerDir = path.join(projectDir, 'manager');
     if (fsSync.existsSync(managerDir)) {
@@ -658,6 +671,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
         });
     }
 
+    if (currentStatus === 'completed') {
     // 3. Helper functions for scanning tasks
     function extractTitleFromGorev(gorevPath) {
         try {
@@ -827,6 +841,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
             action: 'finish',
             message: 'Proje kabul denetimi ve final rapor (RAPOR.md) onaylandı.'
         });
+    }
     }
 
     if (logsToInsert.length === 0) {

@@ -179,9 +179,11 @@ try {
 
         await fs.mkdir(backendDir, { recursive: true });
 
+        // 0. Root DURUM.md (completed status)
+        await fs.writeFile(path.join(projectDir, 'DURUM.md'), '# DURUM\n- Durum: TAMAMLANDI\n', 'utf8');
+
         // 1. Manager DURUM.md
         await fs.writeFile(path.join(managerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
-
         // 2. Director DURUM.md
         await fs.writeFile(path.join(managerDir, 'backend.director', 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: backend director şartnameyi hazırladı.', 'utf8');
 
@@ -311,6 +313,39 @@ try {
         assert.strictEqual(project.latestArtifact.id, artifactRow.id);
         assert.strictEqual(project.latestArtifact.sha256, artifactRow.sha256);
         assert.strictEqual(project.latestArtifact.size, artifactRow.size);
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+    await runAsyncTest('7. rehydrateProjectLogsFromDisk does NOT emit fake task finish logs for pending_approval project', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-pending-logs-test-'));
+        const pendingId = `proj-logs-pending-${Date.now()}`;
+        const pendingDir = path.join(tmpDir, pendingId);
+        const managerDir = path.join(pendingDir, 'manager');
+        const backendDir = path.join(managerDir, 'backend.director', 'domain');
+
+        await fs.mkdir(backendDir, { recursive: true });
+        await fs.writeFile(path.join(managerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager planlama başlattı.', 'utf8');
+        await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), '# Plan\n...', 'utf8');
+
+        // Add task dir with GOREV.md and RAPOR.md to ensure scanner ignores it for pending_approval
+        const task1Dir = path.join(backendDir, 'task-1');
+        await fs.mkdir(task1Dir, { recursive: true });
+        await fs.writeFile(path.join(task1Dir, 'GOREV.md'), '# Task 1\nTask details', 'utf8');
+        await fs.writeFile(path.join(task1Dir, 'RAPOR.md'), '# RAPOR\nDurum: ONAYLANDI', 'utf8');
+
+        const stateResult = await rehydrateProjectStateFromDisk(pendingDir, { projectId: pendingId, database });
+        assert.strictEqual(stateResult.success, true);
+        assert.strictEqual(stateResult.status, 'pending_approval');
+
+        const logs = database.prepare('SELECT agent, action, node_id FROM project_logs WHERE project_id = ?').all(pendingId);
+        assert.ok(logs.length > 0, 'Must have initial planning logs');
+        const actions = logs.map(l => l.action);
+        const nodeIds = logs.map(l => l.node_id).filter(Boolean);
+
+        assert.ok(actions.includes('start'), 'Must include Manager start log');
+        assert.strictEqual(actions.includes('finish'), false, 'Must NOT include any finish logs');
+        assert.strictEqual(actions.includes('write'), false, 'Must NOT include Coder write logs');
+        assert.strictEqual(nodeIds.length, 0, 'Must NOT have any task node_id logs for pending_approval');
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
