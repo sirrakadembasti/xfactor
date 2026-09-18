@@ -63,7 +63,8 @@ function startFrontend() {
     frontendProcess = spawn(cmd, args, {
         cwd: frontendDir,
         env: { ...process.env, FORCE_COLOR: '1' },
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
+        shell: !useLocalBin && process.platform === 'win32'
     });
     pipeLogs(frontendProcess, '[frontend]', '\x1b[32m');
 
