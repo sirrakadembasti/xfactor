@@ -35,7 +35,7 @@ export default function Header({
   };
 
   return (
-    <div className="h-14 bg-cream-50 border-b border-cream-300 px-6 flex items-center justify-between shadow-xs z-10">
+    <div className="h-14 bg-cream-50 border-b border-cream-300 px-6 flex items-center justify-between shadow-sm z-10">
       <div className="flex items-center gap-3 min-w-0">
         <h2 className="font-bold text-base text-gray-900 truncate">{projectState.title}</h2>
         <div>{getStatusBadge(projectState.status)}</div>

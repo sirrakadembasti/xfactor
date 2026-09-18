@@ -205,7 +205,7 @@ export default function ChatView({
             <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-1 text-xs">
               🏛️
             </div>
-            <div className="bg-cream-50 border border-indigo-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-xs flex items-center gap-3">
+            <div className="bg-cream-50 border border-indigo-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm flex items-center gap-3">
               <div className="relative flex items-center justify-center">
                 <Sparkles size={16} className="text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
                 <span className="absolute -top-1 -right-1 flex h-2 w-2">

@@ -39,7 +39,7 @@ export default function Sidebar({
   );
 
   return (
-    <div className="w-72 bg-cream-50 border-r border-cream-300 flex flex-col shadow-xs z-20">
+    <div className="w-72 bg-cream-50 border-r border-cream-300 flex flex-col shadow-sm z-20">
       {/* Sidebar Header */}
       <div className="p-3.5 border-b border-cream-200 flex items-center justify-between bg-cream-50">
         <div className="flex items-center gap-2.5">

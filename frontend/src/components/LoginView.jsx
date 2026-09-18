@@ -15,7 +15,7 @@ export default function LoginView({
 }) {
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-br from-cream-100 via-cream-50 to-cream-200 font-sans">
-      <div className="bg-cream-50/90 border border-cream-200 p-8 rounded-2xl shadow-xl w-96 backdrop-blur-xs">
+      <div className="bg-cream-50/90 border border-cream-200 p-8 rounded-2xl shadow-xl w-96 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-2 mb-2">
           <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xl">X</div>
           <h2 className="text-2xl font-bold text-indigo-700">XFactor</h2>
