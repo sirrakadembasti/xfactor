@@ -23,11 +23,12 @@ try {
 
         await fs.mkdir(backendDir, { recursive: true });
         await fs.mkdir(frontendDir, { recursive: true });
+        // 0. Root DURUM.md
+        await fs.writeFile(path.join(projectDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
 
         // 1. TALIMATNAME.md
         const talimatContent = `# E-Commerce Engine\n\nComprehensive architecture specification.\nMulti-domain microservices structure.`;
         await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), talimatContent, 'utf8');
-
         // 2. manager/TODO.md
         const managerTodoContent = `# TODO — Manager\n\n| # | Domain / Director | Klasör | Durum |\n|---|---|---|---|\n| 1 | backend | backend.director/ | completed |\n| 2 | frontend | frontend.director/ | completed |\n`;
         await fs.writeFile(path.join(managerDir, 'TODO.md'), managerTodoContent, 'utf8');
@@ -124,12 +125,12 @@ try {
 
         await fs.mkdir(managerDir, { recursive: true });
 
+        await fs.writeFile(path.join(projectDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
         const talimatContent = '# Mimari Şartname\nSistem mikroservis mimarisinde tasarlanmıştır.';
         await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), talimatContent, 'utf8');
 
         const raporContent = '# RAPOR — Tamamlandı\nDurum: BAŞARILI\nTüm gereksinimler %100 doğrulandı.';
         await fs.writeFile(path.join(projectDir, 'RAPOR.md'), raporContent, 'utf8');
-
         // Insert project into DB with status completed and NO chat history
         const nowIso = new Date().toISOString();
         database.prepare(
@@ -227,6 +228,48 @@ try {
         const dupResult = rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
         assert.strictEqual(dupResult.rehydrated, false, 'Second rehydration should return rehydrated: false');
         assert.strictEqual(dupResult.count, 0, 'Second rehydration count should be 0');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+    await runAsyncTest('5. project status distinction: completed (root DURUM.md TAMAMLANDI) vs pending_approval (manager/DURUM.md BASLADI)', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-distinction-test-'));
+
+        // Case A: pending_approval project
+        const pendingId = `proj-pending-${Date.now()}`;
+        const pendingDir = path.join(tmpDir, pendingId);
+        const pendingManagerDir = path.join(pendingDir, 'manager');
+        await fs.mkdir(pendingManagerDir, { recursive: true });
+
+        await fs.writeFile(path.join(pendingManagerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
+        await fs.writeFile(path.join(pendingManagerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
+
+        const pendingResult = rehydrateProjectStateFromDisk(pendingDir, { projectId: pendingId, database });
+        assert.strictEqual(pendingResult.success, true);
+        assert.strictEqual(pendingResult.status, 'pending_approval', 'Project status must be pending_approval');
+
+        const pendingChats = database.prepare('SELECT role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(pendingId);
+        assert.strictEqual(pendingChats.length, 2, 'Pending approval project must have exactly 2 chat messages (welcome + plan presentation)');
+        assert.ok(pendingChats[0].text_content.includes('Manager (Kıdemli Mimar)'), 'First message must be welcome/kickoff');
+        assert.ok(pendingChats[1].text_content.includes('İşte hazırladığım mimari şartname ve plan:'), 'Second message must be plan presentation');
+        assert.strictEqual(pendingChats.some(c => c.text_content.includes('🎉')), false, 'Must NOT contain completion message');
+
+        // Case B: completed project
+        const completedId = `proj-completed-${Date.now()}`;
+        const completedDir = path.join(tmpDir, completedId);
+        const completedManagerDir = path.join(completedDir, 'manager');
+        await fs.mkdir(completedManagerDir, { recursive: true });
+
+        await fs.writeFile(path.join(completedDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
+        await fs.writeFile(path.join(completedManagerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\nTüm testler onaylandı.', 'utf8');
+
+        const completedResult = rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
+        assert.strictEqual(completedResult.success, true);
+        assert.strictEqual(completedResult.status, 'completed', 'Project status must be completed');
+
+        const completedChats = database.prepare('SELECT role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(completedId);
+        assert.strictEqual(completedChats.length, 3, 'Completed project must have 3 chat messages (welcome + plan presentation + RAPOR message)');
+        assert.ok(completedChats[2].text_content.includes('🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**'), 'Third message must be completion RAPOR');
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });

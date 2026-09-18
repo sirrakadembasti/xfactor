@@ -53,16 +53,36 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
 }
 function detectProjectStatusFromDisk(dirPath) {
     try {
+        const rootDurumPath = path.join(dirPath, 'DURUM.md');
+        if (fsSync.existsSync(rootDurumPath)) {
+            const rootDurum = fsSync.readFileSync(rootDurumPath, 'utf8');
+            if (rootDurum && rootDurum.includes('TAMAMLANDI')) {
+                return 'completed';
+            }
+        }
+
         const statePath = path.join(dirPath, 'state.json');
         if (fsSync.existsSync(statePath)) {
             const state = JSON.parse(fsSync.readFileSync(statePath, 'utf8'));
-            if (state && typeof state.status === 'string' && state.status.trim()) {
-                return state.status.trim();
+            if (state && typeof state.status === 'string' && state.status.trim() === 'completed') {
+                return 'completed';
             }
         }
-        const raporPath = path.join(dirPath, 'RAPOR.md');
-        if (fsSync.existsSync(raporPath)) {
-            return 'completed';
+
+        const managerDir = path.join(dirPath, 'manager');
+        const managerDurumPath = path.join(managerDir, 'DURUM.md');
+        const managerTalimatPath = path.join(managerDir, 'TALIMATNAME.md');
+
+        let managerBasladi = false;
+        if (fsSync.existsSync(managerDurumPath)) {
+            const mDurum = fsSync.readFileSync(managerDurumPath, 'utf8');
+            if (mDurum && mDurum.includes('BASLADI')) {
+                managerBasladi = true;
+            }
+        }
+
+        if (managerBasladi || fsSync.existsSync(managerTalimatPath)) {
+            return 'pending_approval';
         }
     } catch {}
     return 'planning';
@@ -291,25 +311,17 @@ export function rehydrateProjectStateFromDisk(projectDir, { projectId = null, da
     const tasks = Array.from(allTasksMap.values());
 
     // 4. Status determination
-    let status = 'planning';
-    const rootRaporPath = path.join(projectDir, 'RAPOR.md');
-    let isRaporSuccess = false;
-    if (fsSync.existsSync(rootRaporPath)) {
-        try {
-            const rText = fsSync.readFileSync(rootRaporPath, 'utf8').toUpperCase();
-            if (rText.includes('BAŞARILI') || rText.includes('BASARILI') || rText.includes('ONAYLANDI') || rText.includes('TAMAMLANDI')) {
-                isRaporSuccess = true;
-            }
-        } catch {}
+    const diskStatus = detectProjectStatusFromDisk(projectDir);
+    let status = diskStatus;
+    if (diskStatus !== 'completed') {
+        if (diskStatus === 'pending_approval') {
+            status = 'pending_approval';
+        } else if (tasks.length > 0) {
+            status = 'in_progress';
+        } else {
+            status = 'planning';
+        }
     }
-
-    const allTasksCompleted = tasks.length > 0 && tasks.every(t => t.status === 'completed');
-    if (isRaporSuccess || allTasksCompleted) {
-        status = 'completed';
-    } else if (tasks.length > 0) {
-        status = 'in_progress';
-    }
-
     const plan = {
         title,
         talimatname,
@@ -443,24 +455,33 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
             } catch {}
         }
 
-        // 3. RAPOR.md
-        const raporPath = path.join(projectDir, 'RAPOR.md');
-        if (fsSync.existsSync(raporPath)) {
-            try {
-                const raporContent = fsSync.readFileSync(raporPath, 'utf8').trim();
-                if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI') || raporContent.includes('GEÇTİ') || raporContent.includes('STATİK DENETİM'))) {
-                    const raporMsg = `🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**\n\n${raporContent}`;
-                    const alreadyHasRapor = existingTexts.some(t => t.includes(raporContent));
-                    if (!alreadyHasRapor) {
-                        insertChatStmt.run(pId, 'model', raporMsg, new Date(baseTime).toISOString());
-                        existingTexts.push(raporMsg);
-                        insertedCount++;
-                        baseTime += 1000;
-                    }
-                }
-            } catch {}
+        // 3. RAPOR.md (only add completion report if status === 'completed')
+        let currentStatus = null;
+        try {
+            currentStatus = database.prepare('SELECT status FROM projects WHERE id = ?').get(pId)?.status;
+        } catch {}
+        if (!currentStatus) {
+            currentStatus = detectProjectStatusFromDisk(projectDir);
         }
 
+        if (currentStatus === 'completed') {
+            const raporPath = path.join(projectDir, 'RAPOR.md');
+            if (fsSync.existsSync(raporPath)) {
+                try {
+                    const raporContent = fsSync.readFileSync(raporPath, 'utf8').trim();
+                    if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI') || raporContent.includes('GEÇTİ') || raporContent.includes('STATİK DENETİM'))) {
+                        const raporMsg = `🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**\n\n${raporContent}`;
+                        const alreadyHasRapor = existingTexts.some(t => t.includes(raporContent));
+                        if (!alreadyHasRapor) {
+                            insertChatStmt.run(pId, 'model', raporMsg, new Date(baseTime).toISOString());
+                            existingTexts.push(raporMsg);
+                            insertedCount++;
+                            baseTime += 1000;
+                        }
+                    }
+                } catch {}
+            }
+        }
         if (startedTransaction) database.exec('COMMIT;');
     } catch (error) {
         if (startedTransaction) {
