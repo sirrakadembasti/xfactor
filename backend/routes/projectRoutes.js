@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
-import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot } from '../projectRepository.js';
+import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk } from '../projectRepository.js';
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
@@ -358,7 +358,20 @@ export function createProjectRouter({
     router.get('/:id/logs', requireAuth, projectAccess('viewer'), async (req, res, next) => {
         try {
             const { cursor, limit } = req.query || {};
-            const logs = getProjectLogs(req.params.id, { cursor, limit });
+            let logs = getProjectLogs(req.params.id, { cursor, limit });
+
+            if (logs.length === 0) {
+                try {
+                    const projectDir = getProjectDir(req.params.id);
+                    if (fsSync.existsSync(projectDir)) {
+                        rehydrateProjectLogsFromDisk(projectDir, { projectId: req.params.id });
+                        logs = getProjectLogs(req.params.id, { cursor, limit });
+                    }
+                } catch (rehydrateError) {
+                    logWarning('api.logs_rehydration_failed', rehydrateError, { projectId: req.params.id });
+                }
+            }
+
             res.json(logs);
         } catch (error) {
             next(error);

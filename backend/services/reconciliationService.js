@@ -355,8 +355,8 @@ export function rehydrateProjectStateFromDisk(projectDir, { projectId = null, da
             ) VALUES (?, ?, 1, 'approved', ?, ?, ?, ?)
         `).run(contractId, pId, planJson, contractHash, nowIso, nowIso);
     }
-
     rehydrateProjectChatHistoryFromDisk(projectDir, { projectId: pId, database });
+    rehydrateProjectLogsFromDisk(projectDir, { projectId: pId, database });
 
     return {
         success: true,
@@ -470,6 +470,290 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
     }
 
     return { success: true, rehydrated: insertedCount > 0, insertedCount };
+}
+/**
+ * Rehydrates project_logs from disk protocol files (manager/DURUM.md, director DURUM.md, task GOREV.md/TODO.md/RAPOR.md, root RAPOR.md).
+ */
+export function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = db } = {}) {
+    if (!projectDir || !fsSync.existsSync(projectDir)) {
+        return { success: false, error: 'Directory does not exist' };
+    }
+
+    const pId = projectId || path.basename(projectDir);
+
+    const existingProj = database.prepare('SELECT id FROM projects WHERE id = ?').get(pId);
+    if (!existingProj) {
+        rehydrateProjectStateFromDisk(projectDir, { projectId: pId, database });
+        const checkRow = database.prepare('SELECT COUNT(*) as cnt FROM project_logs WHERE project_id = ?').get(pId);
+        if (checkRow && checkRow.cnt > 0) {
+            return { success: true, rehydrated: true, count: checkRow.cnt };
+        }
+    }
+
+    let existingLogsCount = 0;
+    try {
+        const row = database.prepare('SELECT COUNT(*) as cnt FROM project_logs WHERE project_id = ?').get(pId);
+        existingLogsCount = row ? row.cnt : 0;
+    } catch {}
+
+    if (existingLogsCount > 0) {
+        return { success: true, rehydrated: false, count: 0 };
+    }
+    const logsToInsert = [];
+
+    // 1. Manager DURUM.md -> Manager start log
+    const managerDir = path.join(projectDir, 'manager');
+    if (fsSync.existsSync(managerDir)) {
+        logsToInsert.push({
+            agent: 'Manager',
+            action: 'start',
+            message: 'Manager mimari analiz ve proje planlamasını başlattı.'
+        });
+    }
+
+    // 2. Director DURUM.md / ALT-TALIMATNAME.md -> Director specs log
+    const directorDirs = [];
+    if (fsSync.existsSync(managerDir)) {
+        try {
+            const entries = fsSync.readdirSync(managerDir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isDirectory() && (entry.name.endsWith('.director') || fsSync.existsSync(path.join(managerDir, entry.name, 'ALT-TALIMATNAME.md')) || fsSync.existsSync(path.join(managerDir, entry.name, 'DURUM.md')))) {
+                    directorDirs.push(path.join(managerDir, entry.name));
+                }
+            }
+        } catch {}
+    }
+
+    if (directorDirs.length > 0) {
+        for (const dirPath of directorDirs) {
+            const dirName = path.basename(dirPath).replace(/\.director$/, '');
+            logsToInsert.push({
+                agent: 'Director',
+                action: 'specs',
+                message: `${dirName} director mimari şartname ve domain gereksinimlerini belirledi.`
+            });
+        }
+    } else if (fsSync.existsSync(managerDir)) {
+        logsToInsert.push({
+            agent: 'Director',
+            action: 'specs',
+            message: 'Director mimari şartname ve domain gereksinimlerini belirledi.'
+        });
+    }
+
+    // 3. Helper functions for scanning tasks
+    function extractTitleFromGorev(gorevPath) {
+        try {
+            if (fsSync.existsSync(gorevPath)) {
+                const content = fsSync.readFileSync(gorevPath, 'utf8');
+                const lines = content.split('\n');
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('#')) {
+                        const titleText = trimmed.replace(/^#+\s*/, '').replace(/^Görev:\s*/i, '').replace(/^Task:\s*/i, '').trim();
+                        if (titleText && titleText !== 'Manager (Orkestratör)' && titleText !== 'Manager') {
+                            return titleText;
+                        }
+                    }
+                }
+            }
+        } catch {}
+        return null;
+    }
+
+    function extractReviewResult(raporPath) {
+        try {
+            if (fsSync.existsSync(raporPath)) {
+                const content = fsSync.readFileSync(raporPath, 'utf8').toUpperCase();
+                if (content.includes('REDDEDILDI') || content.includes('BASARISIZ') || content.includes('HATA')) {
+                    return 'rejected';
+                }
+                return 'approved';
+            }
+        } catch {}
+        return null;
+    }
+
+    function findAllTodoFiles(dir) {
+        let results = [];
+        if (!fsSync.existsSync(dir)) return results;
+        try {
+            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory() && !entry.name.startsWith('.')) {
+                    results = results.concat(findAllTodoFiles(fullPath));
+                } else if (entry.isFile() && entry.name.toLowerCase() === 'todo.md') {
+                    if (path.resolve(fullPath) !== path.resolve(path.join(managerDir, 'TODO.md'))) {
+                        results.push(fullPath);
+                    }
+                }
+            }
+        } catch {}
+        return results;
+    }
+
+    const tasksFound = [];
+    const knownTaskIds = new Set();
+    const todoFiles = findAllTodoFiles(managerDir);
+
+    for (const todoFile of todoFiles) {
+        const fileDir = path.dirname(todoFile);
+        try {
+            const content = fsSync.readFileSync(todoFile, 'utf8');
+            const lines = content.split('\n');
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('|') && !trimmed.includes('---|---') && !trimmed.toLowerCase().includes('görev id')) {
+                    const parts = trimmed.split('|').map(p => p.trim()).filter(Boolean);
+                    if (parts.length >= 3) {
+                        const idxNum = parseInt(parts[0], 10);
+                        if (!isNaN(idxNum)) {
+                            const taskId = parts[1];
+                            const taskTitle = parts[2] || taskId;
+
+                            if (taskId && !knownTaskIds.has(taskId)) {
+                                knownTaskIds.add(taskId);
+
+                                const taskDir = path.join(fileDir, taskId);
+                                const gorevPath = path.join(taskDir, 'GOREV.md');
+                                const raporPath = path.join(taskDir, 'RAPOR.md');
+
+                                const titleFromGorev = extractTitleFromGorev(gorevPath);
+                                const finalTitle = titleFromGorev || taskTitle;
+                                const reviewRes = extractReviewResult(raporPath) || 'approved';
+
+                                tasksFound.push({
+                                    id: taskId,
+                                    title: finalTitle,
+                                    reviewResult: reviewRes
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    function scanForTaskDirs(dir) {
+        if (!fsSync.existsSync(dir)) return;
+        try {
+            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory() && !entry.name.startsWith('.')) {
+                    if (entry.name.startsWith('task-') || entry.name.startsWith('task_') || entry.name.startsWith('gorev-') || entry.name.startsWith('gorev_')) {
+                        const taskId = entry.name;
+                        if (!knownTaskIds.has(taskId)) {
+                            knownTaskIds.add(taskId);
+                            const gorevPath = path.join(fullPath, 'GOREV.md');
+                            const raporPath = path.join(fullPath, 'RAPOR.md');
+
+                            const titleFromGorev = extractTitleFromGorev(gorevPath);
+                            const finalTitle = titleFromGorev || taskId;
+                            const reviewRes = extractReviewResult(raporPath) || 'approved';
+
+                            tasksFound.push({
+                                id: taskId,
+                                title: finalTitle,
+                                reviewResult: reviewRes
+                            });
+                        }
+                    }
+                    scanForTaskDirs(fullPath);
+                }
+            }
+        } catch {}
+    }
+
+    scanForTaskDirs(projectDir);
+
+    for (const task of tasksFound) {
+        logsToInsert.push({
+            agent: 'Teamleader',
+            action: 'delegate',
+            message: `Görev "${task.title}" Coder'a iletildi.`,
+            node_id: task.id
+        });
+
+        logsToInsert.push({
+            agent: 'Coder',
+            action: 'write',
+            message: `Görev "${task.title}" için kod dosyaları yazıldı.`,
+            node_id: task.id
+        });
+
+        if (task.reviewResult === 'rejected') {
+            logsToInsert.push({
+                agent: 'Reviewer',
+                action: 'reject',
+                message: `Görev "${task.title}" denetlendi ve REDDEDİLDİ.`,
+                node_id: task.id
+            });
+        } else {
+            logsToInsert.push({
+                agent: 'Reviewer',
+                action: 'finish',
+                message: `Görev "${task.title}" denetlendi ve ONAYLANDI.`,
+                node_id: task.id
+            });
+        }
+    }
+
+    // 4. Root RAPOR.md -> Tester finish log
+    const rootRaporPath = path.join(projectDir, 'RAPOR.md');
+    if (fsSync.existsSync(rootRaporPath)) {
+        logsToInsert.push({
+            agent: 'Tester',
+            action: 'finish',
+            message: 'Proje kabul denetimi ve final rapor (RAPOR.md) onaylandı.'
+        });
+    }
+
+    if (logsToInsert.length === 0) {
+        return { success: true, rehydrated: false, count: 0 };
+    }
+
+    const insertLogStmt = database.prepare(`
+        INSERT INTO project_logs (project_id, agent, action, message, node_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    let insertedCount = 0;
+    let baseTime = Date.now() - (logsToInsert.length * 1000);
+
+    let startedTransaction = false;
+    try {
+        database.exec('BEGIN IMMEDIATE;');
+        startedTransaction = true;
+    } catch {}
+
+    try {
+        for (const logItem of logsToInsert) {
+            const createdAtIso = new Date(baseTime).toISOString();
+            insertLogStmt.run(
+                pId,
+                logItem.agent || null,
+                logItem.action || null,
+                logItem.message || '',
+                logItem.node_id || null,
+                createdAtIso
+            );
+            insertedCount++;
+            baseTime += 1000;
+        }
+
+        if (startedTransaction) database.exec('COMMIT;');
+    } catch (error) {
+        if (startedTransaction) {
+            try { database.exec('ROLLBACK;'); } catch {}
+        }
+        throw error;
+    }
+
+    return { success: true, rehydrated: insertedCount > 0, count: insertedCount };
 }
 
 

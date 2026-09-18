@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
-import { rehydrateProjectStateFromDisk, reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectChatHistoryFromDisk } from '../services/reconciliationService.js';
+import { rehydrateProjectStateFromDisk, reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectChatHistoryFromDisk, rehydrateProjectLogsFromDisk } from '../services/reconciliationService.js';
 import { getProject } from '../projectRepository.js';
 
 const isolated = await setupIsolatedTestDb('rehydration-test');
@@ -164,6 +164,69 @@ try {
 
         const chatsAfter = database.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(projectId).count;
         assert.strictEqual(chatsAfter, 3, 'Chat count must remain 3');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+    await runAsyncTest('4. rehydrateProjectLogsFromDisk populates agent logs from disk files (DURUM, TODO, RAPOR)', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-logs-test-'));
+        const projectId = `proj-logs-rehydrate-${Date.now()}`;
+        const projectDir = path.join(tmpDir, projectId);
+
+        const managerDir = path.join(projectDir, 'manager');
+        const backendDir = path.join(managerDir, 'backend.director', 'domain');
+
+        await fs.mkdir(backendDir, { recursive: true });
+
+        // 1. Manager DURUM.md
+        await fs.writeFile(path.join(managerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
+
+        // 2. Director DURUM.md
+        await fs.writeFile(path.join(managerDir, 'backend.director', 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: backend director şartnameyi hazırladı.', 'utf8');
+
+        // 3. Teamleader TODO.md
+        const backendTodoContent = `# TODO — backend.teamleader\n\n| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n| 1 | task-1 | Database Setup | — | completed |\n| 2 | task-2 | Auth API | task-1 | completed |\n`;
+        await fs.writeFile(path.join(backendDir, 'TODO.md'), backendTodoContent, 'utf8');
+
+        // 4. Task directories with GOREV.md and RAPOR.md
+        const task1Dir = path.join(backendDir, 'task-1');
+        await fs.mkdir(task1Dir, { recursive: true });
+        await fs.writeFile(path.join(task1Dir, 'GOREV.md'), '# Görev: Database Setup\nVeritabanı kurulumu yap.', 'utf8');
+        await fs.writeFile(path.join(task1Dir, 'RAPOR.md'), '# RAPOR\nDurum: ONAYLANDI', 'utf8');
+
+        const task2Dir = path.join(backendDir, 'task-2');
+        await fs.mkdir(task2Dir, { recursive: true });
+        await fs.writeFile(path.join(task2Dir, 'GOREV.md'), '# Görev: Auth API\nAuth API rotalarını yaz.', 'utf8');
+
+        // 5. Root RAPOR.md
+        await fs.writeFile(path.join(projectDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\nTüm testler onaylandı.', 'utf8');
+
+        // 6. Execute rehydrateProjectLogsFromDisk
+        const result = rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(result.success, true, 'rehydrateProjectLogsFromDisk must return success: true');
+        assert.strictEqual(result.rehydrated, true, 'Must report rehydrated: true');
+        assert.ok(result.count >= 8, `Rehydrated log count should be >= 8, got ${result.count}`);
+
+        // 7. Verify logs from SQLite project_logs table
+        const logs = database.prepare('SELECT * FROM project_logs WHERE project_id = ? ORDER BY id ASC').all(projectId);
+        assert.ok(logs.length >= 8, `Database should contain rehydrated logs, count: ${logs.length}`);
+
+        const agents = logs.map(l => l.agent);
+        assert.ok(agents.includes('Manager'), 'Manager log must exist');
+        assert.ok(agents.includes('Director'), 'Director log must exist');
+        assert.ok(agents.includes('Teamleader'), 'Teamleader log must exist');
+        assert.ok(agents.includes('Coder'), 'Coder log must exist');
+        assert.ok(agents.includes('Reviewer'), 'Reviewer log must exist');
+        assert.ok(agents.includes('Tester'), 'Tester log must exist');
+
+        // Check specific task log messages & node_ids
+        const task1Logs = logs.filter(l => l.node_id === 'task-1');
+        assert.strictEqual(task1Logs.length, 3, 'task-1 should have 3 logs (Teamleader, Coder, Reviewer)');
+        assert.ok(task1Logs[0].message.includes('Database Setup'), 'Teamleader log message must include task title');
+
+        // Test duplicate invocation protection
+        const dupResult = rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(dupResult.rehydrated, false, 'Second rehydration should return rehydrated: false');
+        assert.strictEqual(dupResult.count, 0, 'Second rehydration count should be 0');
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
