@@ -39,7 +39,7 @@ await runAsyncTest('2. syncProjectsWithDisk reports unregistered directories as 
     await fs.writeFile(path.join(testDir, 'state.json'), JSON.stringify({ title: 'Disk Sync Test Project' }));
 
     try {
-        const syncRes = syncProjectsWithDisk(process.env);
+        const syncRes = await syncProjectsWithDisk(process.env);
         assert.strictEqual(syncRes.success, true);
         assert.strictEqual(syncRes.syncedCount, 0);
         assert.ok(syncRes.unverified.some(entry => entry.id === testId && entry.verified === false));
@@ -61,7 +61,7 @@ await runAsyncTest('3. syncProjectsWithDisk must NOT prune records when director
 
     try {
         await fs.rm(testDir, { recursive: true, force: true });
-        const res = syncProjectsWithDisk(process.env);
+        const res = await syncProjectsWithDisk(process.env);
         assert.strictEqual(res.success, true);
         assert.ok(res.missingOnDisk.includes(testId), 'Missing folder must be reported in missingOnDisk');
         assert.ok(getAllProjects().some(project => project.id === testId), 'DB entry must survive after folder removal');

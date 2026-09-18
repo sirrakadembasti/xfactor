@@ -71,7 +71,7 @@ await runAsyncTest('3. syncProjectsWithDisk should not re-import .trash or delet
     await fs.mkdir(trashDir, { recursive: true });
 
     try {
-        const result = syncProjectsWithDisk();
+        const result = await syncProjectsWithDisk();
         assert.ok(!result.quarantined.includes('.trash-test-project-123'));
     } finally {
         await fs.rm(trashDir, { recursive: true, force: true }).catch(() => {});

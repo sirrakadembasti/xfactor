@@ -36,7 +36,7 @@ try {
         const id = `p7miss${Date.now()}`;
         db.prepare("INSERT INTO projects (id, title, status, plan, workflow_state) VALUES (?, ?, 'completed', NULL, NULL)").run(id, id);
         try {
-            const result = reconcileProjectsWithDisk({ projectsRoot: root });
+            const result = await reconcileProjectsWithDisk({ projectsRoot: root });
             assert.strictEqual(result.success, true);
             assert.ok(result.missingOnDisk.includes(id), 'missing project id must be reported');
             assert.strictEqual(result.cleanedOrphans, 0);
@@ -52,7 +52,7 @@ try {
     await runAsyncTest('2. missing root fails closed with success:false and zero DB modifications', async () => {
         const missingRoot = path.join(os.tmpdir(), `p7-nonexistent-${Date.now()}`);
         const before = countProjects();
-        const result = reconcileProjectsWithDisk({ projectsRoot: missingRoot });
+        const result = await reconcileProjectsWithDisk({ projectsRoot: missingRoot });
         assert.strictEqual(result.success, false);
         assert.strictEqual(result.syncedCount, 0);
         assert.ok(typeof result.error === 'string' && result.error.length > 0);
@@ -60,7 +60,7 @@ try {
         assert.strictEqual(countProjects(), before, 'no rows may be added or removed');
 
         // Repository wrapper must delegate and fail closed the same way.
-        const viaRepo = repo.syncProjectsWithDisk({ PROJECTS_ROOT: missingRoot });
+        const viaRepo = await repo.syncProjectsWithDisk({ PROJECTS_ROOT: missingRoot });
         assert.strictEqual(viaRepo.success, false);
         assert.strictEqual(countProjects(), before);
     });
@@ -71,7 +71,7 @@ try {
         await fs.mkdir(path.join(root, id), { recursive: true });
         try {
             assert.strictEqual(db.prepare('SELECT id FROM projects WHERE id = ?').get(id), undefined);
-            const result = reconcileProjectsWithDisk({ projectsRoot: root });
+            const result = await reconcileProjectsWithDisk({ projectsRoot: root });
             assert.strictEqual(result.success, true);
             assert.strictEqual(result.syncedCount, 0);
             assert.ok(result.unverified.some(entry => entry.id === id && entry.verified === false));
@@ -89,7 +89,7 @@ try {
         await fs.writeFile(path.join(root, 'loose-file.txt'), 'not a directory');
         try {
             const before = countProjects();
-            const result = reconcileProjectsWithDisk({ projectsRoot: root });
+            const result = await reconcileProjectsWithDisk({ projectsRoot: root });
             assert.strictEqual(result.success, true);
             assert.ok(result.quarantined.includes(invalid), 'invalid name must be quarantined');
             assert.ok(!result.quarantined.includes('.hidden-dir'), 'dotfiles must be ignored, not quarantined');

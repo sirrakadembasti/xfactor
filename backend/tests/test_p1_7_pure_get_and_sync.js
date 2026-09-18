@@ -44,7 +44,7 @@ await runAsyncTest('2. syncProjectsWithDisk should not purge DB when root direct
 
     // Simulate missing mount / non-existent root
     const missingRootEnv = { PROJECTS_ROOT: path.join(os.tmpdir(), `non-existent-mount-${Date.now()}`) };
-    const result = syncProjectsWithDisk(missingRootEnv);
+    const result = await syncProjectsWithDisk(missingRootEnv);
 
     assert.strictEqual(result.success, false, 'Eksik root dizininde sync işlemi reddedilmelidir.');
     assert.strictEqual(result.orphansRemoved, 0, 'Hiçbir DB kaydı silinmemelidir.');
@@ -67,7 +67,7 @@ await runAsyncTest('3. syncProjectsWithDisk should quarantine invalid project ID
 
     await fs.mkdir(invalidDir, { recursive: true });
     try {
-        const result = syncProjectsWithDisk(env);
+        const result = await syncProjectsWithDisk(env);
         assert.strictEqual(result.success, true);
         assert.ok(result.quarantined.includes('invalid!@#_project$id'));
     } finally {

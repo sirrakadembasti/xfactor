@@ -40,7 +40,7 @@ try {
         await fs.mkdir(fallbackDir, { recursive: true });
 
         try {
-            const res = autoRegisterDiscoveredProjects({ env, projectsRoot: root });
+            const res = await autoRegisterDiscoveredProjects({ env, projectsRoot: root });
             assert.strictEqual(res.success, true);
             assert.strictEqual(res.registered.length, 4);
 
@@ -74,7 +74,7 @@ try {
         await fs.writeFile(path.join(testDir, 'package.json'), JSON.stringify({ name: 'Auto Registered Via Sync' }));
 
         try {
-            const res = syncProjectsWithDisk({ autoRegister: true, env, projectsRoot: root });
+            const res = await syncProjectsWithDisk({ autoRegister: true, env, projectsRoot: root });
             assert.strictEqual(res.success, true);
             assert.strictEqual(res.syncedCount, 1);
             assert.ok(res.autoRegistered.some(p => p.id === testId));

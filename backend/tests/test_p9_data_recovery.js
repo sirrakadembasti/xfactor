@@ -305,7 +305,7 @@ await runAsyncTest('reconciliation reports unknown and missing directories witho
     await fs.mkdir(path.join(projectsRoot, unknownId), { recursive: true });
     await fs.writeFile(path.join(projectsRoot, unknownId, 'payload.txt'), 'unverified');
 
-    const result = reconciliation.reconcileProjectsWithDisk({ env });
+    const result = await reconciliation.reconcileProjectsWithDisk({ env });
     assert.strictEqual(result.success, true);
     assert.ok(result.missingOnDisk.includes(missingProject.id));
     assert.ok(dbModule.db.prepare('SELECT id FROM projects WHERE id = ?').get(missingProject.id));
