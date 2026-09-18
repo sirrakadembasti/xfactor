@@ -356,6 +356,8 @@ export function rehydrateProjectStateFromDisk(projectDir, { projectId = null, da
         `).run(contractId, pId, planJson, contractHash, nowIso, nowIso);
     }
 
+    rehydrateProjectChatHistoryFromDisk(projectDir, { projectId: pId, database });
+
     return {
         success: true,
         plan,
@@ -363,6 +365,111 @@ export function rehydrateProjectStateFromDisk(projectDir, { projectId = null, da
         status,
         tasksCount: tasks.length
     };
+}
+
+/**
+ * Rehydrates chat_history from disk protocol files (TALIMATNAME.md and RAPOR.md).
+ */
+export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = null, database = db } = {}) {
+    if (!projectDir || !fsSync.existsSync(projectDir)) {
+        return { success: false, error: 'Directory does not exist' };
+    }
+
+    const pId = projectId || path.basename(projectDir);
+
+    let existingChats = [];
+    try {
+        existingChats = database.prepare(
+            'SELECT id, role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC'
+        ).all(pId);
+    } catch {}
+
+    if (existingChats.length > 1) {
+        return { success: true, rehydrated: false, count: existingChats.length };
+    }
+
+    const existingTexts = existingChats.map(c => c.text_content);
+    const insertChatStmt = database.prepare(
+        'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
+    );
+
+    let insertedCount = 0;
+    let baseTime = Date.now();
+
+    let startedTransaction = false;
+    try {
+        database.exec('BEGIN IMMEDIATE;');
+        startedTransaction = true;
+    } catch {}
+
+    try {
+        // 1. Initial greeting if chat_history is completely empty
+        if (existingChats.length === 0) {
+            let dbProj = null;
+            try {
+                dbProj = database.prepare('SELECT title, status FROM projects WHERE id = ?').get(pId);
+            } catch {}
+
+            const title = dbProj?.title || readProjectTitleFromDisk(projectDir, pId);
+            const status = dbProj?.status || detectProjectStatusFromDisk(projectDir);
+            const welcomeText = status === 'completed'
+                ? `Merhaba Boss! "${title}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
+                : `Merhaba Boss! "${title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
+
+            if (!existingTexts.includes(welcomeText)) {
+                insertChatStmt.run(pId, 'model', welcomeText, new Date(baseTime).toISOString());
+                existingTexts.push(welcomeText);
+                insertedCount++;
+                baseTime += 1000;
+            }
+        }
+
+        // 2. TALIMATNAME.md
+        const managerDir = path.join(projectDir, 'manager');
+        const talimatPath = path.join(managerDir, 'TALIMATNAME.md');
+        if (fsSync.existsSync(talimatPath)) {
+            try {
+                const talimatContent = fsSync.readFileSync(talimatPath, 'utf8').trim();
+                if (talimatContent) {
+                    const talimatMsg = `İşte hazırladığım mimari şartname ve plan:\n\n${talimatContent}`;
+                    const alreadyHasTalimat = existingTexts.some(t => t.includes(talimatContent));
+                    if (!alreadyHasTalimat) {
+                        insertChatStmt.run(pId, 'model', talimatMsg, new Date(baseTime).toISOString());
+                        existingTexts.push(talimatMsg);
+                        insertedCount++;
+                        baseTime += 1000;
+                    }
+                }
+            } catch {}
+        }
+
+        // 3. RAPOR.md
+        const raporPath = path.join(projectDir, 'RAPOR.md');
+        if (fsSync.existsSync(raporPath)) {
+            try {
+                const raporContent = fsSync.readFileSync(raporPath, 'utf8').trim();
+                if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI'))) {
+                    const raporMsg = `🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**\n\n${raporContent}`;
+                    const alreadyHasRapor = existingTexts.some(t => t.includes(raporContent));
+                    if (!alreadyHasRapor) {
+                        insertChatStmt.run(pId, 'model', raporMsg, new Date(baseTime).toISOString());
+                        existingTexts.push(raporMsg);
+                        insertedCount++;
+                        baseTime += 1000;
+                    }
+                }
+            } catch {}
+        }
+
+        if (startedTransaction) database.exec('COMMIT;');
+    } catch (error) {
+        if (startedTransaction) {
+            try { database.exec('ROLLBACK;'); } catch {}
+        }
+        throw error;
+    }
+
+    return { success: true, rehydrated: insertedCount > 0, insertedCount };
 }
 
 

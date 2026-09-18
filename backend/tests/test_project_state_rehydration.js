@@ -4,7 +4,8 @@ import fs from 'fs/promises';
 import os from 'os';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
-import { rehydrateProjectStateFromDisk, reconcileProjectsWithDisk, autoRegisterDiscoveredProjects } from '../services/reconciliationService.js';
+import { rehydrateProjectStateFromDisk, reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectChatHistoryFromDisk } from '../services/reconciliationService.js';
+import { getProject } from '../projectRepository.js';
 
 const isolated = await setupIsolatedTestDb('rehydration-test');
 const database = await isolated.initializeDatabase();
@@ -114,6 +115,57 @@ try {
         assert.ok(restoredRow.workflow_state, 'Reconciliation should re-rehydrate null workflow_state');
 
         await fs.rm(root, { recursive: true, force: true });
+    });
+    await runAsyncTest('3. rehydrateProjectChatHistoryFromDisk and getProject populate chat messages from TALIMATNAME.md and RAPOR.md', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-chat-test-'));
+        const projectId = `proj-chat-rehydrate-${Date.now()}`;
+        const projectDir = path.join(tmpDir, projectId);
+        const managerDir = path.join(projectDir, 'manager');
+
+        await fs.mkdir(managerDir, { recursive: true });
+
+        const talimatContent = '# Mimari Şartname\nSistem mikroservis mimarisinde tasarlanmıştır.';
+        await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), talimatContent, 'utf8');
+
+        const raporContent = '# RAPOR — Tamamlandı\nDurum: BAŞARILI\nTüm gereksinimler %100 doğrulandı.';
+        await fs.writeFile(path.join(projectDir, 'RAPOR.md'), raporContent, 'utf8');
+
+        // Insert project into DB with status completed and NO chat history
+        const nowIso = new Date().toISOString();
+        database.prepare(
+            'INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)'
+        ).run(projectId, 'Chat Test Project', 'completed', nowIso);
+
+        // 1. Direct call to rehydrateProjectChatHistoryFromDisk
+        const rehydrateRes = rehydrateProjectChatHistoryFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(rehydrateRes.success, true, 'rehydrateProjectChatHistoryFromDisk must succeed');
+        assert.strictEqual(rehydrateRes.rehydrated, true, 'Should rehydrate chat history');
+
+        const chats = database.prepare('SELECT role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
+        assert.strictEqual(chats.length, 3, 'Must insert welcome, talimatname, and rapor messages');
+
+        assert.ok(chats[0].text_content.includes('Chat Test Project'), 'First message should be welcome text');
+        assert.ok(chats[1].text_content.includes('İşte hazırladığım mimari şartname ve plan:'), 'Second message must format TALIMATNAME');
+        assert.ok(chats[1].text_content.includes(talimatContent), 'Second message must contain talimat content');
+        assert.ok(chats[2].text_content.includes('🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**'), 'Third message must format RAPOR');
+        assert.ok(chats[2].text_content.includes(raporContent), 'Third message must contain rapor content');
+
+        // 2. Test getProject returning full chatHistory
+        process.env.PROJECTS_ROOT = tmpDir;
+        const projectObj = getProject(projectId);
+        assert.ok(projectObj, 'getProject must return project object');
+        assert.strictEqual(projectObj.chatHistory.length, 3, 'getProject chatHistory length must be 3');
+        assert.strictEqual(projectObj.chatHistory[1].parts[0].text, chats[1].text_content);
+        assert.strictEqual(projectObj.chatHistory[2].parts[0].text, chats[2].text_content);
+
+        // 3. Test duplicate protection: calling rehydrateProjectChatHistoryFromDisk again should not insert extra rows
+        const rehydrateRes2 = rehydrateProjectChatHistoryFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(rehydrateRes2.rehydrated, false, 'Second rehydration should not rehydrate again');
+
+        const chatsAfter = database.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(projectId).count;
+        assert.strictEqual(chatsAfter, 3, 'Chat count must remain 3');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
     });
 } finally {
     await isolated.cleanup();

@@ -13,7 +13,7 @@ import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactR
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
-import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk } from './services/reconciliationService.js';
+import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk, rehydrateProjectChatHistoryFromDisk } from './services/reconciliationService.js';
 
 export function slugifyTitle(title) {
     if (!title || typeof title !== 'string') return 'proje';
@@ -141,7 +141,15 @@ export function getProject(projectId) {
         LIMIT 1
     `).get(projectId);
 
-    const chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
+    let chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
+    if (chats.length <= 1) {
+        try {
+            const projectDir = getProjectDir(projectId);
+            rehydrateProjectChatHistoryFromDisk(projectDir, { projectId, database: db });
+            chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
+        } catch {}
+    }
+
     let chatHistory = chats.map(c => {
         const timestamp = formatDBDate(c.created_at);
         return {
@@ -864,7 +872,7 @@ export async function recoverPendingProjectDeletions({ env = process.env, databa
     return results;
 }
 
-export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk };
+export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk, rehydrateProjectChatHistoryFromDisk };
 
 export function syncProjectsWithDisk(optionsOrEnv = process.env) {
     if (optionsOrEnv && typeof optionsOrEnv === 'object' && (optionsOrEnv.autoRegister !== undefined || optionsOrEnv.projectsRoot !== undefined || optionsOrEnv.database !== undefined)) {
