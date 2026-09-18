@@ -20,6 +20,9 @@
 * 🛡️ **OS Sandbox Sınırları & Sıfır Sızıntı:** Bubblewrap ve Docker yetenek sözleşmesi ile fail-closed duran izole alt süreç sandbox'ı, proxy DNS yönlendirmesi, otomatik gizli anahtar temizliği (`scrubEnvironmentVariables`), 24 saatlik HttpOnly sunucu oturumları, CSRF ve HSTS korumaları, ve çift yönlü disk senkronizasyonu.
 * 🔄 **Dayanıklı LLM Görev Katmanı & Hedefli Onarım:** Geçici ağ ve zaman aşımı hatalarında 3 denemeli sınırlı retry (`llmTaskRetry.js`), Babel AST tabanlı sentaks denetimi ve güvensiz secret fallback hatalarını dosya bazlı sıralı gideren hedefli onarım döngüsü (`executeStaticRepairLoop`).
 * 📊 **Kalite Paneli & Telemetri:** Longitudinal kapı metrikleri, hata parmak izi (fingerprinting), ister etki analizi ve yeniden derleme önizlemesi (`/impact`, `/preview`), kimlik bilgileri temizlenmiş (redacted) kanıt logları, ReactFlow DAG akış şeması ve dahili Monaco Editor IDE.
+* 🐳 **Üretilen Projelerde Tak-Çalıştır Konteyner (Dockerfile):** Üretilen her uygulamaya özel çok aşamalı (multi-stage) `Dockerfile` ve `.dockerignore` otomatik eklenir; kullanıcı tek komutla (`docker build` veya `docker compose up`) projeyi kendi sunucusunda ayağa kaldırabilir.
+* 🎨 **Ergonomik UI/UX ve Sıcak Krem Tema:** Göz yormayan sıcak krem arayüz, çok satırlı yüzen sohbet giriş alanı, tek tıkla mesaj kopyalama, kullanıcı profil kartı ve belirgin oturum kapatma alanı.
+* 🔄 **Dosya Protokolünden Canlı Durum ve Log Canlandırma (Rehydration Engine):** Diskteki projelerin mimari şartnameleri, görevleri, DAG durumları ve 200+ ajan logları veritabanıyla çift yönlü eşitlenir; devam eden projelerde onay butonları, tamamlananlarda ise doğrulanmış ZIP indirme aktifleşir.
 
 ---
 

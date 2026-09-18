@@ -278,13 +278,14 @@ projects/<proje_id>/
 ├── src/                            # Üretilen Temiz Uygulama Kaynak Kodları (app/layout.tsx, app/page.tsx, components, lib)
 ├── prisma/                         # schema.prisma & seed.ts
 ├── .env.example                    # Güvenli örnek yapılandırma şablonu
+├── Dockerfile                     # Üretilen Projeye Özel Çok Aşamalı Konteyner Dosyası
+├── .dockerignore                  # Docker İmajına Girmeyecek Dosyalar Listesi
 ├── package.json                    # Kilitli Kararlı Sürümler (Next 15+, React 18.3+, Prisma 6.4+, Zod 3.24+, Tailwind 3.4+)
 ├── tsconfig.json                   # Path Alias (@/* -> ./src/*) Konfigürasyonu
 ├── tailwind.config.ts              # Stil Yapılandırması (darkMode: 'class')
 ├── service-manifest.json           # Otomatik Üretilen Servis & Port Sözleşmesi
 ├── README.md                       # Otomatik Üretilen Kurulum & Çalıştırma Rehberi
 └── RAPOR.md                        # Tester Nihai Kabul Raporu
-
 ---
 
 ## 7. Üretilen Projeyi Bilgisayarınızda Çalıştırma Kılavuzu
@@ -312,6 +313,14 @@ npx prisma db seed
 ```bash
 npm run dev
 ```
+
+### 5. Adım: (Alternatif) Docker ile Tek Komutla Çalıştırma
+XFactor, ürettiği her projeye otomatik olarak hazır bir **`Dockerfile`** ve **`.dockerignore`** ekler. Bilgisayarınıza Node.js veya Prisma kurmadan doğrudan Docker ile çalıştırmak isterseniz:
+```bash
+docker build -t projem .
+docker run -p 3000:3000 projem
+```
+veya `docker compose up --build` ile projeyi tek adımda canlıya alabilirsiniz.
 > Tarayıcınızda `http://localhost:3000` adresini açarak uygulamanızı kullanmaya başlayabilirsiniz!
 
 ---

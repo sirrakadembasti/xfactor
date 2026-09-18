@@ -8,7 +8,6 @@ test-sandbox/
 
 # Generated project workspaces
 projects/*/
-!projects/todo-app-1/
 .DS_Store
 dist/
 frontend/dist/
@@ -27,6 +26,8 @@ backend/.env.local
 **/*.db-wal
 **/*.db-shm
 backend/data/*.db-shm
+backend/data/artifacts/
+backend/data/*.zip
 backend/data/*.db-wal
 
 # Log files
