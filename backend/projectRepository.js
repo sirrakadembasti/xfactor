@@ -13,7 +13,7 @@ import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactR
 
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
-import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects } from './services/reconciliationService.js';
+import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk } from './services/reconciliationService.js';
 
 export function slugifyTitle(title) {
     if (!title || typeof title !== 'string') return 'proje';
@@ -864,7 +864,7 @@ export async function recoverPendingProjectDeletions({ env = process.env, databa
     return results;
 }
 
-export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects };
+export { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk };
 
 export function syncProjectsWithDisk(optionsOrEnv = process.env) {
     if (optionsOrEnv && typeof optionsOrEnv === 'object' && (optionsOrEnv.autoRegister !== undefined || optionsOrEnv.projectsRoot !== undefined || optionsOrEnv.database !== undefined)) {

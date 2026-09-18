@@ -1,8 +1,8 @@
 import fsSync from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { db } from '../db.js';
 import { getProjectsRoot, isValidProjectId } from '../projectPaths.js';
-
 function readProjectTitleFromDisk(dirPath, defaultTitle) {
     try {
         const pkgPath = path.join(dirPath, 'package.json');
@@ -18,7 +18,9 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
     } catch {}
 
     try {
-        const talimatPath = path.join(dirPath, 'TALIMATNAME.md');
+        const managerTalimat = path.join(dirPath, 'manager', 'TALIMATNAME.md');
+        const rootTalimat = path.join(dirPath, 'TALIMATNAME.md');
+        const talimatPath = fsSync.existsSync(managerTalimat) ? managerTalimat : rootTalimat;
         if (fsSync.existsSync(talimatPath)) {
             const content = fsSync.readFileSync(talimatPath, 'utf8');
             const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
@@ -64,6 +66,303 @@ function detectProjectStatusFromDisk(dirPath) {
         }
     } catch {}
     return 'planning';
+}
+
+/**
+ * Rehydrates full project plan, workflow_state, and status from disk protocol files.
+ */
+export function rehydrateProjectStateFromDisk(projectDir, { projectId = null, database = db } = {}) {
+    if (!projectDir || !fsSync.existsSync(projectDir)) {
+        return { success: false, error: 'Directory does not exist' };
+    }
+
+    const pId = projectId || path.basename(projectDir);
+
+    // 1. TALIMATNAME.md & Summary & Title
+    const managerDir = path.join(projectDir, 'manager');
+    const talimatPath = path.join(managerDir, 'TALIMATNAME.md');
+    let talimatname = '';
+    let summary = '';
+    if (fsSync.existsSync(talimatPath)) {
+        try {
+            talimatname = fsSync.readFileSync(talimatPath, 'utf8');
+            const lines = talimatname.split('\n').map(l => l.trim()).filter(Boolean);
+            summary = lines.slice(0, 3).join(' ');
+        } catch {}
+    }
+
+    const title = readProjectTitleFromDisk(projectDir, pId);
+
+    // 2. Domains from manager/TODO.md or manager subdirectories
+    let domains = [];
+    const managerTodoPath = path.join(managerDir, 'TODO.md');
+    if (fsSync.existsSync(managerTodoPath)) {
+        try {
+            const content = fsSync.readFileSync(managerTodoPath, 'utf8');
+            const lines = content.split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('|') && !trimmed.includes('---|---') && !trimmed.toLowerCase().includes('domain')) {
+                    const parts = trimmed.split('|').map(p => p.trim()).filter(Boolean);
+                    if (parts.length >= 2 && !isNaN(parseInt(parts[0], 10))) {
+                        const dName = parts[1].replace(/\.director\/?$/, '').trim();
+                        if (dName && !domains.includes(dName)) {
+                            domains.push(dName);
+                        }
+                    }
+                }
+            }
+            if (domains.length === 0) {
+                for (const line of lines) {
+                    const match = line.match(/^-\s*\[[ xX]\]\s*(?:\d+\.\s*)?([a-zA-Z0-9_-]+)/);
+                    if (match) {
+                        const dName = match[1].replace(/\.director$/, '').trim();
+                        if (dName && !['TODO', 'Durum', 'Manager'].includes(dName) && !domains.includes(dName)) {
+                            domains.push(dName);
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    if (domains.length === 0 && fsSync.existsSync(managerDir)) {
+        try {
+            const entries = fsSync.readdirSync(managerDir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isDirectory() && entry.name.endsWith('.director')) {
+                    const dName = entry.name.slice(0, -9);
+                    if (dName && !domains.includes(dName)) {
+                        domains.push(dName);
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    if (domains.length === 0) {
+        domains = ['backend', 'frontend'];
+    }
+
+    // 3. Scan sub TODO.md files under manager/
+    function findAllTodoFiles(dir) {
+        let results = [];
+        if (!fsSync.existsSync(dir)) return results;
+        try {
+            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory() && !entry.name.startsWith('.')) {
+                    results = results.concat(findAllTodoFiles(fullPath));
+                } else if (entry.isFile() && entry.name.toLowerCase() === 'todo.md') {
+                    if (path.resolve(fullPath) !== path.resolve(managerTodoPath)) {
+                        results.push(fullPath);
+                    }
+                }
+            }
+        } catch {}
+        return results;
+    }
+
+    const todoFiles = findAllTodoFiles(managerDir);
+    const teamleaderPlans = {};
+    const allTasksMap = new Map();
+
+    for (const todoFile of todoFiles) {
+        const fileDir = path.dirname(todoFile);
+        const relDir = path.relative(managerDir, fileDir);
+        const relParts = relDir.split(/[/\\]/).filter(Boolean).map(p => p.endsWith('.director') ? p.slice(0, -9) : p);
+        const tlId = relParts.join('.') || 'default';
+
+        const fileTasks = [];
+        const fileTasksMap = new Map();
+        try {
+            const content = fsSync.readFileSync(todoFile, 'utf8');
+            const lines = content.split('\n');
+
+            // Pass 1: table rows
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('|') && !trimmed.includes('---|---') && !trimmed.toLowerCase().includes('görev id')) {
+                    const parts = trimmed.split('|').map(p => p.trim()).filter(Boolean);
+                    if (parts.length >= 3) {
+                        const idxNum = parseInt(parts[0], 10);
+                        if (!isNaN(idxNum)) {
+                            const taskId = parts[1];
+                            const taskTitle = parts[2] || taskId;
+                            const depsRaw = parts[3] || '—';
+                            const statusRaw = (parts[4] || '').toLowerCase();
+
+                            let dependencies = [];
+                            if (depsRaw && depsRaw !== '—' && depsRaw !== '-' && depsRaw !== 'none') {
+                                dependencies = depsRaw.split(',').map(d => d.trim()).filter(Boolean);
+                            }
+
+                            const isCompleted = statusRaw.includes('completed') ||
+                                               statusRaw.includes('tamamlandı') ||
+                                               statusRaw.includes('onaylandı') ||
+                                               statusRaw.includes('[x]');
+
+                            const tObj = {
+                                id: taskId,
+                                title: taskTitle,
+                                dependencies,
+                                status: isCompleted ? 'completed' : 'pending'
+                            };
+                            fileTasks.push(tObj);
+                            fileTasksMap.set(taskId, tObj);
+                            fileTasksMap.set(taskTitle, tObj);
+                        }
+                    }
+                }
+            }
+
+            // Pass 2: checkbox lines
+            for (const line of lines) {
+                const trimmed = line.trim();
+                const cbMatch = trimmed.match(/^-\s*\[([ xX])\]\s*(.*)$/);
+                if (cbMatch) {
+                    const isChecked = cbMatch[1].toLowerCase() === 'x';
+                    const rest = cbMatch[2].trim();
+
+                    let tId = null;
+                    let tTitle = null;
+
+                    const arrowMatch = rest.match(/^(?:\d+\.\s*)?(.*?)\s*→\s*`([^`/]+)\/?`/);
+                    if (arrowMatch) {
+                        tTitle = arrowMatch[1].trim();
+                        tId = arrowMatch[2].trim();
+                    } else {
+                        const numMatch = rest.match(/^\d+\.\s*(.*)$/);
+                        if (numMatch) {
+                            tTitle = numMatch[1].trim();
+                        } else {
+                            tTitle = rest;
+                        }
+                    }
+
+                    let existing = (tId && fileTasksMap.get(tId)) || (tTitle && fileTasksMap.get(tTitle));
+                    if (existing) {
+                        if (isChecked) existing.status = 'completed';
+                    } else {
+                        const newId = tId || tTitle;
+                        if (newId) {
+                            const tObj = {
+                                id: newId,
+                                title: tTitle || newId,
+                                dependencies: [],
+                                status: isChecked ? 'completed' : 'pending'
+                            };
+                            fileTasks.push(tObj);
+                            fileTasksMap.set(newId, tObj);
+                        }
+                    }
+                }
+            }
+
+            // Pass 3: Check coder directory completion
+            for (const task of fileTasks) {
+                if (task.status !== 'completed') {
+                    const coderDir = path.join(fileDir, task.id);
+                    if (fsSync.existsSync(coderDir)) {
+                        const raporExists = fsSync.existsSync(path.join(coderDir, 'RAPOR.md'));
+                        let durumCompleted = false;
+                        const durumFile = path.join(coderDir, 'DURUM.md');
+                        if (fsSync.existsSync(durumFile)) {
+                            try {
+                                const durumContent = fsSync.readFileSync(durumFile, 'utf8');
+                                durumCompleted = durumContent.includes('TAMAMLANDI') || durumContent.includes('BASARILI');
+                            } catch {}
+                        }
+                        if (raporExists || durumCompleted) {
+                            task.status = 'completed';
+                        }
+                    }
+                }
+            }
+        } catch {}
+
+        teamleaderPlans[tlId] = { tasks: fileTasks };
+        for (const t of fileTasks) {
+            allTasksMap.set(t.id, t);
+        }
+    }
+
+    const tasks = Array.from(allTasksMap.values());
+
+    // 4. Status determination
+    let status = 'planning';
+    const rootRaporPath = path.join(projectDir, 'RAPOR.md');
+    let isRaporSuccess = false;
+    if (fsSync.existsSync(rootRaporPath)) {
+        try {
+            const rText = fsSync.readFileSync(rootRaporPath, 'utf8').toUpperCase();
+            if (rText.includes('BAŞARILI') || rText.includes('BASARILI') || rText.includes('ONAYLANDI') || rText.includes('TAMAMLANDI')) {
+                isRaporSuccess = true;
+            }
+        } catch {}
+    }
+
+    const allTasksCompleted = tasks.length > 0 && tasks.every(t => t.status === 'completed');
+    if (isRaporSuccess || allTasksCompleted) {
+        status = 'completed';
+    } else if (tasks.length > 0) {
+        status = 'in_progress';
+    }
+
+    const plan = {
+        title,
+        talimatname,
+        summary,
+        domains,
+        tasks
+    };
+
+    const workflow = {
+        teamleaderPlans
+    };
+
+    // 5. Update SQLite projects table
+    const existingProj = database.prepare('SELECT id FROM projects WHERE id = ?').get(pId);
+    const planJson = JSON.stringify(plan);
+    const workflowJson = JSON.stringify(workflow);
+    const nowIso = new Date().toISOString();
+
+    if (!existingProj) {
+        database.prepare(`
+            INSERT INTO projects (id, title, status, plan, workflow_state, is_pinned, created_at)
+            VALUES (?, ?, ?, ?, ?, 0, ?)
+        `).run(pId, title, status, planJson, workflowJson, nowIso);
+    } else {
+        database.prepare(`
+            UPDATE projects
+            SET plan = ?, workflow_state = ?, status = ?
+            WHERE id = ?
+        `).run(planJson, workflowJson, status, pId);
+    }
+
+    // 6. project_contracts table entry
+    const contractExists = database.prepare(
+        'SELECT 1 FROM project_contracts WHERE project_id = ?'
+    ).get(pId);
+
+    if (!contractExists) {
+        const contractId = `contract-${crypto.randomUUID()}`;
+        const contractHash = crypto.createHash('sha256').update(planJson).digest('hex');
+        database.prepare(`
+            INSERT INTO project_contracts (
+                id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at
+            ) VALUES (?, ?, 1, 'approved', ?, ?, ?, ?)
+        `).run(contractId, pId, planJson, contractHash, nowIso, nowIso);
+    }
+
+    return {
+        success: true,
+        plan,
+        workflow,
+        status,
+        tasksCount: tasks.length
+    };
 }
 
 
@@ -132,6 +431,7 @@ export function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot
                 if (insertOwnerStmt && adminUser) {
                     insertOwnerStmt.run(diskId, adminUser.id, nowIso);
                 }
+                rehydrateProjectStateFromDisk(dirPath, { projectId: diskId, database });
                 const welcomeText = status === 'completed'
                     ? `Merhaba Boss! "${title}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
                     : `Merhaba Boss! "${title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
@@ -213,8 +513,8 @@ export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = nu
         }
     }
 
-    const dbProjects = database.prepare('SELECT id FROM projects').all().map(p => p.id);
-    const dbSet = new Set(dbProjects);
+    const dbProjectsWithState = database.prepare('SELECT id, plan, workflow_state FROM projects').all();
+    const dbSet = new Set(dbProjectsWithState.map(p => p.id));
     const unverified = [];
 
     for (const diskId of validDiskDirs) {
@@ -233,10 +533,14 @@ export function reconcileProjectsWithDisk({ env = process.env, projectsRoot = nu
 
     database.exec('BEGIN IMMEDIATE;');
     try {
-        for (const dbId of dbProjects) {
-            const expectedDir = path.join(root, dbId);
+        for (const proj of dbProjectsWithState) {
+            const expectedDir = path.join(root, proj.id);
             if (!fsSync.existsSync(expectedDir)) {
-                missingOnDisk.push(dbId);
+                missingOnDisk.push(proj.id);
+            } else {
+                if (!proj.plan || !proj.workflow_state || proj.plan === 'null' || proj.workflow_state === 'null') {
+                    rehydrateProjectStateFromDisk(expectedDir, { projectId: proj.id, database });
+                }
             }
         }
         database.exec('COMMIT;');
