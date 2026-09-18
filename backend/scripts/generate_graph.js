@@ -51,8 +51,9 @@ async function extractCodeGraph() {
         { id: 'docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md', label: '2026-09-16 Orkestrasyon Planı', desc: 'Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı' },
         { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
         { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
+        { id: 'docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md', label: '2026-09-18 Proje Durumu Canlandırma Planı', desc: 'Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
-    ];
+      ];
 
     docs.forEach(d => {
         addNode(d.id, d.label, 'Document', 'docs', d.id, d.desc);
@@ -192,7 +193,8 @@ async function extractCodeGraph() {
         { id: 'backend/tests/test_disk_sync_and_isolation.js', label: 'test_disk_sync_and_isolation.js (4 Test)', desc: 'Çift yönlü disk senkronizasyonu ve sandbox izolasyonu' },
         { id: 'backend/tests/test_manager_error_telemetry.js', label: 'test_manager_error_telemetry.js', desc: 'Manager hata telemetrisi, revizyon kilit açma ve host fallback testleri' },
         { id: 'frontend/src/utils/__tests__/dagLayout.test.js', label: 'dagLayout.test.js', desc: 'DAG layout 6-ajan hiyerarşisi ve dummy düğüm temizlik testleri' },
-        { id: 'backend/tests/test_scaffold_auth_standards.js', label: 'test_scaffold_auth_standards.js', desc: 'Pragmatik auth ve seed iskele standartları birim testleri' }
+        { id: 'backend/tests/test_scaffold_auth_standards.js', label: 'test_scaffold_auth_standards.js', desc: 'Pragmatik auth ve seed iskele standartları birim testleri' },
+        { id: 'backend/tests/test_project_state_rehydration.js', label: 'test_project_state_rehydration.js (4 Test)', desc: 'Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri' }
     ];
 
     tests.forEach(t => {
@@ -215,6 +217,7 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('frontend/src/utils/__tests__/dagLayout.test.js', 'frontend/src/utils/dagLayout.js', 'verifies');
     addLink('backend/tests/test_scaffold_auth_standards.js', 'backend/engine/codeGenerator.js', 'verifies');
+    addLink('backend/tests/test_project_state_rehydration.js', 'backend/services/reconciliationService.js', 'verifies');
 
     const graphData = { nodes, links };
     await fs.writeFile(path.join(OUT_DIR, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf8');
@@ -600,6 +603,7 @@ ${godNodesText}
               <li><span class="file">📄 2026-09-16-orchestration-remediation-plan.md</span> <span class="tag tag-doc">Orkestrasyon İyileştirme Planı</span></li>
               <li><span class="file">📄 2026-09-17-remediation-refinement-plan.md</span> <span class="tag tag-doc">İyileştirme Rafine Planı</span></li>
               <li><span class="file">📄 2026-09-17-pragmatic-auth-standard-plan.md</span> <span class="tag tag-doc">Pragmatik Auth Standart Planı</span></li>
+              <li><span class="file">📄 2026-09-18-project-state-rehydration-plan.md</span> <span class="tag tag-doc">Proje Durumu Canlandırma Planı</span></li>
             </ul>
           </li>
         </ul>
@@ -667,8 +671,8 @@ ${godNodesText}
               <li><span class="file">📄 test_runtime_verification.js</span> <span class="tag tag-test">6 Testlik Çalışma Zamanı</span></li>
               <li><span class="file">📄 test_e2e_simulation.js</span> <span class="tag tag-test">Uçtan Uca Otonom Pipeline</span></li>
               <li><span class="file">📄 test_disk_sync_and_isolation.js</span> <span class="tag tag-test">Disk Senkronizasyonu & İzolasyon</span></li>
-              <li><span class="file">📄 test_manager_error_telemetry.js</span> <span class="tag tag-test">Manager Hata & Host Fallback</span></li>
               <li><span class="file">📄 test_scaffold_auth_standards.js</span> <span class="tag tag-test">Pragmatik Auth & Seed Standartları</span></li>
+              <li><span class="file">📄 test_project_state_rehydration.js</span> <span class="tag tag-test">Proje Durum Canlandırma</span></li>
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>

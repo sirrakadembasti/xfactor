@@ -7,7 +7,7 @@
       "group": "docs",
       "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "description": "Platformun en üst master orkestrasyon anayasası",
-      "val": 6.5
+      "val": 7
     },
     {
       "id": "docs/manager.md",
@@ -88,6 +88,15 @@
       "group": "docs",
       "file": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
       "description": "Sade auth, seed ve login esneklik planı",
+      "val": 1.5
+    },
+    {
+      "id": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
+      "label": "2026-09-18 Proje Durumu Canlandırma Planı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
+      "description": "Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı",
       "val": 1.5
     },
     {
@@ -268,7 +277,7 @@
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "Disk ve SQLite arasında çift yönlü senkronizasyon, eksik klasör tespiti ve otomatik proje kaydı",
-      "val": 1.5
+      "val": 2
     },
     {
       "id": "backend/executionClient.js",
@@ -412,7 +421,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 14
+      "val": 14.5
     },
     {
       "id": "backend/tests/test_test_harness.js",
@@ -638,6 +647,15 @@
       "file": "backend/tests/test_scaffold_auth_standards.js",
       "description": "Pragmatik auth ve seed iskele standartları birim testleri",
       "val": 2
+    },
+    {
+      "id": "backend/tests/test_project_state_rehydration.js",
+      "label": "test_project_state_rehydration.js (4 Test)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_project_state_rehydration.js",
+      "description": "Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri",
+      "val": 2
     }
   ],
   "links": [
@@ -684,6 +702,11 @@
     {
       "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
       "label": "defines"
     },
     {
@@ -1052,6 +1075,11 @@
       "label": "runs"
     },
     {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_project_state_rehydration.js",
+      "label": "runs"
+    },
+    {
       "source": "backend/tests/test_backend.js",
       "target": "backend/server.js",
       "label": "verifies"
@@ -1114,6 +1142,11 @@
     {
       "source": "backend/tests/test_scaffold_auth_standards.js",
       "target": "backend/engine/codeGenerator.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_project_state_rehydration.js",
+      "target": "backend/services/reconciliationService.js",
       "label": "verifies"
     }
   ]

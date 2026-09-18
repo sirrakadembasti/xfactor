@@ -101,6 +101,7 @@ test_p1_7_task1_auto_register.js
 test_p1_7_task1_routes.js
 test_package_verifier.js
 test_project_repository.js
+test_project_state_rehydration.js
 test_quality_gate.js
 test_scaffold_auth_standards.js
 test_quiz_runtime_remediation.js

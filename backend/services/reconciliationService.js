@@ -384,7 +384,7 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
         ).all(pId);
     } catch {}
 
-    if (existingChats.length > 1) {
+    if (existingChats.length >= 3 || existingChats.some(c => c.role === 'user')) {
         return { success: true, rehydrated: false, count: existingChats.length };
     }
 
@@ -448,7 +448,7 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
         if (fsSync.existsSync(raporPath)) {
             try {
                 const raporContent = fsSync.readFileSync(raporPath, 'utf8').trim();
-                if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI'))) {
+                if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI') || raporContent.includes('GEÇTİ') || raporContent.includes('STATİK DENETİM'))) {
                     const raporMsg = `🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**\n\n${raporContent}`;
                     const alreadyHasRapor = existingTexts.some(t => t.includes(raporContent));
                     if (!alreadyHasRapor) {
