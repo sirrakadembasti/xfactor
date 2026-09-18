@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Play, Pause, Send, Clock, Sparkles, Loader2, User } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Play, Pause, Send, Clock, Sparkles, Loader2, User, Copy, Check, CornerDownLeft } from 'lucide-react';
 
 export default function ChatView({
   projectState,
@@ -14,6 +14,8 @@ export default function ChatView({
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const isInitialMount = useRef(true);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
   const chatHistory = projectState?.chatHistory || [];
   const historyLength = chatHistory.length;
   const lastMessageText = chatHistory[historyLength - 1]?.parts?.[0]?.text;
@@ -30,6 +32,27 @@ export default function ChatView({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [historyLength, lastMessageText, isThinking]);
+
+  const handleCopy = (text, index) => {
+    if (!text) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+    setCopiedIndex(index);
+    setTimeout(() => {
+      setCopiedIndex(null);
+    }, 2000);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isThinking && chatInput.trim()) {
+        handleSendMessage();
+      }
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-slate-50/50 overflow-hidden h-full">
       {/* ÜST SABİT BİLDİRİM VE AKSİYON ŞERİDİ */}
@@ -93,6 +116,9 @@ export default function ChatView({
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {chatHistory.map((msg, i) => {
           const isUser = msg.role === 'user';
+          const isCopied = copiedIndex === i;
+          const messageText = msg.parts?.[0]?.text || '';
+
           return (
             <div key={i} className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
               {!isUser && (
@@ -102,7 +128,7 @@ export default function ChatView({
               )}
 
               <div
-                className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${
+                className={`max-w-[80%] rounded-2xl p-4 shadow-sm relative group transition-all ${
                   isUser
                     ? 'bg-indigo-600 text-white rounded-tr-none'
                     : msg.isError
@@ -110,13 +136,46 @@ export default function ChatView({
                     : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
                 }`}
               >
-                {/* Başlık (Rol Bilgisi) */}
-                <div className={`text-[11px] font-semibold mb-1.5 flex items-center gap-1 ${isUser ? 'text-indigo-200 justify-end' : 'text-indigo-600'}`}>
-                  {isUser ? 'Siz (Boss)' : 'Manager (Kıdemli Mimar)'}
+                {/* Başlık (Rol Bilgisi ve Kopyalama Butonu) */}
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div
+                    className={`text-[11px] font-semibold flex items-center gap-1 ${
+                      isUser ? 'text-indigo-200' : 'text-indigo-600'
+                    }`}
+                  >
+                    {isUser ? 'Siz (Boss)' : 'Manager (Kıdemli Mimar)'}
+                  </div>
+
+                  {messageText && (
+                    <button
+                      onClick={() => handleCopy(messageText, i)}
+                      title={isCopied ? 'Kopyalandı' : 'Mesajı Kopyala'}
+                      className={`p-1 rounded-md text-xs flex items-center gap-1 transition cursor-pointer ${
+                        isUser
+                          ? isCopied
+                            ? 'bg-emerald-500/30 text-emerald-200'
+                            : 'hover:bg-indigo-500/50 text-indigo-200 hover:text-white'
+                          : isCopied
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700'
+                      }`}
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check size={13} className={isUser ? 'text-emerald-200' : 'text-emerald-600'} />
+                          <span className={`text-[10px] font-medium ${isUser ? 'text-emerald-200' : 'text-emerald-600'}`}>
+                            Kopyalandı
+                          </span>
+                        </>
+                      ) : (
+                        <Copy size={13} className="shrink-0" />
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed break-words">
-                  {msg.parts?.[0]?.text || ''}
+                  {messageText}
                 </div>
 
                 {msg.timestamp && (
@@ -171,26 +230,52 @@ export default function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* SOHBET GİRİŞ ALANI (CHAT INPUT) */}
-      <div className="p-4 bg-white border-t border-gray-200 shrink-0">
-        <div className="flex gap-2 max-w-4xl mx-auto items-center">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !isThinking && handleSendMessage()}
-            disabled={isThinking}
-            placeholder={isThinking ? "Manager yanıt hazırlıyor, lütfen bekleyin..." : "Manager ile mimariyi tartışın, isteklerinizi veya revizyonlarınızı yazın..."}
-            className="flex-1 border border-gray-300 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed bg-white"
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={isThinking || !chatInput.trim()}
-            className="bg-indigo-600 text-white p-2.5 rounded-full hover:bg-indigo-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center shrink-0"
-            title="Gönder"
-          >
-            {isThinking ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-          </button>
+      {/* SOHBET GİRİŞ ALANI (FLOATING ELEVATED CARD CHAT INPUT) */}
+      <div className="p-4 bg-gradient-to-t from-slate-100/80 via-slate-50/50 to-transparent shrink-0">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-lg p-3 transition-all duration-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isThinking}
+                rows={2}
+                placeholder={
+                  isThinking
+                    ? "Manager yanıt hazırlıyor, lütfen bekleyin..."
+                    : "Manager ile mimariyi tartışın, isteklerinizi veya revizyonlarınızı yazın..."
+                }
+                className="w-full text-sm bg-transparent resize-none border-0 focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px] max-h-36 leading-relaxed"
+              />
+
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-[11px] text-gray-400 select-none">
+                  <CornerDownLeft size={12} className="text-gray-400" />
+                  <span>Enter: Gönder • Shift+Enter: Yeni Satır</span>
+                </div>
+
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isThinking || !chatInput.trim()}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 text-xs font-semibold shrink-0"
+                  title="Gönder"
+                >
+                  {isThinking ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Düşünüyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={15} />
+                      <span>Gönder</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
