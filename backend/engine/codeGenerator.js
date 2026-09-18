@@ -793,6 +793,87 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {
         await fs.writeFile(envExamplePath, envExampleContent, 'utf8');
     }
+    // 8. Dockerfile ve .dockerignore (Tak-Çalıştır Konteyner Desteği)
+    const dockerfilePath = path.join(projectDir, 'Dockerfile');
+    const dockerignorePath = path.join(projectDir, '.dockerignore');
+
+    try {
+        await fs.stat(dockerfilePath);
+    } catch {
+        let dockerfileLines = [];
+        if (isNext) {
+            dockerfileLines = [
+                'FROM node:22-alpine AS builder',
+                'WORKDIR /app',
+                'COPY package*.json ./',
+                'RUN npm ci',
+                'COPY . .',
+                hasPrisma ? 'RUN npx prisma generate' : '',
+                'RUN npm run build',
+                '',
+                'FROM node:22-alpine AS runner',
+                'WORKDIR /app',
+                'ENV NODE_ENV=production PORT=3000',
+                'COPY --from=builder /app/package*.json ./',
+                'COPY --from=builder /app/node_modules ./node_modules',
+                'COPY --from=builder /app/.next ./.next',
+                'COPY --from=builder /app/public ./public',
+                hasPrisma ? 'COPY --from=builder /app/prisma ./prisma' : '',
+                'EXPOSE 3000',
+                'CMD ["npm", "start"]',
+                ''
+            ];
+        } else if (isExpressOnly) {
+            dockerfileLines = [
+                'FROM node:22-alpine',
+                'WORKDIR /app',
+                'COPY package*.json ./',
+                'RUN npm ci --omit=dev',
+                'COPY . .',
+                hasPrisma ? 'RUN npx prisma generate' : '',
+                'EXPOSE 3000',
+                'CMD ["npm", "start"]',
+                ''
+            ];
+        } else {
+            dockerfileLines = [
+                'FROM node:22-alpine AS builder',
+                'WORKDIR /app',
+                'COPY package*.json ./',
+                'RUN npm ci',
+                'COPY . .',
+                'RUN npm run build',
+                '',
+                'FROM node:22-alpine AS runner',
+                'WORKDIR /app',
+                'COPY --from=builder /app/package*.json ./',
+                'COPY --from=builder /app/node_modules ./node_modules',
+                'COPY --from=builder /app/dist ./dist',
+                'EXPOSE 4173',
+                'CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "4173"]',
+                ''
+            ];
+        }
+        const dockerfileContent = dockerfileLines.filter(Boolean).join('\n');
+        await fs.writeFile(dockerfilePath, dockerfileContent, 'utf8');
+    }
+
+    try {
+        await fs.stat(dockerignorePath);
+    } catch {
+        const dockerignoreContent = [
+            'node_modules',
+            '.next',
+            'dist',
+            'build',
+            '.env',
+            '.env.local',
+            '.git',
+            'npm-debug.log*',
+            ''
+        ].join('\n');
+        await fs.writeFile(dockerignorePath, dockerignoreContent, 'utf8');
+    }
     // 8. Prisma ve DB İstemcisi Çift Köprü Garantisi (src/lib/prisma.ts <-> src/lib/db.ts)
     if (hasPrisma) {
         const libDir = path.join(projectDir, 'src', 'lib');

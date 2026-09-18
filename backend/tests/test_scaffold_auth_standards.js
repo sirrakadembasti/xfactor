@@ -108,10 +108,21 @@ model Product {
 
         assert.deepStrictEqual(authModule.requireAuth({ user: validUser }), validUser);
         assert.throws(() => authModule.requireAuth({}), /Unauthorized/);
-
         // Test requireAdmin
         assert.deepStrictEqual(authModule.requireAdmin({ user: adminUser }), adminUser);
         assert.throws(() => authModule.requireAdmin({ user: validUser }), /Forbidden/);
+    });
+
+    await runAsyncTest('6. ensureProjectScaffold creates Dockerfile and .dockerignore for generated projects', async () => {
+        const workspace = await createTempWorkspace();
+        await ensureProjectScaffold(workspace, { title: 'container-test-app' }, {});
+        const dockerfileExists = await fs.stat(path.join(workspace, 'Dockerfile')).then(() => true).catch(() => false);
+        const dockerignoreExists = await fs.stat(path.join(workspace, '.dockerignore')).then(() => true).catch(() => false);
+        assert.strictEqual(dockerfileExists, true, 'Dockerfile must be generated');
+        assert.strictEqual(dockerignoreExists, true, '.dockerignore must be generated');
+        const dockerfileContent = await fs.readFile(path.join(workspace, 'Dockerfile'), 'utf8');
+        assert.ok(dockerfileContent.includes('FROM node:22-alpine'), 'Must use node 22 alpine base image');
+        assert.ok(dockerfileContent.includes('EXPOSE'), 'Must expose service port');
     });
 } finally {
     for (const dir of tempDirs) {
