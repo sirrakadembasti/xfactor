@@ -231,9 +231,9 @@ export default function ChatView({
       </div>
 
       {/* SOHBET GİRİŞ ALANI (FLOATING ELEVATED CARD CHAT INPUT) */}
-      <div className="p-4 bg-gradient-to-t from-cream-200/80 via-cream-100/50 to-transparent shrink-0">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-cream-50 border border-cream-300 rounded-2xl shadow-lg p-3 transition-all duration-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
+      <div className="px-4 pt-2 pb-8 bg-gradient-to-t from-cream-200/80 via-cream-100/50 to-transparent shrink-0">
+        <div className="max-w-xl mx-auto">
+          <div className="bg-cream-50 border border-cream-300 rounded-2xl shadow-lg p-2.5 px-3.5 transition-all duration-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
             <div className="flex flex-col gap-2">
               <textarea
                 value={chatInput}
@@ -246,10 +246,10 @@ export default function ChatView({
                     ? "Manager yanıt hazırlıyor, lütfen bekleyin..."
                     : "Manager ile mimariyi tartışın, isteklerinizi veya revizyonlarınızı yazın..."
                 }
-                className="w-full text-sm bg-transparent resize-none border-0 focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px] max-h-36 leading-relaxed"
+                className="w-full text-sm bg-transparent resize-none border-0 focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] max-h-36 leading-relaxed"
               />
 
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-[11px] text-gray-400 select-none">
                   <CornerDownLeft size={12} className="text-gray-400" />
                   <span>Enter: Gönder • Shift+Enter: Yeni Satır</span>
