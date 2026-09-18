@@ -15,8 +15,6 @@ const previousEnv = {
     PROJECTS_ROOT: process.env.PROJECTS_ROOT
 };
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const frontendNodeModules = path.join(repoRoot, 'frontend', 'node_modules');
-const hiddenFrontendNodeModules = `${frontendNodeModules}.p6-archive-ownership-hidden`;
 const { runAsyncTest, finish } = createTestHarness();
 
 function restoreEnv(name, value) {
@@ -127,8 +125,6 @@ try {
         assert.strictEqual(backendManifest.dependencies.jszip, '3.10.1');
         assert.strictEqual(frontendManifest.dependencies.jszip, undefined);
 
-        const frontendExists = await fs.stat(frontendNodeModules).then(() => true).catch(() => false);
-        if (frontendExists) await fs.rename(frontendNodeModules, hiddenFrontendNodeModules);
         try {
             await runChild(`
                 import assert from 'node:assert';
@@ -152,9 +148,7 @@ try {
                     await fs.rm(outputDir, { recursive: true, force: true });
                 }
             `);
-        } finally {
-            if (frontendExists) await fs.rename(hiddenFrontendNodeModules, frontendNodeModules);
-        }
+        } finally {}
     });
 } finally {
     restoreEnv('ARTIFACTS_ROOT', previousEnv.ARTIFACTS_ROOT);
