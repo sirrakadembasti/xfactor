@@ -270,7 +270,7 @@ export function createProjectRouter({
     // 3. Proje Senkronizasyonu (Disk ile İki Yönlü Reconcile & Auto-register)
     router.post('/sync', requireAuth, async (req, res, next) => {
         try {
-            const syncResult = syncProjectsWithDisk({ autoRegister: true, env: process.env });
+            const syncResult = await syncProjectsWithDisk({ autoRegister: true, env: process.env });
             res.json(syncResult);
         } catch (error) {
             next(error);

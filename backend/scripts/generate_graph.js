@@ -52,6 +52,7 @@ async function extractCodeGraph() {
         { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
         { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
         { id: 'docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md', label: '2026-09-18 Proje Durumu Canlandırma Planı', desc: 'Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı' },
+        { id: 'docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md', label: '2026-09-19 Doğru Durum ve Artefakt Planı', desc: 'Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
       ];
 
@@ -604,6 +605,7 @@ ${godNodesText}
               <li><span class="file">📄 2026-09-17-remediation-refinement-plan.md</span> <span class="tag tag-doc">İyileştirme Rafine Planı</span></li>
               <li><span class="file">📄 2026-09-17-pragmatic-auth-standard-plan.md</span> <span class="tag tag-doc">Pragmatik Auth Standart Planı</span></li>
               <li><span class="file">📄 2026-09-18-project-state-rehydration-plan.md</span> <span class="tag tag-doc">Proje Durumu Canlandırma Planı</span></li>
+              <li><span class="file">📄 2026-09-19-accurate-project-state-and-artifact-plan.md</span> <span class="tag tag-doc">Doğru Durum ve Artefakt Planı</span></li>
             </ul>
           </li>
         </ul>
