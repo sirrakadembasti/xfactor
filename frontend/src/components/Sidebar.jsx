@@ -59,7 +59,7 @@ export default function Sidebar({
                 onClick={handleSyncProjects}
                 disabled={isSyncing}
                 title="Diskle Senkronize Et (Projeleri Tara)"
-                className="p-1.5 bg-gray-50 hover:bg-gray-100 hover:text-indigo-600 rounded-lg text-gray-500 transition-all border border-gray-200/60 shadow-2xs disabled:opacity-50 cursor-pointer"
+                className="p-1.5 bg-gray-50 hover:bg-gray-100 hover:text-indigo-600 rounded-lg text-gray-500 transition-all border border-gray-200/60 shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw size={15} className={isSyncing ? 'animate-spin text-indigo-600' : ''} />
               </button>
@@ -68,7 +68,7 @@ export default function Sidebar({
               type="button"
               onClick={handleCreateProject}
               title="Yeni Proje Başlat"
-              className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600 hover:text-indigo-700 transition-all border border-indigo-100 shadow-2xs cursor-pointer"
+              className="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600 hover:text-indigo-700 transition-all border border-indigo-100 shadow-sm cursor-pointer"
             >
               <Plus size={16} />
             </button>
@@ -106,7 +106,7 @@ export default function Sidebar({
                 onClick={() => setActiveProjectId(p.id)}
                 className={`p-2.5 rounded-xl cursor-pointer flex items-start justify-between relative group transition-all border ${
                   isActive
-                    ? 'bg-indigo-50/70 border-indigo-200 border-l-4 border-l-indigo-600 shadow-2xs'
+                    ? 'bg-indigo-50/70 border-indigo-200 border-l-4 border-l-indigo-600 shadow-sm'
                     : 'bg-cream-50/60 border-transparent hover:bg-cream-100 hover:border-cream-200/80'
                 }`}
               >
@@ -171,8 +171,8 @@ export default function Sidebar({
       {/* Sidebar Footer */}
       <div className="p-3 border-t border-cream-300 bg-cream-100/80 space-y-2.5">
         {/* User Profile Card */}
-        <div className="flex items-center gap-2.5 p-2 bg-cream-50 rounded-xl border border-cream-200/80 shadow-2xs">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0">
+        <div className="flex items-center gap-2.5 p-2 bg-cream-50 rounded-xl border border-cream-200/80 shadow-sm">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
             {(loginUsername || 'admin').charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -192,6 +192,7 @@ export default function Sidebar({
         {/* Logout Button */}
         <button
           onClick={handleLogout}
+          aria-label="Çıkış"
           className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
         >
           <LogOut size={14} /> Oturumu Kapat
