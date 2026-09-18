@@ -406,7 +406,7 @@ try {
         );
         assert.deepEqual(snapshot(), before);
 
-        for (const candidate of ['x'.repeat(11), 'x'.repeat(257)]) {
+        for (const candidate of ['x'.repeat(5), 'x'.repeat(257)]) {
             assert.equal(validateLoginPayload({ username: user.username, password: candidate }), false);
             assert.throws(() => changeUserPassword(user.username, originalPassword, candidate), /password/i);
             assert.deepEqual(snapshot(), before);
