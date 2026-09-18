@@ -14,8 +14,8 @@ export default function LoginView({
   logoutPending = false
 }) {
   return (
-    <div className="flex items-center justify-center h-screen bg-indigo-50 font-sans">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-96">
+    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-cream-100 via-cream-50 to-cream-200 font-sans">
+      <div className="bg-cream-50/90 border border-cream-200 p-8 rounded-2xl shadow-xl w-96 backdrop-blur-xs">
         <div className="flex items-center justify-center gap-2 mb-2">
           <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xl">X</div>
           <h2 className="text-2xl font-bold text-indigo-700">XFactor</h2>
@@ -72,7 +72,7 @@ export default function LoginView({
             </>
           )}
           {!mfaRequired && (
-            <div className="bg-indigo-50/80 border border-indigo-100 rounded-lg p-2.5 text-center text-xs text-indigo-800">
+            <div className="bg-cream-100/90 border border-cream-200 rounded-lg p-2.5 text-center text-xs text-indigo-900">
               <span className="font-medium text-gray-500">Varsayılan Giriş:</span>{' '}
               <span className="font-semibold text-indigo-900">admin</span> / <span className="font-semibold text-indigo-900">xfactor</span>
             </div>

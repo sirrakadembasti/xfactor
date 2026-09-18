@@ -35,7 +35,7 @@ export default function Header({
   };
 
   return (
-    <div className="h-14 bg-white border-b px-6 flex items-center justify-between shadow-sm z-10">
+    <div className="h-14 bg-cream-50 border-b border-cream-300 px-6 flex items-center justify-between shadow-xs z-10">
       <div className="flex items-center gap-3 min-w-0">
         <h2 className="font-bold text-base text-gray-900 truncate">{projectState.title}</h2>
         <div>{getStatusBadge(projectState.status)}</div>
@@ -51,11 +51,11 @@ export default function Header({
       {/* Action Buttons in Header */}
       <div className="flex items-center gap-2">
         {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar / IDE) */}
-        <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200 mr-2">
+        <div className="flex bg-cream-200/60 p-0.5 rounded-lg border border-cream-300 mr-2">
           <button
             onClick={() => selectView('dashboard')}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-              viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             <LayoutDashboard size={14} /> Kalite Paneli
@@ -66,7 +66,7 @@ export default function Header({
               if (activeProjectId) fetchProjectState(activeProjectId);
             }}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-              viewMode === 'chat' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              viewMode === 'chat' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             <MessageSquare size={14} /> Sohbet & Mimari
@@ -74,7 +74,7 @@ export default function Header({
           <button
             onClick={() => selectView('flow')}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-              viewMode === 'flow' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              viewMode === 'flow' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             <Layers size={14} /> Canlı DAG Grafiği
@@ -82,7 +82,7 @@ export default function Header({
           <button
             onClick={() => selectView('logs')}
             className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-              viewMode === 'logs' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              viewMode === 'logs' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             <ScrollText size={14} /> Canlı Süreç Logları
@@ -91,7 +91,7 @@ export default function Header({
             <button
               onClick={() => selectView('ide')}
               className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-                viewMode === 'ide' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'ide' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               <FileCode size={14} /> Kod Editörü

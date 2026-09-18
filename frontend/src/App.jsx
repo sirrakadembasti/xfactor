@@ -777,7 +777,7 @@ export default function App() {
 
   if (authStatus === 'checking') {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">
+      <div className="flex h-screen items-center justify-center bg-cream-100 text-sm font-semibold text-stone-600">
         Oturum doğrulanıyor…
       </div>
     );
@@ -802,7 +802,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
+    <div className="flex h-screen bg-cream-100 font-sans text-stone-800">
       {/* SIDEBAR */}
       <Sidebar
         projects={projects}
@@ -842,7 +842,7 @@ export default function App() {
           </div>
         )}
         {!projectState ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400 flex-col bg-white">
+          <div className="flex-1 flex items-center justify-center text-stone-400 flex-col bg-cream-50">
             <LayoutDashboard size={56} className="mb-4 text-indigo-300" />
             <h3 className="text-lg font-bold text-gray-700 mb-1">XFactor AI Orkestrasyon Platformu</h3>
             <p className="text-sm text-gray-500 mb-4">Sol menüden bir proje seçin veya yeni bir proje başlatın.</p>

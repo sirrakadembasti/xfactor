@@ -54,7 +54,7 @@ export default function ChatView({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50/50 overflow-hidden h-full">
+    <div className="flex-1 flex flex-col bg-cream-100/60 overflow-hidden h-full">
       {/* ÜST SABİT BİLDİRİM VE AKSİYON ŞERİDİ */}
       {projectState?.status === 'pending_approval' && (
         <div className="mx-6 mt-3 mb-1 p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between shadow-sm shrink-0">
@@ -133,7 +133,7 @@ export default function ChatView({
                     ? 'bg-indigo-600 text-white rounded-tr-none'
                     : msg.isError
                     ? 'bg-red-50 text-red-900 border border-red-200 rounded-tl-none'
-                    : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
+                    : 'bg-cream-50 text-stone-800 border border-cream-200 rounded-tl-none'
                 }`}
               >
                 {/* Başlık (Rol Bilgisi ve Kopyalama Butonu) */}
@@ -205,7 +205,7 @@ export default function ChatView({
             <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-1 text-xs">
               🏛️
             </div>
-            <div className="bg-white border border-indigo-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm flex items-center gap-3">
+            <div className="bg-cream-50 border border-indigo-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-xs flex items-center gap-3">
               <div className="relative flex items-center justify-center">
                 <Sparkles size={16} className="text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
                 <span className="absolute -top-1 -right-1 flex h-2 w-2">
@@ -231,9 +231,9 @@ export default function ChatView({
       </div>
 
       {/* SOHBET GİRİŞ ALANI (FLOATING ELEVATED CARD CHAT INPUT) */}
-      <div className="p-4 bg-gradient-to-t from-slate-100/80 via-slate-50/50 to-transparent shrink-0">
+      <div className="p-4 bg-gradient-to-t from-cream-200/80 via-cream-100/50 to-transparent shrink-0">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white border border-gray-200/90 rounded-2xl shadow-lg p-3 transition-all duration-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
+          <div className="bg-cream-50 border border-cream-300 rounded-2xl shadow-lg p-3 transition-all duration-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
             <div className="flex flex-col gap-2">
               <textarea
                 value={chatInput}

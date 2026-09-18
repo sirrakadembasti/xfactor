@@ -39,9 +39,9 @@ export default function Sidebar({
   );
 
   return (
-    <div className="w-72 bg-white border-r flex flex-col shadow-sm z-20">
+    <div className="w-72 bg-cream-50 border-r border-cream-300 flex flex-col shadow-xs z-20">
       {/* Sidebar Header */}
-      <div className="p-3.5 border-b flex items-center justify-between bg-white">
+      <div className="p-3.5 border-b border-cream-200 flex items-center justify-between bg-cream-50">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-black text-base shadow-sm ring-1 ring-indigo-500/20">
             X
@@ -77,7 +77,7 @@ export default function Sidebar({
       </div>
 
       {/* Search Bar */}
-      <div className="p-2.5 border-b bg-gray-50/50">
+      <div className="p-2.5 border-b border-cream-200 bg-cream-100/60">
         <div className="relative flex items-center">
           <Search size={14} className="absolute left-2.5 text-gray-400" />
           <input
@@ -85,7 +85,7 @@ export default function Sidebar({
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Projelerde ara..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-cream-50 border border-cream-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition"
           />
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function Sidebar({
                 className={`p-2.5 rounded-xl cursor-pointer flex items-start justify-between relative group transition-all border ${
                   isActive
                     ? 'bg-indigo-50/70 border-indigo-200 border-l-4 border-l-indigo-600 shadow-2xs'
-                    : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200/60'
+                    : 'bg-cream-50/60 border-transparent hover:bg-cream-100 hover:border-cream-200/80'
                 }`}
               >
                 <div className="flex-1 min-w-0 pr-2">
@@ -169,9 +169,9 @@ export default function Sidebar({
       </div>
 
       {/* Sidebar Footer */}
-      <div className="p-3 border-t bg-gray-50/80 space-y-2.5">
+      <div className="p-3 border-t border-cream-300 bg-cream-100/80 space-y-2.5">
         {/* User Profile Card */}
-        <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-gray-200/70 shadow-2xs">
+        <div className="flex items-center gap-2.5 p-2 bg-cream-50 rounded-xl border border-cream-200/80 shadow-2xs">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0">
             {(loginUsername || 'admin').charAt(0).toUpperCase()}
           </div>
