@@ -1,6 +1,6 @@
 # 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
 
-**Oluşturulma Tarihi:** 2026-09-17  
+**Oluşturulma Tarihi:** 2026-09-18  
 **Toplam Düğüm (Nodes):** 71  
 **Toplam Bağlantı (Edges):** 95  
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)

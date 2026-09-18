@@ -219,7 +219,7 @@ describe('P9 project/auth request isolation', () => {
 
     render(<App />);
     await screen.findByText(projectB.title, { selector: 'span' });
-    fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
     await screen.findByRole('button', { name: 'Giriş Yap' });
 
     delayedA.resolve({ ...projectA, title: 'A restored after logout' });
@@ -235,7 +235,7 @@ describe('P9 project/auth request isolation', () => {
 
     render(<App />);
     await waitForHeading(projectA.title);
-    fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
     await screen.findByRole('button', { name: 'Giriş Yap' });
 
     fireEvent.change(screen.getByLabelText('Kullanıcı Adı'), { target: { value: 'admin' } });
@@ -260,7 +260,7 @@ describe('P9 project/auth request isolation', () => {
     try {
       render(<App />);
       await waitForHeading(projectA.title);
-      fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+      fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
       const loginButton = await screen.findByRole('button', { name: 'Giriş Yap' });
       expect(loginButton).toBeDisabled();
 
@@ -297,7 +297,7 @@ describe('P9 project/auth request isolation', () => {
     await waitForHeading(projectB.title);
     fireEvent.click(screen.getByRole('button', { name: /Canlı Süreç Logları/ }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Çıkış' }));
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
     await screen.findByRole('button', { name: 'Giriş Yap' });
     await new Promise(resolve => setTimeout(resolve, 125));
 
