@@ -232,6 +232,33 @@ await runAsyncTest('resume and pause append exact canonical action pairs', async
     ]);
 });
 
+await runAsyncTest('malformed action IDs are rejected before workflow mutation', async () => {
+    for (const actionId of [' ', 'x'.repeat(129)]) {
+        const project = await createProject({ title: `Malformed Action ${actionId.length}` });
+        createContractRevision(project.id, validPlan, `malformed-message-${actionId.length}`);
+        const pending = await readProjectState(project.id);
+        pending.status = 'pending_approval';
+        await writeProjectState(pending);
+        const before = db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(project.id);
+
+        const result = await postAction({ projectId: project.id, kind: 'approve', actionId });
+
+        assert.strictEqual(result.status, 400, JSON.stringify(result.body));
+        assert.deepStrictEqual(
+            db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(project.id),
+            before
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM workflow_attempts WHERE project_id = ?').get(project.id).count,
+            0
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count,
+            0
+        );
+    }
+});
+
 await runAsyncTest('invalid workflow transitions do not append action rows', async () => {
     const project = await createProject({ title: 'Invalid Action Route' });
     const result = await postAction({
@@ -252,16 +279,23 @@ await runAsyncTest('repeated approve and resume action requests are idempotent a
     const pending = await readProjectState(approveProject.id);
     pending.status = 'pending_approval';
     await writeProjectState(pending);
-    const approveAction = { projectId: approveProject.id, kind: 'approve', actionId: 'approve-repeat-action' };
+    const approveAction = { projectId: approveProject.id, kind: 'approve', actionId: 'approve-repeat-first' };
     const firstApprove = await postAction(approveAction);
-    const secondApprove = await postAction(approveAction);
+    const secondApprove = await postAction({
+        ...approveAction,
+        actionId: 'approve-repeat-second'
+    });
     try {
         assert.strictEqual(firstApprove.status, 200, JSON.stringify(firstApprove.body));
         assert.strictEqual(secondApprove.status, 200, JSON.stringify(secondApprove.body));
         assert.strictEqual(secondApprove.body.idempotent, true);
         assert.strictEqual(
-            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(approveProject.id, 'approve-repeat-action:%').count,
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(approveProject.id, 'approve-repeat-first:%').count,
             2
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(approveProject.id, 'approve-repeat-second:%').count,
+            0
         );
     } finally {
         abortProjectExecution(approveProject.id);
@@ -271,16 +305,23 @@ await runAsyncTest('repeated approve and resume action requests are idempotent a
     const paused = await readProjectState(resumeProject.id);
     db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
     paused.status = 'paused';
-    const resumeAction = { projectId: resumeProject.id, kind: 'resume', actionId: 'resume-repeat-action' };
+    const resumeAction = { projectId: resumeProject.id, kind: 'resume', actionId: 'resume-repeat-first' };
     const firstResume = await postAction(resumeAction);
-    const secondResume = await postAction(resumeAction);
+    const secondResume = await postAction({
+        ...resumeAction,
+        actionId: 'resume-repeat-second'
+    });
     try {
         assert.strictEqual(firstResume.status, 200, JSON.stringify(firstResume.body));
         assert.strictEqual(secondResume.status, 200, JSON.stringify(secondResume.body));
         assert.strictEqual(secondResume.body.idempotent, true);
         assert.strictEqual(
-            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(resumeProject.id, 'resume-repeat-action:%').count,
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(resumeProject.id, 'resume-repeat-first:%').count,
             2
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(resumeProject.id, 'resume-repeat-second:%').count,
+            0
         );
     } finally {
         abortProjectExecution(resumeProject.id);

@@ -24,12 +24,29 @@ import { listArtifacts } from '../repositories/artifactRepository.js';
 
 
 import { authorizeArtifactDownload } from './artifactDownloadAuthorization.js';
-const getActionId = req => req.get('X-XFactor-Action-Id') || `server-${crypto.randomUUID()}`;
+const getActionId = req => {
+    const supplied = req.get('X-XFactor-Action-Id');
+    if (supplied !== undefined && (
+        !supplied.trim()
+        || supplied.length > 128
+    )) {
+        const error = new Error('Invalid X-XFactor-Action-Id header.');
+        error.status = 400;
+        throw error;
+    }
+    return supplied || `server-${crypto.randomUUID()}`;
+};
 
-const appendWorkflowAction = (projectId, req, action) => appendProjectActionMessages(projectId, {
-    actionId: getActionId(req),
+const appendWorkflowAction = (projectId, actionId, action) => appendProjectActionMessages(projectId, {
+    actionId,
     userText: action.userText,
     modelText: action.modelText
+});
+
+const respondIdempotentWorkflow = (res, projectId, attempt) => res.json({
+    ...getProject(projectId),
+    attemptId: attempt?.id,
+    idempotent: true
 });
 
 function findFailedReports(dir, projectDir) {
@@ -505,6 +522,7 @@ export function createProjectRouter({
     router.post('/:id/approve', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             const leaseOwner = `http-approve-${req.user.id}`;
@@ -514,11 +532,7 @@ export function createProjectRouter({
                 PROJECT_STATUS.CONTRACT_APPROVED
             )) {
                 if (activeLease) {
-                    return res.json({
-                        ...getProject(id),
-                        attemptId: activeLease.id,
-                        idempotent: true
-                    });
+                    return respondIdempotentWorkflow(res, id, activeLease);
                 }
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
@@ -531,6 +545,14 @@ export function createProjectRouter({
             } = await import('../contracts/projectContract.js');
             const latestRevision = getLatestRevision(id);
             if (!latestRevision || latestRevision.status !== 'pending_approval') {
+                const currentAttempt = getActiveWorkflowAttempt(id);
+                const currentState = await readProjectState(id);
+                if (
+                    currentAttempt
+                    && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
+                ) {
+                    return respondIdempotentWorkflow(res, id, currentAttempt);
+                }
                 return res.status(400).json({
                     error: "Onaylanacak bekleyen bir plan bulunamadı."
                 });
@@ -553,18 +575,25 @@ export function createProjectRouter({
                 });
             }
 
-            approveContractRevision(id, latestRevision.revision);
+            try {
+                approveContractRevision(id, latestRevision.revision);
+            } catch (error) {
+                const currentAttempt = getActiveWorkflowAttempt(id);
+                const currentState = await readProjectState(id);
+                if (
+                    currentAttempt
+                    && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
+                ) {
+                    return respondIdempotentWorkflow(res, id, currentAttempt);
+                }
+                throw error;
+            }
             state.status = PROJECT_STATUS.CONTRACT_APPROVED;
             await writeProjectState(id, state);
 
             const lease = acquireWorkflowLease(id, leaseOwner);
-
             if (!lease.acquired) {
-                return res.json({
-                    ...getProject(id),
-                    attemptId: lease.attempt.id,
-                    idempotent: true
-                });
+                return respondIdempotentWorkflow(res, id, lease.attempt);
             }
 
             const approvedState = await readProjectState(id);
@@ -587,7 +616,7 @@ export function createProjectRouter({
                 leaseOwner
             });
 
-            appendWorkflowAction(id, req, {
+            appendWorkflowAction(id, actionId, {
                 userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
                 modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
             });
@@ -1037,6 +1066,7 @@ export function createProjectRouter({
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
@@ -1071,7 +1101,7 @@ export function createProjectRouter({
                 attemptId: lease.attempt.id,
                 leaseOwner
             });
-            appendWorkflowAction(id, req, {
+            appendWorkflowAction(id, actionId, {
                 userText: '▶️ Süreci kaldığı yerden devam ettir.',
                 modelText: 'Süreç kaldığı görevden devam ettiriliyor.'
             });
@@ -1102,6 +1132,7 @@ export function createProjectRouter({
     router.post('/:id/pause', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             const state = await readProjectState(id);
             if (!state || !canTransitionProjectStatus(state.status, 'paused')) {
                 return res.status(400).json({ error: "Geçersiz işlem" });
@@ -1118,7 +1149,7 @@ export function createProjectRouter({
                     ? { attemptId: activeLease.id, leaseOwner: activeLease.lease_owner }
                     : null
             );
-            appendWorkflowAction(id, req, {
+            appendWorkflowAction(id, actionId, {
                 userText: '⏸️ Üretim sürecini duraklat.',
                 modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
             });
