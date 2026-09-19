@@ -60,7 +60,9 @@ export const requestVerifiedArtifactDownload = async ({
   activeProjectId,
   projectState,
   getProject,
-  navigate
+  navigate,
+  actionId,
+  download
 }) => {
   const targetState = projectId === activeProjectId ? projectState : await getProject(projectId);
   const { contractId, latestArtifact } = targetState || {};
@@ -68,7 +70,26 @@ export const requestVerifiedArtifactDownload = async ({
     throw new Error('UNVERIFIED_ARTIFACT');
   }
 
-  navigate(buildArtifactDownloadUrl(projectId, contractId, latestArtifact.id));
+  const url = buildArtifactDownloadUrl(projectId, contractId, latestArtifact.id);
+  if (!actionId || typeof download !== 'function') {
+    navigate(url);
+    return;
+  }
+
+  const blob = await download(url, buildActionRequestOptions(actionId));
+  if (typeof document === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+    navigate(url);
+    return;
+  }
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = `${projectId}.zip`;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
 };
 export const buildWebSocketUrl = (apiBaseUrl = DEFAULT_API_URL) => {
   const apiUrl = new URL(String(apiBaseUrl || DEFAULT_API_URL));
@@ -119,7 +140,12 @@ export const buildActionRequestOptions = (actionId, options = {}) => {
 
 export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15000) => {
   const request = async (endpoint, options = {}) => {
-    const { signal, timeoutMs = defaultTimeoutMs, ...fetchOpts } = options;
+    const {
+      signal,
+      timeoutMs = defaultTimeoutMs,
+      responseType = 'json',
+      ...fetchOpts
+    } = options;
     if (signal?.aborted) {
       throw signal.reason || new DOMException('The operation was aborted.', 'AbortError');
     }
@@ -128,7 +154,9 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       'Content-Type': 'application/json',
       ...(fetchOpts.headers || {})
     };
-    const url = buildApiUrl(baseURL, endpoint);
+    const url = /^https?:\/\//i.test(String(endpoint))
+      ? String(endpoint)
+      : buildApiUrl(baseURL, endpoint);
 
     let timer;
     let requestSignal = signal;
@@ -162,7 +190,7 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
         );
       }
 
-      return await res.json();
+      return responseType === 'blob' ? await res.blob() : await res.json();
     } catch (err) {
       if (err.name === 'AbortError' || err.message?.includes('Timeout')) {
         throw err;
@@ -197,11 +225,6 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
         body: JSON.stringify({ title }),
         ...opts
       }),
-    syncProjects: (opts = {}) =>
-      request('/projects/sync', {
-        method: 'POST',
-        ...opts
-      }),
 
     // Project Files & Logs
     getProjectFiles: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/files`, opts),
@@ -230,6 +253,22 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
         body: JSON.stringify({ changedRequirementKeys }),
         ...opts
       }),
+    syncProjects: (activeProjectIdOrOptions = {}, maybeOptions = {}) => {
+      const options = typeof activeProjectIdOrOptions === 'string'
+        ? maybeOptions
+        : activeProjectIdOrOptions || {};
+      const activeProjectId = typeof activeProjectIdOrOptions === 'string'
+        ? activeProjectIdOrOptions
+        : options.activeProjectId;
+      const { activeProjectId: _ignoredActiveProjectId, ...requestOptions } = options;
+      return request('/projects/sync', {
+        method: 'POST',
+        body: JSON.stringify(activeProjectId ? { activeProjectId } : {}),
+        ...requestOptions
+      });
+    },
+    downloadArtifact: (endpoint, opts = {}) =>
+      request(endpoint, { ...opts, responseType: 'blob' }),
 
     // Execution & Interaction
     sendChatMessage: (id, message, opts = {}) =>

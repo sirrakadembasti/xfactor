@@ -97,6 +97,39 @@ test('fetches a non-active project once before downloading its verified artifact
   );
 });
 
+test('downloads verified artifacts with an action header through the browser download flow', async () => {
+  const download = vi.fn().mockResolvedValue(new Blob(['zip']));
+  const navigate = vi.fn();
+  const originalCreateObjectURL = URL.createObjectURL;
+  const originalRevokeObjectURL = URL.revokeObjectURL;
+  const createObjectURL = vi.fn().mockReturnValue('blob:artifact');
+  const revokeObjectURL = vi.fn();
+  URL.createObjectURL = createObjectURL;
+  URL.revokeObjectURL = revokeObjectURL;
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+  await requestVerifiedArtifactDownload({
+    projectId: 'project-1',
+    activeProjectId: 'project-1',
+    projectState: { contractId: 'contract-1', latestArtifact: { id: 'artifact-1', status: 'verified' } },
+    getProject: vi.fn(),
+    actionId: 'download-action-1',
+    download,
+    navigate
+  });
+
+  expect(download).toHaveBeenCalledWith(
+    buildArtifactDownloadUrl('project-1', 'contract-1', 'artifact-1'),
+    expect.objectContaining({
+      headers: expect.objectContaining({ 'X-XFactor-Action-Id': 'download-action-1' })
+    })
+  );
+  expect(revokeObjectURL).toHaveBeenCalledWith('blob:artifact');
+  URL.createObjectURL = originalCreateObjectURL;
+  URL.revokeObjectURL = originalRevokeObjectURL;
+  click.mockRestore();
+});
+
 test('shows and dismisses the verified-artifact policy alert', async () => {
   class TestWebSocket {
     static OPEN = 1;

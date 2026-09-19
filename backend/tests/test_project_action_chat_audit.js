@@ -40,6 +40,22 @@ const actionMessages = {
     pause: {
         user: '⏸️ Üretim sürecini duraklat.',
         model: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+    },
+    sync: {
+        user: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
+        model: result => `Senkronizasyon tamamlandı: ${result.registered} yeni, ${result.missing} eksik, ${result.updated} güncellenen proje.`
+    },
+    pin: {
+        user: '📌 Projeyi başa sabitledim.',
+        model: 'Proje yan menünün üst sırasına taşındı.'
+    },
+    unpin: {
+        user: '📌 Projenin sabitlemesini kaldırdım.',
+        model: 'Proje normal sıralamaya döndürüldü.'
+    },
+    download: {
+        user: '📥 Doğrulanmış proje ZIP paketini indirdim.',
+        model: 'Doğrulanmış artefakt başarıyla indirildi.'
     }
 };
 
@@ -62,7 +78,7 @@ const app = express();
 app.use(express.json());
 app.use('/api/projects', createProjectRouter({
     requireAuth: (req, _res, next) => {
-        req.user = { id: 'action-audit-owner' };
+        req.user = { id: 'action-audit-owner', isAdmin: true };
         next();
     },
     projectAccess: () => passThrough,
@@ -81,6 +97,29 @@ const postAction = async ({ projectId, kind, actionId }) => {
             ...(actionId ? { 'X-XFactor-Action-Id': actionId } : {})
         },
         body: '{}'
+    });
+    return { status: response.status, body: await response.json() };
+};
+const postSync = async ({ activeProjectId, actionId }) => {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/sync`, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            ...(actionId ? { 'X-XFactor-Action-Id': actionId } : {})
+        },
+        body: JSON.stringify(activeProjectId === undefined ? {} : { activeProjectId })
+    });
+    return { status: response.status, body: await response.json() };
+};
+
+const patchProject = async ({ projectId, body, actionId }) => {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+            'content-type': 'application/json',
+            ...(actionId ? { 'X-XFactor-Action-Id': actionId } : {})
+        },
+        body: JSON.stringify(body)
     });
     return { status: response.status, body: await response.json() };
 };
@@ -247,6 +286,110 @@ await runAsyncTest('resume and pause append exact canonical action pairs', async
     ]);
 });
 
+await runAsyncTest('sync appends canonical summary to the authorized active project only after success', async () => {
+    const project = await createProject({ title: 'Sync Action Route' });
+    const result = await postSync({ activeProjectId: project.id, actionId: 'sync-route-action' });
+    assert.strictEqual(result.status, 200, JSON.stringify(result.body));
+    const rows = db.prepare(`
+        SELECT role, text_content, action_key
+        FROM chat_history
+        WHERE project_id = ? AND action_key LIKE 'sync-route-action:%'
+        ORDER BY id
+    `).all(project.id);
+    assert.deepStrictEqual(rows.map(row => ({
+        role: row.role,
+        text: row.text_content,
+        actionKey: row.action_key
+    })), [
+        {
+            role: 'user',
+            text: actionMessages.sync.user,
+            actionKey: 'sync-route-action:user'
+        },
+        {
+            role: 'model',
+            text: actionMessages.sync.model({
+                registered: result.body.autoRegistered.length,
+                missing: result.body.missingOnDisk.length,
+                updated: result.body.syncedCount
+            }),
+            actionKey: 'sync-route-action:model'
+        }
+    ]);
+});
+
+await runAsyncTest('sync without active project and failed patch/download produce no action rows', async () => {
+    const project = await createProject({ title: 'Helper Failure Route' });
+    const syncResult = await postSync({ actionId: 'sync-without-project' });
+    assert.strictEqual(syncResult.status, 200, JSON.stringify(syncResult.body));
+    const failedPatch = await patchProject({
+        projectId: project.id,
+        body: { title: '!!!' },
+        actionId: 'failed-patch-action'
+    });
+    assert.strictEqual(failedPatch.status, 400, JSON.stringify(failedPatch.body));
+    const failedDownload = await fetch(
+        `http://127.0.0.1:${server.address().port}/api/projects/${project.id}/contracts/missing-contract/artifacts/missing-artifact/download`,
+        {
+            headers: { 'X-XFactor-Action-Id': 'failed-download-action' }
+        }
+    );
+    assert.ok(failedDownload.status >= 400, `unexpected download status ${failedDownload.status}`);
+    assert.strictEqual(
+        db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count,
+        0
+    );
+});
+
+await runAsyncTest('pin and unpin append only their exact canonical pairs; rename does not', async () => {
+    const project = await createProject({ title: 'Pin Action Route' });
+    const pinned = await patchProject({
+        projectId: project.id,
+        body: { is_pinned: true },
+        actionId: 'pin-route-action'
+    });
+    assert.strictEqual(pinned.status, 200, JSON.stringify(pinned.body));
+    const renamed = await patchProject({
+        projectId: project.id,
+        body: { title: 'Renamed Pin Action' },
+        actionId: 'rename-route-action'
+    });
+    assert.strictEqual(renamed.status, 200, JSON.stringify(renamed.body));
+    const unpinned = await patchProject({
+        projectId: project.id,
+        body: { isPinned: false },
+        actionId: 'unpin-route-action'
+    });
+    assert.strictEqual(unpinned.status, 200, JSON.stringify(unpinned.body));
+    const rows = db.prepare(`
+        SELECT text_content, action_key
+        FROM chat_history
+        WHERE project_id = ? AND action_key IS NOT NULL
+        ORDER BY id
+    `).all(project.id).map(row => ({
+        text_content: row.text_content,
+        action_key: row.action_key
+    }));
+    assert.deepStrictEqual(rows, [
+        { text_content: actionMessages.pin.user, action_key: 'pin-route-action:user' },
+        { text_content: actionMessages.pin.model, action_key: 'pin-route-action:model' },
+        { text_content: actionMessages.unpin.user, action_key: 'unpin-route-action:user' },
+        { text_content: actionMessages.unpin.model, action_key: 'unpin-route-action:model' }
+    ]);
+});
+
+await runAsyncTest('delete remains message-free and does not create action-keyed rows', async () => {
+    const project = await createProject({ title: 'Delete Action Route' });
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/${project.id}`, {
+        method: 'DELETE'
+    });
+    assert.strictEqual(response.status, 200, await response.text());
+    assert.strictEqual(
+        db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count,
+        0
+    );
+});
+    const project = await createProject({ title: 'Delete Action Route' });
 await runAsyncTest('malformed action IDs are rejected before workflow mutation', async () => {
     for (const actionId of [' ', 'x'.repeat(129)]) {
         const project = await createProject({ title: `Malformed Action ${actionId.length}` });

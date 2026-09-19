@@ -131,3 +131,42 @@ describe('API request cancellation and identity handling', () => {
     ]);
   });
 });
+
+test('helper actions send active project context and action IDs', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    blob: async () => new Blob(['zip'])
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  const client = createApiClient('https://api.example.test/api');
+
+  await client.syncProjects({
+    activeProjectId: 'project-a',
+    ...buildActionRequestOptions('sync-action-1')
+  });
+  await client.updateProject(
+    'project-a',
+    { is_pinned: true },
+    buildActionRequestOptions('pin-action-1')
+  );
+  await client.downloadArtifact(
+    '/projects/project-a/contracts/contract-a/artifacts/artifact-a/download',
+    buildActionRequestOptions('download-action-1')
+  );
+
+  expect(fetchMock.mock.calls[0]).toEqual([
+    'https://api.example.test/api/projects/sync',
+    expect.objectContaining({
+      body: JSON.stringify({ activeProjectId: 'project-a' }),
+      headers: expect.objectContaining({ 'X-XFactor-Action-Id': 'sync-action-1' })
+    })
+  ]);
+  expect(fetchMock.mock.calls[1][1].headers).toEqual(
+    expect.objectContaining({ 'X-XFactor-Action-Id': 'pin-action-1' })
+  );
+  expect(fetchMock.mock.calls[2][1].headers).toEqual(
+    expect.objectContaining({ 'X-XFactor-Action-Id': 'download-action-1' })
+  );
+});

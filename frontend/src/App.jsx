@@ -226,16 +226,29 @@ export default function App() {
   const [isSyncingProjects, setIsSyncingProjects] = useState(false);
   const handleSyncProjects = useCallback(async () => {
     if (isSyncingProjects) return;
+    const actedOnProjectId = activeProjectRef.current;
+    const identity = captureRequest('sync', actedOnProjectId);
     setIsSyncingProjects(true);
     try {
-      await api.syncProjects();
+      await api.syncProjects({
+        activeProjectId: actedOnProjectId || undefined,
+        ...buildActionRequestOptions(createActionId('sync'))
+      });
+      if (!isCurrentRequest(identity)) return;
       await fetchProjects();
+      if (
+        actedOnProjectId
+        && activeProjectRef.current === actedOnProjectId
+        && isCurrentRequest(identity)
+      ) {
+        await fetchProjectState(actedOnProjectId);
+      }
     } catch (err) {
-      console.error('Disk sync error:', err);
+      if (isCurrentRequest(identity)) console.error('Disk sync error:', err);
     } finally {
       setIsSyncingProjects(false);
     }
-  }, [isSyncingProjects, fetchProjects]);
+  }, [captureRequest, fetchProjects, isCurrentRequest, isSyncingProjects]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
@@ -556,7 +569,6 @@ export default function App() {
     const title = prompt('Proje Başlığı Girin:', 'Yeni Otonom Proje');
     if (!title || !title.trim()) return;
     const identity = captureRequest('createProject');
-
     try {
       const newProj = await api.createProject(title.trim());
       if (!isCurrentRequest(identity)) return;
@@ -570,10 +582,18 @@ export default function App() {
   const handleTogglePin = async (id, currentPinState, e) => {
     e?.stopPropagation();
     setActiveMenuProjectId(null);
-    const identity = captureRequest('togglePin');
+    const identity = captureRequest('togglePin', id);
     try {
-      await api.updateProject(id, { is_pinned: !currentPinState });
-      if (isCurrentRequest(identity)) fetchProjects();
+      await api.updateProject(
+        id,
+        { is_pinned: !currentPinState },
+        buildActionRequestOptions(createActionId(currentPinState ? 'unpin' : 'pin'))
+      );
+      if (identity.authEpoch !== authEpochRef.current) return;
+      await fetchProjects();
+      if (activeProjectRef.current === id && isCurrentRequest(identity)) {
+        await fetchProjectState(id);
+      }
     } catch (err) {
       if (isCurrentRequest(identity)) alert('Sabitleme hatası: ' + err.message);
     }
@@ -613,19 +633,25 @@ export default function App() {
   };
 
   const handleDownloadProjectZip = async (id, event) => {
-    // /contracts/${contractId}/artifacts/${latestArtifact.id}/download
     rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
-    const identity = captureRequest('downloadProject');
+    const identity = captureRequest('downloadProject', id);
     try {
       await requestVerifiedArtifactDownload({
         projectId: id,
         activeProjectId,
         projectState,
         getProject: api.getProject,
-        navigate: window.location.assign.bind(window.location)
+        actionId: createActionId('download'),
+        download: api.downloadArtifact,
+        navigate: window.location.assign.bind(window)
       });
-      if (!isCurrentRequest(identity)) return;
+      if (
+        activeProjectRef.current === id
+        && isCurrentRequest(identity)
+      ) {
+        await fetchProjectState(id);
+      }
     } catch {
       if (isCurrentRequest(identity)) setUiError('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');
     }

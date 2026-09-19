@@ -15,7 +15,8 @@ import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js'
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     canTransitionProjectStatus,
-    getUserProjects
+    getUserProjects,
+    canViewProject
 } from '../auth.js';
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
@@ -322,11 +323,28 @@ export function createProjectRouter({
             next(err);
         }
     });
-
     // 3. Proje Senkronizasyonu (Disk ile İki Yönlü Reconcile & Auto-register)
     router.post('/sync', requireAuth, async (req, res, next) => {
         try {
+            const actionId = getActionId(req);
             const syncResult = await syncProjectsWithDisk({ autoRegister: true, env: process.env });
+            const activeProjectId = req.body?.activeProjectId;
+            const canAuditActiveProject = typeof activeProjectId === 'string'
+                && activeProjectId.trim()
+                && (req.user?.isAdmin === true || canViewProject(req.user?.id, activeProjectId));
+            if (syncResult?.success && canAuditActiveProject) {
+                const registered = Array.isArray(syncResult.autoRegistered)
+                    ? syncResult.autoRegistered.length
+                    : 0;
+                const missing = Array.isArray(syncResult.missingOnDisk)
+                    ? syncResult.missingOnDisk.length
+                    : 0;
+                appendProjectActionMessages(activeProjectId, {
+                    actionId,
+                    userText: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
+                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.syncedCount) || 0} güncellenen proje.`
+                });
+            }
             res.json(syncResult);
         } catch (error) {
             next(error);
@@ -1126,6 +1144,12 @@ export function createProjectRouter({
         if (authorization.status !== 200) {
             return res.status(authorization.status).json({ error: authorization.error });
         }
+        const actionId = getActionId(req);
+        appendProjectActionMessages(id, {
+            actionId,
+            userText: '📥 Doğrulanmış proje ZIP paketini indirdim.',
+            modelText: 'Doğrulanmış artefakt başarıyla indirildi.'
+        });
         res.download(artifact.path, path.basename(artifact.path));
     }));
 
@@ -1225,17 +1249,32 @@ export function createProjectRouter({
             next(err);
         }
     });
+
     // 11. Proje Güncelle (Yeniden Adlandırma / Pinleme)
     router.patch('/:id', requireAuth, projectAccess('editor'), async (req, res, next) => {
         const { id } = req.params;
         const { title, is_pinned, isPinned } = req.body || {};
+        const hasPinChange = typeof is_pinned !== 'undefined' || typeof isPinned !== 'undefined';
 
         if (title && !validateProjectTitle(title)) {
             return res.status(400).json({ error: "Geçersiz proje başlığı formatı." });
         }
 
         try {
+            const actionId = hasPinChange ? getActionId(req) : null;
             const updated = updateProject(id, { title, is_pinned, isPinned });
+            if (hasPinChange) {
+                const pinned = Boolean(updated?.isPinned);
+                appendProjectActionMessages(id, {
+                    actionId,
+                    userText: pinned
+                        ? '📌 Projeyi başa sabitledim.'
+                        : '📌 Projenin sabitlemesini kaldırdım.',
+                    modelText: pinned
+                        ? 'Proje yan menünün üst sırasına taşındı.'
+                        : 'Proje normal sıralamaya döndürüldü.'
+                });
+            }
             res.json(updated);
         } catch (err) {
             next(err);
