@@ -141,6 +141,7 @@ afterEach(() => {
     })));
     await waitFor(() => expect(spies.getProject.mock.calls.length).toBeGreaterThan(1));
 
+    const projectStateCallsBeforePin = spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length;
     fireEvent.click(screen.getAllByTitle('Proje İşlemleri')[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Başa Sabitle' }));
     await waitFor(() => expect(spies.updateProject).toHaveBeenCalledWith(
@@ -150,7 +151,8 @@ afterEach(() => {
         'X-XFactor-Action-Id': expect.any(String)
       }) })
     ));
-    await waitFor(() => expect(spies.getProject.mock.calls.some(([id]) => id === projectA.id)).toBe(true));
+    await waitFor(() => expect(spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length)
+      .toBeGreaterThan(projectStateCallsBeforePin));
   });
 
   test('helper download sends action header and refreshes active project after initiation', async () => {
@@ -192,8 +194,12 @@ describe('P9 project/auth request isolation', () => {
     fireEvent.click(screen.getByTitle('Diskle Senkronize Et (Projeleri Tara)'));
     fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
     await waitForHeading(projectB.title);
+    const projectListCallsBeforeResolve = spies.getProjects.mock.calls.length;
+    const projectStateCallsBeforeResolve = spies.getProject.mock.calls.length;
     pendingSync.resolve({});
     await waitFor(() => expect(screen.getByRole('heading', { name: projectB.title })).toBeInTheDocument());
+    expect(spies.getProjects.mock.calls.length).toBe(projectListCallsBeforeResolve);
+    expect(spies.getProject.mock.calls.length).toBe(projectStateCallsBeforeResolve);
   });
   test('does not apply a deferred A project response after switching to B', async () => {
     const delayedA = deferred();
