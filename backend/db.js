@@ -650,9 +650,10 @@ export const MIGRATIONS = [
             if (!columnExists(database, 'chat_history', 'action_key')) {
                 database.exec('ALTER TABLE chat_history ADD COLUMN action_key TEXT');
             }
+            database.exec('DROP INDEX IF EXISTS idx_chat_history_action_key');
             database.exec(`
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_history_action_key
-                ON chat_history(action_key)
+                ON chat_history(project_id, action_key)
                 WHERE action_key IS NOT NULL;
             `);
         }

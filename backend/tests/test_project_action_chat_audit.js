@@ -44,6 +44,36 @@ await runAsyncTest('action message append persists an ordered user/model pair on
     assert.deepStrictEqual(rows.map(row => row.action_key), ['approve-action-1:user', 'approve-action-1:model']);
 });
 
+await runAsyncTest('same action identity appends independently for different projects', async () => {
+    const firstProject = await createProject({ title: 'Action Audit Project A' });
+    const secondProject = await createProject({ title: 'Action Audit Project B' });
+    const first = appendProjectActionMessages(firstProject.id, {
+        actionId: 'shared-action-1',
+        userText: 'project A user',
+        modelText: 'project A model'
+    });
+    const second = appendProjectActionMessages(secondProject.id, {
+        actionId: 'shared-action-1',
+        userText: 'project B user',
+        modelText: 'project B model'
+    });
+
+    assert.strictEqual(first.inserted, true);
+    assert.strictEqual(second.inserted, true);
+    const rows = db.prepare(`
+        SELECT project_id, action_key
+        FROM chat_history
+        WHERE action_key IN ('shared-action-1:user', 'shared-action-1:model')
+        ORDER BY id
+    `).all().map(row => ({ project_id: row.project_id, action_key: row.action_key }));
+    assert.deepStrictEqual(rows, [
+        { project_id: firstProject.id, action_key: 'shared-action-1:user' },
+        { project_id: firstProject.id, action_key: 'shared-action-1:model' },
+        { project_id: secondProject.id, action_key: 'shared-action-1:user' },
+        { project_id: secondProject.id, action_key: 'shared-action-1:model' }
+    ]);
+});
+
 await runAsyncTest('action message append rejects invalid action identities', async () => {
     const project = await createProject({ title: 'Action Audit Validation' });
     for (const actionId of ['', '   ', null, 'x'.repeat(129)]) {
