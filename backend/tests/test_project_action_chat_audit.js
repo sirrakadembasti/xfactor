@@ -1,15 +1,74 @@
 import assert from 'assert';
+import express from 'express';
+import http from 'http';
 import path from 'path';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
-
 const isolated = await setupIsolatedTestDb('project-action-chat-audit');
+process.env.ALLOW_MOCK_FALLBACK = 'true';
 process.env.DB_PATH = isolated.dbPath;
 process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 const { db, getSchemaVersion } = await import('../db.js');
 isolated.registerDatabase(db);
-const { createProject, appendProjectActionMessages } = await import('../projectRepository.js');
+const {
+    createProject,
+    getProject,
+    appendProjectActionMessages
+} = await import('../projectRepository.js');
+const { readProjectState, writeProjectState } = await import('../engine/index.js');
+const { createContractRevision } = await import('../contracts/projectContract.js');
+const { createProjectRouter } = await import('../routes/projectRoutes.js');
+const { abortProjectExecution } = await import('../engine/cancellation.js');
 const { runAsyncTest, finish } = createTestHarness();
+
+const validPlan = {
+    summary: 'Action audit workflow plan',
+    frontend: { framework: 'react' },
+    backend: { framework: 'express' },
+    database: { engine: 'sqlite' }
+};
+
+const actionMessages = {
+    approve: {
+        user: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
+        model: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+    },
+    resume: {
+        user: '▶️ Süreci kaldığı yerden devam ettir.',
+        model: 'Süreç kaldığı görevden devam ettiriliyor.'
+    },
+    pause: {
+        user: '⏸️ Üretim sürecini duraklat.',
+        model: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+    }
+};
+
+const passThrough = (_req, _res, next) => next();
+const app = express();
+app.use(express.json());
+app.use('/api/projects', createProjectRouter({
+    requireAuth: (req, _res, next) => {
+        req.user = { id: 'action-audit-owner' };
+        next();
+    },
+    projectAccess: () => passThrough,
+    wsHub: { broadcast() {}, publish() {} }
+}));
+app.use((error, _req, res, _next) => res.status(error.status || 500).json({ error: error.message }));
+const server = http.createServer(app);
+await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+const actionUrl = action => `http://127.0.0.1:${server.address().port}/api/projects/${action.projectId}/${action.kind}`;
+const postAction = async ({ projectId, kind, actionId }) => {
+    const response = await fetch(actionUrl({ projectId, kind }), {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            ...(actionId ? { 'X-XFactor-Action-Id': actionId } : {})
+        },
+        body: '{}'
+    });
+    return { status: response.status, body: await response.json() };
+};
 
 await runAsyncTest('action message append persists an ordered user/model pair once', async () => {
     const project = await createProject({ title: 'Action Audit Pair' });
@@ -108,6 +167,127 @@ await runAsyncTest('action message append returns existing rows when either key 
     });
     assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count, 1);
 });
+
+await runAsyncTest('approve appends exact canonical action pair and returns canonical state metadata', async () => {
+    const project = await createProject({ title: 'Approve Action Route' });
+    createContractRevision(project.id, validPlan, 'approve-chat-message');
+    const pending = await readProjectState(project.id);
+    pending.status = 'pending_approval';
+    await writeProjectState(pending);
+
+    const result = await postAction({
+        projectId: project.id,
+        kind: 'approve',
+        actionId: 'approve-route-action'
+    });
+    try {
+        assert.strictEqual(result.status, 200, JSON.stringify(result.body));
+        assert.deepStrictEqual(result.body.chatHistory.slice(-2).map(message => ({
+            role: message.role,
+            text: message.parts[0].text
+        })), [
+            { role: 'user', text: actionMessages.approve.user },
+            { role: 'model', text: actionMessages.approve.model }
+        ]);
+    } finally {
+        abortProjectExecution(project.id);
+    }
+});
+
+await runAsyncTest('resume and pause append exact canonical action pairs', async () => {
+    const resumeProject = await createProject({ title: 'Resume Action Route' });
+    const resumeState = await readProjectState(resumeProject.id);
+    db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
+    resumeState.status = 'paused';
+    const resumed = await postAction({
+        projectId: resumeProject.id,
+        kind: 'resume',
+        actionId: 'resume-route-action'
+    });
+    try {
+        assert.strictEqual(resumed.status, 200, JSON.stringify(resumed.body));
+        assert.deepStrictEqual(resumed.body.chatHistory.slice(-2).map(message => message.parts[0].text), [
+            actionMessages.resume.user,
+            actionMessages.resume.model
+        ]);
+    } finally {
+        abortProjectExecution(resumeProject.id);
+    }
+
+    const pauseProject = await createProject({ title: 'Pause Action Route' });
+    const pauseState = await readProjectState(pauseProject.id);
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(pauseProject.id);
+    pauseState.status = 'implementing';
+    const paused = await postAction({
+        projectId: pauseProject.id,
+        kind: 'pause',
+        actionId: 'pause-route-action'
+    });
+    assert.strictEqual(paused.status, 200, JSON.stringify(paused.body));
+    const canonicalPause = getProject(pauseProject.id);
+    assert.deepStrictEqual(paused.body, canonicalPause);
+    assert.deepStrictEqual(canonicalPause.chatHistory.slice(-2).map(message => message.parts[0].text), [
+        actionMessages.pause.user,
+        actionMessages.pause.model
+    ]);
+});
+
+await runAsyncTest('invalid workflow transitions do not append action rows', async () => {
+    const project = await createProject({ title: 'Invalid Action Route' });
+    const result = await postAction({
+        projectId: project.id,
+        kind: 'pause',
+        actionId: 'invalid-pause-action'
+    });
+    assert.strictEqual(result.status, 400);
+    assert.strictEqual(
+        db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count,
+        0
+    );
+});
+
+await runAsyncTest('repeated approve and resume action requests are idempotent and append once', async () => {
+    const approveProject = await createProject({ title: 'Repeated Approve Route' });
+    createContractRevision(approveProject.id, validPlan, 'approve-repeat-message');
+    const pending = await readProjectState(approveProject.id);
+    pending.status = 'pending_approval';
+    await writeProjectState(pending);
+    const approveAction = { projectId: approveProject.id, kind: 'approve', actionId: 'approve-repeat-action' };
+    const firstApprove = await postAction(approveAction);
+    const secondApprove = await postAction(approveAction);
+    try {
+        assert.strictEqual(firstApprove.status, 200, JSON.stringify(firstApprove.body));
+        assert.strictEqual(secondApprove.status, 200, JSON.stringify(secondApprove.body));
+        assert.strictEqual(secondApprove.body.idempotent, true);
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(approveProject.id, 'approve-repeat-action:%').count,
+            2
+        );
+    } finally {
+        abortProjectExecution(approveProject.id);
+    }
+
+    const resumeProject = await createProject({ title: 'Repeated Resume Route' });
+    const paused = await readProjectState(resumeProject.id);
+    db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
+    paused.status = 'paused';
+    const resumeAction = { projectId: resumeProject.id, kind: 'resume', actionId: 'resume-repeat-action' };
+    const firstResume = await postAction(resumeAction);
+    const secondResume = await postAction(resumeAction);
+    try {
+        assert.strictEqual(firstResume.status, 200, JSON.stringify(firstResume.body));
+        assert.strictEqual(secondResume.status, 200, JSON.stringify(secondResume.body));
+        assert.strictEqual(secondResume.body.idempotent, true);
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(resumeProject.id, 'resume-repeat-action:%').count,
+            2
+        );
+    } finally {
+        abortProjectExecution(resumeProject.id);
+    }
+});
+
+await new Promise(resolve => server.close(resolve));
 
 await runAsyncTest('action message append rolls back the user row when the model insert fails', async () => {
     const project = await createProject({ title: 'Action Audit Atomicity' });

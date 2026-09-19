@@ -177,6 +177,45 @@ describe('P9 project/auth request isolation', () => {
     expect(screen.queryByText('A stale chat')).not.toBeInTheDocument();
   });
 
+  test('replaces local workflow chat with canonical action messages across project switches', async () => {
+    let projectAState = {
+      ...projectA,
+      status: 'running',
+      chatHistory: [{ role: 'model', parts: [{ text: 'A canonical before action' }] }]
+    };
+    const canonicalActionState = {
+      ...projectAState,
+      status: 'paused',
+      chatHistory: [
+        ...projectAState.chatHistory,
+        { role: 'user', parts: [{ text: '⏸️ Üretim sürecini duraklat.' }] },
+        { role: 'model', parts: [{ text: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.' }] }
+      ]
+    };
+    const spies = setupApi({
+      stateFor: id => id === projectA.id ? projectAState : projectB
+    });
+    spies.pauseProject.mockImplementation((_id, options) => {
+      expect(options.headers['X-XFactor-Action-Id']).toMatch(/^pause-/);
+      projectAState = canonicalActionState;
+      return Promise.resolve(canonicalActionState);
+    });
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Süreci Duraklat/ }));
+    await screen.findByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.');
+
+    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
+    expect(screen.getByText('B current state')).toBeInTheDocument();
+    expect(screen.queryByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(projectA.title, { selector: 'span' }));
+    await waitForHeading(projectA.title);
+    expect(screen.getByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.')).toBeInTheDocument();
+  });
+
   test('does not let deferred A files or logs replace B files or logs', async () => {
     const delayedAFiles = deferred();
     const delayedALogs = deferred();

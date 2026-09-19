@@ -106,6 +106,17 @@ export const buildSessionRequestOptions = (options = {}) => {
   return { ...options, method, credentials: 'include', headers };
 };
 
+export const buildActionRequestOptions = (actionId, options = {}) => {
+  if (!actionId) return { ...options };
+  return {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      'X-XFactor-Action-Id': actionId
+    }
+  };
+};
+
 export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15000) => {
   const request = async (endpoint, options = {}) => {
     const { signal, timeoutMs = defaultTimeoutMs, ...fetchOpts } = options;

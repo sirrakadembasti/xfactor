@@ -1,9 +1,10 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
-import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk } from '../projectRepository.js';
+import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk, getProject, appendProjectActionMessages } from '../projectRepository.js';
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
@@ -23,6 +24,13 @@ import { listArtifacts } from '../repositories/artifactRepository.js';
 
 
 import { authorizeArtifactDownload } from './artifactDownloadAuthorization.js';
+const getActionId = req => req.get('X-XFactor-Action-Id') || `server-${crypto.randomUUID()}`;
+
+const appendWorkflowAction = (projectId, req, action) => appendProjectActionMessages(projectId, {
+    actionId: getActionId(req),
+    userText: action.userText,
+    modelText: action.modelText
+});
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -499,10 +507,19 @@ export function createProjectRouter({
         try {
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
+            const leaseOwner = `http-approve-${req.user.id}`;
+            const activeLease = state ? getActiveWorkflowAttempt(id) : null;
             if (!state || !canTransitionProjectStatus(
                 state.status,
                 PROJECT_STATUS.CONTRACT_APPROVED
             )) {
+                if (activeLease) {
+                    return res.json({
+                        ...getProject(id),
+                        attemptId: activeLease.id,
+                        idempotent: true
+                    });
+                }
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
 
@@ -540,11 +557,11 @@ export function createProjectRouter({
             state.status = PROJECT_STATUS.CONTRACT_APPROVED;
             await writeProjectState(id, state);
 
-            const leaseOwner = `http-approve-${req.user.id}`;
             const lease = acquireWorkflowLease(id, leaseOwner);
+
             if (!lease.acquired) {
                 return res.json({
-                    ...state,
+                    ...getProject(id),
                     attemptId: lease.attempt.id,
                     idempotent: true
                 });
@@ -570,6 +587,12 @@ export function createProjectRouter({
                 leaseOwner
             });
 
+            appendWorkflowAction(id, req, {
+                userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
+                modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+            });
+            const canonicalState = getProject(id);
+
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
@@ -581,7 +604,7 @@ export function createProjectRouter({
                     });
                 })
                 .finally(() => operation?.end());
-            res.json({ ...approvedState, attemptId: lease.attempt.id });
+            res.json({ ...canonicalState, attemptId: lease.attempt.id });
         } catch (err) {
             if (err?.code === 'SERVER_SHUTTING_DOWN') {
                 return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
@@ -1028,7 +1051,11 @@ export function createProjectRouter({
             const leaseOwner = `http-resume-${req.user.id}`;
             const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
-                return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
+                return res.json({
+                    ...getProject(id),
+                    attemptId: lease.attempt.id,
+                    idempotent: true
+                });
             }
 
             if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
@@ -1040,11 +1067,15 @@ export function createProjectRouter({
             }
 
             state.status = PROJECT_STATUS.IMPLEMENTING;
-            state.chatHistory.push({ role: 'model', parts: [{ text: "▶️ Süreç kaldığı yerden devam ettiriliyor..." }] });
             await writeProjectState(id, state, {
                 attemptId: lease.attempt.id,
                 leaseOwner
             });
+            appendWorkflowAction(id, req, {
+                userText: '▶️ Süreci kaldığı yerden devam ettir.',
+                modelText: 'Süreç kaldığı görevden devam ettiriliyor.'
+            });
+            const canonicalState = getProject(id);
 
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
@@ -1058,7 +1089,7 @@ export function createProjectRouter({
                     operation?.end();
                 });
 
-            res.json({ ...state, attemptId: lease.attempt.id });
+            res.json({ ...canonicalState, attemptId: lease.attempt.id });
         } catch (err) {
             if (err?.code === 'SERVER_SHUTTING_DOWN') {
                 return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
@@ -1080,7 +1111,6 @@ export function createProjectRouter({
             abortProjectExecution(id, 'PAUSED');
 
             state.status = 'paused';
-            state.chatHistory.push({ role: 'model', parts: [{ text: "Süreç tarafınızdan duraklatıldı. Hangi ajanların veya mimarinin değişmesini istersiniz?" }] });
             await writeProjectState(
                 id,
                 state,
@@ -1088,8 +1118,12 @@ export function createProjectRouter({
                     ? { attemptId: activeLease.id, leaseOwner: activeLease.lease_owner }
                     : null
             );
+            appendWorkflowAction(id, req, {
+                userText: '⏸️ Üretim sürecini duraklat.',
+                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+            });
 
-            res.json(state);
+            res.json(getProject(id));
         } catch (err) {
             next(err);
         }

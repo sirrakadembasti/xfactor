@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-import { api, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
+import { api, buildActionRequestOptions, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
 import { computeHierarchicalDAG } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
@@ -22,6 +22,8 @@ import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
 const MAX_LOGS = 500;
+export const createActionId = action =>
+  `${action}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
 export default function App() {
   const [authStatus, setAuthStatus] = useState('checking');
   const [currentUser, setCurrentUser] = useState(null);
@@ -671,7 +673,10 @@ export default function App() {
     setViewMode('flow');
 
     try {
-      const data = await api.approveProject(activeProjectId);
+      const data = await api.approveProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('approve'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();
@@ -687,7 +692,10 @@ export default function App() {
     const identity = captureRequest('resume', activeProjectId);
     setViewMode('flow');
     try {
-      const data = await api.resumeProject(activeProjectId);
+      const data = await api.resumeProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('resume'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();
@@ -702,7 +710,10 @@ export default function App() {
     rememberUiErrorTrigger(event);
     const identity = captureRequest('pause', activeProjectId);
     try {
-      const data = await api.pauseProject(activeProjectId);
+      const data = await api.pauseProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('pause'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();

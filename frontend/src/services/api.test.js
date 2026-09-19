@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { createApiClient } from './api';
+import { buildActionRequestOptions, createApiClient } from './api';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -104,6 +104,30 @@ describe('API request cancellation and identity handling', () => {
       'https://api.example.test/api/projects/project%2Fa%20b/resume',
       'https://api.example.test/api/projects/project%2Fa%20b',
       'https://api.example.test/api/projects/project%2Fa%20b'
+    ]);
+  });
+  test('adds action IDs to workflow request headers without dropping caller headers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({})
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const client = createApiClient('https://api.example.test/api');
+
+    await client.approveProject('project-a', buildActionRequestOptions('approve-action-1', {
+      headers: { 'X-Custom': 'preserved' }
+    }));
+    await client.pauseProject('project-a', buildActionRequestOptions('pause-action-1'));
+    await client.resumeProject('project-a', buildActionRequestOptions('resume-action-1'));
+
+    expect(fetchMock.mock.calls.map(([, options]) => options.headers)).toEqual([
+      expect.objectContaining({
+        'X-XFactor-Action-Id': 'approve-action-1',
+        'X-Custom': 'preserved'
+      }),
+      expect.objectContaining({ 'X-XFactor-Action-Id': 'pause-action-1' }),
+      expect.objectContaining({ 'X-XFactor-Action-Id': 'resume-action-1' })
     ]);
   });
 });
