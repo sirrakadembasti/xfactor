@@ -122,8 +122,12 @@ export function invalidateProjectCheckpoints(projectId) {
     `).run(new Date().toISOString(), projectId);
 }
 
-export function approveContractRevision(projectId, revision) {
-    db.exec('BEGIN IMMEDIATE;');
+export function approveContractRevision(projectId, revision, { inTransaction = false } = {}) {
+    let transactionOpen = false;
+    if (!inTransaction) {
+        db.exec('BEGIN IMMEDIATE;');
+        transactionOpen = true;
+    }
     try {
         db.prepare(`
             UPDATE project_contracts
@@ -141,13 +145,18 @@ export function approveContractRevision(projectId, revision) {
             throw new Error(`Revision ${revision} is not pending approval or does not exist.`);
         }
         invalidateProjectCheckpoints(projectId);
-        db.exec('COMMIT;');
+        if (transactionOpen) {
+            db.exec('COMMIT;');
+            transactionOpen = false;
+        }
     } catch (error) {
-        db.exec('ROLLBACK;');
+        if (transactionOpen) {
+            db.exec('ROLLBACK;');
+            transactionOpen = false;
+        }
         throw error;
     }
 }
-
 export function getLatestRevision(projectId) {
     return db.prepare(`
         SELECT * FROM project_contracts

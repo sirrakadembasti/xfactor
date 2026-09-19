@@ -58,7 +58,6 @@ test_p1_b_smoke.js
 test_p1_b_test_infra.js
 test_p1_c_archive.js
 test_p1_c_artifact_verifier.js
-test_p1_c_frontend.js
 test_p1_c_repository.js
 test_p1_c_safe_extraction.js
 test_p1_c_state_invalidation.js
@@ -100,6 +99,7 @@ test_p9_verification_pipeline.js
 test_p1_7_task1_auto_register.js
 test_p1_7_task1_routes.js
 test_package_verifier.js
+test_project_action_chat_audit.js
 test_project_repository.js
 test_project_state_rehydration.js
 test_quality_gate.js

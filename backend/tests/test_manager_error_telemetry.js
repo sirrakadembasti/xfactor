@@ -162,6 +162,30 @@ try {
         }
     });
 
+    await runAsyncTest('6. explicit start intent takes precedence over overlapping remediation keywords', async () => {
+        const project = await createProject({ title: "Explicit Start Remediation Overlap Test" });
+        db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(project.id);
+
+        const app = buildTestApp();
+        const server = http.createServer(app);
+        await new Promise(r => server.listen(0, '127.0.0.1', r));
+        try {
+            const { port } = server.address();
+            const response = await fetch(`http://127.0.0.1:${port}/api/projects/${project.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'başla hatayı düzelt' })
+            });
+            assert.strictEqual(response.status, 200, `Chat endpoint should return 200 OK, got ${response.status}`);
+            const body = await response.json();
+
+            assert.strictEqual(body.status, 'pending_approval', 'Explicit start intent should transition paused project to pending_approval');
+            assert.strictEqual(body.remediation, null, 'Explicit start intent should not persist remediation');
+        } finally {
+            await new Promise(r => server.close(r));
+        }
+    });
+
     await runAsyncTest('6. Host dependency preparation fallback successfully recovers when worker is unavailable', async () => {
         const { executeSafeCommand } = await import('../engine/buildValidator.js');
         const crypto = await import('crypto');

@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-import { api, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
+import { api, buildActionRequestOptions, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
 import { computeHierarchicalDAG } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
@@ -22,6 +22,8 @@ import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
 const MAX_LOGS = 500;
+export const createActionId = action =>
+  `${action}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
 export default function App() {
   const [authStatus, setAuthStatus] = useState('checking');
   const [currentUser, setCurrentUser] = useState(null);
@@ -224,16 +226,29 @@ export default function App() {
   const [isSyncingProjects, setIsSyncingProjects] = useState(false);
   const handleSyncProjects = useCallback(async () => {
     if (isSyncingProjects) return;
+    const actedOnProjectId = activeProjectRef.current;
+    const identity = captureRequest('sync', actedOnProjectId);
     setIsSyncingProjects(true);
     try {
-      await api.syncProjects();
+      await api.syncProjects({
+        activeProjectId: actedOnProjectId || undefined,
+        ...buildActionRequestOptions(createActionId('sync'))
+      });
+      if (!isCurrentRequest(identity)) return;
       await fetchProjects();
+      if (
+        actedOnProjectId
+        && activeProjectRef.current === actedOnProjectId
+        && isCurrentRequest(identity)
+      ) {
+        await fetchProjectState(actedOnProjectId);
+      }
     } catch (err) {
-      console.error('Disk sync error:', err);
+      if (isCurrentRequest(identity)) console.error('Disk sync error:', err);
     } finally {
       setIsSyncingProjects(false);
     }
-  }, [isSyncingProjects, fetchProjects]);
+  }, [captureRequest, fetchProjects, isCurrentRequest, isSyncingProjects]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
@@ -554,7 +569,6 @@ export default function App() {
     const title = prompt('Proje Başlığı Girin:', 'Yeni Otonom Proje');
     if (!title || !title.trim()) return;
     const identity = captureRequest('createProject');
-
     try {
       const newProj = await api.createProject(title.trim());
       if (!isCurrentRequest(identity)) return;
@@ -570,8 +584,16 @@ export default function App() {
     setActiveMenuProjectId(null);
     const identity = captureRequest('togglePin');
     try {
-      await api.updateProject(id, { is_pinned: !currentPinState });
-      if (isCurrentRequest(identity)) fetchProjects();
+      await api.updateProject(
+        id,
+        { is_pinned: !currentPinState },
+        buildActionRequestOptions(createActionId(currentPinState ? 'unpin' : 'pin'))
+      );
+      if (identity.authEpoch !== authEpochRef.current) return;
+      await fetchProjects();
+      if (activeProjectRef.current === id && isCurrentRequest(identity)) {
+        await fetchProjectState(id);
+      }
     } catch (err) {
       if (isCurrentRequest(identity)) alert('Sabitleme hatası: ' + err.message);
     }
@@ -611,7 +633,6 @@ export default function App() {
   };
 
   const handleDownloadProjectZip = async (id, event) => {
-    // /contracts/${contractId}/artifacts/${latestArtifact.id}/download
     rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
     const identity = captureRequest('downloadProject');
@@ -621,9 +642,16 @@ export default function App() {
         activeProjectId,
         projectState,
         getProject: api.getProject,
-        navigate: window.location.assign.bind(window.location)
+        actionId: createActionId('download'),
+        download: api.downloadArtifact,
+        navigate: window.location.assign.bind(window)
       });
-      if (!isCurrentRequest(identity)) return;
+      if (
+        activeProjectRef.current === id
+        && isCurrentRequest(identity)
+      ) {
+        await fetchProjectState(id);
+      }
     } catch {
       if (isCurrentRequest(identity)) setUiError('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');
     }
@@ -671,7 +699,10 @@ export default function App() {
     setViewMode('flow');
 
     try {
-      const data = await api.approveProject(activeProjectId);
+      const data = await api.approveProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('approve'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();
@@ -687,7 +718,10 @@ export default function App() {
     const identity = captureRequest('resume', activeProjectId);
     setViewMode('flow');
     try {
-      const data = await api.resumeProject(activeProjectId);
+      const data = await api.resumeProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('resume'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();
@@ -702,7 +736,10 @@ export default function App() {
     rememberUiErrorTrigger(event);
     const identity = captureRequest('pause', activeProjectId);
     try {
-      const data = await api.pauseProject(activeProjectId);
+      const data = await api.pauseProject(
+        activeProjectId,
+        buildActionRequestOptions(createActionId('pause'))
+      );
       if (isCurrentRequest(identity)) {
         setProjectState(data);
         fetchProjects();

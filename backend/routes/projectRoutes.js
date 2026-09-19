@@ -1,9 +1,10 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
-import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk } from '../projectRepository.js';
+import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk, getProject, appendProjectActionMessages } from '../projectRepository.js';
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
@@ -14,7 +15,8 @@ import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js'
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     canTransitionProjectStatus,
-    getUserProjects
+    getUserProjects,
+    canViewProject
 } from '../auth.js';
 import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
@@ -23,6 +25,63 @@ import { listArtifacts } from '../repositories/artifactRepository.js';
 
 
 import { authorizeArtifactDownload } from './artifactDownloadAuthorization.js';
+const getActionId = req => {
+    const supplied = req.get('X-XFactor-Action-Id');
+    if (supplied !== undefined && (
+        !supplied.trim()
+        || supplied.length > 128
+    )) {
+        const error = new Error('Invalid X-XFactor-Action-Id header.');
+        error.status = 400;
+        throw error;
+    }
+    return supplied || `server-${crypto.randomUUID()}`;
+};
+
+const appendWorkflowAction = (projectId, actionId, action, options = {}) => appendProjectActionMessages(projectId, {
+    actionId,
+    userText: action.userText,
+    modelText: action.modelText,
+    ...options
+});
+
+const respondIdempotentWorkflow = (res, projectId, attempt) => res.json({
+    ...getProject(projectId),
+    attemptId: attempt?.id,
+    idempotent: true
+});
+
+const APPROVAL_PUBLICATION_TIMEOUT_MS = 1000;
+const APPROVAL_PUBLICATION_INTERVAL_MS = 10;
+
+const hasRecentActionPair = projectId => {
+    const rows = db.prepare(`
+        SELECT action_key
+        FROM chat_history
+        WHERE project_id = ? AND action_key IS NOT NULL
+        ORDER BY id DESC
+        LIMIT 2
+    `).all(projectId);
+    if (rows.length !== 2) return false;
+    const [model, user] = rows;
+    if (!model.action_key.endsWith(':model') || !user.action_key.endsWith(':user')) return false;
+    return model.action_key.slice(0, -':model'.length) === user.action_key.slice(0, -':user'.length);
+};
+
+const waitForApprovalPublication = async projectId => {
+    const deadline = Date.now() + APPROVAL_PUBLICATION_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+        const state = await readProjectState(projectId);
+        const attempt = getActiveWorkflowAttempt(projectId);
+        if (!attempt || !isApprovalAttempt(attempt)) return { ready: false, timedOut: false };
+        if (state?.status === PROJECT_STATUS.IMPLEMENTING && hasRecentActionPair(projectId)) {
+            return { ready: true, attempt };
+        }
+        await new Promise(resolve => setTimeout(resolve, APPROVAL_PUBLICATION_INTERVAL_MS));
+    }
+    return { ready: false, timedOut: true };
+};
+const isApprovalAttempt = attempt => String(attempt?.lease_owner || '').startsWith('http-approve-');
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -266,11 +325,28 @@ export function createProjectRouter({
             next(err);
         }
     });
-
     // 3. Proje Senkronizasyonu (Disk ile İki Yönlü Reconcile & Auto-register)
     router.post('/sync', requireAuth, async (req, res, next) => {
         try {
+            const actionId = getActionId(req);
             const syncResult = await syncProjectsWithDisk({ autoRegister: true, env: process.env });
+            const activeProjectId = req.body?.activeProjectId;
+            const canAuditActiveProject = typeof activeProjectId === 'string'
+                && activeProjectId.trim()
+                && (req.user?.isAdmin === true || canViewProject(req.user?.id, activeProjectId));
+            if (syncResult?.success && canAuditActiveProject) {
+                const registered = Array.isArray(syncResult.autoRegistered)
+                    ? syncResult.autoRegistered.length
+                    : 0;
+                const missing = Array.isArray(syncResult.missingOnDisk)
+                    ? syncResult.missingOnDisk.length
+                    : 0;
+                appendProjectActionMessages(activeProjectId, {
+                    actionId,
+                    userText: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
+                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.updatedCount) || 0} güncellenen proje.`
+                });
+            }
             res.json(syncResult);
         } catch (error) {
             next(error);
@@ -437,6 +513,12 @@ export function createProjectRouter({
                 PROJECT_STATUS.VERIFICATION_FAILED,
                 PROJECT_STATUS.FAILED
             ]);
+            const remediationKeywords = [
+                'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
+                'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
+            ];
+            const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
+            const wasPaused = freshState.status === PROJECT_STATUS.PAUSED;
 
             const isPlanReady = !!parsedPlan ||
                                 responseText.includes("[PLAN_HAZIR]") ||
@@ -452,7 +534,8 @@ export function createProjectRouter({
                                 responseText.toLowerCase().includes("onaylayabilirsin") ||
                                 (isUserStarting && revisableStatuses.has(freshState.status));
 
-            if (isPlanReady && revisableStatuses.has(freshState.status)) {
+
+            if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested && !isUserStarting)) {
                 const draftPlan = parsedPlan || normalizeManagerPlanFromText(
                     freshState.title,
                     responseText
@@ -472,11 +555,6 @@ export function createProjectRouter({
                 await writeProjectState(id, freshState);
             }
 
-            const remediationKeywords = [
-                'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
-                'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
-            ];
-            const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
 
             if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested) {
                 freshState.remediation = {
@@ -495,12 +573,27 @@ export function createProjectRouter({
     router.post('/:id/approve', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
+            const leaseOwner = `http-approve-${req.user.id}`;
+            const activeLease = state ? getActiveWorkflowAttempt(id) : null;
             if (!state || !canTransitionProjectStatus(
                 state.status,
                 PROJECT_STATUS.CONTRACT_APPROVED
             )) {
+                if (activeLease && isApprovalAttempt(activeLease)) {
+                    const publication = await waitForApprovalPublication(id);
+                    if (publication.ready) {
+                        return respondIdempotentWorkflow(res, id, publication.attempt);
+                    }
+                    return res.status(409).json({
+                        error: publication.timedOut
+                            ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                            : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                        code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
+                    });
+                }
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
 
@@ -512,6 +605,24 @@ export function createProjectRouter({
             } = await import('../contracts/projectContract.js');
             const latestRevision = getLatestRevision(id);
             if (!latestRevision || latestRevision.status !== 'pending_approval') {
+                const currentAttempt = getActiveWorkflowAttempt(id);
+                const currentState = await readProjectState(id);
+                if (
+                    currentAttempt
+                    && isApprovalAttempt(currentAttempt)
+                    && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
+                ) {
+                    const publication = await waitForApprovalPublication(id);
+                    if (publication.ready) {
+                        return respondIdempotentWorkflow(res, id, publication.attempt);
+                    }
+                    return res.status(409).json({
+                        error: publication.timedOut
+                            ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                            : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                        code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
+                    });
+                }
                 return res.status(400).json({
                     error: "Onaylanacak bekleyen bir plan bulunamadı."
                 });
@@ -534,40 +645,60 @@ export function createProjectRouter({
                 });
             }
 
-            approveContractRevision(id, latestRevision.revision);
-            state.status = PROJECT_STATUS.CONTRACT_APPROVED;
-            await writeProjectState(id, state);
-
-            const leaseOwner = `http-approve-${req.user.id}`;
             const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
-                return res.json({
-                    ...state,
-                    attemptId: lease.attempt.id,
-                    idempotent: true
+                const publication = await waitForApprovalPublication(id);
+                if (publication.ready) {
+                    return respondIdempotentWorkflow(res, id, publication.attempt);
+                }
+                return res.status(409).json({
+                    error: publication.timedOut
+                        ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                        : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                    code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
                 });
             }
 
-            const approvedState = await readProjectState(id);
-            if (!canTransitionProjectStatus(
-                approvedState.status,
-                PROJECT_STATUS.IMPLEMENTING
-            )) {
-                releaseWorkflowLease(lease.attempt.id, 'failed', {
-                    error: 'Invalid implementing transition',
-                    leaseOwner
-                });
-                return res.status(409).json({
-                    error: 'Proje uygulama durumuna geçirilemedi.'
-                });
-            }
-            approvedState.status = PROJECT_STATUS.IMPLEMENTING;
-            approvedState.workflow = normalizeWorkflowState(null);
-            await writeProjectState(id, approvedState, {
-                attemptId: lease.attempt.id,
-                leaseOwner
+            await lifecycle?.afterWorkflowLeaseAcquired?.({
+                projectId: id,
+                attemptId: lease.attempt.id
             });
 
+            let transactionOpen = false;
+            try {
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                approveContractRevision(id, latestRevision.revision, { inTransaction: true });
+                state.status = PROJECT_STATUS.CONTRACT_APPROVED;
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true
+                });
+                state.status = PROJECT_STATUS.IMPLEMENTING;
+                state.workflow = normalizeWorkflowState(null);
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true,
+                    onTransaction: () => appendWorkflowAction(id, actionId, {
+                        userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
+                        modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+                    }, { inTransaction: true })
+                });
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: error.message,
+                    leaseOwner
+                });
+                throw error;
+            }
+            const canonicalState = getProject(id);
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
@@ -579,7 +710,7 @@ export function createProjectRouter({
                     });
                 })
                 .finally(() => operation?.end());
-            res.json({ ...approvedState, attemptId: lease.attempt.id });
+            res.json({ ...canonicalState, attemptId: lease.attempt.id });
         } catch (err) {
             if (err?.code === 'SERVER_SHUTTING_DOWN') {
                 return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
@@ -1006,12 +1137,19 @@ export function createProjectRouter({
         if (authorization.status !== 200) {
             return res.status(authorization.status).json({ error: authorization.error });
         }
+        const actionId = getActionId(req);
+        appendProjectActionMessages(id, {
+            actionId,
+            userText: '📥 Doğrulanmış proje ZIP paketini indirdim.',
+            modelText: 'Doğrulanmış artefakt başarıyla indirildi.'
+        });
         res.download(artifact.path, path.basename(artifact.path));
     }));
 
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
@@ -1026,23 +1164,48 @@ export function createProjectRouter({
             const leaseOwner = `http-resume-${req.user.id}`;
             const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
-                return res.json({ ...state, attemptId: lease.attempt.id, idempotent: true });
-            }
-
-            if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
-                state.status = PROJECT_STATUS.PAUSED;
-                await writeProjectState(id, state, {
+                return res.json({
+                    ...getProject(id),
                     attemptId: lease.attempt.id,
-                    leaseOwner
+                    idempotent: true
                 });
             }
 
-            state.status = PROJECT_STATUS.IMPLEMENTING;
-            state.chatHistory.push({ role: 'model', parts: [{ text: "▶️ Süreç kaldığı yerden devam ettiriliyor..." }] });
-            await writeProjectState(id, state, {
-                attemptId: lease.attempt.id,
-                leaseOwner
-            });
+            let transactionOpen = false;
+            try {
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
+                    state.status = PROJECT_STATUS.PAUSED;
+                    await writeProjectState(id, state, {
+                        attemptId: lease.attempt.id,
+                        leaseOwner,
+                        inTransaction: true
+                    });
+                }
+                state.status = PROJECT_STATUS.IMPLEMENTING;
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true,
+                    onTransaction: () => appendWorkflowAction(id, actionId, {
+                        userText: '▶️ Süreci kaldığı yerden devam ettir.',
+                        modelText: 'Süreç kaldığı görevden devam ettiriliyor.'
+                    }, { inTransaction: true })
+                });
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: error.message,
+                    leaseOwner
+                });
+                throw error;
+            }
+            const canonicalState = getProject(id);
 
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
@@ -1056,7 +1219,7 @@ export function createProjectRouter({
                     operation?.end();
                 });
 
-            res.json({ ...state, attemptId: lease.attempt.id });
+            res.json({ ...canonicalState, attemptId: lease.attempt.id });
         } catch (err) {
             if (err?.code === 'SERVER_SHUTTING_DOWN') {
                 return res.status(503).json({ error: 'Server is shutting down.', code: err.code });
@@ -1069,41 +1232,86 @@ export function createProjectRouter({
     router.post('/:id/pause', requireAuth, projectAccess('owner'), async (req, res, next) => {
         const { id } = req.params;
         try {
+            const actionId = getActionId(req);
             const state = await readProjectState(id);
             if (!state || !canTransitionProjectStatus(state.status, 'paused')) {
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
 
             const activeLease = getActiveWorkflowAttempt(id);
-            abortProjectExecution(id, 'PAUSED');
 
-            state.status = 'paused';
-            state.chatHistory.push({ role: 'model', parts: [{ text: "Süreç tarafınızdan duraklatıldı. Hangi ajanların veya mimarinin değişmesini istersiniz?" }] });
-            await writeProjectState(
-                id,
-                state,
-                activeLease
-                    ? { attemptId: activeLease.id, leaseOwner: activeLease.lease_owner }
-                    : null
-            );
+            let transactionOpen = false;
+            try {
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                state.status = 'paused';
+                await writeProjectState(
+                    id,
+                    state,
+                    activeLease
+                        ? {
+                            attemptId: activeLease.id,
+                            leaseOwner: activeLease.lease_owner,
+                            inTransaction: true,
+                            onTransaction: () => appendWorkflowAction(id, actionId, {
+                                userText: '⏸️ Üretim sürecini duraklat.',
+                                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+                            }, { inTransaction: true })
+                        }
+                        : {
+                            inTransaction: true,
+                            onTransaction: () => appendWorkflowAction(id, actionId, {
+                                userText: '⏸️ Üretim sürecini duraklat.',
+                                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+                            }, { inTransaction: true })
+                        }
+                );
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
+                throw error;
+            }
 
-            res.json(state);
+            try {
+                abortProjectExecution(id, 'PAUSED');
+            } catch (error) {
+                logError('workflow.pause_abort_failed', error, { projectId: id });
+            }
+            res.json(getProject(id));
         } catch (err) {
             next(err);
         }
     });
+
     // 11. Proje Güncelle (Yeniden Adlandırma / Pinleme)
     router.patch('/:id', requireAuth, projectAccess('editor'), async (req, res, next) => {
         const { id } = req.params;
         const { title, is_pinned, isPinned } = req.body || {};
+        const hasPinChange = typeof is_pinned !== 'undefined' || typeof isPinned !== 'undefined';
 
         if (title && !validateProjectTitle(title)) {
             return res.status(400).json({ error: "Geçersiz proje başlığı formatı." });
         }
 
         try {
+            const actionId = hasPinChange ? getActionId(req) : null;
             const updated = updateProject(id, { title, is_pinned, isPinned });
-            res.json(updated);
+            if (hasPinChange) {
+                const pinned = Boolean(updated?.isPinned);
+                appendProjectActionMessages(id, {
+                    actionId,
+                    userText: pinned
+                        ? '📌 Projeyi başa sabitledim.'
+                        : '📌 Projenin sabitlemesini kaldırdım.',
+                    modelText: pinned
+                        ? 'Proje yan menünün üst sırasına taşındı.'
+                        : 'Proje normal sıralamaya döndürüldü.'
+                });
+            }
+            res.json(getProject(id));
         } catch (err) {
             next(err);
         }

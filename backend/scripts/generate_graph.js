@@ -18,6 +18,7 @@ async function extractCodeGraph() {
 
     const nodes = [];
     const links = [];
+    const linkKeys = new Set();
     const nodeMap = new Map();
 
     function addNode(id, label, type, group, file, description = '') {
@@ -33,11 +34,15 @@ async function extractCodeGraph() {
 
     function addLink(source, target, label = 'connects') {
         if (source && target && source !== target) {
+            const key = `${source}\u0000${target}`;
+            if (linkKeys.has(key)) return;
+            linkKeys.add(key);
             links.push({ source, target, label });
             if (nodeMap.has(source)) nodeMap.get(source).val += 0.5;
             if (nodeMap.has(target)) nodeMap.get(target).val += 0.5;
         }
     }
+
 
     // 1. Docs & Anayasa Düğüm Grubu (Group 1: Purple)
     const docs = [
@@ -53,6 +58,8 @@ async function extractCodeGraph() {
         { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
         { id: 'docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md', label: '2026-09-18 Proje Durumu Canlandırma Planı', desc: 'Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı' },
         { id: 'docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md', label: '2026-09-19 Doğru Durum ve Artefakt Planı', desc: 'Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı' },
+        { id: 'docs/superpowers/specs/2026-09-19-chat-action-audit-design.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Tasarımı', desc: 'Başarılı iş akışı ve yardımcı buton aksiyonlarının kalıcı sohbet denetim izi tasarımı' },
+        { id: 'docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı', desc: 'İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
       ];
 
@@ -160,7 +167,9 @@ async function extractCodeGraph() {
 
     frontend.forEach(f => {
         addNode(f.id, f.label, 'FrontendComponent', 'frontend', f.id, f.desc);
-        addLink('frontend/src/App.jsx', f.id, 'renders');
+        if (f.id !== 'frontend/src/services/api.js') {
+            addLink('frontend/src/App.jsx', f.id, 'renders');
+        }
     });
 
     addLink('frontend/src/App.jsx', 'frontend/src/services/api.js', 'uses');
@@ -195,7 +204,8 @@ async function extractCodeGraph() {
         { id: 'backend/tests/test_manager_error_telemetry.js', label: 'test_manager_error_telemetry.js', desc: 'Manager hata telemetrisi, revizyon kilit açma ve host fallback testleri' },
         { id: 'frontend/src/utils/__tests__/dagLayout.test.js', label: 'dagLayout.test.js', desc: 'DAG layout 6-ajan hiyerarşisi ve dummy düğüm temizlik testleri' },
         { id: 'backend/tests/test_scaffold_auth_standards.js', label: 'test_scaffold_auth_standards.js', desc: 'Pragmatik auth ve seed iskele standartları birim testleri' },
-        { id: 'backend/tests/test_project_state_rehydration.js', label: 'test_project_state_rehydration.js (4 Test)', desc: 'Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri' }
+        { id: 'backend/tests/test_project_state_rehydration.js', label: 'test_project_state_rehydration.js (4 Test)', desc: 'Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri' },
+        { id: 'backend/tests/test_project_action_chat_audit.js', label: 'test_project_action_chat_audit.js', desc: 'Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri' }
     ];
 
     tests.forEach(t => {
@@ -218,6 +228,8 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('frontend/src/utils/__tests__/dagLayout.test.js', 'frontend/src/utils/dagLayout.js', 'verifies');
     addLink('backend/tests/test_scaffold_auth_standards.js', 'backend/engine/codeGenerator.js', 'verifies');
+    addLink('backend/tests/test_project_action_chat_audit.js', 'backend/routes/projectRoutes.js', 'verifies');
+    addLink('backend/tests/test_project_action_chat_audit.js', 'backend/projectRepository.js', 'verifies');
     addLink('backend/tests/test_project_state_rehydration.js', 'backend/services/reconciliationService.js', 'verifies');
 
     const graphData = { nodes, links };
@@ -242,9 +254,9 @@ async function extractCodeGraph() {
     // Generate GRAPH_REPORT.md
     const reportMd = `# 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
 
-**Oluşturulma Tarihi:** ${new Date().toISOString().split('T')[0]}  
-**Toplam Düğüm (Nodes):** ${nodes.length}  
-**Toplam Bağlantı (Edges):** ${links.length}  
+**Oluşturulma Tarihi:** ${new Date().toISOString().split('T')[0]}
+**Toplam Düğüm (Nodes):** ${nodes.length}
+**Toplam Bağlantı (Edges):** ${links.length}
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
 
 ---
@@ -606,6 +618,12 @@ ${godNodesText}
               <li><span class="file">📄 2026-09-17-pragmatic-auth-standard-plan.md</span> <span class="tag tag-doc">Pragmatik Auth Standart Planı</span></li>
               <li><span class="file">📄 2026-09-18-project-state-rehydration-plan.md</span> <span class="tag tag-doc">Proje Durumu Canlandırma Planı</span></li>
               <li><span class="file">📄 2026-09-19-accurate-project-state-and-artifact-plan.md</span> <span class="tag tag-doc">Doğru Durum ve Artefakt Planı</span></li>
+              <li><span class="file">📄 2026-09-19-chat-action-audit-implementation-plan.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Uygulama Planı</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 superpowers/specs/</span>
+            <ul>
+              <li><span class="file">📄 2026-09-19-chat-action-audit-design.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Tasarımı</span></li>
             </ul>
           </li>
         </ul>
@@ -668,13 +686,14 @@ ${godNodesText}
               <li><span class="file">📄 test_build_validator.js</span> <span class="tag tag-test">tsc & prisma Derleyici</span></li>
               <li><span class="file">📄 test_quality_gate.js</span> <span class="tag tag-test">40 Testlik Kalite Kapısı</span></li>
               <li><span class="file">📄 test_docs_agent_sync.js</span> <span class="tag tag-test">Canlı Docs Senkronizasyonu</span></li>
+              <li><span class="file">📄 test_project_state_rehydration.js</span> <span class="tag tag-test">Proje Durum Canlandırma</span></li>
+              <li><span class="file">📄 test_project_action_chat_audit.js</span> <span class="tag tag-test">Kalıcı Sohbet Aksiyon Denetimi</span></li>
               <li><span class="file">📄 test_deep_verification.js</span> <span class="tag tag-test">17 Testlik DAG & JSON Onarım</span></li>
               <li><span class="file">📄 test_tur2_edge_cases.js</span> <span class="tag tag-test">8 Testlik Edge-Case Stresi</span></li>
               <li><span class="file">📄 test_runtime_verification.js</span> <span class="tag tag-test">6 Testlik Çalışma Zamanı</span></li>
               <li><span class="file">📄 test_e2e_simulation.js</span> <span class="tag tag-test">Uçtan Uca Otonom Pipeline</span></li>
               <li><span class="file">📄 test_disk_sync_and_isolation.js</span> <span class="tag tag-test">Disk Senkronizasyonu & İzolasyon</span></li>
               <li><span class="file">📄 test_scaffold_auth_standards.js</span> <span class="tag tag-test">Pragmatik Auth & Seed Standartları</span></li>
-              <li><span class="file">📄 test_project_state_rehydration.js</span> <span class="tag tag-test">Proje Durum Canlandırma</span></li>
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>

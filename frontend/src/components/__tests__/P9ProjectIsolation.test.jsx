@@ -107,6 +107,8 @@ function setupApi({ stateFor, filesFor, logsFor } = {}) {
       status: 'planning'
     }),
     updateProject: vi.spyOn(api, 'updateProject').mockResolvedValue({}),
+    syncProjects: vi.spyOn(api, 'syncProjects').mockResolvedValue({}),
+    downloadArtifact: vi.spyOn(api, 'downloadArtifact').mockResolvedValue(new Blob(['zip'])),
     logout: vi.spyOn(api, 'logout').mockResolvedValue({})
   };
   return spies;
@@ -126,7 +128,79 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+
+  test('helper sync and pin actions refresh active project state with fenced action requests', async () => {
+    const spies = setupApi();
+    render(<App />);
+    await waitForHeading(projectA.title);
+
+    fireEvent.click(screen.getByTitle('Diskle Senkronize Et (Projeleri Tara)'));
+    await waitFor(() => expect(spies.syncProjects).toHaveBeenCalledWith(expect.objectContaining({
+      activeProjectId: projectA.id,
+      headers: expect.objectContaining({ 'X-XFactor-Action-Id': expect.any(String) })
+    })));
+    await waitFor(() => expect(spies.getProject.mock.calls.length).toBeGreaterThan(1));
+
+    const projectStateCallsBeforePin = spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length;
+    fireEvent.click(screen.getAllByTitle('Proje İşlemleri')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Başa Sabitle' }));
+    await waitFor(() => expect(spies.updateProject).toHaveBeenCalledWith(
+      projectA.id,
+      { is_pinned: true },
+      expect.objectContaining({ headers: expect.objectContaining({
+        'X-XFactor-Action-Id': expect.any(String)
+      }) })
+    ));
+    await waitFor(() => expect(spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length)
+      .toBeGreaterThan(projectStateCallsBeforePin));
+  });
+
+  test('helper download sends action header and refreshes active project after initiation', async () => {
+    const spies = setupApi({
+      stateFor: id => id === projectA.id
+        ? {
+          ...projectA,
+          contractId: 'contract-a',
+          latestArtifact: { id: 'artifact-a', status: 'verified' }
+        }
+        : projectB
+    });
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:project-a');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(await screen.findByRole('button', { name: /zip/i }));
+    await waitFor(() => expect(spies.downloadArtifact).toHaveBeenCalledWith(
+      expect.stringContaining('/projects/project-a/contracts/contract-a/artifacts/artifact-a/download'),
+      expect.objectContaining({ headers: expect.objectContaining({
+        'X-XFactor-Action-Id': expect.any(String)
+      }) })
+    ));
+    await waitFor(() => expect(spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length).toBeGreaterThan(1));
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
+  });
 describe('P9 project/auth request isolation', () => {
+
+  test('does not apply a pending sync refresh after switching projects', async () => {
+    const pendingSync = deferred();
+    const spies = setupApi();
+    spies.syncProjects.mockResolvedValueOnce({}).mockReturnValueOnce(pendingSync.promise);
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Diskle Senkronize Et (Projeleri Tara)'));
+    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
+    const projectListCallsBeforeResolve = spies.getProjects.mock.calls.length;
+    const projectStateCallsBeforeResolve = spies.getProject.mock.calls.length;
+    pendingSync.resolve({});
+    await waitFor(() => expect(screen.getByRole('heading', { name: projectB.title })).toBeInTheDocument());
+    expect(spies.getProjects.mock.calls.length).toBe(projectListCallsBeforeResolve);
+    expect(spies.getProject.mock.calls.length).toBe(projectStateCallsBeforeResolve);
+  });
   test('does not apply a deferred A project response after switching to B', async () => {
     const delayedA = deferred();
     setupApi({
@@ -175,6 +249,45 @@ describe('P9 project/auth request isolation', () => {
 
     expect(screen.queryByRole('heading', { name: 'A stale pause' })).not.toBeInTheDocument();
     expect(screen.queryByText('A stale chat')).not.toBeInTheDocument();
+  });
+
+  test('replaces local workflow chat with canonical action messages across project switches', async () => {
+    let projectAState = {
+      ...projectA,
+      status: 'running',
+      chatHistory: [{ role: 'model', parts: [{ text: 'A canonical before action' }] }]
+    };
+    const canonicalActionState = {
+      ...projectAState,
+      status: 'paused',
+      chatHistory: [
+        ...projectAState.chatHistory,
+        { role: 'user', parts: [{ text: '⏸️ Üretim sürecini duraklat.' }] },
+        { role: 'model', parts: [{ text: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.' }] }
+      ]
+    };
+    const spies = setupApi({
+      stateFor: id => id === projectA.id ? projectAState : projectB
+    });
+    spies.pauseProject.mockImplementation((_id, options) => {
+      expect(options.headers['X-XFactor-Action-Id']).toMatch(/^pause-/);
+      projectAState = canonicalActionState;
+      return Promise.resolve(canonicalActionState);
+    });
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Süreci Duraklat/ }));
+    await screen.findByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.');
+
+    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
+    expect(screen.getByText('B current state')).toBeInTheDocument();
+    expect(screen.queryByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(projectA.title, { selector: 'span' }));
+    await waitForHeading(projectA.title);
+    expect(screen.getByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.')).toBeInTheDocument();
   });
 
   test('does not let deferred A files or logs replace B files or logs', async () => {
