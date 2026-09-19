@@ -58,7 +58,6 @@ test_p1_b_smoke.js
 test_p1_b_test_infra.js
 test_p1_c_archive.js
 test_p1_c_artifact_verifier.js
-test_p1_c_frontend.js
 test_p1_c_repository.js
 test_p1_c_safe_extraction.js
 test_p1_c_state_invalidation.js
