@@ -358,7 +358,7 @@
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "Proje CRUD, Chat, Onay ve Revizyon uç noktaları",
-      "val": 5.5
+      "val": 6.5
     },
     {
       "id": "backend/routes/authRoutes.js",
@@ -376,7 +376,7 @@
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
-      "val": 4.5
+      "val": 5
     },
     {
       "id": "frontend/src/components/Sidebar.jsx",
@@ -415,6 +415,15 @@
       "val": 2
     },
     {
+      "id": "frontend/src/components/DashboardView.jsx",
+      "label": "DashboardView.jsx (Kalite & Kanıt Paneli)",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/DashboardView.jsx",
+      "description": "18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli",
+      "val": 3
+    },
+    {
       "id": "frontend/src/utils/dagLayout.js",
       "label": "utils/dagLayout.js (6-Agent DAG Layout)",
       "type": "FrontendComponent",
@@ -439,7 +448,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "HttpOnly server-session ve CSRF uyumlu API istemcisi",
-      "val": 2
+      "val": 3
     },
     {
       "id": "backend/tests/test_runner.js",
@@ -448,7 +457,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 14.5
+      "val": 15.5
     },
     {
       "id": "backend/tests/test_test_harness.js",
@@ -691,6 +700,24 @@
       "group": "tests",
       "file": "backend/tests/test_project_action_chat_audit.js",
       "description": "Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri",
+      "val": 2.5
+    },
+    {
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "label": "DashboardView.test.jsx",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "description": "Salt-okunur yetki sınırı, kanıt izolasyonu ve sansürlü log render birim testleri",
+      "val": 2
+    },
+    {
+      "id": "e2e/dashboard.spec.js",
+      "label": "dashboard.spec.js (Playwright E2E)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "e2e/dashboard.spec.js",
+      "description": "Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği",
       "val": 2.5
     }
   ],
@@ -972,6 +999,11 @@
     },
     {
       "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/DashboardView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
       "target": "frontend/src/utils/dagLayout.js",
       "label": "renders"
     },
@@ -1131,6 +1163,16 @@
       "label": "runs"
     },
     {
+      "source": "backend/tests/test_runner.js",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "e2e/dashboard.spec.js",
+      "label": "runs"
+    },
+    {
       "source": "backend/tests/test_backend.js",
       "target": "backend/server.js",
       "label": "verifies"
@@ -1204,6 +1246,31 @@
       "source": "backend/tests/test_project_state_rehydration.js",
       "target": "backend/services/reconciliationService.js",
       "label": "verifies"
+    },
+    {
+      "source": "frontend/src/components/DashboardView.jsx",
+      "target": "frontend/src/services/api.js",
+      "label": "uses"
+    },
+    {
+      "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "target": "frontend/src/components/DashboardView.jsx",
+      "label": "verifies"
+    },
+    {
+      "source": "e2e/dashboard.spec.js",
+      "target": "frontend/src/components/DashboardView.jsx",
+      "label": "verifies"
+    },
+    {
+      "source": "e2e/dashboard.spec.js",
+      "target": "backend/routes/projectRoutes.js",
+      "label": "verifies"
+    },
+    {
+      "source": "frontend/src/services/api.js",
+      "target": "backend/routes/projectRoutes.js",
+      "label": "consumes_api"
     }
   ]
 }
