@@ -160,6 +160,7 @@ async function extractCodeGraph() {
         { id: 'frontend/src/components/Header.jsx', label: 'Header.jsx', desc: 'Üst menü, sekme geçişleri ve süreç kontrol butonları' },
         { id: 'frontend/src/components/ChatView.jsx', label: 'ChatView.jsx', desc: 'Manager Sohbet, beyin fırtınası ve revizyon paneli' },
         { id: 'frontend/src/components/DAGFlowView.jsx', label: 'DAGFlowView.jsx', desc: 'ReactFlow canlı DAG akış şeması ve log tablosu' },
+        { id: 'frontend/src/components/DashboardView.jsx', label: 'DashboardView.jsx (Kalite & Kanıt Paneli)', desc: '18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli' },
         { id: 'frontend/src/utils/dagLayout.js', label: 'utils/dagLayout.js (6-Agent DAG Layout)', desc: '6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru' },
         { id: 'frontend/src/components/IDEView.jsx', label: 'IDEView.jsx', desc: 'Monaco Editor kaynak kod inceleyici' },
         { id: 'frontend/src/services/api.js', label: 'services/api.js', desc: 'HttpOnly server-session ve CSRF uyumlu API istemcisi' }
@@ -205,7 +206,9 @@ async function extractCodeGraph() {
         { id: 'frontend/src/utils/__tests__/dagLayout.test.js', label: 'dagLayout.test.js', desc: 'DAG layout 6-ajan hiyerarşisi ve dummy düğüm temizlik testleri' },
         { id: 'backend/tests/test_scaffold_auth_standards.js', label: 'test_scaffold_auth_standards.js', desc: 'Pragmatik auth ve seed iskele standartları birim testleri' },
         { id: 'backend/tests/test_project_state_rehydration.js', label: 'test_project_state_rehydration.js (4 Test)', desc: 'Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri' },
-        { id: 'backend/tests/test_project_action_chat_audit.js', label: 'test_project_action_chat_audit.js', desc: 'Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri' }
+        { id: 'backend/tests/test_project_action_chat_audit.js', label: 'test_project_action_chat_audit.js', desc: 'Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri' },
+        { id: 'frontend/src/components/__tests__/DashboardView.test.jsx', label: 'DashboardView.test.jsx', desc: 'Salt-okunur yetki sınırı, kanıt izolasyonu ve sansürlü log render birim testleri' },
+        { id: 'e2e/dashboard.spec.js', label: 'dashboard.spec.js (Playwright E2E)', desc: 'Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği' }
     ];
 
     tests.forEach(t => {
@@ -231,6 +234,11 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_project_action_chat_audit.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('backend/tests/test_project_action_chat_audit.js', 'backend/projectRepository.js', 'verifies');
     addLink('backend/tests/test_project_state_rehydration.js', 'backend/services/reconciliationService.js', 'verifies');
+    addLink('frontend/src/components/DashboardView.jsx', 'frontend/src/services/api.js', 'uses');
+    addLink('frontend/src/components/__tests__/DashboardView.test.jsx', 'frontend/src/components/DashboardView.jsx', 'verifies');
+    addLink('e2e/dashboard.spec.js', 'frontend/src/components/DashboardView.jsx', 'verifies');
+    addLink('e2e/dashboard.spec.js', 'backend/routes/projectRoutes.js', 'verifies');
+    addLink('frontend/src/services/api.js', 'backend/routes/projectRoutes.js', 'consumes_api');
 
     const graphData = { nodes, links };
     await fs.writeFile(path.join(OUT_DIR, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf8');
@@ -721,7 +729,13 @@ ${godNodesText}
             </ul>
           </li>
           <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
+          <li><span class="file">📄 components/DashboardView.jsx</span> <span class="tag tag-ui">Kalite & Kanıt Paneli</span></li>
           <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
+        </ul>
+      </li>
+      <li><span class="folder">📁 e2e/</span>
+        <ul>
+          <li><span class="file">📄 dashboard.spec.js</span> <span class="tag tag-test">Dashboard E2E Kanıt Testi</span></li>
         </ul>
       </li>
     </ul>
