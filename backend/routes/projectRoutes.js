@@ -49,6 +49,37 @@ const respondIdempotentWorkflow = (res, projectId, attempt) => res.json({
     idempotent: true
 });
 
+const APPROVAL_PUBLICATION_TIMEOUT_MS = 1000;
+const APPROVAL_PUBLICATION_INTERVAL_MS = 10;
+
+const hasRecentActionPair = projectId => {
+    const rows = db.prepare(`
+        SELECT action_key
+        FROM chat_history
+        WHERE project_id = ? AND action_key IS NOT NULL
+        ORDER BY id DESC
+        LIMIT 2
+    `).all(projectId);
+    if (rows.length !== 2) return false;
+    const [model, user] = rows;
+    if (!model.action_key.endsWith(':model') || !user.action_key.endsWith(':user')) return false;
+    return model.action_key.slice(0, -':model'.length) === user.action_key.slice(0, -':user'.length);
+};
+
+const waitForApprovalPublication = async projectId => {
+    const deadline = Date.now() + APPROVAL_PUBLICATION_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+        const state = await readProjectState(projectId);
+        const attempt = getActiveWorkflowAttempt(projectId);
+        if (!attempt) return { ready: false, timedOut: false };
+        if (state?.status === PROJECT_STATUS.IMPLEMENTING && hasRecentActionPair(projectId)) {
+            return { ready: true, attempt };
+        }
+        await new Promise(resolve => setTimeout(resolve, APPROVAL_PUBLICATION_INTERVAL_MS));
+    }
+    return { ready: false, timedOut: true };
+};
+
 function findFailedReports(dir, projectDir) {
     const reports = [];
     try {
@@ -532,7 +563,16 @@ export function createProjectRouter({
                 PROJECT_STATUS.CONTRACT_APPROVED
             )) {
                 if (activeLease) {
-                    return respondIdempotentWorkflow(res, id, activeLease);
+                    const publication = await waitForApprovalPublication(id);
+                    if (publication.ready) {
+                        return respondIdempotentWorkflow(res, id, publication.attempt);
+                    }
+                    return res.status(409).json({
+                        error: publication.timedOut
+                            ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                            : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                        code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
+                    });
                 }
                 return res.status(400).json({ error: "Geçersiz işlem" });
             }
@@ -551,7 +591,16 @@ export function createProjectRouter({
                     currentAttempt
                     && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
                 ) {
-                    return respondIdempotentWorkflow(res, id, currentAttempt);
+                    const publication = await waitForApprovalPublication(id);
+                    if (publication.ready) {
+                        return respondIdempotentWorkflow(res, id, publication.attempt);
+                    }
+                    return res.status(409).json({
+                        error: publication.timedOut
+                            ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                            : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                        code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
+                    });
                 }
                 return res.status(400).json({
                     error: "Onaylanacak bekleyen bir plan bulunamadı."
@@ -577,7 +626,16 @@ export function createProjectRouter({
 
             const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
-                return respondIdempotentWorkflow(res, id, lease.attempt);
+                const publication = await waitForApprovalPublication(id);
+                if (publication.ready) {
+                    return respondIdempotentWorkflow(res, id, publication.attempt);
+                }
+                return res.status(409).json({
+                    error: publication.timedOut
+                        ? 'Onaylanan proje durumunun yayınlanması zaman aşımına uğradı.'
+                        : 'Onaylanan proje yürütmesi tamamlanamadı.',
+                    code: publication.timedOut ? 'APPROVAL_PUBLICATION_TIMEOUT' : 'APPROVAL_PUBLICATION_FAILED'
+                });
             }
 
             try {
@@ -592,6 +650,10 @@ export function createProjectRouter({
                 throw error;
             }
 
+            await lifecycle?.afterWorkflowLeaseAcquired?.({
+                projectId: id,
+                attemptId: lease.attempt.id
+            });
             const approvedState = await readProjectState(id);
             if (!canTransitionProjectStatus(
                 approvedState.status,

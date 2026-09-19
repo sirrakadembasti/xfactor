@@ -44,6 +44,20 @@ const actionMessages = {
 };
 
 const passThrough = (_req, _res, next) => next();
+let leaseGate = null;
+const lifecycle = {
+    assertGenerationAllowed() {},
+    begin() {
+        return null;
+    },
+    async afterWorkflowLeaseAcquired({ projectId }) {
+        if (!leaseGate || leaseGate.projectId !== projectId) return;
+        leaseGate.acquiredResolve();
+        await new Promise(resolve => {
+            leaseGate.release = resolve;
+        });
+    }
+};
 const app = express();
 app.use(express.json());
 app.use('/api/projects', createProjectRouter({
@@ -52,7 +66,8 @@ app.use('/api/projects', createProjectRouter({
         next();
     },
     projectAccess: () => passThrough,
-    wsHub: { broadcast() {}, publish() {} }
+    wsHub: { broadcast() {}, publish() {} },
+    lifecycle
 }));
 app.use((error, _req, res, _next) => res.status(error.status || 500).json({ error: error.message }));
 const server = http.createServer(app);
@@ -377,6 +392,64 @@ await runAsyncTest('concurrent approve requests elect one idempotent loser witho
     }
 });
 
+
+await runAsyncTest('losing approve waits for winner publication before returning canonical state', async () => {
+    const project = await createProject({ title: 'Barrier Approve Route' });
+    createContractRevision(project.id, validPlan, 'approve-barrier-message');
+    const pending = await readProjectState(project.id);
+    pending.status = 'pending_approval';
+    await writeProjectState(pending);
+
+    let acquiredResolve;
+    const acquired = new Promise(resolve => {
+        acquiredResolve = resolve;
+    });
+    leaseGate = { projectId: project.id, acquiredResolve, release: null };
+    const winnerPromise = postAction({
+        projectId: project.id,
+        kind: 'approve',
+        actionId: 'approve-barrier-winner'
+    });
+    await acquired;
+
+    let loserSettled = false;
+    const loserPromise = postAction({
+        projectId: project.id,
+        kind: 'approve',
+        actionId: 'approve-barrier-loser'
+    }).then(result => {
+        loserSettled = true;
+        return result;
+    });
+    await new Promise(resolve => setTimeout(resolve, 25));
+    assert.strictEqual(loserSettled, false, 'loser must wait for winner publication');
+    leaseGate.release();
+    leaseGate = null;
+
+    const [winner, loser] = await Promise.all([winnerPromise, loserPromise]);
+    try {
+        assert.strictEqual(winner.status, 200, JSON.stringify(winner.body));
+        assert.strictEqual(loser.status, 200, JSON.stringify(loser.body));
+        assert.strictEqual(winner.body.idempotent, undefined);
+        assert.strictEqual(loser.body.idempotent, true);
+        assert.strictEqual(winner.body.status, 'implementing');
+        assert.strictEqual(loser.body.status, 'implementing');
+        assert.deepStrictEqual(
+            loser.body.chatHistory.slice(-2).map(message => message.parts[0].text),
+            [actionMessages.approve.user, actionMessages.approve.model]
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(project.id, 'approve-barrier-winner:%').count,
+            2
+        );
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(project.id, 'approve-barrier-loser:%').count,
+            0
+        );
+    } finally {
+        abortProjectExecution(project.id);
+    }
+});
 
 await new Promise(resolve => server.close(resolve));
 
