@@ -327,6 +327,56 @@ await runAsyncTest('repeated approve and resume action requests are idempotent a
         abortProjectExecution(resumeProject.id);
     }
 });
+await runAsyncTest('concurrent approve requests elect one idempotent loser without duplicate audit rows', async () => {
+    const project = await createProject({ title: 'Concurrent Approve Route' });
+    createContractRevision(project.id, validPlan, 'approve-concurrent-message');
+    const pending = await readProjectState(project.id);
+    pending.status = 'pending_approval';
+    await writeProjectState(pending);
+
+    const responses = await Promise.all([
+        postAction({
+            projectId: project.id,
+            kind: 'approve',
+            actionId: 'approve-concurrent-a'
+        }),
+        postAction({
+            projectId: project.id,
+            kind: 'approve',
+            actionId: 'approve-concurrent-b'
+        })
+    ]);
+    try {
+        assert.deepStrictEqual(responses.map(response => response.status).sort(), [200, 200]);
+        assert.strictEqual(responses.filter(response => response.body.idempotent === true).length, 1);
+        assert.ok(responses.every(response => response.body.status === 'implementing'));
+        const rows = db.prepare(`
+            SELECT action_key
+            FROM chat_history
+            WHERE project_id = ? AND action_key IS NOT NULL
+            ORDER BY id
+        `).all(project.id);
+        const rowCounts = new Map([
+            ['approve-concurrent-a', 0],
+            ['approve-concurrent-b', 0]
+        ]);
+        for (const row of rows) {
+            for (const actionId of rowCounts.keys()) {
+                if (row.action_key.startsWith(`${actionId}:`)) {
+                    rowCounts.set(actionId, rowCounts.get(actionId) + 1);
+                }
+            }
+        }
+        assert.deepStrictEqual([...rowCounts.values()].sort(), [0, 2]);
+        assert.strictEqual(
+            db.prepare("SELECT COUNT(*) AS count FROM workflow_attempts WHERE project_id = ? AND status = 'running'").get(project.id).count,
+            1
+        );
+    } finally {
+        abortProjectExecution(project.id);
+    }
+});
+
 
 await new Promise(resolve => server.close(resolve));
 

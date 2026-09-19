@@ -575,25 +575,21 @@ export function createProjectRouter({
                 });
             }
 
-            try {
-                approveContractRevision(id, latestRevision.revision);
-            } catch (error) {
-                const currentAttempt = getActiveWorkflowAttempt(id);
-                const currentState = await readProjectState(id);
-                if (
-                    currentAttempt
-                    && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
-                ) {
-                    return respondIdempotentWorkflow(res, id, currentAttempt);
-                }
-                throw error;
-            }
-            state.status = PROJECT_STATUS.CONTRACT_APPROVED;
-            await writeProjectState(id, state);
-
             const lease = acquireWorkflowLease(id, leaseOwner);
             if (!lease.acquired) {
                 return respondIdempotentWorkflow(res, id, lease.attempt);
+            }
+
+            try {
+                approveContractRevision(id, latestRevision.revision);
+                state.status = PROJECT_STATUS.CONTRACT_APPROVED;
+                await writeProjectState(id, state);
+            } catch (error) {
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: error.message,
+                    leaseOwner
+                });
+                throw error;
             }
 
             const approvedState = await readProjectState(id);
@@ -616,10 +612,18 @@ export function createProjectRouter({
                 leaseOwner
             });
 
-            appendWorkflowAction(id, actionId, {
-                userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
-                modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
-            });
+            try {
+                appendWorkflowAction(id, actionId, {
+                    userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
+                    modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+                });
+            } catch (error) {
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: error.message,
+                    leaseOwner
+                });
+                throw error;
+            }
             const canonicalState = getProject(id);
 
             const operation = lifecycle?.begin('generation', {
