@@ -524,6 +524,66 @@ export function appendProjectChatMessage(projectId, role, textContent, createdAt
     };
 }
 
+export function appendProjectActionMessages(projectId, {
+    actionId,
+    userText,
+    modelText,
+    createdAt = new Date().toISOString()
+} = {}) {
+    if (!isValidProjectId(projectId)) {
+        throw new Error(`Invalid project ID: "${projectId}"`);
+    }
+    if (typeof actionId !== 'string' || !actionId.trim() || actionId.length > 128) {
+        throw new Error('Invalid actionId: expected a non-empty string of at most 128 characters.');
+    }
+
+    const userActionKey = `${actionId}:user`;
+    const modelActionKey = `${actionId}:model`;
+    const toMessage = row => ({
+        id: Number(row.id),
+        role: row.role,
+        parts: [{ text: row.text_content }],
+        created_at: row.created_at
+    });
+    const findMessages = () => db.prepare(`
+        SELECT id, role, text_content, created_at
+        FROM chat_history
+        WHERE project_id = ? AND action_key IN (?, ?)
+        ORDER BY id ASC
+    `).all(projectId, userActionKey, modelActionKey);
+
+    let transactionOpen = false;
+    db.exec('BEGIN IMMEDIATE;');
+    transactionOpen = true;
+    try {
+        const existingRows = findMessages();
+        if (existingRows.length > 0) {
+            db.exec('COMMIT;');
+            transactionOpen = false;
+            return { inserted: false, messages: existingRows.map(toMessage) };
+        }
+
+        db.prepare(`
+            INSERT INTO chat_history (project_id, role, text_content, action_key, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(projectId, 'user', userText, userActionKey, createdAt);
+        db.prepare(`
+            INSERT INTO chat_history (project_id, role, text_content, action_key, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(projectId, 'model', modelText, modelActionKey, createdAt);
+
+        const insertedRows = findMessages();
+        db.exec('COMMIT;');
+        transactionOpen = false;
+        return { inserted: true, messages: insertedRows.map(toMessage) };
+    } catch (error) {
+        if (transactionOpen) {
+            try { db.exec('ROLLBACK;'); } catch {}
+        }
+        throw error;
+    }
+}
+
 export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
     const leaseOptions = typeof stateOrId === 'object' && stateOrId !== null

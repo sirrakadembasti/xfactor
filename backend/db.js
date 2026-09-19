@@ -643,6 +643,20 @@ export const MIGRATIONS = [
             `);
         }
     },
+    {
+        version: 14,
+        name: '014_chat_action_idempotency',
+        up: database => {
+            if (!columnExists(database, 'chat_history', 'action_key')) {
+                database.exec('ALTER TABLE chat_history ADD COLUMN action_key TEXT');
+            }
+            database.exec(`
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_history_action_key
+                ON chat_history(action_key)
+                WHERE action_key IS NOT NULL;
+            `);
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');
