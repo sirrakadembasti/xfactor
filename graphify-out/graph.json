@@ -7,7 +7,7 @@
       "group": "docs",
       "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "description": "Platformun en üst master orkestrasyon anayasası",
-      "val": 8
+      "val": 8.5
     },
     {
       "id": "docs/manager.md",
@@ -97,6 +97,15 @@
       "group": "docs",
       "file": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
       "description": "Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı",
+      "val": 1.5
+    },
+    {
+      "id": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
+      "label": "2026-09-19 Doğru Durum ve Artefakt Planı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
+      "description": "Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı",
       "val": 1.5
     },
     {
@@ -738,6 +747,11 @@
     },
     {
       "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
       "label": "defines"
     },
@@ -969,7 +983,7 @@
     {
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/services/api.js",
-      "label": "renders"
+      "label": "uses"
     },
     {
       "source": "frontend/src/services/api.js",
