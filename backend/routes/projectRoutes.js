@@ -437,6 +437,12 @@ export function createProjectRouter({
                 PROJECT_STATUS.VERIFICATION_FAILED,
                 PROJECT_STATUS.FAILED
             ]);
+            const remediationKeywords = [
+                'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
+                'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
+            ];
+            const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
+            const wasPaused = freshState.status === PROJECT_STATUS.PAUSED;
 
             const isPlanReady = !!parsedPlan ||
                                 responseText.includes("[PLAN_HAZIR]") ||
@@ -452,7 +458,8 @@ export function createProjectRouter({
                                 responseText.toLowerCase().includes("onaylayabilirsin") ||
                                 (isUserStarting && revisableStatuses.has(freshState.status));
 
-            if (isPlanReady && revisableStatuses.has(freshState.status)) {
+
+            if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested)) {
                 const draftPlan = parsedPlan || normalizeManagerPlanFromText(
                     freshState.title,
                     responseText
@@ -472,11 +479,6 @@ export function createProjectRouter({
                 await writeProjectState(id, freshState);
             }
 
-            const remediationKeywords = [
-                'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
-                'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
-            ];
-            const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
 
             if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested) {
                 freshState.remediation = {
