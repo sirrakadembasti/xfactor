@@ -582,7 +582,7 @@ export default function App() {
   const handleTogglePin = async (id, currentPinState, e) => {
     e?.stopPropagation();
     setActiveMenuProjectId(null);
-    const identity = captureRequest('togglePin', id);
+    const identity = captureRequest('togglePin');
     try {
       await api.updateProject(
         id,
@@ -635,7 +635,7 @@ export default function App() {
   const handleDownloadProjectZip = async (id, event) => {
     rememberUiErrorTrigger(event);
     setActiveMenuProjectId(null);
-    const identity = captureRequest('downloadProject', id);
+    const identity = captureRequest('downloadProject');
     try {
       await requestVerifiedArtifactDownload({
         projectId: id,

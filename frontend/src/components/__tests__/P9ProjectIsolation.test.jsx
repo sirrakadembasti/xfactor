@@ -107,6 +107,8 @@ function setupApi({ stateFor, filesFor, logsFor } = {}) {
       status: 'planning'
     }),
     updateProject: vi.spyOn(api, 'updateProject').mockResolvedValue({}),
+    syncProjects: vi.spyOn(api, 'syncProjects').mockResolvedValue({}),
+    downloadArtifact: vi.spyOn(api, 'downloadArtifact').mockResolvedValue(new Blob(['zip'])),
     logout: vi.spyOn(api, 'logout').mockResolvedValue({})
   };
   return spies;
@@ -126,7 +128,73 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+
+  test('helper sync and pin actions refresh active project state with fenced action requests', async () => {
+    const spies = setupApi();
+    render(<App />);
+    await waitForHeading(projectA.title);
+
+    fireEvent.click(screen.getByTitle('Diskle Senkronize Et (Projeleri Tara)'));
+    await waitFor(() => expect(spies.syncProjects).toHaveBeenCalledWith(expect.objectContaining({
+      activeProjectId: projectA.id,
+      headers: expect.objectContaining({ 'X-XFactor-Action-Id': expect.any(String) })
+    })));
+    await waitFor(() => expect(spies.getProject.mock.calls.length).toBeGreaterThan(1));
+
+    fireEvent.click(screen.getAllByTitle('Proje İşlemleri')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Başa Sabitle' }));
+    await waitFor(() => expect(spies.updateProject).toHaveBeenCalledWith(
+      projectA.id,
+      { is_pinned: true },
+      expect.objectContaining({ headers: expect.objectContaining({
+        'X-XFactor-Action-Id': expect.any(String)
+      }) })
+    ));
+    await waitFor(() => expect(spies.getProject.mock.calls.some(([id]) => id === projectA.id)).toBe(true));
+  });
+
+  test('helper download sends action header and refreshes active project after initiation', async () => {
+    const spies = setupApi({
+      stateFor: id => id === projectA.id
+        ? {
+          ...projectA,
+          contractId: 'contract-a',
+          latestArtifact: { id: 'artifact-a', status: 'verified' }
+        }
+        : projectB
+    });
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:project-a');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(await screen.findByRole('button', { name: /zip/i }));
+    await waitFor(() => expect(spies.downloadArtifact).toHaveBeenCalledWith(
+      expect.stringContaining('/projects/project-a/contracts/contract-a/artifacts/artifact-a/download'),
+      expect.objectContaining({ headers: expect.objectContaining({
+        'X-XFactor-Action-Id': expect.any(String)
+      }) })
+    ));
+    await waitFor(() => expect(spies.getProject.mock.calls.filter(([id]) => id === projectA.id).length).toBeGreaterThan(1));
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
+  });
 describe('P9 project/auth request isolation', () => {
+
+  test('does not apply a pending sync refresh after switching projects', async () => {
+    const pendingSync = deferred();
+    const spies = setupApi();
+    spies.syncProjects.mockResolvedValueOnce({}).mockReturnValueOnce(pendingSync.promise);
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Diskle Senkronize Et (Projeleri Tara)'));
+    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
+    pendingSync.resolve({});
+    await waitFor(() => expect(screen.getByRole('heading', { name: projectB.title })).toBeInTheDocument());
+  });
   test('does not apply a deferred A project response after switching to B', async () => {
     const delayedA = deferred();
     setupApi({

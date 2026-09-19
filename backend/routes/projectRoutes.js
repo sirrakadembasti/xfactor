@@ -342,7 +342,7 @@ export function createProjectRouter({
                 appendProjectActionMessages(activeProjectId, {
                     actionId,
                     userText: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
-                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.syncedCount) || 0} güncellenen proje.`
+                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.updatedCount) || 0} güncellenen proje.`
                 });
             }
             res.json(syncResult);
@@ -1275,7 +1275,7 @@ export function createProjectRouter({
                         : 'Proje normal sıralamaya döndürüldü.'
                 });
             }
-            res.json(updated);
+            res.json(getProject(id));
         } catch (err) {
             next(err);
         }

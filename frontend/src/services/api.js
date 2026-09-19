@@ -268,7 +268,7 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       });
     },
     downloadArtifact: (endpoint, opts = {}) =>
-      request(endpoint, { ...opts, responseType: 'blob' }),
+      request(endpoint, { timeoutMs: 0, ...opts, responseType: 'blob' }),
 
     // Execution & Interaction
     sendChatMessage: (id, message, opts = {}) =>

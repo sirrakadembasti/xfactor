@@ -993,6 +993,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             success: false,
             error: `Projects root "${root}" does not exist`,
             syncedCount: 0,
+            updatedCount: 0,
             missingOnDisk: [],
             quarantined: [],
             unverified: [],
@@ -1009,6 +1010,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             success: false,
             error: `Projects root "${root}" could not be read: ${error.message}`,
             syncedCount: 0,
+            updatedCount: 0,
             missingOnDisk: [],
             quarantined: [],
             unverified: [],
@@ -1050,8 +1052,8 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             });
         }
     }
-
-    let syncedCount = autoRegistered.length;
+    const syncedCount = autoRegistered.length;
+    let updatedCount = 0;
     const missingOnDisk = [];
 
     database.exec('BEGIN IMMEDIATE;');
@@ -1063,6 +1065,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             } else {
                 if (!proj.plan || !proj.workflow_state || proj.plan === 'null' || proj.workflow_state === 'null') {
                     await rehydrateProjectStateFromDisk(expectedDir, { projectId: proj.id, database });
+                    updatedCount += 1;
                 }
             }
         }
@@ -1075,6 +1078,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
     return {
         success: true,
         syncedCount,
+        updatedCount,
         missingOnDisk,
         quarantined,
         unverified,

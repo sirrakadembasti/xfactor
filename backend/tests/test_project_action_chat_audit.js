@@ -1,6 +1,8 @@
 import assert from 'assert';
+import crypto from 'crypto';
 import express from 'express';
 import http from 'http';
+import fs from 'fs/promises';
 import path from 'path';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
@@ -16,9 +18,10 @@ const {
     appendProjectActionMessages
 } = await import('../projectRepository.js');
 const { readProjectState, writeProjectState } = await import('../engine/index.js');
-const { createContractRevision } = await import('../contracts/projectContract.js');
 const { createProjectRouter } = await import('../routes/projectRoutes.js');
+const { createContractRevision } = await import('../contracts/projectContract.js');
 const { abortProjectExecution } = await import('../engine/cancellation.js');
+const { createArtifact } = await import('../repositories/artifactRepository.js');
 const { runAsyncTest, finish } = createTestHarness();
 
 const validPlan = {
@@ -74,11 +77,12 @@ const lifecycle = {
         });
     }
 };
+let testUser = { id: 'action-audit-owner', isAdmin: true };
 const app = express();
 app.use(express.json());
 app.use('/api/projects', createProjectRouter({
     requireAuth: (req, _res, next) => {
-        req.user = { id: 'action-audit-owner', isAdmin: true };
+        req.user = { ...testUser };
         next();
     },
     projectAccess: () => passThrough,
@@ -290,6 +294,7 @@ await runAsyncTest('sync appends canonical summary to the authorized active proj
     const project = await createProject({ title: 'Sync Action Route' });
     const result = await postSync({ activeProjectId: project.id, actionId: 'sync-route-action' });
     assert.strictEqual(result.status, 200, JSON.stringify(result.body));
+    assert.strictEqual(typeof result.body.updatedCount, 'number');
     const rows = db.prepare(`
         SELECT role, text_content, action_key
         FROM chat_history
@@ -311,7 +316,7 @@ await runAsyncTest('sync appends canonical summary to the authorized active proj
             text: actionMessages.sync.model({
                 registered: result.body.autoRegistered.length,
                 missing: result.body.missingOnDisk.length,
-                updated: result.body.syncedCount
+                updated: result.body.updatedCount
             }),
             actionKey: 'sync-route-action:model'
         }
@@ -389,7 +394,103 @@ await runAsyncTest('delete remains message-free and does not create action-keyed
         0
     );
 });
-    const project = await createProject({ title: 'Delete Action Route' });
+await runAsyncTest('sync denies unauthorized active project audit and failed sync remains message-free', async () => {
+    const project = await createProject({ title: 'Unauthorized Sync Route' });
+    testUser = { id: 'not-a-member', isAdmin: false };
+    const unauthorized = await postSync({ activeProjectId: project.id, actionId: 'unauthorized-sync-action' });
+    assert.strictEqual(unauthorized.status, 200, JSON.stringify(unauthorized.body));
+    testUser = { id: 'action-audit-owner', isAdmin: true };
+
+    const previousRoot = process.env.PROJECTS_ROOT;
+    process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'missing-project-root');
+    try {
+        const failed = await postSync({ activeProjectId: project.id, actionId: 'failed-sync-action' });
+        assert.strictEqual(failed.status, 200, JSON.stringify(failed.body));
+        assert.strictEqual(failed.body.success, false);
+    } finally {
+        process.env.PROJECTS_ROOT = previousRoot;
+    }
+    assert.strictEqual(
+        db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(project.id).count,
+        0
+    );
+});
+
+await runAsyncTest('pin response contains the canonical appended chat pair', async () => {
+    const project = await createProject({ title: 'Pin Fresh State Route' });
+    const response = await patchProject({
+        projectId: project.id,
+        body: { is_pinned: true },
+        actionId: 'pin-fresh-state-action'
+    });
+    assert.strictEqual(response.status, 200, JSON.stringify(response.body));
+    assert.deepStrictEqual(response.body.chatHistory.slice(-2).map(message => message.parts[0].text), [
+        actionMessages.pin.user,
+        actionMessages.pin.model
+    ]);
+});
+
+await runAsyncTest('verified download appends its canonical pair after evidence authorization', async () => {
+    const project = await createProject({ title: 'Download Action Route' });
+    const contractId = `download-contract-${Date.now()}`;
+    const artifactId = `download-artifact-${Date.now()}`;
+    const runId = `download-run-${Date.now()}`;
+    const artifactPath = path.join(path.dirname(isolated.dbPath), `${artifactId}.zip`);
+    const timestamp = new Date().toISOString();
+    const mandatoryGates = [
+        'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
+        'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
+        'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check',
+        'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
+    ];
+    await fs.writeFile(artifactPath, 'verified download artifact');
+    const artifactHash = crypto.createHash('sha256').update(await fs.readFile(artifactPath)).digest('hex');
+    db.prepare(`
+        INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at)
+        VALUES (?, ?, 1, 'approved', '{}', ?, ?)
+    `).run(contractId, project.id, 'download-contract-hash', timestamp);
+    db.prepare(`
+        INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at)
+        VALUES (?, ?, ?, 'verified', '2.0', ?, ?)
+    `).run(runId, project.id, contractId, timestamp, timestamp);
+    for (const gateName of mandatoryGates) {
+        db.prepare(`
+            INSERT INTO verification_checks
+              (id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
+               started_at, ended_at, stdout_digest, stderr_digest, evidence_json)
+            VALUES (?, ?, ?, ?, 'MANDATORY', 'PASS', 'node gate', 0, ?, ?, ?, ?, '{"ok":true}')
+        `).run(`${runId}-${gateName}`, contractId, runId, gateName, timestamp, timestamp, `stdout-${gateName}`, `stderr-${gateName}`);
+    }
+    createArtifact({
+        id: artifactId,
+        projectId: project.id,
+        contractId,
+        kind: 'zip',
+        path: artifactPath,
+        sha256: artifactHash,
+        size: (await fs.stat(artifactPath)).size,
+        manifestJson: '[]',
+        status: 'verified'
+    });
+    db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE id = ?').run(runId, artifactId);
+    const response = await fetch(
+        `http://127.0.0.1:${server.address().port}/api/projects/${project.id}/contracts/${contractId}/artifacts/${artifactId}/download`,
+        { headers: { 'X-XFactor-Action-Id': 'download-route-action' } }
+    );
+    assert.strictEqual(response.status, 200, `download status ${response.status}`);
+    await response.arrayBuffer();
+    const rows = db.prepare(`
+        SELECT role, text_content, action_key
+        FROM chat_history
+        WHERE project_id = ? AND action_key LIKE 'download-route-action:%'
+        ORDER BY id
+    `).all(project.id).map(row => ({ role: row.role, text: row.text_content, actionKey: row.action_key }));
+    assert.deepStrictEqual(rows, [
+        { role: 'user', text: actionMessages.download.user, actionKey: 'download-route-action:user' },
+        { role: 'model', text: actionMessages.download.model, actionKey: 'download-route-action:model' }
+    ]);
+});
+
 await runAsyncTest('malformed action IDs are rejected before workflow mutation', async () => {
     for (const actionId of [' ', 'x'.repeat(129)]) {
         const project = await createProject({ title: `Malformed Action ${actionId.length}` });

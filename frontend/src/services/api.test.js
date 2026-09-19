@@ -169,4 +169,5 @@ test('helper actions send active project context and action IDs', async () => {
   expect(fetchMock.mock.calls[2][1].headers).toEqual(
     expect.objectContaining({ 'X-XFactor-Action-Id': 'download-action-1' })
   );
+  expect(fetchMock.mock.calls[2][1].signal).toBeUndefined();
 });
