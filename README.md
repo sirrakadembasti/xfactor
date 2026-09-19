@@ -129,7 +129,7 @@ npm run graph
 Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir:
 - **İnteraktif 2D/3D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
 - **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (Renk kodlu hiyerarşi görünümü)
-- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (76 düğüm, 101 bağlantı ve God Node analizleri)
+- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (77 düğüm, 102 bağlantı ve God Node analizleri)
 ---
 
 ## 📚 Kapsamlı Dokümantasyon
