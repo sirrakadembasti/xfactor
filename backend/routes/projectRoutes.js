@@ -1239,7 +1239,6 @@ export function createProjectRouter({
             }
 
             const activeLease = getActiveWorkflowAttempt(id);
-            abortProjectExecution(id, 'PAUSED');
 
             let transactionOpen = false;
             try {
@@ -1276,6 +1275,11 @@ export function createProjectRouter({
                 throw error;
             }
 
+            try {
+                abortProjectExecution(id, 'PAUSED');
+            } catch (error) {
+                logError('workflow.pause_abort_failed', error, { projectId: id });
+            }
             res.json(getProject(id));
         } catch (err) {
             next(err);

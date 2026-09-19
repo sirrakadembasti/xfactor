@@ -20,7 +20,8 @@ const {
 const { readProjectState, writeProjectState } = await import('../engine/index.js');
 const { createProjectRouter } = await import('../routes/projectRoutes.js');
 const { createContractRevision } = await import('../contracts/projectContract.js');
-const { abortProjectExecution } = await import('../engine/cancellation.js');
+const { abortProjectExecution, registerProjectAbortController, getProjectAbortSignal, unregisterProjectAbortController } = await import('../engine/cancellation.js');
+const { acquireWorkflowLease, releaseWorkflowLease } = await import('../workflowAttempts.js');
 const { createArtifact } = await import('../repositories/artifactRepository.js');
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -757,6 +758,63 @@ await runAsyncTest('workflow transitions and audit pairs roll back together on a
         assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(pauseProject.id).count, 0);
     } finally {
         db.exec('DROP TRIGGER fail_workflow_action_model_insert');
+    }
+});
+
+await runAsyncTest('pause audit failure preserves active worker and does not signal abort', async () => {
+    const project = await createProject({ title: 'Pause Atomic Failure Active Worker' });
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+    const lease = acquireWorkflowLease(project.id, 'test-pause-active-worker');
+    const controller = new AbortController();
+    registerProjectAbortController(project.id, controller);
+    db.exec(`
+        CREATE TRIGGER fail_pause_model_insert
+        BEFORE INSERT ON chat_history
+        WHEN NEW.action_key LIKE 'pause-failure-action:model'
+        BEGIN
+            SELECT RAISE(ABORT, 'pause audit model insert blocked');
+        END;
+    `);
+    try {
+        const response = await postAction({
+            projectId: project.id,
+            kind: 'pause',
+            actionId: 'pause-failure-action'
+        });
+        assert.strictEqual(response.status, 500, JSON.stringify(response.body));
+        assert.strictEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(project.id).status, 'implementing');
+        assert.strictEqual(db.prepare("SELECT COUNT(*) AS count FROM workflow_attempts WHERE id = ? AND status = 'running'").get(lease.attempt.id).count, 1);
+        assert.strictEqual(getProjectAbortSignal(project.id)?.aborted, false);
+    } finally {
+        db.exec('DROP TRIGGER fail_pause_model_insert');
+        unregisterProjectAbortController(project.id);
+        releaseWorkflowLease(lease.attempt.id, 'failed', { error: 'test cleanup', leaseOwner: 'test-pause-active-worker' });
+    }
+});
+
+await runAsyncTest('successful pause commits audit before signaling active worker abort', async () => {
+    const project = await createProject({ title: 'Pause Atomic Success Active Worker' });
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+    const lease = acquireWorkflowLease(project.id, 'test-pause-success-worker');
+    const controller = new AbortController();
+    registerProjectAbortController(project.id, controller);
+    try {
+        const response = await postAction({
+            projectId: project.id,
+            kind: 'pause',
+            actionId: 'pause-success-action'
+        });
+        assert.strictEqual(response.status, 200, JSON.stringify(response.body));
+        assert.strictEqual(response.body.status, 'paused');
+        assert.deepStrictEqual(response.body.chatHistory.slice(-2).map(message => message.parts[0].text), [
+            actionMessages.pause.user,
+            actionMessages.pause.model
+        ]);
+        assert.strictEqual(controller.signal.aborted, true);
+        assert.strictEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(project.id).status, 'paused');
+    } finally {
+        unregisterProjectAbortController(project.id);
+        releaseWorkflowLease(lease.attempt.id, 'paused', { error: 'test cleanup', leaseOwner: 'test-pause-success-worker' });
     }
 });
 
