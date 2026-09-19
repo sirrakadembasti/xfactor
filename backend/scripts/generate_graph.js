@@ -60,6 +60,9 @@ async function extractCodeGraph() {
         { id: 'docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md', label: '2026-09-19 Doğru Durum ve Artefakt Planı', desc: 'Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı' },
         { id: 'docs/superpowers/specs/2026-09-19-chat-action-audit-design.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Tasarımı', desc: 'Başarılı iş akışı ve yardımcı buton aksiyonlarının kalıcı sohbet denetim izi tasarımı' },
         { id: 'docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı', desc: 'İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı' },
+        { id: 'docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md', label: '2026-09-19 Kalite Paneli Tasarımı', desc: 'Kalite paneli mimari Graphify entegrasyonu ve kanıt zinciri tasarımı' },
+        { id: 'docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md', label: '2026-09-19 Kalite Paneli Uygulama Planı', desc: 'Kalite paneli Graphify düğüm, bağlantı ve ağaç uygulama planı' },
+        { id: 'docs/OPERATIONS.md', label: 'OPERATIONS.md', desc: 'Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
       ];
 
@@ -131,7 +134,18 @@ async function extractCodeGraph() {
         { id: 'backend/security.js', label: 'security.js (Security Guard)', desc: 'Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama' },
         { id: 'backend/llm.js', label: 'llm.js (Multi-Provider AI)', desc: 'Gemini 3.7 Flash, OpenAI ve SDK/REST fallback yönlendirici' },
         { id: 'backend/routes/projectRoutes.js', label: 'routes/projectRoutes.js', desc: 'Proje CRUD, Chat, Onay ve Revizyon uç noktaları' },
-        { id: 'backend/routes/authRoutes.js', label: 'routes/authRoutes.js', desc: 'Login ve session yetkilendirme rotaları' }
+        { id: 'backend/routes/authRoutes.js', label: 'routes/authRoutes.js', desc: 'Login ve session yetkilendirme rotaları' },
+        { id: 'backend/contracts/projectContract.js', label: 'contracts/projectContract.js', desc: 'Proje sözleşme doğrulama şemaları, gereksinimler ve tip denetimi' },
+        { id: 'backend/contracts/domainPolicy.js', label: 'contracts/domainPolicy.js', desc: 'Domain önceliklendirme, katman kuralları ve domain uyumluluğu' },
+        { id: 'backend/contracts/traceability.js', label: 'contracts/traceability.js', desc: 'Gereksinim, görev ve dosya izlenebilirlik matrisi motoru' },
+        { id: 'backend/verification/qualityPolicy.js', label: 'verification/qualityPolicy.js (Quality Gates)', desc: '18 zorunlu kalite kapısı ve fail-closed bağımsız sandbox doğrulama politikası' },
+        { id: 'backend/verification/artifactVerifier.js', label: 'verification/artifactVerifier.js', desc: 'Temiz oda ZIP arşivleme, SHA-256 sağlama ve artefakt doğrulayıcısı' },
+        { id: 'backend/verification/securityVerifier.js', label: 'verification/securityVerifier.js', desc: 'CORS, hardcoded secret, SQL enjeksiyonu ve güvenlik baseline denetleyicisi' },
+        { id: 'backend/verification/sandboxRunner.js', label: 'verification/sandboxRunner.js', desc: 'İzole alt süreç yürütücüsü ve sandbox adaptör köprüsü' },
+        { id: 'backend/verification/databaseVerifier.js', label: 'verification/databaseVerifier.js', desc: 'Prisma şema varlığı, db push ve veritabanı yazma/okuma kabiliyeti denetleyicisi' },
+        { id: 'backend/verification/apiVerifier.js', label: 'verification/apiVerifier.js', desc: 'REST HTTP yanıtları ve veritabanı durum mutasyonları sözleşme denetleyicisi' },
+        { id: 'backend/websocketHub.js', label: 'websocketHub.js', desc: 'Canlı telemetri yayını, rate limiting ve yetkili kullanıcı soket yöneticisi' },
+        { id: 'scripts/dev.mjs', label: 'scripts/dev.mjs (Unified Dev Runner)', desc: 'Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu' }
     ];
 
     backendServices.forEach(b => {
@@ -163,6 +177,9 @@ async function extractCodeGraph() {
         { id: 'frontend/src/components/DashboardView.jsx', label: 'DashboardView.jsx (Kalite & Kanıt Paneli)', desc: '18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli' },
         { id: 'frontend/src/utils/dagLayout.js', label: 'utils/dagLayout.js (6-Agent DAG Layout)', desc: '6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru' },
         { id: 'frontend/src/components/IDEView.jsx', label: 'IDEView.jsx', desc: 'Monaco Editor kaynak kod inceleyici' },
+        { id: 'frontend/src/components/LogsView.jsx', label: 'LogsView.jsx', desc: 'Süreç logları, VETO, FEEDBACK filtreleme ve telemetri izleme tam ekranı' },
+        { id: 'frontend/src/components/LoginView.jsx', label: 'LoginView.jsx', desc: 'Admin kullanıcı girişi, MFA/TOTP formu ve oturum başlatma ekranı' },
+        { id: 'frontend/src/components/ConnectionStatus.jsx', label: 'ConnectionStatus.jsx', desc: 'WebSocket anlık bağlantı durumu ve kopma/yeniden bağlanma bildirim rozeti' },
         { id: 'frontend/src/services/api.js', label: 'services/api.js', desc: 'HttpOnly server-session ve CSRF uyumlu API istemcisi' }
     ];
 
@@ -208,7 +225,10 @@ async function extractCodeGraph() {
         { id: 'backend/tests/test_project_state_rehydration.js', label: 'test_project_state_rehydration.js (4 Test)', desc: 'Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri' },
         { id: 'backend/tests/test_project_action_chat_audit.js', label: 'test_project_action_chat_audit.js', desc: 'Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri' },
         { id: 'frontend/src/components/__tests__/DashboardView.test.jsx', label: 'DashboardView.test.jsx', desc: 'Salt-okunur yetki sınırı, kanıt izolasyonu ve sansürlü log render birim testleri' },
-        { id: 'e2e/dashboard.spec.js', label: 'dashboard.spec.js (Playwright E2E)', desc: 'Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği' }
+        { id: 'e2e/dashboard.spec.js', label: 'dashboard.spec.js (Playwright E2E)', desc: 'Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği' },
+        { id: 'e2e/trust-chain.spec.js', label: 'trust-chain.spec.js (Playwright E2E)', desc: 'Güven zinciri, CAS revizyonu ve doğrulanmış ZIP indirme uçtan uca kabul testi' },
+        { id: 'e2e/p9-editor.spec.js', label: 'p9-editor.spec.js (Playwright E2E)', desc: 'Monaco Editor yerel yükleme ve güvenli kodlu dosya önizleme testi' },
+        { id: 'e2e/production-operability.spec.js', label: 'production-operability.spec.js (Playwright E2E)', desc: 'Üretim HTTPS/WSS origin, CSP ve operasyonel kabul testi' }
     ];
 
     tests.forEach(t => {
@@ -239,6 +259,25 @@ async function extractCodeGraph() {
     addLink('e2e/dashboard.spec.js', 'frontend/src/components/DashboardView.jsx', 'verifies');
     addLink('e2e/dashboard.spec.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('frontend/src/services/api.js', 'backend/routes/projectRoutes.js', 'consumes_api');
+    addLink('backend/engine/workflow.js', 'backend/contracts/projectContract.js', 'validates_contracts');
+    addLink('backend/engine/workflow.js', 'backend/verification/qualityPolicy.js', 'enforces_quality');
+    addLink('backend/verification/qualityPolicy.js', 'backend/verification/artifactVerifier.js', 'delegates_verification');
+    addLink('backend/verification/qualityPolicy.js', 'backend/verification/securityVerifier.js', 'runs_security_checks');
+    addLink('backend/verification/qualityPolicy.js', 'backend/verification/databaseVerifier.js', 'checks_database');
+    addLink('backend/verification/qualityPolicy.js', 'backend/verification/apiVerifier.js', 'verifies_apis');
+    addLink('backend/verification/qualityPolicy.js', 'backend/verification/sandboxRunner.js', 'executes_sandbox');
+    addLink('backend/verification/qualityPolicy.js', 'backend/contracts/traceability.js', 'enforces_traceability');
+    addLink('backend/routes/projectRoutes.js', 'backend/verification/qualityPolicy.js', 'queries_verification');
+    addLink('backend/routes/projectRoutes.js', 'backend/contracts/projectContract.js', 'validates_schema');
+    addLink('backend/server.js', 'backend/websocketHub.js', 'manages_websockets');
+    addLink('scripts/dev.mjs', 'backend/server.js', 'launches_server');
+    addLink('scripts/dev.mjs', 'execution/server.js', 'launches_worker');
+    addLink('frontend/src/components/Header.jsx', 'frontend/src/components/ConnectionStatus.jsx', 'renders');
+    addLink('frontend/src/components/LogsView.jsx', 'frontend/src/services/api.js', 'uses');
+    addLink('frontend/src/components/LoginView.jsx', 'frontend/src/services/api.js', 'uses');
+    addLink('e2e/trust-chain.spec.js', 'backend/verification/artifactVerifier.js', 'verifies');
+    addLink('e2e/p9-editor.spec.js', 'frontend/src/components/IDEView.jsx', 'verifies');
+    addLink('e2e/production-operability.spec.js', 'backend/server.js', 'verifies');
 
     const graphData = { nodes, links };
     await fs.writeFile(path.join(OUT_DIR, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf8');
@@ -613,6 +652,7 @@ ${godNodesText}
       <li><span class="folder">📁 docs/</span> (Platform Anayasası & Canlı Ajan Kuralları)
         <ul>
           <li><span class="file">📄 ORKESTRASYON-TALIMATNAMESI.md</span> <span class="tag tag-doc">Ana Anayasa v3</span></li>
+          <li><span class="file">📄 OPERATIONS.md</span> <span class="tag tag-doc">Operasyon Kılavuzu & Üretim Sınırları</span></li>
           <li><span class="file">📄 manager.md</span> <span class="tag tag-doc">Manager Kuralı</span></li>
           <li><span class="file">📄 director.md</span> <span class="tag tag-doc">Director Kuralı</span></li>
           <li><span class="file">📄 teamleader.md</span> <span class="tag tag-doc">Teamleader Kuralı</span></li>
@@ -627,11 +667,13 @@ ${godNodesText}
               <li><span class="file">📄 2026-09-18-project-state-rehydration-plan.md</span> <span class="tag tag-doc">Proje Durumu Canlandırma Planı</span></li>
               <li><span class="file">📄 2026-09-19-accurate-project-state-and-artifact-plan.md</span> <span class="tag tag-doc">Doğru Durum ve Artefakt Planı</span></li>
               <li><span class="file">📄 2026-09-19-chat-action-audit-implementation-plan.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Uygulama Planı</span></li>
+              <li><span class="file">📄 2026-09-19-quality-dashboard-graphify-plan.md</span> <span class="tag tag-doc">Kalite Paneli Graphify Uygulama Planı</span></li>
             </ul>
           </li>
           <li><span class="folder">📁 superpowers/specs/</span>
             <ul>
               <li><span class="file">📄 2026-09-19-chat-action-audit-design.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Tasarımı</span></li>
+              <li><span class="file">📄 2026-09-19-quality-dashboard-graphify-design.md</span> <span class="tag tag-doc">Kalite Paneli Graphify Tasarımı</span></li>
             </ul>
           </li>
         </ul>
@@ -659,6 +701,23 @@ ${godNodesText}
               <li><span class="file">📄 fileProtocol.js</span> <span class="tag tag-engine">Agent=Klasör</span></li>
               <li><span class="file">📄 codeGenerator.js</span> <span class="tag tag-engine">Scaffold Guard (.env)</span></li>
               <li><span class="file">📄 selfCorrection.js</span> <span class="tag tag-engine">2 Turlu Veto Döngüsü</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 contracts/</span>
+            <ul>
+              <li><span class="file">📄 projectContract.js</span> <span class="tag tag-engine">Sözleşme Doğrulama</span></li>
+              <li><span class="file">📄 domainPolicy.js</span> <span class="tag tag-engine">Domain Önceliklendirme</span></li>
+              <li><span class="file">📄 traceability.js</span> <span class="tag tag-engine">Gereksinim İzlenebilirliği</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 verification/</span>
+            <ul>
+              <li><span class="file">📄 qualityPolicy.js</span> <span class="tag tag-engine">18 Zorunlu Kalite Kapısı</span></li>
+              <li><span class="file">📄 artifactVerifier.js</span> <span class="tag tag-engine">Temiz Oda ZIP Doğrulayıcısı</span></li>
+              <li><span class="file">📄 securityVerifier.js</span> <span class="tag tag-engine">Güvenlik Baseline Denetleyicisi</span></li>
+              <li><span class="file">📄 databaseVerifier.js</span> <span class="tag tag-engine">Veritabanı Uyum Denetleyicisi</span></li>
+              <li><span class="file">📄 apiVerifier.js</span> <span class="tag tag-engine">REST API Sözleşme Denetleyicisi</span></li>
+              <li><span class="file">📄 sandboxRunner.js</span> <span class="tag tag-engine">İzole Alt Süreç Yürütücüsü</span></li>
             </ul>
           </li>
           <li><span class="folder">📁 routes/</span>
@@ -705,11 +764,11 @@ ${godNodesText}
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>
+          <li><span class="file">📄 websocketHub.js</span> <span class="tag tag-backend">Canlı Telemetri & Rate Limit</span></li>
           <li><span class="file">📄 db.js</span> <span class="tag tag-backend">SQLite WAL</span></li>
           <li><span class="file">📄 auth.js</span> <span class="tag tag-backend">Scrypt & RBAC</span></li>
           <li><span class="file">📄 security.js</span> <span class="tag tag-backend">Security Guard</span></li>
           <li><span class="file">📄 llm.js</span> <span class="tag tag-backend">Gemini 3.7 Flash</span></li>
-        </ul>
       </li>
       <li><span class="folder">📁 execution/</span>
         <ul>
@@ -730,12 +789,23 @@ ${godNodesText}
           </li>
           <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
           <li><span class="file">📄 components/DashboardView.jsx</span> <span class="tag tag-ui">Kalite & Kanıt Paneli</span></li>
+          <li><span class="file">📄 components/LogsView.jsx</span> <span class="tag tag-ui">Süreç Logları & Filtreler</span></li>
+          <li><span class="file">📄 components/LoginView.jsx</span> <span class="tag tag-ui">Admin Giriş & MFA Formu</span></li>
+          <li><span class="file">📄 components/ConnectionStatus.jsx</span> <span class="tag tag-ui">WebSocket Durum Rozeti</span></li>
           <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
         </ul>
       </li>
       <li><span class="folder">📁 e2e/</span>
         <ul>
           <li><span class="file">📄 dashboard.spec.js</span> <span class="tag tag-test">Dashboard E2E Kanıt Testi</span></li>
+          <li><span class="file">📄 trust-chain.spec.js</span> <span class="tag tag-test">Güven Zinciri & ZIP Kabul Testi</span></li>
+          <li><span class="file">📄 p9-editor.spec.js</span> <span class="tag tag-test">Monaco Editor Önizleme Testi</span></li>
+          <li><span class="file">📄 production-operability.spec.js</span> <span class="tag tag-test">Üretim Operasyonel Kabul Testi</span></li>
+        </ul>
+      </li>
+      <li><span class="folder">📁 scripts/</span>
+        <ul>
+          <li><span class="file">📄 dev.mjs</span> <span class="tag tag-backend">Unified Dev Runner</span></li>
         </ul>
       </li>
     </ul>

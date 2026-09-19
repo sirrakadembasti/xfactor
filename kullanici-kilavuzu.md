@@ -402,18 +402,18 @@ npm run graph
 ```
 
 Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
-1. **`graphify-out/graph.json`:** 80 düğüm (node) ve 110 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
+1. **`graphify-out/graph.json`:** 100 düğüm (node) ve 138 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
 2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif, sürüklenebilir ve filtrelenebilir **2D/3D Kod Ağ Haritası**.
 3. **`graphify-out/GRAPH_TREE.html`:** Renk kodlu rozetlerle (Docs, Agents, Engine, Backend, Frontend, Tests) modül hiyerarşisini gösteren **Hiyerarşik Ağaç Görünümü**.
 4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
 
 #### Çekirdek Odak Düğümleri ("God Nodes"):
-- `backend/tests/test_runner.js` — 29 bağlantı ile tüm test ekosisteminin merkez koşucusu.
-- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 15 bağlantı ile platform anayasası.
-- `backend/engine/workflow.js` — 12 bağlantı ile DAG dalgalarını yürüten master orkestratör.
+- `backend/tests/test_runner.js` — 32 bağlantı ile tüm test ekosisteminin merkez koşucusu.
+- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 18 bağlantı ile platform anayasası.
+- `backend/engine/workflow.js` — 14 bağlantı ile DAG dalgalarını yürüten master orkestratör.
+- `backend/routes/projectRoutes.js` — 13 bağlantı ile REST API ve revizyon merkezi.
+- `frontend/src/App.jsx` — 11 bağlantı ile React 18 kullanıcı arayüzü kökü.
 - `backend/agents/index.js` — 9 bağlantı ile ajan fabrikası ve kayıt defteri.
-- `backend/routes/projectRoutes.js` — 9 bağlantı ile REST API ve revizyon merkezi.
-- `frontend/src/App.jsx` — 7 bağlantı ile React 18 kullanıcı arayüzü kökü.
 
 ---
 

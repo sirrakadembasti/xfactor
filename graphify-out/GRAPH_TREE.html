@@ -61,6 +61,7 @@
       <li><span class="folder">📁 docs/</span> (Platform Anayasası & Canlı Ajan Kuralları)
         <ul>
           <li><span class="file">📄 ORKESTRASYON-TALIMATNAMESI.md</span> <span class="tag tag-doc">Ana Anayasa v3</span></li>
+          <li><span class="file">📄 OPERATIONS.md</span> <span class="tag tag-doc">Operasyon Kılavuzu & Üretim Sınırları</span></li>
           <li><span class="file">📄 manager.md</span> <span class="tag tag-doc">Manager Kuralı</span></li>
           <li><span class="file">📄 director.md</span> <span class="tag tag-doc">Director Kuralı</span></li>
           <li><span class="file">📄 teamleader.md</span> <span class="tag tag-doc">Teamleader Kuralı</span></li>
@@ -75,11 +76,13 @@
               <li><span class="file">📄 2026-09-18-project-state-rehydration-plan.md</span> <span class="tag tag-doc">Proje Durumu Canlandırma Planı</span></li>
               <li><span class="file">📄 2026-09-19-accurate-project-state-and-artifact-plan.md</span> <span class="tag tag-doc">Doğru Durum ve Artefakt Planı</span></li>
               <li><span class="file">📄 2026-09-19-chat-action-audit-implementation-plan.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Uygulama Planı</span></li>
+              <li><span class="file">📄 2026-09-19-quality-dashboard-graphify-plan.md</span> <span class="tag tag-doc">Kalite Paneli Graphify Uygulama Planı</span></li>
             </ul>
           </li>
           <li><span class="folder">📁 superpowers/specs/</span>
             <ul>
               <li><span class="file">📄 2026-09-19-chat-action-audit-design.md</span> <span class="tag tag-doc">Sohbet Aksiyon Denetim İzi Tasarımı</span></li>
+              <li><span class="file">📄 2026-09-19-quality-dashboard-graphify-design.md</span> <span class="tag tag-doc">Kalite Paneli Graphify Tasarımı</span></li>
             </ul>
           </li>
         </ul>
@@ -107,6 +110,23 @@
               <li><span class="file">📄 fileProtocol.js</span> <span class="tag tag-engine">Agent=Klasör</span></li>
               <li><span class="file">📄 codeGenerator.js</span> <span class="tag tag-engine">Scaffold Guard (.env)</span></li>
               <li><span class="file">📄 selfCorrection.js</span> <span class="tag tag-engine">2 Turlu Veto Döngüsü</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 contracts/</span>
+            <ul>
+              <li><span class="file">📄 projectContract.js</span> <span class="tag tag-engine">Sözleşme Doğrulama</span></li>
+              <li><span class="file">📄 domainPolicy.js</span> <span class="tag tag-engine">Domain Önceliklendirme</span></li>
+              <li><span class="file">📄 traceability.js</span> <span class="tag tag-engine">Gereksinim İzlenebilirliği</span></li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 verification/</span>
+            <ul>
+              <li><span class="file">📄 qualityPolicy.js</span> <span class="tag tag-engine">18 Zorunlu Kalite Kapısı</span></li>
+              <li><span class="file">📄 artifactVerifier.js</span> <span class="tag tag-engine">Temiz Oda ZIP Doğrulayıcısı</span></li>
+              <li><span class="file">📄 securityVerifier.js</span> <span class="tag tag-engine">Güvenlik Baseline Denetleyicisi</span></li>
+              <li><span class="file">📄 databaseVerifier.js</span> <span class="tag tag-engine">Veritabanı Uyum Denetleyicisi</span></li>
+              <li><span class="file">📄 apiVerifier.js</span> <span class="tag tag-engine">REST API Sözleşme Denetleyicisi</span></li>
+              <li><span class="file">📄 sandboxRunner.js</span> <span class="tag tag-engine">İzole Alt Süreç Yürütücüsü</span></li>
             </ul>
           </li>
           <li><span class="folder">📁 routes/</span>
@@ -153,11 +173,11 @@
             </ul>
           </li>
           <li><span class="file">📄 server.js</span> <span class="tag tag-backend">Express & WSS</span></li>
+          <li><span class="file">📄 websocketHub.js</span> <span class="tag tag-backend">Canlı Telemetri & Rate Limit</span></li>
           <li><span class="file">📄 db.js</span> <span class="tag tag-backend">SQLite WAL</span></li>
           <li><span class="file">📄 auth.js</span> <span class="tag tag-backend">Scrypt & RBAC</span></li>
           <li><span class="file">📄 security.js</span> <span class="tag tag-backend">Security Guard</span></li>
           <li><span class="file">📄 llm.js</span> <span class="tag tag-backend">Gemini 3.7 Flash</span></li>
-        </ul>
       </li>
       <li><span class="folder">📁 execution/</span>
         <ul>
@@ -178,12 +198,23 @@
           </li>
           <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
           <li><span class="file">📄 components/DashboardView.jsx</span> <span class="tag tag-ui">Kalite & Kanıt Paneli</span></li>
+          <li><span class="file">📄 components/LogsView.jsx</span> <span class="tag tag-ui">Süreç Logları & Filtreler</span></li>
+          <li><span class="file">📄 components/LoginView.jsx</span> <span class="tag tag-ui">Admin Giriş & MFA Formu</span></li>
+          <li><span class="file">📄 components/ConnectionStatus.jsx</span> <span class="tag tag-ui">WebSocket Durum Rozeti</span></li>
           <li><span class="file">📄 services/api.js</span> <span class="tag tag-ui">AuthFetch & WS Client</span></li>
         </ul>
       </li>
       <li><span class="folder">📁 e2e/</span>
         <ul>
           <li><span class="file">📄 dashboard.spec.js</span> <span class="tag tag-test">Dashboard E2E Kanıt Testi</span></li>
+          <li><span class="file">📄 trust-chain.spec.js</span> <span class="tag tag-test">Güven Zinciri & ZIP Kabul Testi</span></li>
+          <li><span class="file">📄 p9-editor.spec.js</span> <span class="tag tag-test">Monaco Editor Önizleme Testi</span></li>
+          <li><span class="file">📄 production-operability.spec.js</span> <span class="tag tag-test">Üretim Operasyonel Kabul Testi</span></li>
+        </ul>
+      </li>
+      <li><span class="folder">📁 scripts/</span>
+        <ul>
+          <li><span class="file">📄 dev.mjs</span> <span class="tag tag-backend">Unified Dev Runner</span></li>
         </ul>
       </li>
     </ul>

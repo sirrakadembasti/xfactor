@@ -7,7 +7,7 @@
       "group": "docs",
       "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "description": "Platformun en üst master orkestrasyon anayasası",
-      "val": 8.5
+      "val": 10
     },
     {
       "id": "docs/manager.md",
@@ -127,6 +127,33 @@
       "val": 1.5
     },
     {
+      "id": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
+      "label": "2026-09-19 Kalite Paneli Tasarımı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
+      "description": "Kalite paneli mimari Graphify entegrasyonu ve kanıt zinciri tasarımı",
+      "val": 1.5
+    },
+    {
+      "id": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
+      "label": "2026-09-19 Kalite Paneli Uygulama Planı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
+      "description": "Kalite paneli Graphify düğüm, bağlantı ve ağaç uygulama planı",
+      "val": 1.5
+    },
+    {
+      "id": "docs/OPERATIONS.md",
+      "label": "OPERATIONS.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/OPERATIONS.md",
+      "description": "Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu",
+      "val": 1.5
+    },
+    {
       "id": "kullanici-kilavuzu.md",
       "label": "kullanici-kilavuzu.md",
       "type": "Document",
@@ -223,7 +250,7 @@
       "group": "engine",
       "file": "backend/engine/workflow.js",
       "description": "Paralel DAG dalgalarını yürüten ana iş akışı komutanı",
-      "val": 7
+      "val": 8
     },
     {
       "id": "backend/engine/dag.js",
@@ -277,7 +304,7 @@
       "group": "backend",
       "file": "backend/server.js",
       "description": "REST API sunucusu ve Sec-WebSocket-Protocol yayıncısı",
-      "val": 4
+      "val": 5.5
     },
     {
       "id": "backend/db.js",
@@ -322,7 +349,7 @@
       "group": "backend",
       "file": "execution/server.js",
       "description": "Ayrık mimari derleme/test çalıştırma worker servisi",
-      "val": 1.5
+      "val": 2
     },
     {
       "id": "backend/auth.js",
@@ -358,7 +385,7 @@
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "Proje CRUD, Chat, Onay ve Revizyon uç noktaları",
-      "val": 6.5
+      "val": 7.5
     },
     {
       "id": "backend/routes/authRoutes.js",
@@ -370,13 +397,112 @@
       "val": 1.5
     },
     {
+      "id": "backend/contracts/projectContract.js",
+      "label": "contracts/projectContract.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/contracts/projectContract.js",
+      "description": "Proje sözleşme doğrulama şemaları, gereksinimler ve tip denetimi",
+      "val": 2
+    },
+    {
+      "id": "backend/contracts/domainPolicy.js",
+      "label": "contracts/domainPolicy.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/contracts/domainPolicy.js",
+      "description": "Domain önceliklendirme, katman kuralları ve domain uyumluluğu",
+      "val": 1
+    },
+    {
+      "id": "backend/contracts/traceability.js",
+      "label": "contracts/traceability.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/contracts/traceability.js",
+      "description": "Gereksinim, görev ve dosya izlenebilirlik matrisi motoru",
+      "val": 1.5
+    },
+    {
+      "id": "backend/verification/qualityPolicy.js",
+      "label": "verification/qualityPolicy.js (Quality Gates)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/qualityPolicy.js",
+      "description": "18 zorunlu kalite kapısı ve fail-closed bağımsız sandbox doğrulama politikası",
+      "val": 5
+    },
+    {
+      "id": "backend/verification/artifactVerifier.js",
+      "label": "verification/artifactVerifier.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/artifactVerifier.js",
+      "description": "Temiz oda ZIP arşivleme, SHA-256 sağlama ve artefakt doğrulayıcısı",
+      "val": 2
+    },
+    {
+      "id": "backend/verification/securityVerifier.js",
+      "label": "verification/securityVerifier.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/securityVerifier.js",
+      "description": "CORS, hardcoded secret, SQL enjeksiyonu ve güvenlik baseline denetleyicisi",
+      "val": 1.5
+    },
+    {
+      "id": "backend/verification/sandboxRunner.js",
+      "label": "verification/sandboxRunner.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/sandboxRunner.js",
+      "description": "İzole alt süreç yürütücüsü ve sandbox adaptör köprüsü",
+      "val": 1.5
+    },
+    {
+      "id": "backend/verification/databaseVerifier.js",
+      "label": "verification/databaseVerifier.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/databaseVerifier.js",
+      "description": "Prisma şema varlığı, db push ve veritabanı yazma/okuma kabiliyeti denetleyicisi",
+      "val": 1.5
+    },
+    {
+      "id": "backend/verification/apiVerifier.js",
+      "label": "verification/apiVerifier.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/verification/apiVerifier.js",
+      "description": "REST HTTP yanıtları ve veritabanı durum mutasyonları sözleşme denetleyicisi",
+      "val": 1.5
+    },
+    {
+      "id": "backend/websocketHub.js",
+      "label": "websocketHub.js",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/websocketHub.js",
+      "description": "Canlı telemetri yayını, rate limiting ve yetkili kullanıcı soket yöneticisi",
+      "val": 1.5
+    },
+    {
+      "id": "scripts/dev.mjs",
+      "label": "scripts/dev.mjs (Unified Dev Runner)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "scripts/dev.mjs",
+      "description": "Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu",
+      "val": 2
+    },
+    {
       "id": "frontend/src/App.jsx",
       "label": "App.jsx (Main Container)",
       "type": "FrontendComponent",
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
-      "val": 5
+      "val": 6.5
     },
     {
       "id": "frontend/src/components/Sidebar.jsx",
@@ -394,7 +520,7 @@
       "group": "frontend",
       "file": "frontend/src/components/Header.jsx",
       "description": "Üst menü, sekme geçişleri ve süreç kontrol butonları",
-      "val": 1.5
+      "val": 2
     },
     {
       "id": "frontend/src/components/ChatView.jsx",
@@ -439,7 +565,34 @@
       "group": "frontend",
       "file": "frontend/src/components/IDEView.jsx",
       "description": "Monaco Editor kaynak kod inceleyici",
-      "val": 1.5
+      "val": 2
+    },
+    {
+      "id": "frontend/src/components/LogsView.jsx",
+      "label": "LogsView.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/LogsView.jsx",
+      "description": "Süreç logları, VETO, FEEDBACK filtreleme ve telemetri izleme tam ekranı",
+      "val": 2
+    },
+    {
+      "id": "frontend/src/components/LoginView.jsx",
+      "label": "LoginView.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/LoginView.jsx",
+      "description": "Admin kullanıcı girişi, MFA/TOTP formu ve oturum başlatma ekranı",
+      "val": 2
+    },
+    {
+      "id": "frontend/src/components/ConnectionStatus.jsx",
+      "label": "ConnectionStatus.jsx",
+      "type": "FrontendComponent",
+      "group": "frontend",
+      "file": "frontend/src/components/ConnectionStatus.jsx",
+      "description": "WebSocket anlık bağlantı durumu ve kopma/yeniden bağlanma bildirim rozeti",
+      "val": 2
     },
     {
       "id": "frontend/src/services/api.js",
@@ -448,7 +601,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "HttpOnly server-session ve CSRF uyumlu API istemcisi",
-      "val": 3
+      "val": 4
     },
     {
       "id": "backend/tests/test_runner.js",
@@ -457,7 +610,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 15.5
+      "val": 17
     },
     {
       "id": "backend/tests/test_test_harness.js",
@@ -719,6 +872,33 @@
       "file": "e2e/dashboard.spec.js",
       "description": "Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği",
       "val": 2.5
+    },
+    {
+      "id": "e2e/trust-chain.spec.js",
+      "label": "trust-chain.spec.js (Playwright E2E)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "e2e/trust-chain.spec.js",
+      "description": "Güven zinciri, CAS revizyonu ve doğrulanmış ZIP indirme uçtan uca kabul testi",
+      "val": 2
+    },
+    {
+      "id": "e2e/p9-editor.spec.js",
+      "label": "p9-editor.spec.js (Playwright E2E)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "e2e/p9-editor.spec.js",
+      "description": "Monaco Editor yerel yükleme ve güvenli kodlu dosya önizleme testi",
+      "val": 2
+    },
+    {
+      "id": "e2e/production-operability.spec.js",
+      "label": "production-operability.spec.js (Playwright E2E)",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "e2e/production-operability.spec.js",
+      "description": "Üretim HTTPS/WSS origin, CSP ve operasyonel kabul testi",
+      "val": 2
     }
   ],
   "links": [
@@ -785,6 +965,21 @@
     {
       "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/OPERATIONS.md",
       "label": "defines"
     },
     {
@@ -1014,6 +1209,21 @@
     },
     {
       "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/LogsView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/LoginView.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/ConnectionStatus.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/App.jsx",
       "target": "frontend/src/services/api.js",
       "label": "uses"
     },
@@ -1173,6 +1383,21 @@
       "label": "runs"
     },
     {
+      "source": "backend/tests/test_runner.js",
+      "target": "e2e/trust-chain.spec.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "e2e/p9-editor.spec.js",
+      "label": "runs"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "e2e/production-operability.spec.js",
+      "label": "runs"
+    },
+    {
       "source": "backend/tests/test_backend.js",
       "target": "backend/server.js",
       "label": "verifies"
@@ -1271,6 +1496,101 @@
       "source": "frontend/src/services/api.js",
       "target": "backend/routes/projectRoutes.js",
       "label": "consumes_api"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/contracts/projectContract.js",
+      "label": "validates_contracts"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/verification/qualityPolicy.js",
+      "label": "enforces_quality"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/verification/artifactVerifier.js",
+      "label": "delegates_verification"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/verification/securityVerifier.js",
+      "label": "runs_security_checks"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/verification/databaseVerifier.js",
+      "label": "checks_database"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/verification/apiVerifier.js",
+      "label": "verifies_apis"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/verification/sandboxRunner.js",
+      "label": "executes_sandbox"
+    },
+    {
+      "source": "backend/verification/qualityPolicy.js",
+      "target": "backend/contracts/traceability.js",
+      "label": "enforces_traceability"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/verification/qualityPolicy.js",
+      "label": "queries_verification"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/contracts/projectContract.js",
+      "label": "validates_schema"
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/websocketHub.js",
+      "label": "manages_websockets"
+    },
+    {
+      "source": "scripts/dev.mjs",
+      "target": "backend/server.js",
+      "label": "launches_server"
+    },
+    {
+      "source": "scripts/dev.mjs",
+      "target": "execution/server.js",
+      "label": "launches_worker"
+    },
+    {
+      "source": "frontend/src/components/Header.jsx",
+      "target": "frontend/src/components/ConnectionStatus.jsx",
+      "label": "renders"
+    },
+    {
+      "source": "frontend/src/components/LogsView.jsx",
+      "target": "frontend/src/services/api.js",
+      "label": "uses"
+    },
+    {
+      "source": "frontend/src/components/LoginView.jsx",
+      "target": "frontend/src/services/api.js",
+      "label": "uses"
+    },
+    {
+      "source": "e2e/trust-chain.spec.js",
+      "target": "backend/verification/artifactVerifier.js",
+      "label": "verifies"
+    },
+    {
+      "source": "e2e/p9-editor.spec.js",
+      "target": "frontend/src/components/IDEView.jsx",
+      "label": "verifies"
+    },
+    {
+      "source": "e2e/production-operability.spec.js",
+      "target": "backend/server.js",
+      "label": "verifies"
     }
   ]
 }
