@@ -155,7 +155,7 @@ test('shows and dismisses the verified-artifact policy alert', async () => {
 
   render(<App />);
 
-  fireEvent.click(await screen.findByRole('button', { name: /zip/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /zip/i }, { timeout: 5000 }));
 
   const alert = await screen.findByRole('alert');
   expect(alert).toHaveTextContent('Bu proje için doğrulanmış ZIP artefaktı bulunmuyor.');

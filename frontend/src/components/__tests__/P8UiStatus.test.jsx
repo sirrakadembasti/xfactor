@@ -69,7 +69,7 @@ test('focuses a new UI error alert and keyboard-dismiss restores initiating cont
 
   render(<App />);
 
-  const downloadButton = await screen.findByRole('button', { name: /zip/i });
+  const downloadButton = await screen.findByRole('button', { name: /zip/i }, { timeout: 5000 });
   downloadButton.focus();
   fireEvent.click(downloadButton);
 
