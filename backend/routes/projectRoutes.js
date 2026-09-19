@@ -38,10 +38,11 @@ const getActionId = req => {
     return supplied || `server-${crypto.randomUUID()}`;
 };
 
-const appendWorkflowAction = (projectId, actionId, action) => appendProjectActionMessages(projectId, {
+const appendWorkflowAction = (projectId, actionId, action, options = {}) => appendProjectActionMessages(projectId, {
     actionId,
     userText: action.userText,
-    modelText: action.modelText
+    modelText: action.modelText,
+    ...options
 });
 
 const respondIdempotentWorkflow = (res, projectId, attempt) => res.json({
@@ -72,7 +73,7 @@ const waitForApprovalPublication = async projectId => {
     while (Date.now() < deadline) {
         const state = await readProjectState(projectId);
         const attempt = getActiveWorkflowAttempt(projectId);
-        if (!attempt) return { ready: false, timedOut: false };
+        if (!attempt || !isApprovalAttempt(attempt)) return { ready: false, timedOut: false };
         if (state?.status === PROJECT_STATUS.IMPLEMENTING && hasRecentActionPair(projectId)) {
             return { ready: true, attempt };
         }
@@ -80,6 +81,7 @@ const waitForApprovalPublication = async projectId => {
     }
     return { ready: false, timedOut: true };
 };
+const isApprovalAttempt = attempt => String(attempt?.lease_owner || '').startsWith('http-approve-');
 
 function findFailedReports(dir, projectDir) {
     const reports = [];
@@ -580,7 +582,7 @@ export function createProjectRouter({
                 state.status,
                 PROJECT_STATUS.CONTRACT_APPROVED
             )) {
-                if (activeLease) {
+                if (activeLease && isApprovalAttempt(activeLease)) {
                     const publication = await waitForApprovalPublication(id);
                     if (publication.ready) {
                         return respondIdempotentWorkflow(res, id, publication.attempt);
@@ -607,6 +609,7 @@ export function createProjectRouter({
                 const currentState = await readProjectState(id);
                 if (
                     currentAttempt
+                    && isApprovalAttempt(currentAttempt)
                     && [PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(currentState?.status)
                 ) {
                     const publication = await waitForApprovalPublication(id);
@@ -656,48 +659,39 @@ export function createProjectRouter({
                 });
             }
 
-            try {
-                approveContractRevision(id, latestRevision.revision);
-                state.status = PROJECT_STATUS.CONTRACT_APPROVED;
-                await writeProjectState(id, state);
-            } catch (error) {
-                releaseWorkflowLease(lease.attempt.id, 'failed', {
-                    error: error.message,
-                    leaseOwner
-                });
-                throw error;
-            }
-
             await lifecycle?.afterWorkflowLeaseAcquired?.({
                 projectId: id,
                 attemptId: lease.attempt.id
             });
-            const approvedState = await readProjectState(id);
-            if (!canTransitionProjectStatus(
-                approvedState.status,
-                PROJECT_STATUS.IMPLEMENTING
-            )) {
-                releaseWorkflowLease(lease.attempt.id, 'failed', {
-                    error: 'Invalid implementing transition',
-                    leaseOwner
-                });
-                return res.status(409).json({
-                    error: 'Proje uygulama durumuna geçirilemedi.'
-                });
-            }
-            approvedState.status = PROJECT_STATUS.IMPLEMENTING;
-            approvedState.workflow = normalizeWorkflowState(null);
-            await writeProjectState(id, approvedState, {
-                attemptId: lease.attempt.id,
-                leaseOwner
-            });
 
+            let transactionOpen = false;
             try {
-                appendWorkflowAction(id, actionId, {
-                    userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
-                    modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                approveContractRevision(id, latestRevision.revision, { inTransaction: true });
+                state.status = PROJECT_STATUS.CONTRACT_APPROVED;
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true
                 });
+                state.status = PROJECT_STATUS.IMPLEMENTING;
+                state.workflow = normalizeWorkflowState(null);
+                await writeProjectState(id, state, {
+                    attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true,
+                    onTransaction: () => appendWorkflowAction(id, actionId, {
+                        userText: '✅ Mimari planı onayladım. Uygulama üretimini başlat.',
+                        modelText: '🚀 Plan onaylandı. Otonom üretim süreci başlatılıyor.'
+                    }, { inTransaction: true })
+                });
+                db.exec('COMMIT;');
+                transactionOpen = false;
             } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
                 releaseWorkflowLease(lease.attempt.id, 'failed', {
                     error: error.message,
                     leaseOwner
@@ -705,7 +699,6 @@ export function createProjectRouter({
                 throw error;
             }
             const canonicalState = getProject(id);
-
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
@@ -1178,23 +1171,40 @@ export function createProjectRouter({
                 });
             }
 
-            if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
-                state.status = PROJECT_STATUS.PAUSED;
+            let transactionOpen = false;
+            try {
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
+                    state.status = PROJECT_STATUS.PAUSED;
+                    await writeProjectState(id, state, {
+                        attemptId: lease.attempt.id,
+                        leaseOwner,
+                        inTransaction: true
+                    });
+                }
+                state.status = PROJECT_STATUS.IMPLEMENTING;
                 await writeProjectState(id, state, {
                     attemptId: lease.attempt.id,
+                    leaseOwner,
+                    inTransaction: true,
+                    onTransaction: () => appendWorkflowAction(id, actionId, {
+                        userText: '▶️ Süreci kaldığı yerden devam ettir.',
+                        modelText: 'Süreç kaldığı görevden devam ettiriliyor.'
+                    }, { inTransaction: true })
+                });
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
+                releaseWorkflowLease(lease.attempt.id, 'failed', {
+                    error: error.message,
                     leaseOwner
                 });
+                throw error;
             }
-
-            state.status = PROJECT_STATUS.IMPLEMENTING;
-            await writeProjectState(id, state, {
-                attemptId: lease.attempt.id,
-                leaseOwner
-            });
-            appendWorkflowAction(id, actionId, {
-                userText: '▶️ Süreci kaldığı yerden devam ettir.',
-                modelText: 'Süreç kaldığı görevden devam ettiriliyor.'
-            });
             const canonicalState = getProject(id);
 
             const operation = lifecycle?.begin('generation', {
@@ -1231,18 +1241,40 @@ export function createProjectRouter({
             const activeLease = getActiveWorkflowAttempt(id);
             abortProjectExecution(id, 'PAUSED');
 
-            state.status = 'paused';
-            await writeProjectState(
-                id,
-                state,
-                activeLease
-                    ? { attemptId: activeLease.id, leaseOwner: activeLease.lease_owner }
-                    : null
-            );
-            appendWorkflowAction(id, actionId, {
-                userText: '⏸️ Üretim sürecini duraklat.',
-                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
-            });
+            let transactionOpen = false;
+            try {
+                db.exec('BEGIN IMMEDIATE;');
+                transactionOpen = true;
+                state.status = 'paused';
+                await writeProjectState(
+                    id,
+                    state,
+                    activeLease
+                        ? {
+                            attemptId: activeLease.id,
+                            leaseOwner: activeLease.lease_owner,
+                            inTransaction: true,
+                            onTransaction: () => appendWorkflowAction(id, actionId, {
+                                userText: '⏸️ Üretim sürecini duraklat.',
+                                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+                            }, { inTransaction: true })
+                        }
+                        : {
+                            inTransaction: true,
+                            onTransaction: () => appendWorkflowAction(id, actionId, {
+                                userText: '⏸️ Üretim sürecini duraklat.',
+                                modelText: 'Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.'
+                            }, { inTransaction: true })
+                        }
+                );
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            } catch (error) {
+                if (transactionOpen) {
+                    try { db.exec('ROLLBACK;'); } catch {}
+                }
+                throw error;
+            }
 
             res.json(getProject(id));
         } catch (err) {

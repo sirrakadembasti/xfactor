@@ -528,7 +528,8 @@ export function appendProjectActionMessages(projectId, {
     actionId,
     userText,
     modelText,
-    createdAt = new Date().toISOString()
+    createdAt = new Date().toISOString(),
+    inTransaction = false
 } = {}) {
     if (!isValidProjectId(projectId)) {
         throw new Error(`Invalid project ID: "${projectId}"`);
@@ -553,13 +554,17 @@ export function appendProjectActionMessages(projectId, {
     `).all(projectId, userActionKey, modelActionKey);
 
     let transactionOpen = false;
-    db.exec('BEGIN IMMEDIATE;');
-    transactionOpen = true;
+    if (!inTransaction) {
+        db.exec('BEGIN IMMEDIATE;');
+        transactionOpen = true;
+    }
     try {
         const existingRows = findMessages();
         if (existingRows.length > 0) {
-            db.exec('COMMIT;');
-            transactionOpen = false;
+            if (transactionOpen) {
+                db.exec('COMMIT;');
+                transactionOpen = false;
+            }
             return { inserted: false, messages: existingRows.map(toMessage) };
         }
 
@@ -573,19 +578,26 @@ export function appendProjectActionMessages(projectId, {
         `).run(projectId, 'model', modelText, modelActionKey, createdAt);
 
         const insertedRows = findMessages();
-        db.exec('COMMIT;');
-        transactionOpen = false;
+        if (transactionOpen) {
+            db.exec('COMMIT;');
+            transactionOpen = false;
+        }
         return { inserted: true, messages: insertedRows.map(toMessage) };
     } catch (error) {
         if (transactionOpen) {
             try { db.exec('ROLLBACK;'); } catch {}
         }
         throw error;
-    }
 }
-
+}
 export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
+    const options = [stateOrId, stateOrEnv, maybeEnv].find(candidate => candidate
+        && typeof candidate === 'object'
+        && (Object.prototype.hasOwnProperty.call(candidate, 'inTransaction')
+            || Object.prototype.hasOwnProperty.call(candidate, 'onTransaction')));
+    const inTransaction = Boolean(options?.inTransaction);
+    const onTransaction = options?.onTransaction;
     const leaseOptions = typeof stateOrId === 'object' && stateOrId !== null
         ? leaseOptionsFrom(stateOrEnv)
         : leaseOptionsFrom(maybeEnv);
@@ -616,7 +628,11 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
     );
 
-    db.exec('BEGIN IMMEDIATE;');
+    let transactionOpen = false;
+    if (!inTransaction) {
+        db.exec('BEGIN IMMEDIATE;');
+        transactionOpen = true;
+    }
     try {
         assertMutationLease(state.id, leaseOptions);
         const persisted = db.prepare(
@@ -686,9 +702,16 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
             const createdAt = chat.created_at || new Date().toISOString();
             insertChat.run(state.id, chat.role, text, createdAt);
         }
-        db.exec('COMMIT;');
+        onTransaction?.();
+        if (transactionOpen) {
+            db.exec('COMMIT;');
+            transactionOpen = false;
+        }
     } catch (error) {
-        db.exec('ROLLBACK;');
+        if (transactionOpen) {
+            db.exec('ROLLBACK;');
+            transactionOpen = false;
+        }
         throw error;
     }
     dbEvents.emit(`stateChange:${state.id}`, state.status);

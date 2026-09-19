@@ -695,6 +695,71 @@ await runAsyncTest('losing approve waits for winner publication before returning
     }
 });
 
+await runAsyncTest('stale approve after resume is rejected without approval audit rows', async () => {
+    const project = await createProject({ title: 'Stale Approve Route' });
+    db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(project.id);
+    const resumed = await postAction({
+        projectId: project.id,
+        kind: 'resume',
+        actionId: 'resume-before-stale-approve'
+    });
+    try {
+        assert.strictEqual(resumed.status, 200, JSON.stringify(resumed.body));
+        const approve = await postAction({
+            projectId: project.id,
+            kind: 'approve',
+            actionId: 'stale-approve-action'
+        });
+        assert.strictEqual(approve.status, 400, JSON.stringify(approve.body));
+        assert.strictEqual(
+            db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key LIKE ?').get(project.id, 'stale-approve-action:%').count,
+            0
+        );
+    } finally {
+        abortProjectExecution(project.id);
+    }
+});
+
+await runAsyncTest('workflow transitions and audit pairs roll back together on audit failure', async () => {
+    db.exec(`
+        CREATE TRIGGER fail_workflow_action_model_insert
+        BEFORE INSERT ON chat_history
+        WHEN NEW.action_key LIKE '%:model'
+        BEGIN
+            SELECT RAISE(ABORT, 'workflow audit model insert blocked');
+        END;
+    `);
+    try {
+        const approveProject = await createProject({ title: 'Atomic Approve Route' });
+        createContractRevision(approveProject.id, validPlan, 'atomic-approve-message');
+        const approveState = await readProjectState(approveProject.id);
+        approveState.status = 'pending_approval';
+        await writeProjectState(approveState);
+        const approve = await postAction({ projectId: approveProject.id, kind: 'approve', actionId: 'atomic-approve-action' });
+        assert.strictEqual(approve.status, 500, JSON.stringify(approve.body));
+        assert.strictEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(approveProject.id).status, 'pending_approval');
+        assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(approveProject.id).count, 0);
+        assert.strictEqual(db.prepare("SELECT COUNT(*) AS count FROM workflow_attempts WHERE project_id = ? AND status = 'running'").get(approveProject.id).count, 0);
+
+        const resumeProject = await createProject({ title: 'Atomic Resume Route' });
+        db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
+        const resume = await postAction({ projectId: resumeProject.id, kind: 'resume', actionId: 'atomic-resume-action' });
+        assert.strictEqual(resume.status, 500, JSON.stringify(resume.body));
+        assert.strictEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(resumeProject.id).status, 'paused');
+        assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(resumeProject.id).count, 0);
+        abortProjectExecution(resumeProject.id);
+
+        const pauseProject = await createProject({ title: 'Atomic Pause Route' });
+        db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(pauseProject.id);
+        const pause = await postAction({ projectId: pauseProject.id, kind: 'pause', actionId: 'atomic-pause-action' });
+        assert.strictEqual(pause.status, 500, JSON.stringify(pause.body));
+        assert.strictEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(pauseProject.id).status, 'implementing');
+        assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM chat_history WHERE project_id = ? AND action_key IS NOT NULL').get(pauseProject.id).count, 0);
+    } finally {
+        db.exec('DROP TRIGGER fail_workflow_action_model_insert');
+    }
+});
+
 await new Promise(resolve => server.close(resolve));
 
 await runAsyncTest('action message append rolls back the user row when the model insert fails', async () => {
