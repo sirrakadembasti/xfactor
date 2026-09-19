@@ -57,3 +57,65 @@ Wall time: 7.51 seconds
 ## Commit
 
 Commit message: `fix(chat): prioritize remediation instructions for paused projects`
+
+## Fix Round 2: Explicit Start Precedence
+
+### RED
+
+Added regression coverage for paused `başla hatayı düzelt`, which must honor explicit start intent.
+
+Command:
+
+```text
+node backend/tests/test_manager_error_telemetry.js
+```
+
+Result: exit code `1`.
+
+```text
+[PASS] 1. buildManagerChatSystemPrompt includes workflow attempt error and anti-hallucination mandate
+[PASS] 2. buildManagerChatSystemPrompt falls back to state.last_error if workflow attempt has no error
+[PASS] 3. POST /api/projects/:id/chat updates state.remediation when project is paused and user provides remediation instruction
+[PASS] 4. buildManagerChatSystemPrompt strips hex reference strings from error telemetry
+[PASS] 5. In paused and verification_failed states, a plan ready response transitions to pending_approval
+[FAIL] 6. explicit start intent takes precedence over overlapping remediation keywords: Explicit start intent should transition paused project to pending_approval
++ actual - expected
+
++ 'paused'
+- 'pending_approval'
+[PASS] 6. Host dependency preparation fallback successfully recovers when worker is unavailable
+
+==========================================
+🎉 Testler Tamamlandı: 6 BAŞARILI, 1 HATALI
+==========================================
+
+Wall time: 7.25 seconds
+```
+
+### GREEN
+
+Changed the remediation override guard to apply only when `wasPaused && isRemediationRequested && !isUserStarting`.
+
+Command:
+
+```text
+node backend/tests/test_manager_error_telemetry.js
+```
+
+Result: exit code `0`.
+
+```text
+[PASS] 1. buildManagerChatSystemPrompt includes workflow attempt error and anti-hallucination mandate
+[PASS] 2. buildManagerChatSystemPrompt falls back to state.last_error if workflow attempt has no error
+[PASS] 3. POST /api/projects/:id/chat updates state.remediation when project is paused and user provides remediation instruction
+[PASS] 4. buildManagerChatSystemPrompt strips hex reference strings from error telemetry
+[PASS] 5. In paused and verification_failed states, a plan ready response transitions to pending_approval
+[PASS] 6. explicit start intent takes precedence over overlapping remediation keywords
+[PASS] 6. Host dependency preparation fallback successfully recovers when worker is unavailable
+
+==========================================
+🎉 Testler Tamamlandı: 7 BAŞARILI, 0 HATALI
+==========================================
+
+Wall time: 7.44 seconds
+```

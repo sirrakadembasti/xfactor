@@ -459,7 +459,7 @@ export function createProjectRouter({
                                 (isUserStarting && revisableStatuses.has(freshState.status));
 
 
-            if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested)) {
+            if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested && !isUserStarting)) {
                 const draftPlan = parsedPlan || normalizeManagerPlanFromText(
                     freshState.title,
                     responseText
