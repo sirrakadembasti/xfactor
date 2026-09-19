@@ -7,7 +7,7 @@
       "group": "docs",
       "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
       "description": "Platformun en üst master orkestrasyon anayasası",
-      "val": 7.5
+      "val": 8
     },
     {
       "id": "docs/manager.md",
@@ -100,12 +100,21 @@
       "val": 1.5
     },
     {
-      "id": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
-      "label": "2026-09-19 Doğru Durum ve Artefakt Planı",
+      "id": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
+      "label": "2026-09-19 Sohbet Aksiyon Denetim İzi Tasarımı",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
-      "description": "Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı",
+      "file": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
+      "description": "Başarılı iş akışı ve yardımcı buton aksiyonlarının kalıcı sohbet denetim izi tasarımı",
+      "val": 1.5
+    },
+    {
+      "id": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
+      "label": "2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
+      "description": "İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı",
       "val": 1.5
     },
     {
@@ -277,7 +286,7 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "Kanonik proje CRUD, atomik SQLite işlemleri, disk-varlık kontrolleri ve .trash izolasyonu",
-      "val": 1.5
+      "val": 2
     },
     {
       "id": "backend/services/reconciliationService.js",
@@ -340,7 +349,7 @@
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "Proje CRUD, Chat, Onay ve Revizyon uç noktaları",
-      "val": 5
+      "val": 5.5
     },
     {
       "id": "backend/routes/authRoutes.js",
@@ -358,7 +367,7 @@
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
-      "val": 5
+      "val": 4.5
     },
     {
       "id": "frontend/src/components/Sidebar.jsx",
@@ -421,7 +430,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "HttpOnly server-session ve CSRF uyumlu API istemcisi",
-      "val": 2.5
+      "val": 2
     },
     {
       "id": "backend/tests/test_runner.js",
@@ -637,7 +646,7 @@
       "group": "tests",
       "file": "backend/tests/test_manager_error_telemetry.js",
       "description": "Manager hata telemetrisi, revizyon kilit açma ve host fallback testleri",
-      "val": 3
+      "val": 2.5
     },
     {
       "id": "frontend/src/utils/__tests__/dagLayout.test.js",
@@ -665,6 +674,15 @@
       "file": "backend/tests/test_project_state_rehydration.js",
       "description": "Diskteki projeleri SQLite DB canlandırma, chat ve log senkronizasyon testleri",
       "val": 2
+    },
+    {
+      "id": "backend/tests/test_project_action_chat_audit.js",
+      "label": "test_project_action_chat_audit.js",
+      "type": "TestSuite",
+      "group": "tests",
+      "file": "backend/tests/test_project_action_chat_audit.js",
+      "description": "Kalıcı sohbet aksiyon mesajları, idempotency, hata davranışı ve silme kapsamı testleri",
+      "val": 2.5
     }
   ],
   "links": [
@@ -720,7 +738,12 @@
     },
     {
       "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
+      "target": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
+      "label": "defines"
+    },
+    {
+      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
       "label": "defines"
     },
     {
@@ -949,11 +972,6 @@
       "label": "renders"
     },
     {
-      "source": "frontend/src/App.jsx",
-      "target": "frontend/src/services/api.js",
-      "label": "uses"
-    },
-    {
       "source": "frontend/src/services/api.js",
       "target": "backend/server.js",
       "label": "http_and_ws"
@@ -1094,6 +1112,11 @@
       "label": "runs"
     },
     {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_project_action_chat_audit.js",
+      "label": "runs"
+    },
+    {
       "source": "backend/tests/test_backend.js",
       "target": "backend/server.js",
       "label": "verifies"
@@ -1134,11 +1157,6 @@
       "label": "verifies"
     },
     {
-      "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_manager_error_telemetry.js",
-      "label": "runs"
-    },
-    {
       "source": "backend/tests/test_manager_error_telemetry.js",
       "target": "backend/engine/workflow.js",
       "label": "verifies"
@@ -1156,6 +1174,16 @@
     {
       "source": "backend/tests/test_scaffold_auth_standards.js",
       "target": "backend/engine/codeGenerator.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_project_action_chat_audit.js",
+      "target": "backend/routes/projectRoutes.js",
+      "label": "verifies"
+    },
+    {
+      "source": "backend/tests/test_project_action_chat_audit.js",
+      "target": "backend/projectRepository.js",
       "label": "verifies"
     },
     {

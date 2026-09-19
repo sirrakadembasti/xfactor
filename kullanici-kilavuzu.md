@@ -229,7 +229,20 @@ npm run dev
    - **📜 Canlı Süreç Logları (`logs`):** Arama kutusu, `ERROR` / `VETO` / `FEEDBACK` filtreleri ve anlık bağlantı durumu içeren tam sayfa log izleme ekranı.
    - **💻 Kod Editörü (`ide`):** Proje tamamlandığında açılan tam teşekküllü Monaco Editor arayüzü.
 
+#### Sohbette Kalıcı Aksiyon Denetim İzi
+
+İşlem butonlarından yapılan başarılı aksiyonlar da normal kullanıcı/Manager mesajları gibi proje sohbetine eklenir:
+
+- **İş akışı:** `Planı Onayla ve Başlat`, `Projeyi Devam Ettir (Resume)` ve `Süreci Duraklat` işlemleri, gerçekleşen durum geçişinin hemen ardından kanonik mesaj çifti oluşturur.
+- **Yardımcı işlemler:** Disk senkronizasyonu, `Pin / Unpin` ve doğrulanmış `Download ZIP` işlemleri, yalnızca başarıyla tamamlandıktan sonra açıklayıcı mesaj çifti oluşturur.
+- **Yenileme ve proje değiştirme:** Bu kayıtlar tarayıcı belleğindeki geçici bildirimler değildir. Sayfayı yenilediğinizde veya başka bir projeye geçip geri döndüğünüzde sohbet geçmişi veritabanından yeniden alınır ve aynı sırada görünür.
+- **Hata davranışı:** Yetki, durum, senkronizasyon veya artefakt doğrulama hatasında işlem başarısız olur ve başarı mesajı yazılmaz; arayüz hata banner'ını gösterir.
+- **İdempotency:** Aynı ağ isteği aksiyon kimliğiyle tekrarlandığında kayıtlar çoğaltılmaz. Özellikle onay ve devam etme geçişleri idempotenttir; ayrı ve başarılı yardımcı buton tıklamaları ayrı aksiyonlar olarak kaydedilir.
+
+**Projeyi Sil (`Delete`) bu kapsama dahil değildir.** Silme, proje ve ilişkili sohbet geçmişini birlikte kaldırdığı için silinen projenin sohbetine kalıcı “silindi” mesajı yazılmaz.
+
 ### Adım 6: Canlı Müdahale, Duraklatma ve Kaldığı Yerden Devam Etme (`Pause / Resume`)
+
 1. Süreç devam ederken üst barda bulunan **"⏸️ Süreci Duraklat"** butonuna tıklayabilirsiniz.
 2. Projeyi tekrar başlatmak için üst bardaki veya bildirim şeridindeki yeşil **"▶️ Projeyi Devam Ettir (Resume)"** butonuna basmanız yeterlidir.
 3. **Çift Katmanlı Checkpoint Koruması:** Motor, daha önce tamamlanmış görevleri diskteki `RAPOR.md`, `DURUM.md` ve fiziksel dosya boyutu (`size > 0` byte) üzerinden doğrular; reddedilmiş (`BASARISIZ`) görevleri asla atlamaz.
@@ -389,18 +402,18 @@ npm run graph
 ```
 
 Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
-1. **`graphify-out/graph.json`:** 71 düğüm (node) ve 95 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
+1. **`graphify-out/graph.json`:** 76 düğüm (node) ve 101 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
 2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif, sürüklenebilir ve filtrelenebilir **2D/3D Kod Ağ Haritası**.
 3. **`graphify-out/GRAPH_TREE.html`:** Renk kodlu rozetlerle (Docs, Agents, Engine, Backend, Frontend, Tests) modül hiyerarşisini gösteren **Hiyerarşik Ağaç Görünümü**.
 4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
 
 #### Çekirdek Odak Düğümleri ("God Nodes"):
-- `backend/tests/test_runner.js` — 25 bağlantı ile tüm test ekosisteminin merkez koşucusu.
+- `backend/tests/test_runner.js` — 27 bağlantı ile tüm test ekosisteminin merkez koşucusu.
+- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 14 bağlantı ile platform anayasası.
 - `backend/engine/workflow.js` — 12 bağlantı ile DAG dalgalarını yürüten master orkestratör.
-- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 10 bağlantı ile platform anayasası.
 - `backend/agents/index.js` — 9 bağlantı ile ajan fabrikası ve kayıt defteri.
-- `backend/routes/projectRoutes.js` — 8 bağlantı ile REST API ve revizyon merkezi.
-- `frontend/src/App.jsx` — 8 bağlantı ile React 18 kullanıcı arayüzü kökü.
+- `backend/routes/projectRoutes.js` — 9 bağlantı ile REST API ve revizyon merkezi.
+- `frontend/src/App.jsx` — 7 bağlantı ile React 18 kullanıcı arayüzü kökü.
 
 ---
 

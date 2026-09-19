@@ -103,6 +103,21 @@ npm run test:e2e
 
 ---
 
+## 🧾 Kalıcı Sohbet Aksiyon Denetimi
+
+İş akışı ve yardımcı butonlarla yapılan **başarılı** işlemler, aynı proje sohbetinde kullanıcı ve Manager mesaj çifti olarak görünür. Buna plan onayı, devam etme ve duraklatmanın yanı sıra disk senkronizasyonu, sabitleme/sabitlemeyi kaldırma ve doğrulanmış ZIP indirme dahildir.
+
+- Mesajlar frontend tarafından üretilmez; backend'in kanonik proje sohbeti geçmişine yazılır.
+- Sayfa yenilense veya başka projeye geçilip geri dönülse bile mesajlar veritabanından yeniden yüklenir ve sıralı kalır.
+- Yetkisiz, geçersiz ya da başarısız işlemler başarı mesajı yazmaz; hata mevcut hata bildirimleriyle gösterilir.
+- Aynı isteğin ağ tekrarı (aynı aksiyon kimliği) idempotenttir; plan onayı ve devam etme gibi idempotent geçişler sohbeti çoğaltmaz. Ayrı ve başarılı yardımcı buton tıklamaları ise ayrı kullanıcı işlemleri olarak kaydedilir.
+- **Projeyi Sil** için bilerek sohbet mesajı yazılmaz. Silme işlemi proje sohbet geçmişini de kaldırdığı için kalıcı bir silme mesajı gösterilemez.
+
+Bu denetim izi, proje durumuyla birlikte kanonik olarak döner; böylece Sohbet, DAG, loglar ve proje menüsü aynı başarılı işlem kaydını kullanır.
+
+---
+
+
 ## 🧠 Mimari Bilgi Grafiği (Graphify)
 
 XFactor, projedeki tüm kaynak kodları, yaşayan anayasa dokümanlarını (`docs/*.md`), ajan modüllerini ve test süitlerini AST seviyesinde analiz eden yerel bir Graphify bilgi grafiği motoruna sahiptir:
@@ -114,7 +129,7 @@ npm run graph
 Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir:
 - **İnteraktif 2D/3D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
 - **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (Renk kodlu hiyerarşi görünümü)
-- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (69 düğüm, 92 bağlantı ve God Node analizleri)
+- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (76 düğüm, 101 bağlantı ve God Node analizleri)
 ---
 
 ## 📚 Kapsamlı Dokümantasyon
