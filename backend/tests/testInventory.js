@@ -120,6 +120,8 @@ test_websocket_integration.js
 test_workflow_attempts.js
 test_workflow_state_initialization.js
 test_manager_error_telemetry.js
+test_dev_verification_fallback.js
+test_workflow_dev_fallback.js
 `.trim().split(/\n/);
 
 const support = new Set(['testInventory.js', 'testHarness.js', 'test_runner.js']);
