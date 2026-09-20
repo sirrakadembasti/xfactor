@@ -1,15 +1,20 @@
 import fsSync from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { db } from '../db.js';
+import { db, initializeDatabase } from '../db.js';
 import { getProjectsRoot, isValidProjectId } from '../projectPaths.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
 import { createProjectZip } from '../utils/archive.js';
 
+function resolveDb(database) {
+    return database || db || initializeDatabase();
+}
+
 function makeArtifactDeps(database) {
-    if (!database || database === db) return {};
+    const resolved = resolveDb(database);
+    if (!resolved || resolved === db) return {};
     return {
-        db: database,
+        db: resolved,
         createArtifact: ({ id, projectId, contractId, kind, path, sha256, size, manifestJson = '[]', status = 'draft' }) => {
             return database.prepare(`
                 INSERT INTO artifacts (
@@ -125,11 +130,12 @@ function detectProjectStatusFromDisk(dirPath) {
 /**
  * Rehydrates full project plan, workflow_state, and status from disk protocol files.
  */
-export async function rehydrateProjectStateFromDisk(projectDir, { projectId = null, database = db } = {}) {
+export async function rehydrateProjectStateFromDisk(projectDir, { projectId = null, database = null } = {}) {
     if (!projectDir || !fsSync.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
+    database = resolveDb(database);
     const pId = projectId || path.basename(projectDir);
 
     // 1. TALIMATNAME.md & Summary & Title
@@ -348,10 +354,10 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     const diskStatus = detectProjectStatusFromDisk(projectDir);
     let status = diskStatus;
     if (diskStatus !== 'completed') {
-        if (diskStatus === 'pending_approval') {
-            status = 'pending_approval';
-        } else if (tasks.length > 0) {
+        if (tasks.length > 0) {
             status = 'in_progress';
+        } else if (diskStatus === 'pending_approval') {
+            status = 'pending_approval';
         } else {
             status = 'planning';
         }
@@ -369,42 +375,72 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     };
 
     // 5. Update SQLite projects table
-    const existingProj = database.prepare('SELECT id FROM projects WHERE id = ?').get(pId);
+    const existingProj = database.prepare('SELECT id, status, revision FROM projects WHERE id = ?').get(pId);
     const planJson = JSON.stringify(plan);
     const workflowJson = JSON.stringify(workflow);
     const nowIso = new Date().toISOString();
+
+    let approvedContract = null;
+    let pendingContract = null;
+    try {
+        approvedContract = database.prepare(
+            'SELECT id, revision FROM project_contracts WHERE project_id = ? AND status = \'approved\' ORDER BY revision DESC LIMIT 1'
+        ).get(pId);
+        pendingContract = database.prepare(
+            'SELECT id, revision FROM project_contracts WHERE project_id = ? AND status = \'pending_approval\' ORDER BY revision DESC LIMIT 1'
+        ).get(pId);
+    } catch {}
+
+    // Determine safe reconciled status
+    let finalStatus = status;
+    if (status !== 'completed') {
+        if (approvedContract && !pendingContract) {
+            // Sözleşme zaten onaylanmış ve onay bekleyen yeni bir revizyon yok.
+            // Proje ASLA tekrar pending_approval durumuna düşürülmemelidir.
+            if (existingProj?.status && !['planning', 'pending_approval'].includes(existingProj.status)) {
+                finalStatus = existingProj.status;
+            } else if (tasks.length > 0) {
+                finalStatus = 'paused';
+            } else {
+                finalStatus = 'contract_approved';
+            }
+        } else if (existingProj?.status && !['planning', 'pending_approval'].includes(existingProj.status) && !pendingContract) {
+            finalStatus = existingProj.status;
+        }
+    }
 
     if (!existingProj) {
         database.prepare(`
             INSERT INTO projects (id, title, status, plan, workflow_state, is_pinned, created_at)
             VALUES (?, ?, ?, ?, ?, 0, ?)
-        `).run(pId, title, status, planJson, workflowJson, nowIso);
+        `).run(pId, title, finalStatus, planJson, workflowJson, nowIso);
     } else {
         database.prepare(`
             UPDATE projects
             SET plan = ?, workflow_state = ?, status = ?
             WHERE id = ?
-        `).run(planJson, workflowJson, status, pId);
+        `).run(planJson, workflowJson, finalStatus, pId);
     }
 
     // 6. project_contracts table entry
-    let contractRow = database.prepare(
-        'SELECT id FROM project_contracts WHERE project_id = ? AND status = \'approved\' ORDER BY revision DESC LIMIT 1'
-    ).get(pId);
+    let contractRow = approvedContract || pendingContract;
 
     if (!contractRow) {
         const contractId = `contract-${crypto.randomUUID()}`;
         const contractHash = crypto.createHash('sha256').update(planJson).digest('hex');
+        const contractStatus = (finalStatus === 'pending_approval') ? 'pending_approval' : 'approved';
+        const approvedAtVal = (contractStatus === 'approved') ? nowIso : null;
+
         database.prepare(`
             INSERT INTO project_contracts (
                 id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at
-            ) VALUES (?, ?, 1, 'approved', ?, ?, ?, ?)
-        `).run(contractId, pId, planJson, contractHash, nowIso, nowIso);
-        contractRow = { id: contractId };
+            ) VALUES (?, ?, 1, ?, ?, ?, ?, ?)
+        `).run(contractId, pId, contractStatus, planJson, contractHash, approvedAtVal, nowIso);
+        contractRow = { id: contractId, status: contractStatus };
     }
 
     // 7. Verified ZIP artifact generation for completed projects
-    if (status === 'completed') {
+    if (finalStatus === 'completed') {
         const existingVerified = database.prepare(
             'SELECT id, sha256 FROM artifacts WHERE project_id = ? AND status = \'verified\' LIMIT 1'
         ).get(pId);
@@ -470,7 +506,7 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         success: true,
         plan,
         workflow,
-        status,
+        status: finalStatus,
         tasksCount: tasks.length
     };
 }
@@ -478,11 +514,12 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
 /**
  * Rehydrates chat_history from disk protocol files (TALIMATNAME.md and RAPOR.md).
  */
-export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = null, database = db } = {}) {
+export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = null, database = null } = {}) {
     if (!projectDir || !fsSync.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
+    database = resolveDb(database);
     const pId = projectId || path.basename(projectDir);
 
     let existingChats = [];
@@ -591,11 +628,12 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
 /**
  * Rehydrates project_logs from disk protocol files (manager/DURUM.md, director DURUM.md, task GOREV.md/TODO.md/RAPOR.md, root RAPOR.md).
  */
-export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = db, force = false } = {}) {
+export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = null, force = false } = {}) {
     if (!projectDir || !fsSync.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
+    database = resolveDb(database);
     const pId = projectId || path.basename(projectDir);
 
     const existingProj = database.prepare('SELECT id FROM projects WHERE id = ?').get(pId);
@@ -892,7 +930,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 /**
  * Safely registers valid unimported directories found in projectsRoot into SQLite projects table.
  */
-export async function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot = null, database = db } = {}) {
+export async function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot = null, database = null } = {}) {
+    database = resolveDb(database);
     const root = projectsRoot || getProjectsRoot(env);
 
     if (!fsSync.existsSync(root)) {
@@ -985,7 +1024,8 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
  * project directories. NEVER deletes database rows: projects missing on
  * disk are collected into `missingOnDisk` for the caller to report.
  */
-export async function reconcileProjectsWithDisk({ env = process.env, projectsRoot = null, database = db, autoRegister = false } = {}) {
+export async function reconcileProjectsWithDisk({ env = process.env, projectsRoot = null, database = null, autoRegister = false } = {}) {
+    database = resolveDb(database);
     const root = projectsRoot || getProjectsRoot(env);
 
     if (!fsSync.existsSync(root)) {

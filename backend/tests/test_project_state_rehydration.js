@@ -349,6 +349,67 @@ try {
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
+
+    await runAsyncTest('8. rehydrateProjectStateFromDisk preserves existing active/paused status and heals pending_approval when approved contract exists', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-active-heal-test-'));
+        const projectId = `proj-heal-${Date.now()}`;
+        const projectDir = path.join(tmpDir, projectId);
+        const managerDir = path.join(projectDir, 'manager');
+        const backendDir = path.join(managerDir, 'backend.director', 'domain');
+
+        await fs.mkdir(backendDir, { recursive: true });
+        await fs.writeFile(path.join(managerDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
+        await fs.writeFile(path.join(managerDir, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
+        await fs.writeFile(path.join(backendDir, 'TODO.md'), '# TODO\n| 1 | task-1 | Setup | — | completed |\n', 'utf8');
+
+        // Case A: Existing project in DB with status = 'paused' and an approved contract
+        database.prepare(`
+            INSERT INTO projects (id, title, status, revision, is_pinned, created_at)
+            VALUES (?, ?, 'paused', 2, 0, ?)
+        `).run(projectId, 'Heal Test', new Date().toISOString());
+
+        database.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at)
+            VALUES (?, ?, 1, 'approved', '{}', 'hash', ?, ?)
+        `).run(`contract-${projectId}`, projectId, new Date().toISOString(), new Date().toISOString());
+
+        // Rehydrate
+        const result = await rehydrateProjectStateFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.status, 'paused', 'Status should be preserved as paused, not reverted to pending_approval');
+
+        const dbProj = database.prepare('SELECT status FROM projects WHERE id = ?').get(projectId);
+        assert.strictEqual(dbProj.status, 'paused', 'DB project status must remain paused');
+
+        // Case B: Corrupted project in DB with status = 'pending_approval' but approved contract
+        const corruptId = `proj-corrupt-${Date.now()}`;
+        const corruptDir = path.join(tmpDir, corruptId);
+        const corruptMgr = path.join(corruptDir, 'manager');
+        const corruptBackend = path.join(corruptMgr, 'backend.director', 'domain');
+        await fs.mkdir(corruptBackend, { recursive: true });
+        await fs.writeFile(path.join(corruptMgr, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n- Detay: Manager mimari planı hazırladı.', 'utf8');
+        await fs.writeFile(path.join(corruptMgr, 'TALIMATNAME.md'), '# Mimari Plan\nDetaylar...', 'utf8');
+        await fs.writeFile(path.join(corruptBackend, 'TODO.md'), '# TODO\n| 1 | task-1 | Setup | — | completed |\n', 'utf8');
+
+        database.prepare(`
+            INSERT INTO projects (id, title, status, revision, is_pinned, created_at)
+            VALUES (?, ?, 'pending_approval', 3, 0, ?)
+        `).run(corruptId, 'Corrupt Test', new Date().toISOString());
+
+        database.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at)
+            VALUES (?, ?, 1, 'approved', '{}', 'hash', ?, ?)
+        `).run(`contract-${corruptId}`, corruptId, new Date().toISOString(), new Date().toISOString());
+
+        const corruptResult = await rehydrateProjectStateFromDisk(corruptDir, { projectId: corruptId, database });
+        assert.strictEqual(corruptResult.success, true);
+        assert.strictEqual(corruptResult.status, 'paused', 'Inconsistent pending_approval with approved contract must heal to paused');
+
+        const dbCorrupt = database.prepare('SELECT status FROM projects WHERE id = ?').get(corruptId);
+        assert.strictEqual(dbCorrupt.status, 'paused', 'DB project status must heal to paused');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
 } finally {
     await isolated.cleanup();
     finish();
