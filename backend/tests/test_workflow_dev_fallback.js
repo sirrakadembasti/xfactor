@@ -6,6 +6,7 @@ import { setupIsolatedTestDb } from './isolatedDb.js';
 
 const isolated = await setupIsolatedTestDb('workflow-dev-fallback');
 process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const { createProject, getProject, assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
@@ -127,3 +128,4 @@ assert.strictEqual(rejectingCompletion.fallbackUsed, false, 'Fallback must NOT h
 console.log('[PASS] Case 2: Plan 1 Docker test failure correctly failed without fallback (Fail-Closed).');
 
 console.log('[PASS] test_workflow_dev_fallback passed completely');
+await isolated.cleanup();

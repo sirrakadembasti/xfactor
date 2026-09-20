@@ -6,6 +6,7 @@ import { setupIsolatedTestDb } from './isolatedDb.js';
 
 const isolated = await setupIsolatedTestDb('dev-verification-fallback');
 process.env.DB_PATH = isolated.dbPath;
+process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const { createProject, assertVerifiedArtifactEvidence, completeVerifiedProject } = await import('../projectRepository.js');
@@ -141,3 +142,4 @@ assert.strictEqual(dbRun.status, 'failed', 'DB Run status must be failed');
 
 console.log('[PASS] Test Case 2: Fail-Closed security path validated (invalid files reject artifact and fail run)');
 console.log('[PASS] All test cases in test_dev_verification_fallback passed completely!');
+await isolated.cleanup();
