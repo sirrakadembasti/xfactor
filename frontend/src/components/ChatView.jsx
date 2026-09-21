@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Send, Clock, Sparkles, Loader2, User, Copy, Check, CornerDownLeft } from 'lucide-react';
+import { canResumeProject } from '../utils/canResumeProject';
 
 export default function ChatView({
   projectState,
@@ -80,7 +81,7 @@ export default function ChatView({
         </div>
       )}
 
-      {projectState?.status === 'paused' && (
+      {canResumeProject(projectState?.status) && (
         <div className="mx-6 mt-3 mb-1 p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm">

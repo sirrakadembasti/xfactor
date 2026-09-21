@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Terminal, Play, Search } from 'lucide-react';
+import { canResumeProject } from '../utils/canResumeProject';
 
 export default function LogsView({
   logs = [],
@@ -68,8 +69,8 @@ export default function LogsView({
             <option value="DELEGATE">Devirler (DELEGATE)</option>
           </select>
 
-          {/* Resume Butonu (Eğer Duraklatılmışsa) */}
-          {projectState?.status === 'paused' && (
+          {/* Resume Butonu (Devam ettirilebilir durumlardaysa) */}
+          {canResumeProject(projectState?.status) && (
             <button
               onClick={handleResume}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer animate-pulse"

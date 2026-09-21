@@ -9,6 +9,8 @@ import {
   Download
 } from 'lucide-react';
 import ConnectionStatus from './ConnectionStatus';
+import { canResumeProject } from '../utils/canResumeProject';
+
 export default function Header({
   projectState,
   activeProjectId,
@@ -107,8 +109,8 @@ export default function Header({
           </button>
         )}
 
-        {/* Paused: Active Resume Button */}
-        {viewMode !== 'dashboard' && projectState.status === 'paused' && (
+        {/* Stopped project: Active Resume Button */}
+        {viewMode !== 'dashboard' && canResumeProject(projectState.status) && (
           <button
             onClick={handleResume}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition animate-pulse"

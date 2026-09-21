@@ -42,6 +42,14 @@ test('Header forwards WebSocket state to its accessible status indicator', () =>
   expect(screen.getByRole('status', { name: statusLabels.reconnecting })).toBeVisible();
 });
 
+test('Header offers Resume for verification_failed projects', () => {
+  const handleResume = vi.fn();
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'verification_failed' }} handleResume={handleResume} />);
+
+  fireEvent.click(screen.getByRole('button', { name: /Projeyi Devam Ettir \(Resume\)/ }));
+  expect(handleResume).toHaveBeenCalledTimes(1);
+});
+
 test('focuses a new UI error alert and keyboard-dismiss restores initiating control', async () => {
   class TestWebSocket {
     static OPEN = 1;

@@ -157,4 +157,26 @@ describe('ChatView Component', () => {
     fireEvent.click(flowBtn);
     expect(mockSetViewMode).toHaveBeenCalledWith('flow');
   });
+
+  test('offers Resume when a quality gate leaves the project verification_failed', () => {
+    render(
+      <ChatView
+        projectState={{
+          ...defaultProjectState,
+          status: 'verification_failed',
+          chatHistory: [{ role: 'model', parts: [{ text: 'Tester Kalite Kapısı Uyarısı: devam ettirin.' }] }]
+        }}
+        chatInput=""
+        setChatInput={mockSetChatInput}
+        handleSendMessage={mockHandleSendMessage}
+        handleApprove={mockHandleApprove}
+        handleResume={mockHandleResume}
+        setViewMode={mockSetViewMode}
+      />
+    );
+
+    expect(screen.getByText(/Tester Kalite Kapısı Uyarısı/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Devam Et \(Resume\)/ }));
+    expect(mockHandleResume).toHaveBeenCalledTimes(1);
+  });
 });
