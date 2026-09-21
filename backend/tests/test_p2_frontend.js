@@ -54,9 +54,12 @@ await runAsyncTest('P2.3 App.jsx throttles and batches rapid WebSocket log updat
     assert.match(appCode, /pendingLogBatch/, 'Must use batch queue for incoming log events');
     assert.match(appCode, /flushPendingLogs/, 'Must flush batched logs on interval/frame');
 });
-await runAsyncTest('P2.4 IDEView uses semantic accessible button elements for file selection', async () => {
-    const ideCode = fs.readFileSync(path.join(FRONTEND_SRC, 'components/IDEView.jsx'), 'utf8');
-    assert.match(ideCode, /<button[\s\S]*?onClick=\{\(\)\s*=>\s*setActiveFile\(f\)\}/, 'Must use button tag for file selection');
+await runAsyncTest('P2.4 completed projects keep verified ZIP download without an editor view', async () => {
+    const appCode = fs.readFileSync(path.join(FRONTEND_SRC, 'App.jsx'), 'utf8');
+    const headerCode = fs.readFileSync(path.join(FRONTEND_SRC, 'components/Header.jsx'), 'utf8');
+    assert.doesNotMatch(appCode, /IDEView|getProjectFiles|viewMode\s*===\s*['"]ide['"]/, 'App must not load the editor or project files');
+    assert.doesNotMatch(headerCode, /Kod Editörü|selectView\(['"]ide['"]\)/, 'Header must not expose an editor tab');
+    assert.match(headerCode, /canDownloadArtifact\s*&&\s*\(/, 'Verified ZIP download must remain available');
 });
 
 await finish();

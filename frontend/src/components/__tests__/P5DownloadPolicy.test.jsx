@@ -181,6 +181,7 @@ test('shows the ZIP button only for a completed project with a verified artifact
   );
 
   expect(screen.getByRole('button', { name: /zip/i })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Kod Editörü/i })).not.toBeInTheDocument();
 });
 
 test('does not expose rename action in project-list menu, exposes ZIP action when completed and handleDownloadZip is provided', () => {

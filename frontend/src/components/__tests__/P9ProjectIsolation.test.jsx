@@ -1,18 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-vi.mock('../IDEView', () => ({
-  default: ({ projectFiles = [], activeFile }) => (
-    <div data-testid="ide-view" data-active-file={activeFile?.path || ''}>
-      {projectFiles.map(file => (
-        <button type="button" key={file.path} aria-pressed={activeFile?.path === file.path}>
-          {file.path}
-        </button>
-      ))}
-    </div>
-  )
-}));
-
 import App from '../../App';
 import { api } from '../../services/api';
 
@@ -84,16 +72,14 @@ function installWebSocket() {
   return sockets;
 }
 
-function setupApi({ stateFor, filesFor, logsFor } = {}) {
+function setupApi({ stateFor, logsFor } = {}) {
   const spies = {
     getSession: vi.spyOn(api, 'getSession').mockResolvedValue({ user: { username: 'admin' } }),
     getProjects: vi.spyOn(api, 'getProjects').mockResolvedValue(projectList),
     getProject: vi.spyOn(api, 'getProject').mockImplementation(id => asPromise(
       stateFor ? stateFor(id) : id === projectA.id ? projectA : projectB
     )),
-    getProjectFiles: vi.spyOn(api, 'getProjectFiles').mockImplementation(id => asPromise(
-      filesFor ? filesFor(id) : []
-    )),
+    getProjectFiles: vi.spyOn(api, 'getProjectFiles').mockResolvedValue([]),
     getProjectLogs: vi.spyOn(api, 'getProjectLogs').mockImplementation(id => asPromise(
       logsFor ? logsFor(id) : []
     )),
@@ -184,6 +170,14 @@ afterEach(() => {
     URL.revokeObjectURL = originalRevokeObjectURL;
   });
 describe('P9 project/auth request isolation', () => {
+
+  test('completed project does not fetch source files for a browser editor', async () => {
+    const spies = setupApi();
+    render(<App />);
+    await waitForHeading(projectA.title);
+    await waitFor(() => expect(spies.getProject).toHaveBeenCalledWith(projectA.id, expect.any(Object)));
+    expect(spies.getProjectFiles).not.toHaveBeenCalled();
+  });
 
   test('does not apply a pending sync refresh after switching projects', async () => {
     const pendingSync = deferred();
@@ -290,34 +284,19 @@ describe('P9 project/auth request isolation', () => {
     expect(screen.getByText('Süreç duraklatıldı. Revizyon talebinizi iletebilirsiniz.')).toBeInTheDocument();
   });
 
-  test('does not let deferred A files or logs replace B files or logs', async () => {
-    const delayedAFiles = deferred();
+  test('does not let deferred A logs replace B logs', async () => {
     const delayedALogs = deferred();
-    const betaFile = { path: 'beta/main.js', encoding: 'utf8', content: 'beta' };
     const betaLog = { projectId: projectB.id, action: 'write', message: 'B log' };
     const spies = setupApi({
-      filesFor: id => id === projectA.id ? delayedAFiles.promise : [betaFile],
       logsFor: id => id === projectA.id ? delayedALogs.promise : [betaLog]
     });
 
     render(<App />);
     await waitForHeading(projectA.title);
-    await waitFor(() => expect(spies.getProjectFiles).toHaveBeenCalledWith(
-      projectA.id,
-      expect.objectContaining({ signal: expect.any(Object) })
-    ));
     await waitFor(() => expect(spies.getProjectLogs).toHaveBeenCalledWith(projectA.id, expect.any(Object)));
 
     fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
     await waitForHeading(projectB.title);
-
-    fireEvent.click(screen.getByRole('button', { name: /Kod Editörü/ }));
-    await screen.findByText(betaFile.path);
-
-    const staleFile = { path: 'alpha/stale.js', encoding: 'utf8', content: 'stale' };
-    delayedAFiles.resolve([staleFile]);
-    await waitFor(() => expect(screen.queryByText(staleFile.path)).not.toBeInTheDocument());
-    expect(screen.getByText(betaFile.path)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Canlı Süreç Logları/ }));
     await screen.findByText(betaLog.message);

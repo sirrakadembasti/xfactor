@@ -17,7 +17,6 @@ import Header from './components/Header';
 import ChatView from './components/ChatView';
 import DAGFlowView from './components/DAGFlowView';
 import LogsView from './components/LogsView';
-import IDEView from './components/IDEView';
 import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
@@ -83,7 +82,6 @@ export default function App() {
   // Request cancellation ref for project switches
   const projectAbortRef = useRef(null);
 
-  const filesAbortRef = useRef(null);
   const authEpochRef = useRef(0);
   const projectEpochRef = useRef(0);
   const requestSeqRef = useRef(new Map());
@@ -108,15 +106,13 @@ export default function App() {
   }), [beginRequest]);
 
 
-  // View state: 'chat' | 'dashboard' | 'flow' | 'ide' | 'logs'
+  // View state: 'chat' | 'dashboard' | 'flow' | 'logs'
   const [viewMode, setViewMode] = useState(() => window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
   useEffect(() => {
     const handleNavigation = () => setViewMode(window.location.pathname === '/dashboard' ? 'dashboard' : 'chat');
     window.addEventListener('popstate', handleNavigation);
     return () => window.removeEventListener('popstate', handleNavigation);
   }, []);
-  const [projectFiles, setProjectFiles] = useState([]);
-  const [activeFile, setActiveFile] = useState(null);
 
   const clearAccountState = useCallback(() => {
     authEpochRef.current += 1;
@@ -125,10 +121,6 @@ export default function App() {
     if (projectAbortRef.current) {
       projectAbortRef.current.abort();
       projectAbortRef.current = null;
-    }
-    if (filesAbortRef.current) {
-      filesAbortRef.current.abort();
-      filesAbortRef.current = null;
     }
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
@@ -156,8 +148,6 @@ export default function App() {
     setEdges(emptyDag.edges);
     setLogs([]);
     setViewMode('chat');
-    setProjectFiles([]);
-    setActiveFile(null);
     setUiError('');
     setLoginPassword('');
     setLoginUsername('');
@@ -291,17 +281,13 @@ export default function App() {
   useEffect(() => {
     projectEpochRef.current += 1;
     if (projectAbortRef.current) projectAbortRef.current.abort();
-    if (filesAbortRef.current) filesAbortRef.current.abort();
     projectAbortRef.current = null;
-    filesAbortRef.current = null;
     if (wsBatchRef.current) {
       clearTimeout(wsBatchRef.current.timer);
       wsBatchRef.current = null;
     }
 
     setProjectState(null);
-    setProjectFiles([]);
-    setActiveFile(null);
     setIsThinking(false);
     setLogs([]);
     const emptyDag = computeHierarchicalDAG([]);
@@ -341,36 +327,6 @@ export default function App() {
       if (projectAbortRef.current === controller) projectAbortRef.current = null;
     };
   }, [activeProjectId, beginRequest, fetchProjectState, isCurrentRequest]);
-
-  // Proje tamamlandığında dosyaları çek
-  useEffect(() => {
-    if (filesAbortRef.current) filesAbortRef.current.abort();
-    filesAbortRef.current = null;
-    if (projectState?.status !== 'completed' || !activeProjectId) return;
-
-    const controller = new AbortController();
-    filesAbortRef.current = controller;
-    const identity = {
-      authEpoch: authEpochRef.current,
-      projectId: activeProjectId,
-      key: 'files',
-      sequence: beginRequest('files')
-    };
-    api.getProjectFiles(activeProjectId, { signal: controller.signal })
-      .then(data => {
-        if (!Array.isArray(data) || !isCurrentRequest(identity)) return;
-        setProjectFiles(data);
-        setActiveFile(data[0] || null);
-      })
-      .catch(e => {
-        if (e.name !== 'AbortError' && isCurrentRequest(identity)) console.error('Files error:', e);
-      });
-
-    return () => {
-      controller.abort();
-      if (filesAbortRef.current === controller) filesAbortRef.current = null;
-    };
-  }, [activeProjectId, beginRequest, isCurrentRequest, projectState?.status]);
 
   // WebSocket Canlı Akışı (F-05: State Machine & Bounded Backoff)
   useEffect(() => {
@@ -948,13 +904,6 @@ export default function App() {
                 <DashboardView
                   projectId={activeProjectId}
                   projectTitle={projectState.title}
-                />
-              )}
-              {viewMode === 'ide' && (
-                <IDEView
-                  projectFiles={projectFiles}
-                  activeFile={activeFile}
-                  setActiveFile={setActiveFile}
                 />
               )}
             </div>

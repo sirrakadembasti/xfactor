@@ -3,7 +3,6 @@ import {
   MessageSquare,
   LayoutDashboard,
   Layers,
-  FileCode,
   ScrollText,
   Play,
   Pause,
@@ -50,7 +49,7 @@ export default function Header({
 
       {/* Action Buttons in Header */}
       <div className="flex items-center gap-2">
-        {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar / IDE) */}
+        {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar) */}
         <div className="flex bg-cream-200/60 p-0.5 rounded-lg border border-cream-300 mr-2">
           <button
             onClick={() => selectView('dashboard')}
@@ -87,16 +86,6 @@ export default function Header({
           >
             <ScrollText size={14} /> Canlı Süreç Logları
           </button>
-          {projectState.status === 'completed' && (
-            <button
-              onClick={() => selectView('ide')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-                viewMode === 'ide' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <FileCode size={14} /> Kod Editörü
-            </button>
-          )}
         </div>
         {/* Pending Approval Button */}
         {viewMode !== 'dashboard' && projectState.status === 'pending_approval' && (

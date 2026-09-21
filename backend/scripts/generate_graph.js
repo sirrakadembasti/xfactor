@@ -178,7 +178,6 @@ async function extractCodeGraph() {
         { id: 'frontend/src/components/DAGFlowView.jsx', label: 'DAGFlowView.jsx', desc: 'ReactFlow canlı DAG akış şeması ve log tablosu' },
         { id: 'frontend/src/components/DashboardView.jsx', label: 'DashboardView.jsx (Kalite & Kanıt Paneli)', desc: '18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli' },
         { id: 'frontend/src/utils/dagLayout.js', label: 'utils/dagLayout.js (6-Agent DAG Layout)', desc: '6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru' },
-        { id: 'frontend/src/components/IDEView.jsx', label: 'IDEView.jsx', desc: 'Monaco Editor kaynak kod inceleyici' },
         { id: 'frontend/src/components/LogsView.jsx', label: 'LogsView.jsx', desc: 'Süreç logları, VETO, FEEDBACK filtreleme ve telemetri izleme tam ekranı' },
         { id: 'frontend/src/components/LoginView.jsx', label: 'LoginView.jsx', desc: 'Admin kullanıcı girişi, MFA/TOTP formu ve oturum başlatma ekranı' },
         { id: 'frontend/src/components/ConnectionStatus.jsx', label: 'ConnectionStatus.jsx', desc: 'WebSocket anlık bağlantı durumu ve kopma/yeniden bağlanma bildirim rozeti' },
@@ -229,7 +228,6 @@ async function extractCodeGraph() {
         { id: 'frontend/src/components/__tests__/DashboardView.test.jsx', label: 'DashboardView.test.jsx', desc: 'Salt-okunur yetki sınırı, kanıt izolasyonu ve sansürlü log render birim testleri' },
         { id: 'e2e/dashboard.spec.js', label: 'dashboard.spec.js (Playwright E2E)', desc: 'Kalite paneli uçtan uca tarayıcı denetimi, yetki izolasyonu ve yeniden derleme izlenebilirliği' },
         { id: 'e2e/trust-chain.spec.js', label: 'trust-chain.spec.js (Playwright E2E)', desc: 'Güven zinciri, CAS revizyonu ve doğrulanmış ZIP indirme uçtan uca kabul testi' },
-        { id: 'e2e/p9-editor.spec.js', label: 'p9-editor.spec.js (Playwright E2E)', desc: 'Monaco Editor yerel yükleme ve güvenli kodlu dosya önizleme testi' },
         { id: 'e2e/production-operability.spec.js', label: 'production-operability.spec.js (Playwright E2E)', desc: 'Üretim HTTPS/WSS origin, CSP ve operasyonel kabul testi' }
     ];
 
@@ -274,7 +272,6 @@ async function extractCodeGraph() {
     addLink('frontend/src/components/LogsView.jsx', 'frontend/src/services/api.js', 'uses');
     addLink('frontend/src/components/LoginView.jsx', 'frontend/src/services/api.js', 'uses');
     addLink('e2e/trust-chain.spec.js', 'backend/verification/artifactVerifier.js', 'verifies');
-    addLink('e2e/p9-editor.spec.js', 'frontend/src/components/IDEView.jsx', 'verifies');
     addLink('e2e/production-operability.spec.js', 'backend/server.js', 'verifies');
 
     // Source-derived nodes and imports keep the map aligned with the real tree.
@@ -337,7 +334,7 @@ ${godNodesText}
 | 🟣 **Eflatun** | **Agents** | ${nodes.filter(n => n.group === 'agents').length} Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
 | 🔵 **Mavi** | **Engine** | ${nodes.filter(n => n.group === 'engine').length} Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
 | 🟢 **Yeşil** | **Backend & API** | ${nodes.filter(n => n.group === 'backend').length} Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | ${nodes.filter(n => n.group === 'frontend').length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout, Monaco IDE. |
+| 🟠 **Turuncu** | **Frontend** | ${nodes.filter(n => n.group === 'frontend').length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout ve doğrulanmış ZIP indirme. |
 | 🔴 **Kırmızı** | **Tests** | ${nodes.filter(n => n.group === 'tests').length} Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
@@ -803,7 +800,6 @@ ${godNodesText}
               <li><span class="file">📄 dagLayout.js</span> <span class="tag tag-ui">6-Ajan Hiyerarşik DAG Motoru</span></li>
             </ul>
           </li>
-          <li><span class="file">📄 components/IDEView.jsx</span> <span class="tag tag-ui">Monaco Editor</span></li>
           <li><span class="file">📄 components/DashboardView.jsx</span> <span class="tag tag-ui">Kalite & Kanıt Paneli</span></li>
           <li><span class="file">📄 components/LogsView.jsx</span> <span class="tag tag-ui">Süreç Logları & Filtreler</span></li>
           <li><span class="file">📄 components/LoginView.jsx</span> <span class="tag tag-ui">Admin Giriş & MFA Formu</span></li>
@@ -815,7 +811,6 @@ ${godNodesText}
         <ul>
           <li><span class="file">📄 dashboard.spec.js</span> <span class="tag tag-test">Dashboard E2E Kanıt Testi</span></li>
           <li><span class="file">📄 trust-chain.spec.js</span> <span class="tag tag-test">Güven Zinciri & ZIP Kabul Testi</span></li>
-          <li><span class="file">📄 p9-editor.spec.js</span> <span class="tag tag-test">Monaco Editor Önizleme Testi</span></li>
           <li><span class="file">📄 production-operability.spec.js</span> <span class="tag tag-test">Üretim Operasyonel Kabul Testi</span></li>
         </ul>
       </li>

@@ -502,7 +502,7 @@
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
-      "val": 14
+      "val": 13
     },
     {
       "id": "frontend/src/components/Sidebar.jsx",
@@ -557,15 +557,6 @@
       "file": "frontend/src/utils/dagLayout.js",
       "description": "6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru",
       "val": 3.5
-    },
-    {
-      "id": "frontend/src/components/IDEView.jsx",
-      "label": "IDEView.jsx",
-      "type": "FrontendComponent",
-      "group": "frontend",
-      "file": "frontend/src/components/IDEView.jsx",
-      "description": "Monaco Editor kaynak kod inceleyici",
-      "val": 3
     },
     {
       "id": "frontend/src/components/LogsView.jsx",
@@ -880,15 +871,6 @@
       "group": "tests",
       "file": "e2e/trust-chain.spec.js",
       "description": "Güven zinciri, CAS revizyonu ve doğrulanmış ZIP indirme uçtan uca kabul testi",
-      "val": 1.5
-    },
-    {
-      "id": "e2e/p9-editor.spec.js",
-      "label": "p9-editor.spec.js (Playwright E2E)",
-      "type": "TestSuite",
-      "group": "tests",
-      "file": "e2e/p9-editor.spec.js",
-      "description": "Monaco Editor yerel yükleme ve güvenli kodlu dosya önizleme testi",
       "val": 1.5
     },
     {
@@ -2314,6 +2296,24 @@
       "val": 1
     },
     {
+      "id": "docs/superpowers/plans/2026-09-21-zip-only-completion.md",
+      "label": "2026-09-21-zip-only-completion.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-21-zip-only-completion.md",
+      "description": "",
+      "val": 1
+    },
+    {
+      "id": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
+      "label": "2026-09-21-zip-only-completion-design.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
+      "description": "",
+      "val": 1
+    },
+    {
       "id": "e2e/production.config.js",
       "label": "production.config.js",
       "type": "SourceFile",
@@ -2483,15 +2483,6 @@
       "file": "frontend/src/main.jsx",
       "description": "",
       "val": 2
-    },
-    {
-      "id": "frontend/src/monacoSetup.js",
-      "label": "monacoSetup.js",
-      "type": "SourceFile",
-      "group": "frontend",
-      "file": "frontend/src/monacoSetup.js",
-      "description": "",
-      "val": 1.5
     },
     {
       "id": "frontend/src/services/api.test.js",
@@ -2896,11 +2887,6 @@
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/components/IDEView.jsx",
-      "label": "renders"
-    },
-    {
-      "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/LogsView.jsx",
       "label": "renders"
     },
@@ -3112,11 +3098,6 @@
     {
       "source": "e2e/trust-chain.spec.js",
       "target": "backend/verification/artifactVerifier.js",
-      "label": "verifies"
-    },
-    {
-      "source": "e2e/p9-editor.spec.js",
-      "target": "frontend/src/components/IDEView.jsx",
       "label": "verifies"
     },
     {
@@ -6151,11 +6132,6 @@
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/components/IDEView.jsx",
-      "label": "imports"
-    },
-    {
-      "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/DashboardView.jsx",
       "label": "imports"
     },
@@ -6172,11 +6148,6 @@
     {
       "source": "frontend/src/components/Header.jsx",
       "target": "frontend/src/components/ConnectionStatus.jsx",
-      "label": "imports"
-    },
-    {
-      "source": "frontend/src/components/IDEView.jsx",
-      "target": "frontend/src/monacoSetup.js",
       "label": "imports"
     },
     {
