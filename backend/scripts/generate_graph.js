@@ -7,6 +7,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { buildSourceGraph, assertCuratedNodesExist } from './graphSource.js';
+import { getRunnableTestFiles } from '../tests/testInventory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +36,7 @@ async function extractCodeGraph() {
 
     function addLink(source, target, label = 'connects') {
         if (source && target && source !== target) {
-            const key = `${source}\u0000${target}`;
+            const key = `${source}\u0000${target}\u0000${label}`;
             if (linkKeys.has(key)) return;
             linkKeys.add(key);
             links.push({ source, target, label });
@@ -233,9 +235,6 @@ async function extractCodeGraph() {
 
     tests.forEach(t => {
         addNode(t.id, t.label, 'TestSuite', 'tests', t.id, t.desc);
-        if (t.id !== 'backend/tests/test_runner.js') {
-            addLink('backend/tests/test_runner.js', t.id, 'runs');
-        }
     });
 
     addLink('backend/tests/test_backend.js', 'backend/server.js', 'verifies');
@@ -244,9 +243,8 @@ async function extractCodeGraph() {
     addLink('backend/tests/test_docs_agent_sync.js', 'backend/agents/agentLoader.js', 'verifies');
     addLink('backend/tests/test_disk_sync_and_isolation.js', 'backend/projectPaths.js', 'verifies');
     addLink('backend/tests/test_build_validator.js', 'backend/engine/buildValidator.js', 'verifies');
-    addLink('backend/tests/test_workflow_attempts.js', 'backend/engine/workflowAttempts.js', 'verifies');
+    addLink('backend/tests/test_workflow_attempts.js', 'backend/workflowAttempts.js', 'verifies');
     addLink('backend/tests/test_cancellation_and_deadlines.js', 'backend/engine/cancellation.js', 'verifies');
-    addLink('backend/tests/test_runner.js', 'backend/tests/test_manager_error_telemetry.js', 'runs');
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/engine/workflow.js', 'verifies');
     addLink('backend/tests/test_manager_error_telemetry.js', 'backend/routes/projectRoutes.js', 'verifies');
     addLink('frontend/src/utils/__tests__/dagLayout.test.js', 'frontend/src/utils/dagLayout.js', 'verifies');
@@ -279,6 +277,22 @@ async function extractCodeGraph() {
     addLink('e2e/p9-editor.spec.js', 'frontend/src/components/IDEView.jsx', 'verifies');
     addLink('e2e/production-operability.spec.js', 'backend/server.js', 'verifies');
 
+    // Source-derived nodes and imports keep the map aligned with the real tree.
+    // Curated edges above add architectural meaning; they must still resolve.
+    const sourceGraph = await buildSourceGraph(ROOT_DIR);
+    assertCuratedNodesExist(nodes, sourceGraph.nodes);
+    for (const node of sourceGraph.nodes) {
+        if (!nodeMap.has(node.id)) addNode(node.id, node.label, node.type, node.group, node.file, node.description);
+    }
+    for (const entry of getRunnableTestFiles()) {
+        addLink('backend/tests/test_runner.js', `backend/tests/${entry.file}`, 'runs');
+    }
+    for (const link of sourceGraph.links) addLink(link.source, link.target, link.label);
+    const dangling = links.filter(link => !nodeMap.has(link.source) || !nodeMap.has(link.target));
+    if (dangling.length) {
+        throw new Error(`Graphify has unresolved architectural links: ${dangling.map(link => `${link.source} -> ${link.target}`).join(', ')}`);
+    }
+
     const graphData = { nodes, links };
     await fs.writeFile(path.join(OUT_DIR, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf8');
 
@@ -306,6 +320,8 @@ async function extractCodeGraph() {
 **Toplam Bağlantı (Edges):** ${links.length}
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
 
+Kaynak dosyaları ve yerel import/export bağlantıları AST taramasından; imports dışındaki mimari bağlantılar açıklamalı, elle tanımlanmış ilişkilerden gelir. Paket importları ve dinamik importlar bu grafiğe dahil değildir.
+
 ---
 
 ## 🌟 Çekirdek Odak Düğümleri ("God Nodes" & Merkez Bileşenler)
@@ -317,18 +333,18 @@ ${godNodesText}
 
 | Renk Kodu | Topluluk | Dosya Sayısı | Açıklama |
 |:---:|---|:---:|---|
-| 🟣 **Mor** | **Docs & Anayasa** | ${docs.length} Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
-| 🟣 **Eflatun** | **Agents** | ${agents.length} Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
-| 🔵 **Mavi** | **Engine** | ${engine.length} Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
-| 🟢 **Yeşil** | **Backend & API** | ${backendServices.length} Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | ${frontend.length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout, Monaco IDE. |
-| 🔴 **Kırmızı** | **Tests** | ${tests.length} Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
+| 🟣 **Mor** | **Docs & Anayasa** | ${nodes.filter(n => n.group === 'docs').length} Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
+| 🟣 **Eflatun** | **Agents** | ${nodes.filter(n => n.group === 'agents').length} Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
+| 🔵 **Mavi** | **Engine** | ${nodes.filter(n => n.group === 'engine').length} Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
+| 🟢 **Yeşil** | **Backend & API** | ${nodes.filter(n => n.group === 'backend').length} Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
+| 🟠 **Turuncu** | **Frontend** | ${nodes.filter(n => n.group === 'frontend').length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout, Monaco IDE. |
+| 🔴 **Kırmızı** | **Tests** | ${nodes.filter(n => n.group === 'tests').length} Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
 
 ## 📊 Görsel Haritalar
-- **İnteraktif 2D/3D Ağ Grafiği:** graphify-out/graph.html
-- **Hiyerarşik Ağaç Görünümü:** graphify-out/GRAPH_TREE.html
+- **İnteraktif 2D Ağ Grafiği:** graphify-out/graph.html
+- **Hiyerarşik Ağaç Görünümü (seçilmiş mimari bileşenler):** graphify-out/GRAPH_TREE.html
 `;
 
     await fs.writeFile(path.join(OUT_DIR, 'GRAPH_REPORT.md'), reportMd, 'utf8');
@@ -822,4 +838,7 @@ ${godNodesText}
     console.log(`  - Rapor: graphify-out/GRAPH_REPORT.md`);
 }
 
-extractCodeGraph().catch(console.error);
+extractCodeGraph().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+});

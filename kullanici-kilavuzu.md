@@ -137,7 +137,7 @@ cd ..
 > - **Kullanıcı Adı:** `admin`
 > - **Şifre:** `xfactor`
 > 
-> Giriş ekranı açıldığında bu bilgiler otomatik olarak kutucuklarda hazır gelir.
+> Giriş alanları boş açılır; varsayılan bilgileri elle girin. İnternete açık kurulumdan önce varsayılan parolayı değiştirin.
 
 #### (Opsiyonel) Yönetici Parolasını Değiştirme veya Sıfırlama
 Parolanızı dilediğiniz zaman terminalden güncelleyebilirsiniz (asgari 6 karakter):
@@ -201,8 +201,8 @@ npm run dev
 
 ### Adım 1: Hızlı ve Güvenli Giriş Yapma (Authentication)
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
-2. Karşınıza gelen ekranda varsayılan bilgiler (**admin** / **xfactor**) otomatik doldurulmuş olarak sizi karşılar.
-3. Doğrudan **Giriş Yap** butonuna tıklayarak yönetim paneline anında erişebilirsiniz. Tarayıcı 24 saatlik HttpOnly sunucu oturumu kullanır; credential `localStorage` içinde tutulmaz.
+2. README'deki varsayılan bilgileri (**admin** / **xfactor**) boş giriş alanlarına yazın.
+3. **Giriş Yap** butonuna tıklayarak yönetim paneline erişebilirsiniz. Tarayıcı 24 saatlik HttpOnly sunucu oturumu kullanır; credential `localStorage` içinde tutulmaz.
 ### Adım 2: Yeni Proje Başlatma ve Disk Senkronizasyonu
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan pencerede projenize bir isim verin (Örn: `araba-kiralama-otomasyonu`).
@@ -393,7 +393,7 @@ Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik o
 - **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js` ➔ `migrations/`
 
 ### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
-XFactor, projenin kaynak kodlarını, yaşayan dokümanlarını, ajan sözleşmelerini ve test süitlerini AST seviyesinde analiz eden yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır.
+XFactor, kaynak dosyalarını ve yerel `import`/`export` ilişkilerini AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır.
 
 #### Grafiği Üretme ve Güncelleme:
 Kök dizinde tek bir komutla tüm bilgi grafiğini ve görsel HTML haritalarını tazeleyebilirsiniz:
@@ -402,18 +402,13 @@ npm run graph
 ```
 
 Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
-1. **`graphify-out/graph.json`:** 100 düğüm (node) ve 138 bağlantı (edge) içeren tam makine-okunur bağımlılık grafiği.
-2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif, sürüklenebilir ve filtrelenebilir **2D/3D Kod Ağ Haritası**.
-3. **`graphify-out/GRAPH_TREE.html`:** Renk kodlu rozetlerle (Docs, Agents, Engine, Backend, Frontend, Tests) modül hiyerarşisini gösteren **Hiyerarşik Ağaç Görünümü**.
+1. **`graphify-out/graph.json`:** Güncel dosya düğümlerini, yerel kaynak importlarını ve açıklamalı mimari bağlantıları içeren makine-okunur grafik. Paket ve dinamik importlar kapsama dahil değildir.
+2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif ve sürüklenebilir **2D Kod Ağ Haritası**.
+3. **`graphify-out/GRAPH_TREE.html`:** Seçilmiş mimari bileşenleri renk kodlu rozetlerle gösteren **Hiyerarşik Ağaç Görünümü**.
 4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
 
 #### Çekirdek Odak Düğümleri ("God Nodes"):
-- `backend/tests/test_runner.js` — 32 bağlantı ile tüm test ekosisteminin merkez koşucusu.
-- `docs/ORKESTRASYON-TALIMATNAMESI.md` — 18 bağlantı ile platform anayasası.
-- `backend/engine/workflow.js` — 14 bağlantı ile DAG dalgalarını yürüten master orkestratör.
-- `backend/routes/projectRoutes.js` — 13 bağlantı ile REST API ve revizyon merkezi.
-- `frontend/src/App.jsx` — 11 bağlantı ile React 18 kullanıcı arayüzü kökü.
-- `backend/agents/index.js` — 9 bağlantı ile ajan fabrikası ve kayıt defteri.
+Güncel bağlantı sıralaması için her `npm run graph` çalıştırmasından sonra `graphify-out/GRAPH_REPORT.md` dosyasına bakın. Bağlantı sayısı gerçek çalışma sıklığı veya güvenlik ölçüsü değildir.
 
 ---
 
@@ -432,7 +427,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `frontend/src/components/IDEView.jsx` | Kod Editörü | Üretilen projenin dosya ağacını ve kaynak kodlarını Monaco Editor üzerinden syntax highlighting ile inceleme imkânı sağlar. |
 | `frontend/src/components/LogsView.jsx` | Canlı Loglar | Orkestrasyon sırasında ajanların ürettiği satır satır tüm terminal ve eylem loglarını gösterir; ajan ve eyleme göre anlık filtreleme sunar. |
 | `frontend/src/components/DashboardView.jsx` | Kalite Paneli | 18 Kalite kapısının makine tarafından doğrulanmış bağımsız kanıtlarını, SHA-256 çıktı özetlerini ve sürelerini salt-okunur olarak listeler. |
-| `frontend/src/components/LoginView.jsx` | Giriş Ekranı | Varsayılan `admin` / `xfactor` bilgileriyle hazır gelen, MFA/TOTP adımlarını destekleyen ve tek tıkla girişe olanak tanıyan kullanıcı giriş panelidir. |
+| `frontend/src/components/LoginView.jsx` | Giriş Ekranı | Boş kullanıcı adı/parola alanları ve MFA/TOTP adımlarını destekleyen kullanıcı giriş panelidir. Varsayılan bilgiler README'dedir. |
 | `frontend/src/services/api.js` | API İstemcisi | Backend ile iletişim kuran, 24 saatlik HttpOnly oturum çerezi ve CSRF token yönetimini sağlayan, istek zaman aşımı (timeout) korumalı merkezi fetch modülüdür. |
 
 ---
@@ -477,15 +472,15 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `backend/agents/` | 9 Dosya | Yapay Zekâ Rolleri | 6 seviyeli ajan personelleri (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), şema kurtarıcı (`schemas.js`) ve yaşayan anayasa köprüsü (`agentLoader.js`). |
 | `backend/engine/` | 13 Dosya | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), deterministik DAG (`dag.js`), durum makinesi (`stateMachine.js`), scaffold koruması (`codeGenerator.js`), veto döngüsü (`selfCorrection.js`) ve derleyici denetleyicisi (`buildValidator.js`). |
 | `backend/routes/` | 3 Dosya | REST API Rotaları | Ön yüzün konuştuğu HTTP uç noktaları: `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz onaylı ZIP indirme). |
-| `backend/verification/` | 24 Dosya | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
+| `backend/verification/` | Değişken | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
 | `backend/services/` | 1 Dosya | Senkronizasyon Servisi | `reconciliationService.js`: `projects/` dizinindeki klasörleri tarayarak SQLite veritabanı ve admin kullanıcısıyla anlık çift yönlü senkronize eden servis. |
 | `backend/contracts/` | 3 Dosya | Sözleşme & İzlenebilirlik | Sürümlü sözleşmeler (`projectContract.js`), kullanıcı isterlerinin kodla 1:1 eşleştirilmesi (`traceability.js`) ve şablon kirliliği denetimi (`domainPolicy.js`). |
 | `backend/repositories/` | 2 Dosya | Veri Deposu | Kalite koşuları (`verificationRepository.js`) ve onaylı ZIP paketlerini (`artifactRepository.js`) veritabanına bağlayan veri erişim katmanı. |
 | `backend/crypto/` | 1 Dosya | Şifreleme | `mfaCrypto.js`: TOTP gizli anahtarlarını AES-256-GCM ile şifreleyen ve çözen kriptografik modül. |
 | `backend/utils/` | 1 Dosya | Arşiv Yöneticisi | `archive.js`: Projeleri güvenli biçimde ZIP paketine dönüştüren ve Zip-Slip saldırılarını engelleyen arşivleme aracı. |
-| `backend/scripts/` | 4 Dosya | CLI Araçları | `generate_graph.js` (Graphify motoru), `create_admin.js` (yönetici parola aracı), `backup.js` & `restore.js` (yedekleme araçları). |
+| `backend/scripts/` | Değişken | CLI Araçları | `generate_graph.js` ve `graphSource.js` (Graphify motoru), `create_admin.js` (yönetici parola aracı), `backup.js` & `restore.js` (yedekleme araçları). |
 | `backend/data/` | 3 Dosya | Canlı Veri | SQLite veritabanı dosyaları: `projects.db`, WAL (`projects.db-wal`) ve paylaşımlı bellek (`projects.db-shm`). |
-| `backend/tests/` | 120 Dosya | Test Ekosistemi | Sistemin tüm parçalarını gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde doğrulayan 114 test süiti ve master test koşucusu (`test_runner.js`). |
+| `backend/tests/` | Değişken | Test Ekosistemi | Gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde çalışan süitler; güncel çalıştırılabilir liste `testInventory.js` içinde, master koşucu `test_runner.js` içindedir. |
 
 ---
 

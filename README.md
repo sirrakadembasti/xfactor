@@ -3,7 +3,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22.5.0%2B%20%7C%20Bun%201.0%2B-green.svg)](https://nodejs.org)
 [![Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-646CFF.svg)](https://vitejs.dev/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite%20WAL%20Migrations-003B57.svg)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-100%25%20Passing%20(25%20Suites)-brightgreen.svg)](backend/tests/test_runner.js)
+[![Tests](https://img.shields.io/badge/Tests-run%20npm%20test-blue.svg)](backend/tests/test_runner.js)
 
 **XFactor**, kullanıcıların doğal dilde ilettiği yazılım fikirlerini analiz ederek 6 seviyeli rol uzmanlaşması, deterministik **DAG dalga motoru**, sürümlü **yazılım sözleşmeleri (PROJECT_CONTRACT)**, 18 zorunlu **kalite kapısı** (Aktif Politika 2.0 Fail-Closed Veto) ve izole **temiz oda (clean-room) ZIP doğrulayıcısı** ile sıfırdan çalışan tam teşekküllü projelere dönüştüren otonom bir yazılım üretim platformudur.
 
@@ -47,7 +47,7 @@ cd ..
 > - **Kullanıcı Adı:** `admin`
 > - **Şifre:** `xfactor`
 > 
-> Tarayıcı giriş ekranında bu bilgiler otomatik doldurulmuş olarak gelir; doğrudan **"Giriş Yap"** butonuna basarak başlayabilirsiniz.
+> Giriş alanları güvenlik için boş açılır. Bu bilgileri elle girerek başlayabilirsiniz. İnternete açık kurulumdan önce varsayılan parolayı değiştirin.
 
 #### (Opsiyonel) Parola Değiştirme veya Yeni Yönetici Ekleme
 Parolanızı değiştirmek veya sıfırlamak isterseniz (asgari 6 karakter):
@@ -81,7 +81,7 @@ npm run dev
 * **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
 ### 3. Kullanmaya Başlayın
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
-2. Otomatik doldurulmuş varsayılan bilgilerle (`admin` / `xfactor`) doğrudan **`Giriş Yap`** butonuna tıklayın.
+2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.
 3. Sol menüden **`+ Yeni Proje`** oluşturun.
 4. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
 ---
@@ -120,16 +120,16 @@ Bu denetim izi, proje durumuyla birlikte kanonik olarak döner; böylece Sohbet,
 
 ## 🧠 Mimari Bilgi Grafiği (Graphify)
 
-XFactor, projedeki tüm kaynak kodları, yaşayan anayasa dokümanlarını (`docs/*.md`), ajan modüllerini ve test süitlerini AST seviyesinde analiz eden yerel bir Graphify bilgi grafiği motoruna sahiptir:
+XFactor, kaynak dosyalarını ve yerel `import`/`export` ilişkilerini AST ile tarayan; ayrıca elle tanımlanmış mimari ilişkileri gösteren yerel bir Graphify bilgi grafiği motoruna sahiptir:
 
 ```bash
 npm run graph
 ```
 
 Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir:
-- **İnteraktif 2D/3D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
-- **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (Renk kodlu hiyerarşi görünümü)
-- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (100 düğüm, 138 bağlantı ve God Node analizleri)
+- **İnteraktif 2D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
+- **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (seçilmiş mimari bileşenlerin görünümü)
+- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (güncel düğüm ve bağlantı sayıları)
 ---
 
 ## 📚 Kapsamlı Dokümantasyon
@@ -137,4 +137,3 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
 * 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
-

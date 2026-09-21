@@ -53,7 +53,7 @@ export default function LoginView({
                   onChange={e => setLoginUsername(e.target.value)}
                   required
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-indigo-500"
-                  placeholder="admin"
+                  placeholder="Kullanıcı adınızı girin"
                 />
               </div>
               <div>
@@ -70,12 +70,6 @@ export default function LoginView({
                 />
               </div>
             </>
-          )}
-          {!mfaRequired && (
-            <div className="bg-cream-100/90 border border-cream-200 rounded-lg p-2.5 text-center text-xs text-indigo-900">
-              <span className="font-medium text-gray-500">Varsayılan Giriş:</span>{' '}
-              <span className="font-semibold text-indigo-900">admin</span> / <span className="font-semibold text-indigo-900">xfactor</span>
-            </div>
           )}
           {loginError && <div role="alert" className="text-red-500 text-sm text-center font-medium">{loginError}</div>}
           <button

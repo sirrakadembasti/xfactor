@@ -27,8 +27,8 @@ export const createActionId = action =>
 export default function App() {
   const [authStatus, setAuthStatus] = useState('checking');
   const [currentUser, setCurrentUser] = useState(null);
-  const [loginUsername, setLoginUsername] = useState('admin');
-  const [loginPassword, setLoginPassword] = useState('xfactor');
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginTotp, setLoginTotp] = useState('');
   const [mfaRequired, setMfaRequired] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -160,6 +160,7 @@ export default function App() {
     setActiveFile(null);
     setUiError('');
     setLoginPassword('');
+    setLoginUsername('');
     setLoginTotp('');
     setMfaRequired(false);
     setLoginError('');

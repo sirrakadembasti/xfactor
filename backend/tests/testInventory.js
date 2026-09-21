@@ -18,6 +18,7 @@ test_docs_agent_sync.js
 test_domain_policy.js
 test_e2e_simulation.js
 test_generation_isolation.js
+test_graphify.js
 test_health_and_lifecycle.js
 test_http_integration.js
 test_p0_a_capability_check.js
