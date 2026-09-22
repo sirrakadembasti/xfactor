@@ -91,9 +91,12 @@ Do not run two web instances against the same paths without the prerequisites in
   (`DEFAULT_INTERVAL_MS = 3_600_000`): expired sessions are deleted and
   sessions revoked more than 7 days ago are purged
   (`createMaintenanceScheduler` in `backend/maintenance.js`).
-- **Health:** `GET /healthz` (liveness) and `GET /readyz` (readiness);
-  the production image adds a 30s-interval Docker `HEALTHCHECK` on
-  `http://127.0.0.1:8000/healthz`.
+- **Health:** `GET /healthz` reports process liveness. `GET /readyz` reports
+  full workload readiness, including database, storage, production frontend,
+  and execution-worker capacity for both `prepare_dependencies` and
+  `verify_artifact`; it returns HTTP 503 when any required dependency or worker
+  capability is unavailable. The production image adds a 30s-interval Docker
+  `HEALTHCHECK` on `http://127.0.0.1:8000/healthz`.
 
 ## 8. Horizontal-scaling prerequisites
 

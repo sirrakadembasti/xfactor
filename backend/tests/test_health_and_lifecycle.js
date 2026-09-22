@@ -63,10 +63,25 @@ async function runTests() {
     await fs.mkdir(frontendRoot, { recursive: true });
     await fs.writeFile(path.join(frontendRoot, 'index.html'), '<!doctype html><main>ready SPA</main>');
 
+    let worker = http.createServer((req, res) => {
+        if (req.url === '/readyz') {
+            res.writeHead(200, { 'content-type': 'application/json' });
+            return res.end(JSON.stringify({
+                supportedTypes: ['prepare_dependencies', 'verify_artifact'],
+                executionCapacity: true
+            }));
+        }
+        res.writeHead(404);
+        res.end();
+    });
+    await new Promise((resolve, reject) => worker.listen(0, '127.0.0.1', error => error ? reject(error) : resolve()));
+    const workerUrl = `http://127.0.0.1:${worker.address().port}`;
+
     const commonEnv = {
         ...process.env,
         NODE_ENV: 'production',
         EXECUTION_WORKER_TOKEN: 'health-test-worker-token',
+        EXECUTION_WORKER_URL: workerUrl,
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: 'https://xfactor.example',
         MFA_ENCRYPTION_KEY: '55'.repeat(32),
@@ -97,6 +112,14 @@ async function runTests() {
         assert.equal(navigation.status, 200);
         assert.match(navigation.headers.get('cache-control'), /no-cache/);
 
+        await new Promise(resolve => worker.close(resolve));
+        worker = undefined;
+        const workerUnavailable = await request(port, '/readyz');
+        assert.equal(workerUnavailable.status, 503);
+        const workerUnavailableBody = await workerUnavailable.json();
+        assert.equal(workerUnavailableBody.status, 'not_ready');
+        assert.equal(workerUnavailableBody.executionCapacity, 'unavailable');
+
         await fs.rm(artifactsRoot, { recursive: true, force: true });
         const unavailable = await request(port, '/readyz');
         assert.equal(unavailable.status, 503);
@@ -118,6 +141,7 @@ async function runTests() {
         console.log('P6 health and lifecycle tests passed');
     } finally {
         if (child?.exitCode === null) child.kill('SIGKILL');
+        if (worker) await new Promise(resolve => worker.close(resolve));
         await fs.rm(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
     }
 }

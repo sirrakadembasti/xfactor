@@ -112,6 +112,18 @@ app.get('/readyz', async (req, res) => {
             executionStatus = 'unavailable';
         }
 
+        if (executionStatus !== 'ready') {
+            return res.status(503).json({
+                status: 'not_ready',
+                database: 'connected',
+                projectsRoot: 'accessible',
+                artifactsRoot: 'accessible',
+                frontend: runtimeConfig.production ? 'available' : 'not_required',
+                schemaVersion,
+                executionCapacity: 'unavailable'
+            });
+        }
+
         res.status(200).json({
             status: 'ready',
             database: 'connected',
