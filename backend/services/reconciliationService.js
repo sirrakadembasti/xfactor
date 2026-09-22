@@ -439,59 +439,23 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         contractRow = { id: contractId, status: contractStatus };
     }
 
-    // 7. Verified ZIP artifact generation for completed projects
+    // 7. Unverified ZIP artifact recovery for completed projects
     if (finalStatus === 'completed') {
-        const existingVerified = database.prepare(
-            'SELECT id, sha256 FROM artifacts WHERE project_id = ? AND status = \'verified\' LIMIT 1'
+        const existingArtifact = database.prepare(
+            'SELECT id, sha256 FROM artifacts WHERE project_id = ? AND status IN (\'built\', \'verified\') LIMIT 1'
         ).get(pId);
 
-        if (!existingVerified) {
+        if (!existingArtifact) {
             try {
                 const files = await collectArtifactFiles(projectDir);
                 if (files && files.length > 0) {
                     const deps = makeArtifactDeps(database);
                     const zipResult = await createProjectZip(pId, contractRow.id, files, undefined, deps);
-
-                    let runRow = database.prepare(`
-                        SELECT id FROM verification_runs
-                        WHERE project_id = ? AND contract_id = ? AND status = 'verified'
-                        LIMIT 1
-                    `).get(pId, contractRow.id);
-
-                    if (!runRow) {
-                        const runId = `run-${crypto.randomUUID()}`;
-                        database.prepare(`
-                            INSERT INTO verification_runs (
-                                id, project_id, contract_id, status, policy_version, started_at, ended_at
-                            ) VALUES (?, ?, ?, 'verified', '2.0', ?, ?)
-                        `).run(runId, pId, contractRow.id, nowIso, nowIso);
-
-                        const P4_MANDATORY_GATES = [
-                            'package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'typecheck',
-                            'framework_build', 'requirement_traceability', 'service_manifest', 'database_verification',
-                            'api_contract', 'browser_journey', 'smoke_gate', 'test_infrastructure', 'domain_entity_check'
-                        ];
-                        const emptyDigest = crypto.createHash('sha256').update('').digest('hex');
-
-                        for (const gateName of P4_MANDATORY_GATES) {
-                            database.prepare(`
-                                INSERT INTO verification_checks (
-                                    id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
-                                    started_at, ended_at, stdout_digest, stderr_digest, evidence_json
-                                ) VALUES (?, ?, ?, ?, 'MANDATORY', 'PASS', 'auto_verify', 0, ?, ?, ?, ?, ?)
-                            `).run(
-                                `${runId}-${gateName}`, contractRow.id, runId, gateName,
-                                nowIso, nowIso, emptyDigest, emptyDigest, JSON.stringify({ ok: true })
-                            );
-                        }
-                        runRow = { id: runId };
-                    }
-
                     database.prepare(`
                         UPDATE artifacts
-                        SET status = 'verified', verification_run_id = ?
-                        WHERE id = ?
-                    `).run(runRow.id, zipResult.id);
+                        SET status = 'built'
+                        WHERE id = ? AND project_id = ? AND contract_id = ? AND status = 'draft'
+                    `).run(zipResult.id, pId, contractRow.id);
                 }
             } catch (err) {
                 console.error(`Artifact creation failed during rehydration for ${pId}:`, err);

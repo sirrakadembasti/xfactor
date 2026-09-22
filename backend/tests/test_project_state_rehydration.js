@@ -276,7 +276,7 @@ try {
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
-    await runAsyncTest('6. completed project rehydrates with a verified artifact and getProject(projectId).latestArtifact is populated with status verified', async () => {
+    await runAsyncTest('6. completed project rehydrates with an unverified built artifact and no synthetic evidence', async () => {
         const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-artifact-test-'));
         const completedId = `proj-art-completed-${Date.now()}`;
         const completedDir = path.join(tmpDir, completedId);
@@ -292,27 +292,19 @@ try {
         const completedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
         assert.strictEqual(completedResult.success, true);
         assert.strictEqual(completedResult.status, 'completed');
+        const repeatedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
+        assert.strictEqual(repeatedResult.success, true);
 
-        // Check SQLite artifacts table
-        const artifactRow = database.prepare("SELECT * FROM artifacts WHERE project_id = ? AND status = 'verified'").get(completedId);
-        assert.ok(artifactRow, 'Verified artifact row must exist in database');
-        assert.strictEqual(artifactRow.status, 'verified');
-        assert.ok(artifactRow.sha256, 'Artifact must have sha256 hash');
-        assert.ok(artifactRow.path, 'Artifact must have path');
-        assert.ok(artifactRow.verification_run_id, 'Artifact must have verification_run_id');
-
-        // Verify ZIP file exists on disk
-        assert.strictEqual(fsSync.existsSync(artifactRow.path), true, 'Artifact ZIP file must exist on disk');
-
-        // Check getProject(completedId) returns latestArtifact
+        const artifactRow = database.prepare('SELECT * FROM artifacts WHERE project_id = ?').get(completedId);
+        assert.ok(artifactRow);
+        assert.strictEqual(database.prepare('SELECT COUNT(*) AS count FROM artifacts WHERE project_id = ?').get(completedId).count, 1);
+        assert.strictEqual(artifactRow.status, 'built');
+        assert.strictEqual(artifactRow.verification_run_id, null);
+        assert.strictEqual(database.prepare('SELECT COUNT(*) AS count FROM verification_runs WHERE project_id = ?').get(completedId).count, 0);
+        assert.strictEqual(database.prepare(`SELECT COUNT(*) AS count FROM verification_checks vc JOIN verification_runs vr ON vr.id = vc.run_id WHERE vr.project_id = ?`).get(completedId).count, 0);
+        assert.strictEqual(fsSync.existsSync(artifactRow.path), true);
         process.env.PROJECTS_ROOT = tmpDir;
-        const project = getProject(completedId);
-        assert.ok(project, 'getProject must return project');
-        assert.ok(project.latestArtifact, 'project.latestArtifact must be populated');
-        assert.strictEqual(project.latestArtifact.status, 'verified');
-        assert.strictEqual(project.latestArtifact.id, artifactRow.id);
-        assert.strictEqual(project.latestArtifact.sha256, artifactRow.sha256);
-        assert.strictEqual(project.latestArtifact.size, artifactRow.size);
+        assert.strictEqual(getProject(completedId).latestArtifact, null);
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
