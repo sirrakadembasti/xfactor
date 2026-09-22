@@ -1,37 +1,91 @@
-# 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
+# XFactor kaynak haritası
 
-**Oluşturulma Tarihi:** 2026-09-22
-**Toplam Düğüm (Nodes):** 291
-**Toplam Bağlantı (Edges):** 738
-**Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
+Üretim tarihi: 2026-09-22T16:40:38.520Z
 
-Kaynak dosyaları ve yerel import/export bağlantıları AST taramasından; imports dışındaki mimari bağlantılar açıklamalı, elle tanımlanmış ilişkilerden gelir. Paket importları ve dinamik importlar bu grafiğe dahil değildir.
+- 294 kaynak ve belge dosyası
+- 1918 düğüm
+- 5146 ilişki
 
----
+## Düğüm türleri
 
-## 🌟 Çekirdek Odak Düğümleri ("God Nodes" & Merkez Bileşenler)
-1. **backend/tests/test_runner.js**: 121 bağlantı — npm test master koşucusu
-2. **backend/tests/testHarness.js**: 92 bağlantı — testHarness.js
-3. **backend/tests/isolatedDb.js**: 43 bağlantı — isolatedDb.js
-4. **backend/engine/workflow.js**: 42 bağlantı — Paralel DAG dalgalarını yürüten ana iş akışı komutanı
-5. **backend/routes/projectRoutes.js**: 32 bağlantı — Proje CRUD, Chat, Onay ve Revizyon uç noktaları
-6. **backend/db.js**: 25 bağlantı — SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı
+| Tür | Adet |
+|---|---:|
+| Function | 1003 |
+| Method | 434 |
+| SourceFile | 181 |
+| EnvVar | 60 |
+| Package | 46 |
+| HttpRoute | 34 |
+| Document | 33 |
+| HttpRequest | 33 |
+| TestSuite | 32 |
+| BackendService | 22 |
+| Class | 14 |
+| FrontendComponent | 11 |
+| AgentModule | 9 |
+| EngineCore | 6 |
 
----
+## İlişki türleri
 
-## 🎨 Alt Sistem Toplulukları (Communities)
+| Tür | Adet |
+|---|---:|
+| calls | 1648 |
+| contains | 1513 |
+| imports_package | 690 |
+| imports | 517 |
+| dynamic_imports | 253 |
+| runs | 119 |
+| writes_env | 109 |
+| reads_env | 107 |
+| registers_route | 34 |
+| sends_request | 33 |
+| verifies | 20 |
+| requests_route | 19 |
+| defines | 17 |
+| renders | 10 |
+| registers | 8 |
+| loads | 6 |
+| uses | 6 |
+| mounts | 2 |
+| calls_ai | 2 |
+| reads | 1 |
+| executes_waves | 1 |
+| manages_files | 1 |
+| triggers_scaffold | 1 |
+| runs_review_loop | 1 |
+| dispatches_agents | 1 |
+| guards_states | 1 |
+| triggers_workflow | 1 |
+| reads_docs | 1 |
+| persists_state | 1 |
+| authenticates | 1 |
+| secures | 1 |
+| persists_projects | 1 |
+| reconciles_disk | 1 |
+| validates_revisions | 1 |
+| delegates_execution | 1 |
+| dispatches_jobs | 1 |
+| http_and_ws | 1 |
+| computes_layout | 1 |
+| consumes_api | 1 |
+| validates_contracts | 1 |
+| enforces_quality | 1 |
+| delegates_verification | 1 |
+| runs_security_checks | 1 |
+| checks_database | 1 |
+| verifies_apis | 1 |
+| executes_sandbox | 1 |
+| enforces_traceability | 1 |
+| queries_verification | 1 |
+| validates_schema | 1 |
+| manages_websockets | 1 |
+| launches_server | 1 |
+| launches_worker | 1 |
 
-| Renk Kodu | Topluluk | Dosya Sayısı | Açıklama |
-|:---:|---|:---:|---|
-| 🟣 **Mor** | **Docs & Anayasa** | 31 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
-| 🟣 **Eflatun** | **Agents** | 9 Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
-| 🔵 **Mavi** | **Engine** | 13 Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
-| 🟢 **Yeşil** | **Backend & API** | 78 Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | 18 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, ortak Resume durum kuralı ve doğrulanmış ZIP indirme. |
-| 🔴 **Kırmızı** | **Tests** | 142 Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
+## Yorum sınırları
 
----
+İçe aktarma, çağrı, HTTP rota/isteği ve dosya içerme ilişkileri AST taramasından gelir; mimari ilişkiler üreticide tanımlanmış açıklamalı bağlantılardır. Çağrı bağı yalnızca statik olarak tek hedefe çözülen durumlarda çizilir. İstemci isteği ile sunucu rotası bağı, yöntem ve yolun tek bir rotayla eşleştiği durumlarda çıkarımdır. Çalışma zamanı davranışı, tüm veri akışı ve dinamik değerler bu haritadan tek başına doğrulanamaz.
 
-## 📊 Görsel Haritalar
-- **İnteraktif 2D Ağ Grafiği:** graphify-out/graph.html
-- **Hiyerarşik Ağaç Görünümü (seçilmiş mimari bileşenler):** graphify-out/GRAPH_TREE.html
+- [Etkileşimli ilişki haritası](graph.html)
+- [Güncel dosya ağacı](GRAPH_TREE.html)
+- [Ham JSON](graph.json)

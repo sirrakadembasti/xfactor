@@ -392,7 +392,7 @@ Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik o
 - **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js` ➔ `migrations/`
 
 ### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
-XFactor, kaynak dosyalarını ve yerel `import`/`export` ilişkilerini AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır.
+XFactor, kaynak dosyalarını AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır. `npm run graph` haritayı her seferinde güncel kaynak koddan yeniden üretir.
 
 #### Grafiği Üretme ve Güncelleme:
 Kök dizinde tek bir komutla tüm bilgi grafiğini ve görsel HTML haritalarını tazeleyebilirsiniz:
@@ -401,10 +401,10 @@ npm run graph
 ```
 
 Bu komut çalıştığında `graphify-out/` dizini altında şu zengin çıktılar üretilir:
-1. **`graphify-out/graph.json`:** Güncel dosya düğümlerini, yerel kaynak importlarını ve açıklamalı mimari bağlantıları içeren makine-okunur grafik. Paket ve dinamik importlar kapsama dahil değildir.
-2. **`graphify-out/graph.html`:** Tarayıcınızda açabileceğiniz, D3.js tabanlı, interaktif ve sürüklenebilir **2D Kod Ağ Haritası**.
-3. **`graphify-out/GRAPH_TREE.html`:** Seçilmiş mimari bileşenleri renk kodlu rozetlerle gösteren **Hiyerarşik Ağaç Görünümü**.
-4. **`graphify-out/GRAPH_REPORT.md`:** Sistemdeki çekirdek odak düğümlerini ("God Nodes") ve alt sistem metriklerini listeleyen özet rapor.
+1. **`graphify-out/graph.json`:** Dosya, sınıf, fonksiyon, metot, paket, HTTP rota/istek ve ortam değişkeni adı düğümleri ile statik import/çağrı ve mimari bağlantılar. Ortam değişkeni değerleri kaydedilmez.
+2. **`graphify-out/graph.html`:** Arama ve ilişki süzgeçleriyle seçilen düğümün komşuluğunu gösteren etkileşimli harita; tüm bağlantılar sağdaki listede bulunur.
+3. **`graphify-out/GRAPH_TREE.html`:** Taranan tüm kaynak ve belge yollarından üretilen aranabilir dosya ağacı.
+4. **`graphify-out/GRAPH_REPORT.md`:** Güncel düğüm ve ilişki türlerinin sayıları ile statik analiz sınırları.
 
 #### Çekirdek Odak Düğümleri ("God Nodes"):
 Güncel bağlantı sıralaması için her `npm run graph` çalıştırmasından sonra `graphify-out/GRAPH_REPORT.md` dosyasına bakın. Bağlantı sayısı gerçek çalışma sıklığı veya güvenlik ölçüsü değildir.

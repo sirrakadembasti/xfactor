@@ -1,5 +1,7 @@
 # Graphify Kullanım ve Bilgi Notu
 
+> **Bu deponun görsel haritası:** `npm run graph` komutu `backend/scripts/generate_graph.js` ile güncel kaynaklardan `graph.json`, `graph.html`, `GRAPH_TREE.html` ve `GRAPH_REPORT.md` dosyalarını yeniden üretir. Aşağıdaki Python Graphify komutları ayrı bir araçtır; bu dört görsel çıktının güncelliği için `npm run graph` kullanın. `manifest.json` Python aracının önbelleğidir ve bu görsel haritanın güncellik göstergesi değildir.
+
 Bu doküman, **Graphify** aracının kısıtlı ağlarda (MEB vb.) kullanımı, komutları ve bu uygulama (Gemini / Antigravity AI Asistanı) içerisindeki çalışma mantığına dair rehberdir.
 
 ---
@@ -34,12 +36,12 @@ python -c "import socket; orig=socket.getaddrinfo; socket.getaddrinfo=lambda h,p
 
 | Komut | Açıklama |
 | :--- | :--- |
-| `python -m graphify extract . --code-only` | Projedeki tüm kodları tarar ve `graphify-out/graph.json` haritasını oluşturur. |
+| `python -m graphify extract . --code-only` | Python Graphify verisini çıkarır; bu deponun görsel çıktılarını yeniden üretmek için ardından `npm run graph` çalıştırın. |
 | `python -m graphify query "<soru>"` | Bilgi grafiği üzerinde belirli bir fonksiyon/modül hakkında sorgulama yapar. |
 | `python -m graphify explain "<kavram>"` | Projedeki belirli bir mimariyi veya sınıfı grafik üzerinden detaylı açıklar. |
 | `python -m graphify path "<bileşen_A>" "<bileşen_B>"` | İki kod bileşeni (fonksiyon/sınıf) arasındaki çağrı yolunu ve ilişkileri gösterir. |
 | `python -m graphify god-nodes` | Projedeki en çok bağlantıya sahip merkez (mimari odak) düğümleri listeler. |
-| `python -m graphify tree` | Grafiği tarayıcıda görselleştirmek için `graphify-out/GRAPH_TREE.html` sayfasını üretir. |
+| `python -m graphify tree` | Python Graphify ağacını üretir; bu deponun tam kaynak ağacı için `npm run graph` kullanın. |
 | `python -m graphify reflect` | Başarılı sorgulardan çıkarılan dersleri `LESSONS.md` hafıza dosyasına kaydeder. |
 | `python -m graphify gemini install` | Gemini CLI / Antigravity asistanı entegrasyonunu ve hook'larını yeniden kurar. |
 
@@ -55,7 +57,7 @@ Bu proje dizininde (`xfactor`) `graphify gemini install` komutu başarıyla çal
 2. **Kod Değişikliklerinden Sonra Güncelleme:**
    Projenize yeni dosyalar eklediğinizde veya önemli fonksiyon güncellemeleri yaptığınızda, haritayı tazelemek için terminalinizde şu komutu çalıştırmanız yeterlidir:
    ```bash
-   python -m graphify extract . --code-only
+   npm run graph
    ```
 
 3. **Öğrenen Hafıza (Memory):**

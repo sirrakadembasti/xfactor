@@ -122,16 +122,17 @@ Kalite kapısı doğrulaması başarısız olursa proje `verification_failed` du
 
 ## 🧠 Mimari Bilgi Grafiği (Graphify)
 
-XFactor, kaynak dosyalarını ve yerel `import`/`export` ilişkilerini AST ile tarayan; ayrıca elle tanımlanmış mimari ilişkileri gösteren yerel bir Graphify bilgi grafiği motoruna sahiptir:
+XFactor, kaynak dosyalarını AST ile tarayan ve elle tanımlanmış mimari ilişkileri de gösteren yerel bir Graphify bilgi grafiği motoruna sahiptir. Harita her çalışmada mevcut koddan yeniden üretilir:
 
 ```bash
 npm run graph
 ```
 
 Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir:
-- **İnteraktif 2D Kod Haritası:** `graphify-out/graph.html` (D3.js tabanlı ağ haritası)
-- **Hiyerarşik Modül Ağacı:** `graphify-out/GRAPH_TREE.html` (seçilmiş mimari bileşenlerin görünümü)
-- **Mimari Özet Raporu:** `graphify-out/GRAPH_REPORT.md` (güncel düğüm ve bağlantı sayıları)
+- **Etkileşimli ilişki haritası:** `graphify-out/graph.html` (arama, tür ve ilişki süzgeçleri, seçilen düğümün tüm bağlantıları)
+- **Tam kaynak ağacı:** `graphify-out/GRAPH_TREE.html` (taranan dosyalardan üretilen hiyerarşi)
+- **Makine okunur grafik:** `graphify-out/graph.json` (dosya, sınıf, fonksiyon, metot, rota, istemci isteği, paket ve ortam değişkeni adı düğümleri)
+- **Özet rapor:** `graphify-out/GRAPH_REPORT.md` (güncel tür ve bağlantı sayıları ile statik analiz sınırları)
 ---
 
 ## 📚 Kapsamlı Dokümantasyon

@@ -34,15 +34,96 @@ async function collectFiles(root, relativeDir, files) {
   }
 }
 
-function importSpecifiers(ast) {
-  const specs = [];
-  for (const statement of ast.program.body) {
-    if (statement.type === 'ImportDeclaration' || statement.type === 'ExportNamedDeclaration'
-      || statement.type === 'ExportAllDeclaration') {
-      if (statement.source?.value) specs.push(statement.source.value);
+function visit(node, callback, ancestors = []) {
+  if (!node || typeof node !== 'object') return;
+  if (typeof node.type === 'string') callback(node, ancestors);
+  const next = [...ancestors, node];
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'loc' || key === 'start' || key === 'end' || key === 'extra' || key === 'tokens' || key === 'comments') continue;
+    if (Array.isArray(value)) value.forEach(child => visit(child, callback, next));
+    else if (value && typeof value === 'object') visit(value, callback, next);
+  }
+}
+
+function sourceLocation(file, node) {
+  return { file, line: node.loc?.start.line || 1 };
+}
+
+function symbolDefinition(node, ancestors) {
+  const parent = ancestors.at(-1);
+  const classNode = [...ancestors].reverse().find(item => item.type === 'ClassDeclaration' || item.type === 'ClassExpression');
+  const className = classNode?.id?.name || (classNode && ancestors.find(item => item.type === 'VariableDeclarator' && item.init === classNode)?.id?.name);
+  if (node.type === 'ClassDeclaration' && node.id?.name) return { name: node.id.name, type: 'Class' };
+  if (node.type === 'ClassExpression' && parent?.type === 'VariableDeclarator' && parent.id?.name) {
+    return { name: parent.id.name, type: 'Class' };
+  }
+  if (node.type === 'FunctionDeclaration' && node.id?.name) return { name: node.id.name, type: 'Function' };
+  if ((node.type === 'ClassMethod' || node.type === 'ClassPrivateMethod') && node.key) {
+    const name = node.key.name || node.key.value;
+    return name ? { name: className ? `${className}.${name}` : String(name), type: 'Method' } : null;
+  }
+  if (node.type === 'ObjectMethod' && node.key) {
+    const objectVariable = [...ancestors].reverse().find(item => item.type === 'VariableDeclarator');
+    const name = node.key.name || node.key.value;
+    return name ? { name: objectVariable?.id?.name ? `${objectVariable.id.name}.${name}` : String(name), type: 'Method' } : null;
+  }
+  if ((node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') && parent?.type === 'VariableDeclarator' && parent.id?.name) {
+    return { name: parent.id.name, type: 'Function' };
+  }
+  if ((node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') && parent?.type === 'ObjectProperty' && parent.key) {
+    const objectVariable = [...ancestors].reverse().find(item => item.type === 'VariableDeclarator');
+    const name = parent.key.name || parent.key.value;
+    return name ? { name: objectVariable?.id?.name ? `${objectVariable.id.name}.${name}` : String(name), type: 'Method' } : null;
+  }
+  return null;
+}
+
+function resolveRelative(file, specifier, files) {
+  if (!specifier.startsWith('.')) return null;
+  const base = path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier));
+  const candidates = [base, ...SOURCE_EXTENSIONS.map(ext => base + ext),
+    ...SOURCE_EXTENSIONS.map(ext => path.posix.join(base, 'index' + ext))];
+  return candidates.find(candidate => files.has(candidate)) || null;
+}
+
+function packageName(specifier) {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+}
+
+function calleeName(node) {
+  if (node?.type === 'Identifier') return node.name;
+  if (node?.type === 'MemberExpression' && !node.computed && node.object?.type === 'Identifier' && node.property?.type === 'Identifier') {
+    return `${node.object.name}.${node.property.name}`;
+  }
+  if (node?.type === 'MemberExpression' && !node.computed && node.object?.type === 'ThisExpression' && node.property?.type === 'Identifier') {
+    return `this.${node.property.name}`;
+  }
+  return null;
+}
+
+function endpointPath(node) {
+  if (node?.type === 'StringLiteral') return node.value.split('?')[0];
+  if (node?.type !== 'TemplateLiteral') return null;
+  let value = '';
+  for (let index = 0; index < node.quasis.length; index++) {
+    value += node.quasis[index].value.cooked;
+    if (index < node.expressions.length) {
+      const expression = node.expressions[index];
+      const name = expression.type === 'Identifier' ? expression.name
+        : expression.type === 'CallExpression' && expression.arguments[0]?.type === 'Identifier'
+          ? expression.arguments[0].name : 'value';
+      value += `:${name}`;
     }
   }
-  return specs;
+  return value.split('?')[0];
+}
+
+function requestMethod(node) {
+  const options = node.arguments[1];
+  if (options?.type !== 'ObjectExpression') return 'GET';
+  const method = options.properties.find(property => (property.key?.name || property.key?.value) === 'method');
+  return method?.value?.type === 'StringLiteral' ? method.value.value.toUpperCase() : 'GET';
 }
 
 export function assertCuratedNodesExist(curatedNodes, sourceNodes) {
@@ -63,6 +144,18 @@ export async function buildSourceGraph(root) {
     group: groupFor(id), file: id, description: '', val: 1
   }));
   const links = [];
+  const parsed = new Map();
+  const symbolsByFile = new Map();
+  const importsByFile = new Map();
+  const routeNodes = [];
+  const requestNodes = [];
+  const linkKeys = new Set();
+  function addLink(source, target, label, location = null) {
+    const key = `${source}\0${target}\0${label}`;
+    if (!source || !target || source === target || linkKeys.has(key)) return;
+    linkKeys.add(key);
+    links.push({ source, target, label, provenance: label === 'requests_route' ? 'inferred' : 'ast', ...(location ? { location } : {}) });
+  }
   for (const file of sorted) {
     if (!SOURCE_EXTENSIONS.includes(path.extname(file))) continue;
     const source = await fs.readFile(path.join(root, file), 'utf8');
@@ -72,16 +165,144 @@ export async function buildSourceGraph(root) {
     } catch (error) {
       throw new Error(`Graphify could not parse ${file}: ${error.message}`, { cause: error });
     }
-    for (const specifier of importSpecifiers(ast)) {
-      if (!specifier.startsWith('.')) continue;
-      const base = path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier));
-      const candidates = [base, ...SOURCE_EXTENSIONS.map(ext => base + ext),
-        ...SOURCE_EXTENSIONS.map(ext => path.posix.join(base, 'index' + ext))];
-      const target = candidates.find(candidate => files.has(candidate));
-      if (target && target !== file && !links.some(link => link.source === file && link.target === target)) {
-        links.push({ source: file, target, label: 'imports' });
+    parsed.set(file, ast);
+    const bindings = new Map();
+    importsByFile.set(file, bindings);
+    for (const statement of ast.program.body) {
+      if (!['ImportDeclaration', 'ExportNamedDeclaration', 'ExportAllDeclaration'].includes(statement.type) || !statement.source?.value) continue;
+      const specifier = statement.source.value;
+      const target = resolveRelative(file, specifier, files);
+      if (target) addLink(file, target, 'imports', sourceLocation(file, statement));
+      else if (!specifier.startsWith('.')) {
+        const id = `package:${packageName(specifier)}`;
+        if (!nodes.some(node => node.id === id)) nodes.push({ id, label: packageName(specifier), type: 'Package', group: 'packages', file: null, description: specifier, val: 1 });
+        addLink(file, id, 'imports_package', sourceLocation(file, statement));
+      }
+      if (target && statement.type === 'ImportDeclaration') {
+        for (const item of statement.specifiers) {
+          const imported = item.type === 'ImportDefaultSpecifier' ? 'default' : item.type === 'ImportNamespaceSpecifier' ? '*' : item.imported?.name || item.imported?.value;
+          bindings.set(item.local.name, { file: target, name: imported });
+        }
       }
     }
+    const symbols = [];
+    visit(ast.program, (node, ancestors) => {
+      const def = symbolDefinition(node, ancestors);
+      if (!def) return;
+      const line = node.loc?.start.line || 1;
+      const id = `${file}#${def.type}:${def.name}@${line}`;
+      const symbol = { id, label: def.name, type: def.type, group: groupFor(file), file, line, description: '', val: 1, start: node.start, end: node.end };
+      symbols.push(symbol);
+      nodes.push({ id, label: def.name, type: def.type, group: groupFor(file), file, line, description: '', val: 1 });
+      addLink(file, id, 'contains', sourceLocation(file, node));
+      if (def.type === 'Method') {
+        const parentClass = symbols.find(symbol => symbol.type === 'Class'
+          && symbol.label === def.name.split('.')[0] && symbol.start <= node.start && symbol.end >= node.end);
+        if (parentClass) addLink(parentClass.id, id, 'contains', sourceLocation(file, node));
+      }
+    });
+    symbolsByFile.set(file, symbols);
+  }
+  function resolveCall(file, name, context = null) {
+    if (!name) return null;
+    const symbols = symbolsByFile.get(file) || [];
+    if (name.startsWith('this.') && context?.label.includes('.')) name = `${context.label.split('.')[0]}.${name.slice(5)}`;
+    let matches = symbols.filter(symbol => symbol.label === name);
+    if (matches.length === 1) return matches[0].id;
+    const bindingName = name.split('.')[0];
+    const binding = importsByFile.get(file)?.get(bindingName);
+    if (!binding) return null;
+    const targetName = binding.name === '*' ? name.slice(bindingName.length + 1) : binding.name;
+    matches = (symbolsByFile.get(binding.file) || []).filter(symbol => symbol.label === targetName);
+    return matches.length === 1 ? matches[0].id : null;
+  }
+  for (const [file, ast] of parsed) {
+    const symbols = symbolsByFile.get(file) || [];
+    visit(ast.program, (node, ancestors) => {
+      const isEnvMember = ['MemberExpression', 'OptionalMemberExpression'].includes(node.type)
+        && ['MemberExpression', 'OptionalMemberExpression'].includes(node.object?.type)
+        && node.object.object?.type === 'Identifier' && node.object.object.name === 'process'
+        && node.object.property?.name === 'env';
+      if (isEnvMember) {
+        const key = node.computed ? node.property?.value : node.property?.name;
+        if (typeof key === 'string') {
+          const id = `env:${key}`;
+          if (!nodes.some(candidate => candidate.id === id)) {
+            nodes.push({ id, label: key, type: 'EnvVar', group: 'config', file: null, description: 'Ortam değişkeni adı; değer grafiğe alınmaz.', val: 1 });
+          }
+          const context = symbols.filter(symbol => symbol.start <= node.start && symbol.end >= node.end)
+            .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+          const parent = ancestors.at(-1);
+          const label = parent?.type === 'AssignmentExpression' && parent.left === node ? 'writes_env' : 'reads_env';
+          addLink(context?.id || file, id, label, sourceLocation(file, node));
+        }
+      }
+      if (node.type !== 'CallExpression' && node.type !== 'OptionalCallExpression') return;
+      const context = symbols.filter(symbol => symbol.start <= node.start && symbol.end >= node.end)
+        .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+      const caller = context?.id || file;
+      if (node.callee?.type === 'Import' && node.arguments[0]?.type === 'StringLiteral') {
+        const specifier = node.arguments[0].value;
+        const importedFile = resolveRelative(file, specifier, files);
+        if (importedFile) addLink(caller, importedFile, 'dynamic_imports', sourceLocation(file, node));
+      }
+      const name = calleeName(node.callee);
+      const target = resolveCall(file, name, context);
+      if (target) addLink(caller, target, 'calls', sourceLocation(file, node));
+      if (node.callee?.type === 'MemberExpression' && !node.callee.computed
+        && ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all'].includes(node.callee.property?.name)
+        && ['app', 'router', 'server'].includes(node.callee.object?.name)
+        && node.arguments[0]?.type === 'StringLiteral') {
+        const method = node.callee.property.name.toUpperCase();
+        const routePath = node.arguments[0].value;
+        const line = node.loc?.start.line || 1;
+        const id = `${file}#route:${method} ${routePath}@${line}`;
+        nodes.push({ id, label: `${method} ${routePath}`, type: 'HttpRoute', group: groupFor(file), file, line, description: '', val: 1 });
+        routeNodes.push({ id, method, path: routePath, file });
+        addLink(caller, id, 'registers_route', sourceLocation(file, node));
+        for (const argument of node.arguments.slice(1)) {
+          const handler = resolveCall(file, calleeName(argument), context);
+          if (handler) addLink(id, handler, 'handles', sourceLocation(file, argument));
+        }
+      }
+      if (['request', 'fetch'].includes(name)) {
+        const requestPath = endpointPath(node.arguments[0]);
+        if (requestPath?.startsWith('/')) {
+          const method = requestMethod(node);
+          const line = node.loc?.start.line || 1;
+          const id = `${file}#request:${method} ${requestPath}@${line}`;
+          nodes.push({ id, label: `${method} ${requestPath}`, type: 'HttpRequest', group: groupFor(file), file, line, description: '', val: 1 });
+          requestNodes.push({ id, method, path: requestPath });
+          addLink(caller, id, 'sends_request', sourceLocation(file, node));
+        }
+      }
+    });
+  }
+  const mountsByFile = new Map();
+  for (const [file, ast] of parsed) {
+    visit(ast.program, node => {
+      if (node.type !== 'CallExpression' || calleeName(node.callee) !== 'app.use'
+        || node.arguments[0]?.type !== 'StringLiteral') return;
+      const routerCall = node.arguments[1];
+      const binding = routerCall?.type === 'CallExpression'
+        ? importsByFile.get(file)?.get(calleeName(routerCall.callee)) : null;
+      if (!binding) return;
+      if (!mountsByFile.has(binding.file)) mountsByFile.set(binding.file, new Set());
+      mountsByFile.get(binding.file).add(node.arguments[0].value);
+    });
+  }
+  const normalizePath = value => (value.replace(/\/+/g, '/').replace(/\/$/, '') || '/');
+  for (const request of requestNodes) {
+    const matches = routeNodes.filter(route => {
+      if (route.method !== request.method) return false;
+      const mounts = mountsByFile.get(route.file);
+      if (!mounts) return normalizePath(route.path) === normalizePath(request.path);
+      return [...mounts].some(mount => {
+        const prefix = mount.replace(/^\/api(?=\/|$)/, '').replace(/\/$/, '');
+        return normalizePath(prefix + route.path) === normalizePath(request.path);
+      });
+    });
+    if (matches.length === 1) addLink(request.id, matches[0].id, 'requests_route');
   }
   return { nodes, links };
 }
