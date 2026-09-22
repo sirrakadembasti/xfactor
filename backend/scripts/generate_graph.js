@@ -173,12 +173,12 @@ async function extractCodeGraph() {
     const frontend = [
         { id: 'frontend/src/App.jsx', label: 'App.jsx (Main Container)', desc: 'React 18 ana panel koordinatörü ve WebSocket canlı istemcisi' },
         { id: 'frontend/src/components/Sidebar.jsx', label: 'Sidebar.jsx', desc: 'Sol menü, arama, pin, ZIP indirme ve güvenli silme işlemleri' },
-        { id: 'frontend/src/components/Header.jsx', label: 'Header.jsx', desc: 'Üst menü, sekme geçişleri ve süreç kontrol butonları' },
-        { id: 'frontend/src/components/ChatView.jsx', label: 'ChatView.jsx', desc: 'Manager Sohbet, beyin fırtınası ve revizyon paneli' },
+        { id: 'frontend/src/components/Header.jsx', label: 'Header.jsx', desc: 'Üst menü, sekme geçişleri ve duraklatılmış/doğrulama hatalı projeler için Resume' },
+        { id: 'frontend/src/components/ChatView.jsx', label: 'ChatView.jsx', desc: 'Manager Sohbet, revizyon ve duraklatılmış/doğrulama hatalı projeler için Resume' },
         { id: 'frontend/src/components/DAGFlowView.jsx', label: 'DAGFlowView.jsx', desc: 'ReactFlow canlı DAG akış şeması ve log tablosu' },
         { id: 'frontend/src/components/DashboardView.jsx', label: 'DashboardView.jsx (Kalite & Kanıt Paneli)', desc: '18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli' },
         { id: 'frontend/src/utils/dagLayout.js', label: 'utils/dagLayout.js (6-Agent DAG Layout)', desc: '6 gerçek ajan rolünü (Manager, Director, Teamleader, Coder, Reviewer, Tester) ve gerçek görevleri yerleştiren hiyerarşik layout motoru' },
-        { id: 'frontend/src/components/LogsView.jsx', label: 'LogsView.jsx', desc: 'Süreç logları, VETO, FEEDBACK filtreleme ve telemetri izleme tam ekranı' },
+        { id: 'frontend/src/components/LogsView.jsx', label: 'LogsView.jsx', desc: 'Süreç logları, VETO/FEEDBACK filtreleme ve duraklatılmış/doğrulama hatalı projeler için Resume' },
         { id: 'frontend/src/components/LoginView.jsx', label: 'LoginView.jsx', desc: 'Admin kullanıcı girişi, MFA/TOTP formu ve oturum başlatma ekranı' },
         { id: 'frontend/src/components/ConnectionStatus.jsx', label: 'ConnectionStatus.jsx', desc: 'WebSocket anlık bağlantı durumu ve kopma/yeniden bağlanma bildirim rozeti' },
         { id: 'frontend/src/services/api.js', label: 'services/api.js', desc: 'HttpOnly server-session ve CSRF uyumlu API istemcisi' }
@@ -334,7 +334,7 @@ ${godNodesText}
 | 🟣 **Eflatun** | **Agents** | ${nodes.filter(n => n.group === 'agents').length} Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
 | 🔵 **Mavi** | **Engine** | ${nodes.filter(n => n.group === 'engine').length} Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
 | 🟢 **Yeşil** | **Backend & API** | ${nodes.filter(n => n.group === 'backend').length} Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | ${nodes.filter(n => n.group === 'frontend').length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout ve doğrulanmış ZIP indirme. |
+| 🟠 **Turuncu** | **Frontend** | ${nodes.filter(n => n.group === 'frontend').length} Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, ortak Resume durum kuralı ve doğrulanmış ZIP indirme. |
 | 🔴 **Kırmızı** | **Tests** | ${nodes.filter(n => n.group === 'tests').length} Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
@@ -798,6 +798,7 @@ ${godNodesText}
           <li><span class="folder">📁 utils/</span>
             <ul>
               <li><span class="file">📄 dagLayout.js</span> <span class="tag tag-ui">6-Ajan Hiyerarşik DAG Motoru</span></li>
+              <li><span class="file">📄 canResumeProject.js</span> <span class="tag tag-ui">PAUSED / VERIFICATION_FAILED Resume Kuralı</span></li>
             </ul>
           </li>
           <li><span class="file">📄 components/DashboardView.jsx</span> <span class="tag tag-ui">Kalite & Kanıt Paneli</span></li>

@@ -519,8 +519,8 @@
       "type": "FrontendComponent",
       "group": "frontend",
       "file": "frontend/src/components/Header.jsx",
-      "description": "Üst menü, sekme geçişleri ve süreç kontrol butonları",
-      "val": 4
+      "description": "Üst menü, sekme geçişleri ve duraklatılmış/doğrulama hatalı projeler için Resume",
+      "val": 4.5
     },
     {
       "id": "frontend/src/components/ChatView.jsx",
@@ -528,8 +528,8 @@
       "type": "FrontendComponent",
       "group": "frontend",
       "file": "frontend/src/components/ChatView.jsx",
-      "description": "Manager Sohbet, beyin fırtınası ve revizyon paneli",
-      "val": 2.5
+      "description": "Manager Sohbet, revizyon ve duraklatılmış/doğrulama hatalı projeler için Resume",
+      "val": 3
     },
     {
       "id": "frontend/src/components/DAGFlowView.jsx",
@@ -564,8 +564,8 @@
       "type": "FrontendComponent",
       "group": "frontend",
       "file": "frontend/src/components/LogsView.jsx",
-      "description": "Süreç logları, VETO, FEEDBACK filtreleme ve telemetri izleme tam ekranı",
-      "val": 2.5
+      "description": "Süreç logları, VETO/FEEDBACK filtreleme ve duraklatılmış/doğrulama hatalı projeler için Resume",
+      "val": 3.5
     },
     {
       "id": "frontend/src/components/LoginView.jsx",
@@ -2305,11 +2305,29 @@
       "val": 1
     },
     {
+      "id": "docs/superpowers/plans/2026-09-22-resume-visibility.md",
+      "label": "2026-09-22-resume-visibility.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-22-resume-visibility.md",
+      "description": "",
+      "val": 1
+    },
+    {
       "id": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
       "label": "2026-09-21-zip-only-completion-design.md",
       "type": "Document",
       "group": "docs",
       "file": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
+      "description": "",
+      "val": 1
+    },
+    {
+      "id": "docs/superpowers/specs/2026-09-22-resume-visibility-design.md",
+      "label": "2026-09-22-resume-visibility-design.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/specs/2026-09-22-resume-visibility-design.md",
       "description": "",
       "val": 1
     },
@@ -2440,6 +2458,15 @@
       "val": 1.5
     },
     {
+      "id": "frontend/src/components/__tests__/LogsView.test.jsx",
+      "label": "LogsView.test.jsx",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "frontend/src/components/__tests__/LogsView.test.jsx",
+      "description": "",
+      "val": 1.5
+    },
+    {
       "id": "frontend/src/components/__tests__/P5DownloadPolicy.test.jsx",
       "label": "P5DownloadPolicy.test.jsx",
       "type": "SourceFile",
@@ -2501,6 +2528,15 @@
       "file": "frontend/src/setupTests.js",
       "description": "",
       "val": 1
+    },
+    {
+      "id": "frontend/src/utils/canResumeProject.js",
+      "label": "canResumeProject.js",
+      "type": "SourceFile",
+      "group": "frontend",
+      "file": "frontend/src/utils/canResumeProject.js",
+      "description": "",
+      "val": 2.5
     },
     {
       "id": "frontend/tailwind.config.js",
@@ -6136,6 +6172,11 @@
       "label": "imports"
     },
     {
+      "source": "frontend/src/components/ChatView.jsx",
+      "target": "frontend/src/utils/canResumeProject.js",
+      "label": "imports"
+    },
+    {
       "source": "frontend/src/components/DAGFlowView.jsx",
       "target": "frontend/src/services/api.js",
       "label": "imports"
@@ -6151,6 +6192,16 @@
       "label": "imports"
     },
     {
+      "source": "frontend/src/components/Header.jsx",
+      "target": "frontend/src/utils/canResumeProject.js",
+      "label": "imports"
+    },
+    {
+      "source": "frontend/src/components/LogsView.jsx",
+      "target": "frontend/src/utils/canResumeProject.js",
+      "label": "imports"
+    },
+    {
       "source": "frontend/src/components/__tests__/ChatView.test.jsx",
       "target": "frontend/src/components/ChatView.jsx",
       "label": "imports"
@@ -6163,6 +6214,11 @@
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
       "target": "frontend/src/components/DashboardView.jsx",
+      "label": "imports"
+    },
+    {
+      "source": "frontend/src/components/__tests__/LogsView.test.jsx",
+      "target": "frontend/src/components/LogsView.jsx",
       "label": "imports"
     },
     {

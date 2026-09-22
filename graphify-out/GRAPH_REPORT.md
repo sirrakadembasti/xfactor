@@ -1,8 +1,8 @@
 # 🧠 XFactor Bilgi Grafiği Raporu (Graphify)
 
-**Oluşturulma Tarihi:** 2026-09-21
-**Toplam Düğüm (Nodes):** 287
-**Toplam Bağlantı (Edges):** 734
+**Oluşturulma Tarihi:** 2026-09-22
+**Toplam Düğüm (Nodes):** 291
+**Toplam Bağlantı (Edges):** 738
 **Modül Toplulukları:** 6 Temel Alt Sistem (Docs, Agents, Engine, Backend, Frontend, Tests)
 
 Kaynak dosyaları ve yerel import/export bağlantıları AST taramasından; imports dışındaki mimari bağlantılar açıklamalı, elle tanımlanmış ilişkilerden gelir. Paket importları ve dinamik importlar bu grafiğe dahil değildir.
@@ -23,12 +23,12 @@ Kaynak dosyaları ve yerel import/export bağlantıları AST taramasından; impo
 
 | Renk Kodu | Topluluk | Dosya Sayısı | Açıklama |
 |:---:|---|:---:|---|
-| 🟣 **Mor** | **Docs & Anayasa** | 29 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
+| 🟣 **Mor** | **Docs & Anayasa** | 31 Dosya | docs/ORKESTRASYON-TALIMATNAMESI.md, ajan kuralları ve SDD iyileştirme planları. |
 | 🟣 **Eflatun** | **Agents** | 9 Dosya | Ajan tanımları, registry ve şema ayrıştırıcıları. |
 | 🔵 **Mavi** | **Engine** | 13 Dosya | DAG motoru, durum makinesi, dalga seviyelendirme, dosya protokolü ve scaffold guard. |
 | 🟢 **Yeşil** | **Backend & API** | 78 Dosya | Express server, SQLite WAL, projectRepository, reconciliationService, executionClient, auth ve LLM yönlendirici. |
-| 🟠 **Turuncu** | **Frontend** | 17 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, dagLayout ve doğrulanmış ZIP indirme. |
-| 🔴 **Kırmızı** | **Tests** | 141 Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
+| 🟠 **Turuncu** | **Frontend** | 18 Dosya | React 18, Sidebar, Header, ChatView, DAGFlowView, ortak Resume durum kuralı ve doğrulanmış ZIP indirme. |
+| 🔴 **Kırmızı** | **Tests** | 142 Dosya | Merkezi backend ve frontend davranış süitleri ve master test koşucu. |
 
 ---
 

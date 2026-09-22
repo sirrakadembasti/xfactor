@@ -115,6 +115,8 @@ npm run test:e2e
 
 Bu denetim izi, proje durumuyla birlikte kanonik olarak döner; böylece Sohbet, DAG, loglar ve proje menüsü aynı başarılı işlem kaydını kullanır.
 
+Kalite kapısı doğrulaması başarısız olursa proje `verification_failed` durumunda kalır; hata ayrıntısı sohbet ve süreç loglarında görünür. `paused` ve `verification_failed` durumlarında **Devam Ettir (Resume)** eylemi sohbet, üst çubuk ve log ekranında kullanılabilir. Devam ettirme aynı backend iş akışını kaldığı yerden başlatır; doğrulama hatası durumu gizlenmez ve proje doğrulanmadan ZIP indirme açılmaz.
+
 ---
 
 
