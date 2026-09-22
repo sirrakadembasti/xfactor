@@ -9,6 +9,7 @@ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-graphify-'));
 try {
   await fs.mkdir(path.join(root, 'frontend/src/components'), { recursive: true });
   await fs.mkdir(path.join(root, 'backend'), { recursive: true });
+  await fs.mkdir(path.join(root, 'execution'), { recursive: true });
   await fs.writeFile(path.join(root, 'frontend/src/App.tsx'), "import Button from './components/Button';\nexport default () => <Button />;\n");
   await fs.writeFile(path.join(root, 'frontend/src/components/Button.tsx'), 'export default function Button() { return <button />; }\n');
   await fs.writeFile(path.join(root, 'backend/server.js'), "import './missing.js';\n");
@@ -51,6 +52,21 @@ try {
   await fs.writeFile(path.join(root, 'frontend/src/client.js'), [
     'export const sendTask = id => request(`/tasks/${encodeURIComponent(id)}`, { method: "POST" });',
     'export const sendOther = id => request(`/other/${encodeURIComponent(id)}`, { method: "POST" });',
+    'export const listRuns = (id, query) => request(`/projects/${encodeURIComponent(id)}/verification-runs${query ? `?${query}` : \'\'}`);',
+    ''
+  ].join('\n'));
+  await fs.writeFile(path.join(root, 'execution/server.js'), [
+    "import http from 'node:http';",
+    'http.createServer((req, res) => {',
+    '  const url = new URL(req.url, `http://${req.headers.host}`);',
+    "  if (req.method === 'GET' && url.pathname === '/readyz') return res.end();",
+    "  if (req.method === 'POST' && url.pathname === '/v1/jobs') return res.end();",
+    '  const match = url.pathname.match(/^\\/v1\\/jobs\\/([^/]+)$/);',
+    '  if (match) {',
+    "    if (req.method === 'GET') return res.end();",
+    "    if (req.method === 'DELETE') return res.end();",
+    '  }',
+    '});',
     ''
   ].join('\n'));
   const detailed = await buildSourceGraph(root);
@@ -76,6 +92,11 @@ try {
   assert(detailed.links.some(link => link.source === request.id && link.target === route.id && link.label === 'requests_route'));
   const unrelated = detailed.nodes.find(node => node.type === 'HttpRequest' && node.label === 'POST /other/:id');
   assert(!detailed.links.some(link => link.source === unrelated.id && link.target === route.id && link.label === 'requests_route'));
+  assert(detailed.nodes.some(node => node.type === 'HttpRequest' && node.label === 'GET /projects/:id/verification-runs'));
+  assert(!detailed.nodes.some(node => node.type === 'HttpRequest' && node.label.includes('verification-runs:value')));
+  for (const label of ['GET /readyz', 'POST /v1/jobs', 'GET /v1/jobs/:jobId', 'DELETE /v1/jobs/:jobId']) {
+    assert(detailed.nodes.some(node => node.type === 'HttpRoute' && node.label === label), `${label} raw worker route is extracted`);
+  }
   const html = renderGraphHtml(detailed);
   assert(html.includes('POST /tasks/:id') && html.includes('backend/worker.js'));
   assert(html.includes('id="graph-search"') && html.includes('id="relation-filter"'));

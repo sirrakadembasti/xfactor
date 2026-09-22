@@ -1267,7 +1267,7 @@
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 11,
+      "val": 14.5,
       "provenance": "ast"
     },
     {
@@ -2337,7 +2337,7 @@
       "group": "backend",
       "file": "backend/verification/devVerificationRunner.js",
       "description": "",
-      "val": 8,
+      "val": 7.5,
       "provenance": "ast"
     },
     {
@@ -2591,6 +2591,16 @@
       "provenance": "ast"
     },
     {
+      "id": "docs/superpowers/plans/2026-09-22-verification-and-operations-hardening-plan.md",
+      "label": "2026-09-22-verification-and-operations-hardening-plan.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-09-22-verification-and-operations-hardening-plan.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
       "id": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
       "label": "2026-09-21-zip-only-completion-design.md",
       "type": "Document",
@@ -2616,6 +2626,16 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/superpowers/specs/2026-09-22-resume-visibility-design.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "docs/superpowers/specs/2026-09-22-verification-and-operations-hardening-design.md",
+      "label": "2026-09-22-verification-and-operations-hardening-design.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/specs/2026-09-22-verification-and-operations-hardening-design.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -8213,7 +8233,7 @@
       "line": 273
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "id": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "label": "getFiles",
       "type": "Function",
       "group": "backend",
@@ -8221,10 +8241,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 384
+      "line": 387
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@684",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@687",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -8232,10 +8252,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 684
+      "line": 687
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@703",
+      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@706",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -8243,10 +8263,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 703
+      "line": 706
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@941",
+      "id": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@944",
       "label": "rejectRepeatedQuery",
       "type": "Function",
       "group": "backend",
@@ -8254,10 +8274,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 941
+      "line": 944
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1135",
+      "id": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1138",
       "label": "authorization.assertEvidence",
       "type": "Method",
       "group": "backend",
@@ -8265,10 +8285,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1135
+      "line": 1138
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1191",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1194",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -8276,10 +8296,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1191
+      "line": 1194
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@1211",
+      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@1214",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -8287,10 +8307,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1211
+      "line": 1214
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1256",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1259",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -8298,10 +8318,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1256
+      "line": 1259
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1263",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1266",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -8309,7 +8329,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1263
+      "line": 1266
     },
     {
       "id": "backend/scripts/backup.js#Function:args@5",
@@ -8439,7 +8459,7 @@
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
       "line": 9
     },
@@ -8472,7 +8492,7 @@
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
       "line": 48
     },
@@ -8527,12 +8547,78 @@
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
       "line": 105
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:requestMethod@122",
+      "id": "backend/scripts/graphSource.js#Function:branchPrefix@116",
+      "label": "branchPrefix",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 116
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "label": "memberPath",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 131
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "label": "literalComparison",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 137
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "label": "conjunctionTerms",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 146
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
+      "label": "rawHttpRouteCondition",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 153
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "label": "jobPathMatchBinding",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 162
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:requestMethod@172",
       "label": "requestMethod",
       "type": "Function",
       "group": "backend",
@@ -8540,10 +8626,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 122
+      "line": 172
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@129",
+      "id": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
       "label": "assertCuratedNodesExist",
       "type": "Function",
       "group": "backend",
@@ -8551,32 +8637,32 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 129
+      "line": 179
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "id": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "label": "buildSourceGraph",
       "type": "Function",
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 9,
+      "val": 11,
       "provenance": "ast",
-      "line": 135
+      "line": 185
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:addLink@153",
+      "id": "backend/scripts/graphSource.js#Function:addLink@203",
       "label": "addLink",
       "type": "Function",
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
-      "line": 153
+      "line": 203
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:resolveCall@206",
+      "id": "backend/scripts/graphSource.js#Function:resolveCall@256",
       "label": "resolveCall",
       "type": "Function",
       "group": "backend",
@@ -8584,10 +8670,21 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 206
+      "line": 256
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:normalizePath@294",
+      "id": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "label": "emitRoute",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 3.5,
+      "provenance": "ast",
+      "line": 270
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:normalizePath@369",
       "label": "normalizePath",
       "type": "Function",
       "group": "backend",
@@ -8595,7 +8692,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 294
+      "line": 369
     },
     {
       "id": "backend/scripts/graphViews.js#Function:escapeHtml@1",
@@ -8912,7 +9009,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#Method:origin@146",
+      "id": "backend/server.js#Method:origin@158",
       "label": "origin",
       "type": "Method",
       "group": "backend",
@@ -8920,10 +9017,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 146
+      "line": 158
     },
     {
-      "id": "backend/server.js#Method:wss.verifyClient@198",
+      "id": "backend/server.js#Method:wss.verifyClient@210",
       "label": "wss.verifyClient",
       "type": "Method",
       "group": "backend",
@@ -8931,10 +9028,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 198
+      "line": 210
     },
     {
-      "id": "backend/server.js#Function:onSessionRevoked@227",
+      "id": "backend/server.js#Function:onSessionRevoked@239",
       "label": "onSessionRevoked",
       "type": "Function",
       "group": "backend",
@@ -8942,10 +9039,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 227
+      "line": 239
     },
     {
-      "id": "backend/server.js#Function:onUserSessionsRevoked@228",
+      "id": "backend/server.js#Function:onUserSessionsRevoked@240",
       "label": "onUserSessionsRevoked",
       "type": "Function",
       "group": "backend",
@@ -8953,10 +9050,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 228
+      "line": 240
     },
     {
-      "id": "backend/server.js#Function:projectAccess@236",
+      "id": "backend/server.js#Function:projectAccess@248",
       "label": "projectAccess",
       "type": "Function",
       "group": "backend",
@@ -8964,10 +9061,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 236
+      "line": 248
     },
     {
-      "id": "backend/server.js#Function:startServer@310",
+      "id": "backend/server.js#Function:startServer@322",
       "label": "startServer",
       "type": "Function",
       "group": "backend",
@@ -8975,10 +9072,10 @@
       "description": "",
       "val": 6,
       "provenance": "ast",
-      "line": 310
+      "line": 322
     },
     {
-      "id": "backend/server.js#Function:runEvidenceCompaction@340",
+      "id": "backend/server.js#Function:runEvidenceCompaction@352",
       "label": "runEvidenceCompaction",
       "type": "Function",
       "group": "backend",
@@ -8986,10 +9083,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 340
+      "line": 352
     },
     {
-      "id": "backend/server.js#Function:closeWebSockets@355",
+      "id": "backend/server.js#Function:closeWebSockets@367",
       "label": "closeWebSockets",
       "type": "Function",
       "group": "backend",
@@ -8997,10 +9094,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 355
+      "line": 367
     },
     {
-      "id": "backend/server.js#Function:closeHttpServer@365",
+      "id": "backend/server.js#Function:closeHttpServer@377",
       "label": "closeHttpServer",
       "type": "Function",
       "group": "backend",
@@ -9008,10 +9105,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 365
+      "line": 377
     },
     {
-      "id": "backend/server.js#Function:handleGracefulShutdown@374",
+      "id": "backend/server.js#Function:handleGracefulShutdown@386",
       "label": "handleGracefulShutdown",
       "type": "Function",
       "group": "backend",
@@ -9019,10 +9116,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 374
+      "line": 386
     },
     {
-      "id": "backend/server.js#Method:result.checkpointDatabase@385",
+      "id": "backend/server.js#Method:result.checkpointDatabase@397",
       "label": "result.checkpointDatabase",
       "type": "Method",
       "group": "backend",
@@ -9030,7 +9127,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 385
+      "line": 397
     },
     {
       "id": "backend/services/reconciliationService.js#Function:resolveDb@9",
@@ -9132,7 +9229,7 @@
       "line": 208
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "label": "rehydrateProjectChatHistoryFromDisk",
       "type": "Function",
       "group": "backend",
@@ -9140,10 +9237,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 517
+      "line": 481
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "label": "rehydrateProjectLogsFromDisk",
       "type": "Function",
       "group": "backend",
@@ -9151,10 +9248,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 631
+      "line": 595
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@714",
+      "id": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@678",
       "label": "extractTitleFromGorev",
       "type": "Function",
       "group": "backend",
@@ -9162,10 +9259,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 714
+      "line": 678
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:extractReviewResult@733",
+      "id": "backend/services/reconciliationService.js#Function:extractReviewResult@697",
       "label": "extractReviewResult",
       "type": "Function",
       "group": "backend",
@@ -9173,10 +9270,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 733
+      "line": 697
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@746",
+      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@710",
       "label": "findAllTodoFiles",
       "type": "Function",
       "group": "backend",
@@ -9184,10 +9281,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 746
+      "line": 710
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:scanForTaskDirs@809",
+      "id": "backend/services/reconciliationService.js#Function:scanForTaskDirs@773",
       "label": "scanForTaskDirs",
       "type": "Function",
       "group": "backend",
@@ -9195,10 +9292,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 809
+      "line": 773
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "id": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "label": "autoRegisterDiscoveredProjects",
       "type": "Function",
       "group": "backend",
@@ -9206,10 +9303,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 933
+      "line": 897
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "id": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "label": "reconcileProjectsWithDisk",
       "type": "Function",
       "group": "backend",
@@ -9217,7 +9314,7 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 1027
+      "line": 991
     },
     {
       "id": "backend/sessionAuth.js#Function:cookieAttributes@8",
@@ -14724,7 +14821,7 @@
       "line": 43
     },
     {
-      "id": "backend/tests/test_workflow_dev_fallback.js#Function:rejectingRunner@101",
+      "id": "backend/tests/test_workflow_dev_fallback.js#Function:rejectingRunner@82",
       "label": "rejectingRunner",
       "type": "Function",
       "group": "tests",
@@ -14732,7 +14829,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 101
+      "line": 82
     },
     {
       "id": "backend/utils/archive.js#Function:loadArchiveDefaults@9",
@@ -16115,7 +16212,7 @@
       "group": "backend",
       "file": "backend/verification/verificationCli.js",
       "description": "",
-      "val": 5.5,
+      "val": 5,
       "provenance": "ast",
       "line": 12
     },
@@ -17146,7 +17243,7 @@
       "group": "backend",
       "file": "execution/server.js",
       "description": "",
-      "val": 4.5,
+      "val": 6.5,
       "provenance": "ast",
       "line": 9
     },
@@ -17271,7 +17368,7 @@
       "line": 59
     },
     {
-      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@179",
+      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@184",
       "label": "delayedServer.executeJob",
       "type": "Method",
       "group": "tests",
@@ -17279,7 +17376,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 179
+      "line": 184
     },
     {
       "id": "execution/tests/runtime.integration.test.js#Function:runId@10",
@@ -19429,7 +19526,7 @@
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 34
     },
@@ -19462,7 +19559,7 @@
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 39
     },
@@ -19713,7 +19810,7 @@
       "line": 329
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id@358",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id@361",
       "label": "GET /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -19721,10 +19818,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 358
+      "line": 361
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/files@366",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/files@369",
       "label": "GET /:id/files",
       "type": "HttpRoute",
       "group": "backend",
@@ -19732,10 +19829,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 366
+      "line": 369
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/logs@434",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/logs@437",
       "label": "GET /:id/logs",
       "type": "HttpRoute",
       "group": "backend",
@@ -19743,10 +19840,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 434
+      "line": 437
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/chat@457",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/chat@460",
       "label": "POST /:id/chat",
       "type": "HttpRoute",
       "group": "backend",
@@ -19754,10 +19851,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 457
+      "line": 460
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/approve@573",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/approve@576",
       "label": "POST /:id/approve",
       "type": "HttpRoute",
       "group": "backend",
@@ -19765,10 +19862,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 573
+      "line": 576
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/verify@722",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/verify@725",
       "label": "POST /:id/verify",
       "type": "HttpRoute",
       "group": "backend",
@@ -19776,10 +19873,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 722
+      "line": 725
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@742",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@745",
       "label": "GET /:id/verification-summary",
       "type": "HttpRoute",
       "group": "backend",
@@ -19787,10 +19884,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 742
+      "line": 745
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/contracts@769",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/contracts@772",
       "label": "GET /:id/contracts",
       "type": "HttpRoute",
       "group": "backend",
@@ -19798,21 +19895,21 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 769
+      "line": 772
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs@784",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs@787",
       "label": "GET /:id/verification-runs",
       "type": "HttpRoute",
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
-      "line": 784
+      "line": 787
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@863",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@866",
       "label": "GET /:id/verification-runs/:runId",
       "type": "HttpRoute",
       "group": "backend",
@@ -19820,10 +19917,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 863
+      "line": 866
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@887",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@890",
       "label": "GET /:id/verification-runs/:runId/checks/:checkId/log",
       "type": "HttpRoute",
       "group": "backend",
@@ -19831,10 +19928,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 887
+      "line": 890
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/repair-issues@914",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/repair-issues@917",
       "label": "GET /:id/repair-issues",
       "type": "HttpRoute",
       "group": "backend",
@@ -19842,10 +19939,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 914
+      "line": 917
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/artifacts@929",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/artifacts@932",
       "label": "GET /:id/artifacts",
       "type": "HttpRoute",
       "group": "backend",
@@ -19853,10 +19950,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 929
+      "line": 932
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/gates@955",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/gates@958",
       "label": "GET /:id/metrics/gates",
       "type": "HttpRoute",
       "group": "backend",
@@ -19864,10 +19961,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 955
+      "line": 958
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/stacks@960",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/stacks@963",
       "label": "GET /:id/metrics/stacks",
       "type": "HttpRoute",
       "group": "backend",
@@ -19875,10 +19972,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 960
+      "line": 963
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/trends@965",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/trends@968",
       "label": "GET /:id/metrics/trends",
       "type": "HttpRoute",
       "group": "backend",
@@ -19886,10 +19983,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 965
+      "line": 968
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/failures@970",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/metrics/failures@973",
       "label": "GET /:id/metrics/failures",
       "type": "HttpRoute",
       "group": "backend",
@@ -19897,10 +19994,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 970
+      "line": 973
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/requirements/:reqId/impact@975",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/requirements/:reqId/impact@978",
       "label": "GET /:id/requirements/:reqId/impact",
       "type": "HttpRoute",
       "group": "backend",
@@ -19908,10 +20005,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 975
+      "line": 978
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1031",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1034",
       "label": "POST /:id/rebuild-preview",
       "type": "HttpRoute",
       "group": "backend",
@@ -19919,10 +20016,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1031
+      "line": 1034
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/contracts/:contractId/artifacts/:artifactId/download@1129",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/contracts/:contractId/artifacts/:artifactId/download@1132",
       "label": "GET /:id/contracts/:contractId/artifacts/:artifactId/download",
       "type": "HttpRoute",
       "group": "backend",
@@ -19930,10 +20027,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 1129
+      "line": 1132
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/resume@1149",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/resume@1152",
       "label": "POST /:id/resume",
       "type": "HttpRoute",
       "group": "backend",
@@ -19941,10 +20038,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1149
+      "line": 1152
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/pause@1232",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/pause@1235",
       "label": "POST /:id/pause",
       "type": "HttpRoute",
       "group": "backend",
@@ -19952,10 +20049,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1232
+      "line": 1235
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:PATCH /:id@1290",
+      "id": "backend/routes/projectRoutes.js#route:PATCH /:id@1293",
       "label": "PATCH /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -19963,10 +20060,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1290
+      "line": 1293
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:DELETE /:id@1321",
+      "id": "backend/routes/projectRoutes.js#route:DELETE /:id@1324",
       "label": "DELETE /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -19974,7 +20071,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1321
+      "line": 1324
     },
     {
       "id": "env:PROJECTS_ROOT",
@@ -20389,6 +20486,50 @@
       "provenance": "ast"
     },
     {
+      "id": "execution/server.js#route:GET /readyz@96",
+      "label": "GET /readyz",
+      "type": "HttpRoute",
+      "group": "backend",
+      "file": "execution/server.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "execution/server.js#route:POST /v1/jobs@124",
+      "label": "POST /v1/jobs",
+      "type": "HttpRoute",
+      "group": "backend",
+      "file": "execution/server.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 124
+    },
+    {
+      "id": "execution/server.js#route:GET /v1/jobs/:jobId@196",
+      "label": "GET /v1/jobs/:jobId",
+      "type": "HttpRoute",
+      "group": "backend",
+      "file": "execution/server.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 196
+    },
+    {
+      "id": "execution/server.js#route:DELETE /v1/jobs/:jobId@213",
+      "label": "DELETE /v1/jobs/:jobId",
+      "type": "HttpRoute",
+      "group": "backend",
+      "file": "execution/server.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 213
+    },
+    {
       "id": "env:EXECUTION_WORKER_TOKEN",
       "label": "EXECUTION_WORKER_TOKEN",
       "type": "EnvVar",
@@ -20527,13 +20668,13 @@
       "line": 231
     },
     {
-      "id": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs:value@240",
-      "label": "GET /projects/:id/verification-runs:value",
+      "id": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs@240",
+      "label": "GET /projects/:id/verification-runs",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 240
     },
@@ -28590,92 +28731,92 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "target": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 384
+        "line": 387
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@684",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@687",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 684
+        "line": 687
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@703",
+      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@706",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 703
+        "line": 706
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@941",
+      "target": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@944",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 941
+        "line": 944
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1135",
+      "target": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1135
+        "line": 1138
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1191",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1194",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1191
+        "line": 1194
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@1211",
+      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@1214",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1211
+        "line": 1214
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1256",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1259",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1256
+        "line": 1259
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1263",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1266",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1263
+        "line": 1266
       }
     },
     {
@@ -29070,37 +29211,47 @@
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:requestMethod@122",
+      "target": "backend/scripts/graphSource.js#Function:branchPrefix@116",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 122
+        "line": 116
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@129",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 129
+        "line": 131
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "target": "backend/scripts/graphSource.js#Function:literalComparison@137",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 135
+        "line": 137
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:addLink@153",
+      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 146
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -29110,22 +29261,82 @@
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:resolveCall@206",
+      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 206
+        "line": 162
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:normalizePath@294",
+      "target": "backend/scripts/graphSource.js#Function:requestMethod@172",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 294
+        "line": 172
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 179
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 185
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:addLink@203",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 203
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:resolveCall@256",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 256
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 270
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:normalizePath@369",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 369
       }
     },
     {
@@ -29650,112 +29861,112 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:origin@146",
+      "target": "backend/server.js#Method:origin@158",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 146
+        "line": 158
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:wss.verifyClient@198",
+      "target": "backend/server.js#Method:wss.verifyClient@210",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 198
+        "line": 210
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onSessionRevoked@227",
+      "target": "backend/server.js#Function:onSessionRevoked@239",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 227
+        "line": 239
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onUserSessionsRevoked@228",
+      "target": "backend/server.js#Function:onUserSessionsRevoked@240",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 228
+        "line": 240
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:projectAccess@236",
+      "target": "backend/server.js#Function:projectAccess@248",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 236
+        "line": 248
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@310",
+      "target": "backend/server.js#Function:startServer@322",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 310
+        "line": 322
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:runEvidenceCompaction@340",
+      "target": "backend/server.js#Function:runEvidenceCompaction@352",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 340
+        "line": 352
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeWebSockets@355",
+      "target": "backend/server.js#Function:closeWebSockets@367",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 355
+        "line": 367
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeHttpServer@365",
+      "target": "backend/server.js#Function:closeHttpServer@377",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 365
+        "line": 377
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@374",
+      "target": "backend/server.js#Function:handleGracefulShutdown@386",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 374
+        "line": 386
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:result.checkpointDatabase@385",
+      "target": "backend/server.js#Method:result.checkpointDatabase@397",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 385
+        "line": 397
       }
     },
     {
@@ -29920,82 +30131,82 @@
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 517
+        "line": 481
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 631
+        "line": 595
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@714",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@678",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 714
+        "line": 678
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@733",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@697",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 733
+        "line": 697
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@746",
+      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@710",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 746
+        "line": 710
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@809",
+      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@773",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 809
+        "line": 773
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 933
+        "line": 897
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1027
+        "line": 991
       }
     },
     {
@@ -41790,12 +42001,12 @@
     },
     {
       "source": "backend/tests/test_workflow_dev_fallback.js",
-      "target": "backend/tests/test_workflow_dev_fallback.js#Function:rejectingRunner@101",
+      "target": "backend/tests/test_workflow_dev_fallback.js#Function:rejectingRunner@82",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_workflow_dev_fallback.js",
-        "line": 101
+        "line": 82
       }
     },
     {
@@ -45810,12 +46021,12 @@
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
-      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@179",
+      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@184",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 179
+        "line": 184
       }
     },
     {
@@ -53185,7 +53396,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/workflow.js",
-        "line": 1434
+        "line": 1421
       }
     },
     {
@@ -53195,7 +53406,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/workflow.js",
-        "line": 1448
+        "line": 1435
       }
     },
     {
@@ -53205,7 +53416,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/workflow.js",
-        "line": 1486
+        "line": 1473
       }
     },
     {
@@ -53215,7 +53426,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/workflow.js",
-        "line": 1491
+        "line": 1478
       }
     },
     {
@@ -54220,7 +54431,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:getProject@127",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -54660,7 +54871,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55035,7 +55246,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 331
+        "line": 334
       }
     },
     {
@@ -55045,7 +55256,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 332
+        "line": 335
       }
     },
     {
@@ -55055,7 +55266,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 336
+        "line": 339
       }
     },
     {
@@ -55065,17 +55276,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 344
+        "line": 347
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id@358",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id@361",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 358
+        "line": 361
       }
     },
     {
@@ -55085,77 +55296,77 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 358
+        "line": 361
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@366",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@369",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 366
+        "line": 369
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "source": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "target": "backend/security.js#Function:isSymlinkDirent@212",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 392
+        "line": 395
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "source": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "target": "backend/security.js#Function:isSafeProjectPath@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 396
+        "line": 399
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "source": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "target": "backend/security.js#Function:assertPathInsideRoot@225",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 408
+        "line": 411
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "source": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 419
+        "line": 422
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#Function:getFiles@384",
+      "target": "backend/routes/projectRoutes.js#Function:getFiles@387",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 426
+        "line": 429
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@434",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@437",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 434
+        "line": 437
       }
     },
     {
@@ -55165,7 +55376,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 437
+        "line": 440
       }
     },
     {
@@ -55175,17 +55386,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 447
+        "line": 450
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@457",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@460",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 457
+        "line": 460
       }
     },
     {
@@ -55195,7 +55406,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 461
+        "line": 464
       }
     },
     {
@@ -55205,7 +55416,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 469
+        "line": 472
       }
     },
     {
@@ -55215,7 +55426,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 475
+        "line": 478
       }
     },
     {
@@ -55225,7 +55436,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 482
+        "line": 485
       }
     },
     {
@@ -55235,7 +55446,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 486
+        "line": 489
       }
     },
     {
@@ -55245,7 +55456,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 488
+        "line": 491
       }
     },
     {
@@ -55255,7 +55466,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 539
+        "line": 542
       }
     },
     {
@@ -55265,17 +55476,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 543
+        "line": 546
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@573",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@576",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 573
+        "line": 576
       }
     },
     {
@@ -55285,7 +55496,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 580
+        "line": 583
       }
     },
     {
@@ -55295,7 +55506,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 581
+        "line": 584
       }
     },
     {
@@ -55305,7 +55516,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 585
+        "line": 588
       }
     },
     {
@@ -55315,7 +55526,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 586
+        "line": 589
       }
     },
     {
@@ -55325,7 +55536,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 588
+        "line": 591
       }
     },
     {
@@ -55335,17 +55546,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 648
+        "line": 651
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@684",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@687",
       "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@41",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 684
+        "line": 687
       }
     },
     {
@@ -55355,7 +55566,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 695
+        "line": 698
       }
     },
     {
@@ -55365,17 +55576,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 701
+        "line": 704
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@703",
+      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@706",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 703
+        "line": 706
       }
     },
     {
@@ -55385,27 +55596,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 707
+        "line": 710
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/verify@722",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/verify@725",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 722
+        "line": 725
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@742",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@745",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 742
+        "line": 745
       }
     },
     {
@@ -55415,7 +55626,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 755
+        "line": 758
       }
     },
     {
@@ -55425,47 +55636,47 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 760
+        "line": 763
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/contracts@769",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/contracts@772",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 769
+        "line": 772
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs@784",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs@787",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 784
+        "line": 787
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@863",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@866",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 863
+        "line": 866
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@887",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@890",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 887
+        "line": 890
       }
     },
     {
@@ -55475,27 +55686,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 912
+        "line": 915
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/repair-issues@914",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/repair-issues@917",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 914
+        "line": 917
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/artifacts@929",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/artifacts@932",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 929
+        "line": 932
       }
     },
     {
@@ -55505,27 +55716,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 930
+        "line": 933
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/gates@955",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/gates@958",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 955
+        "line": 958
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@941",
+      "target": "backend/routes/projectRoutes.js#Function:rejectRepeatedQuery@944",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 956
+        "line": 959
       }
     },
     {
@@ -55535,17 +55746,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 957
+        "line": 960
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/stacks@960",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/stacks@963",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 960
+        "line": 963
       }
     },
     {
@@ -55555,17 +55766,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 962
+        "line": 965
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/trends@965",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/trends@968",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 965
+        "line": 968
       }
     },
     {
@@ -55575,17 +55786,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 967
+        "line": 970
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/failures@970",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/metrics/failures@973",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 970
+        "line": 973
       }
     },
     {
@@ -55595,17 +55806,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 972
+        "line": 975
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/requirements/:reqId/impact@975",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/requirements/:reqId/impact@978",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 975
+        "line": 978
       }
     },
     {
@@ -55615,17 +55826,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1024
+        "line": 1027
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1031",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1034",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1031
+        "line": 1034
       }
     },
     {
@@ -55635,17 +55846,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1101
+        "line": 1104
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/contracts/:contractId/artifacts/:artifactId/download@1129",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/contracts/:contractId/artifacts/:artifactId/download@1132",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1129
+        "line": 1132
       }
     },
     {
@@ -55655,7 +55866,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1131
+        "line": 1134
       }
     },
     {
@@ -55665,77 +55876,77 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1133
+        "line": 1136
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1135",
+      "source": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1138",
       "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1135
+        "line": 1138
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@1149",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@1152",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1149
+        "line": 1152
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1191",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1194",
       "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@41",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1191
+        "line": 1194
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@1211",
+      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@1214",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1211
+        "line": 1214
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1232",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1235",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1232
+        "line": 1235
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1256",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1259",
       "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@41",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1256
+        "line": 1259
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1263",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1266",
       "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@41",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1263
+        "line": 1266
       }
     },
     {
@@ -55745,17 +55956,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1279
+        "line": 1282
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1290",
+      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1293",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1290
+        "line": 1293
       }
     },
     {
@@ -55765,7 +55976,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1295
+        "line": 1298
       }
     },
     {
@@ -55775,17 +55986,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1301
+        "line": 1304
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1321",
+      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1324",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1321
+        "line": 1324
       }
     },
     {
@@ -55795,7 +56006,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1324
+        "line": 1327
       }
     },
     {
@@ -55990,7 +56201,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56000,7 +56211,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@129",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56059,133 +56270,243 @@
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:endpointPath@105",
+      "target": "backend/scripts/graphSource.js#Function:branchPrefix@116",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 119
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
+      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 155
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 166
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:collectFiles@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 137
+        "line": 187
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:groupFor@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 144
+        "line": 194
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:resolveRelative@81",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 174
+        "line": 224
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
-      "target": "backend/scripts/graphSource.js#Function:addLink@153",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:addLink@203",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 175
+        "line": 225
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:sourceLocation@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 175
+        "line": 225
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:packageName@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 177
+        "line": 227
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:visit@37",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 189
+        "line": 239
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:symbolDefinition@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 190
+        "line": 240
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "target": "backend/scripts/graphSource.js#Function:groupFor@9",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 276
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "target": "backend/scripts/graphSource.js#Function:addLink@203",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 279
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "target": "backend/scripts/graphSource.js#Function:sourceLocation@48",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 279
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 286
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 293
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 294
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 296
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:calleeName@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 249
+        "line": 328
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
-      "target": "backend/scripts/graphSource.js#Function:resolveCall@206",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:resolveCall@256",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 250
+        "line": 329
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "target": "backend/scripts/graphSource.js#Function:endpointPath@105",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 269
+        "line": 344
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
-      "target": "backend/scripts/graphSource.js#Function:requestMethod@122",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:requestMethod@172",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 271
+        "line": 346
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
-      "target": "backend/scripts/graphSource.js#Function:normalizePath@294",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:normalizePath@369",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 299
+        "line": 374
       }
     },
     {
@@ -56475,7 +56796,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 125
+        "line": 137
       }
     },
     {
@@ -56485,7 +56806,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 134
+        "line": 146
       }
     },
     {
@@ -56495,17 +56816,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 138
+        "line": 150
       }
     },
     {
-      "source": "backend/server.js#Method:origin@146",
+      "source": "backend/server.js#Method:origin@158",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 147
+        "line": 159
       }
     },
     {
@@ -56515,47 +56836,47 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 154
+        "line": 166
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@198",
+      "source": "backend/server.js#Method:wss.verifyClient@210",
       "target": "backend/security.js#Function:isSecureTransportRequest@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 199
+        "line": 211
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@198",
+      "source": "backend/server.js#Method:wss.verifyClient@210",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 203
+        "line": 215
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@198",
+      "source": "backend/server.js#Method:wss.verifyClient@210",
       "target": "backend/sessionAuth.js#Function:readSessionToken@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 212
+        "line": 224
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@198",
+      "source": "backend/server.js#Method:wss.verifyClient@210",
       "target": "backend/auth.js#Function:verifySessionToken@600",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 213
+        "line": 225
       }
     },
     {
@@ -56565,7 +56886,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 223
+        "line": 235
       }
     },
     {
@@ -56575,17 +56896,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 234
+        "line": 246
       }
     },
     {
-      "source": "backend/server.js#Function:projectAccess@236",
+      "source": "backend/server.js#Function:projectAccess@248",
       "target": "backend/auth.js#Function:getProjectRole@372",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 244
+        "line": 256
       }
     },
     {
@@ -56595,7 +56916,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 271
+        "line": 283
       }
     },
     {
@@ -56605,7 +56926,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 275
+        "line": 287
       }
     },
     {
@@ -56615,7 +56936,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 285
+        "line": 297
       }
     },
     {
@@ -56625,7 +56946,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 307
+        "line": 319
       }
     },
     {
@@ -56635,72 +56956,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 308
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/db.js#Function:initializeDatabase@37",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 312
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 313
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 314
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 316
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
         "line": 320
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 322
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@24",
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/db.js#Function:initializeDatabase@37",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56709,18 +56970,58 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@310",
-      "target": "backend/db.js#Function:closeDatabase@58",
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 330
+        "line": 325
       }
     },
     {
-      "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@310",
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 326
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 328
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 332
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 334
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56729,53 +57030,73 @@
       }
     },
     {
-      "source": "backend/server.js#Function:runEvidenceCompaction@340",
+      "source": "backend/server.js#Function:startServer@322",
+      "target": "backend/db.js#Function:closeDatabase@58",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 342
+      }
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/server.js#Function:startServer@322",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 348
+      }
+    },
+    {
+      "source": "backend/server.js#Function:runEvidenceCompaction@352",
       "target": "backend/observability.js#Function:compactStaleEvidencePayloads@242",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 343
+        "line": 355
       }
     },
     {
-      "source": "backend/server.js#Function:runEvidenceCompaction@340",
+      "source": "backend/server.js#Function:runEvidenceCompaction@352",
       "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 345
+        "line": 357
       }
     },
     {
-      "source": "backend/server.js#Method:result.checkpointDatabase@385",
+      "source": "backend/server.js#Method:result.checkpointDatabase@397",
       "target": "backend/db.js#Function:checkpointWAL@710",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 385
+        "line": 397
       }
     },
     {
-      "source": "backend/server.js#Function:handleGracefulShutdown@374",
+      "source": "backend/server.js#Function:handleGracefulShutdown@386",
       "target": "env:SHUTDOWN_TIMEOUT_MS",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 387
+        "line": 399
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@374",
+      "target": "backend/server.js#Function:handleGracefulShutdown@386",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 397
+        "line": 409
       }
     },
     {
@@ -56860,27 +57181,37 @@
     },
     {
       "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@133",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 502
+        "line": 466
       }
     },
     {
       "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@133",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 503
+        "line": 467
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 486
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
+      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@45",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56889,213 +57220,203 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
-      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@45",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 558
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 559
+        "line": 523
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 636
+        "line": 600
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 641
+        "line": 605
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 652
+        "line": 616
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@714",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@678",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 792
+        "line": 756
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@733",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@697",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 794
+        "line": 758
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@809",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@714",
+      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@773",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@678",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 823
+        "line": 787
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@809",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@733",
+      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@773",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@697",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 825
+        "line": 789
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
-      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@809",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
+      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@773",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 840
+        "line": 804
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 934
+        "line": 898
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 935
+        "line": 899
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 959
+        "line": 923
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@45",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 990
+        "line": 954
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 991
+        "line": 955
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 996
+        "line": 960
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1028
+        "line": 992
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1029
+        "line": 993
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1066
+        "line": 1030
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1075
+        "line": 1039
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1107
+        "line": 1071
       }
     },
     {
@@ -58620,22 +58941,22 @@
     },
     {
       "source": "backend/tests/test_graphify.js",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@135",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 19
+        "line": 20
       }
     },
     {
       "source": "backend/tests/test_graphify.js",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@129",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 30
+        "line": 31
       }
     },
     {
@@ -58645,7 +58966,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 79
+        "line": 100
       }
     },
     {
@@ -58655,7 +58976,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 82
+        "line": 103
       }
     },
     {
@@ -58665,7 +58986,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 84
+        "line": 105
       }
     },
     {
@@ -58675,7 +58996,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 81
+        "line": 96
       }
     },
     {
@@ -58685,7 +59006,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 82
+        "line": 97
       }
     },
     {
@@ -58695,7 +59016,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 83
+        "line": 98
       }
     },
     {
@@ -58705,7 +59026,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 85
+        "line": 100
       }
     },
     {
@@ -58715,7 +59036,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 105
+        "line": 128
       }
     },
     {
@@ -58725,7 +59046,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 125
+        "line": 149
       }
     },
     {
@@ -64605,7 +64926,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 405
+        "line": 406
       }
     },
     {
@@ -64680,7 +65001,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@933",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@897",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -64690,7 +65011,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1027",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -64700,7 +65021,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@517",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@481",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -64730,7 +65051,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@631",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@595",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67780,22 +68101,12 @@
     },
     {
       "source": "backend/verification/verificationCli.js#Function:verifyArtifactAndProject@12",
-      "target": "backend/verification/devVerificationRunner.js",
-      "label": "dynamic_imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/verification/verificationCli.js",
-        "line": 52
-      }
-    },
-    {
-      "source": "backend/verification/verificationCli.js#Function:verifyArtifactAndProject@12",
       "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 68
+        "line": 50
       }
     },
     {
@@ -67805,7 +68116,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 73
+        "line": 55
       }
     },
     {
@@ -67815,7 +68126,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 119
+        "line": 101
       }
     },
     {
@@ -67825,7 +68136,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 136
+        "line": 118
       }
     },
     {
@@ -67835,7 +68146,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 136
+        "line": 118
       }
     },
     {
@@ -67845,7 +68156,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 152
+        "line": 134
       }
     },
     {
@@ -67855,7 +68166,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 156
+        "line": 138
       }
     },
     {
@@ -67865,7 +68176,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/verificationCli.js",
-        "line": 162
+        "line": 144
       }
     },
     {
@@ -68960,6 +69271,26 @@
     },
     {
       "source": "execution/server.js#Function:createWorkerServer@9",
+      "target": "execution/server.js#route:GET /readyz@96",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/server.js",
+        "line": 96
+      }
+    },
+    {
+      "source": "execution/server.js#Function:createWorkerServer@9",
+      "target": "execution/server.js#route:POST /v1/jobs@124",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/server.js",
+        "line": 124
+      }
+    },
+    {
+      "source": "execution/server.js#Function:createWorkerServer@9",
       "target": "execution/protocol.js#Function:validateJob@14",
       "label": "calls",
       "provenance": "ast",
@@ -68986,6 +69317,26 @@
       "location": {
         "file": "execution/server.js",
         "line": 188
+      }
+    },
+    {
+      "source": "execution/server.js#Function:createWorkerServer@9",
+      "target": "execution/server.js#route:GET /v1/jobs/:jobId@196",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/server.js",
+        "line": 196
+      }
+    },
+    {
+      "source": "execution/server.js#Function:createWorkerServer@9",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@213",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/server.js",
+        "line": 213
       }
     },
     {
@@ -69095,7 +69446,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 95
+        "line": 100
       }
     },
     {
@@ -69105,7 +69456,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 127
+        "line": 132
       }
     },
     {
@@ -69115,7 +69466,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 157
+        "line": 162
       }
     },
     {
@@ -70000,7 +70351,7 @@
     },
     {
       "source": "frontend/src/services/api.js#Method:createApiClient.getVerificationRuns@234",
-      "target": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs:value@240",
+      "target": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs@240",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -71079,6 +71430,18 @@
       }
     },
     {
+      "source": "backend/executionClient.js#request:POST /v1/jobs@34",
+      "target": "execution/server.js#route:POST /v1/jobs@124",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
+      "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@39",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@213",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
       "source": "frontend/src/services/api.js#request:POST /login@211",
       "target": "backend/routes/authRoutes.js#route:POST /login@20",
       "label": "requests_route",
@@ -71104,7 +71467,7 @@
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id@221",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id@358",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id@361",
       "label": "requests_route",
       "provenance": "inferred"
     },
@@ -71116,37 +71479,43 @@
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/files@230",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@366",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@369",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/logs@231",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@434",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@437",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
+      "source": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs@240",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs@787",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs/:runId@243",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@863",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId@866",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/verification-runs/:runId/checks/:checkId/log@245",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@887",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-runs/:runId/checks/:checkId/log@890",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/verification-summary@248",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@742",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@745",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/rebuild-preview@251",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1031",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/rebuild-preview@1034",
       "label": "requests_route",
       "provenance": "inferred"
     },
@@ -71158,37 +71527,37 @@
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/chat@275",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@457",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@460",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/approve@282",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@573",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@576",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/pause@287",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1232",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1235",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/resume@293",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@1149",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@1152",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:PATCH /projects/:id@299",
-      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1290",
+      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1293",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:DELETE /projects/:id@306",
-      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1321",
+      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1324",
       "label": "requests_route",
       "provenance": "inferred"
     }

@@ -107,16 +107,66 @@ function endpointPath(node) {
   if (node?.type !== 'TemplateLiteral') return null;
   let value = '';
   for (let index = 0; index < node.quasis.length; index++) {
-    value += node.quasis[index].value.cooked;
+    const quasi = node.quasis[index].value.cooked || '';
+    const queryIndex = quasi.indexOf('?');
+    value += queryIndex >= 0 ? quasi.slice(0, queryIndex) : quasi;
+    if (queryIndex >= 0) return value;
     if (index < node.expressions.length) {
       const expression = node.expressions[index];
+      const branchPrefix = branch => branch?.type === 'StringLiteral' ? branch.value
+        : branch?.type === 'TemplateLiteral' ? branch.quasis[0]?.value?.cooked || '' : null;
+      const beginsQuery = expression.type === 'ConditionalExpression'
+        ? [expression.consequent, expression.alternate].some(branch => branchPrefix(branch)?.startsWith('?'))
+        : branchPrefix(expression)?.startsWith('?');
+      if (beginsQuery) return value;
       const name = expression.type === 'Identifier' ? expression.name
         : expression.type === 'CallExpression' && expression.arguments[0]?.type === 'Identifier'
           ? expression.arguments[0].name : 'value';
       value += `:${name}`;
     }
   }
-  return value.split('?')[0];
+  return value;
+}
+
+function memberPath(node) {
+  if (node?.type !== 'MemberExpression' || node.computed
+    || node.object?.type !== 'Identifier' || node.property?.type !== 'Identifier') return null;
+  return `${node.object.name}.${node.property.name}`;
+}
+
+function literalComparison(node) {
+  if (node?.type !== 'BinaryExpression' || !['===', '=='].includes(node.operator)) return null;
+  const leftPath = memberPath(node.left);
+  const rightPath = memberPath(node.right);
+  if (leftPath && node.right?.type === 'StringLiteral') return { path: leftPath, value: node.right.value };
+  if (rightPath && node.left?.type === 'StringLiteral') return { path: rightPath, value: node.left.value };
+  return null;
+}
+
+function conjunctionTerms(node) {
+  if (node?.type === 'LogicalExpression' && node.operator === '&&') {
+    return [...conjunctionTerms(node.left), ...conjunctionTerms(node.right)];
+  }
+  return [node];
+}
+
+function rawHttpRouteCondition(node) {
+  if (node?.type !== 'LogicalExpression' || node.operator !== '&&') return null;
+  const comparisons = conjunctionTerms(node).map(literalComparison).filter(Boolean);
+  const method = comparisons.find(item => item.path === 'req.method')?.value;
+  const routePath = comparisons.find(item => item.path === 'url.pathname')?.value;
+  if (!method || !routePath || !/^[A-Z]+$/.test(method) || !routePath.startsWith('/')) return null;
+  return { method, path: routePath };
+}
+
+function jobPathMatchBinding(node) {
+  if (node?.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier'
+    || node.init?.type !== 'CallExpression' || node.init.callee?.type !== 'MemberExpression'
+    || node.init.callee.computed || node.init.callee.property?.name !== 'match'
+    || memberPath(node.init.callee.object) !== 'url.pathname'
+    || node.init.arguments[0]?.type !== 'RegExpLiteral') return null;
+  const pattern = node.init.arguments[0].pattern.replaceAll('\\/', '/');
+  return pattern === '^/v1/jobs/([^/]+)$' ? node.id.name : null;
 }
 
 function requestMethod(node) {
@@ -216,9 +266,41 @@ export async function buildSourceGraph(root) {
     matches = (symbolsByFile.get(binding.file) || []).filter(symbol => symbol.label === targetName);
     return matches.length === 1 ? matches[0].id : null;
   }
+  const routeKeys = new Set();
+  function emitRoute(file, method, routePath, node, caller) {
+    const line = node.loc?.start.line || 1;
+    const key = `${file}\0${method}\0${routePath}\0${line}`;
+    const id = `${file}#route:${method} ${routePath}@${line}`;
+    if (!routeKeys.has(key)) {
+      routeKeys.add(key);
+      nodes.push({ id, label: `${method} ${routePath}`, type: 'HttpRoute', group: groupFor(file), file, line, description: '', val: 1 });
+      routeNodes.push({ id, method, path: routePath, file });
+    }
+    addLink(caller, id, 'registers_route', sourceLocation(file, node));
+    return id;
+  }
   for (const [file, ast] of parsed) {
     const symbols = symbolsByFile.get(file) || [];
+    const jobPathMatchBindings = new Set();
+    visit(ast.program, node => {
+      const binding = jobPathMatchBinding(node);
+      if (binding) jobPathMatchBindings.add(binding);
+    });
     visit(ast.program, (node, ancestors) => {
+      const context = symbols.filter(symbol => symbol.start <= node.start && symbol.end >= node.end)
+        .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
+      const caller = context?.id || file;
+      const rawRoute = rawHttpRouteCondition(node);
+      if (rawRoute) emitRoute(file, rawRoute.method, rawRoute.path, node, caller);
+      if (node.type === 'IfStatement') {
+        const methodComparison = literalComparison(node.test);
+        const withinJobPathMatch = ancestors.some(ancestor => ancestor.type === 'IfStatement'
+          && ancestor.test?.type === 'Identifier' && jobPathMatchBindings.has(ancestor.test.name));
+        if (withinJobPathMatch && methodComparison?.path === 'req.method'
+          && /^[A-Z]+$/.test(methodComparison.value)) {
+          emitRoute(file, methodComparison.value, '/v1/jobs/:jobId', node, caller);
+        }
+      }
       const isEnvMember = ['MemberExpression', 'OptionalMemberExpression'].includes(node.type)
         && ['MemberExpression', 'OptionalMemberExpression'].includes(node.object?.type)
         && node.object.object?.type === 'Identifier' && node.object.object.name === 'process'
@@ -238,9 +320,6 @@ export async function buildSourceGraph(root) {
         }
       }
       if (node.type !== 'CallExpression' && node.type !== 'OptionalCallExpression') return;
-      const context = symbols.filter(symbol => symbol.start <= node.start && symbol.end >= node.end)
-        .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0];
-      const caller = context?.id || file;
       if (node.callee?.type === 'Import' && node.arguments[0]?.type === 'StringLiteral') {
         const specifier = node.arguments[0].value;
         const importedFile = resolveRelative(file, specifier, files);
@@ -255,11 +334,7 @@ export async function buildSourceGraph(root) {
         && node.arguments[0]?.type === 'StringLiteral') {
         const method = node.callee.property.name.toUpperCase();
         const routePath = node.arguments[0].value;
-        const line = node.loc?.start.line || 1;
-        const id = `${file}#route:${method} ${routePath}@${line}`;
-        nodes.push({ id, label: `${method} ${routePath}`, type: 'HttpRoute', group: groupFor(file), file, line, description: '', val: 1 });
-        routeNodes.push({ id, method, path: routePath, file });
-        addLink(caller, id, 'registers_route', sourceLocation(file, node));
+        const id = emitRoute(file, method, routePath, node, caller);
         for (const argument of node.arguments.slice(1)) {
           const handler = resolveCall(file, calleeName(argument), context);
           if (handler) addLink(id, handler, 'handles', sourceLocation(file, argument));
