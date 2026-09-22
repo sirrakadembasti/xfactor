@@ -1410,24 +1410,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     archiveBase64: verifyIdentity.archiveBase64,
                     signal: abortController.signal,
                     files,
-                    contract,
-                    allowDevFallback: true
+                    contract
                 }
             });
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
-            }
-            if (completion.fallbackUsed) {
-                logWarning('workflow.dev_fallback_used', null, { projectId, attemptId });
-                await workflowLogEvent(
-                    wsHub,
-                    projectId,
-                    "Verifier",
-                    "dev_fallback",
-                    "Docker/Sandbox unavailable",
-                    "Docker ortamı erişilemediği için yerel geliştirme doğrulayıcısı (Plan 2) çalıştırıldı ve tüm kalite kapıları başarıyla doğrulandı.",
-                    "verifier"
-                );
             }
             await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
             try {

@@ -9,7 +9,7 @@ process.env.DB_PATH = isolated.dbPath;
 process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
-const { createProject, getProject, assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
+const { createProject, getProject } = await import('../projectRepository.js');
 const { verifyArtifactAndProject } = await import('../verification/verificationCli.js');
 const { PROJECT_STATUS } = await import('../engine/stateMachine.js');
 
@@ -45,41 +45,22 @@ const failingVerificationRunner = async () => {
 };
 
 const runId = `run-${Date.now()}`;
-const completion = await verifyArtifactAndProject({
-    projectId: project.id,
-    contractId,
-    artifactId,
-    expectedRevision: 1,
-    complete: true,
-    verificationRunner: failingVerificationRunner,
-    options: {
-        runId,
-        allowDevFallback: true,
-        files: [
-            { path: 'package.json', content: '{"name":"app","scripts":{"test":"echo ok"}}' },
-            { path: 'package-lock.json', content: '{}' },
-            { path: 'service-manifest.json', content: '{"services":{"web":{"port":3000}}}' },
-            { path: 'prisma/schema.prisma', content: 'model User { id Int @id }' }
-        ],
-        contract: { domains: [{ name: 'web' }] }
-    }
-});
-
-assert.strictEqual(completion.passed, true, 'Completion passed should be true');
-assert.strictEqual(completion.completed, true, 'Completion completed should be true');
-assert.strictEqual(completion.fallbackUsed, true, 'Fallback should be marked as used');
-
-const updatedProject = getProject(project.id);
-assert.strictEqual(updatedProject.status, PROJECT_STATUS.COMPLETED, 'Project should be in COMPLETED state');
-
-const evidence = assertVerifiedArtifactEvidence({
-    projectId: project.id,
-    contractId,
-    artifactId,
-    strict: true
-});
-assert.strictEqual(evidence.artifact.status, 'verified');
-console.log('[PASS] Case 1: Docker connection error gracefully fell back and completed.');
+await assert.rejects(
+    verifyArtifactAndProject({
+        projectId: project.id,
+        contractId,
+        artifactId,
+        expectedRevision: 1,
+        complete: true,
+        verificationRunner: failingVerificationRunner,
+        options: { runId, allowDevFallback: true, files: [], contract: {} }
+    }),
+    /Docker daemon is not running/
+);
+assert.strictEqual(db.prepare('SELECT COUNT(*) AS count FROM verification_runs WHERE project_id = ?').get(project.id).count, 0);
+assert.strictEqual(db.prepare('SELECT status FROM artifacts WHERE id = ?').get(artifactId).status, 'built');
+assert.notStrictEqual(getProject(project.id).status, PROJECT_STATUS.COMPLETED);
+console.log('[PASS] Case 1: Worker errors cannot create verification evidence or complete the project.');
 
 // Case 2: Runner completed with passed: false (Plan 1 Docker ran and rejected artifact)
 // Must NEVER fall back to dev verification (Fail-Closed & Plan 1 Priority)
@@ -124,7 +105,6 @@ const rejectingCompletion = await verifyArtifactAndProject({
 
 assert.strictEqual(rejectingCompletion.passed, false, 'Plan 1 failure must NOT be converted to pass');
 assert.strictEqual(rejectingCompletion.completed, false, 'Project must NOT be completed on Plan 1 failure');
-assert.strictEqual(rejectingCompletion.fallbackUsed, false, 'Fallback must NOT have run');
 console.log('[PASS] Case 2: Plan 1 Docker test failure correctly failed without fallback (Fail-Closed).');
 
 console.log('[PASS] test_workflow_dev_fallback passed completely');

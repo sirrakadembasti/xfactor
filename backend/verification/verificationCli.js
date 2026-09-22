@@ -42,31 +42,13 @@ export async function verifyArtifactAndProject({
         ...options,
         ...(attemptId !== null || leaseOwner !== null ? { attemptId, leaseOwner } : {})
     };
-    let verification;
-    let fallbackUsed = false;
-    try {
-        verification = await verificationRunner({ projectId, contractId, artifactId }, verificationOptions);
-    } catch (error) {
-        if (options.allowDevFallback === true) {
-            console.warn(`[DEV VERIFICATION FALLBACK] Docker or verification worker unavailable (${error.message}). Executing dev fallback verifier (Plan 2)...`);
-            const { verifyArtifactDevFallback } = await import('./devVerificationRunner.js');
-            verification = await verifyArtifactDevFallback({
-                projectId,
-                contractId,
-                artifactId,
-                runId: options.runId,
-                files: options.files || [],
-                contract: options.contract || {},
-                options
-            });
-            fallbackUsed = true;
-        } else {
-            throw error;
-        }
-    }
+    const verification = await verificationRunner(
+        { projectId, contractId, artifactId },
+        verificationOptions
+    );
 
     const artifact = getArtifact({ projectId, contractId, artifactId });
-    const receipt = { runId: verification?.runId, contractId, artifactId, fallbackUsed };
+    const receipt = { runId: verification?.runId, contractId, artifactId };
     db.exec('BEGIN IMMEDIATE');
     try {
         if (attemptId !== null || leaseOwner !== null) {
