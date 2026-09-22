@@ -77,8 +77,13 @@ test('Job Boundary API', async (t) => {
     };
   };
 
-  await t.test('no token denied / client empty token rejects', async () => {
-    assert.throws(() => createExecutionClient({ EXECUTION_WORKER_URL: config.EXECUTION_WORKER_URL }), /EXECUTION_WORKER_TOKEN/);
+  await t.test('no token denied / production client empty token rejects', async () => {
+    const devClient = createExecutionClient({ EXECUTION_WORKER_URL: config.EXECUTION_WORKER_URL });
+    await assert.rejects(devClient.getCapabilities(), /Worker error \(401\)/);
+    assert.throws(
+      () => createExecutionClient({ production: true, EXECUTION_WORKER_URL: config.EXECUTION_WORKER_URL }),
+      /EXECUTION_WORKER_TOKEN/
+    );
     
     const res = await new Promise((resolve) => {
       http.request(`http://127.0.0.1:${port}/readyz`, { method: 'GET' }, (res) => resolve(res.statusCode)).end();
