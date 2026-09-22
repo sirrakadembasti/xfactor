@@ -395,11 +395,12 @@ await runAsyncTest('delete remains message-free and does not create action-keyed
         0
     );
 });
-await runAsyncTest('sync denies unauthorized active project audit and failed sync remains message-free', async () => {
+await runAsyncTest('sync rejects non-admin users and failed admin sync remains message-free', async () => {
     const project = await createProject({ title: 'Unauthorized Sync Route' });
     testUser = { id: 'not-a-member', isAdmin: false };
     const unauthorized = await postSync({ activeProjectId: project.id, actionId: 'unauthorized-sync-action' });
-    assert.strictEqual(unauthorized.status, 200, JSON.stringify(unauthorized.body));
+    assert.strictEqual(unauthorized.status, 403, JSON.stringify(unauthorized.body));
+    assert.match(unauthorized.body.error, /yönetici/i);
     testUser = { id: 'action-audit-owner', isAdmin: true };
 
     const previousRoot = process.env.PROJECTS_ROOT;

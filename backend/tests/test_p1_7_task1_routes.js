@@ -23,7 +23,7 @@ try {
     app.use(express.json());
 
     const requireAuth = (req, res, next) => {
-        req.user = { id: 'test-user-1', isAdmin: true };
+        req.user = { id: 'test-user-1', isAdmin: req.get('x-test-admin') === 'true' };
         next();
     };
 
@@ -44,7 +44,7 @@ try {
 
             db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Missing On Disk', 'planning')").run(proj2Id);
 
-            const res = await fetch(`${baseUrl}/api/projects`);
+            const res = await fetch(`${baseUrl}/api/projects`, { headers: { 'x-test-admin': 'true' } });
             assert.strictEqual(res.status, 200);
             const data = await res.json();
 
@@ -59,7 +59,24 @@ try {
             assert.strictEqual(p2.missingOnDisk, true);
         });
 
-        await runAsyncTest('2. POST /api/projects/sync triggers disk reconciliation and auto-registration', async () => {
+        await runAsyncTest('2. POST /api/projects/sync rejects non-admin users before reconciliation', async () => {
+            const root = getProjectsRoot(process.env);
+            const discoveredId = `proj-non-admin-${Date.now()}`;
+            const discoveredDir = path.join(root, discoveredId);
+            await fs.mkdir(discoveredDir, { recursive: true });
+            await fs.writeFile(path.join(discoveredDir, 'package.json'), JSON.stringify({ name: 'Must Not Be Registered' }));
+
+            try {
+                const res = await fetch(`${baseUrl}/api/projects/sync`, { method: 'POST' });
+                assert.strictEqual(res.status, 403);
+                assert.match((await res.json()).error, /yönetici/i);
+                assert.strictEqual(db.prepare('SELECT id FROM projects WHERE id = ?').get(discoveredId), undefined);
+            } finally {
+                await fs.rm(discoveredDir, { recursive: true, force: true }).catch(() => {});
+            }
+        });
+
+        await runAsyncTest('3. POST /api/projects/sync triggers disk reconciliation and auto-registration for administrators', async () => {
             const root = getProjectsRoot(process.env);
             const discoveredId = `proj-discovered-${Date.now()}`;
             const discoveredDir = path.join(root, discoveredId);
@@ -67,13 +84,16 @@ try {
             await fs.writeFile(path.join(discoveredDir, 'package.json'), JSON.stringify({ name: 'Discovered Via Endpoint' }));
 
             try {
-                const res = await fetch(`${baseUrl}/api/projects/sync`, { method: 'POST' });
+                const res = await fetch(`${baseUrl}/api/projects/sync`, {
+                    method: 'POST',
+                    headers: { 'x-test-admin': 'true' }
+                });
                 assert.strictEqual(res.status, 200);
                 const syncData = await res.json();
                 assert.strictEqual(syncData.success, true);
                 assert.ok(syncData.autoRegistered.some(p => p.id === discoveredId));
 
-                const listRes = await fetch(`${baseUrl}/api/projects`);
+                const listRes = await fetch(`${baseUrl}/api/projects`, { headers: { 'x-test-admin': 'true' } });
                 const listData = await listRes.json();
                 const found = listData.find(p => p.id === discoveredId);
                 assert.ok(found);

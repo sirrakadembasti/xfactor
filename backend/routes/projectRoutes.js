@@ -327,6 +327,9 @@ export function createProjectRouter({
     });
     // 3. Proje Senkronizasyonu (Disk ile İki Yönlü Reconcile & Auto-register)
     router.post('/sync', requireAuth, async (req, res, next) => {
+        if (req.user?.isAdmin !== true) {
+            return res.status(403).json({ error: 'Bu işlem yalnızca yöneticiler tarafından yapılabilir.' });
+        }
         try {
             const actionId = getActionId(req);
             const syncResult = await syncProjectsWithDisk({ autoRegister: true, env: process.env });
