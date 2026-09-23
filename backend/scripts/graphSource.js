@@ -119,9 +119,10 @@ function endpointPath(node) {
         ? [expression.consequent, expression.alternate].some(branch => branchPrefix(branch)?.startsWith('?'))
         : branchPrefix(expression)?.startsWith('?');
       if (beginsQuery) return value;
-      const name = expression.type === 'Identifier' ? expression.name
-        : expression.type === 'CallExpression' && expression.arguments[0]?.type === 'Identifier'
-          ? expression.arguments[0].name : 'value';
+      const parameter = expression.type === 'CallExpression' ? expression.arguments[0] : expression;
+      const name = parameter?.type === 'Identifier' ? parameter.name
+        : parameter?.type === 'MemberExpression' && !parameter.computed
+          && parameter.property?.type === 'Identifier' ? parameter.property.name : 'value';
       value += `:${name}`;
     }
   }
@@ -347,7 +348,7 @@ export async function buildSourceGraph(root) {
           const line = node.loc?.start.line || 1;
           const id = `${file}#request:${method} ${requestPath}@${line}`;
           nodes.push({ id, label: `${method} ${requestPath}`, type: 'HttpRequest', group: groupFor(file), file, line, description: '', val: 1 });
-          requestNodes.push({ id, method, path: requestPath });
+          requestNodes.push({ id, method, path: requestPath, file });
           addLink(caller, id, 'sends_request', sourceLocation(file, node));
         }
       }
@@ -367,16 +368,25 @@ export async function buildSourceGraph(root) {
     });
   }
   const normalizePath = value => (value.replace(/\/+/g, '/').replace(/\/$/, '') || '/');
+  const routeShape = value => normalizePath(value).replace(/:[^/]+/g, ':param');
+  const serviceHint = file => path.posix.basename(file, path.posix.extname(file))
+    .match(/^(.+)Client$/)?.[1]?.toLowerCase() || null;
   for (const request of requestNodes) {
-    const matches = routeNodes.filter(route => {
+    let matches = routeNodes.filter(route => {
       if (route.method !== request.method) return false;
       const mounts = mountsByFile.get(route.file);
-      if (!mounts) return normalizePath(route.path) === normalizePath(request.path);
+      if (!mounts) return routeShape(route.path) === routeShape(request.path);
       return [...mounts].some(mount => {
         const prefix = mount.replace(/^\/api(?=\/|$)/, '').replace(/\/$/, '');
-        return normalizePath(prefix + route.path) === normalizePath(request.path);
+        return routeShape(prefix + route.path) === routeShape(request.path);
       });
     });
+    if (matches.length > 1) {
+      const hintedService = serviceHint(request.file);
+      const serviceMatches = hintedService
+        ? matches.filter(route => route.file.startsWith(`${hintedService}/`)) : [];
+      if (serviceMatches.length === 1) matches = serviceMatches;
+    }
     if (matches.length === 1) addLink(request.id, matches[0].id, 'requests_route');
   }
   return { nodes, links };

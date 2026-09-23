@@ -1267,7 +1267,7 @@
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 14.5,
+      "val": 15.5,
       "provenance": "ast"
     },
     {
@@ -7612,12 +7612,12 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "",
-      "val": 9.5,
+      "val": 10,
       "provenance": "ast",
       "line": 127
     },
     {
-      "id": "backend/projectRepository.js#Function:getAllProjects@216",
+      "id": "backend/projectRepository.js#Function:getAllProjects@226",
       "label": "getAllProjects",
       "type": "Function",
       "group": "backend",
@@ -7625,10 +7625,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 216
+      "line": 226
     },
     {
-      "id": "backend/projectRepository.js#Function:updateProject@228",
+      "id": "backend/projectRepository.js#Function:updateProject@238",
       "label": "updateProject",
       "type": "Function",
       "group": "backend",
@@ -7636,10 +7636,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 228
+      "line": 238
     },
     {
-      "id": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "id": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "label": "projectStateTransitionInTransaction",
       "type": "Function",
       "group": "backend",
@@ -7647,10 +7647,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 247
+      "line": 257
     },
     {
-      "id": "backend/projectRepository.js#Function:parseEvidence@326",
+      "id": "backend/projectRepository.js#Function:parseEvidence@336",
       "label": "parseEvidence",
       "type": "Function",
       "group": "backend",
@@ -7658,10 +7658,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 326
+      "line": 336
     },
     {
-      "id": "backend/projectRepository.js#Function:isIsoTimestamp@331",
+      "id": "backend/projectRepository.js#Function:isIsoTimestamp@341",
       "label": "isIsoTimestamp",
       "type": "Function",
       "group": "backend",
@@ -7669,10 +7669,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 331
+      "line": 341
     },
     {
-      "id": "backend/projectRepository.js#Function:leaseOptionsFrom@346",
+      "id": "backend/projectRepository.js#Function:leaseOptionsFrom@356",
       "label": "leaseOptionsFrom",
       "type": "Function",
       "group": "backend",
@@ -7680,10 +7680,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 346
+      "line": 356
     },
     {
-      "id": "backend/projectRepository.js#Function:assertMutationLease@352",
+      "id": "backend/projectRepository.js#Function:assertMutationLease@362",
       "label": "assertMutationLease",
       "type": "Function",
       "group": "backend",
@@ -7691,21 +7691,21 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 352
+      "line": 362
     },
     {
-      "id": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
+      "id": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
       "label": "assertVerifiedArtifactEvidence",
       "type": "Function",
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
-      "line": 367
+      "line": 377
     },
     {
-      "id": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "id": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "label": "completeVerifiedProject",
       "type": "Function",
       "group": "backend",
@@ -7713,10 +7713,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 448
+      "line": 458
     },
     {
-      "id": "backend/projectRepository.js#Function:appendProjectChatMessage@513",
+      "id": "backend/projectRepository.js#Function:appendProjectChatMessage@523",
       "label": "appendProjectChatMessage",
       "type": "Function",
       "group": "backend",
@@ -7724,10 +7724,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 513
+      "line": 523
     },
     {
-      "id": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "id": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "label": "appendProjectActionMessages",
       "type": "Function",
       "group": "backend",
@@ -7735,10 +7735,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 527
+      "line": 537
     },
     {
-      "id": "backend/projectRepository.js#Function:toMessage@543",
+      "id": "backend/projectRepository.js#Function:toMessage@553",
       "label": "toMessage",
       "type": "Function",
       "group": "backend",
@@ -7746,10 +7746,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 543
+      "line": 553
     },
     {
-      "id": "backend/projectRepository.js#Function:findMessages@549",
+      "id": "backend/projectRepository.js#Function:findMessages@559",
       "label": "findMessages",
       "type": "Function",
       "group": "backend",
@@ -7757,10 +7757,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 549
+      "line": 559
     },
     {
-      "id": "backend/projectRepository.js#Function:saveProjectState@593",
+      "id": "backend/projectRepository.js#Function:saveProjectState@603",
       "label": "saveProjectState",
       "type": "Function",
       "group": "backend",
@@ -7768,10 +7768,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 593
+      "line": 603
     },
     {
-      "id": "backend/projectRepository.js#Function:parseDeleteOptions@720",
+      "id": "backend/projectRepository.js#Function:parseDeleteOptions@730",
       "label": "parseDeleteOptions",
       "type": "Function",
       "group": "backend",
@@ -7779,10 +7779,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 720
+      "line": 730
     },
     {
-      "id": "backend/projectRepository.js#Function:lockReceiptError@745",
+      "id": "backend/projectRepository.js#Function:lockReceiptError@755",
       "label": "lockReceiptError",
       "type": "Function",
       "group": "backend",
@@ -7790,10 +7790,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 745
+      "line": 755
     },
     {
-      "id": "backend/projectRepository.js#Function:trashRootFor@751",
+      "id": "backend/projectRepository.js#Function:trashRootFor@761",
       "label": "trashRootFor",
       "type": "Function",
       "group": "backend",
@@ -7801,10 +7801,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 751
+      "line": 761
     },
     {
-      "id": "backend/projectRepository.js#Function:updateIntent@767",
+      "id": "backend/projectRepository.js#Function:updateIntent@777",
       "label": "updateIntent",
       "type": "Function",
       "group": "backend",
@@ -7812,10 +7812,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 767
+      "line": 777
     },
     {
-      "id": "backend/projectRepository.js#Function:movePath@773",
+      "id": "backend/projectRepository.js#Function:movePath@783",
       "label": "movePath",
       "type": "Function",
       "group": "backend",
@@ -7823,10 +7823,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 773
+      "line": 783
     },
     {
-      "id": "backend/projectRepository.js#Function:restoreIntentSource@789",
+      "id": "backend/projectRepository.js#Function:restoreIntentSource@799",
       "label": "restoreIntentSource",
       "type": "Function",
       "group": "backend",
@@ -7834,10 +7834,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 789
+      "line": 799
     },
     {
-      "id": "backend/projectRepository.js#Function:removeOwnedTrash@795",
+      "id": "backend/projectRepository.js#Function:removeOwnedTrash@805",
       "label": "removeOwnedTrash",
       "type": "Function",
       "group": "backend",
@@ -7845,10 +7845,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 795
+      "line": 805
     },
     {
-      "id": "backend/projectRepository.js#Function:finalizeDeletion@801",
+      "id": "backend/projectRepository.js#Function:finalizeDeletion@811",
       "label": "finalizeDeletion",
       "type": "Function",
       "group": "backend",
@@ -7856,10 +7856,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 801
+      "line": 811
     },
     {
-      "id": "backend/projectRepository.js#Function:deleteProject@862",
+      "id": "backend/projectRepository.js#Function:deleteProject@872",
       "label": "deleteProject",
       "type": "Function",
       "group": "backend",
@@ -7867,10 +7867,10 @@
       "description": "",
       "val": 7.5,
       "provenance": "ast",
-      "line": 862
+      "line": 872
     },
     {
-      "id": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
+      "id": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
       "label": "recoverPendingProjectDeletions",
       "type": "Function",
       "group": "backend",
@@ -7878,10 +7878,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 921
+      "line": 931
     },
     {
-      "id": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "id": "backend/projectRepository.js#Function:syncProjectsWithDisk@971",
       "label": "syncProjectsWithDisk",
       "type": "Function",
       "group": "backend",
@@ -7889,7 +7889,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 961
+      "line": 971
     },
     {
       "id": "backend/repositories/artifactRepository.js#Function:withArtifactTransaction@3",
@@ -8563,7 +8563,7 @@
       "line": 116
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "id": "backend/scripts/graphSource.js#Function:memberPath@132",
       "label": "memberPath",
       "type": "Function",
       "group": "backend",
@@ -8571,10 +8571,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 131
+      "line": 132
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "id": "backend/scripts/graphSource.js#Function:literalComparison@138",
       "label": "literalComparison",
       "type": "Function",
       "group": "backend",
@@ -8582,10 +8582,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 137
+      "line": 138
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "id": "backend/scripts/graphSource.js#Function:conjunctionTerms@147",
       "label": "conjunctionTerms",
       "type": "Function",
       "group": "backend",
@@ -8593,10 +8593,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 146
+      "line": 147
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
+      "id": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@154",
       "label": "rawHttpRouteCondition",
       "type": "Function",
       "group": "backend",
@@ -8604,10 +8604,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 153
+      "line": 154
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "id": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@163",
       "label": "jobPathMatchBinding",
       "type": "Function",
       "group": "backend",
@@ -8615,10 +8615,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 162
+      "line": 163
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:requestMethod@172",
+      "id": "backend/scripts/graphSource.js#Function:requestMethod@173",
       "label": "requestMethod",
       "type": "Function",
       "group": "backend",
@@ -8626,10 +8626,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 172
+      "line": 173
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
+      "id": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@180",
       "label": "assertCuratedNodesExist",
       "type": "Function",
       "group": "backend",
@@ -8637,21 +8637,21 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 179
+      "line": 180
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "id": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "label": "buildSourceGraph",
       "type": "Function",
       "group": "backend",
       "file": "backend/scripts/graphSource.js",
       "description": "",
-      "val": 11,
+      "val": 11.5,
       "provenance": "ast",
-      "line": 185
+      "line": 186
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:addLink@203",
+      "id": "backend/scripts/graphSource.js#Function:addLink@204",
       "label": "addLink",
       "type": "Function",
       "group": "backend",
@@ -8659,10 +8659,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 203
+      "line": 204
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:resolveCall@256",
+      "id": "backend/scripts/graphSource.js#Function:resolveCall@257",
       "label": "resolveCall",
       "type": "Function",
       "group": "backend",
@@ -8670,10 +8670,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 256
+      "line": 257
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "id": "backend/scripts/graphSource.js#Function:emitRoute@271",
       "label": "emitRoute",
       "type": "Function",
       "group": "backend",
@@ -8681,10 +8681,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 270
+      "line": 271
     },
     {
-      "id": "backend/scripts/graphSource.js#Function:normalizePath@369",
+      "id": "backend/scripts/graphSource.js#Function:normalizePath@370",
       "label": "normalizePath",
       "type": "Function",
       "group": "backend",
@@ -8692,7 +8692,29 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 369
+      "line": 370
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:routeShape@371",
+      "label": "routeShape",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 371
+    },
+    {
+      "id": "backend/scripts/graphSource.js#Function:serviceHint@372",
+      "label": "serviceHint",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/scripts/graphSource.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 372
     },
     {
       "id": "backend/scripts/graphViews.js#Function:escapeHtml@1",
@@ -9009,7 +9031,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#Method:origin@158",
+      "id": "backend/server.js#Method:origin@160",
       "label": "origin",
       "type": "Method",
       "group": "backend",
@@ -9017,10 +9039,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 158
+      "line": 160
     },
     {
-      "id": "backend/server.js#Method:wss.verifyClient@210",
+      "id": "backend/server.js#Method:wss.verifyClient@212",
       "label": "wss.verifyClient",
       "type": "Method",
       "group": "backend",
@@ -9028,10 +9050,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 210
+      "line": 212
     },
     {
-      "id": "backend/server.js#Function:onSessionRevoked@239",
+      "id": "backend/server.js#Function:onSessionRevoked@241",
       "label": "onSessionRevoked",
       "type": "Function",
       "group": "backend",
@@ -9039,10 +9061,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 239
+      "line": 241
     },
     {
-      "id": "backend/server.js#Function:onUserSessionsRevoked@240",
+      "id": "backend/server.js#Function:onUserSessionsRevoked@242",
       "label": "onUserSessionsRevoked",
       "type": "Function",
       "group": "backend",
@@ -9050,10 +9072,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 240
+      "line": 242
     },
     {
-      "id": "backend/server.js#Function:projectAccess@248",
+      "id": "backend/server.js#Function:projectAccess@250",
       "label": "projectAccess",
       "type": "Function",
       "group": "backend",
@@ -9061,10 +9083,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 248
+      "line": 250
     },
     {
-      "id": "backend/server.js#Function:startServer@322",
+      "id": "backend/server.js#Function:startServer@324",
       "label": "startServer",
       "type": "Function",
       "group": "backend",
@@ -9072,10 +9094,10 @@
       "description": "",
       "val": 6,
       "provenance": "ast",
-      "line": 322
+      "line": 324
     },
     {
-      "id": "backend/server.js#Function:runEvidenceCompaction@352",
+      "id": "backend/server.js#Function:runEvidenceCompaction@354",
       "label": "runEvidenceCompaction",
       "type": "Function",
       "group": "backend",
@@ -9083,10 +9105,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 352
+      "line": 354
     },
     {
-      "id": "backend/server.js#Function:closeWebSockets@367",
+      "id": "backend/server.js#Function:closeWebSockets@369",
       "label": "closeWebSockets",
       "type": "Function",
       "group": "backend",
@@ -9094,10 +9116,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 367
+      "line": 369
     },
     {
-      "id": "backend/server.js#Function:closeHttpServer@377",
+      "id": "backend/server.js#Function:closeHttpServer@379",
       "label": "closeHttpServer",
       "type": "Function",
       "group": "backend",
@@ -9105,10 +9127,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 377
+      "line": 379
     },
     {
-      "id": "backend/server.js#Function:handleGracefulShutdown@386",
+      "id": "backend/server.js#Function:handleGracefulShutdown@388",
       "label": "handleGracefulShutdown",
       "type": "Function",
       "group": "backend",
@@ -9116,10 +9138,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 386
+      "line": 388
     },
     {
-      "id": "backend/server.js#Method:result.checkpointDatabase@397",
+      "id": "backend/server.js#Method:result.checkpointDatabase@399",
       "label": "result.checkpointDatabase",
       "type": "Method",
       "group": "backend",
@@ -9127,7 +9149,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 397
+      "line": 399
     },
     {
       "id": "backend/services/reconciliationService.js#Function:resolveDb@9",
@@ -11929,7 +11951,7 @@
       "line": 70
     },
     {
-      "id": "backend/tests/test_p5_artifact_completion.js#Method:result.verificationRunner@83",
+      "id": "backend/tests/test_p5_artifact_completion.js#Method:result.verificationRunner@116",
       "label": "result.verificationRunner",
       "type": "Method",
       "group": "tests",
@@ -11937,7 +11959,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 83
+      "line": 116
     },
     {
       "id": "backend/tests/test_p5_execution_boundary.js#Method:unavailable.getCapabilities@19",
@@ -19509,13 +19531,13 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/executionClient.js#request:DELETE /v1/jobs/:value@30",
-      "label": "DELETE /v1/jobs/:value",
+      "id": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@30",
+      "label": "DELETE /v1/jobs/:jobId",
       "type": "HttpRequest",
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 30
     },
@@ -19531,13 +19553,13 @@
       "line": 34
     },
     {
-      "id": "backend/executionClient.js#request:GET /v1/jobs/:value@36",
-      "label": "GET /v1/jobs/:value",
+      "id": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
+      "label": "GET /v1/jobs/:jobId",
       "type": "HttpRequest",
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 36
     },
@@ -19548,7 +19570,7 @@
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 39
     },
@@ -20492,7 +20514,7 @@
       "group": "backend",
       "file": "execution/server.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 96
     },
@@ -20514,7 +20536,7 @@
       "group": "backend",
       "file": "execution/server.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 196
     },
@@ -20525,7 +20547,7 @@
       "group": "backend",
       "file": "execution/server.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
       "line": 213
     },
@@ -27911,252 +27933,252 @@
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:getAllProjects@216",
+      "target": "backend/projectRepository.js#Function:getAllProjects@226",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 216
+        "line": 226
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:updateProject@228",
+      "target": "backend/projectRepository.js#Function:updateProject@238",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 228
+        "line": 238
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 247
+        "line": 257
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:parseEvidence@326",
+      "target": "backend/projectRepository.js#Function:parseEvidence@336",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 326
+        "line": 336
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:isIsoTimestamp@331",
+      "target": "backend/projectRepository.js#Function:isIsoTimestamp@341",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 331
+        "line": 341
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:leaseOptionsFrom@346",
+      "target": "backend/projectRepository.js#Function:leaseOptionsFrom@356",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 346
+        "line": 356
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:assertMutationLease@352",
+      "target": "backend/projectRepository.js#Function:assertMutationLease@362",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 352
+        "line": 362
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
+      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 367
+        "line": 377
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "target": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 448
+        "line": 458
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:appendProjectChatMessage@513",
+      "target": "backend/projectRepository.js#Function:appendProjectChatMessage@523",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 513
+        "line": 523
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 527
+        "line": 537
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:toMessage@543",
+      "target": "backend/projectRepository.js#Function:toMessage@553",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 543
+        "line": 553
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:findMessages@549",
+      "target": "backend/projectRepository.js#Function:findMessages@559",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 549
+        "line": 559
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:saveProjectState@593",
+      "target": "backend/projectRepository.js#Function:saveProjectState@603",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 593
+        "line": 603
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:parseDeleteOptions@720",
+      "target": "backend/projectRepository.js#Function:parseDeleteOptions@730",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 720
+        "line": 730
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:lockReceiptError@745",
+      "target": "backend/projectRepository.js#Function:lockReceiptError@755",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 745
+        "line": 755
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:trashRootFor@751",
+      "target": "backend/projectRepository.js#Function:trashRootFor@761",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 751
+        "line": 761
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:updateIntent@767",
+      "target": "backend/projectRepository.js#Function:updateIntent@777",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 767
+        "line": 777
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:movePath@773",
+      "target": "backend/projectRepository.js#Function:movePath@783",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 773
+        "line": 783
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:restoreIntentSource@789",
+      "target": "backend/projectRepository.js#Function:restoreIntentSource@799",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 789
+        "line": 799
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:removeOwnedTrash@795",
+      "target": "backend/projectRepository.js#Function:removeOwnedTrash@805",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 795
+        "line": 805
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:finalizeDeletion@801",
+      "target": "backend/projectRepository.js#Function:finalizeDeletion@811",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 801
+        "line": 811
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:deleteProject@862",
+      "target": "backend/projectRepository.js#Function:deleteProject@872",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 862
+        "line": 872
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
+      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 921
+        "line": 931
       }
     },
     {
       "source": "backend/projectRepository.js",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@971",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 961
+        "line": 971
       }
     },
     {
@@ -29221,122 +29243,142 @@
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@132",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 131
+        "line": 132
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "target": "backend/scripts/graphSource.js#Function:literalComparison@138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 137
+        "line": 138
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@147",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 146
+        "line": 147
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
+      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@154",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 153
+        "line": 154
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@163",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 162
+        "line": 163
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:requestMethod@172",
+      "target": "backend/scripts/graphSource.js#Function:requestMethod@173",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 172
+        "line": 173
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@180",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 179
+        "line": 180
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 185
+        "line": 186
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:addLink@203",
+      "target": "backend/scripts/graphSource.js#Function:addLink@204",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 203
+        "line": 204
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:resolveCall@256",
+      "target": "backend/scripts/graphSource.js#Function:resolveCall@257",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 256
+        "line": 257
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "target": "backend/scripts/graphSource.js#Function:emitRoute@271",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 270
+        "line": 271
       }
     },
     {
       "source": "backend/scripts/graphSource.js",
-      "target": "backend/scripts/graphSource.js#Function:normalizePath@369",
+      "target": "backend/scripts/graphSource.js#Function:normalizePath@370",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 369
+        "line": 370
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:routeShape@371",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 371
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js",
+      "target": "backend/scripts/graphSource.js#Function:serviceHint@372",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 372
       }
     },
     {
@@ -29861,112 +29903,112 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:origin@158",
+      "target": "backend/server.js#Method:origin@160",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 158
+        "line": 160
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:wss.verifyClient@210",
+      "target": "backend/server.js#Method:wss.verifyClient@212",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 210
+        "line": 212
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onSessionRevoked@239",
+      "target": "backend/server.js#Function:onSessionRevoked@241",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 239
+        "line": 241
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onUserSessionsRevoked@240",
+      "target": "backend/server.js#Function:onUserSessionsRevoked@242",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 240
+        "line": 242
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:projectAccess@248",
+      "target": "backend/server.js#Function:projectAccess@250",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 248
+        "line": 250
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@322",
+      "target": "backend/server.js#Function:startServer@324",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 322
+        "line": 324
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:runEvidenceCompaction@352",
+      "target": "backend/server.js#Function:runEvidenceCompaction@354",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 352
+        "line": 354
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeWebSockets@367",
+      "target": "backend/server.js#Function:closeWebSockets@369",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 367
+        "line": 369
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeHttpServer@377",
+      "target": "backend/server.js#Function:closeHttpServer@379",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 377
+        "line": 379
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@386",
+      "target": "backend/server.js#Function:handleGracefulShutdown@388",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 386
+        "line": 388
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:result.checkpointDatabase@397",
+      "target": "backend/server.js#Method:result.checkpointDatabase@399",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 397
+        "line": 399
       }
     },
     {
@@ -36441,12 +36483,12 @@
     },
     {
       "source": "backend/tests/test_p5_artifact_completion.js",
-      "target": "backend/tests/test_p5_artifact_completion.js#Method:result.verificationRunner@83",
+      "target": "backend/tests/test_p5_artifact_completion.js#Method:result.verificationRunner@116",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p5_artifact_completion.js",
-        "line": 83
+        "line": 116
       }
     },
     {
@@ -51456,7 +51498,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/config.js",
-        "line": 89
+        "line": 90
       }
     },
     {
@@ -51466,7 +51508,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/config.js",
-        "line": 107
+        "line": 111
       }
     },
     {
@@ -52771,7 +52813,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:workflowWriteState@597",
-      "target": "backend/projectRepository.js#Function:saveProjectState@593",
+      "target": "backend/projectRepository.js#Function:saveProjectState@603",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -53391,7 +53433,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@583",
-      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -53471,7 +53513,7 @@
     },
     {
       "source": "backend/executionClient.js#Function:cancel@30",
-      "target": "backend/executionClient.js#request:DELETE /v1/jobs/:value@30",
+      "target": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@30",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -53531,7 +53573,7 @@
     },
     {
       "source": "backend/executionClient.js#Function:submitAndPoll@24",
-      "target": "backend/executionClient.js#request:GET /v1/jobs/:value@36",
+      "target": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -54460,198 +54502,198 @@
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:updateProject@228",
+      "source": "backend/projectRepository.js#Function:getProject@127",
+      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectRepository.js",
+        "line": 195
+      }
+    },
+    {
+      "source": "backend/projectRepository.js#Function:updateProject@238",
       "target": "backend/projectRepository.js#Function:getProject@127",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 244
+        "line": 254
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 255
+        "line": 265
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "target": "backend/workflowAttempts.js#Function:assertWorkflowLease@214",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 266
+        "line": 276
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "target": "backend/auth.js#Function:isValidProjectStatus@364",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 280
+        "line": 290
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "target": "backend/engine/stateMachine.js#Function:canTransitionProject@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 288
+        "line": 298
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:assertMutationLease@352",
+      "source": "backend/projectRepository.js#Function:assertMutationLease@362",
       "target": "backend/workflowAttempts.js#Function:assertWorkflowLease@214",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 360
+        "line": 370
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
+      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
       "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 375
+        "line": 385
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
-      "target": "backend/projectRepository.js#Function:parseEvidence@326",
+      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
+      "target": "backend/projectRepository.js#Function:parseEvidence@336",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 399
+        "line": 409
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
-      "target": "backend/projectRepository.js#Function:isIsoTimestamp@331",
+      "source": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
+      "target": "backend/projectRepository.js#Function:isIsoTimestamp@341",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 408
+        "line": 418
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "source": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 456
+        "line": 466
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "source": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "target": "backend/workflowAttempts.js#Function:assertWorkflowLease@214",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 460
+        "line": 470
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:completeVerifiedProject@448",
-      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
+      "source": "backend/projectRepository.js#Function:completeVerifiedProject@458",
+      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 468
+        "line": 478
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "source": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "target": "backend/projectRepository.js#Function:getProject@127",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 503
+        "line": 513
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:appendProjectChatMessage@513",
+      "source": "backend/projectRepository.js#Function:appendProjectChatMessage@523",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 514
+        "line": 524
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "source": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 534
+        "line": 544
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
-      "target": "backend/projectRepository.js#Function:findMessages@549",
+      "source": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
+      "target": "backend/projectRepository.js#Function:findMessages@559",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 562
+        "line": 572
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:saveProjectState@593",
-      "target": "backend/projectRepository.js#Function:leaseOptionsFrom@346",
+      "source": "backend/projectRepository.js#Function:saveProjectState@603",
+      "target": "backend/projectRepository.js#Function:leaseOptionsFrom@356",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 602
+        "line": 612
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:saveProjectState@593",
+      "source": "backend/projectRepository.js#Function:saveProjectState@603",
       "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 605
+        "line": 615
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:saveProjectState@593",
-      "target": "backend/projectRepository.js#Function:assertMutationLease@352",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/projectRepository.js",
-        "line": 637
-      }
-    },
-    {
-      "source": "backend/projectRepository.js#Function:saveProjectState@593",
-      "target": "backend/auth.js#Function:isValidProjectStatus@364",
+      "source": "backend/projectRepository.js#Function:saveProjectState@603",
+      "target": "backend/projectRepository.js#Function:assertMutationLease@362",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -54660,78 +54702,78 @@
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:saveProjectState@593",
+      "source": "backend/projectRepository.js#Function:saveProjectState@603",
+      "target": "backend/auth.js#Function:isValidProjectStatus@364",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectRepository.js",
+        "line": 657
+      }
+    },
+    {
+      "source": "backend/projectRepository.js#Function:saveProjectState@603",
       "target": "backend/engine/stateMachine.js#Function:canTransitionProject@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 655
+        "line": 665
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:trashRootFor@751",
+      "source": "backend/projectRepository.js#Function:trashRootFor@761",
       "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 753
+        "line": 763
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:restoreIntentSource@789",
-      "target": "backend/projectRepository.js#Function:movePath@773",
+      "source": "backend/projectRepository.js#Function:restoreIntentSource@799",
+      "target": "backend/projectRepository.js#Function:movePath@783",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 791
+        "line": 801
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:finalizeDeletion@801",
-      "target": "backend/projectRepository.js#Function:restoreIntentSource@789",
+      "source": "backend/projectRepository.js#Function:finalizeDeletion@811",
+      "target": "backend/projectRepository.js#Function:restoreIntentSource@799",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 804
+        "line": 814
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:finalizeDeletion@801",
-      "target": "backend/projectRepository.js#Function:lockReceiptError@745",
+      "source": "backend/projectRepository.js#Function:finalizeDeletion@811",
+      "target": "backend/projectRepository.js#Function:lockReceiptError@755",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 809
+        "line": 819
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:finalizeDeletion@801",
-      "target": "backend/projectRepository.js#Function:updateIntent@767",
+      "source": "backend/projectRepository.js#Function:finalizeDeletion@811",
+      "target": "backend/projectRepository.js#Function:updateIntent@777",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 846
+        "line": 856
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:finalizeDeletion@801",
-      "target": "backend/projectRepository.js#Function:removeOwnedTrash@795",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/projectRepository.js",
-        "line": 853
-      }
-    },
-    {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "source": "backend/projectRepository.js#Function:finalizeDeletion@811",
+      "target": "backend/projectRepository.js#Function:removeOwnedTrash@805",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -54740,28 +54782,8 @@
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:parseDeleteOptions@720",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/projectRepository.js",
-        "line": 866
-      }
-    },
-    {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:lockReceiptError@745",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/projectRepository.js",
-        "line": 871
-      }
-    },
-    {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -54770,113 +54792,143 @@
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:trashRootFor@751",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:parseDeleteOptions@730",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 874
+        "line": 876
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:lockReceiptError@755",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectRepository.js",
+        "line": 881
+      }
+    },
+    {
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectRepository.js",
+        "line": 883
+      }
+    },
+    {
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:trashRootFor@761",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectRepository.js",
+        "line": 884
+      }
+    },
+    {
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
       "target": "backend/engine/cancellation.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 902
+        "line": 912
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:movePath@773",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:movePath@783",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 906
+        "line": 916
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:updateIntent@767",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:updateIntent@777",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 907
+        "line": 917
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:deleteProject@862",
-      "target": "backend/projectRepository.js#Function:finalizeDeletion@801",
+      "source": "backend/projectRepository.js#Function:deleteProject@872",
+      "target": "backend/projectRepository.js#Function:finalizeDeletion@811",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 918
+        "line": 928
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "target": "backend/projectRepository.js#Function:restoreIntentSource@789",
+      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
+      "target": "backend/projectRepository.js#Function:restoreIntentSource@799",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 931
+        "line": 941
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "target": "backend/projectRepository.js#Function:removeOwnedTrash@795",
+      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
+      "target": "backend/projectRepository.js#Function:removeOwnedTrash@805",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 938
+        "line": 948
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "target": "backend/projectRepository.js#Function:movePath@773",
+      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
+      "target": "backend/projectRepository.js#Function:movePath@783",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 946
+        "line": 956
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "target": "backend/projectRepository.js#Function:updateIntent@767",
+      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
+      "target": "backend/projectRepository.js#Function:updateIntent@777",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 947
+        "line": 957
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
-      "target": "backend/projectRepository.js#Function:finalizeDeletion@801",
+      "source": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
+      "target": "backend/projectRepository.js#Function:finalizeDeletion@811",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 954
+        "line": 964
       }
     },
     {
-      "source": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "source": "backend/projectRepository.js#Function:syncProjectsWithDisk@971",
       "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@991",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectRepository.js",
-        "line": 963
+        "line": 973
       }
     },
     {
@@ -55081,7 +55133,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@41",
-      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55191,7 +55243,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/projectRepository.js#Function:getAllProjects@216",
+      "target": "backend/projectRepository.js#Function:getAllProjects@226",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55251,7 +55303,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@971",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55271,7 +55323,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@527",
+      "target": "backend/projectRepository.js#Function:appendProjectActionMessages@537",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55881,7 +55933,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Method:authorization.assertEvidence@1138",
-      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@367",
+      "target": "backend/projectRepository.js#Function:assertVerifiedArtifactEvidence@377",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -55981,7 +56033,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/projectRepository.js#Function:updateProject@228",
+      "target": "backend/projectRepository.js#Function:updateProject@238",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56001,7 +56053,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@273",
-      "target": "backend/projectRepository.js#Function:deleteProject@862",
+      "target": "backend/projectRepository.js#Function:deleteProject@872",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56201,7 +56253,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56211,7 +56263,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@180",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56280,108 +56332,98 @@
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:literalComparison@137",
-      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "source": "backend/scripts/graphSource.js#Function:literalComparison@138",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@132",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 139
+        "line": 140
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
-      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@146",
+      "source": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@154",
+      "target": "backend/scripts/graphSource.js#Function:conjunctionTerms@147",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 155
+        "line": 156
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
-      "target": "backend/scripts/graphSource.js#Function:memberPath@131",
+      "source": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@163",
+      "target": "backend/scripts/graphSource.js#Function:memberPath@132",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 166
+        "line": 167
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:collectFiles@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 187
+        "line": 188
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:groupFor@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 194
+        "line": 195
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:resolveRelative@81",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 224
-      }
-    },
-    {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:addLink@203",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/scripts/graphSource.js",
         "line": 225
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:addLink@204",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 226
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:sourceLocation@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 225
+        "line": 226
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:packageName@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 227
+        "line": 228
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:visit@37",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/scripts/graphSource.js",
-        "line": 239
-      }
-    },
-    {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:symbolDefinition@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56390,58 +56432,58 @@
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:symbolDefinition@52",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 241
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@271",
       "target": "backend/scripts/graphSource.js#Function:groupFor@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 276
+        "line": 277
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
-      "target": "backend/scripts/graphSource.js#Function:addLink@203",
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@271",
+      "target": "backend/scripts/graphSource.js#Function:addLink@204",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 279
+        "line": 280
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "source": "backend/scripts/graphSource.js#Function:emitRoute@271",
       "target": "backend/scripts/graphSource.js#Function:sourceLocation@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 279
+        "line": 280
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@162",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:jobPathMatchBinding@163",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 286
+        "line": 287
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@153",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/scripts/graphSource.js",
-        "line": 293
-      }
-    },
-    {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:emitRoute@270",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:rawHttpRouteCondition@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56450,28 +56492,28 @@
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:literalComparison@137",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:emitRoute@271",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 296
+        "line": 295
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:literalComparison@138",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 297
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:calleeName@94",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/scripts/graphSource.js",
-        "line": 328
-      }
-    },
-    {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:resolveCall@256",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56480,33 +56522,63 @@
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:resolveCall@257",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 330
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "target": "backend/scripts/graphSource.js#Function:endpointPath@105",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 344
+        "line": 345
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:requestMethod@172",
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:requestMethod@173",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 346
+        "line": 347
       }
     },
     {
-      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
-      "target": "backend/scripts/graphSource.js#Function:normalizePath@369",
+      "source": "backend/scripts/graphSource.js#Function:routeShape@371",
+      "target": "backend/scripts/graphSource.js#Function:normalizePath@370",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/graphSource.js",
-        "line": 374
+        "line": 371
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:routeShape@371",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 378
+      }
+    },
+    {
+      "source": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
+      "target": "backend/scripts/graphSource.js#Function:serviceHint@372",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/scripts/graphSource.js",
+        "line": 385
       }
     },
     {
@@ -56796,7 +56868,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 137
+        "line": 139
       }
     },
     {
@@ -56806,7 +56878,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 146
+        "line": 148
       }
     },
     {
@@ -56816,17 +56888,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 150
+        "line": 152
       }
     },
     {
-      "source": "backend/server.js#Method:origin@158",
+      "source": "backend/server.js#Method:origin@160",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 159
+        "line": 161
       }
     },
     {
@@ -56836,47 +56908,47 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 166
+        "line": 168
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@210",
+      "source": "backend/server.js#Method:wss.verifyClient@212",
       "target": "backend/security.js#Function:isSecureTransportRequest@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 211
+        "line": 213
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@210",
+      "source": "backend/server.js#Method:wss.verifyClient@212",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 215
+        "line": 217
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@210",
+      "source": "backend/server.js#Method:wss.verifyClient@212",
       "target": "backend/sessionAuth.js#Function:readSessionToken@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 224
+        "line": 226
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@210",
+      "source": "backend/server.js#Method:wss.verifyClient@212",
       "target": "backend/auth.js#Function:verifySessionToken@600",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 225
+        "line": 227
       }
     },
     {
@@ -56886,7 +56958,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 235
+        "line": 237
       }
     },
     {
@@ -56896,17 +56968,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 246
+        "line": 248
       }
     },
     {
-      "source": "backend/server.js#Function:projectAccess@248",
+      "source": "backend/server.js#Function:projectAccess@250",
       "target": "backend/auth.js#Function:getProjectRole@372",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 256
+        "line": 258
       }
     },
     {
@@ -56916,7 +56988,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 283
+        "line": 285
       }
     },
     {
@@ -56926,7 +56998,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 287
+        "line": 289
       }
     },
     {
@@ -56936,7 +57008,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 297
+        "line": 299
       }
     },
     {
@@ -56946,7 +57018,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 319
+        "line": 321
       }
     },
     {
@@ -56956,32 +57028,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 320
+        "line": 322
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
+      "source": "backend/server.js#Function:startServer@324",
       "target": "backend/db.js#Function:initializeDatabase@37",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 324
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 325
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@921",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -56990,8 +57042,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@961",
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 327
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@931",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -57000,18 +57062,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@971",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 332
+        "line": 330
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -57020,8 +57082,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
-      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@24",
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -57030,38 +57092,38 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@322",
+      "source": "backend/server.js#Function:startServer@324",
+      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 338
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@324",
       "target": "backend/db.js#Function:closeDatabase@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 342
+        "line": 344
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@322",
+      "target": "backend/server.js#Function:startServer@324",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 348
+        "line": 350
       }
     },
     {
-      "source": "backend/server.js#Function:runEvidenceCompaction@352",
+      "source": "backend/server.js#Function:runEvidenceCompaction@354",
       "target": "backend/observability.js#Function:compactStaleEvidencePayloads@242",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 355
-      }
-    },
-    {
-      "source": "backend/server.js#Function:runEvidenceCompaction@352",
-      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -57070,19 +57132,19 @@
       }
     },
     {
-      "source": "backend/server.js#Method:result.checkpointDatabase@397",
-      "target": "backend/db.js#Function:checkpointWAL@710",
+      "source": "backend/server.js#Function:runEvidenceCompaction@354",
+      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 397
+        "line": 359
       }
     },
     {
-      "source": "backend/server.js#Function:handleGracefulShutdown@386",
-      "target": "env:SHUTDOWN_TIMEOUT_MS",
-      "label": "reads_env",
+      "source": "backend/server.js#Method:result.checkpointDatabase@399",
+      "target": "backend/db.js#Function:checkpointWAL@710",
+      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
@@ -57090,13 +57152,23 @@
       }
     },
     {
+      "source": "backend/server.js#Function:handleGracefulShutdown@388",
+      "target": "env:SHUTDOWN_TIMEOUT_MS",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 401
+      }
+    },
+    {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@386",
+      "target": "backend/server.js#Function:handleGracefulShutdown@388",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 409
+        "line": 411
       }
     },
     {
@@ -58121,7 +58193,7 @@
     },
     {
       "source": "backend/tests/test_database_migrations.js#Function:teardown@28",
-      "target": "backend/projectRepository.js#Function:deleteProject@862",
+      "target": "backend/projectRepository.js#Function:deleteProject@872",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -58871,7 +58943,7 @@
     },
     {
       "source": "backend/tests/test_generation_isolation.js#Function:teardown@30",
-      "target": "backend/projectRepository.js#Function:deleteProject@862",
+      "target": "backend/projectRepository.js#Function:deleteProject@872",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -58941,22 +59013,22 @@
     },
     {
       "source": "backend/tests/test_graphify.js",
-      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@185",
+      "target": "backend/scripts/graphSource.js#Function:buildSourceGraph@186",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 20
+        "line": 24
       }
     },
     {
       "source": "backend/tests/test_graphify.js",
-      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@179",
+      "target": "backend/scripts/graphSource.js#Function:assertCuratedNodesExist@180",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 31
+        "line": 35
       }
     },
     {
@@ -58966,7 +59038,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 100
+        "line": 120
       }
     },
     {
@@ -58976,7 +59048,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 103
+        "line": 123
       }
     },
     {
@@ -58986,7 +59058,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 105
+        "line": 125
       }
     },
     {
@@ -58996,7 +59068,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 96
+        "line": 107
       }
     },
     {
@@ -59006,7 +59078,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 97
+        "line": 108
       }
     },
     {
@@ -59016,7 +59088,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 98
+        "line": 109
       }
     },
     {
@@ -59026,7 +59098,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 100
+        "line": 111
       }
     },
     {
@@ -59036,7 +59108,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 128
+        "line": 152
       }
     },
     {
@@ -59046,7 +59118,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 149
+        "line": 173
       }
     },
     {
@@ -65141,7 +65213,7 @@
     },
     {
       "source": "backend/tests/test_quality_gate.js",
-      "target": "backend/projectRepository.js#Function:saveProjectState@593",
+      "target": "backend/projectRepository.js#Function:saveProjectState@603",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67501,7 +67573,7 @@
     },
     {
       "source": "backend/verification/qualityPolicy.js#Function:applyProjectTransition@295",
-      "target": "backend/projectRepository.js#Function:saveProjectState@593",
+      "target": "backend/projectRepository.js#Function:saveProjectState@603",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67571,7 +67643,7 @@
     },
     {
       "source": "backend/verification/qualityPolicy.js#Function:aggregateVerificationRun@365",
-      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -68091,7 +68163,7 @@
     },
     {
       "source": "backend/verification/verificationCli.js#Function:verifyArtifactAndProject@12",
-      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@247",
+      "target": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@257",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -68121,7 +68193,7 @@
     },
     {
       "source": "backend/verification/verificationCli.js#Function:verifyArtifactAndProject@12",
-      "target": "backend/projectRepository.js#Function:completeVerifiedProject@448",
+      "target": "backend/projectRepository.js#Function:completeVerifiedProject@458",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -71430,8 +71502,26 @@
       }
     },
     {
+      "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@30",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@213",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
       "source": "backend/executionClient.js#request:POST /v1/jobs@34",
       "target": "execution/server.js#route:POST /v1/jobs@124",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
+      "source": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
+      "target": "execution/server.js#route:GET /v1/jobs/:jobId@196",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
+      "source": "backend/executionClient.js#request:GET /readyz@39",
+      "target": "execution/server.js#route:GET /readyz@96",
       "label": "requests_route",
       "provenance": "inferred"
     },

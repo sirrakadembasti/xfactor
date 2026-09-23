@@ -12,7 +12,11 @@ try {
   await fs.mkdir(path.join(root, 'execution'), { recursive: true });
   await fs.writeFile(path.join(root, 'frontend/src/App.tsx'), "import Button from './components/Button';\nexport default () => <Button />;\n");
   await fs.writeFile(path.join(root, 'frontend/src/components/Button.tsx'), 'export default function Button() { return <button />; }\n');
-  await fs.writeFile(path.join(root, 'backend/server.js'), "import './missing.js';\n");
+  await fs.writeFile(path.join(root, 'backend/server.js'), [
+    "import './missing.js';",
+    "app.get('/readyz', (_req, res) => res.end());",
+    ''
+  ].join('\n'));
   await fs.writeFile(path.join(root, 'frontend/vite.config.js'), 'export default {};\n');
   await fs.writeFile(path.join(root, 'playwright.config.js'), 'export default {};\n');
   await fs.writeFile(path.join(root, 'README.md'), '# Fixture\n');
@@ -53,6 +57,13 @@ try {
     'export const sendTask = id => request(`/tasks/${encodeURIComponent(id)}`, { method: "POST" });',
     'export const sendOther = id => request(`/other/${encodeURIComponent(id)}`, { method: "POST" });',
     'export const listRuns = (id, query) => request(`/projects/${encodeURIComponent(id)}/verification-runs${query ? `?${query}` : \'\'}`);',
+    ''
+  ].join('\n'));
+  await fs.writeFile(path.join(root, 'backend/executionClient.js'), [
+    "export const getCapabilities = () => request('/readyz');",
+    "export const submit = job => request('/v1/jobs', { method: 'POST' });",
+    'export const poll = job => request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`);',
+    "export const cancel = job => request(`/v1/jobs/${encodeURIComponent(job.jobId)}`, { method: 'DELETE' });",
     ''
   ].join('\n'));
   await fs.writeFile(path.join(root, 'execution/server.js'), [
@@ -96,6 +107,15 @@ try {
   assert(!detailed.nodes.some(node => node.type === 'HttpRequest' && node.label.includes('verification-runs:value')));
   for (const label of ['GET /readyz', 'POST /v1/jobs', 'GET /v1/jobs/:jobId', 'DELETE /v1/jobs/:jobId']) {
     assert(detailed.nodes.some(node => node.type === 'HttpRoute' && node.label === label), `${label} raw worker route is extracted`);
+  }
+  for (const label of ['GET /readyz', 'POST /v1/jobs', 'GET /v1/jobs/:jobId', 'DELETE /v1/jobs/:jobId']) {
+    const workerRequest = detailed.nodes.find(node => node.type === 'HttpRequest'
+      && node.file === 'backend/executionClient.js' && node.label === label);
+    const workerRoute = detailed.nodes.find(node => node.type === 'HttpRoute'
+      && node.file === 'execution/server.js' && node.label === label);
+    assert(workerRequest && workerRoute, `${label} worker request and route are extracted`);
+    assert(detailed.links.some(link => link.source === workerRequest.id
+      && link.target === workerRoute.id && link.label === 'requests_route'), `${label} worker request maps to its execution route`);
   }
   const html = renderGraphHtml(detailed);
   assert(html.includes('POST /tasks/:id') && html.includes('backend/worker.js'));
