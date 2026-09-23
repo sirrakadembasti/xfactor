@@ -139,6 +139,21 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Bulgu:** Diskte eski DAG dosyaları bulunduğu için startup eşitlemesi v3 `pending_approval` durumunu `in_progress` yaptı; mevcut workflow verisini de disk görüntüsüyle değiştirdi. Onay kartı kayboldu.
 - **Aksiyon:** Bekleyen sözleşme varsa disk eşitlemesi onay durumunu ve mevcut workflow verisini koruyacak şekilde düzeltildi. Regresyon testi önce `in_progress` hatasını yakaladı, sonra geçti. Etkilenen aktif proje kayıtlı v3 sözleşmesiyle güvenli biçimde `pending_approval` durumuna geri getirildi.
 
+### TASK-ARTIFACT-015 — v3 üretimi eski ilan dosyaları yüzünden reddedildi
+
+- **Durum:** Açık; teslim engeli
+- **Aşama:** Üçüncü üretim denemesinin statik kabul kontrolü (`attempt-27563df8-d50f-471d-84d2-f24a884d0e37`)
+- **Bulgu:** v3, kitap ve ödünç ekranları ile kütüphane API'leri üretti; ancak v2'den kalan `src/app/api/listings` ve `src/app/listings` dosyalarını kaldırmadı. Bu dosyalar mevcut Prisma şemasında olmayan `prisma.listing` modelini çağırıyor.
+- **Etki:** Statik kalite kapısı Prisma şema uyumsuzluğu nedeniyle denemeyi reddetti. Yeni kanonik doğrulama ve kullanıma hazır ZIP aşamasına geçilemedi.
+- **Aksiyon:** Önce kalıntı dosyalar temizlenecek, sonra üretilen uygulama derleme ve kapsam açısından incelenecek. Kabulden geçmeyen ZIP teslim edilmeyecek.
+
+### TASK-SCOPE-016 — v3 ekran kapsamı hâlâ eksik
+
+- **Durum:** Açık
+- **Aşama:** Üretilen uygulamanın kapsam incelemesi
+- **Bulgu:** Navigasyon `/categories` ve `/members` bağlantılarını gösteriyor; v3 üretiminde bu sayfalar oluşmadı. API rotalarının varlığı, kategori ve üye CRUD işlemlerinin kullanıcı arayüzünden yapılabildiği anlamına gelmiyor.
+- **Aksiyon:** Eksik ekranlar, gerçek API sözleşmesi ve ödünç/iade yolculuğuyla birlikte tamamlanıp tarayıcıda sınanacak.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -155,3 +170,4 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — v2 Docker doğrulaması altyapı kapılarını çalıştırdı; typecheck/build/smoke ve izlenebilirlik hataları nedeniyle koşu başarısız oldu, proje güvenli `paused` durumuna geçti.
 - 2026-09-23 — Genel durum kaydının yeni onaylı sözleşmeyi eski planla ezdiği regresyon testiyle kanıtlandı ve düzeltildi.
 - 2026-09-23 — v3 planı Manager sohbetinden alındı; bekleyen sözleşme gösterimi ve startup eşitlemesi hataları giderildikten sonra kütüphane rotaları doğrulandı ve plan ön yüzden onaylandı.
+- 2026-09-23 — v3 üretimi eski ilan dosyalarının Prisma şemasıyla çakışması nedeniyle statik kabulde reddedildi; kategori ve üye ekranlarının hâlâ eksik olduğu saptandı.
