@@ -125,6 +125,20 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Kök neden:** Sözleşme revizyonu sahipliği ile genel proje durum kaydı aynı yazma yolunda karışmıştı; eski state görüntüsü yeni onaylı planı ezebiliyordu.
 - **Aksiyon:** Önce eski state ile checkpoint kaydedildiğinde yeni sözleşmenin içeriğinin bozulduğunu gösteren regresyon testi yazıldı ve başarısızlığı görüldü. Mevcut sözleşmeler artık genel durum kaydı tarafından değiştirilmez; sözleşme oluşturma/onaylama kendi API'sinde kalır. İlgili üç test paketi 7/7 geçti.
 
+### TASK-STATE-013 — Bekleyen yeni plan yerine eski onaylı plan gösterildi
+
+- **Durum:** Çözüldü
+- **Aşama:** v3 onay ön kontrolü
+- **Bulgu:** Yeni v3 sözleşmesi `pending_approval` olarak veritabanında bulunmasına rağmen `getProject`, eski `approved` sözleşmeyi öncelikli seçip UI'ya gösterdi.
+- **Aksiyon:** Bekleyen onay durumunda yeni taslağı seçen sorgu eklendi. Eski onaylı sözleşme kayıt olarak korundu. Regresyon testi önce başarısızlığı gösterdi, düzeltme sonrası geçti.
+
+### TASK-SYNC-014 — Başlangıç disk eşitlemesi bekleyen v3 onayını bozdu
+
+- **Durum:** Çözüldü
+- **Aşama:** Backend yeniden başlatma
+- **Bulgu:** Diskte eski DAG dosyaları bulunduğu için startup eşitlemesi v3 `pending_approval` durumunu `in_progress` yaptı; mevcut workflow verisini de disk görüntüsüyle değiştirdi. Onay kartı kayboldu.
+- **Aksiyon:** Bekleyen sözleşme varsa disk eşitlemesi onay durumunu ve mevcut workflow verisini koruyacak şekilde düzeltildi. Regresyon testi önce `in_progress` hatasını yakaladı, sonra geçti. Etkilenen aktif proje kayıtlı v3 sözleşmesiyle güvenli biçimde `pending_approval` durumuna geri getirildi.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -140,3 +154,4 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — Header'ın `implementing` durumunda duraklatma sunmaması test odaklı düzeltildi.
 - 2026-09-23 — v2 Docker doğrulaması altyapı kapılarını çalıştırdı; typecheck/build/smoke ve izlenebilirlik hataları nedeniyle koşu başarısız oldu, proje güvenli `paused` durumuna geçti.
 - 2026-09-23 — Genel durum kaydının yeni onaylı sözleşmeyi eski planla ezdiği regresyon testiyle kanıtlandı ve düzeltildi.
+- 2026-09-23 — v3 planı Manager sohbetinden alındı; bekleyen sözleşme gösterimi ve startup eşitlemesi hataları giderildikten sonra kütüphane rotaları doğrulandı ve plan ön yüzden onaylandı.

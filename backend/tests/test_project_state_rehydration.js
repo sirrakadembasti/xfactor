@@ -400,6 +400,34 @@ try {
         const dbCorrupt = database.prepare('SELECT status FROM projects WHERE id = ?').get(corruptId);
         assert.strictEqual(dbCorrupt.status, 'paused', 'DB project status must heal to paused');
 
+        // Case C: A newer pending revision must survive startup disk reconciliation.
+        const pendingId = `proj-pending-revision-${Date.now()}`;
+        const pendingDir = path.join(tmpDir, pendingId);
+        const pendingMgr = path.join(pendingDir, 'manager');
+        const pendingBackend = path.join(pendingMgr, 'backend.director', 'domain');
+        await fs.mkdir(pendingBackend, { recursive: true });
+        await fs.writeFile(path.join(pendingMgr, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n', 'utf8');
+        await fs.writeFile(path.join(pendingMgr, 'TALIMATNAME.md'), '# Previous plan\n', 'utf8');
+        await fs.writeFile(path.join(pendingBackend, 'TODO.md'), '# TODO\n| 1 | task-1 | Setup | — | completed |\n', 'utf8');
+        database.prepare(`
+            INSERT INTO projects (id, title, status, revision, is_pinned, workflow_state, created_at)
+            VALUES (?, ?, 'pending_approval', 4, 0, ?, ?)
+        `).run(pendingId, 'Pending Revision Test', '{"planHash":"pending-v3"}', new Date().toISOString());
+        database.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at)
+            VALUES (?, ?, 1, 'approved', '{}', 'old-hash', ?)
+        `).run(`contract-old-${pendingId}`, pendingId, new Date().toISOString());
+        database.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
+            VALUES (?, ?, 2, 'pending_approval', '{}', 'new-hash')
+        `).run(`contract-new-${pendingId}`, pendingId);
+
+        const pendingResult = await rehydrateProjectStateFromDisk(pendingDir, { projectId: pendingId, database });
+        assert.strictEqual(pendingResult.status, 'pending_approval');
+        const pendingDb = database.prepare('SELECT status, workflow_state FROM projects WHERE id = ?').get(pendingId);
+        assert.strictEqual(pendingDb.status, 'pending_approval');
+        assert.deepStrictEqual(JSON.parse(pendingDb.workflow_state), { planHash: 'pending-v3' });
+
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
 } finally {

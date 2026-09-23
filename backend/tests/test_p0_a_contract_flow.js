@@ -73,6 +73,27 @@ try {
         }
     });
 
+    await runAsyncTest('5. Pending approval shows the new contract while keeping the old approved revision', async () => {
+        const { createProject, deleteProject, getProject, saveProjectState } = await import('../projectRepository.js');
+        const { createContractRevision, approveContractRevision, getLatestRevision } = await import('../contracts/projectContract.js');
+        const project = await createProject({ title: 'Pending revision display' });
+        try {
+            const firstPlan = { summary: 'Old approved plan', domains: [{ name: 'frontend' }] };
+            const secondPlan = { summary: 'New revision for approval', domains: [{ name: 'frontend' }] };
+            createContractRevision(project.id, firstPlan, 1);
+            approveContractRevision(project.id, 1);
+            createContractRevision(project.id, secondPlan, 2);
+            const state = getProject(project.id);
+            state.status = 'pending_approval';
+            await saveProjectState(state);
+
+            assert.deepStrictEqual(getProject(project.id).plan, secondPlan);
+            assert.strictEqual(getLatestRevision(project.id).status, 'pending_approval');
+        } finally {
+            await deleteProject(project.id);
+        }
+    });
+
     finish();
 } finally {
     await isolated.cleanup();

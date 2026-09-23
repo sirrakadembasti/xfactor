@@ -136,10 +136,11 @@ export function getProject(projectId) {
         SELECT id, contract_json FROM project_contracts
         WHERE project_id = ?
         ORDER BY
+            CASE WHEN ? = 'pending_approval' AND status = 'pending_approval' THEN 2 ELSE 0 END DESC,
             CASE WHEN status = 'approved' THEN 1 ELSE 0 END DESC,
             revision DESC
         LIMIT 1
-    `).get(projectId);
+    `).get(projectId, project.status);
 
     let chats = db.prepare('SELECT id, role, text_content, created_at FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(projectId);
     if (chats.length <= 1) {

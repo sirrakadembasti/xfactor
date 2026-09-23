@@ -393,7 +393,11 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
 
     // Determine safe reconciled status
     let finalStatus = status;
-    if (status !== 'completed') {
+    if (pendingContract) {
+        // The database owns a new plan awaiting approval. Disk protocol files
+        // still describe the previous generation and must not override it.
+        finalStatus = 'pending_approval';
+    } else if (status !== 'completed') {
         if (approvedContract && !pendingContract) {
             // Sözleşme zaten onaylanmış ve onay bekleyen yeni bir revizyon yok.
             // Proje ASLA tekrar pending_approval durumuna düşürülmemelidir.
@@ -414,6 +418,8 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
             INSERT INTO projects (id, title, status, plan, workflow_state, is_pinned, created_at)
             VALUES (?, ?, ?, ?, ?, 0, ?)
         `).run(pId, title, finalStatus, planJson, workflowJson, nowIso);
+    } else if (pendingContract) {
+        database.prepare('UPDATE projects SET status = ? WHERE id = ?').run(finalStatus, pId);
     } else {
         database.prepare(`
             UPDATE projects
