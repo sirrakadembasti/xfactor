@@ -23,6 +23,7 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - [x] Manager planını incele ve ön yüzden onayla
 - [x] DAG üretim sürecini, logları ve kalite kapılarını izle
 - [x] İlk üretim turunda karşılaşılan hataları ve uygulanan aksiyonları kaydet
+- [x] Eksik frontend kapsamı için Manager v2 düzeltme planını sohbetten oluştur ve ön yüzden onayla
 - [ ] Doğrulanmış ZIP artefaktını ön yüzden indir
 - [ ] ZIP içeriğini ve çalıştırma talimatlarını doğrula
 
@@ -78,11 +79,11 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 
 ### TASK-SCOPE-007 — Frontend görev ağacı zorunlu kapsamı eksik üretti
 
-- **Durum:** Açık; Manager düzeltmesi gerekli
+- **Durum:** Düzeltme üretimi sürüyor
 - **Aşama:** Üretim kapsamı incelemesi
 - **Bulgu:** Backend görevleri kategori, üye, ödünç/iade ve dashboard API'lerini kapsıyor. Frontend görev ağacı ise kitap kataloğu ve kitap yönetimiyle sınırlı; kategori CRUD, üye CRUD, ödünç/iade ve gecikme ekranları için görev üretmemiş.
 - **Etki:** Doğrulama teknik olarak geçse bile kullanıcı tarafından onaylanan uçtan uca işlevsel kapsam tamamlanmış sayılmaz.
-- **Aksiyon:** Docker doğrulama altyapısı hazırlandıktan sonra aynı Manager sohbetinde eksik ekranlar ve kritik kullanıcı yolculukları açıkça talep edilerek yeni sürüm üretilecek.
+- **Aksiyon:** Aynı Manager sohbetinde eksik ekranlar ve kritik kullanıcı yolculukları açıkça talep edildi. Manager v2 sürümlü düzeltme planını sundu; plan ön yüzden onaylandı ve yeni workflow denemesi (`attempt-99fa8f4b-5e95-407f-a9a0-a701929aa617`) başladı.
 
 ### TASK-STATE-008 — Doğrulama hatası sonrası durum makinesi kilitlendi
 
@@ -102,3 +103,4 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — Kanonik doğrulama Docker daemon kapalı olduğu için yedi zorunlu kapıda engellendi; taslak ZIP reddedildi ve teslim edilmedi.
 - 2026-09-23 — Docker Desktop başlatıldı; daemon ve `xfactor-worker-runtime` imajı doğrulandı.
 - 2026-09-23 — Manager sohbeti v2 düzeltme planını üretti fakat durum makinesi kilidi onay kartını engelledi. Regresyon testleriyle çekirdek geçiş hatası giderildi.
+- 2026-09-23 — Aynı v2 düzeltme planı aktif projede ön yüzden yeniden istendi; onay kartı gösterildi, plan ön yüzden onaylandı ve düzeltme üretimi başladı.
