@@ -21,8 +21,8 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - [x] “Kütüphane Takip Sistemi” projesini ön yüzden oluştur (aktif üretim: `kutuphane-takip-sistemi-2`)
 - [x] Manager sohbetine onaylanan gereksinimleri ilet
 - [x] Manager planını incele ve ön yüzden onayla
-- [ ] DAG üretim sürecini, logları ve kalite kapılarını izle
-- [ ] Karşılaşılan hataları ve uygulanan aksiyonları kaydet
+- [x] DAG üretim sürecini, logları ve kalite kapılarını izle
+- [x] İlk üretim turunda karşılaşılan hataları ve uygulanan aksiyonları kaydet
 - [ ] Doğrulanmış ZIP artefaktını ön yüzden indir
 - [ ] ZIP içeriğini ve çalıştırma talimatlarını doğrula
 
@@ -68,9 +68,27 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Etki:** Kenar çubuğunda aynı başlığa sahip iki proje görünebilir; gerçek üretim `kutuphane-takip-sistemi-2` üzerinde ilerliyor.
 - **Aksiyon:** Silme geri döndürülemez olduğundan eski kayıt otomatik olarak silinmedi. İzleme ve teslimat aktif proje kimliği üzerinden sürdürülecek.
 
+### TASK-VERIFY-006 — Temiz-oda doğrulaması Docker olmadan engellendi
+
+- **Durum:** Açık; teslimatı engelliyor
+- **Aşama:** Kanonik doğrulama (`verification-e63f9622-2db1-4e72-ac8f-175eac16d8d3`)
+- **Bulgu:** Üretim `implementation_finished` durumuna ulaştı ve 74.226 baytlık taslak ZIP oluşturdu. Ancak `service_manifest`, `requirement_traceability`, `database_verification`, `api_contract`, `browser_journey`, `smoke_gate` ve `test_infrastructure` kapıları `BLOCKED` oldu; artefakt `rejected` işaretlendi. Statik `domain_entity_check`, `placeholder_check`, `contamination_check` ve `security_baseline` kapıları geçti.
+- **Kök neden:** `docker info`, Docker istemcisinin kurulu olduğunu fakat `docker_engine` named pipe bulunamadığı için daemon'a bağlanamadığını doğruladı.
+- **Aksiyon:** Docker daemon başlatıldıktan ve `xfactor-worker-runtime` imajı hazırlandıktan sonra Manager sohbeti üzerinden düzeltme/yeniden doğrulama akışı başlatılacak. Reddedilen ZIP son kullanıcıya teslim edilmeyecek.
+
+### TASK-SCOPE-007 — Frontend görev ağacı zorunlu kapsamı eksik üretti
+
+- **Durum:** Açık; Manager düzeltmesi gerekli
+- **Aşama:** Üretim kapsamı incelemesi
+- **Bulgu:** Backend görevleri kategori, üye, ödünç/iade ve dashboard API'lerini kapsıyor. Frontend görev ağacı ise kitap kataloğu ve kitap yönetimiyle sınırlı; kategori CRUD, üye CRUD, ödünç/iade ve gecikme ekranları için görev üretmemiş.
+- **Etki:** Doğrulama teknik olarak geçse bile kullanıcı tarafından onaylanan uçtan uca işlevsel kapsam tamamlanmış sayılmaz.
+- **Aksiyon:** Docker doğrulama altyapısı hazırlandıktan sonra aynı Manager sohbetinde eksik ekranlar ve kritik kullanıcı yolculukları açıkça talep edilerek yeni sürüm üretilecek.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
 - 2026-09-23 — `kutuphane-takip-sistemi-1` ön yüzden oluşturuldu; ilk Manager çağrısı ağ erişimi olmadığı için üç retry sonunda HTTP 500 ile kapandı.
 - 2026-09-23 — Dev servisleri ağ erişimli olarak yeniden başlatıldı; `kutuphane-takip-sistemi-2` ön yüzden oluşturuldu, gereksinimler Manager sohbetine gönderildi ve gerçek mimari plan ön yüzden onaylandı.
 - 2026-09-23 — Backend direktörü 16 alt görevi tamamladı; frontend direktörü üretime başladı.
+- 2026-09-23 — Backend ve frontend DAG görevleri tamamlandı. Kapsam incelemesinde frontend tarafında kategori, üye, ödünç/iade ve gecikme ekranlarının üretilmediği saptandı.
+- 2026-09-23 — Kanonik doğrulama Docker daemon kapalı olduğu için yedi zorunlu kapıda engellendi; taslak ZIP reddedildi ve teslim edilmedi.
