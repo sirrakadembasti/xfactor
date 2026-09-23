@@ -187,8 +187,18 @@ export function getProject(projectId) {
         try { workflow = JSON.parse(project.workflow_state); } catch {}
     }
 
-    const artifact = (contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id }))
+    const artifactCandidate = (contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id }))
         || getLatestVerifiedArtifact({ projectId });
+    let artifact = null;
+    if (artifactCandidate) {
+        try {
+            artifact = assertVerifiedArtifactEvidence({
+                projectId,
+                contractId: artifactCandidate.contractId,
+                artifactId: artifactCandidate.id
+            }).artifact;
+        } catch {}
+    }
     const latestArtifact = artifact && {
         id: artifact.id,
         status: artifact.status,

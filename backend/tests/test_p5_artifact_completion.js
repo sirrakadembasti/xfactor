@@ -21,6 +21,10 @@ const projectId = 'p5-artifact-completion-project';
 const contractId = 'p5-artifact-completion-contract';
 const artifactId = 'p5-artifact-completion-artifact';
 const runId = 'p5-artifact-completion-run';
+const legacyProjectId = 'p5-legacy-synthetic-project';
+const legacyContractId = 'p5-legacy-synthetic-contract';
+const legacyArtifactId = 'p5-legacy-synthetic-artifact';
+const legacyRunId = 'p5-legacy-synthetic-run';
 const timestamp = new Date().toISOString();
 const artifactPath = path.join(path.dirname(isolated.dbPath), 'artifact.zip');
 const mandatoryGates = [
@@ -66,6 +70,35 @@ try {
     });
     db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE contract_id = ? AND id = ?')
         .run(runId, contractId, artifactId);
+
+    await runAsyncTest('legacy synthetic verified rows are retained but not exposed as latestArtifact', async () => {
+        db.prepare("INSERT INTO projects (id, title, status, revision) VALUES (?, 'Legacy synthetic artifact', 'completed', 1)")
+            .run(legacyProjectId);
+        db.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at)
+            VALUES (?, ?, 1, 'approved', '{"name":"legacy"}', 'legacy-contract-hash', ?)
+        `).run(legacyContractId, legacyProjectId, timestamp);
+        db.prepare(`
+            INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at)
+            VALUES (?, ?, ?, 'verified', '2.0', ?, ?)
+        `).run(legacyRunId, legacyProjectId, legacyContractId, timestamp, timestamp);
+        createArtifact({
+            id: legacyArtifactId,
+            projectId: legacyProjectId,
+            contractId: legacyContractId,
+            kind: 'zip',
+            path: artifactPath,
+            sha256: artifactHash,
+            size: artifactContent.length,
+            manifestJson: '[]',
+            status: 'verified'
+        });
+        db.prepare('UPDATE artifacts SET verification_run_id = ? WHERE contract_id = ? AND id = ?')
+            .run(legacyRunId, legacyContractId, legacyArtifactId);
+
+        assert.strictEqual(getProject(legacyProjectId).latestArtifact, null);
+        assert.ok(db.prepare('SELECT id FROM artifacts WHERE id = ?').get(legacyArtifactId));
+    });
 
     await runAsyncTest('canonical artifact identity authorizes completion with its verified run receipt', async () => {
         const artifact = getArtifact({ projectId, contractId, artifactId });
