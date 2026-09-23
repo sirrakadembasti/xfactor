@@ -117,6 +117,14 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Engellenen kapılar:** gereksinim izlenebilirliği, API sözleşmesi ve tarayıcı yolculuğu.
 - **Sonuç:** İkinci ZIP `verification_pending` aşamasında kaldı ve doğrulama koşusu `failed` oldu; proje düzeltilmiş durum makinesi sayesinde güvenli biçimde `paused` durumuna geçti.
 
+### TASK-CONTRACT-012 — Onaylı sözleşme durum kaydında eski planla ezildi
+
+- **Durum:** Çözüldü; sonraki üretim turunda gözlem bekliyor
+- **Aşama:** v2 planının alt ajanlara aktarımı
+- **Bulgu:** Manager sohbetinde doğru v2 planı mevcutken onaylı sözleşmenin metni eski kitap vitrini planına dönmüştü. `saveProjectState`, durum ve workflow kaydı sırasında `state.plan` alanıyla herhangi bir mevcut sözleşme satırını güncelliyor, hatta sözleşme revizyonunu proje durum revizyonuna çeviriyordu.
+- **Kök neden:** Sözleşme revizyonu sahipliği ile genel proje durum kaydı aynı yazma yolunda karışmıştı; eski state görüntüsü yeni onaylı planı ezebiliyordu.
+- **Aksiyon:** Önce eski state ile checkpoint kaydedildiğinde yeni sözleşmenin içeriğinin bozulduğunu gösteren regresyon testi yazıldı ve başarısızlığı görüldü. Mevcut sözleşmeler artık genel durum kaydı tarafından değiştirilmez; sözleşme oluşturma/onaylama kendi API'sinde kalır. İlgili üç test paketi 7/7 geçti.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -131,3 +139,4 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — v2 frontend görevlerinin kütüphane alanından “ilanlar” alanına saptığı ve yanlış dosyalar ürettiği saptandı.
 - 2026-09-23 — Header'ın `implementing` durumunda duraklatma sunmaması test odaklı düzeltildi.
 - 2026-09-23 — v2 Docker doğrulaması altyapı kapılarını çalıştırdı; typecheck/build/smoke ve izlenebilirlik hataları nedeniyle koşu başarısız oldu, proje güvenli `paused` durumuna geçti.
+- 2026-09-23 — Genel durum kaydının yeni onaylı sözleşmeyi eski planla ezdiği regresyon testiyle kanıtlandı ve düzeltildi.

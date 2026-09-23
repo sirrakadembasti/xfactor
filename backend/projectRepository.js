@@ -615,7 +615,6 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
     if (!state || !isValidProjectId(state.id)) {
         throw new Error(`Invalid project state or project ID: ${state?.id}`);
     }
-    const planStr = state.plan ? JSON.stringify(state.plan) : null;
 
     if (state.remediation !== undefined) {
         if (state.workflow) {
@@ -683,23 +682,16 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         }
         state.revision = nextRevision;
 
-        if (state.plan) {
+        // Contract revisions are owned by createContractRevision/approveContractRevision.
+        // A workflow checkpoint may carry an older plan snapshot and must not rewrite them.
+        if (state.plan && !db.prepare('SELECT id FROM project_contracts WHERE project_id = ? LIMIT 1').get(state.id)) {
             const contractJson = JSON.stringify(state.plan);
             const contractHash = crypto.createHash('sha256').update(contractJson).digest('hex');
-            const existing = db.prepare('SELECT id FROM project_contracts WHERE project_id = ?').get(state.id);
-            if (existing) {
-                db.prepare(`
-                    UPDATE project_contracts
-                    SET contract_json = ?, contract_hash = ?, revision = ?
-                    WHERE id = ?
-                `).run(contractJson, contractHash, nextRevision, existing.id);
-            } else {
-                const contractId = `contract-${crypto.randomUUID()}`;
-                db.prepare(`
-                    INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
-                    VALUES (?, ?, ?, 'approved', ?, ?)
-                `).run(contractId, state.id, nextRevision, contractJson, contractHash);
-            }
+            const contractId = `contract-${crypto.randomUUID()}`;
+            db.prepare(`
+                INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
+                VALUES (?, ?, ?, 'approved', ?, ?)
+            `).run(contractId, state.id, nextRevision, contractJson, contractHash);
         }
 
         const existingCount = db.prepare(
