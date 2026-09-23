@@ -337,7 +337,8 @@ try {
             'x-forwarded-proto': 'https'
         }
     });
-    assert.strictEqual(normalSyncResponse.status, 200);
+    assert.strictEqual(normalSyncResponse.status, 403);
+    assert.match((await normalSyncResponse.json()).error, /yönetici/i);
     assert.strictEqual(adminSyncResponse.status, 200);
 
     const listAfterRemovedSync = await request(baseUrl, '/projects', { headers: authA });
@@ -385,4 +386,3 @@ try {
     await stopChild(child);
     await fs.rm(tempDir, { recursive: true, force: true });
 }
-
