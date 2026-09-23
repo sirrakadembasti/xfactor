@@ -100,7 +100,7 @@ export default function Header({
         )}
 
         {/* Running Button */}
-        {viewMode !== 'dashboard' && projectState.status === 'running' && (
+        {viewMode !== 'dashboard' && ['running', 'implementing'].includes(projectState.status) && (
           <button
             onClick={handlePause}
             className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition"

@@ -93,6 +93,30 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Kök neden:** `implementation_finished -> paused/pending_approval` geçişleri tanımlı değildi ve chat rotasının revize edilebilir durumları `implementation_finished` değerini kapsamıyordu.
 - **Aksiyon:** Önce iki regresyon testi yazıldı ve beklenen nedenle başarısız oldukları görüldü. Durum makinesine güvenli duraklatma ve yeni plan onayı geçişleri, chat rotasına revizyon desteği eklendi. Odaklı testler 1/1 ve 7/7 geçti.
 
+### TASK-PLAN-009 — v2 frontend üretimi “ilanlar” alanına saptı
+
+- **Durum:** Açık; v2 artefaktı reddedildi
+- **Aşama:** Manager v2 düzeltme üretimi
+- **Bulgu:** Manager sohbetindeki v2 metni kütüphane kategori/üye/ödünç/iade/dashboard kapsamını doğru tarif etti. Buna rağmen frontend director görevleri `listings`, ilan kartı, ilan detayı ve ilan yönetim paneli üretmeye saptı; `src/app/api/listings`, `src/app/listings` ve ilan bileşenleri proje ağacına eklendi.
+- **Etki:** Üretilen uygulama alan bütünlüğünü kaybetti ve zorunlu kütüphane ekranları tamamlanmadı.
+- **Aksiyon:** v2 teslim edilmedi. Sözleşme revizyon bütünlüğü ve planın alt ajanlara aktarımı ayrı incelemeye alındı; sonraki üretim yanlış ilan dosyalarını kaldırmayı ve yalnız kütüphane alanına bağlı atomik görevleri zorunlu kılacak.
+
+### TASK-UI-010 — `implementing` durumunda duraklatma düğmesi görünmedi
+
+- **Durum:** Çözüldü
+- **Aşama:** Hatalı v2 üretimini durdurma
+- **Bulgu:** Backend canlı üretim durumunu `implementing` olarak bildirirken Header duraklatma düğmesini yalnız `running` değerinde gösteriyordu.
+- **Aksiyon:** Önce erişilebilir düğmenin eksikliğini kanıtlayan regresyon testi yazıldı ve başarısızlığı görüldü. Header iki canlı durumu da kabul edecek şekilde düzeltildi; odaklı test 1/1 geçti.
+
+### TASK-VERIFY-011 — v2 temiz-oda doğrulaması ürün hatalarını yakaladı
+
+- **Durum:** Açık; Manager düzeltmesi gerekli
+- **Aşama:** Kanonik doğrulama (`verification-4a381039-0e1f-4890-b4c1-446e6b20a656`)
+- **Geçen kapılar:** clean install, Prisma validate/generate/db push/seed, veritabanı, test suite, servis manifesti, placeholder/contamination/security statik kontrolleri.
+- **Başarısız kapılar:** TypeScript typecheck, framework build, smoke liveness ve birleşik smoke gate.
+- **Engellenen kapılar:** gereksinim izlenebilirliği, API sözleşmesi ve tarayıcı yolculuğu.
+- **Sonuç:** İkinci ZIP `verification_pending` aşamasında kaldı ve doğrulama koşusu `failed` oldu; proje düzeltilmiş durum makinesi sayesinde güvenli biçimde `paused` durumuna geçti.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -104,3 +128,6 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — Docker Desktop başlatıldı; daemon ve `xfactor-worker-runtime` imajı doğrulandı.
 - 2026-09-23 — Manager sohbeti v2 düzeltme planını üretti fakat durum makinesi kilidi onay kartını engelledi. Regresyon testleriyle çekirdek geçiş hatası giderildi.
 - 2026-09-23 — Aynı v2 düzeltme planı aktif projede ön yüzden yeniden istendi; onay kartı gösterildi, plan ön yüzden onaylandı ve düzeltme üretimi başladı.
+- 2026-09-23 — v2 frontend görevlerinin kütüphane alanından “ilanlar” alanına saptığı ve yanlış dosyalar ürettiği saptandı.
+- 2026-09-23 — Header'ın `implementing` durumunda duraklatma sunmaması test odaklı düzeltildi.
+- 2026-09-23 — v2 Docker doğrulaması altyapı kapılarını çalıştırdı; typecheck/build/smoke ve izlenebilirlik hataları nedeniyle koşu başarısız oldu, proje güvenli `paused` durumuna geçti.

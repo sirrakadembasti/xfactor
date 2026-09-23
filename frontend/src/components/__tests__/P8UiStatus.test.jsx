@@ -50,6 +50,14 @@ test('Header offers Resume for verification_failed projects', () => {
   expect(handleResume).toHaveBeenCalledTimes(1);
 });
 
+test('Header offers Pause while backend reports implementing', () => {
+  const handlePause = vi.fn();
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'implementing' }} handlePause={handlePause} />);
+
+  fireEvent.click(screen.getByRole('button', { name: /Süreci Duraklat/ }));
+  expect(handlePause).toHaveBeenCalledTimes(1);
+});
+
 test('focuses a new UI error alert and keyboard-dismiss restores initiating control', async () => {
   class TestWebSocket {
     static OPEN = 1;
