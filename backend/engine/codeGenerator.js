@@ -981,6 +981,7 @@ export async function listProjectTree(projectDir, {
                     break;
                 }
                 if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
+                if (entry.name.startsWith('.env') && entry.name !== '.env.example') continue;
                 if (entry.name === '.git' || entry.name === '.DS_Store') continue;
 
                 const resPath = path.join(currentDir, entry.name);
