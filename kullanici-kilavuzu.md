@@ -117,6 +117,9 @@ AI_PROVIDER=google
 AI_MODEL=gemini-3.7-flash
 ALLOW_MOCK_FALLBACK=false
 GOOGLE_API_KEY=...GeminiAnahtariniz...
+EXECUTION_WORKER_TOKEN=dev-worker-token-internal
+EXECUTION_WORKER_URL=http://127.0.0.1:8099
+READINESS_WORKER_TIMEOUT_MS=2000
 ```
 
 ### 2. Adım: Bağımlılıklar ve Varsayılan Giriş Hesabı
@@ -164,6 +167,8 @@ npm run dev
 
 > ℹ️ **Önemli Not:** `8099` portu doğrudan kullanıcıların tarayıcıdan gezinmesi için değil; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile izole kod çalıştırma işlerini devrettiği korumalı bir iç servistir. Tarayıcıdan girildiğinde `{"error":"Unauthorized"}` dönmesi bu güvenlik önleminin gereğidir.
 
+> Backend'in `GET /healthz` adresi yalnız süreç canlılığını gösterir. `GET /readyz`, Worker'ın `prepare_dependencies` ve `verify_artifact` kapasitesini de denetler; Worker yanıt vermezse `READINESS_WORKER_TIMEOUT_MS` (varsayılan `2000` ms) sonunda HTTP 503 döner.
+
 > Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 * **1. Terminal (Backend):**
@@ -178,6 +183,11 @@ npm run dev
   npm run dev
   ```
   > Tarayıcınızda `http://localhost:5173` adresine giderek uygulamayı kullanmaya başlayabilirsiniz.
+* **3. Terminal (Execution Worker):**
+  ```bash
+  node execution/server.js
+  ```
+  > Komutu proje kökünden çalıştırın. Worker, `http://127.0.0.1:8099` adresinde yalnız backend isteklerini kabul eder.
 
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS veya sunucu ortamında backend'i (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kurunuz. Oturum çerezlerinin güvenliği için HTTPS zorunludur.
@@ -207,7 +217,7 @@ npm run dev
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan pencerede projenize bir isim verin (Örn: `araba-kiralama-otomasyonu`).
 3. Proje listesinde projeniz `PLANNING` durumunda belirecek ve ana dizindeki `projects/<proje_id>` klasörüne fiziksel olarak oluşturulacaktır.
-4. **Çift Yönlü Disk Senkronizasyonu:** `projects/` dizini altına dışarıdan eklenen veya silinen proje klasörleri web arayüzü tarafından otomatik algılanarak yan menüyle anında senkronize edilir. Test süitleri (`npm test`) izole `os.tmpdir()` sandbox'ında çalıştığından ana veritabanı ve yan menü test artıklarından tamamen korunur.
+4. **Disk Senkronizasyonu:** Backend açılışta `projects/` dizinindeki geçerli, kayıt dışı klasörleri güvenli biçimde keşfeder. Arayüzdeki global **Senkronize Et** işlemini yalnız yönetici kullanıcılar çalıştırabilir; normal kullanıcı isteği veritabanına dokunmadan HTTP 403 alır. Diskte bulunmayan bir klasör veritabanı kaydının otomatik silinmesine yol açmaz. Test süitleri (`npm test`) izole `os.tmpdir()` sandbox'ında çalıştığından ana veritabanı ve yan menü test artıklarından tamamen korunur.
 
 ### Adım 3: Manager ile Beyin Fırtınası ve Planlama (Zaman Damgalı Sohbet)
 1. Proje seçildiğinde doğrudan **Manager Sohbet Paneli (`ChatView`)** açılır.
@@ -254,6 +264,7 @@ npm run dev
    - Arşiv, izole sandbox temiz odasında açılarak 18 zorunlu kalite kapısından geçirilir.
    - Tüm kontroller eksiksiz PASS olduğunda `completeVerifiedProject` fonksiyonu atomik bir CAS işlemiyle projeyi `COMPLETED` yapar ve `completion_receipts` tablosuna değişmez denetim makbuzu yazar.
 2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz.
+3. Worker hatası normal akışta yerel geliştirme doğrulamasına çevrilmez. Benzer biçimde `DURUM.md` veya `state.json` içindeki tarihsel “tamamlandı” bilgisi PASS kanıtı sayılmaz: disk kurtarma ZIP'i yeniden oluşturabilse bile artefakt `built` ve indirilemez kalır; geçerli Worker koşusu olmadan proje doğrulanmış sayılmaz.
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
 Sol kenar çubuğunda her proje kartının yanında üç nokta (`...`) işlem butonu yer alır:
@@ -346,12 +357,15 @@ cd backend
 npm test
 ```
 
-Tüm testler merkezi **`backend/tests/test_runner.js`** altındaki master koşucu ile doğrulanır:
-```text
-==================================================
-📊 Test Özeti: 25 Süit Başarılı, 0 Süit Hatalı (%100 Başarı)
-==================================================
+Frontend, üretim build'i ve Execution Worker süitlerini ayrıca çalıştırın:
+
+```bash
+npm --prefix frontend run test:unit
+npm --prefix frontend run build
+npm --prefix execution test
 ```
+
+Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker daemon gerektirir. Docker kapalıysa bu test başarısızlığı kod başarısı olarak gizlemez; açıkça `BLOCKED` raporlanır.
 
 ## 9. Sıkça Sorulan Sorular (SSS) ve Sorun Giderme
 
@@ -392,7 +406,7 @@ Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik o
 - **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js` ➔ `migrations/`
 
 ### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
-XFactor, kaynak dosyalarını AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır. `npm run graph` haritayı her seferinde güncel kaynak koddan yeniden üretir.
+XFactor, kaynak dosyalarını AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır. Dinamik query parçaları rota yolundan ayrılır; ham Node HTTP Worker rotaları ve `backend/executionClient.js` istekleri `requests_route` ilişkileriyle eşleştirilir. `npm run graph` haritayı her seferinde güncel kaynak koddan yeniden üretir.
 
 #### Grafiği Üretme ve Güncelleme:
 Kök dizinde tek bir komutla tüm bilgi grafiğini ve görsel HTML haritalarını tazeleyebilirsiniz:
@@ -452,7 +466,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `sessionAuth.js` | Oturum Yönetimi | 24 saat geçerli, HttpOnly ve SameSite nitelikli `xfactor_session` çerezini üretir; `createRequireAuth` middleware'i ile yetkisiz istekleri 401 ile keser. |
 | `llm.js` | AI Yönlendirici | Google Gemini 3.8 Flash (ve OpenAI) modelleriyle konuşur; 60 saniyelik zaman aşımı ve kooperatif iptal (`AbortSignal`) ile takılan çağrıları güvenle keser. |
 | `executionClient.js` | Worker İstemcisi | Bağımlılık hazırlığı ve temiz oda testlerini `http://127.0.0.1:8099` portundaki izole Execution Worker servisine Bearer token ile delege eder. |
-| `config.js` | Yapılandırma | Çalışma zamanı çevre değişkenlerini doğrular; port, veritabanı yolu, sandbox modu ve CORS izin listesini standardize eder. |
+| `config.js` | Yapılandırma | Çalışma zamanı çevre değişkenlerini doğrular; veritabanı yolları, CORS izin listesi, Worker adres/token bilgileri ve `READINESS_WORKER_TIMEOUT_MS` sınırını standardize eder. |
 | `projectPaths.js` | Dosya Yolu Muhafızı | `projects/` kök dizinini yönetir; proje kimlik formatını (`/^[a-zA-Z0-9_-]{3,64}$/`) denetler ve klasör dışına taşma ihlallerini engeller. |
 | `artifactPaths.js` | Artefakt Yolu | Kalite kapılarından geçen onaylı ZIP paketlerinin saklandığı `backend/data/artifacts/` dizinini izole eder. |
 | `artifactInventory.js` | Paket Envanteri | Proje dosyalarını tarayarak temiz oda testleri için gereken göreceli dosya yollarını ve boyutlarını listeler. |
@@ -472,7 +486,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `backend/engine/` | 13 Dosya | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), deterministik DAG (`dag.js`), durum makinesi (`stateMachine.js`), scaffold koruması (`codeGenerator.js`), veto döngüsü (`selfCorrection.js`) ve derleyici denetleyicisi (`buildValidator.js`). |
 | `backend/routes/` | 3 Dosya | REST API Rotaları | Ön yüzün konuştuğu HTTP uç noktaları: `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz onaylı ZIP indirme). |
 | `backend/verification/` | Değişken | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
-| `backend/services/` | 1 Dosya | Senkronizasyon Servisi | `reconciliationService.js`: `projects/` dizinindeki klasörleri tarayarak SQLite veritabanı ve admin kullanıcısıyla anlık çift yönlü senkronize eden servis. |
+| `backend/services/` | 1 Dosya | Senkronizasyon Servisi | `reconciliationService.js`: `projects/` dizinini zarar vermeden tarar, geçerli kayıt dışı klasörleri keşfeder ve tarihsel dosya durumunu doğrulama kanıtı üretmeden yeniden kurar. Global HTTP senkronizasyonunu yalnız yönetici tetikleyebilir. |
 | `backend/contracts/` | 3 Dosya | Sözleşme & İzlenebilirlik | Sürümlü sözleşmeler (`projectContract.js`), kullanıcı isterlerinin kodla 1:1 eşleştirilmesi (`traceability.js`) ve şablon kirliliği denetimi (`domainPolicy.js`). |
 | `backend/repositories/` | 2 Dosya | Veri Deposu | Kalite koşuları (`verificationRepository.js`) ve onaylı ZIP paketlerini (`artifactRepository.js`) veritabanına bağlayan veri erişim katmanı. |
 | `backend/crypto/` | 1 Dosya | Şifreleme | `mfaCrypto.js`: TOTP gizli anahtarlarını AES-256-GCM ile şifreleyen ve çözen kriptografik modül. |
