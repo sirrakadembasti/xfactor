@@ -63,8 +63,18 @@ async function runTests() {
     await fs.mkdir(frontendRoot, { recursive: true });
     await fs.writeFile(path.join(frontendRoot, 'index.html'), '<!doctype html><main>ready SPA</main>');
 
+    let workerMode = 'ready';
     let worker = http.createServer((req, res) => {
         if (req.url === '/readyz') {
+            if (workerMode === 'stalled') {
+                return setTimeout(() => {
+                    res.writeHead(200, { 'content-type': 'application/json' });
+                    res.end(JSON.stringify({
+                        supportedTypes: ['prepare_dependencies', 'verify_artifact'],
+                        executionCapacity: true
+                    }));
+                }, 1500);
+            }
             res.writeHead(200, { 'content-type': 'application/json' });
             return res.end(JSON.stringify({
                 supportedTypes: ['prepare_dependencies', 'verify_artifact'],
@@ -82,6 +92,7 @@ async function runTests() {
         NODE_ENV: 'production',
         EXECUTION_WORKER_TOKEN: 'health-test-worker-token',
         EXECUTION_WORKER_URL: workerUrl,
+        READINESS_WORKER_TIMEOUT_MS: '100',
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: 'https://xfactor.example',
         MFA_ENCRYPTION_KEY: '55'.repeat(32),
@@ -107,6 +118,19 @@ async function runTests() {
         const ready = await request(port, '/readyz');
         assert.equal(ready.status, 200);
         assert.equal((await ready.json()).status, 'ready');
+
+        workerMode = 'stalled';
+        const stalledStartedAt = Date.now();
+        const stalled = await fetch(`http://127.0.0.1:${port}/readyz`, {
+            signal: AbortSignal.timeout(800),
+            headers: { 'x-forwarded-proto': 'https', accept: 'application/json' }
+        });
+        assert.equal(stalled.status, 503);
+        const stalledBody = await stalled.json();
+        assert.equal(stalledBody.status, 'not_ready');
+        assert.equal(stalledBody.executionCapacity, 'unavailable');
+        assert.ok(Date.now() - stalledStartedAt < 800, 'Stalled worker must be bounded by the readiness timeout');
+        workerMode = 'ready';
 
         const navigation = await request(port, '/projects/example');
         assert.equal(navigation.status, 200);

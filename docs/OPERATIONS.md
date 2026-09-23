@@ -97,6 +97,9 @@ Do not run two web instances against the same paths without the prerequisites in
   `verify_artifact`; it returns HTTP 503 when any required dependency or worker
   capability is unavailable. The production image adds a 30s-interval Docker
   `HEALTHCHECK` on `http://127.0.0.1:8000/healthz`.
+- **Readiness timeout:** `READINESS_WORKER_TIMEOUT_MS` bounds the worker
+  capability check (default `2000` ms). A stalled worker makes `/readyz`
+  return HTTP 503 instead of leaving the probe open indefinitely.
 
 ## 8. Horizontal-scaling prerequisites
 

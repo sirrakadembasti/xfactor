@@ -76,6 +76,7 @@ export function validateRuntimeConfig(env = process.env) {
     const projectsRoot = normalize(env.PROJECTS_ROOT);
     const dbPath = normalize(env.DB_PATH);
     const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8099';
+    const readinessWorkerTimeoutMs = Number.parseInt(normalize(env.READINESS_WORKER_TIMEOUT_MS) || '2000', 10);
     let workerToken = normalize(env.EXECUTION_WORKER_TOKEN);
     if (!production && !workerToken) {
         workerToken = 'dev-worker-token-internal';
@@ -102,6 +103,9 @@ export function validateRuntimeConfig(env = process.env) {
     if (production && !workerToken) {
         issues.push('EXECUTION_WORKER_TOKEN is required in production');
     }
+    if (!Number.isSafeInteger(readinessWorkerTimeoutMs) || readinessWorkerTimeoutMs < 1) {
+        issues.push('READINESS_WORKER_TIMEOUT_MS must be a positive integer');
+    }
     if (production) {
         try {
             getMfaEncryptionKeys(env);
@@ -124,6 +128,6 @@ export function validateRuntimeConfig(env = process.env) {
         DB_PATH: dbPath,
         EXECUTION_WORKER_URL: workerUrl,
         EXECUTION_WORKER_TOKEN: workerToken,
+        READINESS_WORKER_TIMEOUT_MS: readinessWorkerTimeoutMs,
     };
 }
-

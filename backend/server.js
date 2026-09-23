@@ -103,7 +103,9 @@ app.get('/readyz', async (req, res) => {
         try {
             const { createExecutionClient } = await import('./executionClient.js');
             const client = createExecutionClient(runtimeConfig);
-            const caps = await client.getCapabilities();
+            const caps = await client.getCapabilities({
+                signal: AbortSignal.timeout(runtimeConfig.READINESS_WORKER_TIMEOUT_MS)
+            });
             const supported = Array.isArray(caps.supportedTypes)
                 && caps.supportedTypes.includes('prepare_dependencies')
                 && caps.supportedTypes.includes('verify_artifact');
