@@ -84,6 +84,14 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Etki:** Doğrulama teknik olarak geçse bile kullanıcı tarafından onaylanan uçtan uca işlevsel kapsam tamamlanmış sayılmaz.
 - **Aksiyon:** Docker doğrulama altyapısı hazırlandıktan sonra aynı Manager sohbetinde eksik ekranlar ve kritik kullanıcı yolculukları açıkça talep edilerek yeni sürüm üretilecek.
 
+### TASK-STATE-008 — Doğrulama hatası sonrası durum makinesi kilitlendi
+
+- **Durum:** Çözüldü
+- **Aşama:** Manager düzeltme planı
+- **Bulgu:** Kanonik doğrulama başarısız olduğunda workflow projeyi `implementation_finished` durumundan `paused` durumuna taşımaya çalıştı; durum makinesi bu geçişi reddetti. Aynı durum Manager sohbetindeki revizyon listesinde de olmadığı için v2 plan metni kaydolmasına rağmen onay kartı gösterilmedi.
+- **Kök neden:** `implementation_finished -> paused/pending_approval` geçişleri tanımlı değildi ve chat rotasının revize edilebilir durumları `implementation_finished` değerini kapsamıyordu.
+- **Aksiyon:** Önce iki regresyon testi yazıldı ve beklenen nedenle başarısız oldukları görüldü. Durum makinesine güvenli duraklatma ve yeni plan onayı geçişleri, chat rotasına revizyon desteği eklendi. Odaklı testler 1/1 ve 7/7 geçti.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -92,3 +100,5 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — Backend direktörü 16 alt görevi tamamladı; frontend direktörü üretime başladı.
 - 2026-09-23 — Backend ve frontend DAG görevleri tamamlandı. Kapsam incelemesinde frontend tarafında kategori, üye, ödünç/iade ve gecikme ekranlarının üretilmediği saptandı.
 - 2026-09-23 — Kanonik doğrulama Docker daemon kapalı olduğu için yedi zorunlu kapıda engellendi; taslak ZIP reddedildi ve teslim edilmedi.
+- 2026-09-23 — Docker Desktop başlatıldı; daemon ve `xfactor-worker-runtime` imajı doğrulandı.
+- 2026-09-23 — Manager sohbeti v2 düzeltme planını üretti fakat durum makinesi kilidi onay kartını engelledi. Regresyon testleriyle çekirdek geçiş hatası giderildi.

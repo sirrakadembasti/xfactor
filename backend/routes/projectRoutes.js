@@ -511,6 +511,7 @@ export function createProjectRouter({
             const revisableStatuses = new Set([
                 PROJECT_STATUS.PLANNING,
                 PROJECT_STATUS.PENDING_APPROVAL,
+                PROJECT_STATUS.IMPLEMENTATION_FINISHED,
                 PROJECT_STATUS.CAPABILITY_BLOCKED,
                 PROJECT_STATUS.PAUSED,
                 PROJECT_STATUS.VERIFICATION_FAILED,

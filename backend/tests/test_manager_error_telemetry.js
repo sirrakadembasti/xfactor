@@ -115,7 +115,7 @@ try {
         assert.ok(prompt.includes('Süreç hatası: LLM Kota Sınırı Aşıldı'), 'Prompt should preserve technical error message');
     });
 
-    await runAsyncTest('5. In paused and verification_failed states, a plan ready response transitions to pending_approval', async () => {
+    await runAsyncTest('5. Revisable post-production states transition to pending_approval when a new plan is ready', async () => {
         // Paused state transition test
         const pausedProject = await createProject({ title: "Paused Transition Test" });
         db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(pausedProject.id);
@@ -157,6 +157,19 @@ try {
             assert.strictEqual(bodyFailed.status, 'pending_approval', 'Verification_failed project should transition to pending_approval on plan ready');
             assert.strictEqual(bodyFailed.remediation, null, 'Remediation should be reset to null');
             assert.strictEqual(bodyFailed.last_error, null, 'Last error should be reset to null');
+
+            // An implementation whose canonical verification failed must remain revisable.
+            const finishedProject = await createProject({ title: "Implementation Finished Revision Test" });
+            db.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(finishedProject.id);
+
+            const resFinished = await fetch(`http://127.0.0.1:${port}/api/projects/${finishedProject.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'düzeltme planını hazırla ve başla' })
+            });
+            assert.strictEqual(resFinished.status, 200, `Chat endpoint should return 200 for implementation_finished project, got ${resFinished.status}`);
+            const bodyFinished = await resFinished.json();
+            assert.strictEqual(bodyFinished.status, 'pending_approval', 'Implementation_finished project should transition to pending_approval on plan ready');
         } finally {
             await new Promise(r => server.close(r));
         }
