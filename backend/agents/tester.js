@@ -1,4 +1,5 @@
 import path from 'path';
+import { isBuiltin } from 'node:module';
 import { parse } from '@babel/parser';
 import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
 import { loadAgentPromptFromDocs } from './agentLoader.js';
@@ -942,6 +943,7 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                 const specifier = match[1];
                 if (!specifier) continue;
                 if (file.path === 'next-env.d.ts' && specifier.startsWith('./.next/types/')) continue;
+                if (specifier.startsWith('node:') || isBuiltin(specifier)) continue;
 
                 // A. Yerel İthalat Denetimi (@/... veya ./... veya ../...)
                 if (specifier.startsWith('@/') || specifier.startsWith('@lib/') || specifier.startsWith('@components/') || specifier.startsWith('@app/') || specifier.startsWith('@actions/') || specifier.startsWith('./') || specifier.startsWith('../')) {

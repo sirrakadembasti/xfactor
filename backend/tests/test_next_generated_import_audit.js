@@ -10,3 +10,12 @@ test('static audit accepts Next-generated next-env type references', () => {
     const audit = runDeterministicProjectAudit(files);
     assert.equal(audit.passed, true, audit.issues.join('\n'));
 });
+
+test('static audit treats node: imports as builtins', () => {
+    const files = [
+        { path: 'package.json', content: '{"dependencies":{}}' },
+        { path: 'tests/library.test.ts', content: "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\n" }
+    ];
+    const audit = runDeterministicProjectAudit(files);
+    assert.equal(audit.passed, true, audit.issues.join('\n'));
+});
