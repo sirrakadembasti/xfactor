@@ -17,19 +17,20 @@ export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, option
     const adapterId = adapter?.id || 'direct-fetch';
     const checks = [], issues = [];
     let html = '';
+    const requestTimeoutMs = opts.timeoutMs || 60000;
 
     const request = async url => {
         if (typeof adapter?.request === 'function') {
-            return adapter.request({ url, method: 'GET', timeoutMs: opts.timeoutMs || 5000, signal: opts.signal });
+            return adapter.request({ url, method: 'GET', timeoutMs: requestTimeoutMs, signal: opts.signal });
         }
         if (typeof adapter?.execute === 'function') {
-            const result = await adapter.execute({ command: 'node', args: ['-e', `fetch(${JSON.stringify(url)}).then(async r=>process.stdout.write(JSON.stringify({statusCode:r.status,html:await r.text()}))).catch(e=>{console.error(e.message);process.exit(1)})`], workspace: opts.workspace || '/workspace', timeoutMs: opts.timeoutMs || 5000, signal: opts.signal });
+            const result = await adapter.execute({ command: 'node', args: ['-e', `fetch(${JSON.stringify(url)}).then(async r=>process.stdout.write(JSON.stringify({statusCode:r.status,html:await r.text()}))).catch(e=>{console.error(e.message);process.exit(1)})`], workspace: opts.workspace || '/workspace', timeoutMs: requestTimeoutMs, signal: opts.signal });
             if (result.exitCode && result.exitCode !== 0) throw new Error(result.stderr || 'Sandbox browser request failed');
             return JSON.parse(result.stdout || '{}');
         }
 
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort('TIMEOUT'), opts.timeoutMs || 5000);
+        const timer = setTimeout(() => controller.abort('TIMEOUT'), requestTimeoutMs);
         try {
             const res = await fetch(url, {
                 signal: opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal

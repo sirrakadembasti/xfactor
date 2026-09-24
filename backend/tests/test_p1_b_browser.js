@@ -5,6 +5,20 @@ import { verifyBrowserJourney } from '../verification/browserVerifier.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 
+await runAsyncTest('0. sandbox browser request allows a cold frontend build', async () => {
+    let timeoutMs;
+    const adapter = {
+        id: 'docker-worker',
+        async request(request) {
+            timeoutMs = request.timeoutMs;
+            return { statusCode: 200, html: '<h1>Kütüphane</h1>' };
+        }
+    };
+    const result = await verifyBrowserJourney('http://127.0.0.1:3000', { steps: [{ action: 'assert_text', expectedText: 'Kütüphane' }] }, { adapter });
+    assert.strictEqual(result.passed, true);
+    assert.ok(timeoutMs >= 30000);
+});
+
 await runAsyncTest('1. verifyBrowserJourney should execute mock frontend user flow and assert state', async () => {
     const server = http.createServer((req, res) => {
         if (req.url === '/' || req.url === '/index.html') {
