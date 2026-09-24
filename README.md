@@ -147,5 +147,6 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 ## 📚 Kapsamlı Dokümantasyon
 
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
+* 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
 * 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.

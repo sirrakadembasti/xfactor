@@ -263,7 +263,7 @@ npm run dev
    - Sunucu tarafında ZIP arşivi oluşturulur ve disk SHA-256 özeti hesaplanır (`artifacts`).
    - Arşiv, izole sandbox temiz odasında açılarak 18 zorunlu kalite kapısından geçirilir.
    - Tüm kontroller eksiksiz PASS olduğunda `completeVerifiedProject` fonksiyonu atomik bir CAS işlemiyle projeyi `COMPLETED` yapar ve `completion_receipts` tablosuna değişmez denetim makbuzu yazar.
-2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz.
+2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz. Örnek `kutuphane-takip-sistemi-2` projesinin üretim ve hata kaydı kökteki `surec-raporu.md` dosyasındadır; proje tamamlanmadan örnek ZIP'i kullanıma hazır kabul etmeyin.
 3. Worker hatası normal akışta yerel geliştirme doğrulamasına çevrilmez. Benzer biçimde `DURUM.md` veya `state.json` içindeki tarihsel “tamamlandı” bilgisi PASS kanıtı sayılmaz: disk kurtarma ZIP'i yeniden oluşturabilse bile artefakt `built` ve indirilemez kalır; geçerli Worker koşusu olmadan proje doğrulanmış sayılmaz.
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
@@ -516,14 +516,14 @@ XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamaml
 | 1 | `package_json` | Bağımlılıkların biçim, sürüm ve çakışma kontrolü; geçersiz `^1.0.0` tahminleri engellenir. |
 | 2 | `lockfile` | Paket yöneticisi kilit dosyasının (`package-lock.json`) varlığı ve tutarlılığı. |
 | 3 | `ast_import_inventory` | Kod içinde `import` edilen tüm paketlerin `package.json`'da tanımlı olduğunun AST analiziyle kanıtı. |
-| 4 | `clean_install` | Temiz, izole sandbox ortamında `npm install` komutunun 0 çıkış koduyla başarıyla tamamlanması. |
+| 4 | `clean_install` | Temiz, izole sandbox ortamında `npm ci` komutunun 0 çıkış koduyla başarıyla tamamlanması. |
 | 5 | `typecheck` | Gerçek framework derleyicisi (`tsc --noEmit`) ile tip kontrolü; eksik tip veya kırık export derhal reddedilir. |
 | 6 | `framework_build` | Gerçek framework derleme betiğinin (`npm run build`) sandbox içinde başarıyla sonuçlanması. |
 | 7 | `requirement_traceability` | Sözleşmedeki her zorunlu gereksinimin (`requirements`) en az bir PASS alan kontrolle kanıtlanması. |
 | 8 | `service_manifest` | Frontend/backend port, base URL, proxy ve CORS sözleşmesinin `service-manifest.json` ile çakışmasız yapılandırılması. |
 | 9 | `database_verification` | Prisma şemasının (`npx prisma validate`), client üretiminin (`prisma generate`), migration/push (`prisma db push`), tohumlama (`prisma db seed`) ve kullanıcı hesabı varlığının (`prisma_seed_accounts`) izole worker'da doğrulanması. |
 | 10 | `api_contract` | Üretilen HTTP API rotalarının gerçek HTTP istekleriyle ve veritabanı yan etkileriyle doğrulanması. |
-| 11 | `browser_journey` | Headless Chromium tarayıcısıyla kritik kullanıcı yolculuklarının (form doldurma, CRUD, sayfa yenileme) testi. |
+| 11 | `browser_journey` | Sandbox içinden HTTP sayfa yükleme ve onaylı yolculuk adımlarının metin/öğe doğrulaması; gerçek Chromium etkileşimi ayrıca E2E testlerinde yapılır. |
 | 12 | `smoke_gate` | Projenin bağımsız servis başlatıcı ve sağlık kontrolleriyle uçtan uca ayağa kalktığının doğrulanması. |
 | 13 | `test_infrastructure` | Proje içinde çalıştırılabilir test altyapısının (`test` scripti, test dosyaları) varlığı. |
 | 14 | `domain_entity_check` | Kullanıcının istediği ana modellerin ve iş akışlarının kod tabanında somut olarak varlığının denetimi. |
@@ -532,5 +532,5 @@ XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamaml
 | 17 | `security_baseline` | Açık CORS, hard-coded secret, zayıf oturum ve enjeksiyon risklerinin statik ve dinamik denetimi. |
 | 18 | `readme_check` | Projede üretilen README.md içindeki kurulum ve çalıştırma komutlarının projeyle birebir uyumu. |
 
-Her kapı; çalıştırılan komut, çıkış kodu, SHA-256 çıktı özetleri (`stdout_digest`, `stderr_digest`) ve ISO UTC takvim zaman damgalarını veritabanında `verification_checks` ve `verification_evidence` tablolarına değişmez olarak yazar. Kanıtı eksik veya sahte olan hiçbir kontrol `PASS` sayılmaz.
+Her kapı, çalıştırılan komutun veya türetilmiş PASS kaynaklarının kanıtını; çıkış kodu, SHA-256 çıktı özetleri (`stdout_digest`, `stderr_digest`) ve ISO UTC zaman damgalarıyla `verification_checks` kayıtlarına yazar. Kanıtı eksik veya sahte olan hiçbir zorunlu kontrol tamamlanma makbuzunu geçemez.
 🎉 **XFactor ile otonom, güvenli ve hatasız yazılım geliştirmenin keyfini çıkarın!**
