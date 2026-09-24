@@ -67,7 +67,7 @@ try {
             }
         };
 
-        const result = await verifyProjectSmoke(workspace, {}, { adapter, startupTimeoutMs: 100 });
+        const result = await verifyProjectSmoke(workspace, { api: { baseUrl: 'http://127.0.0.1:3000' } }, { adapter, startupTimeoutMs: 100 });
 
         assert.strictEqual(result.passed, true);
         assert.ok(calls.some(([kind, request]) => kind === 'spawn'

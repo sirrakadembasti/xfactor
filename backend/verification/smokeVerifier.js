@@ -19,8 +19,8 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     const serviceId = contract.process?.id || contract.service?.id || declaredService[0] || 'web';
     const service = contract.process || contract.service || declaredService[1] || null;
     const healthUrl = contract.healthUrl
-        || (contract.api?.baseUrl ? `${contract.api.baseUrl}/health` : null)
-        || (service?.port ? `http://127.0.0.1:${service.port}${service.healthEndpoint || '/'}` : null);
+        || (service?.port ? `http://127.0.0.1:${service.port}${service.healthEndpoint || '/'}` : null)
+        || (contract.api?.baseUrl ? `${contract.api.baseUrl}/health` : null);
 
     try {
         if (service && !options.skipSpawnForLiveServer) {
