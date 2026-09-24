@@ -3,6 +3,7 @@ import { executeInSandbox } from './sandboxRunner.js';
 
 export function resolveDatabaseFilePath(projectDir, env = {}, schemaPath = 'prisma/schema.prisma') {
     const raw = typeof env.DATABASE_URL === 'string' ? env.DATABASE_URL.replace(/^file:/, '').trim() : 'dev.db';
+    if (projectDir.startsWith('/')) return path.posix.isAbsolute(raw) ? raw : path.posix.resolve(projectDir, path.posix.dirname(schemaPath.replaceAll('\\', '/')), raw);
     return path.isAbsolute(raw) ? raw : path.resolve(projectDir, path.dirname(schemaPath), raw);
 }
 
@@ -10,7 +11,7 @@ export async function verifyDatabase(projectDir, contract = {}, env = {}, option
     const adapter = options.adapter;
     if (typeof adapter?.execute !== 'function') return { passed: false, checks: [{ name: 'database_connectivity', status: 'blocked', reason: 'Database verification requires supplied sandbox adapter.' }], issues: ['Database adapter is required.'], dbPath: null };
     const schemaPath = contract.schemaPath || 'prisma/schema.prisma';
-    const dbPath = resolveDatabaseFilePath(projectDir, env, schemaPath);
+    const dbPath = resolveDatabaseFilePath(options.workspace || projectDir, env, schemaPath);
     try {
         const result = await executeInSandbox('node', ['-e', "const [db,schema]=process.argv.slice(1); const fs=require('fs'); process.stdout.write(JSON.stringify({schemaExists:fs.existsSync(schema),databaseExists:fs.existsSync(db)}))", dbPath, schemaPath], { adapter, workspace: options.workspace || '/workspace', timeoutMs: options.timeoutMs || 30000, signal: options.signal, env });
         const evidence = { adapterId: adapter.id, stdout: result.stdout, stderr: result.stderr, command: 'database evidence probe' };

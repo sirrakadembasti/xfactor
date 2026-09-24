@@ -23,6 +23,22 @@ try {
             path.join(workspace, 'prisma', 'dev.db')
         );
     });
+    await runAsyncTest('0a. sandbox probe uses sandbox paths, not host project paths', async () => {
+        const workspace = await createTempWorkspace();
+        let probeArgs;
+        const adapter = {
+            id: 'docker-worker',
+            isAvailable() { return true; },
+            async execute(request) {
+                probeArgs = request.args;
+                return { passed: true, exitCode: 0, stdout: '{"schemaExists":true,"databaseExists":true}', stderr: '' };
+            }
+        };
+        const result = await verifyDatabase(workspace, { database: { engine: 'sqlite' } }, { DATABASE_URL: 'file:./dev.db' }, { adapter, workspace: '/workspace' });
+        assert.strictEqual(result.passed, true);
+        assert.strictEqual(probeArgs[2], '/workspace/prisma/dev.db');
+        assert.strictEqual(result.dbPath, '/workspace/prisma/dev.db');
+    });
     await runAsyncTest('1. verifyDatabase should fail-closed when database schema or file is missing', async () => {
         const workspace = await createTempWorkspace();
         const res = await verifyDatabase(workspace, { database: { engine: 'sqlite' } }, {});
