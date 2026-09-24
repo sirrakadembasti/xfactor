@@ -233,6 +233,13 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **ZIP denetimi:** 59 girişin CRC kontrolü temiz. `README.md`, `.env.example`, `package-lock.json`, `Dockerfile`, Prisma şeması, test ve kategori/kitap/üye/ödünç API ile ekran dosyaları mevcut; özel `.env` ve SQLite çalışma verisi yok. README, Node.js 22 ile `npm ci`, `npx prisma generate`, `npx prisma db push`, `npm run dev` adımlarını ve seed betiğinin mevcut veriyi sileceği uyarısını içeriyor.
 - **Teslim dosyası:** `backend/data/deliveries/kutuphane-takip-sistemi-2.zip` çalışma verisi altında tutuluyor; git'e eklenmeyecek.
 
+### TASK-RELEASE-028 — Graphify ve main dalı kontrolü
+
+- **Durum:** Graphify yeniden üretildi ve testi geçti; push son kontrolü sürüyor.
+- **Graphify:** `npm.cmd run graph` ile 304 kaynak/belge dosyasından 1.950 düğüm ve 5.231 ilişki üretildi; `node backend/tests/test_graphify.js` geçti. Dört görsel/makine okunur çıktı ayrı commit'e alındı (`894cff3`).
+- **Dal:** Çalışma dalı `main`; `origin/main` (`d03261d`) yerel `main` tarihçesinin atası. Ayrı `verification-hardening` çalışma ağacında iki eski commit bulunuyor; bunların worker hata durumunda fail-closed kalma ve kurtarılan ZIP'i doğrulanmamış tutma davranışları güncel `main` kaynaklarında zaten mevcut. Bu nedenle aynı değişiklikleri ikinci kez merge etmek gerekmiyor.
+- **Koruma:** `backend/data/` ve `_tmp_library_*.mjs` yardımcıları git'e eklenmedi.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
