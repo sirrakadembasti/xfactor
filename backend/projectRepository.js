@@ -420,7 +420,7 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         if (derived && (payload.sourceGateNames || payload.sourceCheckIds)) {
             const passByName = new Set(checks.filter(item => item.status === 'PASS').map(item => item.gate_name));
             const passById = new Set(checks.filter(item => item.status === 'PASS').map(item => item.id));
-            if (payload.sourceGateNames?.some(name => !passByName.has(name))
+            if (payload.sourceGateNames?.some(name => !passByName.has(name.startsWith('detail:') ? name.slice('detail:'.length) : name))
                 || payload.sourceCheckIds?.some(id => !passById.has(id))) {
                 throw new Error(`Mandatory gate ${check.gate_name} has invalid derived evidence sources.`);
             }

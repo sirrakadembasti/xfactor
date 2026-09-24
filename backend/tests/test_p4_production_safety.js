@@ -163,9 +163,18 @@ await runAsyncTest('P4.5 completion returns a durable receipt containing the com
             INSERT INTO verification_checks
               (id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
                started_at, ended_at, stdout_digest, stderr_digest, evidence_json)
-            VALUES (?, ?, ?, ?, 'MANDATORY', 'PASS', 'node gate', 0, ?, ?, ?, ?, '{"ok":true}')
-        `).run(`${r}-${gateName}`, c, r, gateName, timestamp, timestamp, `stdout-${gateName}`, `stderr-${gateName}`);
+            VALUES (?, ?, ?, ?, 'MANDATORY', 'PASS', 'node gate', 0, ?, ?, ?, ?, ?)
+        `).run(`${r}-${gateName}`, c, r, gateName, timestamp, timestamp, `stdout-${gateName}`, `stderr-${gateName}`,
+            gateName === 'test_infrastructure'
+                ? JSON.stringify({ kind: 'derived_gate', producer: 'aggregate-verification', sourceGateNames: ['detail:test_suite_execution'], computedAt: timestamp, policyVersion: '2.0' })
+                : '{"ok":true}');
     }
+    db.prepare(`
+        INSERT INTO verification_checks
+          (id, contract_id, run_id, gate_name, applicability, status, command, exit_code,
+           started_at, ended_at, stdout_digest, stderr_digest, evidence_json)
+        VALUES (?, ?, ?, 'test_suite_execution', 'OPTIONAL', 'PASS', 'npm test', 0, ?, ?, 'test-out', 'test-err', '{"ok":true}')
+    `).run(`${r}-test_suite_execution`, c, r, timestamp, timestamp);
     artifactRepository.createArtifact({
         id: a, projectId: p, contractId: c, kind: 'zip', path: file,
         sha256: artifactHash, size: 20, status: 'verification_pending'
