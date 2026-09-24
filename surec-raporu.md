@@ -217,6 +217,13 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Bulgu:** Bir koşu sırasında Docker Desktop/daemon kapandı; framework derlemesi zaman aşımına uğradı ve servis/API/tarayıcı istekleri bağlanamadı. Docker yeniden açıldıktan sonra istemci, worker işi sürerken tek bir `ECONNRESET` durum sorgusunu nihai hata kabul etti. Arkada süren iş 15 dakikalık sert sınırda sonuç üretmeden `failed_timeout` oldu.
 - **Aksiyon:** Docker daemon ve temiz konteyner durumu doğrulandı. İstemci yalnız geçici `fetch failed` kopuşlarını en fazla 60 saniye ve iş son tarihine kadar tekrar deniyor; sorgu sıklığı düşürüldü (`1990cae`). Temiz kurulum, derleme ve çalışma kontrollerini birlikte kapsayan worker üst sınırı 25 dakikaya çıkarıldı, bu proje için 20 dakikalık son tarih kullanıldı; protokol sınır testi 16/16 geçti (`458ae8a`). Worker yeni kodla yeniden başlatıldı. Her başarısız koşunun kaydı korunuyor.
 
+### TASK-HANDOFF-026 — Aktif son doğrulama ve teslim devri
+
+- **Durum:** `verification-1eae55f6-1212-4c14-b643-58c8e05b79aa` çalışıyor; sonuç henüz yok.
+- **İş kimliği:** `8d7b1049-bb63-456c-a62c-e5ee88d1cb96`; worker son tarihi `2026-09-24T16:29:54.225Z`.
+- **Kontrol:** `backend/data/library-worker-jobs.json` içindeki son iş `running` ve henüz kontrol listesi üretmedi. ZIP teslim edilmiş veya proje `completed` sayılmış değildir.
+- **Sonraki adım:** Worker sonucunu ve proje/artefakt/makbuz durumunu kontrol et. Başarısızsa yalnız ilgili kapıyı tanıla; başarılıysa resmi ön yüz indirmesini, ZIP içeriğini ve SHA-256 bütünlüğünü doğrula. Sonuçları bu rapora ekle, Graphify'ı güncelle, görev başına commit oluştur ve istenen push işlemini yap.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
