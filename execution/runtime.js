@@ -7,7 +7,7 @@ import os from 'node:os';
 import { executeVerificationJob, prepareDependencies, prepareResult } from './jobExecutor.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
-const MAX_JOB_MS = 15 * 60 * 1000;
+import { MAX_JOB_MS } from './limits.js';
 const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI|NODE_OPTIONS|PRISMA_ENGINES_MIRROR|DATABASE_URL|AUTH_SECRET|NEXTAUTH_SECRET|NEXTAUTH_URL)$/;
 export function getIsolationArgs(job = {}) {
   const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';

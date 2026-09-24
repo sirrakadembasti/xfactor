@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { ARTIFACT_LIMITS } from '../backend/artifactLimits.js';
-const MAX_DEADLINE_MS = 15 * 60 * 1000;
+import { MAX_JOB_MS } from './limits.js';
 const MAX_PACKAGE_BYTES = 4 * 1024 * 1024;
 const MAX_ARCHIVE_BYTES = ARTIFACT_LIMITS.maxArchiveBytes;
 const HEX64 = /^[a-f0-9]{64}$/;
@@ -24,7 +24,7 @@ export function validateJob(input, now = Date.now()) {
   if (typeof nonce !== 'string' || !HEX64.test(nonce)) return { valid: false, reason: 'Invalid nonce' };
   if (typeof inputSha256 !== 'string' || !HEX64.test(inputSha256)) return { valid: false, reason: 'Invalid inputSha256' };
   if (archiveSha256 !== undefined && (typeof archiveSha256 !== 'string' || !HEX64.test(archiveSha256))) return { valid: false, reason: 'Invalid archiveSha256' };
-  if (!Number.isSafeInteger(deadline) || deadline <= now || deadline - now > MAX_DEADLINE_MS) return { valid: false, reason: 'Expired or invalid deadline' };
+  if (!Number.isSafeInteger(deadline) || deadline <= now || deadline - now > MAX_JOB_MS) return { valid: false, reason: 'Expired or invalid deadline' };
   if (!contract || typeof contract !== 'object' || Array.isArray(contract)) return { valid: false, reason: 'Invalid contract' };
   const forbidden = ['hostPath','image','dockerParams','workspace','cwd','inputPaths','artifactPath'];
   if (forbidden.some(key => key in input) || forbidden.some(key => key in contract)) return { valid: false, reason: 'Forbidden host/Docker field' };
