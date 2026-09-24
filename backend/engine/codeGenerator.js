@@ -6,6 +6,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
+import { isBuiltin } from 'node:module';
 import { isSafeProjectPath, assertPathInsideRoot, assertSafeExistingParent } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
 
@@ -100,12 +101,13 @@ const NODE_BUILTINS = new Set([
 export async function scanUsedNpmPackages(projectDir) {
     const usedPackages = new Set();
     const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx']);
+    const ignoredDirectories = new Set(['node_modules', '.git', '.next', 'coverage', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
 
     async function scanDir(currentDir) {
         try {
             const entries = await fs.readdir(currentDir, { withFileTypes: true });
             for (const entry of entries) {
-                if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'manager') continue;
+                if (ignoredDirectories.has(entry.name)) continue;
                 const resPath = path.join(currentDir, entry.name);
                 if (entry.isDirectory()) {
                     await scanDir(resPath);
@@ -115,7 +117,7 @@ export async function scanUsedNpmPackages(projectDir) {
                     for (const match of importMatches) {
                         const specifier = match[1];
                         if (specifier.startsWith('.') || specifier.startsWith('@/') || specifier.startsWith('/') || specifier.startsWith('@lib/') || specifier.startsWith('@components/') || specifier.startsWith('@app/') || specifier.startsWith('@actions/')) continue;
-                        if (NODE_BUILTINS.has(specifier)) continue;
+                        if (specifier.startsWith('node:') || isBuiltin(specifier) || NODE_BUILTINS.has(specifier)) continue;
 
                         // Paket adını ayrıştır (örn: @prisma/client veya sonner veya lucide-react/dist/...)
                         let pkgName = specifier;
