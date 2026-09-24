@@ -219,10 +219,10 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 
 ### TASK-HANDOFF-026 — Aktif son doğrulama ve teslim devri
 
-- **Durum:** `verification-1eae55f6-1212-4c14-b643-58c8e05b79aa` çalışıyor; sonuç henüz yok.
+- **Durum:** `verification-1eae55f6-1212-4c14-b643-58c8e05b79aa` başarısız tamamlandı; teslim yapılmadı.
 - **İş kimliği:** `8d7b1049-bb63-456c-a62c-e5ee88d1cb96`; worker son tarihi `2026-09-24T16:29:54.225Z`.
-- **Kontrol:** `backend/data/library-worker-jobs.json` içindeki son iş `running` ve henüz kontrol listesi üretmedi. ZIP teslim edilmiş veya proje `completed` sayılmış değildir.
-- **Sonraki adım:** Worker sonucunu ve proje/artefakt/makbuz durumunu kontrol et. Başarısızsa yalnız ilgili kapıyı tanıla; başarılıysa resmi ön yüz indirmesini, ZIP içeriğini ve SHA-256 bütünlüğünü doğrula. Sonuçları bu rapora ekle, Graphify'ı güncelle, görev başına commit oluştur ve istenen push işlemini yap.
+- **Kontrol:** Worker kaydı `failed` ve `passed: false` döndürdü. Temiz kurulum, Prisma validate/generate/db push/seed ve `npm test` geçti; typecheck ve framework build `Command timed out`, smoke liveness `Readiness probe timed out`, API ve tarayıcı istekleri `fetch failed` oldu. Proje `artifact_verified` revizyon 53, son artefakt `rejected`, tamamlama makbuzu yok. Docker API sonraki kontrolde erişilemedi; bu, ortak altyapı kesintisiyle uyumlu fakat koşu sırasında kapanma anı ayrıca kanıtlanmadı.
+- **Sonraki adım:** Docker daemon ve worker servislerini geri getirip yalnız reddedilen koşunun yerine yeni kanonik doğrulama yap. Geçerse resmi ön yüz ZIP indirmesini, içeriği ve SHA-256 bütünlüğünü doğrula; Graphify'ı güncelle ve istenen push işlemini yap.
 
 ## Zaman Çizelgesi
 
