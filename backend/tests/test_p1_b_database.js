@@ -4,7 +4,7 @@ import path from 'path';
 import os from 'os';
 import { DatabaseSync } from 'node:sqlite';
 import { createTestHarness } from './testHarness.js';
-import { verifyDatabase } from '../verification/databaseVerifier.js';
+import { verifyDatabase, resolveDatabaseFilePath } from '../verification/databaseVerifier.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -16,6 +16,13 @@ async function createTempWorkspace(prefix = 'xfactor-db-verif-test-') {
 }
 
 try {
+    await runAsyncTest('0. Prisma SQLite file URL resolves relative to schema directory', async () => {
+        const workspace = await createTempWorkspace();
+        assert.strictEqual(
+            resolveDatabaseFilePath(workspace, { DATABASE_URL: 'file:./dev.db' }),
+            path.join(workspace, 'prisma', 'dev.db')
+        );
+    });
     await runAsyncTest('1. verifyDatabase should fail-closed when database schema or file is missing', async () => {
         const workspace = await createTempWorkspace();
         const res = await verifyDatabase(workspace, { database: { engine: 'sqlite' } }, {});
