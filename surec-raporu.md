@@ -210,6 +210,13 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Bulgu:** Worker'daki bütün kontroller PASS olmasına ve ZIP doğrulanmasına rağmen makbuz denetimi `detail:` önekli kaynak adlarını kayıtlı kontrol adlarıyla eşleştiremedi. Bu düzeltildikten sonra paket, README ve smoke kapılarının bazıları PASS için gerekli çalıştırılabilir veya türetilmiş kanıt alanlarını taşımadığı görüldü. Proje `artifact_verified` durumunda kaldı; tamamlanmış ve indirilebilir sayılmadı.
 - **Aksiyon:** `detail:` kaynakları yalnızca aynı koşudaki kayıtlı PASS kontrolleriyle eşleştirildi (`5488915`). Paket/README statik kontrollerine yapılan denetimi ve çıkış kodunu açıklayan kanıt; smoke kapısına geçtiği alt kontrolleri gösteren türetilmiş kanıt eklendi (`6e3466a`). Önce başarısız, sonra başarılı regresyon testleri çalıştırıldı. Önceki koşunun değiştirilemez kaydı güncellenmedi; yeni kanıtlarla yeni ZIP koşusu başlatıldı.
 
+### TASK-RUNTIME-025 — Docker kapanması, geçici bağlantı kopması ve iş süresi
+
+- **Durum:** Altyapı yeniden başlatıldı; yeni sınırlı koşu sürüyor.
+- **Aşama:** `verification-0ced7756-07d7-44b9-a401-c5fa0146fbad` ve sonraki worker işi.
+- **Bulgu:** Bir koşu sırasında Docker Desktop/daemon kapandı; framework derlemesi zaman aşımına uğradı ve servis/API/tarayıcı istekleri bağlanamadı. Docker yeniden açıldıktan sonra istemci, worker işi sürerken tek bir `ECONNRESET` durum sorgusunu nihai hata kabul etti. Arkada süren iş 15 dakikalık sert sınırda sonuç üretmeden `failed_timeout` oldu.
+- **Aksiyon:** Docker daemon ve temiz konteyner durumu doğrulandı. İstemci yalnız geçici `fetch failed` kopuşlarını en fazla 60 saniye ve iş son tarihine kadar tekrar deniyor; sorgu sıklığı düşürüldü (`1990cae`). Temiz kurulum, derleme ve çalışma kontrollerini birlikte kapsayan worker üst sınırı 25 dakikaya çıkarıldı, bu proje için 20 dakikalık son tarih kullanıldı; protokol sınır testi 16/16 geçti (`458ae8a`). Worker yeni kodla yeniden başlatıldı. Her başarısız koşunun kaydı korunuyor.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
