@@ -33,7 +33,26 @@ export function createExecutionClient(config = {}) {
     try {
       let submitted; try { submitted = await request('/v1/jobs', { method: 'POST', body: JSON.stringify(payload), signal }); } catch (error) { if (signal?.aborted) await abort(); throw error; }
       assertIdentity(submitted, job);
-      while (true) { if (signal?.aborted) await abort(); let status; try { status = await request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`, { signal }); } catch (error) { if (signal?.aborted) await abort(); throw error; } assertIdentity(status, job); if (status.result) assertIdentity(status.result, job); if (['completed','failed','cancelled','failed_interrupted','failed_timeout'].includes(status.status)) return status; await new Promise((resolve, reject) => { let done = false; const onAbort = () => { if (done) return; done = true; clearTimeout(timer); abort().then(reject, reject); }; const timer = setTimeout(() => { done = true; signal?.removeEventListener('abort', onAbort); resolve(); }, 100); signal?.addEventListener('abort', onAbort, { once: true }); }); }
+      let firstTransportFailureAt = null;
+      while (true) {
+        if (signal?.aborted) await abort();
+        let status;
+        try {
+          status = await request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`, { signal });
+          firstTransportFailureAt = null;
+        } catch (error) {
+          if (signal?.aborted) await abort();
+          if (!(error instanceof TypeError) || !/fetch failed/i.test(error.message)) throw error;
+          firstTransportFailureAt ??= Date.now();
+          if (Date.now() >= Math.min(job.deadline || Infinity, firstTransportFailureAt + 60000)) throw error;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        assertIdentity(status, job);
+        if (status.result) assertIdentity(status.result, job);
+        if (['completed','failed','cancelled','failed_interrupted','failed_timeout'].includes(status.status)) return status;
+        await new Promise((resolve, reject) => { let done = false; const onAbort = () => { if (done) return; done = true; clearTimeout(timer); abort().then(reject, reject); }; const timer = setTimeout(() => { done = true; signal?.removeEventListener('abort', onAbort); resolve(); }, 500); signal?.addEventListener('abort', onAbort, { once: true }); });
+      }
     } finally {}
   }
   return { prepareDependencies: (job, { signal } = {}) => submitAndPoll(job, 'prepare_dependencies', signal), verifyArtifact: (job, { signal } = {}) => submitAndPoll(job, 'verify_artifact', signal), getCapabilities: ({ signal } = {}) => request('/readyz', { signal }), cancelJob: jobId => request(`/v1/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }) };
