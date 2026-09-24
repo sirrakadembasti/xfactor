@@ -182,6 +182,34 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Bulgu:** Scaffold, `.next` derleme çıktısını ve `node:net`, `node:test` gibi Node yerleşik modüllerini harici paket sanıp `package.json` içine yazdı. Worker `npm ci` aşamasında `EINVALIDPACKAGENAME` ile durdu; test, derleme ve smoke kapıları buna bağlı olarak başarısız/engelli kaldı.
 - **Aksiyon:** Tarama derleme çıktılarını ve Node yerleşiklerini atlayacak şekilde test odaklı düzeltildi; yanlış bağımlılıklar uygulama manifestinden kaldırıldı. Statik denetim de `node:` importlarını doğru tanıyor (`968210c`, `caffbe5`). İkinci kanonik koşu başlatıldı.
 
+### TASK-VERIFY-021 — Kanonik doğrulama ortamı ve sözleşme eksikleri
+
+- **Durum:** v4 sözleşmesi onaylandı; yeniden doğrulama sürüyor.
+- **Aşama:** `verification-097a5746-ac52-4250-8194-3667ac4af584`, `verification-81a3e359-97bb-4c2d-9ba0-7208e2231c44` ve v4 Manager sohbeti.
+- **Bulgu:** Temiz kurulum ve Prisma/derleme kapıları geçti; ancak smoke aşamasında `DATABASE_URL` eksikti. Sonraki koşuda tüm çalışma kontrolleri geçtiği halde v3 sözleşmesinde API ve tarayıcı yolculuğunun makinece okunur alanları bulunmadığından zorunlu kapılar engellendi.
+- **Aksiyon:** Smoke ortamına varsayılan SQLite bağlantısı ve daha uzun başlangıç süresi eklendi. Manager sohbetinden API kategori rotası, SQLite motoru ve ana sayfa metin kontrolünü içeren v4 planı alındı; plan ön yüzden onaylanıp yeni üretim kaynakları ezmemesi için duraklatıldı.
+
+### TASK-WORKER-022 — İş sorgusu her seferinde ZIP verisini taşıdı
+
+- **Durum:** Çözüldü (`df0cc87`).
+- **Aşama:** v4 kanonik worker sorgulaması.
+- **Bulgu:** `/v1/jobs/:id` yanıtı her durum sorgusunda base64 ZIP'i yeniden gönderdi; tekrarlanan sorgular yüzlerce MB aktarım oluşturup bağlantının kopmasına neden oldu.
+- **Aksiyon:** İş sorgusu yanıtı özet duruma indirildi; arşiv içeriği işlem belleğinde kalıyor ve doğrulama sonucu değişmiyor. Regresyon testi eklendi.
+
+### TASK-VERIFY-023 — Sağlık, SQLite ve tarayıcı kontrollerinde ortam uyuşmazlığı
+
+- **Durum:** Düzeltmeler test edildi (`dc948b3`, `04786b7`, `f679525`); kanonik tekrar sonucu bekleniyor.
+- **Aşama:** `verification-726c45e4-59a5-4abc-8ca9-90ae430578a6`.
+- **Bulgu:** Kategori API POST/GET ve gerçek veritabanı mutasyonu geçti. Sağlık kontrolü servis manifestinin `/` yolunu kullanmak yerine varsayılan `/health` yoluna gidip 404 aldı. SQLite kanıtı Docker içindeki `/workspace/prisma/dev.db` yerine Windows ana makine yolunu sorguladı. Tarayıcı kontrolünün 5 saniyelik süresi soğuk Next.js sayfa derlemesinde doldu.
+- **Aksiyon:** Sağlık kontrolünde manifest yolu önceliklendirildi, SQLite dosya yolu sandbox kökünden çözüldü, tarayıcı isteğinin varsayılan süresi 60 saniyeye çıkarıldı. Üçü için önce başarısız sonra başarılı regresyon testleri çalıştırıldı; temiz worker yeniden başlatıldı.
+
+### TASK-EVIDENCE-024 — Tüm worker kapıları geçti, tamamlama kanıtı eksikti
+
+- **Durum:** Kanıt üretimi düzeltildi; yeni temiz koşu sürüyor.
+- **Aşama:** `verification-9c76c692-41d3-49d3-a5fb-5717b290e284` ve proje tamamlama makbuzu.
+- **Bulgu:** Worker'daki bütün kontroller PASS olmasına ve ZIP doğrulanmasına rağmen makbuz denetimi `detail:` önekli kaynak adlarını kayıtlı kontrol adlarıyla eşleştiremedi. Bu düzeltildikten sonra paket, README ve smoke kapılarının bazıları PASS için gerekli çalıştırılabilir veya türetilmiş kanıt alanlarını taşımadığı görüldü. Proje `artifact_verified` durumunda kaldı; tamamlanmış ve indirilebilir sayılmadı.
+- **Aksiyon:** `detail:` kaynakları yalnızca aynı koşudaki kayıtlı PASS kontrolleriyle eşleştirildi (`5488915`). Paket/README statik kontrollerine yapılan denetimi ve çıkış kodunu açıklayan kanıt; smoke kapısına geçtiği alt kontrolleri gösteren türetilmiş kanıt eklendi (`6e3466a`). Önce başarısız, sonra başarılı regresyon testleri çalıştırıldı. Önceki koşunun değiştirilemez kaydı güncellenmedi; yeni kanıtlarla yeni ZIP koşusu başlatıldı.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
