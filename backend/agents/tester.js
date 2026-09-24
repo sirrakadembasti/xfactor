@@ -941,6 +941,7 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
             for (const match of importMatches) {
                 const specifier = match[1];
                 if (!specifier) continue;
+                if (file.path === 'next-env.d.ts' && specifier.startsWith('./.next/types/')) continue;
 
                 // A. Yerel İthalat Denetimi (@/... veya ./... veya ../...)
                 if (specifier.startsWith('@/') || specifier.startsWith('@lib/') || specifier.startsWith('@components/') || specifier.startsWith('@app/') || specifier.startsWith('@actions/') || specifier.startsWith('./') || specifier.startsWith('../')) {
