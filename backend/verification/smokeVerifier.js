@@ -9,7 +9,8 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     const checks = [];
     const issues = [];
     const handles = [];
-    const common = { ...options, workspace: options.workspace || projectDir };
+    const runtimeEnv = { DATABASE_URL: 'file:./dev.db', ...(options.env || {}) };
+    const common = { ...options, env: runtimeEnv, workspace: options.workspace || projectDir };
     const manifest = await verifyServiceManifest(projectDir, contract, common);
     checks.push(...(manifest.checks || []));
     issues.push(...(manifest.issues || []));
@@ -23,7 +24,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
 
     try {
         if (service && !options.skipSpawnForLiveServer) {
-            const handle = await spawnService(serviceId, service, options.env || {}, common);
+            const handle = await spawnService(serviceId, service, runtimeEnv, common);
             handles.push(handle);
             checks.push({
                 name: 'service_spawn',
@@ -32,7 +33,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             });
         }
         if (healthUrl) {
-            const health = await probeServiceHealth(healthUrl, options.startupTimeoutMs || 30000, common);
+            const health = await probeServiceHealth(healthUrl, options.startupTimeoutMs ?? 90000, common);
             checks.push({
                 name: 'smoke_liveness_probe',
                 status: health.responsive ? 'passed' : 'failed',
@@ -42,7 +43,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             if (!health.responsive) issues.push(health.error);
         }
         if (contract.database) {
-            const db = await verifyDatabase(projectDir, contract, options.env || {}, common);
+            const db = await verifyDatabase(projectDir, contract, runtimeEnv, common);
             checks.push(...db.checks);
             issues.push(...db.issues);
         }

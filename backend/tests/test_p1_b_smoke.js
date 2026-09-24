@@ -73,6 +73,10 @@ try {
         assert.ok(calls.some(([kind, request]) => kind === 'spawn'
             && request.command === 'npm'
             && request.args.join(' ') === 'run start'));
+        assert.ok(calls.some(([kind, request]) => kind === 'spawn'
+            && request.env?.DATABASE_URL === 'file:./dev.db'));
+        assert.ok(calls.some(([kind, request]) => kind === 'execute'
+            && request.env?.DATABASE_URL === 'file:./dev.db'));
         assert.ok(calls.some(([kind, request]) => kind === 'request'
             && request.url === 'http://127.0.0.1:3000/'));
         assert.ok(calls.some(([kind, pid]) => kind === 'kill' && pid === 42));
