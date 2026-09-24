@@ -23,6 +23,9 @@ try {
         const result = await verifyProjectSmoke(workspace, { domains: [{ name: 'users', prefix: 'users' }], database: { engine: 'sqlite' }, api: { baseUrl: 'http://service' } }, { adapter, skipSpawnForLiveServer: true, baseUrl: 'http://service' });
         assert.strictEqual(result.passed, true);
         assert.ok(result.checks.some(c => c.name === 'smoke_gate' && c.status === 'passed'));
+        const smokeGate = result.checks.find(c => c.name === 'smoke_gate');
+        assert.strictEqual(smokeGate.evidence?.kind, 'derived_gate');
+        assert.ok(smokeGate.evidence.sourceGateNames.includes('detail:smoke_liveness_probe'));
         assert.ok(result.checks.some(c => c.name === 'database_connectivity' && c.status === 'passed'));
         assert.ok(calls.some(([kind]) => kind === 'request'));
     });

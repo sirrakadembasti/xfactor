@@ -5,6 +5,7 @@ import { probeServiceHealth } from './healthProber.js';
 import { verifyAPIContract } from './apiVerifier.js';
 import { verifyBrowserJourney } from './browserVerifier.js';
 import { verifyTestInfrastructure } from './testInfrastructureVerifier.js';
+import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 export async function verifyProjectSmoke(projectDir, contract = {}, options = {}) {
     const checks = [];
     const issues = [];
@@ -72,6 +73,16 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     }
 
     const passed = !issues.length && checks.every(check => ['passed', 'skipped'].includes(check.status));
-    checks.push({ name: 'smoke_gate', status: passed ? 'passed' : 'failed' });
+    checks.push({
+        name: 'smoke_gate',
+        status: passed ? 'passed' : 'failed',
+        evidence: passed ? {
+            kind: 'derived_gate',
+            producer: 'aggregate-verification',
+            sourceGateNames: checks.filter(check => check.status === 'passed').map(check => `detail:${check.name}`),
+            computedAt: new Date().toISOString(),
+            policyVersion: ACTIVE_POLICY_VERSION
+        } : { issues }
+    });
     return { passed, checks, issues };
 }

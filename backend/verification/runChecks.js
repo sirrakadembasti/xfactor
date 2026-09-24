@@ -34,15 +34,10 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
     checks.push({
         name: 'readme_check',
         status: readme.passed === true ? 'passed' : 'failed',
+        command: 'static:verify-readme-contract',
+        exitCode: readme.passed === true ? 0 : 1,
         reason: (readme.issues || []).join('; ') || 'README commands and runtime contract are consistent.',
-        evidence: readme.passed === true ? {
-            kind: 'derived_gate',
-            producer: 'aggregate-verification',
-            sourceGateNames: (readme.checks || []).map(check => `detail:${check.name || check.gateName}`)
-                .concat('detail:readme-contract'),
-            computedAt: new Date().toISOString(),
-            policyVersion: ACTIVE_POLICY_VERSION
-        } : { issues: readme.issues || [] }
+        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, issues: readme.issues || [] }
     });
     // Smoke is the single runtime orchestrator; it owns service lifecycle and all
     // applicable database/API/browser/process/health/test-infrastructure gates.

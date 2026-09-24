@@ -181,7 +181,7 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
     try {
         const content = packageFile ? String(packageFile.content || '') : await fs.readFile(packageJsonPath, 'utf8');
         packageJson = JSON.parse(content);
-        checks.push({ name: 'package_json', status: 'passed', reason: 'package.json exists and is valid JSON.' });
+        checks.push({ name: 'package_json', status: 'passed', command: 'static:parse-package-json', exitCode: 0, reason: 'package.json exists and is valid JSON.' });
     } catch (err) {
         checks.push({ name: 'package_json', status: 'failed', reason: `package.json is missing or invalid: ${err.message}` });
         return { passed: false, checks };
@@ -190,13 +190,13 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
     const lockfileFound = suppliedFiles
         ? lockfiles.some(name => Boolean(readSupplied(name)))
         : lockfiles.some(f => fsSync.existsSync(path.join(projectDir, f)));
-    checks.push({ name: 'lockfile', status: lockfileFound ? 'passed' : 'failed', reason: lockfileFound ? 'Deterministic lockfile is present.' : 'No deterministic lockfile found.' });
+    checks.push({ name: 'lockfile', status: lockfileFound ? 'passed' : 'failed', command: 'static:check-lockfile-presence', exitCode: lockfileFound ? 0 : 1, reason: lockfileFound ? 'Deterministic lockfile is present.' : 'No deterministic lockfile found.' });
     const declaredDeps = new Set([...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {}), ...Object.keys(packageJson.peerDependencies || {}), ...Object.keys(packageJson.optionalDependencies || {})]);
     const discoveredImports = suppliedFiles
         ? new Set(suppliedFiles.flatMap(file => CODE_EXTENSIONS.has(path.extname(String(file.path || '')).toLowerCase()) ? [...extractImportsFromCode(String(file.content || ''))] : []))
         : await scanProjectImports(projectDir);
     const undeclared = [...discoveredImports].filter(pkg => !declaredDeps.has(pkg));
-    checks.push({ name: 'ast_import_inventory', status: undeclared.length ? 'failed' : 'passed', reason: undeclared.length ? `Source code imports undeclared packages: ${undeclared.join(', ')}` : `All ${discoveredImports.size} discovered imports are declared in package.json.`, undeclared, count: discoveredImports.size });
+    checks.push({ name: 'ast_import_inventory', status: undeclared.length ? 'failed' : 'passed', command: 'static:compare-import-inventory', exitCode: undeclared.length ? 1 : 0, reason: undeclared.length ? `Source code imports undeclared packages: ${undeclared.join(', ')}` : `All ${discoveredImports.size} discovered imports are declared in package.json.`, undeclared, count: discoveredImports.size });
 
     // 4. Sandboxed clean install. A populated node_modules directory is not
     // evidence: always execute npm ci against the validated npm lockfile.

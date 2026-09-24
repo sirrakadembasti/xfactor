@@ -25,6 +25,11 @@ try {
         await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
         await fs.writeFile(path.join(dir, 'package-lock.json'), JSON.stringify({ name: 'fixture', version: '1.0.0', lockfileVersion: 3, packages: { '': { name: 'fixture', version: '1.0.0' } } }));
         const result = await verifyDependencies(dir, {}, { adapter: { id: 'fixture', getCapabilities: () => ({ available: true, isolation: true }), execute: async () => ({ passed: true, exitCode: 0, stdout: '', stderr: '' }) } });
+        for (const name of ['package_json', 'lockfile', 'ast_import_inventory']) {
+            const staticCheck = result.checks.find(c => c.name === name);
+            assert.ok(staticCheck.command, `${name} must identify its executed static check`);
+            assert.strictEqual(staticCheck.exitCode, 0);
+        }
         const check = result.checks.find(c => c.name === 'clean_install');
         assert.equal(check.stdoutDigest, expected);
         assert.equal(check.stderrDigest, expected);
@@ -84,6 +89,19 @@ try {
         const result = await runVerificationChecks({ workspace: await workspace(), contract: {}, requirementIds: ['req-1'], adapter: { isAvailable: () => false }, runId, files: [] });
         assert.equal(result.runId, runId);
         assert.ok(result.checks.every(check => check.runId === runId || check.evidence?.runId === runId || check.requirementIds?.includes('req-1')));
+    });
+
+    await runAsyncTest('P9.3: README summary uses executable static evidence when no detail checks exist', async () => {
+        const result = await runVerificationChecks({ workspace: '/workspace', files: [], adapter: {}, runId: 'readme-static', verifiers: {
+            dependencies: async () => ({ checks: [] }),
+            build: async () => ({ checks: [] }),
+            readme: async () => ({ passed: true, checks: [], issues: [] }),
+            smoke: async () => ({ checks: [] })
+        } });
+        const check = result.checks.find(c => c.name === 'readme_check');
+        assert.ok(check.command);
+        assert.strictEqual(check.exitCode, 0);
+        assert.notStrictEqual(check.evidence?.kind, 'derived_gate');
     });
 
     await runAsyncTest('P9.3: worker rejects archive digest mismatch before materialization', async () => {
