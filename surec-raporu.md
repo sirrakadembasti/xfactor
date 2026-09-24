@@ -24,8 +24,8 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - [x] DAG üretim sürecini, logları ve kalite kapılarını izle
 - [x] İlk üretim turunda karşılaşılan hataları ve uygulanan aksiyonları kaydet
 - [x] Eksik frontend kapsamı için Manager v2 düzeltme planını sohbetten oluştur ve ön yüzden onayla
-- [ ] Doğrulanmış ZIP artefaktını ön yüzden indir
-- [ ] ZIP içeriğini ve çalıştırma talimatlarını doğrula
+- [x] Doğrulanmış ZIP artefaktını ön yüzden indir
+- [x] ZIP içeriğini ve çalıştırma talimatlarını doğrula
 
 ## Hata ve Risk Kayıtları
 
@@ -224,6 +224,15 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Kontrol:** Worker kaydı `failed` ve `passed: false` döndürdü. Temiz kurulum, Prisma validate/generate/db push/seed ve `npm test` geçti; typecheck ve framework build `Command timed out`, smoke liveness `Readiness probe timed out`, API ve tarayıcı istekleri `fetch failed` oldu. Proje `artifact_verified` revizyon 53, son artefakt `rejected`, tamamlama makbuzu yok. Docker API sonraki kontrolde erişilemedi; bu, ortak altyapı kesintisiyle uyumlu fakat koşu sırasında kapanma anı ayrıca kanıtlanmadı.
 - **Sonraki adım:** Docker daemon ve worker servislerini geri getirip yalnız reddedilen koşunun yerine yeni kanonik doğrulama yap. Geçerse resmi ön yüz ZIP indirmesini, içeriği ve SHA-256 bütünlüğünü doğrula; Graphify'ı güncelle ve istenen push işlemini yap.
 
+### TASK-DELIVERY-027 — Doğrulanmış ZIP ve tamamlama makbuzu
+
+- **Durum:** Tamamlandı; ZIP ön yüzün **Projeyi (ZIP) İndir** düğmesiyle indirildi.
+- **Yeni koşu:** `verification-64c92082-78b7-43cd-97fa-25fe8a3c1874`; worker işi `e4843e8f-1362-4802-a4ea-bbccafc5929b` `completed`, `passed: true`; veritabanında 38/38 kontrol `PASS`.
+- **Proje ve kanıt:** `kutuphane-takip-sistemi-2` `completed` (revizyon 54); `artifact-e946bc50-2f04-48f1-a7dd-45a38bd80bad` `verified`; `completion-2c2a938f-37fc-4094-9241-1d254207e466` makbuzu aynı run ve artefakt karmasına bağlı.
+- **İndirme:** Ön yüz tarayıcı akışındaki resmi düğme `kutuphane-takip-sistemi-2.zip` dosyasını verdi. 132.943 baytlık indirme SHA-256 `fa4de0c3590d1ee22919d0315cb318254b366ae135844c88033613b9f7f64f86`; kayıtlı artefakt ve makbuz karmalarıyla aynı.
+- **ZIP denetimi:** 59 girişin CRC kontrolü temiz. `README.md`, `.env.example`, `package-lock.json`, `Dockerfile`, Prisma şeması, test ve kategori/kitap/üye/ödünç API ile ekran dosyaları mevcut; özel `.env` ve SQLite çalışma verisi yok. README, Node.js 22 ile `npm ci`, `npx prisma generate`, `npx prisma db push`, `npm run dev` adımlarını ve seed betiğinin mevcut veriyi sileceği uyarısını içeriyor.
+- **Teslim dosyası:** `backend/data/deliveries/kutuphane-takip-sistemi-2.zip` çalışma verisi altında tutuluyor; git'e eklenmeyecek.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -243,3 +252,4 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — v3 üretimi eski ilan dosyalarının Prisma şemasıyla çakışması nedeniyle statik kabulde reddedildi; kategori ve üye ekranlarının hâlâ eksik olduğu saptandı.
 - 2026-09-24 — Uygulama kaynakları onarıldı; yerel test, TypeScript, Next.js derlemesi ve deterministik statik denetim geçti.
 - 2026-09-24 — Ön yüzden devam ettirme, kayıtlı atomik DAG hedefleri boş olduğu için durdu. Ayrı kanonik ZIP doğrulaması ilk denemede geçersiz `node:` NPM bağımlılıklarını yakaladı; scaffold düzeltildi ve ikinci koşu başlatıldı.
+- 2026-09-24 — Docker yeniden açıldı; yeni kanonik doğrulama 38 kontrolle geçti, completion receipt oluştu ve resmi ön yüz ZIP indirmesi SHA-256/CRC/içerik açısından doğrulandı.
