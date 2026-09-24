@@ -377,7 +377,7 @@
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "İzole execution worker HTTP istemcisi ve yerel host derleyici fallback köprüsü",
-      "val": 11.5,
+      "val": 12,
       "provenance": "curated"
     },
     {
@@ -1391,6 +1391,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/tests/test_execution_client_poll.js",
+      "label": "test_execution_client_poll.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_execution_client_poll.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast"
+    },
+    {
       "id": "backend/tests/test_graphify.js",
       "label": "test_graphify.js",
       "type": "SourceFile",
@@ -2187,7 +2197,7 @@
       "group": "tests",
       "file": "backend/tests/test_p9_verification_pipeline.js",
       "description": "",
-      "val": 27.5,
+      "val": 29.5,
       "provenance": "ast"
     },
     {
@@ -2417,7 +2427,7 @@
       "group": "backend",
       "file": "backend/verification/policyVersion.js",
       "description": "",
-      "val": 2.5,
+      "val": 3,
       "provenance": "ast"
     },
     {
@@ -2487,7 +2497,7 @@
       "group": "backend",
       "file": "backend/verification/smokeVerifier.js",
       "description": "",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast"
     },
     {
@@ -2721,13 +2731,23 @@
       "provenance": "ast"
     },
     {
+      "id": "execution/limits.js",
+      "label": "limits.js",
+      "type": "SourceFile",
+      "group": "backend",
+      "file": "execution/limits.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast"
+    },
+    {
       "id": "execution/protocol.js",
       "label": "protocol.js",
       "type": "SourceFile",
       "group": "backend",
       "file": "execution/protocol.js",
       "description": "",
-      "val": 4,
+      "val": 5,
       "provenance": "ast"
     },
     {
@@ -2747,7 +2767,7 @@
       "group": "backend",
       "file": "execution/runtime.js",
       "description": "",
-      "val": 25.5,
+      "val": 26,
       "provenance": "ast"
     },
     {
@@ -2778,6 +2798,16 @@
       "file": "execution/tests/jobStatusProjection.test.js",
       "description": "",
       "val": 4,
+      "provenance": "ast"
+    },
+    {
+      "id": "execution/tests/protocolDeadline.test.js",
+      "label": "protocolDeadline.test.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "execution/tests/protocolDeadline.test.js",
+      "description": "",
+      "val": 3.5,
       "provenance": "ast"
     },
     {
@@ -4570,7 +4600,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 13,
+      "val": 13.5,
       "provenance": "ast"
     },
     {
@@ -6721,7 +6751,7 @@
       "group": "backend",
       "file": "backend/executionClient.js",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
       "line": 4
     },
@@ -6792,7 +6822,7 @@
       "line": 31
     },
     {
-      "id": "backend/executionClient.js#Function:onAbort@36",
+      "id": "backend/executionClient.js#Function:onAbort@54",
       "label": "onAbort",
       "type": "Function",
       "group": "backend",
@@ -6800,10 +6830,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 36
+      "line": 54
     },
     {
-      "id": "backend/executionClient.js#Method:prepareDependencies@39",
+      "id": "backend/executionClient.js#Method:prepareDependencies@58",
       "label": "prepareDependencies",
       "type": "Method",
       "group": "backend",
@@ -6811,10 +6841,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
-      "id": "backend/executionClient.js#Method:verifyArtifact@39",
+      "id": "backend/executionClient.js#Method:verifyArtifact@58",
       "label": "verifyArtifact",
       "type": "Method",
       "group": "backend",
@@ -6822,10 +6852,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
-      "id": "backend/executionClient.js#Method:getCapabilities@39",
+      "id": "backend/executionClient.js#Method:getCapabilities@58",
       "label": "getCapabilities",
       "type": "Method",
       "group": "backend",
@@ -6833,10 +6863,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
-      "id": "backend/executionClient.js#Method:cancelJob@39",
+      "id": "backend/executionClient.js#Method:cancelJob@58",
       "label": "cancelJob",
       "type": "Method",
       "group": "backend",
@@ -6844,7 +6874,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
       "id": "backend/generatedIdentifiers.js#Function:normalizeGeneratedIdentifier@23",
@@ -9910,7 +9940,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 13,
+      "val": 14,
       "provenance": "ast"
     },
     {
@@ -9920,7 +9950,7 @@
       "group": "packages",
       "file": null,
       "description": "node:test",
-      "val": 5.5,
+      "val": 6.5,
       "provenance": "ast"
     },
     {
@@ -11207,7 +11237,7 @@
       "line": 21
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.getCapabilities@50",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.getCapabilities@53",
       "label": "adapter.getCapabilities",
       "type": "Method",
       "group": "tests",
@@ -11215,10 +11245,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 50
+      "line": 53
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.spawn@51",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.spawn@54",
       "label": "adapter.spawn",
       "type": "Method",
       "group": "tests",
@@ -11226,10 +11256,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 51
+      "line": 54
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.kill@59",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.kill@62",
       "label": "adapter.kill",
       "type": "Method",
       "group": "tests",
@@ -11237,10 +11267,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 59
+      "line": 62
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@60",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@63",
       "label": "adapter.request",
       "type": "Method",
       "group": "tests",
@@ -11248,10 +11278,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 60
+      "line": 63
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@64",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@67",
       "label": "adapter.execute",
       "type": "Method",
       "group": "tests",
@@ -11259,7 +11289,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 64
+      "line": 67
     },
     {
       "id": "backend/tests/test_p1_b_test_infra.js#Function:createTempWorkspace@11",
@@ -13758,7 +13788,7 @@
       "line": 27
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@45",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@50",
       "label": "result.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13766,10 +13796,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 45
+      "line": 50
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:install.isAvailable@55",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:install.isAvailable@60",
       "label": "install.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13777,10 +13807,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 55
+      "line": 60
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:install.execute@55",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:install.execute@60",
       "label": "install.execute",
       "type": "Method",
       "group": "tests",
@@ -13788,10 +13818,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 55
+      "line": 60
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:build.isAvailable@57",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:build.isAvailable@62",
       "label": "build.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13799,10 +13829,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 57
+      "line": 62
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:build.execute@57",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:build.execute@62",
       "label": "build.execute",
       "type": "Method",
       "group": "tests",
@@ -13810,10 +13840,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 57
+      "line": 62
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@64",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@69",
       "label": "result.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13821,10 +13851,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 64
+      "line": 69
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@74",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@79",
       "label": "result.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13832,10 +13862,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 74
+      "line": 79
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@74",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@79",
       "label": "result.execute",
       "type": "Method",
       "group": "tests",
@@ -13843,10 +13873,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 74
+      "line": 79
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@84",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@89",
       "label": "result.isAvailable",
       "type": "Method",
       "group": "tests",
@@ -13854,10 +13884,54 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 84
+      "line": 89
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.writeFile@100",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.dependencies@96",
+      "label": "result.dependencies",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_p9_verification_pipeline.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.build@97",
+      "label": "result.build",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_p9_verification_pipeline.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 97
+    },
+    {
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.readme@98",
+      "label": "result.readme",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_p9_verification_pipeline.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.smoke@99",
+      "label": "result.smoke",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_p9_verification_pipeline.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 99
+    },
+    {
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.writeFile@118",
       "label": "adapter.writeFile",
       "type": "Method",
       "group": "tests",
@@ -13865,10 +13939,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 100
+      "line": 118
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@101",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@119",
       "label": "adapter.execute",
       "type": "Method",
       "group": "tests",
@@ -13876,10 +13950,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 101
+      "line": 119
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.readFile@102",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.readFile@120",
       "label": "adapter.readFile",
       "type": "Method",
       "group": "tests",
@@ -13887,10 +13961,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 102
+      "line": 120
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@119",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@137",
       "label": "result.execute",
       "type": "Method",
       "group": "tests",
@@ -13898,10 +13972,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 119
+      "line": 137
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@119",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@137",
       "label": "result.writeFile",
       "type": "Method",
       "group": "tests",
@@ -13909,10 +13983,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 119
+      "line": 137
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@134",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@152",
       "label": "result.writeFile",
       "type": "Method",
       "group": "tests",
@@ -13920,10 +13994,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 134
+      "line": 152
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.extractArchive@135",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.extractArchive@153",
       "label": "result.extractArchive",
       "type": "Method",
       "group": "tests",
@@ -13931,10 +14005,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 135
+      "line": 153
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@136",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@154",
       "label": "result.execute",
       "type": "Method",
       "group": "tests",
@@ -13942,10 +14016,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 136
+      "line": 154
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@157",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@175",
       "label": "adapter.getCapabilities",
       "type": "Method",
       "group": "tests",
@@ -13953,10 +14027,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 157
+      "line": 175
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@158",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@176",
       "label": "adapter.execute",
       "type": "Method",
       "group": "tests",
@@ -13964,10 +14038,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 158
+      "line": 176
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.request@159",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.request@177",
       "label": "adapter.request",
       "type": "Method",
       "group": "tests",
@@ -13975,10 +14049,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 159
+      "line": 177
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.spawn@160",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.spawn@178",
       "label": "adapter.spawn",
       "type": "Method",
       "group": "tests",
@@ -13986,10 +14060,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 160
+      "line": 178
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.on@160",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.on@178",
       "label": "adapter.on",
       "type": "Method",
       "group": "tests",
@@ -13997,10 +14071,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 160
+      "line": 178
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@174",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@192",
       "label": "adapter.getCapabilities",
       "type": "Method",
       "group": "tests",
@@ -14008,10 +14082,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 174
+      "line": 192
     },
     {
-      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@174",
+      "id": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@192",
       "label": "adapter.execute",
       "type": "Method",
       "group": "tests",
@@ -14019,7 +14093,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 174
+      "line": 192
     },
     {
       "id": "backend/tests/test_package_verifier.js#Function:createTempWorkspace@11",
@@ -16298,7 +16372,7 @@
       "line": 4
     },
     {
-      "id": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "id": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "label": "verifyProjectSmoke",
       "type": "Function",
       "group": "backend",
@@ -16306,7 +16380,7 @@
       "description": "",
       "val": 6,
       "provenance": "ast",
-      "line": 8
+      "line": 9
     },
     {
       "id": "backend/verification/testInfrastructureVerifier.js#Function:computeDigest@6",
@@ -16853,7 +16927,7 @@
       "group": "backend",
       "file": "execution/protocol.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast",
       "line": 14
     },
@@ -19657,7 +19731,7 @@
       "line": 34
     },
     {
-      "id": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
+      "id": "backend/executionClient.js#request:GET /v1/jobs/:jobId@41",
       "label": "GET /v1/jobs/:jobId",
       "type": "HttpRequest",
       "group": "backend",
@@ -19665,10 +19739,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 36
+      "line": 41
     },
     {
-      "id": "backend/executionClient.js#request:GET /readyz@39",
+      "id": "backend/executionClient.js#request:GET /readyz@58",
       "label": "GET /readyz",
       "type": "HttpRequest",
       "group": "backend",
@@ -19676,10 +19750,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
-      "id": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@39",
+      "id": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@58",
       "label": "DELETE /v1/jobs/:jobId",
       "type": "HttpRequest",
       "group": "backend",
@@ -19687,7 +19761,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 39
+      "line": 58
     },
     {
       "id": "env:ALLOW_MOCK_FALLBACK",
@@ -27017,52 +27091,52 @@
     },
     {
       "source": "backend/executionClient.js",
-      "target": "backend/executionClient.js#Function:onAbort@36",
+      "target": "backend/executionClient.js#Function:onAbort@54",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 36
+        "line": 54
       }
     },
     {
       "source": "backend/executionClient.js",
-      "target": "backend/executionClient.js#Method:prepareDependencies@39",
+      "target": "backend/executionClient.js#Method:prepareDependencies@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
       "source": "backend/executionClient.js",
-      "target": "backend/executionClient.js#Method:verifyArtifact@39",
+      "target": "backend/executionClient.js#Method:verifyArtifact@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
       "source": "backend/executionClient.js",
-      "target": "backend/executionClient.js#Method:getCapabilities@39",
+      "target": "backend/executionClient.js#Method:getCapabilities@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
       "source": "backend/executionClient.js",
-      "target": "backend/executionClient.js#Method:cancelJob@39",
+      "target": "backend/executionClient.js#Method:cancelJob@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
@@ -32156,6 +32230,36 @@
       }
     },
     {
+      "source": "backend/tests/test_execution_client_poll.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_execution_client_poll.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_execution_client_poll.js",
+      "target": "package:node:test",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_execution_client_poll.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_execution_client_poll.js",
+      "target": "backend/executionClient.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_execution_client_poll.js",
+        "line": 3
+      }
+    },
+    {
       "source": "backend/tests/test_generation_isolation.js",
       "target": "package:assert",
       "label": "imports_package",
@@ -34887,52 +34991,52 @@
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.getCapabilities@50",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.getCapabilities@53",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 50
+        "line": 53
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.spawn@51",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.spawn@54",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 51
+        "line": 54
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.kill@59",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.kill@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 59
+        "line": 62
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@60",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@63",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 60
+        "line": 63
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@64",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@67",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 64
+        "line": 67
       }
     },
     {
@@ -39897,127 +40001,147 @@
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@45",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@50",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 45
+        "line": 50
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:install.isAvailable@55",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:install.isAvailable@60",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 55
+        "line": 60
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:install.execute@55",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:install.execute@60",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 55
+        "line": 60
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:build.isAvailable@57",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:build.isAvailable@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 57
+        "line": 62
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:build.execute@57",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:build.execute@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 57
+        "line": 62
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@64",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@69",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 64
+        "line": 69
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@74",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@79",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 74
+        "line": 79
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@74",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@79",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 74
+        "line": 79
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@84",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.isAvailable@89",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 84
+        "line": 89
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.writeFile@100",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.dependencies@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 100
+        "line": 96
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@101",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.build@97",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 101
+        "line": 97
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.readFile@102",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.readme@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 102
+        "line": 98
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@119",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.smoke@99",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p9_verification_pipeline.js",
+        "line": 99
+      }
+    },
+    {
+      "source": "backend/tests/test_p9_verification_pipeline.js",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.writeFile@118",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p9_verification_pipeline.js",
+        "line": 118
+      }
+    },
+    {
+      "source": "backend/tests/test_p9_verification_pipeline.js",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@119",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -40027,112 +40151,132 @@
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@119",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.readFile@120",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 119
+        "line": 120
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@134",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@137",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 134
+        "line": 137
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.extractArchive@135",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@137",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 135
+        "line": 137
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@136",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.writeFile@152",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 136
+        "line": 152
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@157",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.extractArchive@153",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 157
+        "line": 153
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@158",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:result.execute@154",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 158
+        "line": 154
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.request@159",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@175",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 159
+        "line": 175
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.spawn@160",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@176",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 160
+        "line": 176
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.on@160",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.request@177",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 160
+        "line": 177
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@174",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.spawn@178",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 174
+        "line": 178
       }
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@174",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.on@178",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 174
+        "line": 178
+      }
+    },
+    {
+      "source": "backend/tests/test_p9_verification_pipeline.js",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.getCapabilities@192",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p9_verification_pipeline.js",
+        "line": 192
+      }
+    },
+    {
+      "source": "backend/tests/test_p9_verification_pipeline.js",
+      "target": "backend/tests/test_p9_verification_pipeline.js#Method:adapter.execute@192",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p9_verification_pipeline.js",
+        "line": 192
       }
     },
     {
@@ -44717,12 +44861,22 @@
     },
     {
       "source": "backend/verification/smokeVerifier.js",
-      "target": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
-      "label": "contains",
+      "target": "backend/verification/policyVersion.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
         "line": 8
+      }
+    },
+    {
+      "source": "backend/verification/smokeVerifier.js",
+      "target": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/smokeVerifier.js",
+        "line": 9
       }
     },
     {
@@ -45557,6 +45711,16 @@
     },
     {
       "source": "execution/protocol.js",
+      "target": "execution/limits.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/protocol.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "execution/protocol.js",
       "target": "execution/protocol.js#Function:validId@7",
       "label": "contains",
       "provenance": "ast",
@@ -45743,6 +45907,16 @@
       "location": {
         "file": "execution/runtime.js",
         "line": 7
+      }
+    },
+    {
+      "source": "execution/runtime.js",
+      "target": "execution/limits.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 10
       }
     },
     {
@@ -46583,6 +46757,46 @@
       "location": {
         "file": "execution/tests/jobStatusProjection.test.js",
         "line": 28
+      }
+    },
+    {
+      "source": "execution/tests/protocolDeadline.test.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/protocolDeadline.test.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "execution/tests/protocolDeadline.test.js",
+      "target": "package:node:test",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/protocolDeadline.test.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "execution/tests/protocolDeadline.test.js",
+      "target": "package:node:crypto",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/protocolDeadline.test.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "execution/tests/protocolDeadline.test.js",
+      "target": "execution/protocol.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/protocolDeadline.test.js",
+        "line": 4
       }
     },
     {
@@ -53987,82 +54201,82 @@
     },
     {
       "source": "backend/executionClient.js#Function:submitAndPoll@24",
-      "target": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
+      "target": "backend/executionClient.js#request:GET /v1/jobs/:jobId@41",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 36
+        "line": 41
       }
     },
     {
-      "source": "backend/executionClient.js#Function:onAbort@36",
+      "source": "backend/executionClient.js#Function:onAbort@54",
       "target": "backend/executionClient.js#Function:abort@31",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 36
+        "line": 54
       }
     },
     {
-      "source": "backend/executionClient.js#Method:prepareDependencies@39",
+      "source": "backend/executionClient.js#Method:prepareDependencies@58",
       "target": "backend/executionClient.js#Function:submitAndPoll@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
-      "source": "backend/executionClient.js#Method:verifyArtifact@39",
+      "source": "backend/executionClient.js#Method:verifyArtifact@58",
       "target": "backend/executionClient.js#Function:submitAndPoll@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
-      "source": "backend/executionClient.js#Method:getCapabilities@39",
+      "source": "backend/executionClient.js#Method:getCapabilities@58",
       "target": "backend/executionClient.js#Function:request@19",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
-      "source": "backend/executionClient.js#Method:getCapabilities@39",
-      "target": "backend/executionClient.js#request:GET /readyz@39",
+      "source": "backend/executionClient.js#Method:getCapabilities@58",
+      "target": "backend/executionClient.js#request:GET /readyz@58",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
-      "source": "backend/executionClient.js#Method:cancelJob@39",
+      "source": "backend/executionClient.js#Method:cancelJob@58",
       "target": "backend/executionClient.js#Function:request@19",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
-      "source": "backend/executionClient.js#Method:cancelJob@39",
-      "target": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@39",
+      "source": "backend/executionClient.js#Method:cancelJob@58",
+      "target": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@58",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
         "file": "backend/executionClient.js",
-        "line": 39
+        "line": 58
       }
     },
     {
@@ -59356,6 +59570,16 @@
       }
     },
     {
+      "source": "backend/tests/test_execution_client_poll.js",
+      "target": "backend/executionClient.js#Function:createExecutionClient@4",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_execution_client_poll.js",
+        "line": 29
+      }
+    },
+    {
       "source": "backend/tests/test_generation_isolation.js#Function:setup@21",
       "target": "backend/projectRepository.js#Function:createProject@80",
       "label": "calls",
@@ -61537,7 +61761,7 @@
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "target": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -65122,7 +65346,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 34
+        "line": 39
       }
     },
     {
@@ -65132,7 +65356,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 57
+        "line": 62
       }
     },
     {
@@ -65142,7 +65366,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 64
+        "line": 69
       }
     },
     {
@@ -65152,7 +65376,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 90
+        "line": 108
       }
     },
     {
@@ -65162,7 +65386,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 104
+        "line": 122
       }
     },
     {
@@ -65172,7 +65396,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 126
+        "line": 144
       }
     },
     {
@@ -65182,7 +65406,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 149
+        "line": 167
       }
     },
     {
@@ -65192,7 +65416,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 150
+        "line": 168
       }
     },
     {
@@ -65202,7 +65426,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 151
+        "line": 169
       }
     },
     {
@@ -65212,7 +65436,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 152
+        "line": 170
       }
     },
     {
@@ -65222,7 +65446,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_verification_pipeline.js",
-        "line": 153
+        "line": 171
       }
     },
     {
@@ -68372,7 +68596,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 54
+        "line": 49
       }
     },
     {
@@ -68516,83 +68740,83 @@
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/serviceManifestVerifier.js#Function:verifyServiceManifest@4",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 14
+        "line": 15
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/processVerifier.js#Function:spawnService@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 27
+        "line": 28
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/healthProber.js#Function:probeServiceHealth@1",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 36
+        "line": 37
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/databaseVerifier.js#Function:verifyDatabase@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 46
+        "line": 47
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/apiVerifier.js#Function:verifyAPIContract@40",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 51
+        "line": 52
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/browserVerifier.js#Function:verifyBrowserJourney@2",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 56
+        "line": 57
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/testInfrastructureVerifier.js#Function:verifyTestInfrastructure@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 60
+        "line": 61
       }
     },
     {
-      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@8",
+      "source": "backend/verification/smokeVerifier.js#Function:verifyProjectSmoke@9",
       "target": "backend/verification/processVerifier.js#Function:killService@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 71
+        "line": 72
       }
     },
     {
@@ -70042,6 +70266,16 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobStatusProjection.test.js",
+        "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/protocolDeadline.test.js",
+      "target": "execution/protocol.js#Function:validateJob@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/protocolDeadline.test.js",
         "line": 25
       }
     },
@@ -71988,19 +72222,19 @@
       "provenance": "inferred"
     },
     {
-      "source": "backend/executionClient.js#request:GET /v1/jobs/:jobId@36",
+      "source": "backend/executionClient.js#request:GET /v1/jobs/:jobId@41",
       "target": "execution/server.js#route:GET /v1/jobs/:jobId@196",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "backend/executionClient.js#request:GET /readyz@39",
+      "source": "backend/executionClient.js#request:GET /readyz@58",
       "target": "execution/server.js#route:GET /readyz@96",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@39",
+      "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@58",
       "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@217",
       "label": "requests_route",
       "provenance": "inferred"
