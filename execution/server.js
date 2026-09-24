@@ -207,7 +207,11 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
           }
 
           res.writeHead(200);
-          return res.end(JSON.stringify(job));
+          return res.end(JSON.stringify(identityResponse(job, {
+            status: job.status,
+            ...(job.result ? { result: job.result } : {}),
+            ...(job.completedAt ? { completedAt: job.completedAt } : {})
+          })));
         }
 
         if (req.method === 'DELETE') {
