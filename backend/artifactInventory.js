@@ -17,6 +17,11 @@ export async function collectArtifactFiles(root, options = {}) {
     let totalBytes = 0;
     const rootPath = path.resolve(root);
     async function walk(currentPath, relativePath) {
+        const entryName = path.basename(currentPath);
+        if (relativePath && ((entryName.startsWith('.env') && entryName !== '.env.example')
+            || /\.(?:db|sqlite|sqlite3)(?:-(?:wal|shm|journal))?$/i.test(entryName))) {
+            return;
+        }
         const stats = await fs.lstat(currentPath);
         if (stats.isSymbolicLink()) throw new Error(`Symlink not allowed: ${relativePath || root}`);
         if (stats.isDirectory()) {
