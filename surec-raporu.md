@@ -154,6 +154,34 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - **Bulgu:** Navigasyon `/categories` ve `/members` bağlantılarını gösteriyor; v3 üretiminde bu sayfalar oluşmadı. API rotalarının varlığı, kategori ve üye CRUD işlemlerinin kullanıcı arayüzünden yapılabildiği anlamına gelmiyor.
 - **Aksiyon:** Eksik ekranlar, gerçek API sözleşmesi ve ödünç/iade yolculuğuyla birlikte tamamlanıp tarayıcıda sınanacak.
 
+### TASK-APP-017 — Üretilen uygulama tamamlandı, yerel testlerden geçti
+
+- **Durum:** Yerel doğrulama geçti; kanonik ZIP doğrulaması sürüyor
+- **Aşama:** v3 artefakt onarımı
+- **Bulgu:** Eski ilan ve `items` rotaları, kullanılmayan bileşenler, eksik kategori/üye/kitap detay ekranları, görünmeyen gezinme, bozuk dashboard veri eşlemesi ve yanlış hızlı işlem bağlantıları bulundu. `next/font/google` dış ağ olmadığında derlemeyi durdurdu; ödünç rotasının parametre tipi Next.js 16 ile uyumsuzdu.
+- **Aksiyon:** Kalıntılar temizlendi, ekranlar ve gezinme tamamlandı, bağlantı/veri sözleşmesi düzeltildi, derlemenin ağ bağımlılığı kaldırıldı. Gerçek ödünç–stok–iade testi eklendi. `npm test`, `tsc --noEmit`, `next build` ve deterministik kaynak denetimi geçti.
+
+### TASK-WORKFLOW-018 — Reddedilmiş denemenin kayıtlı DAG'ı yeniden başlatmayı engelledi
+
+- **Durum:** Açık; doğrulama için güvenli bypass kullanıldı
+- **Aşama:** Ön yüzde “Devam Ettir” (`attempt-dc47f282-d459-4dcb-8d40-4fcad822942a`)
+- **Bulgu:** Kayıtlı `backend.domain` planında `task-prisma-schema` görevinin `targetFiles` listesi boştu. Yeniden başlatma bu geçersiz planı doğrulamadan tekrar kullandı ve atomik tek-dosya sözleşmesinde durdu.
+- **Aksiyon:** Kaynak kod yeniden üretilmedi; onaylı v3 sözleşmesi ve aynı kanonik worker doğrulaması üzerinden onarılmış kaynakların artefaktı ayrıca sınanıyor. Geçersiz kayıtlı planı otomatik iyileştirme ayrıca ürün görevi olarak açık kalacak.
+
+### TASK-ARTIFACT-019 — Yerel sırlar ve veritabanı ZIP'e girebiliyordu
+
+- **Durum:** Çözüldü
+- **Aşama:** ZIP envanteri ve kaynak ağacı
+- **Bulgu:** `.env` ve `prisma/dev.db` hem kaynak taramasında hem gerçek ZIP envanterinde görünüyordu. Bu, yerel sırları ve kişisel kayıtları pakete taşıyabilirdi.
+- **Aksiyon:** Önce başarısız regresyon testleri yazıldı. Envanter ve kaynak ağacı `.env*` (`.env.example` hariç), SQLite çalışma dosyaları ve derleme çıktısını dışlıyor. İlgili testler ve mevcut artefakt test paketi geçti (`ac86937`, `908640c`, `c91a39d`).
+
+### TASK-DEPENDENCY-020 — Scaffold geçersiz NPM bağımlılıkları ekledi
+
+- **Durum:** Çözüldü; ikinci kanonik koşu sonucu bekleniyor
+- **Aşama:** İlk onarılmış ZIP doğrulaması (`verification-cf1e287d-8e77-41c2-838e-3207d2f46356`)
+- **Bulgu:** Scaffold, `.next` derleme çıktısını ve `node:net`, `node:test` gibi Node yerleşik modüllerini harici paket sanıp `package.json` içine yazdı. Worker `npm ci` aşamasında `EINVALIDPACKAGENAME` ile durdu; test, derleme ve smoke kapıları buna bağlı olarak başarısız/engelli kaldı.
+- **Aksiyon:** Tarama derleme çıktılarını ve Node yerleşiklerini atlayacak şekilde test odaklı düzeltildi; yanlış bağımlılıklar uygulama manifestinden kaldırıldı. Statik denetim de `node:` importlarını doğru tanıyor (`968210c`, `caffbe5`). İkinci kanonik koşu başlatıldı.
+
 ## Zaman Çizelgesi
 
 - 2026-09-23 — Kapsam onaylandı; frontend, backend ve execution worker servislerinin dinlediği doğrulandı.
@@ -171,3 +199,5 @@ XFactor ön yüzünde Manager sohbeti kullanılarak “Kütüphane Takip Sistemi
 - 2026-09-23 — Genel durum kaydının yeni onaylı sözleşmeyi eski planla ezdiği regresyon testiyle kanıtlandı ve düzeltildi.
 - 2026-09-23 — v3 planı Manager sohbetinden alındı; bekleyen sözleşme gösterimi ve startup eşitlemesi hataları giderildikten sonra kütüphane rotaları doğrulandı ve plan ön yüzden onaylandı.
 - 2026-09-23 — v3 üretimi eski ilan dosyalarının Prisma şemasıyla çakışması nedeniyle statik kabulde reddedildi; kategori ve üye ekranlarının hâlâ eksik olduğu saptandı.
+- 2026-09-24 — Uygulama kaynakları onarıldı; yerel test, TypeScript, Next.js derlemesi ve deterministik statik denetim geçti.
+- 2026-09-24 — Ön yüzden devam ettirme, kayıtlı atomik DAG hedefleri boş olduğu için durdu. Ayrı kanonik ZIP doğrulaması ilk denemede geçersiz `node:` NPM bağımlılıklarını yakaladı; scaffold düzeltildi ve ikinci koşu başlatıldı.
