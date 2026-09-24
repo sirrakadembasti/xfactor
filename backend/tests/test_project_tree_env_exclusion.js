@@ -12,8 +12,13 @@ test('archive source tree excludes local environment secrets but keeps the examp
         await fs.writeFile(path.join(projectDir, '.env.local'), 'SECRET=local-secret');
         await fs.writeFile(path.join(projectDir, '.env.production'), 'SECRET=production-secret');
         await fs.writeFile(path.join(projectDir, '.env.example'), 'SECRET=placeholder');
+        await fs.mkdir(path.join(projectDir, '.next'));
+        await fs.writeFile(path.join(projectDir, '.next', 'bundle.js'), 'compiled output');
+        await fs.mkdir(path.join(projectDir, 'prisma'));
+        await fs.writeFile(path.join(projectDir, 'prisma', 'dev.db'), 'private-records');
+        await fs.writeFile(path.join(projectDir, 'prisma', 'schema.prisma'), 'model Book {}');
         const tree = await listProjectTree(projectDir);
-        assert.deepEqual(tree.map(file => file.path), ['.env.example']);
+        assert.deepEqual(tree.map(file => file.path), ['.env.example', 'prisma/schema.prisma']);
     } finally {
         await fs.rm(projectDir, { recursive: true, force: true });
     }

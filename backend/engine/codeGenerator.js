@@ -960,7 +960,7 @@ export async function listProjectTree(projectDir, {
 } = {}) {
     const results = [];
     let totalBytes = 0;
-    const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
+    const IGNORED_DIRS = new Set(['node_modules', '.git', '.next', 'coverage', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
     const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', '.DS_Store', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
     const incompleteTree = message => {
         const error = new Error(message);
@@ -982,6 +982,7 @@ export async function listProjectTree(projectDir, {
                 }
                 if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
                 if (entry.name.startsWith('.env') && entry.name !== '.env.example') continue;
+                if (/\.(?:db|sqlite|sqlite3)(?:-(?:wal|shm|journal))?$/i.test(entry.name)) continue;
                 if (entry.name === '.git' || entry.name === '.DS_Store') continue;
 
                 const resPath = path.join(currentDir, entry.name);
