@@ -667,7 +667,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 67,
+      "val": 69.5,
       "provenance": "curated"
     },
     {
@@ -1347,7 +1347,7 @@
       "group": "tests",
       "file": "backend/tests/test_artifact_inventory_private_files.js",
       "description": "",
-      "val": 4.5,
+      "val": 5,
       "provenance": "ast"
     },
     {
@@ -1397,7 +1397,7 @@
       "group": "tests",
       "file": "backend/tests/test_execution_client_poll.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast"
     },
     {
@@ -1417,7 +1417,7 @@
       "group": "tests",
       "file": "backend/tests/test_next_generated_import_audit.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast"
     },
     {
@@ -2217,7 +2217,7 @@
       "group": "tests",
       "file": "backend/tests/test_project_tree_env_exclusion.js",
       "description": "",
-      "val": 4.5,
+      "val": 5,
       "provenance": "ast"
     },
     {
@@ -2267,7 +2267,7 @@
       "group": "tests",
       "file": "backend/tests/test_scaffold_dependency_scan.js",
       "description": "",
-      "val": 4.5,
+      "val": 5,
       "provenance": "ast"
     },
     {
@@ -2477,7 +2477,7 @@
       "group": "backend",
       "file": "backend/verification/runChecks.js",
       "description": "",
-      "val": 6.5,
+      "val": 7,
       "provenance": "ast"
     },
     {
@@ -4610,7 +4610,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 13.5,
+      "val": 14,
       "provenance": "ast"
     },
     {
@@ -9659,7 +9659,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@154",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@159",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -9667,10 +9667,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 154
+      "line": 159
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@158",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@163",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -9678,10 +9678,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 158
+      "line": 163
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@163",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@168",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -9689,7 +9689,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 163
+      "line": 168
     },
     {
       "id": "package:assert",
@@ -16272,7 +16272,7 @@
       "line": 251
     },
     {
-      "id": "backend/verification/runChecks.js#Function:collectFiles@7",
+      "id": "backend/verification/runChecks.js#Function:collectFiles@8",
       "label": "collectFiles",
       "type": "Function",
       "group": "backend",
@@ -16280,10 +16280,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 7
+      "line": 8
     },
     {
-      "id": "backend/verification/runChecks.js#Function:withEvidence@21",
+      "id": "backend/verification/runChecks.js#Function:withEvidence@22",
       "label": "withEvidence",
       "type": "Function",
       "group": "backend",
@@ -16291,10 +16291,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 21
+      "line": 22
     },
     {
-      "id": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
+      "id": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
       "label": "runVerificationChecks",
       "type": "Function",
       "group": "backend",
@@ -16302,7 +16302,7 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 24
+      "line": 25
     },
     {
       "id": "backend/verification/safeExtractor.js#Function:canonicalZipPath@6",
@@ -21942,6 +21942,12 @@
     },
     {
       "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_artifact_inventory_private_files.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_backend.js",
       "label": "runs",
       "provenance": "curated"
@@ -22009,6 +22015,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_e2e_simulation.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_execution_client_poll.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -22524,6 +22536,12 @@
     },
     {
       "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_project_tree_env_exclusion.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_project_state_rehydration.js",
       "label": "runs",
       "provenance": "curated"
@@ -22537,6 +22555,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_scaffold_auth_standards.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_scaffold_dependency_scan.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -22633,6 +22657,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_manager_error_telemetry.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_next_generated_import_audit.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -31000,32 +31030,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@154",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@159",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 154
+        "line": 159
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@158",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/testInventory.js",
-        "line": 158
-      }
-    },
-    {
-      "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@163",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@163",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
         "line": 163
+      }
+    },
+    {
+      "source": "backend/tests/testInventory.js",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@168",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/testInventory.js",
+        "line": 168
       }
     },
     {
@@ -44850,8 +44880,8 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/packageVerifier.js",
-      "label": "imports",
+      "target": "package:node:crypto",
+      "label": "imports_package",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
@@ -44860,7 +44890,7 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/buildVerifier.js",
+      "target": "backend/verification/packageVerifier.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -44870,7 +44900,7 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/readmeVerifier.js",
+      "target": "backend/verification/buildVerifier.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -44880,7 +44910,7 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/smokeVerifier.js",
+      "target": "backend/verification/readmeVerifier.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -44890,7 +44920,7 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/policyVersion.js",
+      "target": "backend/verification/smokeVerifier.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -44900,32 +44930,42 @@
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/runChecks.js#Function:collectFiles@7",
-      "label": "contains",
+      "target": "backend/verification/policyVersion.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 7
+        "line": 6
       }
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/runChecks.js#Function:withEvidence@21",
+      "target": "backend/verification/runChecks.js#Function:collectFiles@8",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 21
+        "line": 8
       }
     },
     {
       "source": "backend/verification/runChecks.js",
-      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
+      "target": "backend/verification/runChecks.js#Function:withEvidence@22",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 24
+        "line": 22
+      }
+    },
+    {
+      "source": "backend/verification/runChecks.js",
+      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/runChecks.js",
+        "line": 25
       }
     },
     {
@@ -57470,7 +57510,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@154",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@159",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -58829,13 +58869,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@163",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@158",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@168",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@163",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 164
+        "line": 169
       }
     },
     {
@@ -65650,7 +65690,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@163",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -65980,7 +66020,7 @@
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
+      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -66740,7 +66780,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@154",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@159",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -66750,7 +66790,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@163",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -69130,7 +69170,7 @@
     },
     {
       "source": "backend/verification/qualityPolicy.js#Function:runProjectVerification@625",
-      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
+      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -69299,23 +69339,23 @@
       }
     },
     {
-      "source": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
-      "target": "backend/verification/runChecks.js#Function:collectFiles@7",
+      "source": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
+      "target": "backend/verification/runChecks.js#Function:collectFiles@8",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 25
+        "line": 26
       }
     },
     {
-      "source": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
-      "target": "backend/verification/runChecks.js#Function:withEvidence@21",
+      "source": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
+      "target": "backend/verification/runChecks.js#Function:withEvidence@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/runChecks.js",
-        "line": 49
+        "line": 58
       }
     },
     {
@@ -70290,7 +70330,7 @@
     },
     {
       "source": "execution/jobExecutor.js#Function:verifyArtifact@111",
-      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@24",
+      "target": "backend/verification/runChecks.js#Function:runVerificationChecks@25",
       "label": "calls",
       "provenance": "ast",
       "location": {

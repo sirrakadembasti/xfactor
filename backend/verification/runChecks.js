@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { verifyDependencies } from './packageVerifier.js';
 import { verifyBuild } from './buildVerifier.js';
 import { verifyReadmeCommands } from './readmeVerifier.js';
@@ -29,15 +30,23 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
     checks.push(...(dependency.checks || []));
     const build = await (verifiers.build || verifyBuild)(workspace, contract, { ...options, dependencyResult: dependency });
     checks.push(...(build.checks || []));
+    const readmeStartedAt = new Date().toISOString();
     const readme = await (verifiers.readme || verifyReadmeCommands)(contract, inventory, { ...options });
+    const readmeEndedAt = new Date().toISOString();
+    const readmeIssues = readme.issues || [];
     checks.push(...(readme.checks || []));
     checks.push({
         name: 'readme_check',
         status: readme.passed === true ? 'passed' : 'failed',
         command: 'static:verify-readme-contract',
         exitCode: readme.passed === true ? 0 : 1,
-        reason: (readme.issues || []).join('; ') || 'README commands and runtime contract are consistent.',
-        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, issues: readme.issues || [] }
+        startedAt: readmeStartedAt,
+        endedAt: readmeEndedAt,
+        stdoutDigest: crypto.createHash('sha256').update(JSON.stringify({ passed: readme.passed, issues: readmeIssues })).digest('hex'),
+        stderrDigest: crypto.createHash('sha256').update(readmeIssues.join('; ')).digest('hex'),
+        policyVersion: ACTIVE_POLICY_VERSION,
+        reason: readmeIssues.join('; ') || 'README commands and runtime contract are consistent.',
+        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, issues: readmeIssues }
     });
     // Smoke is the single runtime orchestrator; it owns service lifecycle and all
     // applicable database/API/browser/process/health/test-infrastructure gates.

@@ -5,6 +5,7 @@ testInventory.js
 testHarness.js
 test_admin_cli.js
 test_agent_contract_schemas.js
+test_artifact_inventory_private_files.js
 test_backend.js
 test_build_sandbox_gate.js
 test_build_validator.js
@@ -17,6 +18,7 @@ test_disk_sync_and_isolation.js
 test_docs_agent_sync.js
 test_domain_policy.js
 test_e2e_simulation.js
+test_execution_client_poll.js
 test_generation_isolation.js
 test_graphify.js
 test_health_and_lifecycle.js
@@ -102,9 +104,11 @@ test_p1_7_task1_routes.js
 test_package_verifier.js
 test_project_action_chat_audit.js
 test_project_repository.js
+test_project_tree_env_exclusion.js
 test_project_state_rehydration.js
 test_quality_gate.js
 test_scaffold_auth_standards.js
+test_scaffold_dependency_scan.js
 test_quiz_runtime_remediation.js
 test_quality_policy_integration.js
 test_runner.js
@@ -122,6 +126,7 @@ test_workflow_attempts.js
 test_workflow_state_initialization.js
 test_workflow_failure_chat_event.js
 test_manager_error_telemetry.js
+test_next_generated_import_audit.js
 test_dev_verification_fallback.js
 test_workflow_dev_fallback.js
 `.trim().split(/\n/);
