@@ -57,8 +57,12 @@ await runAsyncTest('2. getProjectLogs should support cursor pagination and limit
         });
     }
 
-    // Page 1: Limit 5
-    const page1 = getProjectLogs(project.id, { limit: 5 });
+    // A fresh live view begins with the latest five entries in chronological order.
+    const latest = getProjectLogs(project.id, { limit: 5 });
+    assert.deepStrictEqual(latest.map(log => log.message), [8, 9, 10, 11, 12].map(i => `Log entry ${i}`));
+
+    // Explicit cursor 0 starts forward pagination at the beginning.
+    const page1 = getProjectLogs(project.id, { cursor: 0, limit: 5 });
     assert.strictEqual(page1.length, 5);
 
     // Page 2: Cursor = page1 last ID, Limit 5

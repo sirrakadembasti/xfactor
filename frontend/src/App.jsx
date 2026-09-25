@@ -21,6 +21,34 @@ import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
 const MAX_LOGS = 500;
+const mergeProjectLogs = (incoming, current) => {
+  const seenIds = new Set();
+  const seenEvents = new Set();
+  return [...incoming, ...current]
+    .sort((left, right) => Number(right.id != null) - Number(left.id != null))
+    .filter(log => {
+      const eventKey = log.created_at
+        ? JSON.stringify([log.created_at, log.node_id, log.action, log.message, log.agent, log.file])
+        : null;
+      if (log.id != null) {
+        if (seenIds.has(log.id)) return false;
+        seenIds.add(log.id);
+      } else if (eventKey && seenEvents.has(eventKey)) {
+        return false;
+      }
+      if (eventKey) seenEvents.add(eventKey);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.created_at || '');
+      const rightTime = Date.parse(right.created_at || '');
+      if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) {
+        return rightTime - leftTime;
+      }
+      return (Number(right.id) || 0) - (Number(left.id) || 0);
+    })
+    .slice(0, MAX_LOGS);
+};
 export const createActionId = action =>
   `${action}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
 export default function App() {
@@ -313,10 +341,13 @@ export default function App() {
       .then(data => {
         if (!Array.isArray(data) || !isCurrentRequest(logIdentity)) return;
         const sortedLogs = data.slice(-MAX_LOGS).reverse();
-        setLogs(sortedLogs);
-        const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(sortedLogs, projectStateRef.current?.plan);
-        setNodes(computedNodes);
-        setEdges(computedEdges);
+        setLogs(currentLogs => {
+          const mergedLogs = mergeProjectLogs(sortedLogs, currentLogs);
+          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(mergedLogs, projectStateRef.current?.plan);
+          setNodes(computedNodes);
+          setEdges(computedEdges);
+          return mergedLogs;
+        });
       })
       .catch(e => {
         if (e.name !== 'AbortError' && isCurrentRequest(logIdentity)) console.error('Logs error:', e);
@@ -379,7 +410,7 @@ export default function App() {
             || batch.projectEpoch !== projectEpochRef.current
             || batch.projectId !== activeProjectRef.current
           ) return prev;
-          const newLogs = [...batch.items].reverse().concat(prev).slice(0, MAX_LOGS);
+          const newLogs = mergeProjectLogs([...batch.items].reverse(), prev);
           const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs, projectStateRef.current?.plan);
           setNodes(computedNodes);
           setEdges(computedEdges);
@@ -397,6 +428,17 @@ export default function App() {
           }
           const projectId = activeProjectRef.current;
           if (data.projectId !== activeProjectRef.current) return;
+          if (data.type === 'project_state_updated') {
+            if (projectId) {
+              fetchProjectState(projectId).then(state => {
+                if (state?.status === 'verification_failed' || ((state?.status === 'paused' || state?.status === 'artifact_verified') && state?.last_error)) {
+                  setViewMode('chat');
+                }
+              });
+              fetchProjects();
+            }
+            return;
+          }
 
           // pendingLogBatch queue
           let batch = wsBatchRef.current;
@@ -673,7 +715,6 @@ export default function App() {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
     const identity = captureRequest('resume', activeProjectId);
-    setViewMode('flow');
     try {
       const data = await api.resumeProject(
         activeProjectId,

@@ -81,7 +81,7 @@ export default function ChatView({
         </div>
       )}
 
-      {canResumeProject(projectState?.status) && (
+      {canResumeProject(projectState?.status, projectState?.last_error) && (
         <div className="mx-6 mt-3 mb-1 p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm">

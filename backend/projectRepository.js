@@ -187,6 +187,14 @@ export function getProject(projectId) {
     if (project.workflow_state) {
         try { workflow = JSON.parse(project.workflow_state); } catch {}
     }
+    let lastError = workflow?.last_error || null;
+    if (!lastError && ['paused', 'verification_failed', 'artifact_verified'].includes(project.status)) {
+        const attempt = db.prepare(`
+            SELECT status, error FROM workflow_attempts
+            WHERE project_id = ? ORDER BY started_epoch DESC, started_at DESC LIMIT 1
+        `).get(projectId);
+        if (attempt?.status === 'failed') lastError = attempt.error || null;
+    }
 
     const artifactCandidate = (contractRow && getLatestVerifiedArtifact({ projectId, contractId: contractRow.id }))
         || getLatestVerifiedArtifact({ projectId });
@@ -218,7 +226,7 @@ export function getProject(projectId) {
         plan,
         workflow,
         remediation: workflow?.remediation || null,
-        last_error: workflow?.last_error || null,
+        last_error: lastError,
         chatHistory,
         contractId: contractRow?.id || null,
         latestArtifact: latestArtifact || null
@@ -470,7 +478,7 @@ export function completeVerifiedProject({
         if (attemptId !== null || leaseOwner !== null) {
             assertWorkflowLease(attemptId, leaseOwner, { projectId });
         }
-        const persisted = db.prepare('SELECT status, revision FROM projects WHERE id = ?').get(projectId);
+        const persisted = db.prepare('SELECT status, revision, workflow_state FROM projects WHERE id = ?').get(projectId);
         if (!persisted) throw new Error(`Project ${projectId} does not exist.`);
         if (persisted.revision !== Number(expectedRevision || 1)) throw new Error(`CAS Revision conflict on project ${projectId}.`);
         if (persisted.status !== PROJECT_STATUS.ARTIFACT_VERIFIED) {
@@ -492,10 +500,18 @@ export function completeVerifiedProject({
         const previousRevision = persisted.revision;
         const nextRevision = previousRevision + 1;
         const completedAt = new Date().toISOString();
+        let workflowState = persisted.workflow_state;
+        try {
+            const parsed = JSON.parse(workflowState || '{}');
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                delete parsed.last_error;
+                workflowState = JSON.stringify(parsed);
+            }
+        } catch {}
         const result = db.prepare(`
-            UPDATE projects SET status = ?, revision = ?
+            UPDATE projects SET status = ?, revision = ?, workflow_state = ?
             WHERE id = ? AND revision = ? AND status = ?
-        `).run(PROJECT_STATUS.COMPLETED, nextRevision, projectId, previousRevision, PROJECT_STATUS.ARTIFACT_VERIFIED);
+        `).run(PROJECT_STATUS.COMPLETED, nextRevision, workflowState, projectId, previousRevision, PROJECT_STATUS.ARTIFACT_VERIFIED);
         if (result.changes !== 1) throw new Error(`CAS Revision conflict on project ${projectId}.`);
         const completionReceiptId = `completion-${crypto.randomUUID()}`;
         db.prepare(`

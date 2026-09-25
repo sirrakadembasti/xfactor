@@ -95,6 +95,30 @@ try {
         assert.strictEqual(buildCheck.status, 'failed');
     });
 
+    await runAsyncTest('4. Prisma schemas without User do not require seeded accounts', async () => {
+        const workspace = await createTempWorkspace();
+        const commands = [];
+        const adapter = {
+            id: 'mock-sandbox',
+            getCapabilities() { return { available: true, isolation: true }; },
+            isAvailable() { return true; },
+            async execute(request) {
+                commands.push(`${request.command} ${(request.args || []).join(' ')}`);
+                return { status: 'PASS', passed: true, exitCode: 0, stdout: 'ok', stderr: '' };
+            }
+        };
+        const result = await verifyBuild(workspace, {}, {
+            adapter,
+            files: [
+                { path: 'package.json', content: JSON.stringify({ scripts: { build: 'echo ok', 'prisma:seed': 'prisma db seed' }, prisma: { seed: 'tsx prisma/seed.ts' } }) },
+                { path: 'prisma/schema.prisma', content: 'model Task { id String @id }' },
+                { path: 'prisma/seed.ts', content: 'console.log("seed")' }
+            ]
+        });
+        assert.strictEqual(result.checks.find(check => check.name === 'prisma_seed_accounts')?.status, 'skipped');
+        assert.ok(!commands.some(command => command.includes('seed-account-count')));
+    });
+
     finish();
 } finally {
     for (const dir of tempDirs) {

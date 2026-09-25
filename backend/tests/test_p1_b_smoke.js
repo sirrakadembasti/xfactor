@@ -85,5 +85,33 @@ try {
         assert.ok(calls.some(([kind, pid]) => kind === 'kill' && pid === 42));
     });
     await runAsyncTest('2. verifyProjectSmoke fails closed when manifest is missing', async () => { const result = await verifyProjectSmoke(await createTempWorkspace(), {}); assert.strictEqual(result.passed, false); });
+    await runAsyncTest('3. Next task route and page provide runtime evidence when contract omits URLs', async () => {
+        const workspace = await createTempWorkspace();
+        const manifest = { version: '1.0', services: { web: { type: 'nextjs', port: 3000, healthEndpoint: '/' } } };
+        const calls = [];
+        const adapter = {
+            id: 'mock-sandbox',
+            getCapabilities: () => ({ available: true, isolation: true, serviceSpawn: true }),
+            async request(request) {
+                calls.push(request);
+                return { statusCode: 200, rawBody: '<html><main>Tasks</main></html>', html: '<html><main>Tasks</main></html>', data: { data: [] } };
+            },
+            async execute() { return { passed: true, exitCode: 0, stdout: '', stderr: '' }; }
+        };
+        const result = await verifyProjectSmoke(workspace, {}, {
+            adapter,
+            skipSpawnForLiveServer: true,
+            files: [
+                { path: 'service-manifest.json', content: JSON.stringify(manifest) },
+                { path: 'package.json', content: JSON.stringify({ scripts: { test: 'echo ok' } }) },
+                { path: 'src/app/api/tasks/route.ts', content: 'export async function GET() {}\nexport async function POST() {}' },
+                { path: 'src/app/page.tsx', content: 'export default function Page() { return <main>Tasks</main>; }' }
+            ]
+        });
+        assert.ok(result.checks.some(check => check.name === 'api_status_check' && check.status === 'passed'));
+        assert.ok(result.checks.some(check => check.name === 'browser_journey_steps' && check.status === 'passed'));
+        assert.ok(calls.some(call => call.url === 'http://127.0.0.1:3000/api/tasks' && call.method === 'POST'));
+        assert.ok(calls.some(call => call.url === 'http://127.0.0.1:3000/' && call.method === 'GET'));
+    });
     finish();
 } finally { await Promise.all(tempDirs.map(dir => fs.rm(dir, { recursive: true, force: true }))); }

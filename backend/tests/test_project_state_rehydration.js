@@ -7,12 +7,53 @@ import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 import { rehydrateProjectStateFromDisk, reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectChatHistoryFromDisk, rehydrateProjectLogsFromDisk } from '../services/reconciliationService.js';
 import { getProject } from '../projectRepository.js';
+import { restoreTaskTargetsFromProtocol } from '../services/reconciliationService.js';
 
 const isolated = await setupIsolatedTestDb('rehydration-test');
 const database = await isolated.initializeDatabase();
 const { runAsyncTest, finish } = createTestHarness();
 
 try {
+    await runAsyncTest('task targets are recovered from each coder GOREV without inventing missing targets', async () => {
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-targets-'));
+        const taskDir = path.join(root, 'task-a');
+        await fs.mkdir(taskDir);
+        await fs.writeFile(path.join(taskDir, 'GOREV.md'), '# Task\nAçıklama: Exact schema description\nHedef Dosyalar: ["prisma/schema.prisma"]\n', 'utf8');
+        const tasks = [
+            { id: 'task-a', targetFiles: [] },
+            { id: 'task-b', targetFiles: [] }
+        ];
+        const restored = restoreTaskTargetsFromProtocol(root, tasks);
+        assert.deepStrictEqual(restored[0].targetFiles, ['prisma/schema.prisma']);
+        assert.strictEqual(restored[0].description, 'Exact schema description');
+        assert.deepStrictEqual(restored[1].targetFiles, []);
+        await fs.writeFile(path.join(taskDir, 'GOREV.md'), '# Task\nHedef Dosyalar: ["C:/private/schema.prisma"]\n', 'utf8');
+        assert.deepStrictEqual(restoreTaskTargetsFromProtocol(root, tasks)[0].targetFiles, []);
+        await fs.rm(root, { recursive: true, force: true });
+    });
+    await runAsyncTest('paused project log rehydration preserves real logs and recovers only completed disk tasks', async () => {
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-paused-logs-'));
+        const projectId = `paused-logs-${Date.now()}`;
+        const projectDir = path.join(root, projectId);
+        const tlDir = path.join(projectDir, 'manager', 'backend.director', 'domain');
+        await fs.mkdir(path.join(tlDir, 'done-task'), { recursive: true });
+        await fs.mkdir(path.join(tlDir, 'pending-task'), { recursive: true });
+        await fs.writeFile(path.join(tlDir, 'TODO.md'), '| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n| 1 | done-task | Done | — | bekliyor |\n| 2 | pending-task | Pending | done-task | bekliyor |\n');
+        await fs.writeFile(path.join(tlDir, 'done-task', 'DURUM.md'), '# DURUM\n- **Durum:** TAMAMLANDI\n');
+        database.prepare('INSERT INTO projects (id, title, status, revision) VALUES (?, ?, ?, 1)').run(projectId, 'Paused', 'paused');
+        database.prepare('INSERT INTO project_logs (project_id, agent, action, message, node_id) VALUES (?, ?, ?, ?, ?)').run(projectId, 'System', 'error', 'Original failure', 'system');
+        await rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        const logs = database.prepare('SELECT agent, action, message, node_id, parent_node_id FROM project_logs WHERE project_id = ? ORDER BY id').all(projectId);
+        assert.ok(logs.some(log => log.message === 'Original failure'));
+        assert.ok(logs.some(log => log.node_id === 'backend.director' && log.parent_node_id === 'manager'));
+        assert.ok(logs.some(log => log.node_id === 'backend.domain' && log.parent_node_id === 'backend.director'));
+        assert.ok(logs.some(log => log.node_id === 'backend.domain.done-task' && log.parent_node_id === 'backend.domain' && log.action === 'finish'));
+        assert.ok(!logs.some(log => log.node_id === 'backend.domain.pending-task' && log.action === 'finish'));
+        const count = logs.length;
+        await rehydrateProjectLogsFromDisk(projectDir, { projectId, database });
+        assert.strictEqual(database.prepare('SELECT COUNT(*) as count FROM project_logs WHERE project_id = ?').get(projectId).count, count);
+        await fs.rm(root, { recursive: true, force: true });
+    });
     await runAsyncTest('1. rehydrateProjectStateFromDisk correctly parses TALIMATNAME, TODO, RAPOR and updates DB + project_contracts', async () => {
         const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-test-1-'));
         const projectId = `proj-rehydrate-${Date.now()}`;
@@ -223,7 +264,7 @@ try {
         assert.ok(agents.includes('Tester'), 'Tester log must exist');
 
         // Check specific task log messages & node_ids
-        const task1Logs = logs.filter(l => l.node_id === 'task-1');
+        const task1Logs = logs.filter(l => l.node_id === 'backend.domain.task-1' && l.parent_node_id === 'backend.domain');
         assert.strictEqual(task1Logs.length, 3, 'task-1 should have 3 logs (Teamleader, Coder, Reviewer)');
         assert.ok(task1Logs[0].message.includes('Database Setup'), 'Teamleader log message must include task title');
 
@@ -356,9 +397,9 @@ try {
 
         // Case A: Existing project in DB with status = 'paused' and an approved contract
         database.prepare(`
-            INSERT INTO projects (id, title, status, revision, is_pinned, created_at)
-            VALUES (?, ?, 'paused', 2, 0, ?)
-        `).run(projectId, 'Heal Test', new Date().toISOString());
+            INSERT INTO projects (id, title, status, revision, is_pinned, workflow_state, created_at)
+            VALUES (?, ?, 'paused', 2, 0, ?, ?)
+        `).run(projectId, 'Heal Test', JSON.stringify({ last_error: 'Verification failed', planHash: 'approved-hash' }), new Date().toISOString());
 
         database.prepare(`
             INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at)
@@ -370,8 +411,22 @@ try {
         assert.strictEqual(result.success, true);
         assert.strictEqual(result.status, 'paused', 'Status should be preserved as paused, not reverted to pending_approval');
 
-        const dbProj = database.prepare('SELECT status FROM projects WHERE id = ?').get(projectId);
+        const dbProj = database.prepare('SELECT status, workflow_state FROM projects WHERE id = ?').get(projectId);
         assert.strictEqual(dbProj.status, 'paused', 'DB project status must remain paused');
+        assert.strictEqual(JSON.parse(dbProj.workflow_state).last_error, 'Verification failed');
+        assert.strictEqual(JSON.parse(dbProj.workflow_state).planHash, 'approved-hash');
+
+        // A failed finalization must remain resumable after an older startup
+        // reconciliation has already discarded its workflow error.
+        database.prepare("UPDATE projects SET status = 'artifact_verified', workflow_state = '{}' WHERE id = ?").run(projectId);
+        database.prepare(`INSERT INTO workflow_attempts (id, project_id, status, lease_owner, error)
+            VALUES (?, ?, 'failed', 'test-owner', 'Finalization evidence mismatch')`)
+            .run(`attempt-final-${projectId}`, projectId);
+        assert.strictEqual(getProject(projectId).last_error, 'Finalization evidence mismatch');
+        await rehydrateProjectStateFromDisk(projectDir, { projectId, database });
+        const recovered = database.prepare('SELECT status, workflow_state FROM projects WHERE id = ?').get(projectId);
+        assert.strictEqual(recovered.status, 'artifact_verified');
+        assert.strictEqual(JSON.parse(recovered.workflow_state).last_error, 'Finalization evidence mismatch');
 
         // Case B: Corrupted project in DB with status = 'pending_approval' but approved contract
         const corruptId = `proj-corrupt-${Date.now()}`;

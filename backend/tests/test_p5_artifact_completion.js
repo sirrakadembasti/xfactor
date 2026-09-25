@@ -101,6 +101,8 @@ try {
     });
 
     await runAsyncTest('canonical artifact identity authorizes completion with its verified run receipt', async () => {
+        db.prepare('UPDATE projects SET workflow_state = ? WHERE id = ?')
+            .run(JSON.stringify({ last_error: 'Earlier failed verification' }), projectId);
         const artifact = getArtifact({ projectId, contractId, artifactId });
         assert.strictEqual(artifact.projectId, projectId);
         assert.strictEqual(artifact.contractId, contractId);
@@ -121,6 +123,7 @@ try {
         assert.deepStrictEqual({ ...receipt }, { artifact_id: artifactId, run_id: runId });
 
         const project = getProject(projectId);
+        assert.strictEqual(project.last_error, null);
         assert.strictEqual(project.contractId, contractId);
         assert.deepStrictEqual(project.latestArtifact, {
             id: artifactId,

@@ -10,6 +10,27 @@ function resolveDb(database) {
     return database || db || initializeDatabase();
 }
 
+export function restoreTaskTargetsFromProtocol(teamleaderDir, tasks = []) {
+    return tasks.map(task => {
+        if (Array.isArray(task.targetFiles) && task.targetFiles.length === 1 && task.description) return task;
+        if (!/^[a-zA-Z0-9_-]+$/.test(task.id || '')) return task;
+        const gorevPath = path.join(teamleaderDir, task.id, 'GOREV.md');
+        try {
+            const content = fsSync.readFileSync(gorevPath, 'utf8');
+            const description = content.match(/^Açıklama:\s*(.+)$/m)?.[1]?.trim();
+            const match = content.match(/^Hedef Dosyalar:\s*(\[[^\r\n]*\])/m);
+            if (!match) return task;
+            const targets = JSON.parse(match[1]);
+            if (!Array.isArray(targets) || targets.length !== 1 || typeof targets[0] !== 'string') return task;
+            const target = targets[0].trim().replace(/\\/g, '/');
+            if (!target || path.posix.isAbsolute(target) || path.win32.isAbsolute(target) || target.split('/').some(part => !part || part === '..' || part === '.') || target.includes('\0')) return task;
+            return { ...task, ...(description ? { description } : {}), targetFiles: [target] };
+        } catch {
+            return task;
+        }
+    });
+}
+
 function makeArtifactDeps(database) {
     const resolved = resolveDb(database);
     if (!resolved || resolved === db) return {};
@@ -342,8 +363,9 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
             }
         } catch {}
 
-        teamleaderPlans[tlId] = { tasks: fileTasks };
-        for (const t of fileTasks) {
+        const recoveredTasks = restoreTaskTargetsFromProtocol(fileDir, fileTasks);
+        teamleaderPlans[tlId] = { tasks: recoveredTasks };
+        for (const t of recoveredTasks) {
             allTasksMap.set(t.id, t);
         }
     }
@@ -370,12 +392,27 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         tasks
     };
 
-    const workflow = {
-        teamleaderPlans
-    };
-
     // 5. Update SQLite projects table
-    const existingProj = database.prepare('SELECT id, status, revision FROM projects WHERE id = ?').get(pId);
+    const existingProj = database.prepare('SELECT id, status, revision, workflow_state FROM projects WHERE id = ?').get(pId);
+    let existingWorkflow = {};
+    try {
+        const parsed = JSON.parse(existingProj?.workflow_state || '{}');
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) existingWorkflow = parsed;
+    } catch {}
+    if (!existingWorkflow.last_error && ['paused', 'verification_failed', 'artifact_verified'].includes(existingProj?.status)) {
+        const latestAttempt = database.prepare(`
+            SELECT status, error FROM workflow_attempts
+            WHERE project_id = ?
+            ORDER BY started_epoch DESC, started_at DESC LIMIT 1
+        `).get(pId);
+        if (latestAttempt?.status === 'failed' && latestAttempt.error) {
+            existingWorkflow.last_error = latestAttempt.error;
+        }
+    }
+    const workflow = {
+        ...existingWorkflow,
+        teamleaderPlans: { ...(existingWorkflow.teamleaderPlans || {}), ...teamleaderPlans }
+    };
     const planJson = JSON.stringify(plan);
     const workflowJson = JSON.stringify(workflow);
     const nowIso = new Date().toISOString();
@@ -627,21 +664,14 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
         existingLogs = database.prepare('SELECT id, node_id, action FROM project_logs WHERE project_id = ?').all(pId);
     } catch {}
 
-    const hasTaskLogs = existingLogs.some(l => l.node_id !== null || ['delegate', 'write', 'finish', 'reject'].includes(l.action));
-
-    if (existingLogs.length > 0) {
-        if (force || (currentStatus !== 'completed' && hasTaskLogs)) {
-            try {
-                database.prepare('DELETE FROM project_logs WHERE project_id = ?').run(pId);
-            } catch {}
-        } else {
-            return { success: true, rehydrated: false, count: 0 };
-        }
+    const recoverableProgress = currentStatus === 'paused' || currentStatus === 'verification_failed';
+    if (existingLogs.length > 0 && !recoverableProgress && !force) {
+        return { success: true, rehydrated: false, count: 0 };
     }
     const logsToInsert = [];
     // 1. Manager DURUM.md -> Manager start log
     const managerDir = path.join(projectDir, 'manager');
-    if (fsSync.existsSync(managerDir)) {
+    if (existingLogs.length === 0 && fsSync.existsSync(managerDir)) {
         logsToInsert.push({
             agent: 'Manager',
             action: 'start',
@@ -662,7 +692,9 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
         } catch {}
     }
 
-    if (directorDirs.length > 0) {
+    if (existingLogs.length > 0) {
+        // Preserve the real event stream; disk recovery only appends missing task evidence.
+    } else if (directorDirs.length > 0) {
         for (const dirPath of directorDirs) {
             const dirName = path.basename(dirPath).replace(/\.director$/, '');
             logsToInsert.push({
@@ -679,7 +711,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
         });
     }
 
-    if (currentStatus === 'completed') {
+    if (currentStatus === 'completed' || recoverableProgress) {
     // 3. Helper functions for scanning tasks
     function extractTitleFromGorev(gorevPath) {
         try {
@@ -735,6 +767,11 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     const tasksFound = [];
     const knownTaskIds = new Set();
     const todoFiles = findAllTodoFiles(managerDir);
+    const taskNode = (parentDir, taskId) => {
+        const parentNodeId = path.relative(managerDir, parentDir).split(/[/\\]/).filter(Boolean)
+            .map(part => part.replace(/\.director$/, '')).join('.');
+        return { node_id: `${parentNodeId}.${taskId}`, parent_node_id: parentNodeId };
+    };
 
     for (const todoFile of todoFiles) {
         const fileDir = path.dirname(todoFile);
@@ -761,12 +798,16 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
                                 const titleFromGorev = extractTitleFromGorev(gorevPath);
                                 const finalTitle = titleFromGorev || taskTitle;
-                                const reviewRes = extractReviewResult(raporPath) || 'approved';
+                                const reviewRes = extractReviewResult(raporPath);
+                                const durumPath = path.join(taskDir, 'DURUM.md');
+                                const completedOnDisk = reviewRes !== null || (fsSync.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(fsSync.readFileSync(durumPath, 'utf8')));
+                                if (recoverableProgress && !completedOnDisk) continue;
 
                                 tasksFound.push({
                                     id: taskId,
                                     title: finalTitle,
-                                    reviewResult: reviewRes
+                                    reviewResult: reviewRes,
+                                    ...taskNode(fileDir, taskId)
                                 });
                             }
                         }
@@ -792,12 +833,16 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
                             const titleFromGorev = extractTitleFromGorev(gorevPath);
                             const finalTitle = titleFromGorev || taskId;
-                            const reviewRes = extractReviewResult(raporPath) || 'approved';
+                            const reviewRes = extractReviewResult(raporPath);
+                            const durumPath = path.join(fullPath, 'DURUM.md');
+                            const completedOnDisk = reviewRes !== null || (fsSync.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(fsSync.readFileSync(durumPath, 'utf8')));
+                            if (recoverableProgress && !completedOnDisk) continue;
 
                             tasksFound.push({
                                 id: taskId,
                                 title: finalTitle,
-                                reviewResult: reviewRes
+                                reviewResult: reviewRes,
+                                ...taskNode(path.dirname(fullPath), taskId)
                             });
                         }
                     }
@@ -809,19 +854,32 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     scanForTaskDirs(projectDir);
 
+    const knownNodes = new Set(existingLogs.map(log => log.node_id).filter(Boolean));
     for (const task of tasksFound) {
+        const directorId = `${task.parent_node_id.split('.')[0]}.director`;
+        if (!knownNodes.has(directorId)) {
+            logsToInsert.push({ agent: 'Director', action: 'specs', message: `${directorId} şartnamesi diskten geri yüklendi.`, node_id: directorId, parent_node_id: 'manager' });
+            knownNodes.add(directorId);
+        }
+        if (!knownNodes.has(task.parent_node_id)) {
+            logsToInsert.push({ agent: 'Teamleader', action: 'start', message: `${task.parent_node_id} görev planı diskten geri yüklendi.`, node_id: task.parent_node_id, parent_node_id: directorId });
+            knownNodes.add(task.parent_node_id);
+        }
+        if (existingLogs.some(log => log.node_id === task.id || log.node_id === task.node_id)) continue;
         logsToInsert.push({
             agent: 'Teamleader',
             action: 'delegate',
             message: `Görev "${task.title}" Coder'a iletildi.`,
-            node_id: task.id
+            node_id: task.node_id,
+            parent_node_id: task.parent_node_id
         });
 
         logsToInsert.push({
             agent: 'Coder',
             action: 'write',
             message: `Görev "${task.title}" için kod dosyaları yazıldı.`,
-            node_id: task.id
+            node_id: task.node_id,
+            parent_node_id: task.parent_node_id
         });
 
         if (task.reviewResult === 'rejected') {
@@ -829,21 +887,23 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                 agent: 'Reviewer',
                 action: 'reject',
                 message: `Görev "${task.title}" denetlendi ve REDDEDİLDİ.`,
-                node_id: task.id
+                node_id: task.node_id,
+                parent_node_id: task.parent_node_id
             });
         } else {
             logsToInsert.push({
                 agent: 'Reviewer',
                 action: 'finish',
                 message: `Görev "${task.title}" denetlendi ve ONAYLANDI.`,
-                node_id: task.id
+                node_id: task.node_id,
+                parent_node_id: task.parent_node_id
             });
         }
     }
 
     // 4. Root RAPOR.md -> Tester finish log
     const rootRaporPath = path.join(projectDir, 'RAPOR.md');
-    if (fsSync.existsSync(rootRaporPath)) {
+    if (currentStatus === 'completed' && fsSync.existsSync(rootRaporPath)) {
         logsToInsert.push({
             agent: 'Tester',
             action: 'finish',
@@ -857,8 +917,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     }
 
     const insertLogStmt = database.prepare(`
-        INSERT INTO project_logs (project_id, agent, action, message, node_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO project_logs (project_id, agent, action, message, node_id, parent_node_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     let insertedCount = 0;
@@ -879,6 +939,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                 logItem.action || null,
                 logItem.message || '',
                 logItem.node_id || null,
+                logItem.parent_node_id || null,
                 createdAtIso
             );
             insertedCount++;

@@ -11,7 +11,7 @@ process.env.DB_PATH = isolated.dbPath;
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
-const { uncheckTodoItem, reconcileTaskCache, readDurum, isTaskCheckpointValid } = await import('../engine/fileProtocol.js');
+const { uncheckTodoItem, reconcileTaskCache, readDurum, isTaskCheckpointValid, setupRootProtocol } = await import('../engine/fileProtocol.js');
 const { saveCheckpoint } = await import('../engine/checkpointRepository.js');
 const { computeTaskSpecHash, computeInputHash, computeOutputHash } = await import('../engine/checkpointHelper.js');
 
@@ -25,6 +25,22 @@ async function createTempWorkspace(prefix = 'xfactor-wf-cp-test-') {
 }
 
 try {
+    await runAsyncTest('0. resuming root protocol preserves manager progress', async () => {
+        const workspace = await createTempWorkspace();
+        await setupRootProtocol(workspace, '# Plan', [{ name: 'backend', prefix: 'backend' }]);
+        const managerDir = path.join(workspace, 'manager');
+        const todoPath = path.join(managerDir, 'TODO.md');
+        const durumPath = path.join(managerDir, 'DURUM.md');
+        const completedTodo = (await fs.readFile(todoPath, 'utf8')).replace('- [ ] 1. backend', '- [x] 1. backend');
+        await fs.writeFile(todoPath, completedTodo);
+        await fs.writeFile(durumPath, '# DURUM\n- **Durum:** DEVAM_EDIYOR\n');
+
+        await setupRootProtocol(workspace, '# Plan', [{ name: 'backend', prefix: 'backend' }]);
+
+        assert.strictEqual(await fs.readFile(todoPath, 'utf8'), completedTodo);
+        assert.strictEqual(await fs.readFile(durumPath, 'utf8'), '# DURUM\n- **Durum:** DEVAM_EDIYOR\n');
+    });
+
     await runAsyncTest('1. uncheckTodoItem should uncheck completed todo checkbox in TODO.md', async () => {
         const workspace = await createTempWorkspace();
         const todoPath = path.join(workspace, 'TODO.md');
@@ -115,6 +131,31 @@ try {
         assert.strictEqual(invalidAfterEdit, false);
 
         db.prepare("DELETE FROM projects WHERE id = 'proj-cp-test'").run();
+    });
+
+    await runAsyncTest('4. acceptance retry may reuse unchanged legacy checkpoint without reviving manual invalidation', async () => {
+        const workspace = await createTempWorkspace();
+        const target = path.join(workspace, 'src', 'App.jsx');
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.writeFile(target, 'export default function App() { return null; }');
+        db.prepare("INSERT INTO projects (id, title, status) VALUES ('proj-acceptance-retry', 'Retry', 'implementing')").run();
+        db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash) VALUES ('contract-acceptance-retry', 'proj-acceptance-retry', 1, 'approved', '{}', 'hash-retry')").run();
+        const task = { id: 'task-ui-retry', targetFiles: ['src/App.jsx'], dependencies: [] };
+        saveCheckpoint({
+            projectId: 'proj-acceptance-retry', taskId: task.id,
+            contractId: 'contract-acceptance-retry', planHash: 'hash-retry',
+            taskSpecHash: computeTaskSpecHash(task),
+            inputHash: await computeInputHash(workspace, []),
+            outputHash: await computeOutputHash(workspace, task.targetFiles)
+        });
+        db.prepare("UPDATE task_checkpoints SET invalidated_at = '2026-09-21T00:00:00.000Z' WHERE project_id = 'proj-acceptance-retry'").run();
+
+        assert.strictEqual(await isTaskCheckpointValid(workspace, 'proj-acceptance-retry', task, { planHash: 'hash-retry' }), false);
+        assert.strictEqual(await isTaskCheckpointValid(workspace, 'proj-acceptance-retry', task, { planHash: 'hash-retry', allowAcceptanceRetry: true }), true);
+        assert.strictEqual(await isTaskCheckpointValid(workspace, 'proj-acceptance-retry', task, { planHash: 'hash-retry', contractId: 'different-contract', allowAcceptanceRetry: true }), false);
+        db.prepare("UPDATE task_checkpoints SET invalidation_reason = 'manual rejection' WHERE project_id = 'proj-acceptance-retry'").run();
+        assert.strictEqual(await isTaskCheckpointValid(workspace, 'proj-acceptance-retry', task, { planHash: 'hash-retry', allowAcceptanceRetry: true }), false);
+        db.prepare("DELETE FROM projects WHERE id = 'proj-acceptance-retry'").run();
     });
 
     finish();

@@ -108,6 +108,10 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
     let prismaPushed = false;
     const prismaSchemaPath = path.join(projectDir, 'prisma', 'schema.prisma');
     const hasPrisma = suppliedFiles ? hasFile('prisma/schema.prisma') || hasFile('schema.prisma') : fsSync.existsSync(prismaSchemaPath);
+    const prismaSchema = hasPrisma
+        ? String(suppliedFiles ? fileContent('prisma/schema.prisma') ?? fileContent('schema.prisma') ?? '' : await fs.readFile(prismaSchemaPath, 'utf8'))
+        : '';
+    const requiresSeededAccounts = /^\s*model\s+User\s*\{/m.test(prismaSchema);
     const workspace = options.workspace || projectDir;
     const hasSeedFile = suppliedFiles ? hasFile('prisma/seed.ts') : fsSync.existsSync(path.join(projectDir, 'prisma', 'seed.ts'));
     const seedCommand = packageJson?.prisma?.seed;
@@ -201,7 +205,13 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     successReason: 'Prisma database seed executed successfully.',
                     failurePrefix: 'Prisma database seed failed'
                 });
-                if (seeded) {
+                if (seeded && !requiresSeededAccounts) {
+                    checks.push({
+                        name: 'prisma_seed_accounts',
+                        status: 'skipped',
+                        reason: 'Prisma schema has no User model; seeded accounts are not applicable.'
+                    });
+                } else if (seeded) {
                     try {
                         const countScript = "const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.user.count().then(c => { console.log(JSON.stringify({ userCount: c })); return prisma.$disconnect(); }).catch(() => process.exit(1));";
                         const res = await executeInSandbox('node', ['-e', countScript], {

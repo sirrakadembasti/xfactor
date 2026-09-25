@@ -50,6 +50,11 @@ test('Header offers Resume for verification_failed projects', () => {
   expect(handleResume).toHaveBeenCalledTimes(1);
 });
 
+test('Header offers Resume when finalization failed after artifact verification', () => {
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'artifact_verified', last_error: 'Evidence mismatch' }} />);
+  expect(screen.getByRole('button', { name: /Projeyi Devam Ettir \(Resume\)/ })).toBeInTheDocument();
+});
+
 test('Header offers Pause while backend reports implementing', () => {
   const handlePause = vi.fn();
   render(<Header {...headerProps} projectState={{ title: 'Project', status: 'implementing' }} handlePause={handlePause} />);

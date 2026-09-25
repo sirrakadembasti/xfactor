@@ -53,10 +53,17 @@ function assertIdentity(value, expected) {
     }
 }
 
-function checkStatus(value) {
+export function normalizeWorkerCheckStatus(value, mandatory = false) {
     if (value === 'passed' || value === 'PASS') return 'PASS';
     if (value === 'failed' || value === 'FAIL') return 'FAIL';
+    if (value === 'skipped' || value === 'NOT_APPLICABLE') return mandatory ? 'BLOCKED' : 'NOT_APPLICABLE';
     return 'BLOCKED';
+}
+
+export function passingVerificationSourceNames(checks = []) {
+    return checks
+        .filter(check => check.status === 'passed' || check.status === 'PASS')
+        .map(check => `detail:${check.gateName || check.name}`);
 }
 
 function canonicalArchivePath(value) {
@@ -299,7 +306,7 @@ export async function verifyArtifact(
                 evidence: {
                     kind: 'derived_gate',
                     producer: 'quality-policy',
-                    sourceGateNames: allSoFar.map(c => `detail:${c.gateName || c.name}`),
+                    sourceGateNames: passingVerificationSourceNames(allSoFar),
                     computedAt: timestamp,
                     policyVersion: ACTIVE_POLICY_VERSION
                 }
@@ -312,6 +319,7 @@ export async function verifyArtifact(
             const gateName = check.gateName || check.name;
             const isMandatory = MANDATORY_GATES.includes(gateName);
             const applicability = isMandatory ? 'MANDATORY' : (check.applicability || 'OPTIONAL');
+            const status = normalizeWorkerCheckStatus(check.status, isMandatory);
             runLeaseTransaction(database, assertLease, () => {
                 createCheck({
                     id: checkId,
@@ -319,12 +327,12 @@ export async function verifyArtifact(
                     runId,
                     gateName,
                     applicability,
-                    status: checkStatus(check.status),
+                    status,
                     command: check.command || null,
                     cwd: check.cwd || null,
                     startedAt: check.startedAt || new Date().toISOString(),
                     endedAt: check.endedAt || new Date().toISOString(),
-                    exitCode: check.exitCode ?? (checkStatus(check.status) === 'PASS' ? 0 : null),
+                    exitCode: check.exitCode ?? (status === 'PASS' ? 0 : null),
                     stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(gateName).digest('hex'),
                     stderrDigest: check.stderrDigest || crypto.createHash('sha256').update('').digest('hex'),
                     evidenceJson: check.evidence ?? check.evidenceJson ?? null,
@@ -338,7 +346,7 @@ export async function verifyArtifact(
             }
         }
 
-        const passed = allChecks.every(c => checkStatus(c.status) === 'PASS' || checkStatus(c.status) === 'SKIPPED');
+        const passed = allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, MANDATORY_GATES.includes(c.gateName || c.name))));
         runLeaseTransaction(database, assertLease, () => {
             updateArtifactStatus({
                 projectId, contractId, artifactId,

@@ -6,6 +6,25 @@ import { verifyAPIContract } from './apiVerifier.js';
 import { verifyBrowserJourney } from './browserVerifier.js';
 import { verifyTestInfrastructure } from './testInfrastructureVerifier.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
+
+function inferRuntimeChecks(contract, service, files = []) {
+    const baseUrl = service?.port ? `http://127.0.0.1:${service.port}` : null;
+    const sourceFiles = Array.isArray(files) ? files : [];
+    const route = sourceFiles.map(file => ({
+        path: String(file.path || '').replace(/\\/g, '/'),
+        content: String(file.content || '')
+    })).find(file => /(?:^|\/)src\/app\/api\/[^/]+\/route\.[jt]s$/.test(file.path)
+        && /export\s+(?:async\s+function|const)\s+GET\b/.test(file.content)
+        && /export\s+(?:async\s+function|const)\s+POST\b/.test(file.content));
+    const routeName = route?.path.match(/\/api\/([^/]+)\/route\.[jt]s$/)?.[1];
+    const page = sourceFiles.find(file => /(?:^|\/)src\/app\/page\.tsx$/.test(String(file.path || '').replace(/\\/g, '/')));
+    return {
+        api: contract.api?.baseUrl ? contract.api : (baseUrl && routeName ? { baseUrl, domains: [{ prefix: routeName }] } : null),
+        browser: contract.browser?.url ? contract.browser : (baseUrl && page && /<main(?:\s|>)/.test(String(page.content || ''))
+            ? { url: `${baseUrl}/`, journey: { steps: [{ action: 'assert_element', selector: 'main' }] } }
+            : null)
+    };
+}
 export async function verifyProjectSmoke(projectDir, contract = {}, options = {}) {
     const checks = [];
     const issues = [];
@@ -22,6 +41,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     const healthUrl = contract.healthUrl
         || (service?.port ? `http://127.0.0.1:${service.port}${service.healthEndpoint || '/'}` : null)
         || (contract.api?.baseUrl ? `${contract.api.baseUrl}/health` : null);
+    const runtimeChecks = inferRuntimeChecks(contract, service, options.files);
 
     try {
         if (service && !options.skipSpawnForLiveServer) {
@@ -48,13 +68,13 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             checks.push(...db.checks);
             issues.push(...db.issues);
         }
-        if (contract.api?.baseUrl) {
-            const api = await verifyAPIContract(contract.api.baseUrl, null, contract.api, common);
+        if (runtimeChecks.api?.baseUrl) {
+            const api = await verifyAPIContract(runtimeChecks.api.baseUrl, null, runtimeChecks.api, common);
             checks.push(...api.checks);
             issues.push(...api.issues);
         }
-        if (contract.browser?.url) {
-            const browser = await verifyBrowserJourney(contract.browser.url, contract.browser.journey || {}, common);
+        if (runtimeChecks.browser?.url) {
+            const browser = await verifyBrowserJourney(runtimeChecks.browser.url, runtimeChecks.browser.journey || {}, common);
             checks.push(...browser.checks);
             issues.push(...browser.issues);
         }

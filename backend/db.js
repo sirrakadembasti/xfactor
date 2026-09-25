@@ -780,8 +780,12 @@ export function saveProjectLog(logData, leaseOptions = null) {
     }
 }
 
-export function getProjectLogs(projectId, { cursor = null, limit = 100 } = {}) {
+export function getProjectLogs(projectId, { cursor = null, limit = 500 } = {}) {
     const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 500);
+    if (cursor === null || cursor === undefined || cursor === '') {
+        const latest = db.prepare('SELECT * FROM project_logs WHERE project_id = ? ORDER BY id DESC LIMIT ?').all(projectId, safeLimit);
+        return latest.reverse().map(formatProjectLog);
+    }
     let query = 'SELECT * FROM project_logs WHERE project_id = ?';
     const params = [projectId];
 
@@ -793,7 +797,10 @@ export function getProjectLogs(projectId, { cursor = null, limit = 100 } = {}) {
     query += ' ORDER BY id ASC LIMIT ?';
     params.push(safeLimit);
 
-    return db.prepare(query).all(...params).map(log => {
+    return db.prepare(query).all(...params).map(formatProjectLog);
+}
+
+function formatProjectLog(log) {
         const timestamp = formatDBDate(log.created_at);
         return {
             id: log.id,
@@ -807,7 +814,6 @@ export function getProjectLogs(projectId, { cursor = null, limit = 100 } = {}) {
             node_id: log.node_id,
             parent_node_id: log.parent_node_id
         };
-    });
 }
 
 export function getProjectChatHistory(projectId, { cursor = null, limit = 100 } = {}) {
@@ -831,4 +837,3 @@ export function getProjectChatHistory(projectId, { cursor = null, limit = 100 } 
         created_at: c.created_at
     }));
 }
-

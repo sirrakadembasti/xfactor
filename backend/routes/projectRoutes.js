@@ -437,9 +437,11 @@ export function createProjectRouter({
     router.get('/:id/logs', requireAuth, projectAccess('viewer'), async (req, res, next) => {
         try {
             const { cursor, limit } = req.query || {};
+            const projectStatus = db.prepare('SELECT status FROM projects WHERE id = ?').get(req.params.id)?.status;
+            const recoverProgress = projectStatus === 'paused' || projectStatus === 'verification_failed';
             let logs = getProjectLogs(req.params.id, { cursor, limit });
 
-            if (logs.length === 0) {
+            if (logs.length === 0 || recoverProgress) {
                 try {
                     const projectDir = getProjectDir(req.params.id);
                     if (fsSync.existsSync(projectDir)) {
@@ -1160,6 +1162,7 @@ export function createProjectRouter({
             const canResume = state.status === PROJECT_STATUS.PAUSED
                 || state.status === PROJECT_STATUS.IMPLEMENTING
                 || state.status === PROJECT_STATUS.VERIFICATION_FAILED
+                || (state.status === PROJECT_STATUS.ARTIFACT_VERIFIED && Boolean(state.last_error))
                 || canTransitionProjectStatus(state.status, PROJECT_STATUS.IMPLEMENTING);
             if (!canResume) {
                 return res.status(400).json({ error: `Bu durumdan (${state.status}) çalışır duruma geçilemez.` });
@@ -1179,7 +1182,8 @@ export function createProjectRouter({
             try {
                 db.exec('BEGIN IMMEDIATE;');
                 transactionOpen = true;
-                if (state.status === PROJECT_STATUS.VERIFICATION_FAILED) {
+                if (state.status === PROJECT_STATUS.VERIFICATION_FAILED
+                    || (state.status === PROJECT_STATUS.ARTIFACT_VERIFIED && state.last_error)) {
                     state.status = PROJECT_STATUS.PAUSED;
                     await writeProjectState(id, state, {
                         attemptId: lease.attempt.id,
@@ -1187,6 +1191,8 @@ export function createProjectRouter({
                         inTransaction: true
                     });
                 }
+                state.last_error = null;
+                if (state.workflow) state.workflow.last_error = null;
                 state.status = PROJECT_STATUS.IMPLEMENTING;
                 await writeProjectState(id, state, {
                     attemptId: lease.attempt.id,

@@ -18,6 +18,7 @@ try {
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.PENDING_APPROVAL, PROJECT_STATUS.COMPLETED), false);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.COMPLETED, PROJECT_STATUS.IMPLEMENTING), false);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.ARTIFACT_VERIFIED, PROJECT_STATUS.COMPLETED), true);
+        assert.strictEqual(canTransitionProject(PROJECT_STATUS.ARTIFACT_VERIFIED, PROJECT_STATUS.PAUSED), true);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.IMPLEMENTATION_FINISHED, PROJECT_STATUS.PAUSED), true);
         assert.strictEqual(canTransitionProject(PROJECT_STATUS.IMPLEMENTATION_FINISHED, PROJECT_STATUS.PENDING_APPROVAL), true);
 

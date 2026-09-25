@@ -14,7 +14,7 @@ process.env.PROJECTS_ROOT = tempProjectsRoot;
 
 try {
     const workflowModule = await import('../engine/workflow.js');
-    const { normalizeWorkflowState } = workflowModule;
+    const { normalizeWorkflowState, restoreDirectorSpecFromDisk } = workflowModule;
 
     console.log('1. normalizeWorkflowState(null) should return the empty workflow shape');
     const emptyState = normalizeWorkflowState(null);
@@ -48,6 +48,19 @@ try {
     assert.strictEqual(malformed.planHash, 'keep-me');
     assert.deepStrictEqual(malformed.directorSpecs, {});
     assert.deepStrictEqual(malformed.teamleaderPlans, {});
+
+    console.log('4. restoreDirectorSpecFromDisk reuses a matching teamleader plan and disk spec');
+    const directorDir = path.join(tempRoot, 'manager', 'frontend.director');
+    await fs.mkdir(path.join(directorDir, 'domain'), { recursive: true });
+    await fs.writeFile(path.join(directorDir, 'domain', 'TODO.md'), '# existing tasks');
+    const restored = restoreDirectorSpecFromDisk(
+        { name: 'frontend', prefix: 'frontend' },
+        '# Existing frontend architecture',
+        directorDir,
+        { 'frontend.domain': { tasks: [{ id: 'task-1' }] } }
+    );
+    assert.strictEqual(restored.altTalimatname, '# Existing frontend architecture');
+    assert.deepStrictEqual(restored.teamleaders.map(tl => tl.prefix), ['domain']);
 
     console.log('workflow state initialization tests passed');
 } finally {

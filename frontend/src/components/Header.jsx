@@ -110,7 +110,7 @@ export default function Header({
         )}
 
         {/* Stopped project: Active Resume Button */}
-        {viewMode !== 'dashboard' && canResumeProject(projectState.status) && (
+        {viewMode !== 'dashboard' && canResumeProject(projectState.status, projectState.last_error) && (
           <button
             onClick={handleResume}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition animate-pulse"

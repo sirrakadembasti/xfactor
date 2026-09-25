@@ -305,6 +305,110 @@ describe('P9 project/auth request isolation', () => {
     expect(screen.getByText(betaLog.message)).toBeInTheDocument();
   });
 
+  test('keeps live logs when the initial log request returns later', async () => {
+    const delayedLogs = deferred();
+    const sockets = installWebSocket();
+    setupApi({ logsFor: id => id === projectA.id ? delayedLogs.promise : [] });
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Logları/ }));
+    await waitFor(() => expect(sockets[0]?.onmessage).toBeTypeOf('function'));
+    sockets[0].onmessage({
+      data: JSON.stringify({ id: 2, projectId: projectA.id, action: 'write', message: 'New live work' })
+    });
+    await screen.findByText('New live work');
+    delayedLogs.resolve([{ id: 1, projectId: projectA.id, action: 'write', message: 'Previous work' }]);
+
+    await screen.findByText('Previous work');
+    expect(screen.getByText('New live work')).toBeInTheDocument();
+  });
+
+  test('dedupes a live event after persistence while keeping distinct stored rows', async () => {
+    const delayedLogs = deferred();
+    const sockets = installWebSocket();
+    setupApi({ logsFor: id => id === projectA.id ? delayedLogs.promise : [] });
+    const event = {
+      projectId: projectA.id,
+      created_at: '2026-09-24T18:25:39.115Z',
+      agent: 'Coder',
+      action: 'write',
+      file: 'src/app.js',
+      message: 'Saved once',
+      node_id: 'backend-prisma-schema',
+      parent_node_id: 'backend'
+    };
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Logları/ }));
+    sockets[0].onmessage({ data: JSON.stringify(event) });
+    await screen.findByText('Saved once');
+    delayedLogs.resolve([
+      { ...event, id: 42 },
+      { ...event, id: 43 },
+      { ...event, id: 41, created_at: '2026-09-24T18:25:38.115Z', message: 'Earlier work' }
+    ]);
+
+    await screen.findByText('Earlier work');
+    expect(screen.getByText('3 / 3 Kayıt')).toBeInTheDocument();
+    expect(screen.getAllByText('Saved once')).toHaveLength(2);
+  });
+
+  test('shows a persisted workflow error in chat after a state update event', async () => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+    const sockets = installWebSocket();
+    const pausedA = { ...projectA, status: 'paused' };
+    const runningA = { ...projectA, status: 'running' };
+    const failedA = {
+      ...projectA,
+      status: 'paused',
+      last_error: 'backend-prisma-schema requires one target file',
+      chatHistory: [{ role: 'model', parts: [{ text: 'backend-prisma-schema requires one target file' }] }]
+    };
+    let canonicalA = pausedA;
+    const spies = setupApi({ stateFor: id => id === projectA.id ? canonicalA : projectB });
+    spies.resumeProject.mockResolvedValue(runningA);
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Devam Et \(Resume\)/ }));
+    await waitFor(() => expect(spies.resumeProject).toHaveBeenCalled());
+    canonicalA = failedA;
+    sockets[0].onmessage({
+      data: JSON.stringify({ type: 'project_state_updated', projectId: projectA.id })
+    });
+
+    await screen.findByText('backend-prisma-schema requires one target file');
+    expect(screen.getByRole('button', { name: /Sohbet & Mimari/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Logları/ }));
+    expect(screen.getByText(/Henüz kaydedilmiş bir süreç logu bulunmuyor/)).toBeInTheDocument();
+  });
+
+  test('opens chat for a persisted static verification failure', async () => {
+    const sockets = installWebSocket();
+    let canonicalA = { ...projectA, status: 'running' };
+    setupApi({ stateFor: id => id === projectA.id ? canonicalA : projectB });
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByRole('button', { name: /Logları/ }));
+    canonicalA = {
+      ...projectA,
+      status: 'verification_failed',
+      chatHistory: [{ role: 'model', parts: [{ text: 'Tester found a broken import in src/app.js' }] }]
+    };
+    sockets[0].onmessage({
+      data: JSON.stringify({ type: 'project_state_updated', projectId: projectA.id })
+    });
+
+    await screen.findByText('Tester found a broken import in src/app.js');
+  });
+
   test('does not restore project state from a response that resolves after logout', async () => {
     const delayedA = deferred();
     setupApi({ stateFor: () => delayedA.promise });

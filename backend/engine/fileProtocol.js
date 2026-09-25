@@ -51,10 +51,19 @@ export async function setupRootProtocol(projectDir, talimatnameContent, domains 
     });
 
     const managerTodoPath = path.join(managerDir, 'TODO.md');
-    await fs.writeFile(managerTodoPath, todoContent, 'utf8');
+    try {
+        await fs.writeFile(managerTodoPath, todoContent, { encoding: 'utf8', flag: 'wx' });
+    } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
+    }
 
     // 4. DURUM.md
-    await writeDurum(managerDir, 'BASLADI', 'Manager mimari planı hazırladı, direktör katmanına devrediliyor.');
+    try {
+        await fs.access(path.join(managerDir, 'DURUM.md'));
+    } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        await writeDurum(managerDir, 'BASLADI', 'Manager mimari planı hazırladı, direktör katmanına devrediliyor.');
+    }
 
     return { talimatPath: managerTalimatPath, todoPath: managerTodoPath, managerDir };
 }
@@ -377,10 +386,16 @@ export async function isTaskCheckpointValid(projectDir, projectId, task, options
     try {
         const checkpoint = getLatestCheckpoint(projectId, task.id);
         if (!checkpoint) return false;
+        if (options.contractId && checkpoint.contract_id !== options.contractId) return false;
+
+        const acceptanceRetry = options.allowAcceptanceRetry === true
+            && checkpoint.status === 'completed'
+            && checkpoint.invalidated_at !== null
+            && checkpoint.invalidation_reason === null;
 
         return await verifyTaskCheckpoint({
             projectDir,
-            checkpoint,
+            checkpoint: acceptanceRetry ? { ...checkpoint, invalidated_at: null } : checkpoint,
             task,
             planHash: options.planHash,
             dependencyTargetFiles: options.dependencyTargetFiles || [],

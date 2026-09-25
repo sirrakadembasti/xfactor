@@ -53,12 +53,12 @@ import {
     appendProjectActionMessages
 } from '../projectRepository.js';
 import { verifyArtifactAndProject } from '../verification/verificationCli.js';
-import { invalidateProjectCheckpoints } from '../contracts/projectContract.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 import { generateProjectReadme } from './readmeGenerator.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
+import { restoreTaskTargetsFromProtocol } from '../services/reconciliationService.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
@@ -114,6 +114,31 @@ export function normalizeWorkflowState(value) {
         directorSpecs,
         teamleaderPlans
     };
+}
+
+export function resolveStaticAuditRepairIssues(database, projectId, contractId) {
+    return database.prepare(`
+        UPDATE repair_issues
+        SET status = 'resolved', resolved_at = ?
+        WHERE project_id = ? AND contract_id = ? AND status = 'open'
+          AND requirement_id IS NULL
+          AND run_id IN (SELECT id FROM workflow_attempts WHERE project_id = ?)
+    `).run(new Date().toISOString(), projectId, contractId, projectId).changes;
+}
+
+export function restoreDirectorSpecFromDisk(domain, altTalimatname, directorDir, teamleaderPlans = {}) {
+    if (!altTalimatname || !fsSync.existsSync(directorDir)) return null;
+    const prefix = `${domain.prefix}.`;
+    const teamleaders = Object.entries(teamleaderPlans)
+        .filter(([key, plan]) => key.startsWith(prefix) && Array.isArray(plan?.tasks) && plan.tasks.length > 0)
+        .map(([key]) => {
+            const tlPrefix = key.slice(prefix.length);
+            if (!tlPrefix || !/^[a-zA-Z0-9_-]+$/.test(tlPrefix)
+                || !fsSync.existsSync(path.join(directorDir, tlPrefix, 'TODO.md'))) return null;
+            return { name: `${tlPrefix}.teamleader`, prefix: tlPrefix, mission: `${domain.name} geliştirme` };
+        }).filter(Boolean);
+    if (teamleaders.length === 0) return null;
+    return { domain: domain.name, altTalimatname, teamleaders };
 }
 export function mergeGeneratedProjectFiles(generatedFiles = [], diskFiles = []) {
     const filesByPath = new Map();
@@ -691,6 +716,13 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
 
             let directorSpec = state.workflow.directorSpecs[domain.prefix];
+            if (!directorSpec) {
+                directorSpec = restoreDirectorSpecFromDisk(domain, altTalimatOnDisk, directorDir, state.workflow.teamleaderPlans);
+                if (directorSpec) {
+                    state.workflow.directorSpecs[domain.prefix] = directorSpec;
+                    await workflowWriteState(projectId, state);
+                }
+            }
             if (!directorSpec || Array.isArray(directorSpec) || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0)) {
                 await workflowLogEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
@@ -744,6 +776,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     });
                 }
                 taskPlan = normalizeTeamleaderTasks(taskPlan, plan.requirements || []);
+                taskPlan = {
+                    ...taskPlan,
+                    tasks: restoreTaskTargetsFromProtocol(tlDir, taskPlan.tasks)
+                };
                 taskPlan = normalizeTeamleaderPlanForStack(taskPlan, stack);
                 state.workflow.teamleaderPlans[tlId] = taskPlan;
                 await workflowWriteState(projectId, state);
@@ -830,7 +866,17 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             projectDir,
                             projectId,
                             task,
-                            { planHash: currentPlanHash, dependencyTargetFiles: depTargetFiles, gateVersion: '1.0.0' }
+                            {
+                                planHash: currentPlanHash,
+                                contractId: latestContract?.id,
+                                dependencyTargetFiles: depTargetFiles,
+                                gateVersion: '1.0.0',
+                                allowAcceptanceRetry: Boolean(latestContract && db.prepare(`
+                                    SELECT 1 FROM repair_issues
+                                    WHERE project_id = ? AND contract_id = ? AND status = 'open'
+                                    LIMIT 1
+                                `).get(projectId, latestContract.id))
+                            }
                         );
 
                         if (checkpointValid) {
@@ -1193,23 +1239,17 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             );
                         }
                     }
-                    invalidateProjectCheckpoints(projectId);
                     db.exec('COMMIT;');
                 } catch (repairError) {
                     try { db.exec('ROLLBACK;'); } catch {}
                     throw repairError;
                 }
-                if (typeof dag !== 'undefined' && dag && typeof dag.getAllTasks === 'function') {
-                    for (const t of dag.getAllTasks()) {
-                        await reconcileTaskCache(projectDir, t.id, t);
-                    }
-                }
-
                 terminalStatus = 'rejected';
                 executionError = `Proje kabul testlerini geçemedi: ${testResult.summary}`;
 
                 const failedState = await readProjectState(projectId);
                 if (failedState) {
+                    failedState.last_error = executionError;
                     const failurePaths = {
                         implementing: [
                             'implementation_finished',
@@ -1255,8 +1295,24 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         created_at: now.toISOString()
                     });
                     await workflowWriteState(projectId, failedState);
+                    wsHub?.publish({ type: 'project_state_updated', projectId });
                 }
                 return;
+            }
+
+            db.exec('BEGIN IMMEDIATE;');
+            try {
+                assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+                const approvedContract = db.prepare(`
+                    SELECT id FROM project_contracts
+                    WHERE project_id = ? AND status = 'approved'
+                    ORDER BY revision DESC LIMIT 1
+                `).get(projectId);
+                if (approvedContract) resolveStaticAuditRepairIssues(db, projectId, approvedContract.id);
+                db.exec('COMMIT;');
+            } catch (repairError) {
+                try { db.exec('ROLLBACK;'); } catch {}
+                throw repairError;
             }
 
             await workflowLogEvent(
@@ -1450,7 +1506,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             if (failedState) {
                 failedState.last_error = error?.message || errorMessageText;
                 // fail-closed pause check
-                const immutableStatuses = new Set(['completed', 'artifact_verified', 'acceptance_verified', 'runtime_verified']);
+                const immutableStatuses = new Set(['completed', 'acceptance_verified', 'runtime_verified']);
                 if (!immutableStatuses.has(failedState.status)) {
                     failedState.status = 'paused';
                 }
@@ -1461,11 +1517,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 if (!failedState.chatHistory) failedState.chatHistory = [];
                 failedState.chatHistory.push({
                     role: 'model',
-                    parts: [{ text: `⚠️ **Süreç Duraklatıldı (Müdahale Gerekli):**\n\nAlt ajanların görev üretiminde bir kalite kapısı engeli ile karşılaşıldı ve proje güvenli modda duraklatıldı.\n\n- Ayrıntıları üst menüdeki **'Canlı Süreç Logları'** veya **'Canlı DAG Grafiği'** sekmesinden inceleyebilirsiniz.\n- Bana buradan *"Hata neydi, ne yapmalıyız?"* diye sorabilir veya hazır olduğunuzda üstteki **'Devam Et (Resume)'** butonuna tıklayabilirsiniz.` }],
+                    parts: [{ text: `⚠️ **Süreç Duraklatıldı:**\n\n${redactSensitiveText(errorMessageText)}\n\nManager bu hata kaydını görebilir. Düzeltme talimatı verebilir veya **Devam Et (Resume)** ile kayıtlı görevlerden sürdürebilirsiniz. Ayrıntılar **Canlı Süreç Logları** ve **Canlı DAG Grafiği** sekmelerinde.` }],
                     timestamp: `${errDate} ${errTime}`,
                     created_at: errNow.toISOString()
                 });
                 await workflowWriteState(projectId, failedState);
+                wsHub?.publish({ type: 'project_state_updated', projectId });
             }
         }
     } finally {

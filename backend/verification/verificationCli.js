@@ -9,6 +9,24 @@ import {
 } from '../projectRepository.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
 import { db, initializeDatabase, closeDatabase } from '../db.js';
+
+export function formatVerificationFailure(checks = [], fallback = 'Canonical verification did not complete the project.') {
+    const failed = checks.filter(check => check.status === 'FAIL');
+    const blocked = checks.filter(check => check.status === 'BLOCKED' && !failed.some(item => item.gate_name === check.gate_name));
+    const relevant = failed.length ? [...failed, ...blocked] : blocked;
+    if (relevant.length === 0) return fallback;
+    const names = relevant.map(check => check.gate_name).slice(0, 8);
+    const issues = relevant.flatMap(check => {
+        try {
+            const evidence = JSON.parse(check.evidence_json || '{}');
+            return Array.isArray(evidence.issues) ? evidence.issues : (evidence.reason ? [evidence.reason] : []);
+        } catch {
+            return [];
+        }
+    }).map(issue => String(issue).slice(0, 240)).slice(0, 3);
+    return `Doğrulama başarısız: ${names.join(', ')}${issues.length ? ` — ${issues.join('; ')}` : ''}`;
+}
+
 export async function verifyArtifactAndProject({
     projectId,
     contractId,
@@ -66,7 +84,10 @@ export async function verifyArtifactAndProject({
     }
 
     if (!verification.passed || verification.status !== 'verified' || !artifact || artifact.status !== 'verified') {
-        return { ...receipt, passed: false, completed: false };
+        const checks = verification.runId
+            ? db.prepare('SELECT gate_name, status, evidence_json FROM verification_checks WHERE run_id = ?').all(verification.runId)
+            : [];
+        return { ...receipt, passed: false, completed: false, error: formatVerificationFailure(checks, verification.error) };
     }
     if (!verification.runId || artifact.verificationRunId !== verification.runId) {
         throw new Error('Verified artifact is missing authoritative verification run linkage.');

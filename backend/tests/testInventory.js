@@ -120,6 +120,7 @@ test_tur2_edge_cases.js
 test_websocket_integration.js
 test_workflow_attempts.js
 test_workflow_state_initialization.js
+test_workflow_failure_chat_event.js
 test_manager_error_telemetry.js
 test_dev_verification_fallback.js
 test_workflow_dev_fallback.js

@@ -70,7 +70,7 @@ export default function LogsView({
           </select>
 
           {/* Resume Butonu (Devam ettirilebilir durumlardaysa) */}
-          {canResumeProject(projectState?.status) && (
+          {canResumeProject(projectState?.status, projectState?.last_error) && (
             <button
               onClick={handleResume}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer animate-pulse"

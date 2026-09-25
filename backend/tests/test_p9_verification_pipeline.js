@@ -8,6 +8,7 @@ import { verifyDependencies } from '../verification/packageVerifier.js';
 import { verifyReadmeCommands } from '../verification/readmeVerifier.js';
 import { verifyBuild } from '../verification/buildVerifier.js';
 import { runVerificationChecks } from '../verification/runChecks.js';
+import { normalizeWorkerCheckStatus, passingVerificationSourceNames } from '../verification/artifactVerifier.js';
 import { verifyArtifact, prepareDependencies } from '../../execution/jobExecutor.js';
 
 const { runAsyncTest, finish } = createTestHarness();
@@ -19,6 +20,14 @@ async function workspace(prefix = 'xfactor-p9-pipeline-') {
 }
 
 try {
+    await runAsyncTest('P9.3: optional skipped worker checks are not failures', async () => {
+        assert.strictEqual(normalizeWorkerCheckStatus('skipped', false), 'NOT_APPLICABLE');
+        assert.strictEqual(normalizeWorkerCheckStatus('skipped', true), 'BLOCKED');
+        assert.deepStrictEqual(passingVerificationSourceNames([
+            { name: 'prisma_seed_accounts', status: 'skipped' },
+            { name: 'typecheck', status: 'passed' }
+        ]), ['detail:typecheck']);
+    });
     await runAsyncTest('P9.3: computeDigest preserves evidence for empty command output', async () => {
         const expected = crypto.createHash('sha256').update('').digest('hex');
         const dir = await workspace();
