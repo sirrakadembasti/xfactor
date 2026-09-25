@@ -607,7 +607,7 @@
       "group": "frontend",
       "file": "frontend/src/components/DashboardView.jsx",
       "description": "18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli",
-      "val": 8,
+      "val": 8.5,
       "provenance": "curated"
     },
     {
@@ -5875,7 +5875,7 @@
       "line": 463
     },
     {
-      "id": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "id": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "listProjectTree",
       "type": "Function",
       "group": "engine",
@@ -5883,10 +5883,10 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 957
+      "line": 958
     },
     {
-      "id": "backend/engine/codeGenerator.js#Function:incompleteTree@967",
+      "id": "backend/engine/codeGenerator.js#Function:incompleteTree@968",
       "label": "incompleteTree",
       "type": "Function",
       "group": "engine",
@@ -5894,10 +5894,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 967
+      "line": 968
     },
     {
-      "id": "backend/engine/codeGenerator.js#Function:traverse@973",
+      "id": "backend/engine/codeGenerator.js#Function:traverse@974",
       "label": "traverse",
       "type": "Function",
       "group": "engine",
@@ -5905,7 +5905,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 973
+      "line": 974
     },
     {
       "id": "backend/engine/dag.js#Function:canonicalizeTaskDependencies@13",
@@ -18268,7 +18268,18 @@
       "line": 203
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@23",
+      "id": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
+      "label": "gateDetails",
+      "type": "Function",
+      "group": "frontend",
+      "file": "frontend/src/components/DashboardView.jsx",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 50
+    },
+    {
+      "id": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@54",
       "label": "StatusBadge",
       "type": "Function",
       "group": "frontend",
@@ -18276,10 +18287,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 23
+      "line": 54
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@31",
+      "id": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
       "label": "formatTimestamp",
       "type": "Function",
       "group": "frontend",
@@ -18287,21 +18298,21 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 31
+      "line": 62
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:DashboardView@37",
+      "id": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
       "label": "DashboardView",
       "type": "Function",
       "group": "frontend",
       "file": "frontend/src/components/DashboardView.jsx",
       "description": "",
-      "val": 2.5,
+      "val": 3,
       "provenance": "ast",
-      "line": 37
+      "line": 68
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@118",
+      "id": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@149",
       "label": "loadMoreRuns",
       "type": "Function",
       "group": "frontend",
@@ -18309,10 +18320,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 118
+      "line": 149
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:loadLog@134",
+      "id": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
       "label": "loadLog",
       "type": "Function",
       "group": "frontend",
@@ -18320,7 +18331,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 134
+      "line": 165
     },
     {
       "id": "frontend/src/components/Header.jsx#Function:Header@14",
@@ -18508,7 +18519,7 @@
       "line": 48
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@109",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@128",
       "label": "apiClient.getVerificationRun",
       "type": "Method",
       "group": "tests",
@@ -18516,10 +18527,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 109
+      "line": 128
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@110",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@129",
       "label": "apiClient.getVerificationCheckLog",
       "type": "Method",
       "group": "tests",
@@ -18527,10 +18538,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 110
+      "line": 129
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@133",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@152",
       "label": "apiClient.getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -18538,10 +18549,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 133
+      "line": 152
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@150",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@169",
       "label": "apiClient.getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -18549,10 +18560,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 150
+      "line": 169
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@174",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@193",
       "label": "getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -18560,7 +18571,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 174
+      "line": 193
     },
     {
       "id": "frontend/src/components/__tests__/P5DownloadPolicy.test.jsx#Method:headerProps.getStatusBadge@17",
@@ -18673,7 +18684,7 @@
       "line": 25
     },
     {
-      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@67",
+      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@81",
       "label": "TestWebSocket",
       "type": "Class",
       "group": "tests",
@@ -18681,10 +18692,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 67
+      "line": 81
     },
     {
-      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@71",
+      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@85",
       "label": "TestWebSocket.close",
       "type": "Method",
       "group": "tests",
@@ -18692,10 +18703,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 71
+      "line": 85
     },
     {
-      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@72",
+      "id": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@86",
       "label": "TestWebSocket.send",
       "type": "Method",
       "group": "tests",
@@ -18703,7 +18714,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 72
+      "line": 86
     },
     {
       "id": "frontend/src/components/__tests__/P9ProjectIsolation.test.jsx#Function:deferred@21",
@@ -25900,32 +25911,32 @@
     },
     {
       "source": "backend/engine/codeGenerator.js",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 957
+        "line": 958
       }
     },
     {
       "source": "backend/engine/codeGenerator.js",
-      "target": "backend/engine/codeGenerator.js#Function:incompleteTree@967",
+      "target": "backend/engine/codeGenerator.js#Function:incompleteTree@968",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 967
+        "line": 968
       }
     },
     {
       "source": "backend/engine/codeGenerator.js",
-      "target": "backend/engine/codeGenerator.js#Function:traverse@973",
+      "target": "backend/engine/codeGenerator.js#Function:traverse@974",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 973
+        "line": 974
       }
     },
     {
@@ -48120,52 +48131,62 @@
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@23",
+      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 23
+        "line": 50
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@31",
+      "target": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@54",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 31
+        "line": 54
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:DashboardView@37",
+      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 37
+        "line": 62
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@118",
+      "target": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 118
+        "line": 68
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@134",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@149",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 134
+        "line": 149
+      }
+    },
+    {
+      "source": "frontend/src/components/DashboardView.jsx",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/components/DashboardView.jsx",
+        "line": 165
       }
     },
     {
@@ -48530,52 +48551,52 @@
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@109",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@128",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 109
+        "line": 128
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@110",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 110
+        "line": 129
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@133",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@152",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 133
+        "line": 152
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@150",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@169",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 150
+        "line": 169
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@174",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@193",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 174
+        "line": 193
       }
     },
     {
@@ -48920,52 +48941,52 @@
     },
     {
       "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@67",
+      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@81",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-        "line": 67
+        "line": 81
       }
     },
     {
       "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@71",
+      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@85",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-        "line": 71
+        "line": 85
       }
     },
     {
-      "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@67",
-      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@71",
+      "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@81",
+      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.close@85",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-        "line": 71
+        "line": 85
       }
     },
     {
       "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@72",
+      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@86",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-        "line": 72
+        "line": 86
       }
     },
     {
-      "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@67",
-      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@72",
+      "source": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Class:TestWebSocket@81",
+      "target": "frontend/src/components/__tests__/P8UiStatus.test.jsx#Method:TestWebSocket.send@86",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/P8UiStatus.test.jsx",
-        "line": 72
+        "line": 86
       }
     },
     {
@@ -53375,27 +53396,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 920
+        "line": 921
       }
     },
     {
-      "source": "backend/engine/codeGenerator.js#Function:traverse@973",
-      "target": "backend/engine/codeGenerator.js#Function:incompleteTree@967",
+      "source": "backend/engine/codeGenerator.js#Function:traverse@974",
+      "target": "backend/engine/codeGenerator.js#Function:incompleteTree@968",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 975
+        "line": 976
       }
     },
     {
-      "source": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
-      "target": "backend/engine/codeGenerator.js#Function:traverse@973",
+      "source": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
+      "target": "backend/engine/codeGenerator.js#Function:traverse@974",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/codeGenerator.js",
-        "line": 1024
+        "line": 1025
       }
     },
     {
@@ -53990,7 +54011,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeStaticRepairLoop@432",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -54200,7 +54221,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@608",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -59740,7 +59761,7 @@
     },
     {
       "source": "backend/tests/test_deep_verification.js",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -60190,7 +60211,7 @@
     },
     {
       "source": "backend/tests/test_e2e_simulation.js#Function:runE2E@35",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62830,7 +62851,7 @@
     },
     {
       "source": "backend/tests/test_p2_completion_report.js",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -66470,7 +66491,7 @@
     },
     {
       "source": "backend/tests/test_project_tree_env_exclusion.js",
-      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@957",
+      "target": "backend/engine/codeGenerator.js#Function:listProjectTree@958",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -71479,23 +71500,33 @@
       }
     },
     {
-      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@37",
-      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@31",
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
+      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 221
+        "line": 236
       }
     },
     {
-      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@37",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@134",
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 253
+        "line": 313
+      }
+    },
+    {
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
+      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/components/DashboardView.jsx",
+        "line": 315
       }
     },
     {
@@ -71505,7 +71536,7 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/Header.jsx",
-        "line": 57
+        "line": 58
       }
     },
     {
@@ -71565,7 +71596,7 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 106
+        "line": 125
       }
     },
     {

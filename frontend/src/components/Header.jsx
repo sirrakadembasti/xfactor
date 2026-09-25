@@ -54,14 +54,6 @@ export default function Header({
         {/* View Mode Switcher (Sohbet / DAG Grafiği / Canlı Loglar) */}
         <div className="flex bg-cream-200/60 p-0.5 rounded-lg border border-cream-300 mr-2">
           <button
-            onClick={() => selectView('dashboard')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
-              viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
-            }`}
-          >
-            <LayoutDashboard size={14} /> Kalite Paneli
-          </button>
-          <button
             onClick={() => {
               selectView('chat');
               if (activeProjectId) fetchProjectState(activeProjectId);
@@ -71,6 +63,14 @@ export default function Header({
             }`}
           >
             <MessageSquare size={14} /> Sohbet & Mimari
+          </button>
+          <button
+            onClick={() => selectView('dashboard')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1.5 transition cursor-pointer ${
+              viewMode === 'dashboard' ? 'bg-white text-indigo-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <LayoutDashboard size={14} /> Kalite Paneli
           </button>
           <button
             onClick={() => selectView('flow')}

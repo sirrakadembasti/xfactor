@@ -1472,12 +1472,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
             }
-            await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje IDE'de incelenebilir veya ZIP olarak indirilebilir.", "manager");
+            await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje doğrulanmış ZIP olarak indirilebilir; kaynak kodları indirilen pakette inceleyebilirsiniz.", "manager");
             try {
                 appendProjectActionMessages(projectId, {
                     actionId: `action-finish-${Date.now()}`,
                     userText: '✅ Proje geliştirme ve doğrulama süreci tamamlandı.',
-                    modelText: '🎉 Tebrikler Boss! Uygulamanız başarıyla üretildi ve doğrulandı. Kodları Monaco IDE üzerinden inceleyebilir veya doğrudan ZIP olarak indirebilirsiniz.'
+                    modelText: '🎉 Tebrikler Boss! Uygulamanız başarıyla üretildi ve doğrulandı. Projeyi ZIP olarak indirebilir, kaynak kodlarını indirdiğiniz pakette inceleyebilirsiniz.'
                 });
             } catch {}
         }

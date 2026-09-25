@@ -810,6 +810,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 'COPY package*.json ./',
                 'RUN npm ci',
                 'COPY . .',
+                'RUN mkdir -p public',
                 hasPrisma ? 'RUN npx prisma generate' : '',
                 'RUN npm run build',
                 '',

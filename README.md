@@ -20,7 +20,7 @@
 * 🛡️ **OS Sandbox Sınırları & Sıfır Sızıntı:** Bubblewrap ve Docker yetenek sözleşmesi ile fail-closed duran izole alt süreç sandbox'ı, proxy DNS yönlendirmesi, otomatik gizli anahtar temizliği (`scrubEnvironmentVariables`), 24 saatlik HttpOnly sunucu oturumları, CSRF ve HSTS korumaları ve yalnızca yöneticilerin tetikleyebildiği global disk senkronizasyonu.
 * 🔄 **Dayanıklı LLM Görev Katmanı & Hedefli Onarım:** Geçici ağ ve zaman aşımı hatalarında 3 denemeli sınırlı retry (`llmTaskRetry.js`), Babel AST tabanlı sentaks denetimi ve güvensiz secret fallback hatalarını dosya bazlı sıralı gideren hedefli onarım döngüsü (`executeStaticRepairLoop`).
 * 📊 **Kalite Paneli & Telemetri:** Longitudinal kapı metrikleri, hata parmak izi (fingerprinting), ister etki analizi ve yeniden derleme önizlemesi (`/impact`, `/preview`), kimlik bilgileri temizlenmiş (redacted) kanıt logları ve ReactFlow DAG akış şeması. Tamamlanan proje, doğrulanmış ZIP paketi olarak indirilir.
-* 🐳 **Üretilen Projelerde Tak-Çalıştır Konteyner (Dockerfile):** Üretilen her uygulamaya özel çok aşamalı (multi-stage) `Dockerfile` ve `.dockerignore` otomatik eklenir; kullanıcı tek komutla (`docker build` veya `docker compose up`) projeyi kendi sunucusunda ayağa kaldırabilir.
+* 🐳 **Üretilen Projelerde Dockerfile:** Üretilen uygulamaya yığınına uygun `Dockerfile` ve `.dockerignore` eklenir. Kullanıcı ZIP'i çıkardıktan sonra `docker build` ve başarılı build sonrası `docker run` komutlarıyla uygulamayı çalıştırabilir.
 * 🎨 **Ergonomik UI/UX ve Sıcak Krem Tema:** Göz yormayan sıcak krem arayüz, çok satırlı yüzen sohbet giriş alanı, tek tıkla mesaj kopyalama, kullanıcı profil kartı ve belirgin oturum kapatma alanı.
 * 🔄 **Dosya Protokolünden Canlı Durum ve Log Canlandırma (Rehydration Engine):** Diskteki projelerin mimari şartnameleri, görevleri, DAG durumları ve ajan logları tarihsel durum olarak yeniden kurulur. Kurtarılan ZIP `built` kalır; Worker tarafından üretilmiş geçerli doğrulama koşusu, zorunlu PASS kanıtları ve tamamlama makbuzu yoksa indirme açılmaz.
 
@@ -87,6 +87,10 @@ npm run dev
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.
 3. Sol menüden **`+ Yeni Proje`** oluşturun.
 4. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
+
+Yeni proje açıldığında ilk ekran **Sohbet & Mimari** olur; üst sekmelerde de önce sohbet, ardından **Kalite Paneli**, **Canlı DAG Grafiği** ve **Canlı Süreç Logları** yer alır. Kalite Paneli üstte amacını ve durumların anlamını açıklar; altta koşu geçmişi, yapılan kontroller, çıkış kodu, zaman damgası, SHA-256 özetleri ve gizli bilgileri temizlenmiş loglar bulunur. Manager tamamlanma mesajı kaynak kodu incelemek için doğrulanmış ZIP indirmesine yönlendirir.
+
+Next.js projelerinde `public/` dizini boş veya yoksa üretilen Dockerfile derleme aşamasında dizini oluşturur. ZIP'ten çıkarılan uygulama klasöründe `docker build -t projem .` komutu tamamlanmadan `docker run` çalıştırılmamalıdır; build başarısızsa yerel imaj oluşmaz.
 
 ### Üretim sırasında hata ve devam etme
 

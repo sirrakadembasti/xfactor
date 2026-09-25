@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, FileText, History, Loader2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileText, History, Loader2, SearchCheck, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
 
 const statusClasses = {
@@ -8,7 +8,10 @@ const statusClasses = {
   failed: 'bg-rose-50 text-rose-700 border-rose-200',
   FAIL: 'bg-rose-50 text-rose-700 border-rose-200',
   blocked: 'bg-amber-50 text-amber-700 border-amber-200',
-  BLOCKED: 'bg-amber-50 text-amber-700 border-amber-200'
+  BLOCKED: 'bg-amber-50 text-amber-700 border-amber-200',
+  NOT_APPLICABLE: 'bg-slate-50 text-slate-600 border-slate-200',
+  running: 'bg-blue-50 text-blue-700 border-blue-200',
+  queued: 'bg-slate-50 text-slate-600 border-slate-200'
 };
 
 const statusLabels = {
@@ -17,8 +20,36 @@ const statusLabels = {
   failed: 'Başarısız',
   FAIL: 'KALDI',
   blocked: 'Bloke',
-  BLOCKED: 'BLOKE'
+  BLOCKED: 'BLOKE',
+  NOT_APPLICABLE: 'Uygulanmıyor',
+  running: 'Sürüyor',
+  queued: 'Sırada'
 };
+
+const gateDescriptions = {
+  package_json: ['Paket tanımı', 'Uygulamanın bağımlılık ve komut tanımlarını denetler.'],
+  lockfile: ['Kilit dosyası', 'Kurulacak paket sürümlerinin sabitlenip sabitlenmediğini denetler.'],
+  ast_import_inventory: ['İçe aktarımlar', 'Kodun kullandığı paketlerle bağımlılık listesini karşılaştırır.'],
+  clean_install: ['Temiz kurulum', 'Bağımlılıkların sıfırdan kurulabildiğini sınar.'],
+  typecheck: ['Tip denetimi', 'TypeScript tür hatalarını arar.'],
+  framework_build: ['Uygulama derlemesi', 'Üretim derlemesinin tamamlanıp tamamlanmadığını sınar.'],
+  requirement_traceability: ['Gereksinim izleri', 'Zorunlu gereksinimlerin makine kanıtına bağlanmasını denetler.'],
+  service_manifest: ['Servis tanımı', 'Başlatma komutu, port ve servis bildirimini denetler.'],
+  database_verification: ['Veritabanı', 'Şema, bağlantı ve veri yazma işlemlerini sınar.'],
+  api_contract: ['API uç noktaları', 'API yanıtları ve veri işlemleri beklenen sözleşmeye uyuyor mu, sınar.'],
+  browser_journey: ['Tarayıcı akışı', 'Sayfa açılışını ve tanımlı kullanıcı adımlarını sınar.'],
+  smoke_gate: ['Canlı servis', 'Uygulamanın başlatılıp sağlık yanıtı verdiğini sınar.'],
+  test_infrastructure: ['Uygulama testleri', 'Test komutunun varlığını ve çalışmasını denetler.'],
+  domain_entity_check: ['Alan ve veri modeli', 'İstenen iş alanının ve varlıkların karşılanmasını denetler.'],
+  placeholder_check: ['Eksik kod taraması', 'Boş veya geçici kod parçalarını arar.'],
+  contamination_check: ['İçerik temizliği', 'Başka projelerden taşınmış içerikleri arar.'],
+  security_baseline: ['Güvenlik temeli', 'Temel güvenlik kurallarının uygulanmasını denetler.'],
+  readme_check: ['Kurulum rehberi', 'README komutlarının uygulama ayarlarıyla uyumunu denetler.']
+};
+
+function gateDetails(gateName) {
+  return gateDescriptions[gateName] || [gateName, 'Bu kontrolün teknik adı ve makine sonucu aşağıda gösterilir.'];
+}
 
 function StatusBadge({ status }) {
   return (
@@ -150,23 +181,38 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
   const detailMatchesProject = selectedRunProjectId === projectId;
   const visibleRuns = runsMatchProject ? runs : [];
   const checks = detailMatchesProject && Array.isArray(runDetail?.checks) ? runDetail.checks : [];
+  const selectedCheck = checks.find(check => check.id === selectedCheckId);
+  const passedCount = checks.filter(check => check.status === 'PASS').length;
+  const failedCount = checks.filter(check => check.status === 'FAIL').length;
+  const blockedCount = checks.filter(check => check.status === 'BLOCKED').length;
 
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50 p-6" aria-label="Kalite geçmişi paneli">
+    <main className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6" aria-label="Kalite geçmişi paneli">
       <div className="mx-auto max-w-7xl space-y-5">
-        <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-800 p-6 text-white shadow-sm">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-indigo-700">
+            <div className="mb-2 flex items-center gap-2 text-indigo-200">
               <History size={20} />
               <span className="text-xs font-bold uppercase tracking-wider">Kalite Geçmişi</span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900">{projectTitle || 'Proje'} Kanıt Paneli</h1>
-            <p className="mt-1 text-sm text-slate-500">Değişmez doğrulama koşuları, kontroller, özetler ve sansürlenmiş konsol kanıtları.</p>
+            <h1 className="text-2xl font-bold">{projectTitle || 'Proje'} Kalite Paneli</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-indigo-100">Üretilen uygulamanın kurulumu, derlemesi, çalışması ve güvenliği için yapılan gerçek kontrolleri burada izleyebilirsiniz. Her koşu ayrı kaydedilir; bir kontrolü seçerek sonucunun makine kanıtını görebilirsiniz.</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-bold text-white">
             <ShieldCheck size={14} /> Salt-Okunur
           </span>
         </header>
+
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm" aria-labelledby="panel-purpose-heading">
+          <h2 id="panel-purpose-heading" className="text-base font-bold text-slate-900">Bu panel neyi gösterir?</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Önce soldan bir doğrulama koşusu seçin. Sağdaki kontrollerde hangi adımın geçtiğini veya neden durduğunu görün. Kontrole tıklayınca zaman, çıkış kodu, çıktı özeti ve gizli bilgiler temizlenmiş kayıtlar açılır.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3"><span className="text-xs font-bold text-emerald-800">PASS</span><p className="mt-1 text-xs text-emerald-900">PASS: kontrol başarıyla tamamlandı ve kanıtı kaydedildi.</p></div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3"><span className="text-xs font-bold text-rose-800">FAIL</span><p className="mt-1 text-xs text-rose-900">FAIL: çalıştırılan kontrol hata buldu; teslim tamamlanmaz.</p></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3"><span className="text-xs font-bold text-amber-800">BLOCKED</span><p className="mt-1 text-xs text-amber-900">BLOCKED: zorunlu kontrol için yeterli yürütme kanıtı yok.</p></div>
+          </div>
+          <p className="mt-3 text-xs text-slate-500">İsteğe bağlı bir kontrol uygulanmıyorsa “Uygulanmıyor” görünür. Zorunlu kontroller atlanarak proje doğrulanmış sayılamaz.</p>
+        </section>
 
         <section className="grid gap-3 md:grid-cols-2" aria-label="Kanıt otoritesi">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -179,6 +225,18 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
           </div>
         </section>
 
+        {detailMatchesProject && runDetail?.run && (
+          <section className="rounded-xl border border-indigo-100 bg-indigo-50 p-4" aria-label="Seçili koşu özeti">
+            <div className="flex flex-wrap items-center gap-3">
+              <SearchCheck size={19} className="text-indigo-700" />
+              <h2 className="text-sm font-bold text-slate-900">Seçili koşunun sonucu</h2>
+              <StatusBadge status={runDetail.run.status} />
+            </div>
+            <p className="mt-2 text-sm text-slate-700">{passedCount} kontrol geçti · {failedCount} kontrol başarısız · {blockedCount} kontrol engellendi</p>
+            <p className="mt-1 text-xs text-slate-600">Başlangıç: {formatTimestamp(runDetail.run.started_at)} · Bitiş: {formatTimestamp(runDetail.run.ended_at)} · Politika: {runDetail.run.policy_version || '—'}</p>
+          </section>
+        )}
+
         {error && (
           <div role="alert" className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
             <AlertTriangle size={16} /> {error}
@@ -188,7 +246,8 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="run-history-heading">
             <div className="border-b border-slate-200 px-4 py-3">
-              <h2 id="run-history-heading" className="text-sm font-bold text-slate-900">Doğrulama Koşuları</h2>
+              <h2 id="run-history-heading" className="text-sm font-bold text-slate-900">1. Doğrulama Koşuları</h2>
+              <p className="mt-1 text-xs text-slate-500">Her koşu, uygulama için yapılmış ayrı bir doğrulama denemesidir. En yenisi üsttedir.</p>
             </div>
             {!runsMatchProject || loadingRuns ? (
               <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kanıtlar yükleniyor…</div>
@@ -241,7 +300,8 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
 
           <section className="min-h-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="check-heading">
             <div className="border-b border-slate-200 px-4 py-3">
-              <h2 id="check-heading" className="text-sm font-bold text-slate-900">Bağımsız Kontroller</h2>
+              <h2 id="check-heading" className="text-sm font-bold text-slate-900">2. Yapılan Kontroller</h2>
+              <p className="mt-1 text-xs text-slate-500">Bir satır seçerek neyin denetlendiğini ve kayıtlı kanıtı inceleyin.</p>
             </div>
             {!detailMatchesProject || loadingDetail ? (
               <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kontroller yükleniyor…</div>
@@ -251,7 +311,11 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
               <div className="divide-y divide-slate-100">
                 {checks.map(check => (
                   <button key={check.id} type="button" onClick={() => loadLog(check)} aria-label={`${check.gate_name} kanıtı ${check.id}`} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 ${selectedCheckId === check.id ? 'bg-indigo-50' : ''}`}>
-                    <span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-800">{check.gate_name}</span><span className="block truncate font-mono text-[11px] text-slate-500">{check.id}</span></span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-slate-800">{gateDetails(check.gate_name)[0]}</span>
+                      <span className="block text-xs leading-5 text-slate-600">{gateDetails(check.gate_name)[1]}</span>
+                      <span className="flex flex-wrap gap-1 font-mono text-[11px] text-slate-500"><span>{check.gate_name}</span><span>· {check.id}</span></span>
+                    </span>
                     <StatusBadge status={check.status} />
                   </button>
                 ))}
@@ -260,10 +324,30 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
           </section>
         </div>
 
+        {detailMatchesProject && selectedCheck && (
+          <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm" aria-label="Seçili kontrolün makine kanıtı">
+            <div className="flex flex-wrap items-center gap-3">
+              <CheckCircle2 size={18} className="text-indigo-700" />
+              <h2 className="text-sm font-bold text-slate-900">3. {gateDetails(selectedCheck.gate_name)[0]} kanıtı</h2>
+              <StatusBadge status={selectedCheck.status} />
+            </div>
+            <p className="mt-2 text-sm text-slate-600">{gateDetails(selectedCheck.gate_name)[1]}</p>
+            <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+              <div><dt className="font-semibold text-slate-500">Zorunluluk</dt><dd className="mt-1 text-slate-800">{selectedCheck.applicability === 'MANDATORY' ? 'Zorunlu' : 'İsteğe bağlı'}</dd></div>
+              <div><dt className="font-semibold text-slate-500">Çıkış kodu</dt><dd className="mt-1 text-slate-800">{selectedCheck.exit_code ?? 'Kaydedilmedi'}</dd></div>
+              <div><dt className="font-semibold text-slate-500">Başlangıç</dt><dd className="mt-1 text-slate-800">{formatTimestamp(selectedCheck.started_at)}</dd></div>
+              <div><dt className="font-semibold text-slate-500">Bitiş</dt><dd className="mt-1 text-slate-800">{formatTimestamp(selectedCheck.ended_at)}</dd></div>
+              <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Standart çıktı SHA-256 özeti</dt><dd className="mt-1 break-all font-mono text-slate-700">{selectedCheck.stdout_digest || 'Kaydedilmedi'}</dd></div>
+              <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Hata çıktısı SHA-256 özeti</dt><dd className="mt-1 break-all font-mono text-slate-700">{selectedCheck.stderr_digest || 'Kaydedilmedi'}</dd></div>
+            </dl>
+            {selectedCheck.timed_out && <p className="mt-3 text-xs font-semibold text-amber-800">Bu kontrol zaman sınırına takıldı.</p>}
+          </section>
+        )}
+
         {detailMatchesProject && (loadingLog || log) && (
           <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-sm" aria-label="Sansürlenmiş konsol kanıtı">
             <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 text-slate-200">
-              <span className="text-sm font-bold">Sansürlenmiş konsol kanıtı</span>
+              <span className="text-sm font-bold">4. Sansürlenmiş konsol kanıtı</span>
               {log?.id && <span className="font-mono text-xs text-slate-400">{log.id}</span>}
             </div>
             {loadingLog ? (

@@ -42,6 +42,20 @@ test('Header forwards WebSocket state to its accessible status indicator', () =>
   expect(screen.getByRole('status', { name: statusLabels.reconnecting })).toBeVisible();
 });
 
+test('Header puts chat first and quality next in the project navigation', () => {
+  render(<Header {...headerProps} />);
+
+  const views = screen.getAllByRole('button').filter(button =>
+    /Sohbet & Mimari|Kalite Paneli|Canlı DAG Grafiği|Canlı Süreç Logları/.test(button.textContent)
+  );
+  expect(views.map(button => button.textContent.trim())).toEqual([
+    'Sohbet & Mimari',
+    'Kalite Paneli',
+    'Canlı DAG Grafiği',
+    'Canlı Süreç Logları'
+  ]);
+});
+
 test('Header offers Resume for verification_failed projects', () => {
   const handleResume = vi.fn();
   render(<Header {...headerProps} projectState={{ title: 'Project', status: 'verification_failed' }} handleResume={handleResume} />);

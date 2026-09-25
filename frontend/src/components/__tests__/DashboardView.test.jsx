@@ -69,6 +69,25 @@ test('renders authoritative run history and evidence identifiers without mutatio
   }
 });
 
+test('explains the panel purpose, status meanings, and selected run summary before technical evidence', async () => {
+  render(<DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={createApi()} />);
+
+  expect(screen.getByRole('heading', { name: /Bu panel neyi gösterir/i })).toBeInTheDocument();
+  expect(screen.getByText(/PASS.*kontrol başarıyla tamamlandı/i)).toBeInTheDocument();
+  expect(await screen.findByText(/1 kontrol geçti/i)).toBeInTheDocument();
+  expect(screen.getByText(/API uç noktaları/i)).toBeInTheDocument();
+});
+
+test('shows what a selected check did and its machine evidence', async () => {
+  render(<DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={createApi()} />);
+
+  fireEvent.click(await screen.findByRole('button', { name: /api_contract.*check-evidence-009/i }));
+  expect(await screen.findByText('database_url=[REDACTED]')).toBeInTheDocument();
+  expect(screen.getAllByText(/API yanıtları ve veri işlemleri/i).length).toBeGreaterThanOrEqual(1);
+  expect(screen.getByText('Çıkış kodu')).toBeInTheDocument();
+  expect(screen.getByText('stdout-sha256')).toBeInTheDocument();
+});
+
 test('loads selected check logs and renders backend redaction markers', async () => {
   const apiClient = createApi();
   const { container } = render(
@@ -138,11 +157,11 @@ test('discards a superseded verification-run detail response', async () => {
   fireEvent.click(await screen.findByRole('button', { name: /run-evidence-older.*doğrulama koşusunu incele|inspect verification run run-evidence-older/i }));
   await waitFor(() => expect(getVerificationRun).toHaveBeenCalledTimes(2));
   secondDetail.resolve({ run: olderRun, checks: [secondCheck] });
-  expect(await screen.findByText('browser_e2e')).toBeInTheDocument();
+  expect((await screen.findAllByText('browser_e2e')).length).toBeGreaterThan(0);
 
   firstDetail.resolve({ run, checks: [check] });
   await waitFor(() => expect(screen.queryByText('api_contract')).not.toBeInTheDocument());
-  expect(screen.getByText('browser_e2e')).toBeInTheDocument();
+  expect(screen.getAllByText('browser_e2e').length).toBeGreaterThan(0);
 });
 
 test('hides prior-project evidence synchronously during a project switch', async () => {

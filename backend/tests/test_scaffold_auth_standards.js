@@ -123,6 +123,12 @@ model Product {
         const dockerfileContent = await fs.readFile(path.join(workspace, 'Dockerfile'), 'utf8');
         assert.ok(dockerfileContent.includes('FROM node:22-alpine'), 'Must use node 22 alpine base image');
         assert.ok(dockerfileContent.includes('EXPOSE'), 'Must expose service port');
+        const publicCopy = dockerfileContent.indexOf('COPY --from=builder /app/public ./public');
+        if (publicCopy >= 0) {
+            const publicPreparation = dockerfileContent.indexOf('RUN mkdir -p public');
+            assert.ok(publicPreparation >= 0 && publicPreparation < publicCopy,
+                'Optional public directory must exist in the builder before runner COPY');
+        }
     });
 } finally {
     for (const dir of tempDirs) {

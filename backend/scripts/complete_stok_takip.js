@@ -98,7 +98,7 @@ console.log('completeVerifiedProject result:', completion.status, 'receipt:', co
 appendProjectActionMessages(projectId, {
     actionId: `action-finish-${Date.now()}`,
     userText: '✅ Stok Takip MVP uygulaması başarıyla tamamlandı ve doğrulandı.',
-    modelText: '🎉 Tebrikler Boss! "stok-takip-mvp" uygulaması başarıyla tamamlandı! Tüm Next.js sayfaları, Prisma modelleri ve bileşenleri eksiksiz üretildi. Kodları üst bardaki "Kod Editörünü Aç" butonundan inceleyebilir veya "Projeyi (ZIP) İndir" butonuyla indirebilirsiniz.'
+    modelText: '🎉 Tebrikler Boss! "stok-takip-mvp" uygulaması başarıyla tamamlandı! Tüm Next.js sayfaları, Prisma modelleri ve bileşenleri üretildi. "Projeyi (ZIP) İndir" butonuyla paketi indirip kaynak kodlarını bilgisayarınızda inceleyebilirsiniz.'
 });
 
 const updatedProject = db.prepare('SELECT id, status, revision FROM projects WHERE id = ?').get(projectId);
