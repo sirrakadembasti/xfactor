@@ -87,6 +87,15 @@ npm run dev
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.
 3. Sol menüden **`+ Yeni Proje`** oluşturun.
 4. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
+
+### Üretim sırasında hata ve devam etme
+
+Plan onayından sonra Manager'ın `TODO.md` dosyası, Director şartnameleri ve Teamleader görev dosyaları üretim ilerlemesini diskte tutar. Kesinti sonrası **Devam Ettir**, mevcut `TODO.md` ve `GOREV.md` kayıtlarındaki tek dosyalık görev hedeflerini geri yükler. Aynı sözleşmeye ait geçerli checkpoint'ler yeniden kullanılır; kabul hatası nedeniyle açık onarım kaydı varsa tamamlanmış görevler denetlenerek sürdürülür.
+
+Sohbet, üst çubuk ve Loglar ekranı `paused` ile `verification_failed` durumlarında **Devam Ettir** gösterir. `artifact_verified` durumunda son hata kayıtlıysa da aynı seçenek görünür. İş akışı hata bildirdiğinde sohbet ekranı açılır; neden ve varsa ilgili kalite kapısı burada ve süreç loglarında gösterilir. Diskten kurtarılan görevler canlı logları silmeden DAG'a eklenir; tamamlanmamış görevler bitmiş gibi işaretlenmez.
+
+Derlemenin veya ZIP oluşturmanın bitmesi teslimin doğrulandığı anlamına gelmez. Zorunlu kapılardan biri başarısız ya da atlanmışsa proje tamamlanmaz; isteğe bağlı ve uygulanamayan kontrol `NOT_APPLICABLE` olabilir. **ZIP indir** yalnızca geçerli Worker doğrulaması, zorunlu PASS kanıtları ve tamamlama makbuzu oluştuğunda açılır. Ayrıntılı müdahale adımları [kullanıcı kılavuzunda](kullanici-kilavuzu.md#adım-6-canlı-müdahale-duraklatma-ve-kaldığı-yerden-devam-etme-pause--resume) yer alır.
+
 ---
 
 ## 🧪 Test Süiti & Güvenlik Doğrulaması
@@ -122,7 +131,7 @@ Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker d
 
 Bu denetim izi, proje durumuyla birlikte kanonik olarak döner; böylece Sohbet, DAG, loglar ve proje menüsü aynı başarılı işlem kaydını kullanır.
 
-Kalite kapısı doğrulaması başarısız olursa proje `verification_failed` durumunda kalır; hata ayrıntısı sohbet ve süreç loglarında görünür. `paused` ve `verification_failed` durumlarında **Devam Ettir (Resume)** eylemi sohbet, üst çubuk ve log ekranında kullanılabilir. Devam ettirme aynı backend iş akışını kaldığı yerden başlatır; doğrulama hatası durumu gizlenmez ve proje doğrulanmadan ZIP indirme açılmaz.
+Kalite kapısı doğrulaması başarısız olursa proje `verification_failed` durumunda kalır; hata ayrıntısı sohbet ve süreç loglarında görünür. `paused`, `verification_failed` ve son hata kaydı bulunan `artifact_verified` durumlarında **Devam Ettir (Resume)** eylemi sohbet, üst çubuk ve log ekranında kullanılabilir. Devam ettirme aynı backend iş akışını kaldığı yerden başlatır; proje doğrulanmadan ZIP indirme açılmaz.
 
 Normal tamamlama akışı Worker hatasını yerel bir geliştirme doğrulamasına dönüştürmez ve diskten okunan `DURUM.md` / `state.json` kayıtlarından sentetik PASS kanıtı üretmez. Worker hatası kanıtsız başarı yerine fail-closed olarak yukarı taşınır.
 
