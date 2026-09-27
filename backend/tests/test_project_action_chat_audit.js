@@ -843,6 +843,6 @@ await runAsyncTest('action message append rolls back the user row when the model
     );
 });
 
-assert.strictEqual(getSchemaVersion(), 14);
+assert.strictEqual(getSchemaVersion(), 15);
 finish();
 await isolated.cleanup();

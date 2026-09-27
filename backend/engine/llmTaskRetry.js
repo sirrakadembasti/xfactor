@@ -63,6 +63,7 @@ export async function runLLMTaskWithRetry({
     maxAttempts = process.env.LLM_TASK_MAX_ATTEMPTS,
     retryDelayMs = 250,
     generate = generateLLMResponse,
+    onUsage = null,
     onDiagnostic = async () => {}
 } = {}) {
     if (!agentRole) throw new Error('agentRole is required for an LLM task.');
@@ -74,7 +75,7 @@ export async function runLLMTaskWithRetry({
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
         let phase = 'provider';
         try {
-            const response = await generate(messages, { signal });
+            const response = await generate(messages, { signal, onUsage });
             phase = 'validation';
             const parsed = parseResponse(response);
             await onDiagnostic(diagnosticFor({

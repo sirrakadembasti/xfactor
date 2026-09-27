@@ -38,6 +38,7 @@ import { db, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { runLLMTaskWithRetry } from './llmTaskRetry.js';
+import { formatProjectTokenUsage, getProjectTokenUsage, recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
 import {
     updateAttemptHeartbeat,
@@ -409,7 +410,8 @@ export async function checkPause(projectId, signal = null) {
 async function callAgentLLM(agentRole, userPrompt, {
     signal = null,
     taskId = null,
-    onDiagnostic = null
+    onDiagnostic = null,
+    onUsage = null
 } = {}) {
     const agent = getAgent(agentRole);
     return runLLMTaskWithRetry({
@@ -417,6 +419,7 @@ async function callAgentLLM(agentRole, userPrompt, {
         taskId,
         signal,
         onDiagnostic: onDiagnostic || undefined,
+        onUsage,
         messages: [
             { role: 'system', content: agent.systemPrompt },
             { role: 'user', content: userPrompt }
@@ -441,6 +444,7 @@ export async function executeStaticRepairLoop({
     wsHub = null,
     workflowLog = workflowLogEvent,
     recordDiagnostic = null,
+    onUsage = null,
     signal = null,
     maxRounds = 5,
     maxTotalAttempts = 15
@@ -520,6 +524,7 @@ export async function executeStaticRepairLoop({
                 const rawRepair = await callAgent('coder', repairPrompt, {
                     signal,
                     taskId: `generation.repair.${totalAttempts}`,
+                    onUsage,
                     onDiagnostic: recordDiagnostic
                 });
 
@@ -621,6 +626,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         : null;
     const workflowWriteState = (id, nextState) => writeProjectState(id, nextState, leaseOptions);
     const workflowLogEvent = createWorkflowLogEvent(leaseOptions);
+    const recordTokenUsage = usage => {
+        try { recordProjectTokenUsage(projectId, process.env.AI_PROVIDER || 'google', usage); }
+        catch (error) { logWarning('workflow.token_usage_record_failed', error, { projectId }); }
+    };
     const recordLLMDiagnostic = async diagnostic => {
         const task = diagnostic.taskId || `${diagnostic.agentRole}.task`;
         await workflowLogEvent(
@@ -662,6 +671,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             plan = await callAgentLLM('manager', managerPrompt, {
                 signal: abortController.signal,
                 taskId: 'manager.plan',
+                onUsage: recordTokenUsage,
                 onDiagnostic: recordLLMDiagnostic
             });
             state.plan = plan;
@@ -730,6 +740,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 const rawSpec = await callAgentLLM('director', directorPrompt, {
                     signal: abortController.signal,
                     taskId: `${directorId}.spec`,
+                    onUsage: recordTokenUsage,
                     onDiagnostic: recordLLMDiagnostic
                 });
                 directorSpec = normalizeDirectorSpec(rawSpec, domain.prefix);
@@ -772,6 +783,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     taskPlan = await callAgentLLM('teamleader', tlPrompt, {
                         signal: abortController.signal,
                         taskId: `${tlId}.plan`,
+                        onUsage: recordTokenUsage,
                         onDiagnostic: recordLLMDiagnostic
                     });
                 }
@@ -933,6 +945,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         let coderOutput = await callAgentLLM('coder', coderPrompt, {
                             signal: abortController.signal,
                             taskId,
+                            onUsage: recordTokenUsage,
                             onDiagnostic: recordLLMDiagnostic
                         });
 
@@ -948,6 +961,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             maxRetries: 2,
                             signal: abortController.signal,
                             onLLMDiagnostic: recordLLMDiagnostic,
+                            onUsage: recordTokenUsage,
                             onFeedback: async ({ iteration, feedback, summary }) => {
                                 await workflowLogEvent(wsHub,
                                 projectId,
@@ -1148,6 +1162,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     wsHub,
                     workflowLog: workflowLogEvent,
                     recordDiagnostic: recordLLMDiagnostic,
+                    onUsage: recordTokenUsage,
                     signal: abortController.signal
                 });
                 deterministicAudit = repairResult.audit;
@@ -1174,6 +1189,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             let testerAdvisory = await callAgentLLM('tester', testerPrompt, {
                 signal: abortController.signal,
                 taskId: 'tester.static-audit',
+                onUsage: recordTokenUsage,
                 onDiagnostic: recordLLMDiagnostic
             });
             if (!testerAdvisory || typeof testerAdvisory !== 'object') {
@@ -1477,7 +1493,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 appendProjectActionMessages(projectId, {
                     actionId: `action-finish-${Date.now()}`,
                     userText: '✅ Proje geliştirme ve doğrulama süreci tamamlandı.',
-                    modelText: '🎉 Tebrikler Boss! Uygulamanız başarıyla üretildi ve doğrulandı. Projeyi ZIP olarak indirebilir, kaynak kodlarını indirdiğiniz pakette inceleyebilirsiniz.'
+                    modelText: `🎉 Tebrikler Boss! Uygulamanız başarıyla üretildi ve doğrulandı. Projeyi ZIP olarak indirebilir, kaynak kodlarını indirdiğiniz pakette inceleyebilirsiniz.\n\n${formatProjectTokenUsage(getProjectTokenUsage(projectId))}`
                 });
             } catch {}
         }

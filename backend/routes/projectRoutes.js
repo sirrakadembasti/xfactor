@@ -9,6 +9,7 @@ import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } 
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
 import { generateLLMResponse } from '../llm.js';
+import { recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
@@ -484,7 +485,12 @@ export function createProjectRouter({
         });
         messages.push({ role: 'user', content: message });
 
-        let responseText = await generateLLMResponse(messages);
+        let responseText = await generateLLMResponse(messages, {
+            onUsage: usage => {
+                try { recordProjectTokenUsage(id, process.env.AI_PROVIDER || 'google', usage); }
+                catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
+            }
+        });
             // 1. Gelen yanıtta JSON planı var mı ayrıştır ve kurtar
             let parsedPlan = null;
             try {

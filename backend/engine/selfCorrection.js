@@ -21,6 +21,7 @@ export async function executeCorrectionLoop({
     maxRetries = 2,
     onFeedback,
     onLLMDiagnostic = null,
+    onUsage = null,
     signal = null
 }) {
     let currentOutput = initialCoderOutput;
@@ -65,6 +66,7 @@ export async function executeCorrectionLoop({
                 taskId: `${taskId}.review.${iterations}`,
                 signal,
                 onDiagnostic: onLLMDiagnostic || undefined,
+                onUsage,
                 messages: [
                     { role: 'system', content: reviewer.systemPrompt },
                     { role: 'user', content: reviewPrompt }
@@ -109,6 +111,7 @@ export async function executeCorrectionLoop({
                 taskId: `${taskId}.repair.${iterations}`,
                 signal,
                 onDiagnostic: onLLMDiagnostic || undefined,
+                onUsage,
                 messages: [
                     { role: 'system', content: coder.systemPrompt },
                     { role: 'user', content: fixPrompt }

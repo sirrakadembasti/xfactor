@@ -104,6 +104,7 @@ test_p1_7_task1_routes.js
 test_package_verifier.js
 test_project_action_chat_audit.js
 test_project_repository.js
+test_project_token_usage.js
 test_project_tree_env_exclusion.js
 test_project_state_rehydration.js
 test_quality_gate.js

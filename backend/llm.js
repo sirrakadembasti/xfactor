@@ -211,7 +211,10 @@ export async function generateLLMResponse(messages, options = {}) {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'sdk', tokenLimit: 8192 });
             }
             const responseText = result.response.text();
-            if (responseText) return responseText;
+            if (responseText) {
+                options.onUsage?.(result.response.usageMetadata ?? null);
+                return responseText;
+            }
         } catch (sdkError) {
             if (mergedSignal?.aborted || sdkError.name === 'AbortError' || sdkError.name === 'TimeoutError') {
                 throw sdkError;
@@ -258,7 +261,10 @@ export async function generateLLMResponse(messages, options = {}) {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'rest' });
             }
             const textPart = candidate?.content?.parts?.[0]?.text;
-            if (textPart) return textPart;
+            if (textPart) {
+                options.onUsage?.(data.usageMetadata ?? null);
+                return textPart;
+            }
         } catch (restError) {
             if (mergedSignal?.aborted || restError.name === 'AbortError' || restError.name === 'TimeoutError') {
                 throw restError;
@@ -326,5 +332,6 @@ export async function generateLLMResponse(messages, options = {}) {
     if (!content) {
         throw new Error(`${provider.toUpperCase()} API boş içerik döndürdü.`);
     }
+    options.onUsage?.(data.usage ?? null);
     return content;
 }

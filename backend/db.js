@@ -658,6 +658,25 @@ export const MIGRATIONS = [
             `);
         }
     },
+    {
+        version: 15,
+        name: '015_project_llm_token_usage',
+        up: database => {
+            database.exec(`
+                CREATE TABLE IF NOT EXISTS project_llm_usage (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    input_tokens INTEGER,
+                    output_tokens INTEGER,
+                    total_tokens INTEGER,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS idx_project_llm_usage_project ON project_llm_usage(project_id);
+            `);
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');
