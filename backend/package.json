@@ -11,7 +11,8 @@
     "start:bun": "bun server.js",
     "dev:bun": "bun --watch server.js",
     "create-admin:bun": "bun scripts/create_admin.js",
-    "test": "node tests/test_runner.js"
+    "test": "node tests/test_runner.js",
+    "test:docker:artifact": "node tests/test_generated_docker_artifact.js"
   },
   "dependencies": {
     "@babel/parser": "^7.29.8",

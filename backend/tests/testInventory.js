@@ -20,6 +20,7 @@ test_domain_policy.js
 test_e2e_simulation.js
 test_execution_client_poll.js
 test_generation_isolation.js
+test_generated_docker_artifact.js
 test_graphify.js
 test_health_and_lifecycle.js
 test_http_integration.js
@@ -136,6 +137,7 @@ test_workflow_dev_fallback.js
 
 const support = new Set(['testInventory.js', 'testHarness.js', 'test_runner.js']);
 const docker = new Set(['test_p8_sandbox_limits.js']);
+const optInDocker = new Set(['test_generated_docker_artifact.js']);
 const browser = new Set(['test_p1_b_browser.js']);
 const integration = new Set([
     'test_http_integration.js', 'test_websocket_integration.js',
@@ -145,12 +147,14 @@ const integration = new Set([
 
 export const TEST_INVENTORY = Object.freeze(names.map(file => Object.freeze({
     file,
-    run: !support.has(file),
-    classification: support.has(file) ? 'support' : (docker.has(file) ? 'docker' : (browser.has(file) ? 'browser' : (integration.has(file) ? 'integration' : 'unit'))),
-    prerequisites: docker.has(file) ? ['docker-daemon'] : (browser.has(file) ? ['chromium'] : []),
+    run: !support.has(file) && !optInDocker.has(file),
+    classification: support.has(file) ? 'support' : (docker.has(file) || optInDocker.has(file) ? 'docker' : (browser.has(file) ? 'browser' : (integration.has(file) ? 'integration' : 'unit'))),
+    prerequisites: docker.has(file) || optInDocker.has(file) ? ['docker-daemon'] : (browser.has(file) ? ['chromium'] : []),
     reason: support.has(file)
         ? 'Runner support module; imported by suites, not a standalone suite.'
-        : docker.has(file)
+        : optInDocker.has(file)
+            ? 'Explicit Docker artifact acceptance suite; run with npm run test:docker:artifact.'
+            : docker.has(file)
             ? 'Requires a real Docker daemon; absence is an explicit failure.'
             : browser.has(file)
                 ? 'Requires the browser verifier and Chromium capability.'

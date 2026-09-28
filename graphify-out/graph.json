@@ -317,7 +317,7 @@
       "group": "engine",
       "file": "backend/engine/codeGenerator.js",
       "description": ".env, Next 14.2, Vite ve Express şablon koruması",
-      "val": 21.5,
+      "val": 22,
       "provenance": "curated"
     },
     {
@@ -1418,6 +1418,16 @@
       "file": "backend/tests/test_execution_client_poll.js",
       "description": "",
       "val": 3.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_generated_docker_artifact.js",
+      "label": "test_generated_docker_artifact.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_generated_docker_artifact.js",
+      "description": "",
+      "val": 7,
       "provenance": "ast"
     },
     {
@@ -4122,7 +4132,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 17.5,
+      "val": 18,
       "provenance": "ast"
     },
     {
@@ -4132,7 +4142,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 19.5,
+      "val": 20,
       "provenance": "ast"
     },
     {
@@ -4756,7 +4766,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 14.5,
+      "val": 15,
       "provenance": "ast"
     },
     {
@@ -4776,7 +4786,7 @@
       "group": "packages",
       "file": null,
       "description": "jszip",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast"
     },
     {
@@ -6060,7 +6070,7 @@
       "group": "engine",
       "file": "backend/engine/codeGenerator.js",
       "description": "",
-      "val": 7.5,
+      "val": 8,
       "provenance": "ast",
       "line": 467
     },
@@ -7411,7 +7421,7 @@
       "group": "packages",
       "file": null,
       "description": "node:os",
-      "val": 11.5,
+      "val": 12,
       "provenance": "ast"
     },
     {
@@ -9915,7 +9925,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@162",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@166",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -9923,10 +9933,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 162
+      "line": 166
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@166",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@170",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -9934,10 +9944,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 166
+      "line": 170
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@171",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@175",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -9945,7 +9955,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 171
+      "line": 175
     },
     {
       "id": "package:assert",
@@ -10261,7 +10271,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 16,
+      "val": 16.5,
       "provenance": "ast"
     },
     {
@@ -10627,6 +10637,38 @@
       "line": 35
     },
     {
+      "id": "package:node:child_process",
+      "label": "node:child_process",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "node:child_process",
+      "val": 8.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_generated_docker_artifact.js#Function:docker@10",
+      "label": "docker",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_generated_docker_artifact.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 10
+    },
+    {
+      "id": "backend/tests/test_generated_docker_artifact.js#Function:verifyZipDockerRun@21",
+      "label": "verifyZipDockerRun",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_generated_docker_artifact.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 21
+    },
+    {
       "id": "backend/tests/test_generation_isolation.js#Function:setup@21",
       "label": "setup",
       "type": "Function",
@@ -10667,16 +10709,6 @@
       "file": null,
       "description": "node:http",
       "val": 5,
-      "provenance": "ast"
-    },
-    {
-      "id": "package:node:child_process",
-      "label": "node:child_process",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "node:child_process",
-      "val": 8,
       "provenance": "ast"
     },
     {
@@ -32526,17 +32558,7 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@162",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/testInventory.js",
-        "line": 162
-      }
-    },
-    {
-      "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@166",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@166",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -32546,12 +32568,22 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@171",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@170",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 171
+        "line": 170
+      }
+    },
+    {
+      "source": "backend/tests/testInventory.js",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@175",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/testInventory.js",
+        "line": 175
       }
     },
     {
@@ -34152,6 +34184,106 @@
       "location": {
         "file": "backend/tests/test_execution_client_poll.js",
         "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:child_process",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:crypto",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:os",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "package:jszip",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 7
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "backend/engine/codeGenerator.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 8
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "backend/tests/test_generated_docker_artifact.js#Function:docker@10",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 10
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "backend/tests/test_generated_docker_artifact.js#Function:verifyZipDockerRun@21",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 21
       }
     },
     {
@@ -60256,7 +60388,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@162",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@166",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -61615,13 +61747,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@171",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@166",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@175",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@170",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 172
+        "line": 176
       }
     },
     {
@@ -62962,6 +63094,46 @@
       "location": {
         "file": "backend/tests/test_execution_client_poll.js",
         "line": 29
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js#Function:verifyZipDockerRun@21",
+      "target": "backend/engine/codeGenerator.js#Function:ensureProjectScaffold@467",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 31
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js#Function:verifyZipDockerRun@21",
+      "target": "backend/tests/test_generated_docker_artifact.js#Function:docker@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 62
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "backend/tests/test_generated_docker_artifact.js#Function:docker@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 86
+      }
+    },
+    {
+      "source": "backend/tests/test_generated_docker_artifact.js",
+      "target": "backend/tests/test_generated_docker_artifact.js#Function:verifyZipDockerRun@21",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_generated_docker_artifact.js",
+        "line": 87
       }
     },
     {
@@ -68576,7 +68748,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@171",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@175",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -69756,7 +69928,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@162",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@166",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -69766,7 +69938,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@171",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@175",
       "label": "calls",
       "provenance": "ast",
       "location": {

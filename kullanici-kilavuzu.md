@@ -378,6 +378,7 @@ npm --prefix execution test
 ```
 
 Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker daemon gerektirir. Docker kapalıysa bu test başarısızlığı kod başarısı olarak gizlemez; açıkça `BLOCKED` raporlanır.
+Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artifact` komutu temsilî Express ve Next projelerinin son ZIP'inden build ve ilk HTTP yanıtını doğrular. Bu test gerçek kullanıcı projesinin ZIP'ine otomatik uygulanmaz; onu ayrıca doğrulanmış kabul etmeyin.
 
 ## 9. Sıkça Sorulan Sorular (SSS) ve Sorun Giderme
 

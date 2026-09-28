@@ -1,18 +1,18 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-09-28T12:06:57.180Z
+Üretim tarihi: 2026-09-28T12:55:42.067Z
 
-- 313 kaynak ve belge dosyası
-- 2091 düğüm
-- 5476 ilişki
+- 314 kaynak ve belge dosyası
+- 2094 düğüm
+- 5490 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1051 |
+| Function | 1053 |
 | Method | 534 |
-| SourceFile | 196 |
+| SourceFile | 197 |
 | EnvVar | 60 |
 | Package | 48 |
 | HttpRoute | 38 |
@@ -29,10 +29,10 @@
 
 | Tür | Adet |
 |---|---:|
-| calls | 1739 |
-| contains | 1661 |
-| imports_package | 726 |
-| imports | 545 |
+| calls | 1743 |
+| contains | 1663 |
+| imports_package | 733 |
+| imports | 546 |
 | dynamic_imports | 257 |
 | runs | 128 |
 | reads_env | 110 |

@@ -147,6 +147,8 @@ model Product {
         const dockerfileContent = await fs.readFile(path.join(workspace, 'Dockerfile'), 'utf8');
         assert.ok(dockerfileContent.includes('FROM node:22-alpine'), 'Must use node 22 alpine base image');
         assert.ok(dockerfileContent.includes('EXPOSE'), 'Must expose service port');
+        assert.ok(dockerfileContent.includes('RUN npm ci && mkdir -p node_modules'),
+            'A dependency-free build must still provide the runner COPY source');
         const publicCopy = dockerfileContent.indexOf('COPY --from=builder /app/public ./public');
         if (publicCopy >= 0) {
             const publicPreparation = dockerfileContent.indexOf('RUN mkdir -p public');
