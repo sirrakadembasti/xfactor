@@ -508,14 +508,16 @@ export async function aggregateVerificationRun(projectId, contractId, runId, che
 
 export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = []) {
     const members = checks.filter(check => RUNTIME_GATE_MEMBERS[gateName].has(check.name));
+    const presentNames = new Set(members.map(check => check.name));
+    const missing = [...RUNTIME_GATE_MEMBERS[gateName]].filter(name => !presentNames.has(name));
     const requirementIds = new Set(members.flatMap(check => (
         Array.isArray(check.requirementIds) ? check.requirementIds.map(String) : []
     )));
     let status = 'PASS';
-    if (members.length === 0) {
-        status = 'BLOCKED';
-    } else if (members.some(check => normalizeGateStatus(check.status) === 'FAIL')) {
+    if (members.some(check => normalizeGateStatus(check.status) === 'FAIL')) {
         status = 'FAIL';
+    } else if (members.length === 0 || missing.length > 0) {
+        status = 'BLOCKED';
     } else if (members.some(check => {
         const normalized = normalizeGateStatus(check.status);
         return normalized === 'BLOCKED' || normalized === 'NOT_APPLICABLE';
@@ -533,8 +535,8 @@ export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = [
         applicability: 'MANDATORY',
         status,
         requirementIds: [...requirementIds],
-        reason: members.length === 0
-            ? `No machine evidence was produced for ${gateName}.`
+        reason: missing.length > 0
+            ? `Missing machine evidence for ${gateName}: ${missing.join(', ')}.`
             : `${members.length} machine check(s) aggregated for ${gateName}.`,
         evidence: {
             ...(status === 'PASS'

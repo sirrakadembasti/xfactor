@@ -7,6 +7,7 @@ MİSYON:
 1. Director'dan aldığın ALT-TALIMATNAME ve görevleri, Coder ajanlarının tek seferde tamamlayabileceği atomik alt görevlere böl.
 2. ATOMİK TEK DOSYA KURALI: Her görev tam olarak bir targetFiles öğesi içerir. Servis, API rotası, şema, bileşen ve sayfa sarmalayıcısını ayrı DAG görevleri yap.
 3. Her rol yolculuğundaki UI, API, şema/veri ve sonuç adımını requirementIds ile tek-dosya görevlere bağla; Zod update şeması ve paylaşılan component prop sözleşmesini açıklamada belirt.
+3a. MGMT-RESOURCE görevlerinde managementCoverage dizisine her kaynak işlemi için ayrı ui/api kaydı; MGMT-ROLE görevlerinde login/positive/negative yolculuk kaydı ekle. Bir tek-dosya görevine hem ui hem api kapsamı yazma.
 4. GÖREV SIRALAMASI VE BAĞIMLILIKLAR: Şema -> Tipler -> Veritabanı Yardımcısı -> Servis Fonksiyonları -> API Rotaları -> UI Alt Bileşenleri -> Sayfa Sarmalayıcıları sıralamasını takip et.
 5. Çıktını KESİNLİKLE aşağıdaki JSON şemasına uygun olarak üret. JSON dışında hiçbir açıklama metni üretme.
 JSON ÇIKTI ŞEMASI:
@@ -39,6 +40,9 @@ export function buildTeamleaderPrompt(teamleaderName, mission, altTalimatname, r
           requirements.map(r => typeof r === 'string' ? `- ${r}` : `- ${r.id}: ${r.statement || r.title || r.id}`).join('\n') +
           `\nKRİTİK KURAL (GEREKSİNİM KAPSAMI): Her görevin "requirementIds" alanına YALNIZCA yukarıdaki listede yer alan ID'leri (örn: "REQ-1", "REQ-2") ata. Listede bulunmayan yeni veya farklı bir REQ ID'si uydurma.\n`
         : '';
+    const managementRule = requirements.some(r => /^MGMT-(?:RESOURCE|ROLE)-\d+$/.test(typeof r === 'string' ? r : r?.id || ''))
+        ? `\nYÖNETİM KAPSAMI: Her MGMT-RESOURCE-N için her onaylı işlemde ayrı UI ve API görevi üret; görevde managementCoverage: [{"requirementId":"MGMT-RESOURCE-N","surface":"ui" veya "api","operation":"create|read|update|delete"}] kullan. Bir görev hem ui hem api yüzeyini karşılayamaz. Her MGMT-ROLE-N için login görevini ve ayrı hedef dosyadaki positive/negative rol yolculuğu görevlerini managementCoverage: [{"requirementId":"MGMT-ROLE-N","journey":"login|positive|negative"}] ile bağla. Her kaydın requirementId değeri görevin requirementIds dizisinde bulunmalı.\n`
+        : '';
     return `Teamleader Adı: ${teamleaderName}
 Misyon: ${mission}
 
@@ -46,7 +50,7 @@ Domain Alt-Talimatnamesi:
 """
 ${altTalimatname}
 """
-${reqList}
+${reqList}${managementRule}
 Lütfen bu görevi bağımlılıklarıyla birlikte atomik Coder görevlerine bölerek JSON formatında döndür.`;
 }
 

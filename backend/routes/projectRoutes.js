@@ -12,7 +12,8 @@ import { generateLLMResponse } from '../llm.js';
 import { recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
-import { extractAndParseJSON, normalizeManagerPlan } from '../agents/schemas.js';
+import { extractAndParseJSON, normalizeManagerPlan, validateManagerPlan } from '../agents/schemas.js';
+import { formatManagementProposal } from '../agents/manager.js';
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     canTransitionProjectStatus,
@@ -105,32 +106,6 @@ function findFailedReports(dir, projectDir) {
     return reports;
 }
 
-function normalizeManagerPlanFromText(title, responseText) {
-    const standardRequirements = [
-        { id: 'REQ-1', statement: 'Veritabanı modelleri, şema ve başlangıç verisi (Prisma SQLite)', mandatory: true, kind: 'functional', priority: 'high' },
-        { id: 'REQ-2', statement: 'REST API CRUD rotaları, veri doğrulama ve sunucu mantığı', mandatory: true, kind: 'functional', priority: 'high' },
-        { id: 'REQ-3', statement: 'Kullanıcı arayüzü bileşenleri, vitrin, listeleme ve sayfalar', mandatory: true, kind: 'functional', priority: 'high' },
-        { id: 'REQ-4', statement: 'Yönetim paneli, filtreleme, arama ve kullanıcı etkileşimi', mandatory: true, kind: 'functional', priority: 'high' }
-    ];
-    return normalizeManagerPlan({
-        summary: `Mimari Plan: ${title}`,
-        talimatname: `# ${title} (Mimari Şartname)\n\n${responseText.replace(/\[PLAN_HAZIR\]/g, '').trim()}`,
-        domains: [
-            {
-                name: 'backend',
-                prefix: 'backend',
-                description: 'Veritabanı şeması, Prisma SQLite ve REST API servisleri'
-            },
-            {
-                name: 'frontend',
-                prefix: 'frontend',
-                description: 'Kullanıcı arayüzü, sayfalar, bileşenler ve Tailwind stilleri'
-            }
-        ],
-        requirements: standardRequirements
-    });
-}
-
 export function buildManagerChatSystemPrompt(state, projectDir) {
     const status = state?.status || 'planning';
     const title = state?.title || 'Proje';
@@ -157,7 +132,7 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
 - Eğer Boss projede bir hata, yanlış şablon veya mimari revizyon bildirirse:
   1. Hatayı ve eksikleri dürüstçe kabul et.
   2. İstenen yeni/düzeltilmiş mimariyi ve şartnameyi (modeller, sayfalar, rotalar) net şekilde özetle.
-  3. Yanıtının sonuna mutlaka "[PLAN_HAZIR]" etiketini ekleyerek Boss'a "Revizyon planını hazırladım. Kodların DAG motoru tarafından sıfırdan üretilmesi için lütfen aşağıdaki 'Planı Onayla ve Başlat' butonuna tıklayınız." de.
+  3. Revizyon için yönetim ihtiyacı, roller ve kabul yolculuklarını yeniden değerlendir; JSON şemasına uygun yapılandırılmış plan üret. Sistem geçerli planı kullanıcıya gösterip onay akışını açacaktır.
 `;
     } else if (status === 'running') {
         extraContext = `
@@ -260,12 +235,12 @@ ${telemetrySection}
 ### 💬 MANAGER SOHBET VE İLETİŞİM PROTOKOLÜ:
 1. **İletişim Şekli:**
    - Boss ile samimi, zeki, vizyoner bir kıdemli yazılım mimarı olarak Türkçe doğal dilde ve Markdown formatında konuş.
-   - SOHBET PENCERESİNE KESİNLİKLE ÇIPLAK/HAM JSON KOD BLOKLARI (örn: \`\`\`json { ... } \`\`\`) BASMA. Mimariyi başlıklar, listeler ve maddeler halinde doğal Türkçe ile anlat.
+   - Günlük sohbette doğal Türkçe kullan. Onaya sunulacak plan hazır olduğunda yalnız geçerli yapılandırılmış JSON planı üret; sunucu bu planı kullanıcı için okunur bir özete dönüştürür.
 2. **Plan Hazırlandığında ve Onay Aşamasında:**
    - Boss bir proje kapsamı belirttiğinde veya "başla", "tamamdır", "onaylıyorum", "inşa et" vb. dediğinde:
-     a) Mimariyi (sayfalar, bileşenler, API rotaları, veritabanı modelleri, kullanılacak teknolojiler: Next.js/React, Tailwind, Prisma SQLite) net bir şekilde özetle.
-     b) Yanıtının EN SONUNA mutlaka "[PLAN_HAZIR]" etiketini ekle.
-     c) Boss'a: "Mimari planı ve şartnameyi hazırladım. Üretimi otonom olarak başlatmak için lütfen aşağıdaki **'Planı Onayla ve Başlat'** butonuna tıklayınız." de.
+     a) Kullanıcı yönetim ihtiyacını belirtmese bile operasyonel kayıt, rol ve yetki gereksinimini değerlendir; yapılandırılmış planda management.needed ve gerekçeyi mutlaka doldur.
+     b) Plan hazırsa JSON çıktı şemasına uygun yapılandırılmış plan döndür. Sistem bu planı kullanıcıya okunur özet olarak gösterecek; salt [PLAN_HAZIR] etiketi onay oluşturmaz.
+     c) Yönetim gerekiyorsa kaynak/işlem/rol matrisi, auth, her rolün izole demo hesabı ve izin verilen/reddedilen yolculuklarını öner. Gerekmediğinde gerekçeyi yaz.
 3. **Dürüstlük ve Gerçek Zaman Kuralı (ASLA YALAN SÖYLEME):**
    - Boss arayüzdeki yeşil "Planı Onayla ve Başlat" butonuna basmadan önce ASLA "Ekipler kodlamaya başladı", "Backend ve frontend çalışıyor", "İşler bittiğinde haber vereceğim" gibi GERÇEK DIŞI iddialarda BULUNMA.
    - Üretimin sadece Boss butona bastığında başlayacağını belirt ve Boss'u butona yönlendir.`;
@@ -276,7 +251,8 @@ export function createProjectRouter({
     projectAccess,
     wsHub,
     lifecycle = null,
-    verificationRunner = runProjectVerification
+    verificationRunner = runProjectVerification,
+    managerResponder = generateLLMResponse
 }) {
     const router = Router();
 
@@ -485,7 +461,7 @@ export function createProjectRouter({
         });
         messages.push({ role: 'user', content: message });
 
-        let responseText = await generateLLMResponse(messages, {
+        let responseText = await managerResponder(messages, {
             onUsage: usage => {
                 try { recordProjectTokenUsage(id, process.env.AI_PROVIDER || 'google', usage); }
                 catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
@@ -496,6 +472,7 @@ export function createProjectRouter({
             try {
                 const extracted = extractAndParseJSON(responseText);
                 if (extracted && typeof extracted === 'object' && (extracted.talimatname || extracted.domains || extracted.summary)) {
+                    validateManagerPlan(extracted, { requireManagement: true });
                     parsedPlan = normalizeManagerPlan(extracted);
                 }
             } catch {}
@@ -504,7 +481,10 @@ export function createProjectRouter({
             const trimmedResp = responseText.trim();
             if (parsedPlan && (trimmedResp.startsWith('{') || trimmedResp.startsWith('```json') || trimmedResp.startsWith('```\n{'))) {
                 const domainsText = (parsedPlan.domains || []).map(d => `- **${d.name}**: ${d.description || d.name}`).join('\n');
-                responseText = `📋 **Mimari Plan ve Şartname Hazırlandı!**\n\n**Özet:**\n${parsedPlan.summary}\n\n**Domainler:**\n${domainsText}\n\n---\nMimari plan hazırlandı. Otonom ajanların kod üretimine başlaması için lütfen aşağıdaki **"Planı Onayla ve Başlat"** butonuna tıklayınız.\n\n[PLAN_HAZIR]`;
+                responseText = `📋 **Mimari Plan ve Şartname Hazırlandı!**\n\n**Özet:**\n${parsedPlan.summary}\n\n**Domainler:**\n${domainsText}\n\n${formatManagementProposal(parsedPlan.management, parsedPlan.browser)}\n\n---\nMimari plan hazırlandı. Otonom ajanların kod üretimine başlaması için lütfen aşağıdaki **"Planı Onayla ve Başlat"** butonuna tıklayınız.\n\n[PLAN_HAZIR]`;
+            } else if (!parsedPlan && responseText.includes('[PLAN_HAZIR]')) {
+                responseText = responseText.replaceAll('[PLAN_HAZIR]', '').trim()
+                    + '\n\nPlanı onaya sunmadan önce yönetim ihtiyacı, roller ve kabul yolculukları yapılandırılmış sözleşmede tamamlanmalıdır.';
             }
 
             const modelNow = new Date();
@@ -532,26 +512,11 @@ export function createProjectRouter({
             const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
             const wasPaused = freshState.status === PROJECT_STATUS.PAUSED;
 
-            const isPlanReady = !!parsedPlan ||
-                                responseText.includes("[PLAN_HAZIR]") ||
-                                responseText.toLowerCase().includes("onaylıyor") ||
-                                responseText.toLowerCase().includes("planı onayla") ||
-                                responseText.toLowerCase().includes("üretime başla") ||
-                                responseText.toLowerCase().includes("revizyon planı") ||
-                                responseText.toLowerCase().includes("onayınız bekleniyor") ||
-                                responseText.toLowerCase().includes("onayınıza sunuldu") ||
-                                responseText.toLowerCase().includes("başlatabilirsiniz") ||
-                                responseText.toLowerCase().includes("başlatabilirsin") ||
-                                responseText.toLowerCase().includes("onaylayabilirsiniz") ||
-                                responseText.toLowerCase().includes("onaylayabilirsin") ||
-                                (isUserStarting && revisableStatuses.has(freshState.status));
+            const isPlanReady = Boolean(parsedPlan);
 
 
             if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested && !isUserStarting)) {
-                const draftPlan = parsedPlan || normalizeManagerPlanFromText(
-                    freshState.title,
-                    responseText
-                );
+                const draftPlan = parsedPlan;
                 const { createContractRevision } = await import('../contracts/projectContract.js');
                 createContractRevision(id, draftPlan, modelMsg.id);
 
@@ -568,7 +533,7 @@ export function createProjectRouter({
             }
 
 
-            if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested) {
+            if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested && !isUserStarting) {
                 freshState.remediation = {
                     ready: true,
                     instruction: message,

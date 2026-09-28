@@ -119,6 +119,21 @@ try {
         assert.ok(!commands.some(command => command.includes('seed-account-count')));
     });
 
+    await runAsyncTest('5. declared lint script must execute successfully', async () => {
+        const adapter = {
+            id: 'lint-failure', getCapabilities: () => ({ available: true, isolation: true }),
+            async execute(request) {
+                const lint = request.args?.join(' ') === 'run lint';
+                return { passed: !lint, exitCode: lint ? 1 : 0, stdout: '', stderr: lint ? 'lint error' : '' };
+            }
+        };
+        const result = await verifyBuild('/workspace', {}, {
+            adapter, files: [{ path: 'package.json', content: JSON.stringify({ scripts: { build: 'echo ok', lint: 'eslint .' } }) }]
+        });
+        assert.equal(result.passed, false);
+        assert.equal(result.checks.find(check => check.name === 'lint')?.status, 'failed');
+    });
+
     finish();
 } finally {
     for (const dir of tempDirs) {

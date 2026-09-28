@@ -60,6 +60,11 @@ export function normalizeWorkerCheckStatus(value, mandatory = false) {
     return 'BLOCKED';
 }
 
+export function hasMandatoryGateCoverage(checks = []) {
+    const present = new Set(checks.map(check => check?.gateName || check?.name).filter(Boolean));
+    return MANDATORY_GATES.every(name => present.has(name));
+}
+
 export function passingVerificationSourceNames(checks = []) {
     return checks
         .filter(check => check.status === 'passed' || check.status === 'PASS')
@@ -264,10 +269,8 @@ export async function verifyArtifact(
             SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1 ORDER BY stable_key
         `).all(contractId).map(row => row.id);
 
-        for (const [gateName, members] of Object.entries(RUNTIME_GATE_MEMBERS)) {
-            if (!existingGateNames.has(gateName)) {
-                additionalChecks.push(combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds));
-            }
+        for (const gateName of Object.keys(RUNTIME_GATE_MEMBERS)) {
+            additionalChecks.push(combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds));
         }
 
             let parsedContract = {};
@@ -346,7 +349,8 @@ export async function verifyArtifact(
             }
         }
 
-        const passed = allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, MANDATORY_GATES.includes(c.gateName || c.name))));
+        const passed = hasMandatoryGateCoverage(allChecks)
+            && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, MANDATORY_GATES.includes(c.gateName || c.name))));
         runLeaseTransaction(database, assertLease, () => {
             updateArtifactStatus({
                 projectId, contractId, artifactId,

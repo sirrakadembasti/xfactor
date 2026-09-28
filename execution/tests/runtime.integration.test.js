@@ -55,6 +55,75 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
     assert.match(result.result.evidence.command, /^npm install --package-lock-only --ignore-scripts/);
   });
 
+  await t.test('real worker seeds demo roles and verifies allowed and forbidden API writes', async () => {
+    const scripts = {
+      build: 'node -e "process.stdout.write(1)"',
+      start: 'node server.js',
+      test: 'node --test tests/server.test.js',
+      'xfactor:test:setup': 'node seed.js'
+    };
+    const pkg = { name: 'role-worker-fixture', version: '1.0.0', type: 'module', private: true, scripts };
+    const lock = { name: pkg.name, version: pkg.version, lockfileVersion: 3, requires: true,
+      packages: { '': { name: pkg.name, version: pkg.version, private: true } } };
+    const server = `import http from 'node:http';
+import fs from 'node:fs';
+const users = JSON.parse(fs.readFileSync('users.json', 'utf8'));
+const records = [];
+http.createServer(async (req, res) => {
+  const chunks = []; for await (const chunk of req) chunks.push(chunk);
+  const body = Buffer.concat(chunks).toString();
+  res.setHeader('content-type', 'application/json');
+  if (req.url === '/api/auth/login' && req.method === 'POST') {
+    const data = JSON.parse(body || '{}');
+    if (users[data.username] !== data.password) { res.writeHead(401).end('{}'); return; }
+    res.setHeader('set-cookie', 'session=' + data.username + '; HttpOnly');
+    res.writeHead(200).end('{}'); return;
+  }
+  if (req.url === '/api/assets') {
+    const user = req.headers.cookie?.match(/session=([^;]+)/)?.[1];
+    if (req.method === 'POST') {
+      if (user !== 'manager-fixture') { res.writeHead(user ? 403 : 401).end('{}'); return; }
+      const item = { id: String(records.length + 1), name: JSON.parse(body).name };
+      records.push(item); res.writeHead(201).end(JSON.stringify(item)); return;
+    }
+    if (req.method === 'GET' && user) { res.writeHead(200).end(JSON.stringify(records)); return; }
+  }
+  res.writeHead(200).end('{}');
+}).listen(3000, '127.0.0.1');`;
+    const seed = `import fs from 'node:fs';
+fs.writeFileSync('users.json', JSON.stringify({
+  'manager-fixture': process.env.XFACTOR_DEMO_PASSWORD_MANAGER,
+  'viewer-fixture': process.env.XFACTOR_DEMO_PASSWORD_VIEWER
+}));`;
+    const zip = await archive({
+      'package.json': JSON.stringify(pkg), 'package-lock.json': JSON.stringify(lock),
+      'service-manifest.json': JSON.stringify({ services: { web: { command: 'npm', args: ['run', 'start'], port: 3000, healthEndpoint: '/' } } }),
+      'server.js': server, 'seed.js': seed, 'README.md': '# Role fixture\nRun npm start.\n',
+      'tests/server.test.js': `import test from 'node:test'; import assert from 'node:assert/strict'; import fs from 'node:fs'; test('server source exists', () => assert.match(fs.readFileSync('server.js', 'utf8'), /createServer/));`
+    });
+    const result = await executeJob({
+      jobId: 'job-real-role-verification', operation: 'verify_artifact', runId: runId('roles'),
+      deadline: Date.now() + 180000, archiveBase64: zip.toString('base64'), inputSha256: digest(zip),
+      contract: {
+        api: { baseUrl: 'http://127.0.0.1:3000' },
+        browser: { url: 'http://127.0.0.1:3000/' },
+        management: {
+          needed: true,
+          authentication: { apiLogin: { path: '/api/auth/login' } },
+          resources: [{ name: 'assets', apiPath: '/api/assets', operations: ['create', 'read'] }],
+          roles: [
+            { name: 'manager', demoUser: { username: 'manager-fixture' }, permissions: [{ resource: 'assets', operations: ['create', 'read'] }] },
+            { name: 'viewer', demoUser: { username: 'viewer-fixture' }, permissions: [{ resource: 'assets', operations: ['read'] }] }
+          ]
+        }
+      }, requirementIds: []
+    }, { signal: new AbortController().signal });
+    const checks = result.result?.checks || [];
+    for (const name of ['management_demo_seed', 'api_role_create_allowed', 'api_role_create_denied', 'database_mutation_assertion']) {
+      assert.equal(checks.find(check => check.name === name)?.status, 'passed', `${name}: ${JSON.stringify(result).slice(0, 4000)}`);
+    }
+  });
+
   await t.test('rejects forbidden dependency sources before Docker startup', async () => {
     const resources = [];
     const fixture = await artifact('forbidden-fixture', {}, { dependencies: { escaped: 'https://evil.example/pkg.tgz' } });

@@ -2,6 +2,7 @@ import assert from 'assert';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { createTestHarness } from './testHarness.js';
 import { verifyDatabase, resolveDatabaseFilePath } from '../verification/databaseVerifier.js';
@@ -31,13 +32,26 @@ try {
             isAvailable() { return true; },
             async execute(request) {
                 probeArgs = request.args;
-                return { passed: true, exitCode: 0, stdout: '{"schemaExists":true,"databaseExists":true}', stderr: '' };
+                return { passed: true, exitCode: 0, stdout: '{"schemaExists":true,"databaseExists":true,"writeSucceeded":true}', stderr: '' };
             }
         };
         const result = await verifyDatabase(workspace, { database: { engine: 'sqlite' } }, { DATABASE_URL: 'file:./dev.db' }, { adapter, workspace: '/workspace' });
         assert.strictEqual(result.passed, true);
         assert.strictEqual(probeArgs[2], '/workspace/prisma/dev.db');
         assert.strictEqual(result.dbPath, '/workspace/prisma/dev.db');
+    });
+    await runAsyncTest('0b. an existing database without a successful write probe is blocked', async () => {
+        const adapter = {
+            id: 'read-only-worker',
+            isAvailable() { return true; },
+            async execute() {
+                return { passed: true, exitCode: 0, stdout: JSON.stringify({ schemaExists: true, databaseExists: true, writeSucceeded: false }), stderr: '' };
+            }
+        };
+        const result = await verifyDatabase('/workspace', { database: { engine: 'sqlite' } },
+            { DATABASE_URL: 'file:./dev.db' }, { adapter, workspace: '/workspace' });
+        assert.equal(result.passed, false);
+        assert.equal(result.checks.find(check => check.name === 'database_write_capability')?.status, 'blocked');
     });
     await runAsyncTest('1. verifyDatabase should fail-closed when database schema or file is missing', async () => {
         const workspace = await createTempWorkspace();
@@ -48,7 +62,9 @@ try {
 
     await runAsyncTest('2. verifyDatabase should verify valid SQLite database and assert write/read capability', async () => {
         const workspace = await createTempWorkspace();
-        const dbPath = path.join(workspace, 'dev.db');
+        const prismaDir = path.join(workspace, 'prisma');
+        await fs.mkdir(prismaDir, { recursive: true });
+        const dbPath = path.join(prismaDir, 'dev.db');
 
         // Create mock database with tables
         const testDb = new DatabaseSync(dbPath);
@@ -68,8 +84,6 @@ try {
         testDb.close();
 
         // Create prisma schema
-        const prismaDir = path.join(workspace, 'prisma');
-        await fs.mkdir(prismaDir, { recursive: true });
         await fs.writeFile(path.join(prismaDir, 'schema.prisma'), `
             datasource db {
                 provider = "sqlite"
@@ -85,8 +99,10 @@ try {
         const mockSandboxAdapter = {
             id: 'mock-sandbox',
             isAvailable() { return true; },
-            async execute() {
-                return { status: 'PASS', passed: true, exitCode: 0, stdout: 'Prisma migration pass', stderr: '' };
+            async execute(request) {
+                const result = spawnSync(process.execPath, request.args, { cwd: request.workspace, encoding: 'utf8' });
+                if (result.error) throw result.error;
+                return { passed: result.status === 0, exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
             }
         };
 
@@ -95,10 +111,11 @@ try {
         }, {
             DATABASE_URL: 'file:./dev.db'
         }, {
-            adapter: mockSandboxAdapter
+            adapter: mockSandboxAdapter,
+            workspace
         });
 
-        assert.strictEqual(res.passed, true);
+        assert.strictEqual(res.passed, true, JSON.stringify(res));
         assert.ok(res.checks.some(c => c.name === 'database_connectivity' && c.status === 'passed'));
         assert.ok(res.checks.some(c => c.name === 'database_write_capability' && c.status === 'passed'));
     });

@@ -27,6 +27,7 @@ const { runAsyncTest, finish } = createTestHarness();
 
 const validPlan = {
     summary: 'Action audit workflow plan',
+    management: { needed: false, reason: 'This route audit fixture has no managed resources.' },
     frontend: { framework: 'react' },
     backend: { framework: 'express' },
     database: { engine: 'sqlite' }
@@ -566,6 +567,8 @@ await runAsyncTest('repeated approve and resume action requests are idempotent a
     const paused = await readProjectState(resumeProject.id);
     db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
     paused.status = 'paused';
+    paused.plan = { ...validPlan, domains: [{ name: 'backend', prefix: 'backend' }] };
+    await writeProjectState(paused);
     const resumeAction = { projectId: resumeProject.id, kind: 'resume', actionId: 'resume-repeat-first' };
     const firstResume = await postAction(resumeAction);
     const secondResume = await postAction({

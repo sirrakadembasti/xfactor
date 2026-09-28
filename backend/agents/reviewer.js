@@ -21,8 +21,9 @@ JSON ÇIKTI ŞEMASI:
 `;
 
 export const REVIEWER_SYSTEM_PROMPT = loadAgentPromptFromDocs('reviewer', FALLBACK_REVIEWER_PROMPT);
-export function buildReviewerPrompt(taskTitle, targetFiles, producedFiles) {
+export function buildReviewerPrompt(taskTitle, targetFiles, producedFiles, taskDescription = '') {
     return `Görev Başlığı: ${taskTitle}
+Görev Gereksinimleri: ${taskDescription}
 Hedef Dosyalar: ${JSON.stringify(targetFiles)}
 
 Üretilen Dosyalar ve Kod İçerikleri:

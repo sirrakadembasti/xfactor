@@ -97,7 +97,8 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
     const isAuthRequired = Boolean(
         contract.authentication?.required ||
         contract.auth?.required ||
-        contract.requiresAuth
+        contract.requiresAuth ||
+        contract.management?.needed === true
     );
     const isAuthExplicitlyDisabled = (
         contract.authentication?.required === false ||

@@ -55,16 +55,31 @@ model Product {
         assert.ok(schemaContent.includes('role'), 'User model should have role');
     });
 
-    await runAsyncTest('3. ensureProjectScaffold creates prisma/seed.ts with admin seed', async () => {
+    await runAsyncTest('3. ensureProjectScaffold creates isolated demo seeds for every declared role', async () => {
         const workspace = await createTempWorkspace();
-        await ensureProjectScaffold(workspace, { title: 'Admin App', hasAuth: true }, {});
+        await ensureProjectScaffold(workspace, { title: 'Asset App' }, { management: {
+            needed: true,
+            roles: [
+                { name: 'manager', demoUser: { username: 'manager-fixture', setup: 'isolated-test-seed' } },
+                { name: 'viewer', demoUser: { username: 'viewer-fixture', setup: 'isolated-test-seed' } }
+            ]
+        } });
 
         const seedPath = path.join(workspace, 'prisma', 'seed.ts');
         const seedContent = await fs.readFile(seedPath, 'utf8');
 
-        assert.ok(seedContent.includes("username: 'admin'"), "seed.ts should seed username: 'admin'");
-        assert.ok(seedContent.includes("role: 'admin'"), "seed.ts should assign role: 'admin'");
-        assert.ok(seedContent.includes("admin123") || seedContent.includes("hashPassword"), "seed.ts should handle admin password");
+        assert.ok(seedContent.includes('manager-fixture'));
+        assert.ok(seedContent.includes('viewer-fixture'));
+        assert.ok(seedContent.includes('XFACTOR_DEMO_PASSWORD_MANAGER'));
+        assert.ok(seedContent.includes('XFACTOR_DEMO_PASSWORD_VIEWER'));
+        assert.ok(!seedContent.includes('admin123'));
+        assert.ok(seedContent.includes("NODE_ENV === 'production'"));
+        const envExample = await fs.readFile(path.join(workspace, '.env.example'), 'utf8');
+        assert.ok(envExample.includes('XFACTOR_DEMO_PASSWORD_MANAGER='));
+        assert.ok(envExample.includes('XFACTOR_DEMO_PASSWORD_VIEWER='));
+        const pkg = JSON.parse(await fs.readFile(path.join(workspace, 'package.json'), 'utf8'));
+        assert.match(pkg.scripts['xfactor:test:setup'] || '', /prisma db push/);
+        assert.match(pkg.scripts['xfactor:test:setup'] || '', /prisma db seed/);
     });
 
     await runAsyncTest('4. ensureProjectScaffold creates src/lib/auth.ts with required auth helpers', async () => {
@@ -100,7 +115,7 @@ model Product {
 
         assert.strictEqual(authModule.verifyPassword('admin123', hash), true, 'verifyPassword should return true for correct password');
         assert.strictEqual(authModule.verifyPassword('wrongpass', hash), false, 'verifyPassword should return false for incorrect password');
-        assert.strictEqual(authModule.verifyPassword('admin123', 'admin123'), true, 'verifyPassword should handle plaintext fallback');
+        assert.strictEqual(authModule.verifyPassword('admin123', 'admin123'), false, 'plaintext passwords must be rejected');
 
         // Test requireAuth
         const validUser = { id: '1', username: 'user1', role: 'user' };
@@ -111,6 +126,15 @@ model Product {
         // Test requireAdmin
         assert.deepStrictEqual(authModule.requireAdmin({ user: adminUser }), adminUser);
         assert.throws(() => authModule.requireAdmin({ user: validUser }), /Forbidden/);
+        const matrix = {
+            manager: [{ resource: 'assets', operations: ['create', 'read'] }],
+            viewer: [{ resource: 'assets', operations: ['read'] }]
+        };
+        assert.equal(authModule.hasPermission({ role: 'manager' }, 'assets', 'create', matrix), true);
+        assert.equal(authModule.hasPermission({ role: 'viewer' }, 'assets', 'create', matrix), false);
+        assert.equal(authModule.hasPermission({ role: 'viewer' }, 'assets', 'read', matrix), true);
+        assert.throws(() => authModule.requirePermission({ user: { role: 'viewer' } }, 'assets', 'create', matrix), /Forbidden/);
+        assert.deepStrictEqual(authModule.requirePermission({ user: { role: 'manager' } }, 'assets', 'create', matrix), { role: 'manager' });
     });
 
     await runAsyncTest('6. ensureProjectScaffold creates Dockerfile and .dockerignore for generated projects', async () => {
@@ -129,6 +153,36 @@ model Product {
             assert.ok(publicPreparation >= 0 && publicPreparation < publicCopy,
                 'Optional public directory must exist in the builder before runner COPY');
         }
+    });
+    await runAsyncTest('7. Next scaffold does not produce passing placeholder test or unsupported next lint', async () => {
+        const workspace = await createTempWorkspace();
+        await ensureProjectScaffold(workspace, { title: 'Next app' }, { talimatname: 'Next.js app router' });
+        const pkg = JSON.parse(await fs.readFile(path.join(workspace, 'package.json'), 'utf8'));
+        assert.ok(!pkg.scripts.test.includes('No tests specified'));
+        assert.ok(!pkg.scripts.lint.includes('next lint'));
+        assert.ok(pkg.devDependencies.eslint);
+        assert.ok(pkg.devDependencies['eslint-config-next']);
+        assert.ok((await fs.readFile(path.join(workspace, 'eslint.config.mjs'), 'utf8')).includes('eslint-config-next/core-web-vitals'));
+    });
+    await runAsyncTest('8. Express Prisma image retains its generator toolchain', async () => {
+        const workspace = await createTempWorkspace();
+        await ensureProjectScaffold(workspace, { title: 'Express Inventory' }, {
+            talimatname: 'Express server with Prisma SQLite', management: { needed: true, roles: [] }
+        });
+        const dockerfile = await fs.readFile(path.join(workspace, 'Dockerfile'), 'utf8');
+        assert.ok(!dockerfile.includes('npm ci --omit=dev\nCOPY . .\nRUN npx prisma generate'));
+        assert.ok(dockerfile.includes('RUN npx prisma generate'));
+        assert.ok(dockerfile.includes('DATABASE_URL=file:/data/app.db'));
+        assert.ok(dockerfile.includes('VOLUME ["/data"]'));
+        assert.ok(dockerfile.includes('npx prisma db push && npm start'));
+    });
+    await runAsyncTest('9. explicit non-management assessment does not trigger auth from negated keywords', async () => {
+        const workspace = await createTempWorkspace();
+        await ensureProjectScaffold(workspace, { title: 'Public Gallery' }, {
+            management: { needed: false, reason: 'No user accounts or operational records.' },
+            talimatname: 'A public gallery with no users, login or admin panel.'
+        });
+        assert.equal(await fs.stat(path.join(workspace, 'src', 'lib', 'auth.ts')).then(() => true).catch(() => false), false);
     });
 } finally {
     for (const dir of tempDirs) {

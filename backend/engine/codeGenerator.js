@@ -360,9 +360,13 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = [], allo
 }
 
 export function isAuthRequested(state = {}, plan = {}) {
-    if (state?.contract?.authentication?.required || state?.contract?.authentication || state?.auth || state?.hasAuth || plan?.hasAuth) {
+    if (plan?.management?.needed === true || state?.contract?.management?.needed === true) return true;
+    if (state?.contract?.authentication?.required === true || state?.contract?.auth?.required === true
+        || state?.auth === true || state?.hasAuth === true || plan?.hasAuth === true) {
         return true;
     }
+    if (plan?.management?.needed === false || state?.contract?.management?.needed === false
+        || state?.contract?.authentication?.required === false) return false;
     const authRegex = /auth|login|giris|kullanici|user/i;
     if (typeof state?.title === 'string' && authRegex.test(state.title)) return true;
     if (typeof state?.plan === 'string' && authRegex.test(state.plan)) return true;
@@ -505,12 +509,14 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     let scripts = {};
     if (isNext) {
         baseDependencies['next'] = LATEST_STABLE_VERSION;
+        baseDevDependencies['eslint'] = LATEST_STABLE_VERSION;
+        baseDevDependencies['eslint-config-next'] = LATEST_STABLE_VERSION;
         scripts = {
             dev: 'next dev',
             build: 'next build',
             start: 'next start',
-            lint: 'next lint',
-            test: 'echo \"No tests specified\" && exit 0',
+            lint: 'eslint .',
+            test: 'node --test tests/*.test.js',
             ...(hasPrisma ? {
                 'prisma:generate': 'prisma generate',
                 'prisma:push': 'prisma db push',
@@ -576,7 +582,10 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         scripts: {
             ...scripts,
             ...(currentPkg.scripts || {}),
-            ...(hasPrisma ? { 'prisma:seed': 'prisma db seed' } : {})
+            ...(hasPrisma ? { 'prisma:seed': 'prisma db seed' } : {}),
+            ...(plan?.management?.needed === true && hasPrisma ? {
+                'xfactor:test:setup': currentPkg.scripts?.['xfactor:test:setup'] || 'prisma db push && prisma db seed'
+            } : {})
         },
         ...(hasPrisma ? {
             prisma: {
@@ -605,6 +614,14 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     };
 
     await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
+    if (isNext) {
+        const lintConfigs = ['eslint.config.mjs', 'eslint.config.js', 'eslint.config.cjs', '.eslintrc.json', '.eslintrc.js'];
+        const hasLintConfig = (await Promise.all(lintConfigs.map(name => fs.stat(path.join(projectDir, name)).then(() => true).catch(() => false)))).some(Boolean);
+        if (!hasLintConfig) {
+            await fs.writeFile(path.join(projectDir, 'eslint.config.mjs'),
+                "import { defineConfig } from 'eslint/config';\nimport nextVitals from 'eslint-config-next/core-web-vitals';\n\nexport default defineConfig([...nextVitals]);\n", 'utf8');
+        }
+    }
 
     const serviceManifestPath = path.join(projectDir, 'service-manifest.json');
     try {
@@ -795,6 +812,15 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {
         await fs.writeFile(envExamplePath, envExampleContent, 'utf8');
     }
+    if (plan?.management?.needed === true) {
+        let example = await fs.readFile(envExamplePath, 'utf8');
+        for (const role of plan.management.roles || []) {
+            const variable = `XFACTOR_DEMO_PASSWORD_${String(role.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+            if (variable.endsWith('_') || new RegExp(`^${variable}=`, 'm').test(example)) continue;
+            example += `${example.endsWith('\n') ? '' : '\n'}${variable}=\n`;
+        }
+        await fs.writeFile(envExamplePath, example, 'utf8');
+    }
     // 8. Dockerfile ve .dockerignore (Tak-Çalıştır Konteyner Desteği)
     const dockerfilePath = path.join(projectDir, 'Dockerfile');
     const dockerignorePath = path.join(projectDir, '.dockerignore');
@@ -817,23 +843,43 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 'FROM node:22-alpine AS runner',
                 'WORKDIR /app',
                 'ENV NODE_ENV=production PORT=3000',
+                hasPrisma ? 'ENV DATABASE_URL=file:/data/app.db' : '',
                 'COPY --from=builder /app/package*.json ./',
                 'COPY --from=builder /app/node_modules ./node_modules',
                 'COPY --from=builder /app/.next ./.next',
                 'COPY --from=builder /app/public ./public',
                 hasPrisma ? 'COPY --from=builder /app/prisma ./prisma' : '',
+                hasPrisma ? 'RUN mkdir -p /data' : '',
+                hasPrisma ? 'VOLUME ["/data"]' : '',
                 'EXPOSE 3000',
-                'CMD ["npm", "start"]',
+                hasPrisma ? 'CMD ["sh", "-c", "npx prisma db push && npm start"]' : 'CMD ["npm", "start"]',
                 ''
             ];
         } else if (isExpressOnly) {
-            dockerfileLines = [
+            dockerfileLines = hasPrisma ? [
+                'FROM node:22-alpine AS builder',
+                'WORKDIR /app',
+                'COPY package*.json ./',
+                'RUN npm ci',
+                'COPY . .',
+                'RUN npx prisma generate',
+                '',
+                'FROM node:22-alpine AS runner',
+                'WORKDIR /app',
+                'ENV NODE_ENV=production',
+                'ENV DATABASE_URL=file:/data/app.db',
+                'COPY --from=builder /app ./',
+                'RUN mkdir -p /data',
+                'VOLUME ["/data"]',
+                'EXPOSE 3000',
+                'CMD ["sh", "-c", "npx prisma db push && npm start"]',
+                ''
+            ] : [
                 'FROM node:22-alpine',
                 'WORKDIR /app',
                 'COPY package*.json ./',
                 'RUN npm ci --omit=dev',
                 'COPY . .',
-                hasPrisma ? 'RUN npx prisma generate' : '',
                 'EXPOSE 3000',
                 'CMD ["npm", "start"]',
                 ''
@@ -932,7 +978,43 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
 
         if (!seedTsStat && !seedJsStat) {
             await fs.mkdir(path.join(projectDir, 'prisma'), { recursive: true });
-            const seedContent = `import { PrismaClient } from '@prisma/client';\nimport crypto from 'crypto';\n\nconst prisma = new PrismaClient();\n\nfunction hashPassword(password: string): string {\n  const salt = crypto.randomBytes(16).toString('hex');\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  return \`\${salt}:\${hash}\`;\n}\n\nasync function main() {\n  const adminPassword = hashPassword('admin123');\n  await prisma.user.upsert({\n    where: { username: 'admin' },\n    update: {},\n    create: {\n      username: 'admin',\n      password: adminPassword,\n      role: 'admin'\n    }\n  });\n  console.log('Seed successful: admin user ensured.');\n}\n\nmain()\n  .catch((e) => {\n    console.error(e);\n    process.exit(1);\n  })\n  .finally(async () => {\n    await prisma.$disconnect();\n  });\n`;
+            const demoSpecs = (Array.isArray(plan?.management?.roles) ? plan.management.roles : [])
+                .filter((role) => role?.name && role?.demoUser?.username)
+                .map((role) => ({
+                    role: role.name,
+                    username: role.demoUser.username,
+                    passwordEnv: `XFACTOR_DEMO_PASSWORD_${role.name.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`
+                }));
+            const seedContent = `import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
+
+const prisma = new PrismaClient();
+const demoSpecs: Array<{ role: string; username: string; passwordEnv: string }> = ${JSON.stringify(demoSpecs, null, 2)};
+
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return \`\${salt}:\${hash}\`;
+}
+
+async function main() {
+  if (process.env.NODE_ENV === 'production') return;
+  for (const demo of demoSpecs) {
+    const password = process.env[demo.passwordEnv];
+    if (!password) throw new Error(\`Missing demo password: \${demo.passwordEnv}\`);
+    await prisma.user.upsert({
+      where: { username: demo.username },
+      update: { password: hashPassword(password), role: demo.role },
+      create: { username: demo.username, password: hashPassword(password), role: demo.role }
+    });
+  }
+  console.log(\`Seeded \${demoSpecs.length} isolated demo users.\`);
+}
+
+main()
+  .catch((error) => { console.error(error); process.exitCode = 1; })
+  .finally(async () => { await prisma.$disconnect(); });
+`;
             await fs.writeFile(seedTsPath, seedContent, 'utf8');
         }
 
@@ -944,8 +1026,9 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
 
         if (!authTsStat && !authJsStat) {
             await fs.mkdir(path.join(projectDir, 'src', 'lib'), { recursive: true });
-            const authContent = `import crypto from 'crypto';\n\nexport function hashPassword(password: string): string {\n  const salt = crypto.randomBytes(16).toString('hex');\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  return \`\${salt}:\${hash}\`;\n}\n\nexport function verifyPassword(password: string, combined: string): boolean {\n  if (!combined) return false;\n  if (!combined.includes(':')) {\n    return password === combined;\n  }\n  const [salt, originalHash] = combined.split(':');\n  if (!salt || !originalHash) return false;\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  try {\n    const a = Buffer.from(hash, 'hex');\n    const b = Buffer.from(originalHash, 'hex');\n    if (a.length !== b.length) return false;\n    return crypto.timingSafeEqual(a, b);\n  } catch {\n    return false;\n  }\n}\n\nexport function requireAuth(req: any, res: any, next?: any) {\n  const user = req?.user || req?.session?.user;\n  if (!user) {\n    if (res && typeof res.status === 'function') {\n      return res.status(401).json({ error: 'Unauthorized' });\n    }\n    throw new Error('Unauthorized');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n\nexport function requireAdmin(req: any, res: any, next?: any) {\n  const user = requireAuth(req, res);\n  if (!user || user.role !== 'admin') {\n    if (res && typeof res.status === 'function') {\n      return res.status(403).json({ error: 'Forbidden: Admin access required' });\n    }\n    throw new Error('Forbidden: Admin access required');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n`;
-            await fs.writeFile(authTsPath, authContent, 'utf8');
+            const authContent = `import crypto from 'crypto';\n\nexport function hashPassword(password: string): string {\n  const salt = crypto.randomBytes(16).toString('hex');\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  return \`\${salt}:\${hash}\`;\n}\n\nexport function verifyPassword(password: string, combined: string): boolean {\n  if (!combined || !combined.includes(':')) return false;\n  const [salt, originalHash] = combined.split(':');\n  if (!salt || !originalHash) return false;\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  try {\n    const a = Buffer.from(hash, 'hex');\n    const b = Buffer.from(originalHash, 'hex');\n    if (a.length !== b.length) return false;\n    return crypto.timingSafeEqual(a, b);\n  } catch {\n    return false;\n  }\n}\n\nexport function requireAuth(req: any, res: any, next?: any) {\n  const user = req?.user || req?.session?.user;\n  if (!user) {\n    if (res && typeof res.status === 'function') {\n      return res.status(401).json({ error: 'Unauthorized' });\n    }\n    throw new Error('Unauthorized');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n\nexport function requireAdmin(req: any, res: any, next?: any) {\n  const user = requireAuth(req, res);\n  if (!user || user.role !== 'admin') {\n    if (res && typeof res.status === 'function') {\n      return res.status(403).json({ error: 'Forbidden: Admin access required' });\n    }\n    throw new Error('Forbidden: Admin access required');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n`;
+            const permissionHelpers = `\nexport function hasPermission(user: any, resource: string, operation: string, matrix: any) {\n  const grants = matrix?.[user?.role];\n  return Array.isArray(grants) && grants.some((grant: any) => grant.resource === resource && Array.isArray(grant.operations) && grant.operations.includes(operation));\n}\n\nexport function requirePermission(req: any, resource: string, operation: string, matrix: any, res?: any, next?: any) {\n  const user = req?.user || req?.session?.user;\n  if (!user) return requireAuth(req, res);\n  if (!hasPermission(user, resource, operation, matrix)) {\n    if (res && typeof res.status === 'function') return res.status(403).json({ error: 'Forbidden' });\n    throw new Error('Forbidden');\n  }\n  if (typeof next === 'function') return next();\n  return user;\n}\n`;
+            await fs.writeFile(authTsPath, authContent + permissionHelpers, 'utf8');
         }
     }
 

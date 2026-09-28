@@ -22,7 +22,7 @@ try {
     const { readProjectState, writeProjectState } = await import('../engine/index.js');
     const { buildManagerChatSystemPrompt, createProjectRouter } = await import('../routes/projectRoutes.js');
 
-    function buildTestApp() {
+    function buildTestApp(managerResponder) {
         const requireAuth = (req, _res, next) => {
             req.user = { id: 'test-user-manager' };
             next();
@@ -33,7 +33,8 @@ try {
         app.use('/api/projects', createProjectRouter({
             requireAuth,
             projectAccess: () => passThrough,
-            wsHub: { broadcast() {}, publish() {} }
+            wsHub: { broadcast() {}, publish() {} },
+            managerResponder
         }));
         app.use((err, _req, res, _next) => {
             res.status(err.status || 500).json({ error: err.message });
@@ -69,6 +70,72 @@ try {
 
         assert.ok(prompt.includes(fallbackError), `Prompt should contain state.last_error '${fallbackError}'`);
         assert.ok(prompt.includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
+    });
+
+    await runAsyncTest('2a. Manager chat asks for proactive structured management assessment', async () => {
+        const project = await createProject({ title: 'Asset workspace' });
+        const prompt = buildManagerChatSystemPrompt(await readProjectState(project.id), process.env.PROJECTS_ROOT);
+        assert.match(prompt, /management\.needed/);
+        assert.match(prompt, /kullanıcı[^\n]*belirtmese/i);
+    });
+
+    await runAsyncTest('2b. unstructured plan marker cannot create an approvable contract', async () => {
+        const project = await createProject({ title: 'Asset workspace' });
+        const server = http.createServer(buildTestApp());
+        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+        try {
+            const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/${project.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'başla' })
+            });
+            assert.equal(response.status, 200);
+            const body = await response.json();
+            assert.notEqual(body.status, 'pending_approval');
+            assert.equal(db.prepare('SELECT count(*) AS count FROM project_contracts WHERE project_id = ?').get(project.id).count, 0);
+        } finally {
+            await new Promise(resolve => server.close(resolve));
+        }
+    });
+
+    await runAsyncTest('2c. structured management proposal is shown before approval', async () => {
+        const project = await createProject({ title: 'Asset workspace' });
+        const plan = {
+            summary: 'Asset workspace with operational administration',
+            talimatname: '# Asset workspace',
+            domains: [{ name: 'app', prefix: 'app', description: 'App' }],
+            requirements: [{ id: 'REQ-1', statement: 'Manage assets', mandatory: true }],
+            browser: { roleJourneys: [
+                { role: 'manager', kind: 'positive', steps: [{ action: 'submit', selector: '#create-asset' }], expectedOutcome: { kind: 'success', text: 'Asset created' } },
+                { role: 'manager', kind: 'negative', steps: [{ action: 'click', selector: '#forbidden-action' }], expectedOutcome: { kind: 'denied', text: 'Access denied' } }
+            ] },
+            management: {
+                needed: true,
+                reason: 'Staff creates and updates asset records.',
+                authentication: { login: '/login', apiLogin: { path: '/api/auth/login' }, accountProvisioning: 'Invite', publicRegistration: false },
+                resources: [{ name: 'Asset', operations: ['create', 'read', 'update', 'delete'], readAccess: 'authenticated',
+                    deletionPolicy: { relatedData: 'none', reason: 'No linked records in this example.' },
+                    uiPath: '/admin/assets', apiPath: '/api/assets', verification: { itemPath: '/api/assets/{id}', updateMethod: 'PATCH', deleteExpectation: { kind: 'absent' } } }],
+                roles: [{ name: 'manager', permissions: [{ resource: 'Asset', operations: ['create', 'read', 'update', 'delete'] }], demoUser: { username: 'manager-test', setup: 'isolated-test-seed' }, journeys: { positive: ['Create and see an asset'], negative: ['Anonymous create is denied'] } }]
+            }
+        };
+        const server = http.createServer(buildTestApp(async () => JSON.stringify(plan)));
+        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+        try {
+            const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/${project.id}/chat`, {
+                method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: 'I need an asset catalog' })
+            });
+            assert.equal(response.status, 200);
+            const body = await response.json();
+            assert.equal(body.status, 'pending_approval');
+            assert.equal(body.plan.management.resources[0].name, 'Asset');
+            const modelText = body.chatHistory.at(-1).parts[0].text;
+            assert.match(modelText, /Asset/);
+            assert.match(modelText, /manager-test/);
+            assert.equal(db.prepare('SELECT count(*) AS count FROM project_contracts WHERE project_id = ?').get(project.id).count, 1);
+        } finally {
+            await new Promise(resolve => server.close(resolve));
+        }
     });
 
     await runAsyncTest('3. POST /api/projects/:id/chat updates state.remediation when project is paused and user provides remediation instruction', async () => {
@@ -115,7 +182,7 @@ try {
         assert.ok(prompt.includes('Süreç hatası: LLM Kota Sınırı Aşıldı'), 'Prompt should preserve technical error message');
     });
 
-    await runAsyncTest('5. Revisable post-production states transition to pending_approval when a new plan is ready', async () => {
+    await runAsyncTest('5. Revisable states wait for a structured plan before pending approval', async () => {
         // Paused state transition test
         const pausedProject = await createProject({ title: "Paused Transition Test" });
         db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(pausedProject.id);
@@ -136,9 +203,8 @@ try {
             });
             assert.strictEqual(resPaused.status, 200, `Chat endpoint should return 200 for paused project, got ${resPaused.status}`);
             const bodyPaused = await resPaused.json();
-            assert.strictEqual(bodyPaused.status, 'pending_approval', 'Paused project should transition to pending_approval on plan ready');
-            assert.strictEqual(bodyPaused.remediation, null, 'Remediation should be reset to null');
-            assert.strictEqual(bodyPaused.last_error, null, 'Last error should be reset to null');
+            assert.strictEqual(bodyPaused.status, 'paused', 'A start request alone cannot approve an incomplete plan');
+            assert.equal(db.prepare('SELECT count(*) AS count FROM project_contracts WHERE project_id = ?').get(pausedProject.id).count, 0);
 
             // Verification_failed state transition test
             const failedProject = await createProject({ title: "Verification Failed Transition Test" });
@@ -154,9 +220,7 @@ try {
             });
             assert.strictEqual(resFailed.status, 200, `Chat endpoint should return 200 for failed project, got ${resFailed.status}`);
             const bodyFailed = await resFailed.json();
-            assert.strictEqual(bodyFailed.status, 'pending_approval', 'Verification_failed project should transition to pending_approval on plan ready');
-            assert.strictEqual(bodyFailed.remediation, null, 'Remediation should be reset to null');
-            assert.strictEqual(bodyFailed.last_error, null, 'Last error should be reset to null');
+            assert.strictEqual(bodyFailed.status, 'verification_failed', 'No revision is published without a structured plan');
 
             // An implementation whose canonical verification failed must remain revisable.
             const finishedProject = await createProject({ title: "Implementation Finished Revision Test" });
@@ -169,13 +233,13 @@ try {
             });
             assert.strictEqual(resFinished.status, 200, `Chat endpoint should return 200 for implementation_finished project, got ${resFinished.status}`);
             const bodyFinished = await resFinished.json();
-            assert.strictEqual(bodyFinished.status, 'pending_approval', 'Implementation_finished project should transition to pending_approval on plan ready');
+            assert.strictEqual(bodyFinished.status, 'implementation_finished', 'No revision is published without a structured plan');
         } finally {
             await new Promise(r => server.close(r));
         }
     });
 
-    await runAsyncTest('6. explicit start intent takes precedence over overlapping remediation keywords', async () => {
+    await runAsyncTest('6. explicit start intent does not fabricate a remediation or approval', async () => {
         const project = await createProject({ title: "Explicit Start Remediation Overlap Test" });
         db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(project.id);
 
@@ -192,32 +256,11 @@ try {
             assert.strictEqual(response.status, 200, `Chat endpoint should return 200 OK, got ${response.status}`);
             const body = await response.json();
 
-            assert.strictEqual(body.status, 'pending_approval', 'Explicit start intent should transition paused project to pending_approval');
+            assert.strictEqual(body.status, 'paused', 'Explicit start intent needs a structured plan before approval');
             assert.strictEqual(body.remediation, null, 'Explicit start intent should not persist remediation');
         } finally {
             await new Promise(r => server.close(r));
         }
-    });
-
-    await runAsyncTest('6. Host dependency preparation fallback successfully recovers when worker is unavailable', async () => {
-        const { executeSafeCommand } = await import('../engine/buildValidator.js');
-        const crypto = await import('crypto');
-        const fsSync = await import('fs');
-        const testDir = path.join(process.env.PROJECTS_ROOT, 'prep-fallback-test');
-        await fs.mkdir(testDir, { recursive: true });
-        await fs.writeFile(path.join(testDir, 'package.json'), JSON.stringify({ name: 'prep-fallback-test', version: '1.0.0' }, null, 2));
-
-        // Execute host fallback command as implemented in workflow.js
-        const lockPath = path.join(testDir, 'package-lock.json');
-        await executeSafeCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], { cwd: testDir });
-        assert.ok(fsSync.existsSync(lockPath), 'Host fallback should produce package-lock.json');
-
-        const lockBytes = await fs.readFile(lockPath);
-        const packageLockBase64 = lockBytes.toString('base64');
-        const packageLockSha256 = crypto.createHash('sha256').update(lockBytes).digest('hex');
-
-        assert.ok(packageLockBase64.length > 0, 'packageLockBase64 should be non-empty');
-        assert.strictEqual(packageLockSha256.length, 64, 'packageLockSha256 should be 64-char hex string');
     });
 
     finish();

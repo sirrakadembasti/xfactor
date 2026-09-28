@@ -127,4 +127,22 @@ if (!filteredTest || filteredTest === 'no-scripts') {
   });
 }
 
+if (!filteredTest || filteredTest === 'management') {
+  await runAsyncTest('P7.5.6: final ZIP setup lists demo seed after environment and uses clean install', async () => {
+    const dir = await makeDir({
+      'package.json': JSON.stringify({ name: 'inventory', scripts: { start: 'node server.js', 'prisma:seed': 'prisma db seed' }, dependencies: { '@prisma/client': '^6.4.0' } }),
+      '.env.example': 'DATABASE_URL="file:./dev.db"\nXFACTOR_DEMO_PASSWORD_MANAGER=\n',
+      'Dockerfile': 'FROM node:22-alpine\nVOLUME ["/data"]\n'
+    });
+    const readme = await generateProjectReadme({ projectTitle: 'Inventory', projectDir: dir,
+      lockfileExpected: true, management: { needed: true, roles: [{ name: 'manager' }] } });
+    assert.match(readme, /npm ci/);
+    assert.ok(readme.indexOf('cp .env.example .env') < readme.indexOf('npx prisma db push'));
+    assert.match(readme, /npm run prisma:seed/);
+    assert.match(readme, /XFACTOR_DEMO_PASSWORD_MANAGER/);
+    assert.match(readme, /yalnızca geliştirme ve test/i);
+    assert.match(readme, /target=\/data/);
+  });
+}
+
 finish();

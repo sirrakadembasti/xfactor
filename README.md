@@ -92,6 +92,12 @@ Yeni proje açıldığında ilk ekran **Sohbet & Mimari** olur; üst sekmelerde 
 
 Manager'ın tamamlanma mesajı, sağlayıcının bildirdiği ve proje bazında kaydedilen giriş, çıkış ve toplam token kullanımını da gösterir. Bir çağrıda sağlayıcı kullanım bilgisi vermezse yalnız bilinen en düşük toplam ve eksik çağrı sayısı gösterilir. Bu sayaç geçmişte kaydedilmemiş çağrıları geriye dönük hesaplamaz; API ücreti anlamına gelmez.
 
+### Yönetim ve takip uygulamalarının kapsamı
+
+Manager, kullanıcı “admin paneli” demese bile kalıcı kayıt, işlem veya rol gerektiren her istekte yönetim ihtiyacını değerlendirir. Önerilen planda yönetilecek kaynaklar, gerekli işlemler, yönetim ekranları, oturum açma ve rol yetkileri açıklanır; yönetim gerekmiyorsa bunun gerekçesi yazılır. Bu kapsam kod üretimine ancak kullanıcının planı onaylamasıyla girer. Açık kullanıcı kaydı ayrı bir ürün kararıdır; kayıt işlemi ayrıcalıklı rol vermez.
+
+Yönetim gerektiren projelerde her rol için yalnız geliştirme ve test ortamında kullanılacak ayrı demo hesabı ile izin verilen ve reddedilmesi gereken akışlar tanımlanır. Kalite kontrolü API kayıtlarının gerçekten değişip kalıcı olduğunu, oturumsuz ve yetkisiz işlemlerin reddedildiğini, silme ve ilişkili kayıt politikasının izlendiğini ve arayüz eylemlerinin görünür sonuç verdiğini arar. Gerçek etkileşim sağlayan güvenilir tarayıcı adaptörü bulunmazsa yönetim yolculuğu `BLOCKED` kalır; HTML varlığı veya bir testin yalnızca “başarılı” demesi yeterli değildir. Bu daldaki son ZIP Docker çalıştırma kabulü ertelenmiştir.
+
 Next.js projelerinde `public/` dizini boş veya yoksa üretilen Dockerfile derleme aşamasında dizini oluşturur. ZIP'ten çıkarılan uygulama klasöründe `docker build -t projem .` komutu tamamlanmadan `docker run` çalıştırılmamalıdır; build başarısızsa yerel imaj oluşmaz.
 
 ### Üretim sırasında hata ve devam etme

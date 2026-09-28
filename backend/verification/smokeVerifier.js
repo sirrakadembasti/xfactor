@@ -6,6 +6,7 @@ import { verifyAPIContract } from './apiVerifier.js';
 import { verifyBrowserJourney } from './browserVerifier.js';
 import { verifyTestInfrastructure } from './testInfrastructureVerifier.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
+import { createRoleSessionAdapter, prepareManagementDemoUsers } from './roleSessionAdapter.js';
 
 function inferRuntimeChecks(contract, service, files = []) {
     const baseUrl = service?.port ? `http://127.0.0.1:${service.port}` : null;
@@ -21,7 +22,8 @@ function inferRuntimeChecks(contract, service, files = []) {
     return {
         api: contract.api?.baseUrl ? contract.api : (baseUrl && routeName ? { baseUrl, domains: [{ prefix: routeName }] } : null),
         browser: contract.browser?.url ? contract.browser : (baseUrl && page && /<main(?:\s|>)/.test(String(page.content || ''))
-            ? { url: `${baseUrl}/`, journey: { steps: [{ action: 'assert_element', selector: 'main' }] } }
+            ? { url: `${baseUrl}/`, journey: { steps: [{ action: 'assert_element', selector: 'main' }] },
+                ...(contract.browser || {}) }
             : null)
     };
 }
@@ -30,7 +32,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     const issues = [];
     const handles = [];
     const runtimeEnv = { DATABASE_URL: 'file:./dev.db', ...(options.env || {}) };
-    const common = { ...options, env: runtimeEnv, workspace: options.workspace || projectDir };
+    const common = { ...options, management: contract.management, env: runtimeEnv, workspace: options.workspace || projectDir };
     const manifest = await verifyServiceManifest(projectDir, contract, common);
     checks.push(...(manifest.checks || []));
     issues.push(...(manifest.issues || []));
@@ -42,8 +44,30 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
         || (service?.port ? `http://127.0.0.1:${service.port}${service.healthEndpoint || '/'}` : null)
         || (contract.api?.baseUrl ? `${contract.api.baseUrl}/health` : null);
     const runtimeChecks = inferRuntimeChecks(contract, service, options.files);
+    if (contract.management?.needed === true && (!runtimeChecks.api?.baseUrl || !runtimeChecks.browser?.url)) {
+        checks.push({ name: 'management_runtime_contract', status: 'blocked',
+            reason: 'Management verification needs explicit or inferable API and browser endpoints.' });
+        issues.push('Management API or browser endpoint is missing from runtime verification.');
+    }
 
+    let apiAdapter = options.adapter;
     try {
+        if (contract.management?.needed === true) {
+            try {
+                if (!runtimeChecks.api?.baseUrl || !contract.management.authentication?.apiLogin?.path) {
+                    throw new Error('Management verification requires a declared API login path and API base URL.');
+                }
+                const passwords = await prepareManagementDemoUsers(options.adapter, contract.management, runtimeEnv,
+                    { signal: options.signal });
+                apiAdapter = createRoleSessionAdapter(options.adapter, runtimeChecks.api.baseUrl,
+                    contract.management, passwords);
+                checks.push({ name: 'management_demo_seed', status: 'passed',
+                    evidence: { adapterId: options.adapter?.id, roles: contract.management.roles.map(role => role.name) } });
+            } catch (error) {
+                checks.push({ name: 'management_demo_seed', status: 'blocked', reason: error.message });
+                issues.push(`Management role setup failed: ${error.message}`);
+            }
+        }
         if (service && !options.skipSpawnForLiveServer) {
             const handle = await spawnService(serviceId, service, runtimeEnv, common);
             handles.push(handle);
@@ -69,12 +93,15 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             issues.push(...db.issues);
         }
         if (runtimeChecks.api?.baseUrl) {
-            const api = await verifyAPIContract(runtimeChecks.api.baseUrl, null, runtimeChecks.api, common);
+            const api = await verifyAPIContract(runtimeChecks.api.baseUrl, null,
+                { ...runtimeChecks.api, management: contract.management }, { ...common, adapter: apiAdapter });
             checks.push(...api.checks);
             issues.push(...api.issues);
         }
         if (runtimeChecks.browser?.url) {
-            const browser = await verifyBrowserJourney(runtimeChecks.browser.url, runtimeChecks.browser.journey || {}, common);
+            const browser = await verifyBrowserJourney(runtimeChecks.browser.url, runtimeChecks.browser.journey || {}, {
+                ...common, roleJourneys: runtimeChecks.browser.roleJourneys || options.roleJourneys
+            });
             checks.push(...browser.checks);
             issues.push(...browser.issues);
         }

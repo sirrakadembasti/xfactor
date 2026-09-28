@@ -1,10 +1,7 @@
 import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
-import path, { posix, resolve } from 'node:path';
-import fs from 'node:fs/promises';
-import fsSync from 'node:fs';
-import os from 'node:os';
-import { executeVerificationJob, prepareDependencies, prepareResult } from './jobExecutor.js';
+import { posix } from 'node:path';
+import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
 import { MAX_JOB_MS } from './limits.js';
@@ -190,52 +187,6 @@ async function validateJobPaths(job) {
   }
   return paths;
 }
-async function executeHostPrepareFallback(job, { signal } = {}) {
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-worker-prep-'));
-  try {
-    const pkgBytes = Buffer.from(job.packageJsonBytes || '');
-    await fs.writeFile(path.join(tmpDir, 'package.json'), pkgBytes);
-    const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-    const proc = cp.spawn(cmd, ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], {
-      cwd: tmpDir,
-      shell: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true
-    });
-    const code = await new Promise((resolve, reject) => {
-      proc.on('close', resolve);
-      proc.on('error', reject);
-      if (signal) {
-        signal.addEventListener('abort', () => {
-          try { proc.kill('SIGKILL'); } catch {}
-          reject(new Error('Cancelled by user'));
-        }, { once: true });
-      }
-    });
-    if (code !== 0) {
-      throw new Error(`Host fallback npm install exited with code ${code}`);
-    }
-    const lockPath = path.join(tmpDir, 'package-lock.json');
-    if (!fsSync.existsSync(lockPath)) {
-      throw new Error('Host fallback npm install did not produce a package-lock.json');
-    }
-    const lockBytes = await fs.readFile(lockPath);
-    const prepared = prepareResult({
-      lockBytes,
-      runId: job.runId,
-      evidence: {
-        command: 'npm install --package-lock-only --ignore-scripts (host fallback)',
-        exitCode: 0,
-        stdoutDigest: createHash('sha256').update('').digest('hex'),
-        stderrDigest: createHash('sha256').update('').digest('hex')
-      }
-    });
-    return { status: 'success', result: prepared };
-  } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-  }
-}
-
 export async function executeJob(job, { signal, onResource } = {}) {
   if (!job || !['prepare_dependencies', 'verify_artifact'].includes(job.operation)) {
     return { status: 'failed', error: 'Unsupported worker operation' };
@@ -313,7 +264,8 @@ export async function executeJob(job, { signal, onResource } = {}) {
           } else {
             da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...(Array.isArray(args) ? args : []));
           }
-          const p = cp.spawn('docker', da, { stdio: ['ignore', 'pipe', 'pipe'] });
+          const p = cp.spawn('docker', da, { stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'], windowsHide: true });
+          if (options.input !== undefined) p.stdin.end(Buffer.from(options.input));
           let done = false;
           const finish = (fn, value) => { if (done) return; done = true; clearTimeout(timer); signal?.removeEventListener('abort', abort); fn(value); };
           const captured = captureChildOutput(p);
@@ -393,13 +345,6 @@ export async function executeJob(job, { signal, onResource } = {}) {
     if (!verification.passed) return { status: 'failed', result: verification };
     return { status:'success', result: verification };
   } catch (e) {
-    if (install && !signal?.aborted) {
-      try {
-        return await executeHostPrepareFallback(job, { signal, deadline });
-      } catch (hostErr) {
-        return { status: 'failed', error: hostErr.message };
-      }
-    }
     return { status:'failed', error:signal?.aborted?'Cancelled by user':e.message, ...(e.result?{result:e.result}:{}) };
   }
   finally { const cleanOpts={signal:undefined,deadline:Date.now()+30000}; try{await cleanupOwned('rm',names.job,cleanOpts)}catch{} try{await cleanupOwned('network',names.job,cleanOpts)}catch{} }

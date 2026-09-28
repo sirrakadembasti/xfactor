@@ -199,7 +199,7 @@ try {
 
     await runAsyncTest('P9.3: simple inventory path avoids host workspace reads', async () => {
         const adapter = { id: 'inventory-adapter', getCapabilities: () => ({ available: true, isolation: true }), async execute() { return { passed: true, exitCode: 0, stdout: '', stderr: '' }; } };
-        const result = await runVerificationChecks({ workspace: '/workspace', contract: {}, requirementIds: ['simple'], adapter, files: [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node test.js' } }) }, { path: 'package-lock.json', content: '{}' }] });
+        const result = await runVerificationChecks({ workspace: '/workspace', contract: {}, requirementIds: ['simple'], adapter, files: [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test test.js' } }) }, { path: 'package-lock.json', content: '{}' }] });
         assert.ok(result.checks.some(check => check.name === 'test_script_presence'));
         assert.ok(result.checks.every(check => !String(check.reason || '').includes('F:\\workspace')));
     });

@@ -102,6 +102,30 @@ test('child output capture retains bounded bytes and full digests', async () => 
   assert.equal(result.stderr, 'xyz'); assert.equal(result.stderrTruncated, false);
 });
 
+test('failed isolated dependency preparation never invokes host npm', async () => {
+  const commands = [];
+  const spawnMock = mock.method(cp, 'spawn', (cmd) => {
+    commands.push(cmd);
+    const proc = fakeChild();
+    setTimeout(() => {
+      proc.stderr.emit('data', Buffer.from('Docker unavailable'));
+      proc.emit('close', 1);
+    }, 1);
+    return proc;
+  });
+  try {
+    const result = await executeJob({
+      operation: 'prepare_dependencies', runId: 'isolated-only', jobId: 'isolated-only',
+      packageJsonBytes: Buffer.from('{"name":"isolated-only","version":"1.0.0"}')
+    });
+    assert.equal(result.status, 'failed');
+    assert.match(result.error, /Docker unavailable/);
+    assert.deepEqual([...new Set(commands)], ['docker']);
+  } finally {
+    spawnMock.mock.restore();
+  }
+});
+
 test('dependency policy rejects non-registry sources and permits registry lock entries', () => {
   assert.throws(() => validateDependencySources({ manifest: { dependencies: { bad: 'git+https://github.com/acme/bad.git' } } }), /Forbidden dependency source/);
   assert.throws(() => validateDependencySources({ manifest: { dependencies: { bad: 'file:../outside' } } }), /Forbidden dependency source/);

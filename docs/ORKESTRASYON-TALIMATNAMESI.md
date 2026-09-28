@@ -111,8 +111,8 @@ Uygulama kimlik doğrulama mimarisinde tüm katmanlar (Manager, Director, Teamle
 1. **Standart Auth Rotaları:** Giriş/Kayıt gerektiren uygulamalarda `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` rotaları esastır.
 2. **JWT & Oturum Çerezi:** Kimlik doğrulamada standart JWT (`Authorization: Bearer <token>`) veya sade session cookie tercih edilir. Kullanıcıyı kilitleyen aşırı karmaşık TOTP/MFA veya ağır CSRF kısıtları konulmaz.
 3. **Parola Güvenliği:** Parolalar açık metin saklanmaz; Node.js yerleşik `crypto.scryptSync` veya `bcrypt` / `bcryptjs` ile hash'lenir.
-4. **Sade Rol Yapısı:** Rol mekanizması sade tutulur (`admin` ve `user`, `user.role === 'admin'`).
-5. **Varsayılan Seed Hesabı:** Başlangıç veritabanı seed işleminde varsayılan yönetici hesabı `admin` / `admin123` olarak tanımlanır.
+4. **Rol Yapısı:** Roller ve kaynak başına izinler Manager'ın onaylanan proje sözleşmesinden türetilir; her projeye aynı `admin`/`user` ayrımı dayatılmaz.
+5. **İzole Demo Hesapları:** Her rol için yalnız geliştirme/test ortamında oluşturulan ayrı bir demo hesap kullanılır. Üretim paketinde ortak varsayılan parola veya otomatik yönetici hesabı bulunmaz.
 6. **Yalnızca Talep Edildiğinde Karmaşıklık:** Kullanıcı spesifik olarak istemediği sürece zorunlu 2FA/MFA, SMS doğrulama veya karmaşık ABAC altyapıları kurulmaz.
 
 ---

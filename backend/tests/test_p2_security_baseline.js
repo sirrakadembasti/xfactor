@@ -443,6 +443,13 @@ if (!filteredTest || filteredTest === 'sql-injection') {
         assert.strictEqual(res.passed, true);
         assert.strictEqual(res.issues.length, 0);
     });
+    await runAsyncTest('P2.4.6: management contract requires auth on mutation routes', async () => {
+        const result = verifySecurityBaseline({ management: { needed: true } }, [
+            { path: 'src/routes/assets.js', content: "router.post('/api/assets', async (req, res) => res.json({ ok: true }));" }
+        ]);
+        assert.equal(result.passed, false);
+        assert.ok(result.issues.some(issue => issue.includes('Mandatory authentication missing')));
+    });
 }
 
 finish();

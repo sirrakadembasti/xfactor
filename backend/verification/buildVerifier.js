@@ -346,6 +346,17 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
         }
     }
 
+    if (packageJson?.scripts?.lint) {
+        await runSandboxCheck(checks, {
+            name: 'lint', command: npmCmd, args: ['run', 'lint'],
+            workspace: options.workspace || projectDir, timeoutMs: options.timeoutMs || 120000,
+            adapter: options.adapter, env: options.env,
+            successReason: 'Declared lint script passed in the sandbox.', failurePrefix: 'Lint failed'
+        });
+    } else if (packageJson?.dependencies?.next) {
+        checks.push({ name: 'lint', status: 'blocked', reason: 'Next.js project has no lint script.' });
+    }
+
     const hasFailedOrBlocked = checks.some(c => c.status === 'failed' || c.status === 'blocked');
     const allPassedOrSkipped = checks.every(c => c.status === 'passed' || c.status === 'skipped');
 

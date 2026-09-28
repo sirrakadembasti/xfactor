@@ -74,6 +74,8 @@ export async function generateProjectReadme({
   projectDir,
   manifest = null,
   detectedStack = null,
+  lockfileExpected = false,
+  management = null,
 } = {}) {
   const pkg = (projectDir ? await readJsonFile(path.join(projectDir, 'package.json')) : null) || {};
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
@@ -119,21 +121,11 @@ export async function generateProjectReadme({
   lines.push('');
   lines.push('### 1. Adım: Bağımlılıkları Yükleyin');
   lines.push('```bash');
-  lines.push('npm install');
+  lines.push(lockfileExpected ? 'npm ci' : 'npm install');
   lines.push('```');
   lines.push('');
 
   let step = 2;
-  if (hasPrisma) {
-    lines.push(`### ${step}. Adım: Veritabanı ve Şemayı Hazırlayın (Prisma / SQLite)`);
-    lines.push('```bash');
-    lines.push('npx prisma generate');
-    lines.push('npx prisma db push');
-    lines.push('```');
-    lines.push('');
-    step += 1;
-  }
-
   if (envKeys.length > 0) {
     lines.push(`### ${step}. Adım: Ortam Değişkenlerini Yapılandırın`);
     lines.push('`.env.example` dosyasını `.env` olarak kopyalayın ve aşağıdaki değişkenleri doldurun:');
@@ -147,12 +139,49 @@ export async function generateProjectReadme({
     step += 1;
   }
 
+  if (hasPrisma) {
+    lines.push(`### ${step}. Adım: Veritabanı ve Şemayı Hazırlayın (Prisma / SQLite)`);
+    lines.push('```bash');
+    lines.push('npx prisma generate');
+    lines.push('npx prisma db push');
+    lines.push('```');
+    lines.push('');
+    step += 1;
+  }
+
+  if (management?.needed === true && pkg.scripts?.['prisma:seed']) {
+    lines.push(`### ${step}. Adım: Rol Bazlı Demo Kullanıcıları Kurun`);
+    lines.push('Demo hesapları yalnızca geliştirme ve test ortamında oluşturulur. `.env` içindeki her `XFACTOR_DEMO_PASSWORD_*` değişkenine ayrı bir güçlü parola verin. Üretim ortamında demo seed çalıştırmayın.');
+    lines.push('```bash');
+    lines.push('npm run prisma:seed');
+    lines.push('```');
+    lines.push('');
+    step += 1;
+  }
+
   if (runCommand) {
     lines.push(`### ${step}. Adım: Uygulamayı Başlatın`);
     lines.push('```bash');
     lines.push(runCommand);
     lines.push('```');
     lines.push(`Uygulamanız varsayılan olarak \`http://localhost:${port}\` adresinde çalışacaktır.`);
+    lines.push('');
+  }
+  if (projectDir && await fileExists(path.join(projectDir, 'Dockerfile'))) {
+    const imageName = String(pkg.name || 'xfactor-app').toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'xfactor-app';
+    const dockerfile = await fs.readFile(path.join(projectDir, 'Dockerfile'), 'utf8');
+    const containerPort = Number(dockerfile.match(/^EXPOSE\s+(\d+)/m)?.[1]) || port;
+    lines.push('### Docker ile Çalıştırma');
+    lines.push('```bash');
+    lines.push(`docker build -t ${imageName} .`);
+    if (hasPrisma) {
+      lines.push(`docker run -d --name ${imageName} --mount type=volume,source=${imageName}-data,target=/data -p ${containerPort}:${containerPort} ${imageName}`);
+      lines.push('```');
+      lines.push('SQLite verisi `/data` volume içinde kalır; konteyneri yeniden başlattığınızda aynı volume adını kullanın. Gerekli üretim sırlarını çalışma ortamında ayrıca sağlayın.');
+    } else {
+      lines.push(`docker run -d --name ${imageName} -p ${containerPort}:${containerPort} ${imageName}`);
+      lines.push('```');
+    }
     lines.push('');
   }
   lines.push('---');

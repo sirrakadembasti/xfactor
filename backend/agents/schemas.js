@@ -5,6 +5,7 @@
 import path from 'path';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
 import { canonicalizeTaskDependencies } from '../engine/dag.js';
+import { hasRoleJourneyCoverage } from '../contracts/browserJourneyContract.js';
 
 
 /**
@@ -304,10 +305,39 @@ export function normalizeManagerPlan(plan) {
         };
     });
 
+    if (plan.management && typeof plan.management === 'object') {
+        const management = plan.management;
+        plan.requirements = plan.requirements.filter(requirement => !/^MGMT-(?:RESOURCE|ROLE)-\d+$/.test(requirement.id));
+        const sectionStart = '<!-- XFACTOR_MANAGEMENT_START -->';
+        const sectionEnd = '<!-- XFACTOR_MANAGEMENT_END -->';
+        plan.talimatname = plan.talimatname.replace(/\n?<!-- XFACTOR_MANAGEMENT_START -->[\s\S]*?<!-- XFACTOR_MANAGEMENT_END -->/g, '').trimEnd();
+        const lines = [sectionStart, '## Yönetim ve rol sözleşmesi', `Değerlendirme: ${management.needed ? 'Gerekli' : 'Gerekli değil'}. ${management.reason || ''}`];
+        if (management.needed && Array.isArray(management.resources) && Array.isArray(management.roles)) {
+            for (const [index, resource] of management.resources.entries()) {
+                const id = `MGMT-RESOURCE-${index + 1}`;
+                const fixture = resource.verification ? `; verification ${JSON.stringify(resource.verification)}` : '';
+                const readAccess = resource.readAccess ? `; readAccess ${resource.readAccess}` : '';
+                const deletionPolicy = resource.deletionPolicy
+                    ? `; relatedData ${resource.deletionPolicy.relatedData}: ${resource.deletionPolicy.reason}${resource.deletionPolicy.retentionRule ? `; retentionRule ${resource.deletionPolicy.retentionRule}` : ''}` : '';
+                const statement = `Admin UI and API for ${resource.name}: ${resource.operations.join(', ')}; UI ${resource.uiPath}; API ${resource.apiPath}${readAccess}${deletionPolicy}${fixture}; verify persistent result.`;
+                plan.requirements.push({ id, statement, mandatory: true, kind: 'functional', priority: 'high' });
+                lines.push(`- ${id}: ${statement}`);
+            }
+            for (const [index, role] of management.roles.entries()) {
+                const id = `MGMT-ROLE-${index + 1}`;
+                const statement = `${role.name} login, permissions and isolated demo user ${role.demoUser?.username || ''}; allowed journeys: ${(role.journeys?.positive || []).join('; ')}; denied journeys: ${(role.journeys?.negative || []).join('; ')}.`;
+                plan.requirements.push({ id, statement, mandatory: true, kind: 'behavior', priority: 'high' });
+                lines.push(`- ${id}: ${statement}`);
+            }
+        }
+        lines.push(sectionEnd);
+        plan.talimatname += `\n\n${lines.join('\n')}`;
+    }
+
     return plan;
 }
 
-export function validateManagerPlan(plan) {
+export function validateManagerPlan(plan, { requireManagement = false } = {}) {
     if (!plan || typeof plan !== 'object') {
         throw new Error('Manager planı bir nesne olmalıdır.');
     }
@@ -329,6 +359,144 @@ export function validateManagerPlan(plan) {
     const reqs = plan.requirements || plan.requirementIds;
     if (!Array.isArray(reqs) || reqs.length === 0) {
         throw new Error('Manager planında en az bir gereksinim ("requirements" veya "requirementIds") tanımlanmalıdır.');
+    }
+    const management = plan.management;
+    if (requireManagement || management !== undefined) {
+        if (!management || typeof management !== 'object' || Array.isArray(management) || typeof management.needed !== 'boolean') {
+            throw new Error('Manager planında yapılandırılmış management.needed değerlendirmesi zorunludur.');
+        }
+        if (typeof management.reason !== 'string' || !management.reason.trim()) {
+            throw new Error('management.reason somut bir gerekçe içermelidir.');
+        }
+        if (management.needed) {
+            const auth = management.authentication;
+            if (!auth || typeof auth.login !== 'string' || !auth.login.trim()
+                || typeof auth.accountProvisioning !== 'string' || !auth.accountProvisioning.trim()
+                || typeof auth.publicRegistration !== 'boolean') {
+                throw new Error('management.authentication login, accountProvisioning ve publicRegistration kararını içermelidir.');
+            }
+            if (requireManagement || auth.apiLogin !== undefined) {
+                if (!auth.apiLogin || typeof auth.apiLogin.path !== 'string'
+                    || !/^\/(?!\/)/.test(auth.apiLogin.path) || /\.\.|[?#\\]/.test(auth.apiLogin.path)
+                    || ['identityField', 'passwordField', 'tokenField'].some(field =>
+                        auth.apiLogin[field] !== undefined && !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(auth.apiLogin[field]))) {
+                    throw new Error('management.authentication.apiLogin güvenli yerel giriş yolunu ve geçerli alan adlarını içermelidir.');
+                }
+            }
+            if (!Array.isArray(management.resources) || management.resources.length === 0) {
+                throw new Error('management.resources en az bir yönetilen kaynağı içermelidir.');
+            }
+            const resourceNames = new Set();
+            const allowedOperations = new Set(['create', 'read', 'update', 'delete']);
+            for (const resource of management.resources) {
+                if (typeof resource?.name !== 'string' || !resource.name.trim()
+                    || resourceNames.has(resource.name)
+                    || !Array.isArray(resource.operations) || resource.operations.length === 0
+                    || resource.operations.some(op => !allowedOperations.has(op))
+                    || typeof resource.uiPath !== 'string' || !/^\/(?!\/)/.test(resource.uiPath) || /\.\.|[?#\\]/.test(resource.uiPath)
+                    || typeof resource.apiPath !== 'string' || !/^\/(?!\/)/.test(resource.apiPath) || /\.\.|[?#\\]/.test(resource.apiPath)) {
+                    throw new Error('management.resources her kaynak için benzersiz name, operations, uiPath ve apiPath gerektirir.');
+                }
+                if ((requireManagement && resource.operations.includes('read')
+                    && !['public', 'authenticated'].includes(resource.readAccess))
+                    || (resource.readAccess !== undefined
+                        && !['public', 'authenticated'].includes(resource.readAccess))) {
+                    throw new Error('management.resources.readAccess must be public or authenticated for readable resources.');
+                }
+                const mutationFixture = resource.verification;
+                const needsItemFixture = resource.operations.includes('update') || resource.operations.includes('delete');
+                if (resource.operations.includes('delete') && requireManagement) {
+                    const policy = resource.deletionPolicy;
+                    if (!policy || !['none', 'preserve', 'cascade'].includes(policy.relatedData)
+                        || typeof policy.reason !== 'string' || !policy.reason.trim()) {
+                        throw new Error('management.resources.deletionPolicy requires relatedData and a concrete reason.');
+                    }
+                    if (policy.relatedData !== 'none') {
+                        if (typeof policy.retentionRule !== 'string' || !policy.retentionRule.trim()) {
+                            throw new Error('management.resources.deletionPolicy.retentionRule must describe how long or until when related records are kept or deleted.');
+                        }
+                        const retention = mutationFixture?.retention;
+                        if (!retention || typeof retention.createPath !== 'string'
+                            || !/^\/(?!\/)/.test(retention.createPath) || /\.\.|[?#\\]/.test(retention.createPath)
+                            || typeof retention.itemPath !== 'string'
+                            || !/^\/(?!\/)/.test(retention.itemPath) || /\.\.|[?#\\]/.test(retention.itemPath)
+                            || (retention.itemPath.match(/\{id\}/g) || []).length !== 1
+                            || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(retention.parentField || '')
+                            || !retention.createBody || typeof retention.createBody !== 'object'
+                            || Array.isArray(retention.createBody)
+                            || !JSON.stringify(retention.createBody).includes('{parentId}')) {
+                            throw new Error('management.resources.verification.retention requires related create/read fixtures linked to the parent ID.');
+                        }
+                        const transition = retention.beforeDelete;
+                        if (transition && (!['POST', 'PATCH', 'PUT'].includes(transition.method)
+                            || typeof transition.path !== 'string' || !/^\/(?!\/)/.test(transition.path)
+                            || /\.\.|[?#\\]/.test(transition.path)
+                            || (transition.path.match(/\{id\}/g) || []).length !== 1
+                            || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(transition.expectedField || '')
+                            || !Object.hasOwn(transition, 'expectedValue'))) {
+                            throw new Error('management.resources.verification.retention.beforeDelete needs a safe transition and expected state.');
+                        }
+                    }
+                }
+                if (needsItemFixture && (requireManagement || mutationFixture !== undefined)) {
+                    const deletion = mutationFixture?.deleteExpectation;
+                    if (!mutationFixture || typeof mutationFixture.itemPath !== 'string'
+                        || !/^\/(?!\/)/.test(mutationFixture.itemPath)
+                        || /\.\.|[?#\\]/.test(mutationFixture.itemPath)
+                        || (mutationFixture.itemPath.match(/\{id\}/g) || []).length !== 1
+                        || (resource.operations.includes('update') && !['PATCH', 'PUT'].includes(mutationFixture.updateMethod))
+                        || (resource.operations.includes('delete') && !['absent', 'field'].includes(deletion?.kind))
+                        || (deletion?.kind === 'field' && (!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(deletion.field || '')
+                            || !Object.hasOwn(deletion, 'equals')))) {
+                        throw new Error('management.resources.verification requires an item path, update method and deletion expectation.');
+                    }
+                }
+                resourceNames.add(resource.name);
+            }
+            if (!Array.isArray(management.roles) || management.roles.length === 0) {
+                throw new Error('management.roles en az bir rol içermelidir.');
+            }
+            const demoUsers = new Set();
+            const roleNames = new Set();
+            const credentialNames = new Set();
+            for (const role of management.roles) {
+                const credentialName = typeof role?.name === 'string'
+                    ? role.name.toUpperCase().replace(/[^A-Z0-9]/g, '_') : '';
+                if (typeof role?.name !== 'string' || !role.name.trim()
+                    || roleNames.has(role.name)
+                    || !credentialName || credentialNames.has(credentialName)
+                    || !Array.isArray(role.permissions) || role.permissions.length === 0
+                    || role.permissions.some(permission => !resourceNames.has(permission?.resource)
+                        || !Array.isArray(permission.operations)
+                        || permission.operations.some(op => !allowedOperations.has(op)))) {
+                    throw new Error('management.roles her rol için kaynak bazlı permissions gerektirir.');
+                }
+                roleNames.add(role.name);
+                credentialNames.add(credentialName);
+                if (typeof role.demoUser?.username !== 'string' || !role.demoUser.username.trim()
+                    || demoUsers.has(role.demoUser.username)
+                    || role.demoUser.setup !== 'isolated-test-seed') {
+                    throw new Error('management.roles her rol için benzersiz, izole test demoUser gerektirir.');
+                }
+                demoUsers.add(role.demoUser.username);
+                if (!Array.isArray(role.journeys?.positive) || role.journeys.positive.length === 0
+                    || !Array.isArray(role.journeys?.negative) || role.journeys.negative.length === 0) {
+                    throw new Error('management.roles her rol için positive ve negative journeys gerektirir.');
+                }
+            }
+            for (const resource of management.resources) {
+                for (const operation of resource.operations) {
+                    if (!management.roles.some(role => role.permissions.some(permission =>
+                        permission.resource === resource.name && permission.operations.includes(operation)))) {
+                        throw new Error(`Uncovered management operation: ${resource.name}.${operation}`);
+                    }
+                }
+            }
+            if (requireManagement && !hasRoleJourneyCoverage(plan.browser?.roleJourneys,
+                management.roles.map(role => role.name))) {
+                throw new Error('management browser.roleJourneys requires positive and negative interactive journeys with visible outcomes for every role.');
+            }
+        }
     }
     return true;
 }
@@ -462,7 +630,8 @@ export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
             description: t.description || t.title || `Görev ${idx + 1} geliştirme`,
             dependencies,
             targetFiles: Array.isArray(t.targetFiles) ? t.targetFiles : (t.target_files || []),
-            requirementIds: reqIds
+            requirementIds: reqIds,
+            ...(Array.isArray(t.managementCoverage) ? { managementCoverage: t.managementCoverage } : {})
         };
     });
 

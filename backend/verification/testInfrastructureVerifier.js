@@ -28,13 +28,18 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     }
 
     const testScript = packageJson?.scripts?.test;
-    if (!testScript || typeof testScript !== 'string' || testScript.trim().length === 0) {
+    const shellComposition = typeof testScript === 'string' && /[;&|<>`\r\n]|\$\(/.test(testScript);
+    const placeholder = typeof testScript === 'string'
+        && (/(?:no\s+tests?\s+(?:specified|found)|echo\s+["']?test\s+not\s+implemented)/i.test(testScript)
+            || shellComposition
+            || !/^(?:(?:npx|pnpm exec)\s+)?(?:node(?:\.exe)?\s+--test(?:\s|$)|(?:vitest|jest|mocha|ava|tap)\b|playwright\s+test\b|bun\s+test\b)/i.test(testScript.trim()));
+    if (!testScript || typeof testScript !== 'string' || testScript.trim().length === 0 || placeholder) {
         checks.push({
             name: 'test_script_presence',
             status: 'failed',
-            reason: 'No "test" script declared in package.json scripts.'
+            reason: placeholder ? 'The test script is a non-testing placeholder.' : 'No "test" script declared in package.json scripts.'
         });
-        issues.push('No "test" script declared in package.json scripts.');
+        issues.push(placeholder ? 'The test script is a non-testing placeholder.' : 'No "test" script declared in package.json scripts.');
         return { passed: false, checks, issues };
     }
 
@@ -56,7 +61,10 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
             env: options.env
         });
 
-        if (testRes.passed) {
+        const testOutput = `${testRes.stdout || ''}\n${testRes.stderr || ''}`;
+        const emptySuite = /(?:\b0\s+(?:passing|passed|tests?)\b|#\s*(?:tests|pass)\s+0\b)/i.test(testOutput);
+        const executedTests = /(?:#\s*(?:tests|pass)\s+[1-9]\d*\b|\b[1-9]\d*\s+(?:passing|passed|tests?|başarılı)\b)/i.test(testOutput);
+        if (testRes.passed && !emptySuite && executedTests) {
             checks.push({
                 name: 'test_suite_execution',
                 status: 'passed',
@@ -78,9 +86,9 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
                 stderr: testRes.stderr,
                 stdoutDigest: computeDigest(testRes.stdout),
                 stderrDigest: computeDigest(testRes.stderr),
-                reason: `Test suite execution failed: ${testRes.stderr || testRes.stdout}`
+                reason: emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite execution failed: ${testRes.stderr || testRes.stdout}`
             });
-            issues.push(`Test suite failed (exit ${testRes.exitCode}): ${testRes.stderr || testRes.stdout}`);
+            issues.push(emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite failed (exit ${testRes.exitCode}): ${testRes.stderr || testRes.stdout}`);
         }
     } catch (err) {
         checks.push({

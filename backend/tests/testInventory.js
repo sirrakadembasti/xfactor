@@ -58,6 +58,7 @@ test_p1_b_manifest.js
 test_p1_b_process.js
 test_p1_b_quality_policy_evidence.js
 test_p1_b_smoke.js
+test_role_session_adapter.js
 test_p1_b_test_infra.js
 test_p1_c_archive.js
 test_p1_c_artifact_verifier.js
@@ -127,6 +128,7 @@ test_workflow_attempts.js
 test_workflow_state_initialization.js
 test_workflow_failure_chat_event.js
 test_manager_error_telemetry.js
+test_manager_management_discovery.js
 test_next_generated_import_audit.js
 test_dev_verification_fallback.js
 test_workflow_dev_fallback.js

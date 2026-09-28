@@ -14,7 +14,8 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
 const { createArtifact, getArtifact, getLatestVerifiedArtifact } = await import('../repositories/artifactRepository.js');
-const { verifyArtifact } = await import('../verification/artifactVerifier.js');
+const { verifyArtifact, hasMandatoryGateCoverage } = await import('../verification/artifactVerifier.js');
+const { RUNTIME_GATE_MEMBERS } = await import('../verification/qualityPolicy.js');
 
 const { runAsyncTest, finish } = createTestHarness();
 const projectId = 'pipeline-proj-123';
@@ -123,6 +124,11 @@ const allGates = [
     'placeholder_check', 'contamination_check', 'security_baseline', 'readme_check'
 ];
 
+assert.equal(typeof hasMandatoryGateCoverage, 'function');
+assert.equal(hasMandatoryGateCoverage(allGates.map(passingCheck)), true);
+assert.equal(hasMandatoryGateCoverage(allGates.filter(name => name !== 'framework_build').map(passingCheck)), false,
+    'a worker cannot verify an artifact while omitting a mandatory gate');
+
 try {
     await runAsyncTest('1. verifyArtifact fails closed and rejects artifact when package lockfile is missing', async () => {
         const zipPath = await createTestZip('broken-lock.zip', [
@@ -173,6 +179,7 @@ try {
                 ? { evidence: { kind: 'derived_gate', producer: 'quality-policy', sourceGateNames: ['domain_entity_check'], policyVersion: '2.0', computedAt: new Date().toISOString() } }
                 : { evidence: { producer: 'quality-policy', policyVersion: '2.0' } }
         }));
+        checks.push(...[...new Set(Object.values(RUNTIME_GATE_MEMBERS).flatMap(members => [...members]))].map(passingCheck));
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {
             runId,
             activeJob: identity,
@@ -215,6 +222,24 @@ try {
             }
         );
         assert.ok(evidence.computedAt);
+    });
+
+    await runAsyncTest('2b. worker aggregate PASS cannot replace missing runtime member evidence', async () => {
+        const zipPath = await createTestZip('aggregate-only.zip', [
+            { path: 'package.json', content: '{"name":"aggregate-only"}' },
+            { path: 'package-lock.json', content: '{"lockfileVersion":3}' },
+            { path: 'service-manifest.json', content: '{"version":"1.0","services":{}}' }
+        ]);
+        const artifactId = 'artifact-aggregate-only';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        const runId = 'run-aggregate-only';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId, activeJob: identity, archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, allGates.map(passingCheck), 'completed') }
+        });
+        assert.equal(result.passed, false);
+        assert.equal(getArtifact({ projectId, contractId, artifactId }).status, 'rejected');
     });
 
     await runAsyncTest('3. verifyArtifact rejects malicious symlink before persistence', async () => {

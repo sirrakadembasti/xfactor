@@ -13,7 +13,8 @@ const {
     MANDATORY_GATES,
     aggregateVerificationRun,
     evaluateVerificationRun,
-    runProjectVerification
+    runProjectVerification,
+    combineRuntimeGate
 } = await import('../verification/qualityPolicy.js');
 const { createRun, updateRunStatus } = await import('../repositories/verificationRepository.js');
 
@@ -96,6 +97,20 @@ await runAsyncTest('1. mandatory runtime and smoke gates are part of quality pol
     ]) {
         assert.ok(MANDATORY_GATES.includes(gate), `MANDATORY_GATES must include "${gate}"`);
     }
+});
+
+await runAsyncTest('1b. a runtime gate blocks when one required member is missing', async () => {
+    const gate = combineRuntimeGate('api_contract', [
+        { name: 'database_file_accessible', status: 'passed' },
+        { name: 'api_status_check', status: 'passed' },
+        { name: 'database_mutation_assertion', status: 'passed' }
+    ]);
+    assert.equal(gate.status, 'BLOCKED');
+    assert.match(gate.reason, /api_query_check/);
+    const failed = combineRuntimeGate('api_contract', [
+        { name: 'database_file_accessible', status: 'failed' }
+    ]);
+    assert.equal(failed.status, 'FAIL', 'a concrete failure takes precedence over missing evidence');
 });
 
 await runAsyncTest('2. duplicate failing evidence cannot be hidden by a passing gate result or LLM approval', async () => {

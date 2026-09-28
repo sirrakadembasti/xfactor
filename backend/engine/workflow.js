@@ -33,7 +33,7 @@ import {
     normalizeDirectorSpec,
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
-import { validatePlanTasks } from '../agents/director.js';
+import { validatePlanTasks, validateManagementTaskCoverage, formatManagementTaskDescription } from '../agents/director.js';
 import { db, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
@@ -63,7 +63,6 @@ import { restoreTaskTargetsFromProtocol } from '../services/reconciliationServic
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
-import { executeSafeCommand } from './buildValidator.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function computePlanHash(plan) {
@@ -664,6 +663,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         // 1. AŞAMA: MANAGER & ROOT PROTOKOLÜ
         await checkPause(projectId, abortController.signal);
         let plan = state.plan;
+        if (!plan || !Array.isArray(plan.domains) || plan.domains.length === 0) {
+            const approved = db.prepare(`SELECT contract_json FROM project_contracts
+                WHERE project_id = ? AND status = 'approved' ORDER BY revision DESC LIMIT 1`).get(projectId);
+            if (approved) plan = normalizeManagerPlan(JSON.parse(approved.contract_json));
+        }
 
         if (!plan || !plan.domains || plan.domains.length === 0) {
             const managerAgent = getAgent('manager');
@@ -909,11 +913,13 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                         await workflowLogEvent(wsHub, projectId, "Teamleader", "delegate", "", `Görev "${task.title}" Coder'a iletildi. Kod üretiliyor...`, coderNodeId, tlId);
 
+                        const taskDescription = formatManagementTaskDescription(task, plan);
+
                         await setupCoderProtocol(
                             tlDir,
                             taskId,
                             task.title,
-                            `# Atomik Görev: ${task.title}\n\nAçıklama: ${task.description}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`
+                            `# Atomik Görev: ${task.title}\n\nAçıklama: ${taskDescription}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`
                         );
 
                         // Yapılandırılmış Proje Bağlamı (Şemalar, Tipler, Route'lar)
@@ -941,7 +947,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                         // Coder LLM çağrısı
                         const coderAgent = getAgent('coder');
-                        const coderPrompt = coderAgent.buildPrompt(taskId, task.title, task.description, task.targetFiles, projectContext);
+                        const coderPrompt = coderAgent.buildPrompt(taskId, task.title, taskDescription, task.targetFiles, projectContext);
                         let coderOutput = await callAgentLLM('coder', coderPrompt, {
                             signal: abortController.signal,
                             taskId,
@@ -955,6 +961,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         const loopResult = await executeCorrectionLoop({
                             taskId,
                             taskTitle: task.title,
+                            taskDescription,
                             targetFiles: task.targetFiles,
                             initialCoderOutput: coderOutput,
                             coderPrompt,
@@ -1129,6 +1136,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         }
 
         // 6. AŞAMA: TESTER AJANI VE NİHAİ KONSOLİDE RAPOR
+        const managementCoverage = validateManagementTaskCoverage(plan, state.workflow.teamleaderPlans);
+        if (!managementCoverage.passed) {
+            throw new Error(`Yönetim sözleşmesi için görev kapsamı eksik: ${managementCoverage.missing.join(', ')}`);
+        }
         if (isExecutionActive(await checkPause(projectId, abortController.signal))) {
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
             const allDiskFiles = await listProjectTree(projectDir);
@@ -1367,6 +1378,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 projectDir,
                 manifest: plan.service_manifest || plan.serviceManifest || null,
                 detectedStack: plan.stack || plan.detectedStack || null,
+                lockfileExpected: true,
+                management: plan.management || null,
             });
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
@@ -1427,16 +1440,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 packageLockBase64 = prepResult.result.packageLockBase64;
                 packageLockSha256 = prepResult.result.packageLockSha256;
             } else {
-                const lockPath = path.join(projectDir, 'package-lock.json');
-                await executeSafeCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], { cwd: projectDir }).catch(() => {});
-                if (fsSync.existsSync(lockPath)) {
-                    const lockBytes = await fs.readFile(lockPath);
-                    packageLockBase64 = lockBytes.toString('base64');
-                    packageLockSha256 = crypto.createHash('sha256').update(lockBytes).digest('hex');
-                } else {
-                    const errorMsg = prepError?.message || 'Dependency preparation did not produce a package-lock.json.';
-                    throw new Error(errorMsg);
-                }
+                throw new Error(prepError?.message || 'Isolated dependency preparation did not produce a package-lock.json.');
             }
 
             if (!packageLockBase64) {

@@ -15,6 +15,7 @@ import { validateCoderFiles } from '../agents/schemas.js';
 export async function executeCorrectionLoop({
     taskId,
     taskTitle,
+    taskDescription = '',
     targetFiles,
     initialCoderOutput,
     coderPrompt,
@@ -60,7 +61,7 @@ export async function executeCorrectionLoop({
             };
         } else {
             // 1. Reviewer İncelemesi
-            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files);
+            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files, taskDescription);
             reviewResult = await runLLMTaskWithRetry({
                 agentRole: 'reviewer',
                 taskId: `${taskId}.review.${iterations}`,
