@@ -119,7 +119,7 @@ fs.writeFileSync('users.json', JSON.stringify({
       }, requirementIds: []
     }, { signal: new AbortController().signal });
     const checks = result.result?.checks || [];
-    for (const name of ['management_demo_seed', 'api_role_create_allowed', 'api_role_create_denied', 'database_mutation_assertion']) {
+    for (const name of ['management_demo_seed', 'management_role_login', 'api_role_create_allowed', 'api_role_create_denied', 'database_mutation_assertion']) {
       assert.equal(checks.find(check => check.name === name)?.status, 'passed', `${name}: ${JSON.stringify(result).slice(0, 4000)}`);
     }
   });

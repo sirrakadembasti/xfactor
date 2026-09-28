@@ -487,7 +487,7 @@
       "group": "backend",
       "file": "backend/verification/artifactVerifier.js",
       "description": "Temiz oda ZIP arşivleme, SHA-256 sağlama ve artefakt doğrulayıcısı",
-      "val": 16.5,
+      "val": 17,
       "provenance": "curated"
     },
     {
@@ -947,7 +947,7 @@
       "group": "tests",
       "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
       "description": "Salt-okunur yetki sınırı, kanıt izolasyonu ve sansürlü log render birim testleri",
-      "val": 9,
+      "val": 9.5,
       "provenance": "curated"
     },
     {
@@ -12360,7 +12360,7 @@
       "line": 165
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@214",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@217",
       "label": "adapter.request",
       "type": "Method",
       "group": "tests",
@@ -12368,10 +12368,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 214
+      "line": 217
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.interact@215",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.interact@218",
       "label": "adapter.interact",
       "type": "Method",
       "group": "tests",
@@ -12379,10 +12379,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 215
+      "line": 218
     },
     {
-      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@224",
+      "id": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@227",
       "label": "adapter.execute",
       "type": "Method",
       "group": "tests",
@@ -12390,7 +12390,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 224
+      "line": 227
     },
     {
       "id": "backend/tests/test_p1_b_test_infra.js#Function:createTempWorkspace@11",
@@ -12536,7 +12536,7 @@
       "line": 135
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@42",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@47",
       "label": "createTestZip",
       "type": "Function",
       "group": "tests",
@@ -12544,10 +12544,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 42
+      "line": 47
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@53",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@58",
       "label": "registerArtifact",
       "type": "Function",
       "group": "tests",
@@ -12555,10 +12555,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 53
+      "line": 58
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@80",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@85",
       "label": "passingCheck",
       "type": "Function",
       "group": "tests",
@@ -12566,10 +12566,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 80
+      "line": 85
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@95",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@100",
       "label": "artifactIdentity",
       "type": "Function",
       "group": "tests",
@@ -12577,10 +12577,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 95
+      "line": 100
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@111",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@116",
       "label": "workerResponse",
       "type": "Function",
       "group": "tests",
@@ -12588,10 +12588,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 111
+      "line": 116
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@147",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@152",
       "label": "result.verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -12599,10 +12599,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 147
+      "line": 152
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@187",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@192",
       "label": "result.verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -12610,10 +12610,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 187
+      "line": 192
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@239",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@244",
       "label": "result.verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -12621,10 +12621,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 239
+      "line": 244
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@260",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@265",
       "label": "verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -12632,10 +12632,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 260
+      "line": 265
     },
     {
-      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@278",
+      "id": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@283",
       "label": "verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -12643,7 +12643,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 278
+      "line": 283
     },
     {
       "id": "backend/tests/test_p1_c_safe_extraction.js#Method:async@20",
@@ -16681,8 +16681,8 @@
       "line": 56
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@63",
-      "label": "hasMandatoryGateCoverage",
+      "id": "backend/verification/artifactVerifier.js#Function:isMandatoryArtifactCheck@63",
+      "label": "isMandatoryArtifactCheck",
       "type": "Function",
       "group": "backend",
       "file": "backend/verification/artifactVerifier.js",
@@ -16692,7 +16692,18 @@
       "line": 63
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@68",
+      "id": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@69",
+      "label": "hasMandatoryGateCoverage",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/verification/artifactVerifier.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 69
+    },
+    {
+      "id": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@74",
       "label": "passingVerificationSourceNames",
       "type": "Function",
       "group": "backend",
@@ -16700,10 +16711,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 68
+      "line": 74
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@74",
+      "id": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@80",
       "label": "canonicalArchivePath",
       "type": "Function",
       "group": "backend",
@@ -16711,10 +16722,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 74
+      "line": 80
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@84",
+      "id": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@90",
       "label": "runLeaseTransaction",
       "type": "Function",
       "group": "backend",
@@ -16722,21 +16733,21 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 84
+      "line": 90
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "id": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "label": "verifyArtifact",
       "type": "Function",
       "group": "backend",
       "file": "backend/verification/artifactVerifier.js",
       "description": "",
-      "val": 10.5,
+      "val": 11,
       "provenance": "ast",
-      "line": 104
+      "line": 110
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:assertLease@152",
+      "id": "backend/verification/artifactVerifier.js#Function:assertLease@158",
       "label": "assertLease",
       "type": "Function",
       "group": "backend",
@@ -16744,10 +16755,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 152
+      "line": 158
     },
     {
-      "id": "backend/verification/artifactVerifier.js#Function:compare@223",
+      "id": "backend/verification/artifactVerifier.js#Function:compare@229",
       "label": "compare",
       "type": "Function",
       "group": "backend",
@@ -16755,7 +16766,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 223
+      "line": 229
     },
     {
       "id": "backend/verification/browserVerifier.js#Function:matchElement@2",
@@ -19567,7 +19578,7 @@
       "line": 203
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
+      "id": "frontend/src/components/DashboardView.jsx#Function:gateDetails@59",
       "label": "gateDetails",
       "type": "Function",
       "group": "frontend",
@@ -19575,10 +19586,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 50
+      "line": 59
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@54",
+      "id": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@70",
       "label": "StatusBadge",
       "type": "Function",
       "group": "frontend",
@@ -19586,10 +19597,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 54
+      "line": 70
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
+      "id": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@78",
       "label": "formatTimestamp",
       "type": "Function",
       "group": "frontend",
@@ -19597,10 +19608,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 62
+      "line": 78
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
+      "id": "frontend/src/components/DashboardView.jsx#Function:DashboardView@84",
       "label": "DashboardView",
       "type": "Function",
       "group": "frontend",
@@ -19608,10 +19619,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 68
+      "line": 84
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@149",
+      "id": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@165",
       "label": "loadMoreRuns",
       "type": "Function",
       "group": "frontend",
@@ -19619,10 +19630,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 149
+      "line": 165
     },
     {
-      "id": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
+      "id": "frontend/src/components/DashboardView.jsx#Function:loadLog@181",
       "label": "loadLog",
       "type": "Function",
       "group": "frontend",
@@ -19630,7 +19641,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 165
+      "line": 181
     },
     {
       "id": "frontend/src/components/Header.jsx#Function:Header@14",
@@ -19818,7 +19829,18 @@
       "line": 48
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@128",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRun@78",
+      "label": "getVerificationRun",
+      "type": "Method",
+      "group": "tests",
+      "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 78
+    },
+    {
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@144",
       "label": "apiClient.getVerificationRun",
       "type": "Method",
       "group": "tests",
@@ -19826,10 +19848,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 128
+      "line": 144
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@129",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@145",
       "label": "apiClient.getVerificationCheckLog",
       "type": "Method",
       "group": "tests",
@@ -19837,10 +19859,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 129
+      "line": 145
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@152",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@168",
       "label": "apiClient.getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -19848,10 +19870,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 152
+      "line": 168
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@169",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@185",
       "label": "apiClient.getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -19859,10 +19881,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 169
+      "line": 185
     },
     {
-      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@193",
+      "id": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@209",
       "label": "getVerificationRuns",
       "type": "Method",
       "group": "tests",
@@ -19870,7 +19892,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 193
+      "line": 209
     },
     {
       "id": "frontend/src/components/__tests__/P5DownloadPolicy.test.jsx#Method:headerProps.getStatusBadge@17",
@@ -37728,32 +37750,32 @@
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@214",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.request@217",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 214
+        "line": 217
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.interact@215",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.interact@218",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 215
+        "line": 218
       }
     },
     {
       "source": "backend/tests/test_p1_b_smoke.js",
-      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@224",
+      "target": "backend/tests/test_p1_b_smoke.js#Method:adapter.execute@227",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_b_smoke.js",
-        "line": 224
+        "line": 227
       }
     },
     {
@@ -38088,102 +38110,102 @@
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@42",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@47",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 42
+        "line": 47
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@53",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 53
+        "line": 58
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@80",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@85",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 80
+        "line": 85
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@95",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@100",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 95
+        "line": 100
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@111",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@116",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 111
+        "line": 116
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@147",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@152",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 147
+        "line": 152
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@187",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@192",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 187
+        "line": 192
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@239",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@244",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 239
+        "line": 244
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@260",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@265",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 260
+        "line": 265
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@278",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Method:verifyArtifact@283",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 278
+        "line": 283
       }
     },
     {
@@ -46358,7 +46380,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@63",
+      "target": "backend/verification/artifactVerifier.js#Function:isMandatoryArtifactCheck@63",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -46368,17 +46390,17 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@68",
+      "target": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@69",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 68
+        "line": 69
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@74",
+      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@74",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -46388,42 +46410,52 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@84",
+      "target": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@80",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 84
+        "line": 80
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "target": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@90",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 104
+        "line": 90
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:assertLease@152",
+      "target": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 152
+        "line": 110
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js",
-      "target": "backend/verification/artifactVerifier.js#Function:compare@223",
+      "target": "backend/verification/artifactVerifier.js#Function:assertLease@158",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 223
+        "line": 158
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js",
+      "target": "backend/verification/artifactVerifier.js#Function:compare@229",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 229
       }
     },
     {
@@ -50828,62 +50860,62 @@
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
+      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@59",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 50
+        "line": 59
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@54",
+      "target": "frontend/src/components/DashboardView.jsx#Function:StatusBadge@70",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 54
+        "line": 70
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
+      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@78",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 62
+        "line": 78
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
+      "target": "frontend/src/components/DashboardView.jsx#Function:DashboardView@84",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 68
+        "line": 84
       }
     },
     {
       "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@149",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "frontend/src/components/DashboardView.jsx",
-        "line": 149
-      }
-    },
-    {
-      "source": "frontend/src/components/DashboardView.jsx",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadMoreRuns@165",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
         "line": 165
+      }
+    },
+    {
+      "source": "frontend/src/components/DashboardView.jsx",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@181",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/components/DashboardView.jsx",
+        "line": 181
       }
     },
     {
@@ -51248,52 +51280,62 @@
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@128",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRun@78",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 128
+        "line": 78
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@129",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRun@144",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 129
+        "line": 144
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@152",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationCheckLog@145",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 152
+        "line": 145
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@169",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@168",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 169
+        "line": 168
       }
     },
     {
       "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
-      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@193",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:apiClient.getVerificationRuns@185",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 193
+        "line": 185
+      }
+    },
+    {
+      "source": "frontend/src/components/__tests__/DashboardView.test.jsx",
+      "target": "frontend/src/components/__tests__/DashboardView.test.jsx#Method:getVerificationRuns@209",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
+        "line": 209
       }
     },
     {
@@ -65593,7 +65635,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 18
+        "line": 23
       }
     },
     {
@@ -65603,42 +65645,32 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 20
+        "line": 25
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@42",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:createTestZip@47",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 134
+        "line": 139
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@53",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:registerArtifact@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 140
+        "line": 145
       }
     },
     {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@95",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 142
-      }
-    },
-    {
-      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@147",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@111",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:artifactIdentity@100",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -65647,33 +65679,43 @@
       }
     },
     {
+      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@152",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@116",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p1_c_artifact_verifier.js",
+        "line": 152
+      }
+    },
+    {
       "source": "backend/tests/test_p1_c_artifact_verifier.js",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@80",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:passingCheck@85",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 177
+        "line": 182
       }
     },
     {
-      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@187",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@111",
+      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@192",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@116",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 187
+        "line": 192
       }
     },
     {
-      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@239",
-      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@111",
+      "source": "backend/tests/test_p1_c_artifact_verifier.js#Method:result.verifyArtifact@244",
+      "target": "backend/tests/test_p1_c_artifact_verifier.js#Function:workerResponse@116",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p1_c_artifact_verifier.js",
-        "line": 239
+        "line": 244
       }
     },
     {
@@ -69028,7 +69070,7 @@
     },
     {
       "source": "backend/tests/test_p9_verification_pipeline.js",
-      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@68",
+      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@74",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -71637,168 +71679,138 @@
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@84",
-      "target": "backend/verification/artifactVerifier.js#Function:assertLease@152",
+      "source": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@90",
+      "target": "backend/verification/artifactVerifier.js#Function:assertLease@158",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 87
+        "line": 93
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/artifactVerifier.js#Function:loadRepositoryDefaults@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 143
+        "line": 149
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:assertLease@152",
+      "source": "backend/verification/artifactVerifier.js#Function:assertLease@158",
       "target": "backend/workflowAttempts.js#Function:assertWorkflowLease@214",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 154
+        "line": 160
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/config.js#Function:validateRuntimeConfig@64",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 177
+        "line": 183
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/executionClient.js#Function:createExecutionClient@4",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 178
+        "line": 184
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/safeExtractor.js#Function:inspectZipEntries@31",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 208
+        "line": 214
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@74",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:canonicalArchivePath@80",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 221
+        "line": 227
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:compare@223",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:compare@229",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 231
+        "line": 237
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@84",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:runLeaseTransaction@90",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 235
+        "line": 241
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:assertLease@152",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:assertLease@158",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 258
+        "line": 264
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/artifactVerifier.js#Function:assertIdentity@45",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 259
+        "line": 265
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/qualityPolicy.js#Function:combineRuntimeGate@509",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 273
+        "line": 279
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/contracts/domainPolicy.js#Function:verifyDomainCompliance@74",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 283
+        "line": 289
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/placeholderVerifier.js#Function:verifyPlaceholders@139",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/verification/artifactVerifier.js",
-        "line": 284
-      }
-    },
-    {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/contaminationVerifier.js#Function:verifyContamination@13",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/verification/artifactVerifier.js",
-        "line": 285
-      }
-    },
-    {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/securityVerifier.js#Function:verifySecurityBaseline@95",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/verification/artifactVerifier.js",
-        "line": 286
-      }
-    },
-    {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/qualityPolicy.js#Function:captureHardeningGate@575",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -71807,33 +71819,73 @@
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@68",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/contaminationVerifier.js#Function:verifyContamination@13",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 312
+        "line": 291
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/securityVerifier.js#Function:verifySecurityBaseline@95",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 292
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/qualityPolicy.js#Function:captureHardeningGate@575",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 296
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:passingVerificationSourceNames@74",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 318
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:isMandatoryArtifactCheck@63",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 329
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
       "target": "backend/verification/artifactVerifier.js#Function:normalizeWorkerCheckStatus@56",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 325
+        "line": 331
       }
     },
     {
-      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@104",
-      "target": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@63",
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@110",
+      "target": "backend/verification/artifactVerifier.js#Function:hasMandatoryGateCoverage@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 352
+        "line": 358
       }
     },
     {
@@ -72883,7 +72935,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 91
+        "line": 110
       }
     },
     {
@@ -72893,7 +72945,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 96
+        "line": 115
       }
     },
     {
@@ -72903,7 +72955,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 102
+        "line": 121
       }
     },
     {
@@ -72913,7 +72965,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 108
+        "line": 127
       }
     },
     {
@@ -72923,7 +72975,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/smokeVerifier.js",
-        "line": 119
+        "line": 138
       }
     },
     {
@@ -74797,33 +74849,33 @@
       }
     },
     {
-      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
-      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@62",
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@84",
+      "target": "frontend/src/components/DashboardView.jsx#Function:formatTimestamp@78",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 236
+        "line": 252
       }
     },
     {
-      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
-      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@165",
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@84",
+      "target": "frontend/src/components/DashboardView.jsx#Function:loadLog@181",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 313
+        "line": 329
       }
     },
     {
-      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@68",
-      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@50",
+      "source": "frontend/src/components/DashboardView.jsx#Function:DashboardView@84",
+      "target": "frontend/src/components/DashboardView.jsx#Function:gateDetails@59",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/DashboardView.jsx",
-        "line": 315
+        "line": 331
       }
     },
     {
@@ -74893,7 +74945,7 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/__tests__/DashboardView.test.jsx",
-        "line": 125
+        "line": 141
       }
     },
     {

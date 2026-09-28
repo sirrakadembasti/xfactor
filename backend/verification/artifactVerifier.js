@@ -60,6 +60,12 @@ export function normalizeWorkerCheckStatus(value, mandatory = false) {
     return 'BLOCKED';
 }
 
+export function isMandatoryArtifactCheck(gateName, contract = {}) {
+    if (MANDATORY_GATES.includes(gateName)) return true;
+    if (contract.management?.needed !== true) return false;
+    return /^(?:api_role_(?:create|read|update|delete)_(?:allowed|denied)|api_anonymous_(?:mutation_denied|read_policy)|api_delete_related_retention|api_unverified_mutation_operation|management_(?:runtime_contract|demo_seed|role_login)|browser_management_interaction|database_mutation_assertion)$/.test(gateName);
+}
+
 export function hasMandatoryGateCoverage(checks = []) {
     const present = new Set(checks.map(check => check?.gateName || check?.name).filter(Boolean));
     return MANDATORY_GATES.every(name => present.has(name));
@@ -320,7 +326,7 @@ export async function verifyArtifact(
         for (const check of allChecks) {
             const checkId = check.id || crypto.randomUUID();
             const gateName = check.gateName || check.name;
-            const isMandatory = MANDATORY_GATES.includes(gateName);
+            const isMandatory = isMandatoryArtifactCheck(gateName, parsedContract);
             const applicability = isMandatory ? 'MANDATORY' : (check.applicability || 'OPTIONAL');
             const status = normalizeWorkerCheckStatus(check.status, isMandatory);
             runLeaseTransaction(database, assertLease, () => {
@@ -350,7 +356,7 @@ export async function verifyArtifact(
         }
 
         const passed = hasMandatoryGateCoverage(allChecks)
-            && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, MANDATORY_GATES.includes(c.gateName || c.name))));
+            && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, isMandatoryArtifactCheck(c.gateName || c.name, parsedContract))));
         runLeaseTransaction(database, assertLease, () => {
             updateArtifactStatus({
                 projectId, contractId, artifactId,

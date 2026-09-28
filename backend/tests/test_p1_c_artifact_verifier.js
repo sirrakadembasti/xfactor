@@ -14,7 +14,12 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
 const { createArtifact, getArtifact, getLatestVerifiedArtifact } = await import('../repositories/artifactRepository.js');
-const { verifyArtifact, hasMandatoryGateCoverage } = await import('../verification/artifactVerifier.js');
+const { verifyArtifact, hasMandatoryGateCoverage, isMandatoryArtifactCheck } = await import('../verification/artifactVerifier.js');
+assert.equal(isMandatoryArtifactCheck('api_role_create_allowed', { management: { needed: true } }), true);
+assert.equal(isMandatoryArtifactCheck('browser_management_interaction', { management: { needed: true } }), true);
+assert.equal(isMandatoryArtifactCheck('management_demo_seed', { management: { needed: true } }), true);
+assert.equal(isMandatoryArtifactCheck('management_role_login', { management: { needed: true } }), true);
+assert.equal(isMandatoryArtifactCheck('api_role_create_allowed', { management: { needed: false } }), false);
 const { RUNTIME_GATE_MEMBERS } = await import('../verification/qualityPolicy.js');
 
 const { runAsyncTest, finish } = createTestHarness();

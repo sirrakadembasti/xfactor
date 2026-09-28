@@ -44,10 +44,26 @@ const gateDescriptions = {
   placeholder_check: ['Eksik kod taraması', 'Boş veya geçici kod parçalarını arar.'],
   contamination_check: ['İçerik temizliği', 'Başka projelerden taşınmış içerikleri arar.'],
   security_baseline: ['Güvenlik temeli', 'Temel güvenlik kurallarının uygulanmasını denetler.'],
-  readme_check: ['Kurulum rehberi', 'README komutlarının uygulama ayarlarıyla uyumunu denetler.']
+  readme_check: ['Kurulum rehberi', 'README komutlarının uygulama ayarlarıyla uyumunu denetler.'],
+  management_runtime_contract: ['Yönetim çalışma sözleşmesi', 'Yönetim API ve ekran adreslerinin doğrulama için tanımlı olmasını denetler.'],
+  management_demo_seed: ['Demo rol hesapları', 'Her rol için ayrı test hesabının izole ortamda hazırlandığını denetler.'],
+  management_role_login: ['Rol girişleri', 'Her demo rolünün gerçek giriş akışıyla oturum açabildiğini denetler.'],
+  api_anonymous_mutation_denied: ['Oturumsuz yazma reddi', 'Giriş yapmayan kullanıcının yönetim kaydını değiştirememesini sınar.'],
+  api_anonymous_read_policy: ['Oturumsuz okuma kuralı', 'Anonim okumanın onaylı erişim kuralına uyduğunu sınar.'],
+  api_delete_related_retention: ['İlişkili kayıt saklama kuralı', 'Silme sonrasında ilişkili kayıtların onaylı saklama davranışını sınar.'],
+  api_unverified_mutation_operation: ['Eksik CRUD doğrulaması', 'Onaylı yönetim işlemlerinden kanıtı eksik olanları gösterir.'],
+  database_mutation_assertion: ['Veri kalıcılığı', 'API ile yapılan değişikliğin sonraki okumada gerçekten görüldüğünü sınar.'],
+  browser_management_interaction: ['Yönetim paneli etkileşimleri', 'Rol bazlı tıklama, form, görünür sonuç ve erişilebilirlik yolculuklarını sınar.']
 };
 
 function gateDetails(gateName) {
+  const roleOperation = /^api_role_(create|read|update|delete)_(allowed|denied)$/.exec(gateName || '');
+  if (roleOperation) {
+    const action = { create: 'oluşturma', read: 'okuma', update: 'güncelleme', delete: 'silme' }[roleOperation[1]];
+    return roleOperation[2] === 'allowed'
+      ? [`Rol bazlı ${action} izni`, `Yetkili rolün ${action} işlemini yapıp sonucunu görebildiğini sınar.`]
+      : [`Rol bazlı ${action} reddi`, `Yetkisiz rolün ${action} işlemi yapamadığını ve verinin değişmediğini sınar.`];
+  }
   return gateDescriptions[gateName] || [gateName, 'Bu kontrolün teknik adı ve makine sonucu aşağıda gösterilir.'];
 }
 

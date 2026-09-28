@@ -69,6 +69,22 @@ test('renders authoritative run history and evidence identifiers without mutatio
   }
 });
 
+test('names management login, role permissions, CRUD denial and browser checks', async () => {
+  const managementChecks = [
+    'management_demo_seed', 'management_role_login', 'api_role_create_allowed', 'api_role_delete_denied',
+    'api_anonymous_mutation_denied', 'api_delete_related_retention', 'browser_management_interaction'
+  ].map((gate_name, index) => ({ ...check, id: `management-${index}`, gate_name }));
+  render(<DashboardView projectId={projectId} projectTitle="Management Project"
+    apiClient={createApi({ getVerificationRun: async () => ({ run, checks: managementChecks }) })} />);
+  expect(await screen.findByText('Demo rol hesapları')).toBeInTheDocument();
+  expect(screen.getByText('Rol girişleri')).toBeInTheDocument();
+  expect(screen.getByText('Rol bazlı oluşturma izni')).toBeInTheDocument();
+  expect(screen.getByText('Rol bazlı silme reddi')).toBeInTheDocument();
+  expect(screen.getByText('Oturumsuz yazma reddi')).toBeInTheDocument();
+  expect(screen.getByText('İlişkili kayıt saklama kuralı')).toBeInTheDocument();
+  expect(screen.getByText('Yönetim paneli etkileşimleri')).toBeInTheDocument();
+});
+
 test('explains the panel purpose, status meanings, and selected run summary before technical evidence', async () => {
   render(<DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={createApi()} />);
 

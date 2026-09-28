@@ -128,6 +128,7 @@ npm run test:e2e
 ```
 
 Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker daemon gerektirir; daemon yoksa ilgili test açıkça `BLOCKED` olur.
+Yönetim uygulamalarının kalite paneli, demo rol girişlerini, izinli/reddedilen CRUD işlemlerini ve yönetim ekranı etkileşimlerini ayrı kanıt satırları olarak gösterir. Bu satırlar mevcut API, tarayıcı ve canlı servis kapılarının ayrıntılarıdır; ayrıca yeni bir üst seviye kapı sayısı oluşturmaz.
 Üretilen Dockerfile için ayrıca `npm --prefix backend run test:docker:artifact` komutu, temsilî Express ve `public/` klasörü olmayan Next projelerini ZIP'e koyup ZIP'den çıkarır; Docker build ve ilk HTTP yanıtını denetler. Bu bağımsız kabul testi, her kullanıcı ZIP'inin üretim sırasında Docker ile doğrulandığı anlamına gelmez.
 
 ---

@@ -198,6 +198,9 @@ try {
             ]
         });
         assert.equal(result.checks.find(check => check.name === 'management_demo_seed')?.status, 'passed');
+        assert.deepEqual(result.checks.filter(check => check.name === 'management_role_login')
+            .map(check => [check.evidence?.role, check.status]),
+            [['manager', 'passed'], ['viewer', 'passed']]);
         assert.equal(result.checks.find(check => check.name === 'api_role_create_allowed')?.status, 'passed');
         assert.equal(result.checks.find(check => check.name === 'api_role_create_denied')?.status, 'passed');
         assert.ok(calls.some(call => call.args?.[1]?.includes('xfactor:test:setup') && call.input));

@@ -87,6 +87,25 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             });
             if (!health.responsive) issues.push(health.error);
         }
+        if (contract.management?.needed === true) {
+            for (const role of contract.management.roles || []) {
+                try {
+                    if (!runtimeChecks.api?.baseUrl || typeof apiAdapter?.requestAsRole !== 'function') {
+                        throw new Error('An isolated authenticated role session is unavailable.');
+                    }
+                    const target = new URL('/', runtimeChecks.api.baseUrl).href;
+                    const response = await apiAdapter.requestAsRole({ role: role.name, method: 'GET', url: target,
+                        signal: options.signal });
+                    checks.push({ name: 'management_role_login', status: 'passed',
+                        evidence: { adapterId: options.adapter?.id, role: role.name,
+                            authenticatedTargetStatus: response.statusCode } });
+                } catch (error) {
+                    checks.push({ name: 'management_role_login', status: 'blocked',
+                        reason: error.message, evidence: { role: role.name } });
+                    issues.push(`Management login failed for role ${role.name}: ${error.message}`);
+                }
+            }
+        }
         if (contract.database) {
             const db = await verifyDatabase(projectDir, contract, runtimeEnv, common);
             checks.push(...db.checks);
