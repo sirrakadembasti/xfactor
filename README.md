@@ -34,10 +34,9 @@
 ```bash
 # 1. Backend yapılandırması
 cd backend
-copy .env.example .env    # Linux/macOS: cp .env.example .env
-
-# .env dosyasına LLM_CONFIG_ENCRYPTION_KEY değerini girin;
-# sağlayıcı API anahtarını LLM Yönetimi ekranında kaydedin
+# İlk açılış .env dosyasını oluşturur ve LLM şifreleme anahtarını yazar.
+# Özel port veya ağ ayarı gerekiyorsa .env.example dosyasını önce .env olarak kopyalayıp düzenleyin.
+# Sağlayıcı API anahtarını LLM Yönetimi ekranında kaydedin.
 npm install
 
 # 2. Frontend bağımlılıkları

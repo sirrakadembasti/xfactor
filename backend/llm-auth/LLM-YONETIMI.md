@@ -2,13 +2,8 @@
 
 ## İlk kurulum
 
-1. XFactor'ın yerel `backend/.env` dosyasında LLM yönetimi için yalnızca `LLM_CONFIG_ENCRYPTION_KEY` şifreleme anahtarı bulunur; sağlayıcı adresi, modeli ve API anahtarı burada tutulmaz. Bu anahtarı Git'e koymayın; kaybolursa kayıtlı sağlayıcı anahtarları çözülemez. Eklentiyi başka uygulamaya taşıdığınızda o uygulama için yeni bir 32 baytlık anahtar üretin:
-
-   ```bash
-   node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-   ```
-
-2. Daha önce `.env` içinde bulunan Google Gemini API anahtarı şifreli **Google Gemini** profiline taşınmıştır. Xiaomi MiMo profili de yönetim ekranında kayıtlıdır. Etkin sağlayıcıyı **Etkinleştir** düğmesiyle değiştirebilirsiniz. Token Plan anahtarı ile Singapur adresi aynı plana/bölgeye ait olmalıdır.
+1. XFactor ilk açılışta kurulumuna özel rastgele `LLM_CONFIG_ENCRYPTION_KEY` anahtarını yerel `backend/.env` içine otomatik yazar. Elle anahtar üretmeniz gerekmez. Sağlayıcı adresi, modeli ve API anahtarı bu dosyada tutulmaz. `.env` dosyasını Git'e koymayın; anahtar kaybolursa kayıtlı sağlayıcı anahtarları çözülemez. Şifreli profil dosyası varken anahtar eksikse XFactor yeni anahtar üretmez ve eski anahtarın yedekten kurtarılmasını ister.
+2. GitHub'dan yeni kurulumda kayıtlı profil veya sağlayıcı API anahtarı gelmez; yönetim ekranından kendi profilinizi oluşturun. Önceki yerel kurulumda taşınmış Google Gemini ve Xiaomi MiMo profilleri varsa yalnız o kurulumda görünür. Token Plan anahtarı ile Singapur adresi aynı plana/bölgeye ait olmalıdır.
 3. XFactor'a yönetici olarak giriş yapın. Sol menüden **LLM Yönetimi** sayfasını açın (`/llm`). Geliştirme sunucusu `/llm` isteğini backend'e yönlendirir.
 4. Sağlayıcıyı seçin, profil adını, API adresini, model kimliğini ve o sağlayıcının API anahtarını girin. Katalog değerleri yalnızca başlangıç önerisidir; API adresi ve model kimliği alanlarına güncel değerleri elle yazabilirsiniz. **Profili kaydet** ardından **Bağlantıyı sına** ve **Etkinleştir** adımlarını izleyin. **Düzenle** sırasında API anahtarını boş bırakırsanız kayıtlı anahtar korunur; yeni anahtar girerseniz değiştirilir.
 
@@ -37,6 +32,8 @@ Yalnızca API anahtarını değiştirmek yeterli değildir: sağlayıcı, model 
 ## Başka Express uygulamasına ekleme
 
 `backend/llm-auth/llm.js` içindeki `mountLLMManagement` uygulamanın mevcut oturum ara yazılımını alır. `requireAuth` isteğe `req.user` eklemeli; yönetici için `req.user.isAdmin === true` sağlamalıdır. JSON body ve CSRF korumasını montajdan önce kurun.
+
+Başka uygulamada yalnız eklentiyi kullanırken `LLM_CONFIG_ENCRYPTION_KEY` ortam değişkenini o uygulamaya özel güvenli ve kalıcı bir anahtarla sağlayın. XFactor'ın otomatik `.env` hazırlığı `backend/server.js` içindeki `ensureLLMEncryptionKey` çağrısına bağlıdır; eklentinin tek başına montajı bu hazırlığı yapmaz.
 
 ```js
 import express from 'express';

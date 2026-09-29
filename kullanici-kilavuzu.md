@@ -96,7 +96,7 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 - **İnternet Bağlantısı:** Seçtiğiniz LLM sağlayıcısının API adresine erişim için
 
 ### 1. Adım: Yapılandırma Dosyasını Hazırlama
-`backend/` klasöründe bulunan `.env.example` dosyasını kopyalayarak `.env` oluşturun:
+İlk açılış `backend/.env.example` dosyasından yerel `backend/.env` dosyasını otomatik oluşturur. Özel ayar yapacaksanız önceden kendiniz kopyalayıp düzenleyebilirsiniz:
 
 ```bash
 # Windows
@@ -108,19 +108,18 @@ cd backend
 cp .env.example .env
 ```
 
-`.env` dosyasını açıp doldurun:
+Özel ayar gerektiğinde `.env` dosyasını düzenleyin. Varsayılan içerik şöyledir:
 ```env
 PORT=8000
 # Kimlik doğrulama anahtarı veya yönetici parolası .env içinde tutulmaz.
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ALLOW_MOCK_FALLBACK=false
-LLM_CONFIG_ENCRYPTION_KEY=...64-hex-karakterlik-yerel-anahtar...
 EXECUTION_WORKER_TOKEN=dev-worker-token-internal
 EXECUTION_WORKER_URL=http://127.0.0.1:8099
 READINESS_WORKER_TIMEOUT_MS=2000
 ```
 
-Şifreleme anahtarını `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` komutuyla üretin. Sağlayıcı API anahtarını, adresini ve modelini `.env` içine koymayın; yönetici oturumuyla **LLM Yönetimi** sayfasında profil olarak kaydedin. Profil dosyası `backend/data/llm-profiles.json` konumunda şifreli tutulur ve Git dışında kalır. Şifreleme anahtarını kaybederseniz kayıtlı API anahtarlarını çözemezsiniz.
+İlk açılışta XFactor her kurulum için ayrı rastgele `LLM_CONFIG_ENCRYPTION_KEY` üretir ve yerel `backend/.env` dosyasına kaydeder; komut çalıştırmanız veya anahtarı elle yazmanız gerekmez. Sağlayıcı API anahtarını, adresini ve modelini `.env` içine koymayın; yönetici oturumuyla **LLM Yönetimi** sayfasında profil olarak kaydedin. Profil dosyası `backend/data/llm-profiles.json` konumunda şifreli tutulur ve Git dışında kalır. Şifreleme anahtarı kaybolur fakat şifreli profiller durursa XFactor yeni anahtar üretmek yerine kurtarma isteyerek açılışı durdurur. `.env` ve profil dosyasını birlikte güvenli biçimde yedekleyin.
 
 ### 2. Adım: Bağımlılıklar ve Varsayılan Giriş Hesabı
 ```bash

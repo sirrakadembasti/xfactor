@@ -39,7 +39,9 @@ import {
 import { createLifecycleCoordinator } from './lifecycle.js';
 import { initNetworkResolver } from './networkResolver.js';
 import { mountLLMManagement } from './llm-auth/llm.js';
+import { ensureLLMEncryptionKey } from './llm-auth/setup.js';
 dotenv.config();
+ensureLLMEncryptionKey();
 initNetworkResolver();
 
 const runtimeConfig = validateRuntimeConfig(process.env);

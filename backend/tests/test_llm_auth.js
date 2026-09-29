@@ -6,6 +6,35 @@ import path from 'node:path';
 import express from 'express';
 import { createLLMProfileStore, mountLLMManagement, PROVIDERS, validateProviderUrl } from '../llm-auth/llm.js';
 import { generateLLMResponse, getCurrentLLMProvider } from '../llm.js';
+import { ensureLLMEncryptionKey } from '../llm-auth/setup.js';
+
+test('first launch writes one installation-specific encryption key and reuses it', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-llm-setup-'));
+  try {
+    const envPath = path.join(root, '.env');
+    const examplePath = path.join(root, '.env.example');
+    fs.writeFileSync(examplePath, 'PORT=8000\n# LLM_CONFIG_ENCRYPTION_KEY=\n');
+    const environment = {};
+    const first = ensureLLMEncryptionKey({ envPath, examplePath, profilePath: path.join(root, 'profiles.json'), environment });
+    assert.match(first, /^[0-9a-f]{64}$/);
+    assert.equal(environment.LLM_CONFIG_ENCRYPTION_KEY, first);
+    assert.match(fs.readFileSync(envPath, 'utf8'), new RegExp(`^LLM_CONFIG_ENCRYPTION_KEY=${first}$`, 'm'));
+    assert.equal(ensureLLMEncryptionKey({ envPath, examplePath, profilePath: path.join(root, 'profiles.json'), environment: {} }), first);
+    assert.equal((fs.readFileSync(envPath, 'utf8').match(/^LLM_CONFIG_ENCRYPTION_KEY=/gm) || []).length, 1);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('missing key with existing encrypted profiles stops instead of replacing the key', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-llm-recovery-'));
+  try {
+    const envPath = path.join(root, '.env');
+    const profilePath = path.join(root, 'profiles.json');
+    fs.writeFileSync(envPath, 'PORT=8000\n');
+    fs.writeFileSync(profilePath, JSON.stringify({ profiles: [{ id: 'existing', secret: 'encrypted' }], activeId: 'existing' }));
+    assert.throws(() => ensureLLMEncryptionKey({ envPath, profilePath, environment: {} }), /şifreleme anahtarı.*kurtar/i);
+    assert.equal(fs.readFileSync(envPath, 'utf8'), 'PORT=8000\n');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
 
 test('provider profiles persist encrypted and never expose the API key', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-llm-auth-'));

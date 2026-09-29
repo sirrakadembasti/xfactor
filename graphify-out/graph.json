@@ -337,7 +337,7 @@
       "group": "backend",
       "file": "backend/server.js",
       "description": "REST API sunucusu ve Sec-WebSocket-Protocol yayıncısı",
-      "val": 37.5,
+      "val": 38.5,
       "provenance": "curated"
     },
     {
@@ -1191,6 +1191,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/llm-auth/setup.js",
+      "label": "setup.js",
+      "type": "SourceFile",
+      "group": "backend",
+      "file": "backend/llm-auth/setup.js",
+      "description": "",
+      "val": 5.5,
+      "provenance": "ast"
+    },
+    {
       "id": "backend/maintenance.js",
       "label": "maintenance.js",
       "type": "SourceFile",
@@ -1487,7 +1497,7 @@
       "group": "tests",
       "file": "backend/tests/test_llm_auth.js",
       "description": "",
-      "val": 17,
+      "val": 18,
       "provenance": "ast"
     },
     {
@@ -4282,7 +4292,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 19.5,
+      "val": 20,
       "provenance": "ast"
     },
     {
@@ -4292,7 +4302,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 21.5,
+      "val": 22,
       "provenance": "ast"
     },
     {
@@ -4302,7 +4312,7 @@
       "group": "packages",
       "file": null,
       "description": "node:url",
-      "val": 10.5,
+      "val": 11,
       "provenance": "ast"
     },
     {
@@ -4916,7 +4926,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 16.5,
+      "val": 17,
       "provenance": "ast"
     },
     {
@@ -7802,8 +7812,30 @@
       "group": "packages",
       "file": null,
       "description": "dotenv",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast"
+    },
+    {
+      "id": "backend/llm-auth/setup.js#Function:validKey@9",
+      "label": "validKey",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/llm-auth/setup.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 9
+    },
+    {
+      "id": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
+      "label": "ensureLLMEncryptionKey",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/llm-auth/setup.js",
+      "description": "",
+      "val": 3.5,
+      "provenance": "ast",
+      "line": 14
     },
     {
       "id": "package:@google/generative-ai",
@@ -9976,7 +10008,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#Method:origin@161",
+      "id": "backend/server.js#Method:origin@163",
       "label": "origin",
       "type": "Method",
       "group": "backend",
@@ -9984,10 +10016,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 161
+      "line": 163
     },
     {
-      "id": "backend/server.js#Method:wss.verifyClient@213",
+      "id": "backend/server.js#Method:wss.verifyClient@215",
       "label": "wss.verifyClient",
       "type": "Method",
       "group": "backend",
@@ -9995,10 +10027,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 213
+      "line": 215
     },
     {
-      "id": "backend/server.js#Function:onSessionRevoked@242",
+      "id": "backend/server.js#Function:onSessionRevoked@244",
       "label": "onSessionRevoked",
       "type": "Function",
       "group": "backend",
@@ -10006,10 +10038,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 242
+      "line": 244
     },
     {
-      "id": "backend/server.js#Function:onUserSessionsRevoked@243",
+      "id": "backend/server.js#Function:onUserSessionsRevoked@245",
       "label": "onUserSessionsRevoked",
       "type": "Function",
       "group": "backend",
@@ -10017,10 +10049,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 243
+      "line": 245
     },
     {
-      "id": "backend/server.js#Function:projectAccess@251",
+      "id": "backend/server.js#Function:projectAccess@253",
       "label": "projectAccess",
       "type": "Function",
       "group": "backend",
@@ -10028,10 +10060,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 251
+      "line": 253
     },
     {
-      "id": "backend/server.js#Function:startServer@326",
+      "id": "backend/server.js#Function:startServer@328",
       "label": "startServer",
       "type": "Function",
       "group": "backend",
@@ -10039,10 +10071,10 @@
       "description": "",
       "val": 6.5,
       "provenance": "ast",
-      "line": 326
+      "line": 328
     },
     {
-      "id": "backend/server.js#Function:runEvidenceCompaction@357",
+      "id": "backend/server.js#Function:runEvidenceCompaction@359",
       "label": "runEvidenceCompaction",
       "type": "Function",
       "group": "backend",
@@ -10050,10 +10082,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 357
+      "line": 359
     },
     {
-      "id": "backend/server.js#Function:closeWebSockets@372",
+      "id": "backend/server.js#Function:closeWebSockets@374",
       "label": "closeWebSockets",
       "type": "Function",
       "group": "backend",
@@ -10061,10 +10093,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 372
+      "line": 374
     },
     {
-      "id": "backend/server.js#Function:closeHttpServer@382",
+      "id": "backend/server.js#Function:closeHttpServer@384",
       "label": "closeHttpServer",
       "type": "Function",
       "group": "backend",
@@ -10072,10 +10104,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 382
+      "line": 384
     },
     {
-      "id": "backend/server.js#Function:handleGracefulShutdown@391",
+      "id": "backend/server.js#Function:handleGracefulShutdown@393",
       "label": "handleGracefulShutdown",
       "type": "Function",
       "group": "backend",
@@ -10083,10 +10115,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 391
+      "line": 393
     },
     {
-      "id": "backend/server.js#Method:result.checkpointDatabase@402",
+      "id": "backend/server.js#Method:result.checkpointDatabase@404",
       "label": "result.checkpointDatabase",
       "type": "Method",
       "group": "backend",
@@ -10094,7 +10126,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 402
+      "line": 404
     },
     {
       "id": "backend/services/reconciliationService.js#Function:resolveDb@9",
@@ -11554,7 +11586,7 @@
       "line": 136
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@57",
+      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@86",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -11562,10 +11594,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 57
+      "line": 86
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:generate@57",
+      "id": "backend/tests/test_llm_auth.js#Method:generate@86",
       "label": "generate",
       "type": "Method",
       "group": "tests",
@@ -11573,10 +11605,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 57
+      "line": 86
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@98",
+      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@127",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -11584,10 +11616,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 98
+      "line": 127
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:generate@99",
+      "id": "backend/tests/test_llm_auth.js#Method:generate@128",
       "label": "generate",
       "type": "Method",
       "group": "tests",
@@ -11595,10 +11627,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 99
+      "line": 128
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:generate@152",
+      "id": "backend/tests/test_llm_auth.js#Method:generate@181",
       "label": "generate",
       "type": "Method",
       "group": "tests",
@@ -11606,10 +11638,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 152
+      "line": 181
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@152",
+      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@181",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -11617,10 +11649,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 152
+      "line": 181
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@194",
+      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@223",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -11628,10 +11660,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 194
+      "line": 223
     },
     {
-      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@234",
+      "id": "backend/tests/test_llm_auth.js#Method:requireAuth@263",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -11639,7 +11671,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 234
+      "line": 263
     },
     {
       "id": "backend/tests/test_manager_error_telemetry.js#Function:buildTestApp@25",
@@ -22163,7 +22195,7 @@
       "group": "config",
       "file": null,
       "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
-      "val": 2.5,
+      "val": 3,
       "provenance": "ast"
     },
     {
@@ -22867,7 +22899,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#route:GET /healthz@70",
+      "id": "backend/server.js#route:GET /healthz@72",
       "label": "GET /healthz",
       "type": "HttpRoute",
       "group": "backend",
@@ -22875,10 +22907,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 70
+      "line": 72
     },
     {
-      "id": "backend/server.js#route:GET /readyz@78",
+      "id": "backend/server.js#route:GET /readyz@80",
       "label": "GET /readyz",
       "type": "HttpRoute",
       "group": "backend",
@@ -22886,7 +22918,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 78
+      "line": 80
     },
     {
       "id": "env:PORT",
@@ -30453,6 +30485,76 @@
       }
     },
     {
+      "source": "backend/llm-auth/setup.js",
+      "target": "package:node:crypto",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "package:node:url",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "package:dotenv",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "backend/llm-auth/setup.js#Function:validKey@9",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 9
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js",
+      "target": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 14
+      }
+    },
+    {
       "source": "backend/llm.js",
       "target": "package:node:path",
       "label": "imports_package",
@@ -33434,112 +33536,122 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:origin@161",
-      "label": "contains",
+      "target": "backend/llm-auth/setup.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 161
+        "line": 42
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:wss.verifyClient@213",
+      "target": "backend/server.js#Method:origin@163",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 213
+        "line": 163
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onSessionRevoked@242",
+      "target": "backend/server.js#Method:wss.verifyClient@215",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 242
+        "line": 215
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onUserSessionsRevoked@243",
+      "target": "backend/server.js#Function:onSessionRevoked@244",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 243
+        "line": 244
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:projectAccess@251",
+      "target": "backend/server.js#Function:onUserSessionsRevoked@245",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 251
+        "line": 245
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@326",
+      "target": "backend/server.js#Function:projectAccess@253",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 326
+        "line": 253
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:runEvidenceCompaction@357",
+      "target": "backend/server.js#Function:startServer@328",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 357
+        "line": 328
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeWebSockets@372",
+      "target": "backend/server.js#Function:runEvidenceCompaction@359",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 372
+        "line": 359
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeHttpServer@382",
+      "target": "backend/server.js#Function:closeWebSockets@374",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 382
+        "line": 374
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@391",
+      "target": "backend/server.js#Function:closeHttpServer@384",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 391
+        "line": 384
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:result.checkpointDatabase@402",
+      "target": "backend/server.js#Function:handleGracefulShutdown@393",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 402
+        "line": 393
+      }
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/server.js#Method:result.checkpointDatabase@404",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 404
       }
     },
     {
@@ -36394,82 +36506,92 @@
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@57",
-      "label": "contains",
+      "target": "backend/llm-auth/setup.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 57
+        "line": 9
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:generate@57",
+      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@86",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 57
+        "line": 86
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@98",
+      "target": "backend/tests/test_llm_auth.js#Method:generate@86",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 98
+        "line": 86
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:generate@99",
+      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 99
+        "line": 127
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:generate@152",
+      "target": "backend/tests/test_llm_auth.js#Method:generate@128",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 152
+        "line": 128
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@152",
+      "target": "backend/tests/test_llm_auth.js#Method:generate@181",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 152
+        "line": 181
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@194",
+      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@181",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 194
+        "line": 181
       }
     },
     {
       "source": "backend/tests/test_llm_auth.js",
-      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@234",
+      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@223",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 234
+        "line": 223
+      }
+    },
+    {
+      "source": "backend/tests/test_llm_auth.js",
+      "target": "backend/tests/test_llm_auth.js#Method:requireAuth@263",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_llm_auth.js",
+        "line": 263
       }
     },
     {
@@ -60273,6 +60395,26 @@
       }
     },
     {
+      "source": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
+      "target": "env:LLM_CONFIG_PATH",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 17
+      }
+    },
+    {
+      "source": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
+      "target": "backend/llm-auth/setup.js#Function:validKey@9",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/llm-auth/setup.js",
+        "line": 23
+      }
+    },
+    {
       "source": "backend/llm.js",
       "target": "backend/networkResolver.js#Function:initNetworkResolver@34",
       "label": "calls",
@@ -63444,17 +63586,17 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/networkResolver.js#Function:initNetworkResolver@34",
+      "target": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 43
+        "line": 44
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/config.js#Function:validateRuntimeConfig@64",
+      "target": "backend/networkResolver.js#Function:initNetworkResolver@34",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63464,12 +63606,22 @@
     },
     {
       "source": "backend/server.js",
+      "target": "backend/config.js#Function:validateRuntimeConfig@64",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 47
+      }
+    },
+    {
+      "source": "backend/server.js",
       "target": "backend/lifecycle.js#Function:createLifecycleCoordinator@26",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 46
+        "line": 48
       }
     },
     {
@@ -63479,7 +63631,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 47
+        "line": 49
       }
     },
     {
@@ -63489,7 +63641,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 61
+        "line": 63
       }
     },
     {
@@ -63499,27 +63651,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 64
+        "line": 66
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#route:GET /healthz@70",
+      "target": "backend/server.js#route:GET /healthz@72",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 70
+        "line": 72
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#route:GET /readyz@78",
+      "target": "backend/server.js#route:GET /readyz@80",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 78
+        "line": 80
       }
     },
     {
@@ -63529,7 +63681,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 90
+        "line": 92
       }
     },
     {
@@ -63539,7 +63691,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 93
+        "line": 95
       }
     },
     {
@@ -63549,7 +63701,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 95
+        "line": 97
       }
     },
     {
@@ -63559,7 +63711,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 96
+        "line": 98
       }
     },
     {
@@ -63569,7 +63721,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 101
+        "line": 103
       }
     },
     {
@@ -63579,7 +63731,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 105
+        "line": 107
       }
     },
     {
@@ -63589,7 +63741,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 140
+        "line": 142
       }
     },
     {
@@ -63599,7 +63751,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 149
+        "line": 151
       }
     },
     {
@@ -63609,17 +63761,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 153
+        "line": 155
       }
     },
     {
-      "source": "backend/server.js#Method:origin@161",
+      "source": "backend/server.js#Method:origin@163",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 162
+        "line": 164
       }
     },
     {
@@ -63629,47 +63781,47 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 169
+        "line": 171
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@213",
+      "source": "backend/server.js#Method:wss.verifyClient@215",
       "target": "backend/security.js#Function:isSecureTransportRequest@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 214
+        "line": 216
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@213",
+      "source": "backend/server.js#Method:wss.verifyClient@215",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 218
+        "line": 220
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@213",
+      "source": "backend/server.js#Method:wss.verifyClient@215",
       "target": "backend/sessionAuth.js#Function:readSessionToken@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 227
+        "line": 229
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@213",
+      "source": "backend/server.js#Method:wss.verifyClient@215",
       "target": "backend/auth.js#Function:verifySessionToken@600",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 228
+        "line": 230
       }
     },
     {
@@ -63679,7 +63831,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 238
+        "line": 240
       }
     },
     {
@@ -63689,17 +63841,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 249
+        "line": 251
       }
     },
     {
-      "source": "backend/server.js#Function:projectAccess@251",
+      "source": "backend/server.js#Function:projectAccess@253",
       "target": "backend/auth.js#Function:getProjectRole@372",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 259
+        "line": 261
       }
     },
     {
@@ -63709,7 +63861,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 286
+        "line": 288
       }
     },
     {
@@ -63719,7 +63871,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 290
+        "line": 292
       }
     },
     {
@@ -63729,7 +63881,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 291
+        "line": 293
       }
     },
     {
@@ -63739,7 +63891,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 301
+        "line": 303
       }
     },
     {
@@ -63749,7 +63901,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 323
+        "line": 325
       }
     },
     {
@@ -63759,32 +63911,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 324
+        "line": 326
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
+      "source": "backend/server.js#Function:startServer@328",
       "target": "backend/db.js#Function:initializeDatabase@37",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 328
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 329
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/maintenance.js#Function:recoverInterruptedWorkflows@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63793,8 +63925,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@940",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@305",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63803,8 +63935,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@980",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/maintenance.js#Function:recoverInterruptedWorkflows@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 332
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@940",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63813,18 +63955,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@980",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 337
+        "line": 335
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63833,8 +63975,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
-      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@29",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63843,38 +63985,38 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@326",
+      "source": "backend/server.js#Function:startServer@328",
+      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@29",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 343
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@328",
       "target": "backend/db.js#Function:closeDatabase@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 347
+        "line": 349
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@326",
+      "target": "backend/server.js#Function:startServer@328",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 353
+        "line": 355
       }
     },
     {
-      "source": "backend/server.js#Function:runEvidenceCompaction@357",
+      "source": "backend/server.js#Function:runEvidenceCompaction@359",
       "target": "backend/observability.js#Function:compactStaleEvidencePayloads@242",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 360
-      }
-    },
-    {
-      "source": "backend/server.js#Function:runEvidenceCompaction@357",
-      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -63883,19 +64025,19 @@
       }
     },
     {
-      "source": "backend/server.js#Method:result.checkpointDatabase@402",
-      "target": "backend/db.js#Function:checkpointWAL@729",
+      "source": "backend/server.js#Function:runEvidenceCompaction@359",
+      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 402
+        "line": 364
       }
     },
     {
-      "source": "backend/server.js#Function:handleGracefulShutdown@391",
-      "target": "env:SHUTDOWN_TIMEOUT_MS",
-      "label": "reads_env",
+      "source": "backend/server.js#Method:result.checkpointDatabase@404",
+      "target": "backend/db.js#Function:checkpointWAL@729",
+      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
@@ -63903,13 +64045,23 @@
       }
     },
     {
+      "source": "backend/server.js#Function:handleGracefulShutdown@393",
+      "target": "env:SHUTDOWN_TIMEOUT_MS",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 406
+      }
+    },
+    {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@391",
+      "target": "backend/server.js#Function:handleGracefulShutdown@393",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 414
+        "line": 416
       }
     },
     {
@@ -66084,12 +66236,22 @@
     },
     {
       "source": "backend/tests/test_llm_auth.js",
+      "target": "backend/llm-auth/setup.js#Function:ensureLLMEncryptionKey@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_llm_auth.js",
+        "line": 18
+      }
+    },
+    {
+      "source": "backend/tests/test_llm_auth.js",
       "target": "backend/llm-auth/llm.js#Function:createLLMProfileStore@71",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 15
+        "line": 44
       }
     },
     {
@@ -66099,7 +66261,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 57
+        "line": 86
       }
     },
     {
@@ -66109,7 +66271,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 77
+        "line": 106
       }
     },
     {
@@ -66119,7 +66281,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 131
+        "line": 160
       }
     },
     {
@@ -66129,7 +66291,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 132
+        "line": 161
       }
     },
     {
@@ -66139,7 +66301,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 133
+        "line": 162
       }
     },
     {
@@ -66149,7 +66311,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 134
+        "line": 163
       }
     },
     {
@@ -66159,7 +66321,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 135
+        "line": 164
       }
     },
     {
@@ -66169,7 +66331,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 137
+        "line": 166
       }
     },
     {
@@ -66179,7 +66341,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 258
+        "line": 287
       }
     },
     {
@@ -66189,7 +66351,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 258
+        "line": 287
       }
     },
     {
@@ -66199,7 +66361,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 258
+        "line": 287
       }
     },
     {
@@ -66209,7 +66371,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 260
+        "line": 289
       }
     },
     {
@@ -66219,7 +66381,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 261
+        "line": 290
       }
     },
     {
@@ -66229,7 +66391,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_llm_auth.js",
-        "line": 266
+        "line": 295
       }
     },
     {
