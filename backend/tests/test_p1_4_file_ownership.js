@@ -87,7 +87,11 @@ await runAsyncTest('4. executeCorrectionLoop coder düzeltme çıktısında hede
 
     // allowMockFallback ortamında test edelim
     const prevKey = process.env.GOOGLE_API_KEY;
+    const prevProvider = process.env.AI_PROVIDER;
+    const prevConfigPath = process.env.LLM_CONFIG_PATH;
     process.env.GOOGLE_API_KEY = 'your_gemini_api_key_here';
+    process.env.AI_PROVIDER = 'google';
+    process.env.LLM_CONFIG_PATH = `${process.env.DB_PATH}.llm-profiles.json`;
     process.env.ALLOW_MOCK_FALLBACK = 'true';
     try {
         const loopResult = await executeCorrectionLoop({
@@ -108,6 +112,10 @@ await runAsyncTest('4. executeCorrectionLoop coder düzeltme çıktısında hede
         } else {
             delete process.env.GOOGLE_API_KEY;
         }
+        if (prevProvider !== undefined) process.env.AI_PROVIDER = prevProvider;
+        else delete process.env.AI_PROVIDER;
+        if (prevConfigPath !== undefined) process.env.LLM_CONFIG_PATH = prevConfigPath;
+        else delete process.env.LLM_CONFIG_PATH;
         delete process.env.ALLOW_MOCK_FALLBACK;
     }
 });

@@ -11,6 +11,9 @@ process.env.ALLOW_MOCK_FALLBACK = 'true';
 const isolated = await setupIsolatedTestDb('manager-error-telemetry');
 process.env.DB_PATH = isolated.dbPath;
 process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
+process.env.LLM_CONFIG_PATH = path.join(path.dirname(isolated.dbPath), 'llm-profiles.json');
+process.env.AI_PROVIDER = 'google';
+process.env.GOOGLE_API_KEY = 'your_gemini_api_key_here';
 await fs.mkdir(process.env.PROJECTS_ROOT, { recursive: true });
 
 const { runAsyncTest, finish } = createTestHarness();

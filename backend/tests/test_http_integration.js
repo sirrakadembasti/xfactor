@@ -171,7 +171,8 @@ try {
         ARTIFACTS_ROOT: artifactsRoot,
         FRONTEND_DIST_ROOT: frontendDistRoot,
         ALLOW_MOCK_FALLBACK: 'false',
-        LLM_PROVIDER: 'google',
+        AI_PROVIDER: 'google',
+        LLM_CONFIG_PATH: path.join(tempDir, 'llm-profiles.json'),
         GOOGLE_API_KEY: '',
         GEMINI_API_KEY: ''
     };
