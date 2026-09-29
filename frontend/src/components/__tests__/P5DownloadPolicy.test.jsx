@@ -40,6 +40,13 @@ function SidebarWithMenu() {
   return <Sidebar {...sidebarProps} activeMenuProjectId={activeMenuProjectId} setActiveMenuProjectId={setActiveMenuProjectId} />;
 }
 
+test('LLM management link is visible only to an administrator', () => {
+  const view = render(<Sidebar {...sidebarProps} isAdmin={false} />);
+  expect(screen.queryByRole('link', { name: /LLM Yönetimi/i })).not.toBeInTheDocument();
+  view.rerender(<Sidebar {...sidebarProps} isAdmin />);
+  expect(screen.getByRole('link', { name: /LLM Yönetimi/i })).toHaveAttribute('href', '/llm');
+});
+
 test('builds the configured-origin URL for a verified artifact download', () => {
   expect(buildArtifactDownloadUrl(
     'project-1',

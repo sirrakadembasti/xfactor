@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { cleanupStaleLogs, logError } from './observability.js';
+import { reconcileStaleWorkflowAttempts } from './workflowAttempts.js';
 
 const DEFAULT_INTERVAL_MS = 3_600_000;
 const SESSION_SWEEP_SQL = `DELETE FROM user_sessions
@@ -19,6 +20,10 @@ export function sweepExpiredSessions(database = db, now = new Date(), retentionD
     const result = database.prepare(SESSION_SWEEP_SQL).run(nowIso, nowIso);
     const logsDeleted = cleanupStaleLogs(database, retentionDays, now);
     return { sweptCount: Number(result?.changes || 0), logsDeleted };
+}
+
+export function recoverInterruptedWorkflows({ database = db } = {}) {
+    return reconcileStaleWorkflowAttempts({ database });
 }
 
 export function createMaintenanceScheduler({

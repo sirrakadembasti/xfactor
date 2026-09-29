@@ -29,6 +29,7 @@ backend/data/*.db-shm
 backend/data/artifacts/
 backend/data/*.zip
 backend/data/*.db-wal
+backend/data/llm-profiles.json
 
 # Log files
 *.log

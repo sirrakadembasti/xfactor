@@ -61,6 +61,10 @@ const KNOWN_PACKAGE_VERSIONS = {
     'nodemon': LATEST_STABLE_VERSION,
     'vite': LATEST_STABLE_VERSION,
     '@vitejs/plugin-react': LATEST_STABLE_VERSION,
+    '@vitejs/plugin-vue': LATEST_STABLE_VERSION,
+    'vue': '^3.0.0',
+    'vue-router': '^4.0.0',
+    'pinia': LATEST_STABLE_VERSION,
     '@prisma/client': '^6.4.0',
     'next': LATEST_STABLE_VERSION,
     'react': '^18.3.1',
@@ -80,6 +84,7 @@ const DEV_TOOLCHAIN_PACKAGES = new Set([
     'nodemon',
     'vite',
     '@vitejs/plugin-react',
+    '@vitejs/plugin-vue',
     'eslint',
     'prettier'
 ]);
@@ -100,7 +105,7 @@ const NODE_BUILTINS = new Set([
  */
 export async function scanUsedNpmPackages(projectDir) {
     const usedPackages = new Set();
-    const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx']);
+    const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.vue']);
     const ignoredDirectories = new Set(['node_modules', '.git', '.next', 'coverage', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
 
     async function scanDir(currentDir) {
@@ -436,11 +441,12 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
 
     const specText = `${state.title || ''} ${plan.summary || ''} ${plan.talimatname || ''}`.toLowerCase();
     const hasReactKeyword = specText.includes('react') || specText.includes('frontend') || specText.includes('ui') || specText.includes('client');
-    const isExpressOnly = (specText.includes('express') || specText.includes('rest api') || specText.includes('node api') || specText.includes('backend api')) && !hasReactKeyword && !hasNextApp && !hasVite;
+    const isVue = /\bvue\s*(?:3|js)?\b|vue\.js|pinia|vue-router/i.test(specText);
+    const isExpressOnly = (specText.includes('express') || specText.includes('rest api') || specText.includes('node api') || specText.includes('backend api')) && !hasReactKeyword && !isVue && !hasNextApp && !hasVite;
 
     if (specText.includes('next.js') || specText.includes('nextjs') || specText.includes('app router')) {
         hasNextApp = true;
-    } else if (specText.includes('vite') || specText.includes('react spa')) {
+    } else if (specText.includes('vite') || specText.includes('react spa') || isVue) {
         hasVite = true;
     }
     if (specText.includes('prisma') || specText.includes('sqlite') || specText.includes('database')) {
@@ -459,6 +465,7 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
         hasNextApp,
         hasVite,
         isExpressOnly,
+        isVue,
         hasPrisma,
         hasTypeScript
     };
@@ -471,7 +478,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     // 1. Proje Türü / Framework Algılama
     const isAuthRequired = isAuthRequested(state, plan);
     const stack = await detectProjectStack(projectDir, state, plan);
-    let { isNext, hasPrisma, isExpressOnly } = stack;
+    let { isNext, hasPrisma, isExpressOnly, isVue } = stack;
     if (isAuthRequired) {
         hasPrisma = true;
     }
@@ -504,6 +511,15 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     if (hasPrisma) {
         baseDevDependencies['prisma'] = '^6.4.0';
         baseDevDependencies['tsx'] = LATEST_STABLE_VERSION;
+    }
+    if (isVue && !isNext) {
+        delete baseDependencies.react;
+        delete baseDependencies['react-dom'];
+        delete baseDevDependencies['@types/react'];
+        delete baseDevDependencies['@types/react-dom'];
+        baseDependencies.vue = '^3.0.0';
+        baseDependencies['vue-router'] = '^4.0.0';
+        baseDependencies.pinia = LATEST_STABLE_VERSION;
     }
 
     let scripts = {};
@@ -549,7 +565,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         };
     } else {
         baseDevDependencies['vite'] = LATEST_STABLE_VERSION;
-        baseDevDependencies['@vitejs/plugin-react'] = LATEST_STABLE_VERSION;
+        baseDevDependencies[isVue ? '@vitejs/plugin-vue' : '@vitejs/plugin-react'] = LATEST_STABLE_VERSION;
         scripts = {
             dev: 'vite',
             build: 'vite build',
@@ -612,6 +628,17 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             } : {})
         }
     };
+
+    if (isVue && !isNext) {
+        for (const packageName of ['react', 'react-dom']) delete finalPkg.dependencies[packageName];
+        for (const packageName of ['@types/react', '@types/react-dom', '@vitejs/plugin-react']) {
+            delete finalPkg.devDependencies[packageName];
+        }
+        finalPkg.dependencies.vue = '^3.0.0';
+        finalPkg.dependencies['vue-router'] = '^4.0.0';
+        finalPkg.dependencies.pinia = LATEST_STABLE_VERSION;
+        finalPkg.devDependencies['@vitejs/plugin-vue'] = LATEST_STABLE_VERSION;
+    }
 
     await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
     if (isNext) {
@@ -751,10 +778,14 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         }
 
         const viteConfigPath = path.join(projectDir, 'vite.config.js');
-        try {
-            await fs.stat(viteConfigPath);
-        } catch {
-            const viteConfigContent = `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
+        const reactConfigContent = `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
+        const vueConfigContent = `import { defineConfig } from 'vite';\nimport vue from '@vitejs/plugin-vue';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [vue()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
+        const existingConfig = await fs.readFile(viteConfigPath, 'utf8').catch(error => {
+            if (error.code === 'ENOENT') return null;
+            throw error;
+        });
+        if (existingConfig === null || (isVue && existingConfig === reactConfigContent)) {
+            const viteConfigContent = isVue ? vueConfigContent : reactConfigContent;
             await fs.writeFile(viteConfigPath, viteConfigContent, 'utf8');
         }
     }

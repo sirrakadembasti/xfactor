@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM Yönetimi · XFactor</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#1e293b;background:#f5f6fb}*{box-sizing:border-box}body{margin:0}header{background:#1e1b4b;color:white;padding:22px max(20px,calc((100vw - 1100px)/2))}header a{color:#c7d2fe}main{max-width:1100px;margin:30px auto;padding:0 20px}h1,h2{margin:0 0 12px}p{line-height:1.5}.grid{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.2fr);gap:20px}@media(max-width:760px){.grid{grid-template-columns:1fr}}section{background:white;border:1px solid #dce2ef;border-radius:14px;padding:22px;box-shadow:0 4px 18px #1725540d}section.active-summary{border-color:#4f46e5;background:#eef2ff;margin-bottom:20px}label{display:block;margin:14px 0 5px;font-weight:600;font-size:14px}input,select{width:100%;padding:10px;border:1px solid #aebbd0;border-radius:8px;font:inherit}button{border:0;border-radius:8px;padding:10px 14px;background:#4338ca;color:white;font:inherit;font-weight:600;cursor:pointer}button.secondary{background:#e7eaf2;color:#202c46}button.danger{background:#b91c1c}button:disabled{opacity:.5;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.card{border:1px solid #dce2ef;border-radius:10px;padding:14px;margin:12px 0}.card.active{border-color:#4f46e5;background:#eef2ff}.card h3{margin:0 0 5px}.muted{color:#64748b;font-size:13px}#message{min-height:24px;margin:14px 0}#message.error{color:#b91c1c}#message.success{color:#047857}code{background:#f1f5f9;padding:2px 5px;border-radius:4px}
+  </style>
+  <script src="/llm/llm-ui.js" defer></script>
+</head>
+<body>
+  <header><a href="/">← XFactor'a dön</a><h1>LLM Yönetimi</h1><div>Sağlayıcı, model ve API anahtarlarını tek yerden yönetin.</div></header>
+  <main>
+    <p id="message" role="status" aria-live="polite"></p>
+    <section id="active-summary" class="active-summary" aria-live="polite">Etkin profil yükleniyor…</section>
+    <div class="grid">
+      <section><h2>Yeni profil / düzenle</h2><p class="muted">Anahtarlar sunucuda şifreli saklanır. Düzenlerken anahtarı boş bırakırsanız kayıtlı anahtar korunur. Sağlayıcı seçimi yalnızca başlangıç değerlerini doldurur; API adresini ve model kimliğini istediğiniz zaman elle yazabilirsiniz.</p>
+        <form id="profile-form">
+          <input id="profile-id" type="hidden">
+          <label for="name">Profil adı</label><input id="name" required maxlength="80" placeholder="Örn. Üretim modeli">
+          <label for="provider">Sağlayıcı</label><select id="provider" required></select>
+          <label for="base-url">API temel adresi (elle düzenlenebilir)</label><input id="base-url" type="url" required placeholder="https://api.example.com/v1">
+          <label for="model">Model kimliği (elle yazılabilir)</label><input id="model" list="known-models" required maxlength="160" placeholder="Örn. sağlayıcının güncel model kimliği"><datalist id="known-models"></datalist>
+          <label for="api-key">API anahtarı</label><input id="api-key" type="password" autocomplete="new-password" placeholder="Anahtarı girin veya mevcut anahtarı koruyun">
+          <div class="actions"><button type="submit">Profili kaydet</button><button type="button" id="clear-form" class="secondary">Yeni profil</button></div>
+        </form>
+      </section>
+      <section><h2>Kayıtlı profiller</h2><p class="muted">Aynı anda yalnızca bir profil etkindir. Son test sonucu test anını gösterir; sağlayıcının şu an erişilebilir olduğunu garanti etmez.</p><div id="profiles"></div></section>
+    </div>
+  </main>
+</body>
+</html>

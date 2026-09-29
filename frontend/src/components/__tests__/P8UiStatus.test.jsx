@@ -77,6 +77,28 @@ test('Header offers Pause while backend reports implementing', () => {
   expect(handlePause).toHaveBeenCalledTimes(1);
 });
 
+test('project in implementing state is labelled as production, not planning', async () => {
+  class TestWebSocket {
+    static OPEN = 1;
+    static CONNECTING = 0;
+    readyState = TestWebSocket.OPEN;
+    close() {}
+    send() {}
+  }
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.stubGlobal('WebSocket', TestWebSocket);
+  vi.spyOn(api, 'getSession').mockResolvedValue({ user: { username: 'admin' } });
+  vi.spyOn(api, 'getProjects').mockResolvedValue([{ id: 'project-1', title: 'Project', status: 'implementing' }]);
+  vi.spyOn(api, 'getProject').mockResolvedValue({ id: 'project-1', title: 'Project', status: 'implementing', chatHistory: [] });
+  vi.spyOn(api, 'getProjectLogs').mockResolvedValue([]);
+  vi.spyOn(api, 'getProjectFiles').mockResolvedValue([]);
+
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  expect(screen.getAllByText('Üretiliyor').length).toBeGreaterThan(0);
+  expect(screen.queryByText('Planlama')).not.toBeInTheDocument();
+});
+
 test('focuses a new UI error alert and keyboard-dismiss restores initiating control', async () => {
   class TestWebSocket {
     static OPEN = 1;

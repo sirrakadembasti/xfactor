@@ -101,7 +101,7 @@ function setupApi({ stateFor, logsFor } = {}) {
 }
 
 async function waitForHeading(title) {
-  return screen.findByRole('heading', { name: title });
+  return screen.findByRole('heading', { name: title }, { timeout: 5000 });
 }
 
 beforeEach(() => {

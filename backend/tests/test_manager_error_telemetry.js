@@ -72,11 +72,51 @@ try {
         assert.ok(prompt.includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
     });
 
+    await runAsyncTest('2x. Manager telemetry selects the latest attempt by time, not random attempt ID', async () => {
+        const project = await createProject({ title: 'Attempt Ordering Project' });
+        const base = Date.now();
+        db.prepare(`INSERT INTO workflow_attempts (id, project_id, status, lease_owner, started_at, started_epoch, error)
+            VALUES (?, ?, 'failed', 'old-owner', ?, ?, 'old error')`).run('z-old', project.id, new Date(base - 1000).toISOString(), base - 1000);
+        db.prepare(`INSERT INTO workflow_attempts (id, project_id, status, lease_owner, started_at, started_epoch, error)
+            VALUES (?, ?, 'failed', 'new-owner', ?, ?, 'new error')`).run('a-new', project.id, new Date(base).toISOString(), base);
+        const prompt = buildManagerChatSystemPrompt(await readProjectState(project.id), process.env.PROJECTS_ROOT);
+        assert.match(prompt, /new error/);
+        assert.doesNotMatch(prompt, /old error/);
+    });
+
     await runAsyncTest('2a. Manager chat asks for proactive structured management assessment', async () => {
         const project = await createProject({ title: 'Asset workspace' });
         const prompt = buildManagerChatSystemPrompt(await readProjectState(project.id), process.env.PROJECTS_ROOT);
         assert.match(prompt, /management\.needed/);
         assert.match(prompt, /kullanıcı[^\n]*belirtmese/i);
+    });
+
+    await runAsyncTest('2aa. completion question uses canonical evidence instead of a hallucinated Manager answer', async () => {
+        const project = await createProject({ title: 'Unfinished Management Project' });
+        db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+        db.prepare("INSERT INTO project_logs (project_id, agent, action, message, node_id) VALUES (?, 'Tester', 'finish', 'Statik denetim geçti', 'tester-qa')").run(project.id);
+        let responderCalls = 0;
+        const server = http.createServer(buildTestApp(async () => {
+            responderCalls += 1;
+            return 'Uygulama tamamlandı, doğrulanmış ZIP indirilebilir.';
+        }));
+        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+        try {
+            const response = await fetch(`http://127.0.0.1:${server.address().port}/api/projects/${project.id}/chat`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ message: 'Uygulama bitti mi? Son Tester logunda FINISH yazıyor.' })
+            });
+            assert.equal(response.status, 200);
+            const body = await response.json();
+            const answer = body.chatHistory.at(-1).parts[0].text;
+            assert.equal(responderCalls, 0);
+            assert.match(answer, /tamamlanmadı|tamamlanmış değil/i);
+            assert.match(answer, /doğrulama|ZIP/i);
+            assert.doesNotMatch(answer, /doğrulanmış ZIP indirilebilir/i);
+        } finally {
+            await new Promise(resolve => server.close(resolve));
+        }
     });
 
     await runAsyncTest('2b. unstructured plan marker cannot create an approvable contract', async () => {

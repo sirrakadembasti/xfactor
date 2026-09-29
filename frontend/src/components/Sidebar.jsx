@@ -9,7 +9,8 @@ import {
   Trash2,
   MoreVertical,
   RefreshCw,
-  LogOut
+  LogOut,
+  Settings2
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -27,6 +28,7 @@ export default function Sidebar({
   handleDownloadZip,
   handleDownloadProjectZip,
   loginUsername,
+  isAdmin = false,
   handleLogout,
   getStatusBadge,
   readOnly = false,
@@ -170,6 +172,7 @@ export default function Sidebar({
 
       {/* Sidebar Footer */}
       <div className="p-3 border-t border-cream-300 bg-cream-100/80 space-y-2.5">
+        {isAdmin && <a href="/llm" className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition"><Settings2 size={14} /> LLM Yönetimi</a>}
         {/* User Profile Card */}
         <div className="flex items-center gap-2.5 p-2 bg-cream-50 rounded-xl border border-cream-200/80 shadow-sm">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
@@ -183,7 +186,7 @@ export default function Sidebar({
             </div>
             <div className="flex items-center gap-1">
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                Yönetici
+                {isAdmin ? 'Yönetici' : 'Kullanıcı'}
               </span>
             </div>
           </div>

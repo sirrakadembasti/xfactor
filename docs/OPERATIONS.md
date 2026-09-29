@@ -23,11 +23,25 @@ Do not run two web instances against the same paths without the prerequisites in
 
 - Node.js `22.23.2`, `npm@10.9.8` (see `engines` in `package.json`).
 - `EXECUTION_WORKER_URL` and `EXECUTION_WORKER_TOKEN` pointing to a trusted execution worker instance.
-- `GOOGLE_API_KEY` for LLM-backed generation.
+- `LLM_CONFIG_ENCRYPTION_KEY` (32-byte hex/base64) and at least one LLM profile
+  configured in the admin-only `/llm` page for LLM-backed generation.
 - `JWT_SECRET` (session/token signing material).
 - `MFA_ENCRYPTION_KEY` (32-byte hex): encrypts stored TOTP secrets.
 - Reverse proxy terminating TLS in front of the backend (section 6).
 - Persistent storage for `DB_PATH`, `PROJECTS_ROOT`, `ARTIFACTS_ROOT`.
+- Persistent, access-controlled storage for `backend/data/llm-profiles.json` (or
+  `LLM_CONFIG_PATH`); back it up together with its encryption key.
+
+### LLM profile operation
+
+Provider API keys, base URLs, and model IDs are saved in encrypted profiles,
+not in `.env`. `/api/llm` and `/llm` require an administrator session; mutating
+requests pass the platform's origin and CSRF checks. Only one profile ID is
+active at a time. The admin page shows the active profile and each profile's
+last connection test result and timestamp. A passed test proves a response at
+that time, not continuous provider availability. Editing a profile clears its
+test result. If no profile is active, the legacy environment fallback remains
+available for older installations; new installations should select a profile.
 
 ## 3. Authentication and sessions
 

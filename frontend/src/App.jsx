@@ -755,6 +755,7 @@ export default function App() {
           </span>
         );
       case 'running':
+      case 'implementing':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 animate-pulse">
             <Play size={12} /> Üretiliyor
@@ -856,6 +857,7 @@ export default function App() {
         handleDownloadZip={handleDownloadProjectZip}
         handleDownloadProjectZip={handleDownloadProjectZip}
         loginUsername={currentUser?.username || loginUsername}
+        isAdmin={currentUser?.isAdmin === true}
         handleLogout={handleLogout}
         getStatusBadge={getStatusBadge}
         readOnly={viewMode === 'dashboard'}

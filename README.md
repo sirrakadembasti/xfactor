@@ -11,6 +11,8 @@
 
 ## 🌟 Öne Çıkan Yetenekler
 
+**LLM sağlayıcı yönetimi:** Yönetici hesabıyla sol menüdeki **LLM Yönetimi** bağlantısını açın. Yerel `backend/.env` dosyasında LLM için yalnızca profil şifreleme anahtarı tutulur; sağlayıcı adresi, model ve API anahtarları yönetim ekranındaki şifreli profillerde saklanır. Xiaomi MiMo Singapur adresi ve modelleri katalogda başlangıç değeri olarak sunulur; API adresi ile model kimliğini elle değiştirebilirsiniz. Aynı anda yalnızca bir profil etkindir. Sayfa seçili profili, pasif profilleri ve her profilin son bağlantı testinin sonucunu ve zamanını gösterir. Son test sonucu anlık erişim garantisi değildir; profil düzenlenirse yeniden sınanmalıdır. Kurulum ve kullanım adımları [LLM yönetimi kılavuzunda](backend/llm-auth/LLM-YONETIMI.md) yer alır. Seçilen profil Manager sohbeti ve üretim ajanları tarafından kullanılır.
+
 * 🤖 **6 Seviyeli Rol Uzmanlaşması:** `Manager` (Mimar), `Director` (Domain), `Teamleader` (DAG/Plan), `Coder` (Geliştirici), `Reviewer` (Kod Denetim) ve `Tester` (Kabul & QA).
 * ⚡ **Deterministik DAG Dalga Yürütücüsü:** Görevleri katı atomik tek dosya parçalarına (`targetFiles.length === 1`) böler, bağımsız işleri paralel dalgalar halinde çalıştırır.
 * 🛡️ **18 Zorunlu Kalite Kapısı (Aktif Politika 2.0):** Kodlar yalnızca sentaks değil; `clean_install`, `typecheck`, `framework_build`, `service_manifest`, `database_verification`, `api_contract`, `browser_journey`, `smoke_gate`, `placeholder_check`, `contamination_check`, `security_baseline` ve `readme_check` olmak üzere 18 zorunlu kapının makine tarafından doğrulanmış yürütme kanıtı (SHA-256 digest, exit code, ISO UTC zaman damgası) olmadan onaylanmaz (Fail-Closed Veto).
@@ -34,7 +36,8 @@
 cd backend
 copy .env.example .env    # Linux/macOS: cp .env.example .env
 
-# .env dosyasına GOOGLE_API_KEY değerinizi girin
+# .env dosyasına LLM_CONFIG_ENCRYPTION_KEY değerini girin;
+# sağlayıcı API anahtarını LLM Yönetimi ekranında kaydedin
 npm install
 
 # 2. Frontend bağımlılıkları
@@ -148,6 +151,10 @@ Bu denetim izi, proje durumuyla birlikte kanonik olarak döner; böylece Sohbet,
 Kalite kapısı doğrulaması başarısız olursa proje `verification_failed` durumunda kalır; hata ayrıntısı sohbet ve süreç loglarında görünür. `paused`, `verification_failed` ve son hata kaydı bulunan `artifact_verified` durumlarında **Devam Ettir (Resume)** eylemi sohbet, üst çubuk ve log ekranında kullanılabilir. Devam ettirme aynı backend iş akışını kaldığı yerden başlatır; proje doğrulanmadan ZIP indirme açılmaz.
 
 Normal tamamlama akışı Worker hatasını yerel bir geliştirme doğrulamasına dönüştürmez ve diskten okunan `DURUM.md` / `state.json` kayıtlarından sentetik PASS kanıtı üretmez. Worker hatası kanıtsız başarı yerine fail-closed olarak yukarı taşınır.
+
+Backend açıldığında yarım kalmış ve kalp atışı süresi dolmuş üretim girişimleri güvenli biçimde `paused` durumuna alınır. Manager'ın tamamlanma sorusuna verdiği yanıt, Tester'ın statik `FINISH` kaydı yerine tamamlama makbuzu ve doğrulanmış ZIP kanıtına dayanır. Bağımlılık hazırlığı başarısız olursa worker'ın hata mesajı süreç hatasına taşınır. [Emlak üretim olayı incelemesi](docs/EMLAK-URETIM-OLAYI-2026-09-28.md) bu davranışın dayandığı gerçek olayı ve doğrulanamayan npm hata nedenini açıklar.
+
+Statik denetim tamamlandığında onaylı sözleşme ile artefakt içeriğinin özeti saklanır. Bu kanıt değişmemişse bağımlılık hazırlığındaki bir hatadan sonra **Devam Ettir** doğrudan aynı aşamayı yeniden dener; Manager, DAG ve Tester aşamaları tekrar loglanmaz. Hazırlık başarılı olduğunda bu aşama kaydı temizlenir; sonraki doğrulama hatası bağımlılık hazırlığı hatası gibi tekrar denenmez. Vue/Vite üretiminde Vue 3 uyumlu bağımlılıklar ve `@vitejs/plugin-vue` kullanılır.
 
 ---
 

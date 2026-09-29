@@ -93,7 +93,7 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 ### Sistem Gereksinimleri
 - **İşletim Sistemi:** Windows, macOS veya Linux
 - **Node.js:** v22.5.0 veya daha yenisi (veya Bun v1.0+)
-- **İnternet Bağlantısı:** LLM API sağlayıcılarına (Google Gemini / OpenAI / OpenRouter) erişim için
+- **İnternet Bağlantısı:** Seçtiğiniz LLM sağlayıcısının API adresine erişim için
 
 ### 1. Adım: Yapılandırma Dosyasını Hazırlama
 `backend/` klasöründe bulunan `.env.example` dosyasını kopyalayarak `.env` oluşturun:
@@ -113,14 +113,14 @@ cp .env.example .env
 PORT=8000
 # Kimlik doğrulama anahtarı veya yönetici parolası .env içinde tutulmaz.
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-AI_PROVIDER=google
-AI_MODEL=gemini-3.7-flash
 ALLOW_MOCK_FALLBACK=false
-GOOGLE_API_KEY=...GeminiAnahtariniz...
+LLM_CONFIG_ENCRYPTION_KEY=...64-hex-karakterlik-yerel-anahtar...
 EXECUTION_WORKER_TOKEN=dev-worker-token-internal
 EXECUTION_WORKER_URL=http://127.0.0.1:8099
 READINESS_WORKER_TIMEOUT_MS=2000
 ```
+
+Şifreleme anahtarını `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` komutuyla üretin. Sağlayıcı API anahtarını, adresini ve modelini `.env` içine koymayın; yönetici oturumuyla **LLM Yönetimi** sayfasında profil olarak kaydedin. Profil dosyası `backend/data/llm-profiles.json` konumunda şifreli tutulur ve Git dışında kalır. Şifreleme anahtarını kaybederseniz kayıtlı API anahtarlarını çözemezsiniz.
 
 ### 2. Adım: Bağımlılıklar ve Varsayılan Giriş Hesabı
 ```bash
@@ -213,6 +213,15 @@ npm run dev
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
 2. README'deki varsayılan bilgileri (**admin** / **xfactor**) boş giriş alanlarına yazın.
 3. **Giriş Yap** butonuna tıklayarak yönetim paneline erişebilirsiniz. Tarayıcı 24 saatlik HttpOnly sunucu oturumu kullanır; credential `localStorage` içinde tutulmaz.
+
+### Adım 1a: LLM Sağlayıcı Profillerini Yönetme
+
+1. Yönetici oturumunda sol menüden **LLM Yönetimi** sayfasını açın (`/llm`). Sayfa ve `/api/llm` yalnızca yöneticiye açıktır.
+2. Sağlayıcıyı seçin; önerilen API temel adresi ve model kimliğini gerektiğinde elle değiştirin. API anahtarını girip **Profili kaydet** düğmesine basın. **Düzenle** sırasında anahtarı boş bırakırsanız mevcut anahtar korunur.
+3. **Bağlantıyı sına** gerçek model çağrısı yapar. Son testin başarılı/başarısız sonucu ve zamanı profil kartında saklanır. Bu, test anının kanıtıdır; sağlayıcının sürekli erişilebilir olduğunu garanti etmez. Profil düzenlenince sonuç temizlenir.
+4. Kullanmak istediğiniz pasif profilin **Etkinleştir** düğmesine basın. Aynı anda yalnızca bir profil etkindir; seçili profil üst özette görünür ve kartındaki düğme **Etkin** olarak kapalıdır. Manager sohbeti ve üretim ajanları yeni çağrılarda bu profili kullanır. Etkin profili silerseniz seçili profil kalmaz.
+
+Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taşıma için [LLM yönetimi kılavuzuna](backend/llm-auth/LLM-YONETIMI.md) bakın.
 ### Adım 2: Yeni Proje Başlatma ve Disk Senkronizasyonu
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan pencerede projenize bir isim verin (Örn: `araba-kiralama-otomasyonu`).
@@ -386,9 +395,10 @@ Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artif
 **C:** XFactor'ın güncel sürümünde `.env.example` dosyası üretilir ve ZIP paketine eklenir; `.env` dosyasını siz oluşturup `NEXTAUTH_SECRET` ile `DATABASE_URL` gibi değerleri doldurmalısınız.
 
 ### S: Manager ile konuşurken "Mesaj iletilemedi, lütfen tekrar deneyin" hatası alıyorum, nedeni nedir?
-**C:** Bu durum iki nedenden kaynaklanabilir:
-1. `backend/.env` dosyasında geçerli bir `GOOGLE_API_KEY` tanımlı değildir veya model adı (`AI_MODEL`) hatalıdır.
-2. İşletim sistemi veya kısıtlı kurumsal ağ ortamlarında Node.js varsayılan `dns.lookup` sistem çağrısı harici API host'larını (`generativelanguage.googleapis.com`) doğrudan çözümleyemeyebilir. XFactor içinde yerleşik `backend/networkResolver.js` modülü `ENOTFOUND` durumunda doğrudan aktif DNS sunucusundan IPv4 (`dns.resolve4`) çözümlemesine otomatik düşer. Sorun devam ederse yerel DNS veya proxy ayarlarınızı kontrol ediniz.
+**C:** Önce **LLM Yönetimi** sayfasındaki etkin profili ve son bağlantı testini kontrol edin. Profilin API anahtarı, adresi ve model kimliği aynı sağlayıcıya ait olmalıdır; profili değiştirdiyseniz yeniden sınayın. Son testin başarılı görünmesi yeni bir çağrının mutlaka geçeceği anlamına gelmez. İşletim sistemi veya kısıtlı kurumsal ağ ortamlarında Node.js harici API adresini çözemeyebilir; `backend/networkResolver.js` `ENOTFOUND` durumunda IPv4 çözümlemesine düşer. Sorun sürerse ağ, DNS veya proxy ayarlarını kontrol edin.
+
+### S: LLM profilinde “Bağlantı testi başarısız” görürsem ne yapmalıyım?
+**C:** Sağlayıcı adresini, model kimliğini ve API anahtarını kontrol edip **Bağlantıyı sına** düğmesini yeniden kullanın. MiMo Pro gibi düşünme kullanan modeller için test yeterli çıkış bütçesi ayırır; sağlayıcı metin üretmeden token sınırına ulaşırsa bunu ayrı bir hata olarak bildirir. Profil kartındaki sonuç yalnızca son test anını gösterir. Test başarılıysa ve profili üretimde kullanmak istiyorsanız pasif kartın **Etkinleştir** düğmesine basın.
 
 ### S: LLM çıktısı token sınırına takılırsa veya Reviewer veto ederse ne olur?
 **C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Eğer bir görev 2 tur sonunda tamamlanamazsa Reviewer güvenli modda **VETO** verir ve projeyi `PAUSED` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuna basarak orkestrasyonu güvenle sürdürebilirsiniz.
@@ -477,7 +487,8 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `auth.js` | Kimlik & RBAC | Parolaları Scrypt ile tuzlayarak hash'ler; Google Authenticator uyumlu RFC-6238 TOTP üretir ve doğrular; proje sahiplik rollerini (`owner`, `editor`, `viewer`) denetler. |
 | `security.js` | Güvenlik Kalkanı | Path traversal sızma girişimlerini, CSRF saldırılarını, güvensiz WebSocket isteklerini ve XSS içeriklerini engeller; CSP, Frameguard ve HSTS başlıklarını ekler. |
 | `sessionAuth.js` | Oturum Yönetimi | 24 saat geçerli, HttpOnly ve SameSite nitelikli `xfactor_session` çerezini üretir; `createRequireAuth` middleware'i ile yetkisiz istekleri 401 ile keser. |
-| `llm.js` | AI Yönlendirici | Google Gemini 3.8 Flash (ve OpenAI) modelleriyle konuşur; 60 saniyelik zaman aşımı ve kooperatif iptal (`AbortSignal`) ile takılan çağrıları güvenle keser. |
+| `backend/llm.js` | AI Yönlendirici | Etkin şifreli profili her çağrının başında çözer; Google Gemini, Anthropic ve OpenAI uyumlu sağlayıcı çağrılarını yürütür. |
+| `backend/llm-auth/` | LLM Profil Yönetimi | Yöneticiye özel sayfa/API; şifreli anahtar saklama, tek etkin profil, bağlantı testi geçmişi ve düzenlenebilir adres/model alanları. |
 | `executionClient.js` | Worker İstemcisi | Bağımlılık hazırlığı ve temiz oda testlerini `http://127.0.0.1:8099` portundaki izole Execution Worker servisine Bearer token ile delege eder. |
 | `config.js` | Yapılandırma | Çalışma zamanı çevre değişkenlerini doğrular; veritabanı yolları, CORS izin listesi, Worker adres/token bilgileri ve `READINESS_WORKER_TIMEOUT_MS` sınırını standardize eder. |
 | `projectPaths.js` | Dosya Yolu Muhafızı | `projects/` kök dizinini yönetir; proje kimlik formatını (`/^[a-zA-Z0-9_-]{3,64}$/`) denetler ve klasör dışına taşma ihlallerini engeller. |
@@ -505,7 +516,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `backend/crypto/` | 1 Dosya | Şifreleme | `mfaCrypto.js`: TOTP gizli anahtarlarını AES-256-GCM ile şifreleyen ve çözen kriptografik modül. |
 | `backend/utils/` | 1 Dosya | Arşiv Yöneticisi | `archive.js`: Projeleri güvenli biçimde ZIP paketine dönüştüren ve Zip-Slip saldırılarını engelleyen arşivleme aracı. |
 | `backend/scripts/` | Değişken | CLI Araçları | `generate_graph.js` ve `graphSource.js` (Graphify motoru), `create_admin.js` (yönetici parola aracı), `backup.js` & `restore.js` (yedekleme araçları). |
-| `backend/data/` | 3 Dosya | Canlı Veri | SQLite veritabanı dosyaları: `projects.db`, WAL (`projects.db-wal`) ve paylaşımlı bellek (`projects.db-shm`). |
+| `backend/data/` | Değişken | Canlı Veri | SQLite veritabanı dosyaları ve Git dışında tutulan şifreli `llm-profiles.json` profil deposu. |
 | `backend/tests/` | Değişken | Test Ekosistemi | Gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde çalışan süitler; güncel çalıştırılabilir liste `testInventory.js` içinde, master koşucu `test_runner.js` içindedir. |
 
 ---

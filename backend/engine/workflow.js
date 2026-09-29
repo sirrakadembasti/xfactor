@@ -38,6 +38,7 @@ import { db, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack } from './codeGenerator.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { runLLMTaskWithRetry } from './llmTaskRetry.js';
+import { getCurrentLLMProvider } from '../llm.js';
 import { formatProjectTokenUsage, getProjectTokenUsage, recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
 import {
@@ -59,12 +60,23 @@ import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 import { generateProjectReadme } from './readmeGenerator.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
+import { fingerprintArtifactFiles, resolveDependencyResume } from './resumeStage.js';
 import { restoreTaskTargetsFromProtocol } from '../services/reconciliationService.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
+export function extractPreparedLockfile(prepResult, prepError = null) {
+    if (prepResult?.status !== 'completed' || !prepResult.result?.packageLockBase64) {
+        throw new Error(prepError?.message || prepResult?.result?.error || prepResult?.error ||
+            'Isolated dependency preparation did not produce a package-lock.json.');
+    }
+    return {
+        packageLockBase64: prepResult.result.packageLockBase64,
+        packageLockSha256: prepResult.result.packageLockSha256 || null
+    };
+}
 export function computePlanHash(plan) {
     if (!plan || typeof plan !== 'object') return '0'.repeat(16);
     const normalized = {
@@ -112,7 +124,8 @@ export function normalizeWorkflowState(value) {
     return {
         planHash: workflow.planHash ?? null,
         directorSpecs,
-        teamleaderPlans
+        teamleaderPlans,
+        ...(workflow.dependencyPreparation ? { dependencyPreparation: workflow.dependencyPreparation } : {})
     };
 }
 
@@ -626,7 +639,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
     const workflowWriteState = (id, nextState) => writeProjectState(id, nextState, leaseOptions);
     const workflowLogEvent = createWorkflowLogEvent(leaseOptions);
     const recordTokenUsage = usage => {
-        try { recordProjectTokenUsage(projectId, process.env.AI_PROVIDER || 'google', usage); }
+        try { recordProjectTokenUsage(projectId, getCurrentLLMProvider(), usage); }
         catch (error) { logWarning('workflow.token_usage_record_failed', error, { projectId }); }
     };
     const recordLLMDiagnostic = async diagnostic => {
@@ -658,11 +671,26 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
     try {
         if (attemptId) assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+        const approvedResumeContract = db.prepare(`
+            SELECT id, contract_hash FROM project_contracts
+            WHERE project_id = ? AND status = 'approved'
+            ORDER BY revision DESC LIMIT 1
+        `).get(projectId);
+        let resumeFiles = null;
+        if (state.workflow.dependencyPreparation && approvedResumeContract) {
+            resumeFiles = await collectArtifactFiles(projectDir);
+        }
+        const resumeAtDependencyPreparation = resolveDependencyResume(
+            state.workflow.dependencyPreparation,
+            approvedResumeContract,
+            resumeFiles
+        );
+        let plan = state.plan;
+        if (!resumeAtDependencyPreparation) {
         await workflowLogEvent(wsHub, projectId, "Manager", "start", "", "Otonom DAG orkestrasyon süreci başlatıldı.", "manager");
 
         // 1. AŞAMA: MANAGER & ROOT PROTOKOLÜ
         await checkPause(projectId, abortController.signal);
-        let plan = state.plan;
         if (!plan || !Array.isArray(plan.domains) || plan.domains.length === 0) {
             const approved = db.prepare(`SELECT contract_json FROM project_contracts
                 WHERE project_id = ? AND status = 'approved' ORDER BY revision DESC LIMIT 1`).get(projectId);
@@ -688,6 +716,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             logWarning('workflow.plan_revised_cache_cleared', null, { projectId, previousHash: state.workflow.planHash, newHash: planHash });
             state.workflow.directorSpecs = {};
             state.workflow.teamleaderPlans = {};
+            state.workflow.dependencyPreparation = null;
         }
         state.workflow.planHash = planHash;
         await workflowWriteState(projectId, state);
@@ -897,14 +926,6 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                         if (checkpointValid) {
                             dag.setTaskStatus(taskId, 'completed');
-                            await workflowLogEvent(wsHub,
-                            projectId,
-                            "Coder",
-                            "skip",
-                            task.targetFiles ? task.targetFiles.join(', ') : '',
-                            `Görev "${task.title}" CAS checkpoint doğrulamasıyla geçerli, atlanıyor.`,
-                            coderNodeId,
-                            tlId);
                             return { success: true, taskId, skipped: true };
                         }
 
@@ -1383,6 +1404,30 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             });
             await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
 
+            const approvedContract = db.prepare(`
+                SELECT id, contract_hash FROM project_contracts
+                WHERE project_id = ? AND status = 'approved'
+                ORDER BY revision DESC LIMIT 1
+            `).get(projectId);
+            if (approvedContract) {
+                const artifactFiles = await collectArtifactFiles(projectDir);
+                state.workflow.dependencyPreparation = {
+                    stage: 'dependency_preparation',
+                    contractId: approvedContract.id,
+                    contractHash: approvedContract.contract_hash,
+                    artifactHash: fingerprintArtifactFiles(artifactFiles)
+                };
+                await workflowWriteState(projectId, state);
+            }
+        }
+        }
+        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+        if (resumeAtDependencyPreparation) {
+            await workflowLogEvent(wsHub, projectId, 'Manager', 'resume', 'package.json',
+                'Kaydedilmiş statik üretim sonucu doğrulandı; bağımlılık hazırlığından devam ediliyor.', 'manager');
+        }
+        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+
             const latestContract = db.prepare(`
                 SELECT id, revision, contract_json, contract_hash FROM project_contracts
                 WHERE project_id = ? AND status = 'approved'
@@ -1393,7 +1438,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 maxTotalBytes: ARTIFACT_LIMITS.maxExtractedBytes,
                 maxFileBytes: ARTIFACT_LIMITS.maxFileBytes
             };
-            const files = await collectArtifactFiles(projectDir, limits);
+            const files = resumeAtDependencyPreparation ? resumeFiles : await collectArtifactFiles(projectDir, limits);
 
             const config = validateRuntimeConfig(process.env);
             const executionClient = createExecutionClient(config);
@@ -1427,30 +1472,21 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             };
             let prepResult = null;
             let prepError = null;
+            await workflowLogEvent(wsHub, projectId, 'System', 'start', 'package.json',
+                'İzole bağımlılık hazırlığı ve lockfile üretimi başladı.', 'dependency-preparation', 'manager');
             try {
                 prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
             } catch (err) {
                 prepError = err;
             }
-
-            let packageLockBase64 = null;
-            let packageLockSha256 = null;
-
-            if (prepResult?.status === 'completed' && prepResult.result?.packageLockBase64) {
-                packageLockBase64 = prepResult.result.packageLockBase64;
-                packageLockSha256 = prepResult.result.packageLockSha256;
-            } else {
-                throw new Error(prepError?.message || 'Isolated dependency preparation did not produce a package-lock.json.');
-            }
-
-            if (!packageLockBase64) {
-                throw new Error('Dependency preparation did not produce a package-lock.json.');
-            }
+            const { packageLockBase64, packageLockSha256 } = extractPreparedLockfile(prepResult, prepError);
 
             const lockContent = Buffer.from(packageLockBase64, 'base64');
             if (packageLockSha256 && crypto.createHash('sha256').update(lockContent).digest('hex') !== packageLockSha256) {
                 throw new Error('Worker returned a package-lock digest mismatch.');
             }
+            state.workflow.dependencyPreparation = null;
+            await workflowWriteState(projectId, state);
             const existingLockIndex = files.findIndex(f => f.path === 'package-lock.json');
             if (existingLockIndex >= 0) files[existingLockIndex].content = lockContent;
             else files.push({ path: 'package-lock.json', content: lockContent });
@@ -1500,7 +1536,6 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     modelText: `🎉 Tebrikler Boss! Uygulamanız başarıyla üretildi ve doğrulandı. Projeyi ZIP olarak indirebilir, kaynak kodlarını indirdiğiniz pakette inceleyebilirsiniz.\n\n${formatProjectTokenUsage(getProjectTokenUsage(projectId))}`
                 });
             } catch {}
-        }
     } catch (error) {
         if (abortController.signal.aborted) {
             terminalStatus = abortController.signal.reason === 'PAUSED' ? 'paused' : 'aborted';

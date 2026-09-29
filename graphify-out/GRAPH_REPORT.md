@@ -1,26 +1,26 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-09-28T15:24:48.666Z
+Üretim tarihi: 2026-09-29T12:30:31.665Z
 
-- 314 kaynak ve belge dosyası
-- 2096 düğüm
-- 5493 ilişki
+- 329 kaynak ve belge dosyası
+- 2186 düğüm
+- 5683 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1054 |
-| Method | 535 |
-| SourceFile | 197 |
-| EnvVar | 60 |
-| Package | 48 |
-| HttpRoute | 38 |
-| Document | 37 |
-| HttpRequest | 33 |
+| Function | 1084 |
+| Method | 555 |
+| SourceFile | 202 |
+| EnvVar | 66 |
+| Package | 49 |
+| HttpRoute | 48 |
+| Document | 47 |
+| HttpRequest | 40 |
 | TestSuite | 32 |
 | BackendService | 22 |
-| Class | 14 |
+| Class | 15 |
 | FrontendComponent | 11 |
 | AgentModule | 9 |
 | EngineCore | 6 |
@@ -29,17 +29,17 @@
 
 | Tür | Adet |
 |---|---:|
-| calls | 1744 |
-| contains | 1665 |
-| imports_package | 733 |
-| imports | 546 |
-| dynamic_imports | 257 |
-| runs | 128 |
-| reads_env | 110 |
-| writes_env | 110 |
-| registers_route | 38 |
-| sends_request | 33 |
-| requests_route | 25 |
+| calls | 1810 |
+| contains | 1718 |
+| imports_package | 753 |
+| imports | 553 |
+| dynamic_imports | 262 |
+| runs | 129 |
+| reads_env | 119 |
+| writes_env | 116 |
+| registers_route | 48 |
+| sends_request | 40 |
+| requests_route | 31 |
 | verifies | 20 |
 | defines | 17 |
 | renders | 10 |

@@ -27,7 +27,7 @@ import {
     createRequireAuth,
     readSessionToken
 } from './sessionAuth.js';
-import { createMaintenanceScheduler } from './maintenance.js';
+import { createMaintenanceScheduler, recoverInterruptedWorkflows } from './maintenance.js';
 import { db, dbEvents, getSchemaVersion, checkpointWAL, initializeDatabase, closeDatabase } from './db.js';
 import { getProjectsRoot, recoverPendingProjectDeletions, syncProjectsWithDisk } from './projectRepository.js';
 import { getArtifactsRoot, assertArtifactsRootAvailable } from './artifactPaths.js';
@@ -38,6 +38,7 @@ import {
 } from './productionStatic.js';
 import { createLifecycleCoordinator } from './lifecycle.js';
 import { initNetworkResolver } from './networkResolver.js';
+import { mountLLMManagement } from './llm-auth/llm.js';
 dotenv.config();
 initNetworkResolver();
 
@@ -286,6 +287,7 @@ app.use('/api', createAuthRouter({
     requireAuth,
     production: runtimeConfig.production
 }));
+mountLLMManagement(app, { requireAuth });
 app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub, lifecycle }));
 
 app.use('/api', (req, res) => {
@@ -325,6 +327,7 @@ async function startServer() {
     try {
         initializeDatabase(runtimeConfig.DB_PATH ? { path: runtimeConfig.DB_PATH } : {});
         await ensureDefaultAdminUser();
+        recoverInterruptedWorkflows({ database: db });
         await recoverPendingProjectDeletions({ env: process.env });
         try {
             syncProjectsWithDisk({ autoRegister: true, env: process.env });

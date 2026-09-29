@@ -8,7 +8,7 @@ import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProje
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { db, getProjectLogs } from '../db.js';
-import { generateLLMResponse } from '../llm.js';
+import { generateLLMResponse, getCurrentLLMProvider } from '../llm.js';
 import { recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
 import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
@@ -106,6 +106,47 @@ function findFailedReports(dir, projectDir) {
     return reports;
 }
 
+export function isProjectStatusQuestion(message) {
+    return /bitti mi|tamamland[ıi] m[ıi]|haz[ıi]r m[ıi]|sonu[cç]land|tak[ıi]ld|ilerlemiyor|ne durumda|son durum|finished|is it done|completed/i.test(String(message || ''));
+}
+
+export function buildProjectStatusAnswer(state, database = db) {
+    const receipt = database.prepare(`
+        SELECT id FROM completion_receipts WHERE project_id = ? ORDER BY completed_at DESC LIMIT 1
+    `).get(state.id);
+    const attempt = database.prepare(`
+        SELECT status, heartbeat_at, error FROM workflow_attempts
+        WHERE project_id = ? ORDER BY started_epoch DESC, id DESC LIMIT 1
+    `).get(state.id);
+    const lastLog = database.prepare(`
+        SELECT agent, action, message FROM project_logs WHERE project_id = ? ORDER BY id DESC LIMIT 1
+    `).get(state.id);
+    const verified = state.status === 'completed'
+        && Boolean(receipt)
+        && state.latestArtifact?.status === 'verified';
+    if (verified) {
+        return 'Proje tamamlandı. Doğrulama makbuzu ve doğrulanmış ZIP artefaktı mevcut; arayüzdeki ZIP indirme işlemini kullanabilirsiniz.';
+    }
+    const descriptions = {
+        implementing: 'Üretim veya son paketleme aşaması tamamlanmadı.',
+        running: 'Üretim devam ediyor.',
+        paused: 'Süreç duraklatıldı; Devam Et (Resume) ile sürdürülebilir.',
+        verification_failed: 'Doğrulama başarısız oldu.',
+        verification_pending: 'İzole doğrulama bekleniyor.',
+        verification_running: 'İzole doğrulama sürüyor.',
+        implementation_finished: 'Kod üretimi bitti; izole doğrulama henüz tamamlanmadı.'
+    };
+    const statusText = descriptions[state.status] || `Proje durumu: ${state.status}.`;
+    const lastEvent = lastLog
+        ? ` Son kayıt: ${lastLog.agent} / ${lastLog.action} — ${lastLog.message}`
+        : '';
+    const attemptText = attempt?.status === 'running' && attempt.heartbeat_at
+        && Date.now() - Date.parse(attempt.heartbeat_at) > 30_000
+        ? ' Çalışma girişiminin kalp atışı eskimiş; sunucu yeniden başlatılmış olabilir. Durumu yenileyin.'
+        : attempt?.error ? ` Son çalışma hatası: ${attempt.error}` : '';
+    return `Proje tamamlanmadı. ${statusText} Statik Tester FINISH kaydı tek başına ürün kabulü değildir. Tamamlama makbuzu ve doğrulanmış ZIP kanıtı bulunmuyor.${lastEvent}${attemptText}`;
+}
+
 export function buildManagerChatSystemPrompt(state, projectDir) {
     const status = state?.status || 'planning';
     const title = state?.title || 'Proje';
@@ -134,7 +175,7 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
   2. İstenen yeni/düzeltilmiş mimariyi ve şartnameyi (modeller, sayfalar, rotalar) net şekilde özetle.
   3. Revizyon için yönetim ihtiyacı, roller ve kabul yolculuklarını yeniden değerlendir; JSON şemasına uygun yapılandırılmış plan üret. Sistem geçerli planı kullanıcıya gösterip onay akışını açacaktır.
 `;
-    } else if (status === 'running') {
+    } else if (status === 'running' || status === 'implementing') {
         extraContext = `
 [GÜNCEL DURUM: KODLAMA VE GELİŞTİRME CANLI DEVAM EDİYOR]
 - Ekipler görevleri sırayla kodluyor ve test ediyor.
@@ -166,10 +207,10 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
     if (state?.id) {
         try {
             attempt = db.prepare(`
-                SELECT id, status, error, started_at, ended_at 
-                FROM workflow_attempts 
-                WHERE project_id = ? 
-                ORDER BY id DESC LIMIT 1
+                SELECT id, status, error, started_at, ended_at
+                FROM workflow_attempts
+                WHERE project_id = ?
+                ORDER BY started_epoch DESC, started_at DESC, id DESC LIMIT 1
             `).get(state.id);
         } catch {}
     }
@@ -461,9 +502,11 @@ export function createProjectRouter({
         });
         messages.push({ role: 'user', content: message });
 
-        let responseText = await managerResponder(messages, {
+            let responseText = isProjectStatusQuestion(message)
+                ? buildProjectStatusAnswer(state)
+                : await managerResponder(messages, {
             onUsage: usage => {
-                try { recordProjectTokenUsage(id, process.env.AI_PROVIDER || 'google', usage); }
+                try { recordProjectTokenUsage(id, getCurrentLLMProvider(), usage); }
                 catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
             }
         });

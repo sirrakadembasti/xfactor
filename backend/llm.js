@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logError, logWarning, writeStructuredLog } from './observability.js';
 import { initNetworkResolver } from './networkResolver.js';
+import { createLLMProfileStore } from './llm-auth/llm.js';
 
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(backendDir, '.env') });
@@ -38,7 +39,7 @@ async function fetchWithRetry(url, options, { retries = 3, signal = null } = {})
             throw new Error(`LLM fetch aborted: ${signal.reason || 'ABORTED'}`);
         }
         try {
-            const res = await fetch(url, { ...options, signal });
+            const res = await fetch(url, { redirect: 'error', ...options, signal });
             if (res.status === 429 || res.status >= 500) {
                 if (i < retries - 1 && !signal?.aborted) {
                     const backoffMs = 1000 * (i + 1);
@@ -82,8 +83,17 @@ export function raceWithAbort(operationPromise, signal) {
     });
 }
 
+export function getCurrentLLMProvider() {
+    return createLLMProfileStore().getActive()?.provider || process.env.AI_PROVIDER || 'google';
+}
+
 export async function generateLLMResponse(messages, options = {}) {
     dotenv.config(); // Her istekte güncel .env değişkenlerini yükle
+
+    if (options.provider === undefined && options.apiKey === undefined && options.useManagedProfile !== false) {
+        const activeProfile = createLLMProfileStore().getActive();
+        if (activeProfile) options = { ...activeProfile, ...options };
+    }
 
     const allowMockFallback = options.allowMockFallback === true || process.env.ALLOW_MOCK_FALLBACK === 'true';
     const provider = (options.provider || process.env.AI_PROVIDER || 'google').toLowerCase().trim();
@@ -138,6 +148,10 @@ export async function generateLLMResponse(messages, options = {}) {
             baseURL = process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1/chat/completions";
             if (!aiModel) aiModel = 'moonshot-v1-32k';
         }
+        else if (provider === 'xiaomi_mimo') {
+            apiKey = process.env.XIAOMI_MIMO_API_KEY?.trim() || '';
+            baseURL = process.env.XIAOMI_MIMO_BASE_URL?.trim() || 'https://token-plan-sgp.xiaomimimo.com/v1';
+        }
     }
 
     if (!baseURL && process.env.AI_BASE_URL?.trim()) {
@@ -177,6 +191,7 @@ export async function generateLLMResponse(messages, options = {}) {
     // =========================================================================
     if (provider === 'google') {
         // Önce Resmi SDK'yı dene
+        if (!baseURL) {
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
             
@@ -221,9 +236,11 @@ export async function generateLLMResponse(messages, options = {}) {
             }
             logWarning('llm.google_sdk_failed', sdkError, { fallback: 'rest' });
         }
+        }
         // SDK Başarısız olursa Doğrudan Google Native REST API Fallback
         try {
-            const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
+            const nativeBase = (baseURL || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/+$/, '');
+            const nativeUrl = `${nativeBase}/models/${encodeURIComponent(aiModel)}:generateContent`;
             
             const systemMsg = messages.find(m => m.role === 'system');
             let contents = messages
@@ -247,7 +264,7 @@ export async function generateLLMResponse(messages, options = {}) {
 
             const restOptions = {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
                 body: JSON.stringify(requestPayload)
             };
             const response = await fetchWithRetry(nativeUrl, restOptions, { signal: mergedSignal });
@@ -277,6 +294,25 @@ export async function generateLLMResponse(messages, options = {}) {
         }
     }
 
+    if (provider === 'anthropic') {
+        const system = messages.filter(item => item.role === 'system').map(item => item.content).join('\n');
+        const conversation = messages.filter(item => item.role !== 'system').map(item => ({
+            role: item.role === 'assistant' ? 'assistant' : 'user', content: String(item.content || '')
+        }));
+        const endpoint = `${(baseURL || 'https://api.anthropic.com/v1').replace(/\/+$/, '').replace(/\/messages$/, '')}/messages`;
+        const response = await fetchWithRetry(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({ model: aiModel, max_tokens: 8192, ...(system ? { system } : {}), messages: conversation.length ? conversation : [{ role: 'user', content: system || 'Devam et.' }] })
+        }, { signal: mergedSignal });
+        if (!response.ok) throw new Error(`ANTHROPIC API Hatası: ${response.status}`);
+        const body = await response.json();
+        const content = body.content?.filter(item => item.type === 'text').map(item => item.text).join('\n');
+        if (!content) throw new Error('ANTHROPIC API boş içerik döndürdü.');
+        options.onUsage?.(body.usage ?? null);
+        return content;
+    }
+
     // =========================================================================
     // 2. OPENAI UYUMLU REST API ÇAĞRISI (OpenAI, OpenRouter, DeepSeek, Qwen vb.)
     // =========================================================================
@@ -289,7 +325,8 @@ export async function generateLLMResponse(messages, options = {}) {
         'Authorization': `Bearer ${apiKey}`
     };
 
-    const requestBody = JSON.stringify({ model: aiModel, messages: messages, max_tokens: 8192 });
+    const tokenLimit = provider === 'openai' ? { max_completion_tokens: 8192 } : { max_tokens: 8192 };
+    const requestBody = JSON.stringify({ model: aiModel, messages: messages, ...tokenLimit });
 
     let response;
     try {
