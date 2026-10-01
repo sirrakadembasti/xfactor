@@ -10,6 +10,7 @@ export function getIsolationArgs(job = {}) {
   const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
   if (isFullApp) {
     return [
+      '--init',
       '--cpus', '2.0',
       '--memory', '4g',
       '--memory-swap', '4g',
@@ -23,6 +24,7 @@ export function getIsolationArgs(job = {}) {
     ];
   }
   return [
+    '--init',
     '--cpus', '2.0',
     '--memory', '1g',
     '--memory-swap', '1g',
@@ -61,6 +63,18 @@ function docker(args, { signal, deadline, timeout = 120000 } = {}) {
     proc.once('error', e => finish(reject, e));
     proc.once('close', (code, sig) => { const stdout = Buffer.concat(out).toString(); const stderr = Buffer.concat(err).toString(); if (code === 0) finish(resolve, { stdout, stderr }); else { const e = new Error(stderr || `docker exited ${code}${sig ? ` (${sig})` : ''}`); e.stdout = stdout; e.stderr = stderr; e.code = code; e.signal = sig; finish(reject, e); } });
   });
+}
+
+export async function probeRuntimeReadiness() {
+  const deadline = Date.now() + 4000;
+  await docker(['info', '--format', '{{.ServerVersion}}'], { deadline });
+  await docker(['image', 'inspect', IMAGE_NAME], { deadline });
+}
+
+export function commandTimeoutMs(requested, deadline, now = Date.now()) {
+  const remaining = deadline - now;
+  if (remaining <= 0) throw new Error('Job deadline exceeded');
+  return Math.max(1, Math.min(Number(requested) || 900000, remaining));
 }
 
 export function buildContainerExecArgs({ containerName, command, args = [], cwd = null, env = {} }) {
@@ -237,6 +251,12 @@ export async function executeJob(job, { signal, onResource } = {}) {
     const ownedProcesses = new Map();
     const adapter = {
       id: 'docker-worker',
+      interact: async request => {
+        const result = await adapter.execute('node', ['/opt/worker/browserRunner.cjs'], {
+          input: JSON.stringify({ ...request, signal: undefined }), timeoutMs: 120000
+        });
+        return JSON.parse(result.stdout);
+      },
       getCapabilities: () => ({ available: true, isolation: true, adapterId: 'docker-worker', execute: true, spawn: true, writeFile: true }),
       execute: async (command, args = [], options = {}) => {
         if (command && typeof command === 'object') {
@@ -264,15 +284,17 @@ export async function executeJob(job, { signal, onResource } = {}) {
           } else {
             da.push(names.container, 'node', '/opt/worker/entrypoint.js', command, ...(Array.isArray(args) ? args : []));
           }
+          const ms = commandTimeoutMs(options.timeout || options.timeoutMs, deadline);
+          if (signal?.aborted) throw new Error('Cancelled by user');
           const p = cp.spawn('docker', da, { stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'], windowsHide: true });
           if (options.input !== undefined) p.stdin.end(Buffer.from(options.input));
           let done = false;
           const finish = (fn, value) => { if (done) return; done = true; clearTimeout(timer); signal?.removeEventListener('abort', abort); fn(value); };
           const captured = captureChildOutput(p);
-          const ms = Math.max(1, Math.min(options.timeout || options.timeoutMs || 900000, Math.max(900000, deadline - Date.now())));
           const timer = setTimeout(() => { finish(reject, new Error('Command timed out')); try { p.kill('SIGKILL'); } catch {} }, ms);
           const abort = () => { finish(reject, new Error('Cancelled by user')); try { p.kill('SIGKILL'); } catch {} };
           signal?.addEventListener('abort', abort, { once: true });
+          p.once('error', error => finish(reject, error));
           captured.then(r => {
             const normalized = { ...r, exitCode: r.code ?? null, passed: r.code === 0 && !r.stdoutTruncated && !r.stderrTruncated };
             if (normalized.passed) finish(resolve, normalized);

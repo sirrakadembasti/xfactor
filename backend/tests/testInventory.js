@@ -131,6 +131,9 @@ test_workflow_failure_chat_event.js
 test_manager_error_telemetry.js
 test_manager_management_discovery.js
 test_llm_auth.js
+test_backup_wal.js
+test_provider_dns.js
+test_download_completion.js
 test_next_generated_import_audit.js
 test_dev_verification_fallback.js
 test_workflow_dev_fallback.js

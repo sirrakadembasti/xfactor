@@ -1,6 +1,6 @@
 # ⚡ XFactor — Otonom AI Yazılım Orkestrasyon Platformu
 
-[![Node.js](https://img.shields.io/badge/Node.js-22.5.0%2B%20%7C%20Bun%201.0%2B-green.svg)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-22.23.2-green.svg)](https://nodejs.org)
 [![Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-646CFF.svg)](https://vitejs.dev/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite%20WAL%20Migrations-003B57.svg)](https://www.sqlite.org/)
 [![Tests](https://img.shields.io/badge/Tests-run%20npm%20test-blue.svg)](backend/tests/test_runner.js)
@@ -18,8 +18,8 @@
 * 🛡️ **18 Zorunlu Kalite Kapısı (Aktif Politika 2.0):** Kodlar yalnızca sentaks değil; `clean_install`, `typecheck`, `framework_build`, `service_manifest`, `database_verification`, `api_contract`, `browser_journey`, `smoke_gate`, `placeholder_check`, `contamination_check`, `security_baseline` ve `readme_check` olmak üzere 18 zorunlu kapının makine tarafından doğrulanmış yürütme kanıtı (SHA-256 digest, exit code, ISO UTC zaman damgası) olmadan onaylanmaz (Fail-Closed Veto).
 * 📜 **Sürümlü Sözleşme & Çoklu Yığın Sürüm Koruması:** Next.js 15+ (App Router), React 18.3+, Prisma 6.4+, Zod 3.24+ ve Tailwind 3.4+ kararlı sürümleri kilitlidir. Otomatik `service-manifest.json`, `layout.tsx` ve `page.tsx` iskele koruması sağlanır.
 * 📦 **Sunucu Tarafı Temiz Oda ZIP Doğrulaması:** Dosya listesinden tahminî ZIP üretimi engellenmiştir. Sunucu tarafında üretilen ZIP artefaktı (`artifacts`), SHA-256 hash'i kilitlenerek izole `artifactVerifier` temiz odasında sıfırdan açılıp test edilmeden ve dayanıklı tamamlama makbuzu (`completion_receipts`, Migrasyon 10) üretilmeden indirilemez (Unverified 409 Conflict).
-* 🔒 **Bölünmüş Mimari ve İzole Worker Sınırı (Split Architecture):** Web Orchestrator ve Execution Worker olarak iki ayrı güven sınırına (trust boundary) ayrılmıştır. Güvensiz kod, asla Web Orchestrator üzerinde çalıştırılmaz. API etkileşimi, Bearer token (`EXECUTION_WORKER_TOKEN`) ile doğrulanmış ayrı bir Worker sınırında gerçekleşir. Çok katmanlı uygulamalar için dinamik 4GB RAM / 2GB tmpfs tahsisi ve gzip sıkıştırmalı npm proxy desteği sunar.
-* 🛡️ **OS Sandbox Sınırları & Sıfır Sızıntı:** Bubblewrap ve Docker yetenek sözleşmesi ile fail-closed duran izole alt süreç sandbox'ı, proxy DNS yönlendirmesi, otomatik gizli anahtar temizliği (`scrubEnvironmentVariables`), 24 saatlik HttpOnly sunucu oturumları, CSRF ve HSTS korumaları ve yalnızca yöneticilerin tetikleyebildiği global disk senkronizasyonu.
+* 🔒 **Bağımsız Execution Worker:** Web Orchestrator ve Execution Worker ayrı süreçlerdir; iş API'si Bearer token (`EXECUTION_WORKER_TOKEN`) ile korunur. `npm run dev:local` kalite kontrollerini Docker olmadan Node/npm/Playwright/Chromium ile yürütür. `local-trusted` profili işletim sistemi izolasyonu sağlamaz; üretilen kod worker kullanıcısının yetkileriyle çalışır.
+* 🛡️ **Profile Göre Güvenlik Sınırları:** Docker profili container kaynak/ağ sınırlarını uygular. Yerel profil ayrı iş dizini, ortam temizliği, arşiv sınırları, iptal ve süreç ağacı temizliği sağlar; container sandbox garantisi vermez. HttpOnly oturum, CSRF, HSTS ve yöneticiye özel disk senkronizasyonu platformun ortak korumalarıdır.
 * 🔄 **Dayanıklı LLM Görev Katmanı & Hedefli Onarım:** Geçici ağ ve zaman aşımı hatalarında 3 denemeli sınırlı retry (`llmTaskRetry.js`), Babel AST tabanlı sentaks denetimi ve güvensiz secret fallback hatalarını dosya bazlı sıralı gideren hedefli onarım döngüsü (`executeStaticRepairLoop`).
 * 📊 **Kalite Paneli & Telemetri:** Longitudinal kapı metrikleri, hata parmak izi (fingerprinting), ister etki analizi ve yeniden derleme önizlemesi (`/impact`, `/preview`), kimlik bilgileri temizlenmiş (redacted) kanıt logları ve ReactFlow DAG akış şeması. Tamamlanan proje, doğrulanmış ZIP paketi olarak indirilir.
 * 🐳 **Üretilen Projelerde Dockerfile:** Üretilen uygulamaya yığınına uygun `Dockerfile` ve `.dockerignore` eklenir. Kullanıcı ZIP'i çıkardıktan sonra `docker build` ve başarılı build sonrası `docker run` komutlarıyla uygulamayı çalıştırabilir.
@@ -63,16 +63,17 @@ cd ..
 ### 2. Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
-Proje kök dizinindeyken tek bir `npm run dev` komutuyla sistemin 3 temel servisi eşzamanlı başlatılır:
+Backend ve frontend bağımlılıkları kurulduktan sonra yerel worker araçlarını hazırlayıp üç servisi Docker olmadan başlatın:
 ```bash
-npm run dev
+npm run worker:local:setup -- --install
+npm run dev:local
 ```
 
 | Port | Servis | Rolü ve Erişimi |
 |:---:|---|---|
 | **`5173`** | **Frontend (Vite/React)** | **Kullanıcı Arayüzü:** Tarayıcınızda açacağınız ana panel (`http://localhost:5173`). |
 | **`8000`** | **Backend (Web Orchestrator)** | **Platform Beyni:** REST API, SQLite WAL, WebSocket telemetrisi ve 6 yapay zekâ ajanı. |
-| **`8099`** | **Execution Worker** | **İzole Derleyici/Test:** Yapay zekânın ürettiği kodları izole çalıştıran iç servis. |
+| **`8099`** | **Execution Worker** | **Bağımsız Derleyici/Test:** Yerel veya Docker profiliyle çalışan, token korumalı iç servis. |
 
 > ℹ️ **Execution Worker (`8099`) Hakkında:** Bu port tarayıcıyla açılacak bir web sayfası değildir; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile iletişim kurduğu korumalı bir iç RPC servisidir. Tarayıcıdan açıldığında `{"error":"Unauthorized"}` dönmesi güvenlik kalkanının çalıştığını gösterir. Worker'ın derleme ve test logları doğrudan Frontend arayüzündeki **Loglar**, **DAG Akışı** ve **Kalite Paneli** sekmelerine canlı yansıtılır.
 
@@ -83,7 +84,7 @@ npm run dev
 Üç ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
 * **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
-* **Terminal 3 (Execution Worker):** proje kökünde `node execution/server.js` *(İç servis: http://127.0.0.1:8099)*
+* **Terminal 3 (Execution Worker):** yerel kullanımda [paket kılavuzundaki](docs/LOCAL-WORKER-PACKAGE.md) launcher ve backend URL/token bağlantısını kullanın *(İç servis: http://127.0.0.1:8099)*. Doğrudan `node execution/server.js` ve `npm run dev` çalışma zamanı seçilmedikçe Docker profilini kullanır; Docker'sız akış için `npm run dev:local` seçilmelidir.
 ### 3. Kullanmaya Başlayın
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.
@@ -98,7 +99,7 @@ Manager'ın tamamlanma mesajı, sağlayıcının bildirdiği ve proje bazında k
 
 Manager, kullanıcı “admin paneli” demese bile kalıcı kayıt, işlem veya rol gerektiren her istekte yönetim ihtiyacını değerlendirir. Önerilen planda yönetilecek kaynaklar, gerekli işlemler, yönetim ekranları, oturum açma ve rol yetkileri açıklanır; yönetim gerekmiyorsa bunun gerekçesi yazılır. Bu kapsam kod üretimine ancak kullanıcının planı onaylamasıyla girer. Açık kullanıcı kaydı ayrı bir ürün kararıdır; kayıt işlemi ayrıcalıklı rol vermez.
 
-Yönetim gerektiren projelerde her rol için yalnız geliştirme ve test ortamında kullanılacak ayrı demo hesabı ile izin verilen ve reddedilmesi gereken akışlar tanımlanır. Kalite kontrolü API kayıtlarının gerçekten değişip kalıcı olduğunu, oturumsuz ve yetkisiz işlemlerin reddedildiğini, silme ve ilişkili kayıt politikasının izlendiğini ve arayüz eylemlerinin görünür sonuç verdiğini arar. Gerçek etkileşim sağlayan güvenilir tarayıcı adaptörü bulunmazsa yönetim yolculuğu `BLOCKED` kalır; HTML varlığı veya bir testin yalnızca “başarılı” demesi yeterli değildir. Bu daldaki son ZIP Docker çalıştırma kabulü ertelenmiştir.
+Yönetim gerektiren projelerde her rol için yalnız geliştirme ve test ortamında kullanılacak ayrı demo hesabı ile izin verilen ve reddedilmesi gereken akışlar tanımlanır. Kalite kontrolü API kayıtlarının gerçekten değişip kalıcı olduğunu, oturumsuz ve yetkisiz işlemlerin reddedildiğini, silme ve ilişkili kayıt politikasının izlendiğini ve arayüz eylemlerinin görünür sonuç verdiğini arar. Gerçek etkileşim sağlayan güvenilir tarayıcı adaptörü bulunmazsa yönetim yolculuğu `BLOCKED` kalır; HTML varlığı veya bir testin yalnızca “başarılı” demesi yeterli değildir. Docker imajının build/run kabulü, yerel kalite doğrulamasından ayrı bir altyapı kontrolüdür.
 
 Next.js projelerinde `public/` dizini boş veya yoksa üretilen Dockerfile derleme aşamasında dizini oluşturur. ZIP'ten çıkarılan uygulama klasöründe `docker build -t projem .` komutu tamamlanmadan `docker run` çalıştırılmamalıdır; build başarısızsa yerel imaj oluşmaz.
 
@@ -129,7 +130,7 @@ npm --prefix execution test
 npm run test:e2e
 ```
 
-Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker daemon gerektirir; daemon yoksa ilgili test açıkça `BLOCKED` olur.
+Yerel kalite doğrulaması için `npm run test:local-worker`; paketli worker için `npm run test:local-worker-package -- --bundle dist/local-worker` kullanın. Bu testler Docker gerektirmez. Docker izolasyonu entegrasyonu ve imaj build/run kabulü ayrı kontrollerdir; bunlar çalışan bir Docker daemon gerektirir.
 Yönetim uygulamalarının kalite paneli, demo rol girişlerini, izinli/reddedilen CRUD işlemlerini ve yönetim ekranı etkileşimlerini ayrı kanıt satırları olarak gösterir. Bu satırlar mevcut API, tarayıcı ve canlı servis kapılarının ayrıntılarıdır; ayrıca yeni bir üst seviye kapı sayısı oluşturmaz.
 Üretilen Dockerfile için ayrıca `npm --prefix backend run test:docker:artifact` komutu, temsilî Express ve `public/` klasörü olmayan Next projelerini ZIP'e koyup ZIP'den çıkarır; Docker build ve ilk HTTP yanıtını denetler. Bu bağımsız kabul testi, her kullanıcı ZIP'inin üretim sırasında Docker ile doğrulandığı anlamına gelmez.
 
@@ -179,3 +180,10 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 * 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
 * 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
+## Docker olmadan bağımsız yerel worker
+
+Yerel worker Node 22.23.2, npm 10.9.8, Playwright 1.62.1 ve Chromium ile gerçek kurulum, build, test, API, veritabanı ve tarayıcı kontrollerini yürütür. Python veya Docker gerekmez. İlk kurulumda `npm run worker:local:setup -- --install`, ardından `npm run dev:local` kullanılabilir. Chromium sistem kitaplıkları Linux'ta ayrıca kurulu olmalıdır.
+
+Paket üretmek için `npm run worker:local:package -- --output dist/local-worker` çalıştırın. Aynı işletim sistemi ve mimariye sahip bilgisayarda paketin `start-worker.cmd` veya `start-worker.sh` dosyasını başlatın. Backend'in worker URL ve token ayarlarını [paket kılavuzuna](docs/LOCAL-WORKER-PACKAGE.md) göre eşleştirin. Paket kendi Node/npm/Chromium dosyalarını içerir; Node kurulmamış hedef bilgisayarda da başlatılabilir.
+
+Profil `local-trusted` olarak raporlanır: gerçek bağımsız testler vardır, **OS izolasyonu yoktur**. Üretilen kod yerel kullanıcının yetkileriyle çalışır. Kaynak üzerinden doğrudan worker başlatılırken `EXECUTION_WORKER_RUNTIME=local` ve `EXECUTION_WORKER_TRUST_LOCAL_CODE=1` açıkça seçilmelidir; Docker'dan sessiz geçiş yapılmaz. Docker imajı üretme/çalıştırma doğrulaması ayrı bir işlem olarak Docker gerektirir. Windows gerçek uçtan uca testleri çalıştırılır; Linux/macOS platform doğrulaması CI matrisinde bulunur.

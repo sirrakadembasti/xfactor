@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import JSZip from 'jszip';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 import { createBackup, restoreBackup } from '../backupRestore.js';
@@ -70,8 +71,12 @@ try {
     const restored = await restoreBackup(snapshot.root, path.join(root, 'restore-ok'));
     const restoredArchive = path.join(restored.artifactsRoot, `${artifactId}.zip`);
     assert.deepEqual(await fs.readFile(restoredArchive), archiveBytes);
-    const restoredRow = db.prepare('SELECT 1').get();
-    assert.equal(restoredRow['1'], 1);
+    const restoredDatabase = new DatabaseSync(restored.dbPath);
+    try {
+        const restoredRow = restoredDatabase.prepare('SELECT path FROM artifacts WHERE id = ?').get(artifactId);
+        assert.equal(restoredRow.path, restoredArchive);
+        assert.deepEqual(await fs.readFile(restoredRow.path), archiveBytes);
+    } finally { restoredDatabase.close(); }
 
     const timeoutCoordinator = createLifecycleCoordinator({ timeoutMs: 50 });
     const held = timeoutCoordinator.begin('generation', { cancel: () => {} });

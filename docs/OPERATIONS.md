@@ -25,12 +25,26 @@ Do not run two web instances against the same paths without the prerequisites in
 - `EXECUTION_WORKER_URL` and `EXECUTION_WORKER_TOKEN` pointing to a trusted execution worker instance.
 - `LLM_CONFIG_ENCRYPTION_KEY` (32-byte hex/base64) and at least one LLM profile
   configured in the admin-only `/llm` page for LLM-backed generation.
-- `JWT_SECRET` (session/token signing material).
+- Sessions use opaque cookie tokens and server-side SHA-256 hashes; `JWT_SECRET`
+  is only a legacy development fallback for MFA key derivation.
 - `MFA_ENCRYPTION_KEY` (32-byte hex): encrypts stored TOTP secrets.
 - Reverse proxy terminating TLS in front of the backend (section 6).
 - Persistent storage for `DB_PATH`, `PROJECTS_ROOT`, `ARTIFACTS_ROOT`.
 - Persistent, access-controlled storage for `backend/data/llm-profiles.json` (or
   `LLM_CONFIG_PATH`); back it up together with its encryption key.
+
+Production reads an explicitly supplied `LLM_CONFIG_ENCRYPTION_KEY`, an existing
+environment-file key, or a persisted `llm-encryption.key` beside the profile file.
+On a new installation it writes the key to that persistent data directory with
+mode 0600, without modifying the application directory. `LLM_CONFIG_KEY_PATH`
+overrides this path. Never lose the key; encrypted profiles cannot recover it.
+Both the profile file and key need a separate access-controlled backup: the
+project snapshot below contains database/projects/artifacts only.
+
+The production worker requires an operator-supplied `EXECUTION_WORKER_TOKEN` or
+`WORKER_TOKEN`; the built-in development token is refused in production.
+Keep the worker API on a trusted private boundary; use TLS for traffic crossing
+hosts. Bearer authentication alone does not encrypt HTTP traffic.
 
 ### LLM profile operation
 
@@ -79,6 +93,17 @@ available for older installations; new installations should select a profile.
 - Docker isolation enforces exactly: `--cpus 2.0`, `--memory 1g`, `--memory-swap 1g`, `--pids-limit 100`, `--security-opt no-new-privileges:true`, `--cap-drop ALL`, `--tmpfs /tmp:rw,noexec,nosuid,size=64m`, and loopback-only port publishing.
 - Sandboxed processes start with a scrubbed environment and a strict execution deadline bounded by the worker.
 - CI enforces real Docker evidence.
+- The built-in worker uses Docker. Build its operator-owned runtime with
+  `docker build -t xfactor-worker-runtime execution`. It includes Chromium and
+  pinned Playwright Core, independent of generated project dependencies.
+  Interactive role journeys use temporary demo accounts and a fresh browser
+  context; role/session proof, visible outcomes, keyboard access and mobile
+  overflow are measured. Missing evidence never becomes PASS.
+- Worker `/readyz` checks the Docker daemon and runtime image; missing resources
+  produce 503. A running job is aborted at its deadline, including subprocesses.
+- Provider connections validate all DNS answers at socket connection time and
+  reject non-public addresses and redirects. The explicit local HTTP switch is
+  restricted to loopback development endpoints.
 ## 6. Artifacts and verified ZIP downloads
 
 - ZIP artifacts are produced server-side and recorded with SHA-256 hashes;
@@ -87,11 +112,26 @@ available for older installations; new installations should select a profile.
   (`requireAuth` + `projectAccess('viewer')`), served with `res.download`
   from the server-side artifact path — never reconstructed from a client
   file list (`backend/routes/projectRoutes.js`).
+- Successful download action messages are appended after the transfer callback
+  succeeds. A missing file or disconnected transfer does not record success.
 - Release gating requires the execution worker to complete all mandatory gates (e.g., `clean_install`, `typecheck`), and provide durable completion receipts with strictly validated `evidence_json` and `stdout/stderr` digests before an artifact becomes downloadable. Unverified requests strictly return `409 Conflict`.
 
 ## 7. Persistence, proxy/TLS, and maintenance
 
 - **Persistence & Recovery:** Back up `DB_PATH` together with `PROJECTS_ROOT` and `ARTIFACTS_ROOT`. SQLite checkpoints WAL on graceful shutdown (`checkpointWAL`). Recovery tools are provided to safely restore backups and invalidate stale workflow leases without data corruption.
+- **Snapshot procedure:** Stop the web orchestrator and worker writers before
+  using the CLI: `node backend/scripts/backup.js --offline --db ABSOLUTE_DB_PATH
+  --projects ABSOLUTE_PROJECTS_ROOT --artifacts ABSOLUTE_ARTIFACTS_ROOT
+  --output ABSOLUTE_EMPTY_DESTINATION`. `--offline` declares that writers have
+  been stopped; it does not stop them. Embedded callers must supply a quiescing
+  lifecycle coordinator. SQLite `VACUUM INTO` includes committed WAL pages.
+  The snapshot is a directory containing `manifest.json`, `db`, `projects`
+  and `artifacts`, with byte counts and SHA-256 hashes, rather than tar.gz.
+  Restore into a fresh target using `node backend/scripts/restore.js
+  --snapshot ABSOLUTE_SNAPSHOT --target ABSOLUTE_TARGET`; artifact DB paths
+  are rewritten to the final destination and receipt hashes checked.
+- Worker job-store JSON is durable state. Corruption stops worker startup;
+  restore the file from a known backup rather than silently discarding jobs.
 - **Graceful Bounded Shutdown:** The web orchestrator catches `SIGTERM/SIGINT` and executes a bounded shutdown (default `SHUTDOWN_TIMEOUT_MS=3000`), ensuring websockets are closed, pending DB transactions are finalized, and the SQLite connection is safely terminated.
 - **Reverse proxy / TLS contract:** production requires `TRUST_PROXY=loopback`
   and HTTPS-only `ALLOWED_ORIGINS` (`validateRuntimeConfig` in
@@ -138,5 +178,21 @@ contract test `backend/tests/test_p8_ci_contract.js`:
   `timeout 60s` and blocking; backend suite with
   `P8_REQUIRE_DOCKER_LIMITS=1`; frontend `test:unit`; frontend build;
   Chromium install plus root `test:e2e`.
+  The worker suite also builds its fixed image and runs authenticated HTTP and
+  Docker isolation tests. Browser containers use an init process to reap children;
+  GPU rendering and zygote are disabled, with a fresh single-process browser per
+  journey. The worker container remains the isolation boundary within existing
+  CPU, memory and PID limits.
 - `production-image` job: declares `needs: test`, contains no
   `continue-on-error`, and proves the production HTTPS container surface.
+- `local-worker` job: Windows, Linux ve macOS matrisi üzerinde sabit sürümlü araçları kurar, yerel entegrasyonu çalıştırır, platform paketini üretir ve gerçek paket/kapanış kabulünü doğrular. Docker gerektirmez. Matrisin tanımlanması bu platformlarda CI'nın geçtiği anlamına gelmez; yerel Windows kanıtı [doğrulama raporundadır](LOCAL-WORKER-VALIDATION-2026-10-01.md).
+
+## 10. Yerel worker işletimi
+
+Docker olmadan gerçek doğrulama için `npm run dev:local` veya paketli worker kullanılabilir. `local-trusted` profili açık operatör seçimi gerektirir; OS izolasyonu sağlamaz. Setup/paket/bağlantı komutları [yerel paket kılavuzundadır](LOCAL-WORKER-PACKAGE.md). Kaynak, paketli worker ve Docker entegrasyon testleri ayrı komutlarla çalıştırılır; Docker'ın bulunmaması yerel testleri devre dışı bırakmaz.
+
+`npm run dev` ve doğrudan `node execution/server.js` varsayılan olarak Docker profilini seçer. Yerel kaynak kurulumu için `npm run worker:local:setup -- --install`, ardından `npm run dev:local` kullanın; backend/frontend bağımlılıkları ayrıca kurulmalıdır. `npm run test:local-worker` kaynak entegrasyonunu, `npm run test:local-worker-package -- --bundle dist/local-worker` gerçek dağıtım paketini doğrular. Üretilen uygulamanın Docker imajını build/run etmek ve container izolasyonunu test etmek ayrı işlemlerdir; Docker gerektirir.
+
+Paket manifesti her dosyanın SHA256 bütünlüğünü doğrular; imzalı yayın yerine geçmez. Chromium, doğrulanmış kaynak paketten paket dışındaki benzersiz ve hashleri tekrar doğrulanan çalışma kopyasına alınır. Normal kapanış ve açılış hataları bu kopyayı temizler; ani launcher çöküşünden kalan kopyalar operatör tarafından temizlenebilir. Linux Chromium sistem kitaplıkları ve platforma özgü işletim sistemi gereksinimleri kılavuzda belirtilmiştir.
+
+Worker'a kapatma mesajı gönderildiğinde önce aktif işler iptal edilip süreçler ve çalışma dizinleri temizlenir. Windows'ta launcher IPC kullanır; native Job Object yardımcısı ayrıca worker'ın beklenmedik kapanışını izleyip çocuk süreçleri sonlandırır. İlk helper derlemesi iptal ve job deadline'a tabidir. Her iş kendi HOME/npm cache/geçici dizinlerini kullanır. Worker kapanışı sırasında bekleyen yeni işler başlatılmaz; kesilen aktif işler `failed_interrupted` olarak kaydedilir.

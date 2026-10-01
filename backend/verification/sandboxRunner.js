@@ -47,6 +47,15 @@ export function getActiveSandboxAdapter(requestedId = null) {
     throw new SandboxInitializationError(`No compatible sandbox adapter found for platform: ${platform}`);
 }
 
+const consentedLocalCapabilities = new WeakSet();
+export function authorizeLocalExecutionAdapter(adapter, { trustLocalCode = false } = {}) {
+    const capabilities = adapter?.getCapabilities?.();
+    if (trustLocalCode !== true) throw new SandboxInitializationError('Local execution requires explicit operator consent.');
+    if (!Object.isFrozen(capabilities) || capabilities?.executionProfile !== 'local-trusted' || capabilities.isolation !== false || capabilities.osIsolation !== false || capabilities.available !== true) throw new SandboxInitializationError('Invalid local execution capabilities.');
+    consentedLocalCapabilities.add(capabilities);
+    return adapter;
+}
+
 export function requireSandboxCapabilities(adapter) {
     if (typeof adapter?.getCapabilities !== 'function') {
         if (adapter?.id && adapter.id !== 'unknown' && typeof adapter?.isAvailable === 'function' && adapter.isAvailable()) {
@@ -63,7 +72,7 @@ export function requireSandboxCapabilities(adapter) {
     }
 
     const capabilities = adapter.getCapabilities();
-    if (!capabilities?.available || capabilities.isolation !== true) {
+    if (!capabilities?.available || (capabilities.isolation !== true && !consentedLocalCapabilities.has(capabilities))) {
         throw new SandboxInitializationError(
             capabilities?.reason || `Sandbox adapter "${adapter.id || 'unknown'}" is unavailable.`
         );

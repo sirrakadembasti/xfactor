@@ -12,11 +12,24 @@ export class JobStore {
       if (fs.existsSync(dbPath)) {
         try {
           const data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+          if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid jobs document');
+          let recovered = false;
           for (const [jobId, job] of Object.entries(data)) {
-            if (job.status === 'running') job.status = 'failed_interrupted';
+            if (!job || typeof job !== 'object' || job.jobId !== jobId || typeof job.status !== 'string') throw new Error('Invalid job record');
+            if (job.status === 'running') {
+              job.status = 'failed_interrupted';
+              job.completedAt = Date.now();
+              recovered = true;
+            } else if (['completed', 'failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(job.status) && !Number.isFinite(job.completedAt)) {
+              job.completedAt = Date.now();
+              recovered = true;
+            }
             this.jobs.set(jobId, job);
           }
-        } catch {}
+          if (recovered) this._save();
+        } catch (error) {
+          throw new Error('Cannot load job store: corrupt or unreadable persistence. Restore it before starting the worker.', { cause: error });
+        }
       }
     }
   }

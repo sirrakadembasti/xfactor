@@ -91,10 +91,12 @@ export async function createBackup({
     artifactsRoot,
     destination,
     lifecycle = null,
+    offline = false,
     checkpoint = null,
     limits = DEFAULT_LIMITS
 } = {}) {
     const databasePath = String(dbPath || '');
+    if (!lifecycle?.quiesce && !offline) throw new Error('Backup requires a quiesced lifecycle or offline mode with all writers stopped.');
     if (!databasePath || databasePath === ':memory:' || !path.isAbsolute(databasePath)) throw new Error('Backup requires an absolute SQLite DB path.');
     const databaseFile = resolveRoot(databasePath);
     const projects = await assertDirectory(projectsRoot, 'Projects');
@@ -111,7 +113,13 @@ export async function createBackup({
         await checkpoint?.();
         const dbStat = await fs.lstat(databaseFile).catch(() => null);
         if (!dbStat?.isFile() || dbStat.isSymbolicLink()) throw new Error('SQLite DB must be a regular owned file.');
-        const dbBytes = await fs.readFile(databaseFile);
+        await fs.mkdir(path.join(target, 'db'), { recursive: true });
+        // SQLite reads committed WAL pages too; copying the main file alone loses them.
+        const sourceDatabase = new DatabaseSync(databaseFile, { readOnly: true });
+        try {
+            sourceDatabase.exec(`VACUUM INTO '${path.join(target, 'db', 'projects.db').replace(/'/g, "''")}'`);
+        } finally { sourceDatabase.close(); }
+        const dbBytes = await fs.readFile(path.join(target, 'db', 'projects.db'));
         const projectInventory = await collectFiles(projects, 'projects', limits);
         const artifactInventory = await collectFiles(artifacts, 'artifacts', limits);
         const manifest = {
@@ -127,7 +135,6 @@ export async function createBackup({
         await fs.mkdir(path.join(target, 'db'), { recursive: true });
         await fs.mkdir(path.join(target, 'projects'), { recursive: true });
         await fs.mkdir(path.join(target, 'artifacts'), { recursive: true });
-        await fs.writeFile(path.join(target, 'db', 'projects.db'), dbBytes, { flag: 'wx' });
         await copyManifestFiles(projects, path.join(target, 'projects'), projectInventory.files);
         await copyManifestFiles(artifacts, path.join(target, 'artifacts'), artifactInventory.files);
         await fs.writeFile(path.join(target, 'manifest.json'), JSON.stringify(manifest, null, 2), { flag: 'wx' });
@@ -242,7 +249,7 @@ export async function restoreBackup(snapshotRoot, targetRoot, { limits = DEFAULT
                     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error(`Artifact path escapes owned artifacts root: ${artifact.id}`);
                     const restoredPath = path.join(staging, 'artifacts', relative);
                     if (!fsSync.existsSync(restoredPath)) throw new Error(`Artifact file missing during restore: ${artifact.id}`);
-                    database.prepare('UPDATE artifacts SET path = ? WHERE id = ? AND contract_id = ?').run(restoredPath, artifact.id, artifact.contract_id);
+                    database.prepare('UPDATE artifacts SET path = ? WHERE id = ? AND contract_id = ?').run(path.join(target, 'artifacts', relative), artifact.id, artifact.contract_id);
                 }
                 database.exec('COMMIT;');
             } catch (error) {

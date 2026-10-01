@@ -74,6 +74,23 @@ try {
             { name: 'viewer', demoUser: { username: 'viewer-fixture' } }
         ]
     }, { manager: 'ephemeral-secret', viewer: 'ephemeral-secret' });
+    const browserRequests = [];
+    const browserAdapter = createRoleSessionAdapter({ ...sandboxAdapter,
+        interact: async request => { browserRequests.push(request); return { passed: true }; }
+    }, baseUrl, {
+        authentication: { apiLogin: { path: '/api/auth/login', identityField: 'username' } },
+        roles: [{ name: 'manager', demoUser: { username: 'manager-fixture' } }]
+    }, { manager: 'ephemeral-secret' });
+    await browserAdapter.interact({ url: baseUrl, role: 'manager', authState: 'authenticated', steps: [] });
+    assert.equal(browserRequests[0].login?.username, 'manager-fixture');
+    assert.equal(browserRequests[0].login?.password, 'ephemeral-secret');
+    await browserAdapter.interact({ url: baseUrl, role: 'manager', authState: 'anonymous', steps: [] });
+    assert.equal(browserRequests[1].login, undefined);
+    const separateFrontend = createRoleSessionAdapter({ ...sandboxAdapter, interact: async request => request }, baseUrl, {
+        authentication: { apiLogin: { path: '/api/auth/login' } },
+        roles: [{ name: 'manager', demoUser: { username: 'manager-fixture' } }]
+    }, { manager: 'ephemeral-secret' }, { browserUrl: 'http://127.0.0.1:5173' });
+    assert.equal((await separateFrontend.interact({ url: 'http://127.0.0.1:5173', role: 'manager', steps: [] })).login.url, `${baseUrl}/api/auth/login`);
     const created = await adapter.requestAsRole({ role: 'manager', method: 'POST', url: `${baseUrl}/api/assets`, data: { name: 'probe-one' } });
     assert.equal(created.statusCode, 201);
     assert.equal(created.data.name, 'probe-one');

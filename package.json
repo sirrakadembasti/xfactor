@@ -3,6 +3,12 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:local": "node scripts/dev.mjs --local-worker",
+    "worker:local:setup": "node scripts/setup-local-worker.mjs",
+    "worker:local:package": "node scripts/package-local-worker.mjs",
+    "worker:local": "node scripts/start-local-worker.mjs",
+    "test:local-worker": "node scripts/test-worker.mjs --local-integration",
+    "test:local-worker-package": "node scripts/test-local-worker-package.mjs",
     "graph": "node backend/scripts/generate_graph.js",
     "test:e2e": "playwright test",
     "test:production-image": "node scripts/test-p6-production-image.mjs"

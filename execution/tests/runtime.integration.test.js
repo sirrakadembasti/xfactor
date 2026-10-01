@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import JSZip from '../../backend/node_modules/jszip/lib/index.js';
-import { executeJob } from '../runtime.js';
+import { executeJob, getIsolationArgs } from '../runtime.js';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +44,16 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
   try { command('build', '-t', 'xfactor-worker-runtime', '-f', path.join(dockerfileDir, 'Dockerfile'), dockerfileDir); }
   catch (error) { assert.fail(`Integration image build failed: ${error.stderr || error.message}`); }
 
+  await t.test('real Chromium proves role journeys within unchanged worker limits', () => {
+    const fixture = path.join(dockerfileDir, 'tests', 'browserRunner.test.js');
+    const output = command('run', '--rm', '--network', 'none', ...getIsolationArgs(),
+      '--mount', `type=bind,source=${fixture},target=/opt/browser/tests/browserRunner.test.js,readonly`,
+      '--env', 'XFACTOR_BROWSER_RUNNER=/opt/worker/browserRunner.cjs',
+      '--env', 'XFACTOR_TEST_CHROMIUM=/usr/bin/chromium-browser',
+      '--entrypoint', 'node', 'xfactor-worker-runtime', '--test', '/opt/browser/tests/browserRunner.test.js');
+    assert.match(output, /# fail 0/);
+  });
+
   await t.test('prepare returns exact package bytes, lock digest, and caller runId through registry proxy', async () => {
     const fixture = await artifact('prepare-fixture');
     const result = await executeJob({ jobId: 'job-install-proxy', operation: 'prepare_dependencies', runId: runId('prepare'), deadline: Date.now() + 120000, packageJsonBytes: fixture.packageJson, dependencies: {} }, { signal: new AbortController().signal });
@@ -57,7 +67,7 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
 
   await t.test('real worker seeds demo roles and verifies allowed and forbidden API writes', async () => {
     const scripts = {
-      build: 'node -e "process.stdout.write(1)"',
+      build: 'node -e "process.stdout.write(String(1))"',
       start: 'node server.js',
       test: 'node --test tests/server.test.js',
       'xfactor:test:setup': 'node seed.js'
@@ -65,6 +75,7 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
     const pkg = { name: 'role-worker-fixture', version: '1.0.0', type: 'module', private: true, scripts };
     const lock = { name: pkg.name, version: pkg.version, lockfileVersion: 3, requires: true,
       packages: { '': { name: pkg.name, version: pkg.version, private: true } } };
+    const rolePage = manager => `<main><button id="save" onclick="document.querySelector('#result').textContent='${manager ? 'Saved' : 'Denied'}'">Save</button><button id="read" onclick="document.querySelector('#result').textContent='Read'">Read</button><button id="forbidden" onclick="document.querySelector('#result').textContent='Denied'">Forbidden</button><p id="result"></p></main>`;
     const server = `import http from 'node:http';
 import fs from 'node:fs';
 const users = JSON.parse(fs.readFileSync('users.json', 'utf8'));
@@ -73,11 +84,16 @@ http.createServer(async (req, res) => {
   const chunks = []; for await (const chunk of req) chunks.push(chunk);
   const body = Buffer.concat(chunks).toString();
   res.setHeader('content-type', 'application/json');
+  if (req.url === '/' && req.method === 'GET') {
+    const manager = req.headers.cookie?.includes('session=manager-fixture');
+    res.setHeader('content-type', 'text/html');
+    res.end(manager ? ${JSON.stringify(rolePage(true))} : ${JSON.stringify(rolePage(false))}); return;
+  }
   if (req.url === '/api/auth/login' && req.method === 'POST') {
     const data = JSON.parse(body || '{}');
     if (users[data.username] !== data.password) { res.writeHead(401).end('{}'); return; }
-    res.setHeader('set-cookie', 'session=' + data.username + '; HttpOnly');
-    res.writeHead(200).end('{}'); return;
+    res.setHeader('set-cookie', 'session=' + data.username + '; HttpOnly; Path=/');
+    res.writeHead(200).end(JSON.stringify({ user: { role: data.username === 'manager-fixture' ? 'manager' : 'viewer' } })); return;
   }
   if (req.url === '/api/assets') {
     const user = req.headers.cookie?.match(/session=([^;]+)/)?.[1];
@@ -103,10 +119,14 @@ fs.writeFileSync('users.json', JSON.stringify({
     });
     const result = await executeJob({
       jobId: 'job-real-role-verification', operation: 'verify_artifact', runId: runId('roles'),
-      deadline: Date.now() + 180000, archiveBase64: zip.toString('base64'), inputSha256: digest(zip),
+      deadline: Date.now() + 300000, archiveBase64: zip.toString('base64'), inputSha256: digest(zip),
       contract: {
         api: { baseUrl: 'http://127.0.0.1:3000' },
-        browser: { url: 'http://127.0.0.1:3000/' },
+        browser: { url: 'http://127.0.0.1:3000/', roleJourneys: [
+          { role: 'manager', kind: 'positive', steps: [{ action: 'click', selector: '#save' }], expectedOutcome: { kind: 'success', text: 'Saved' } },
+          { role: 'viewer', kind: 'positive', steps: [{ action: 'click', selector: '#read' }], expectedOutcome: { kind: 'success', text: 'Read' } },
+          ...['manager', 'viewer'].map(role => ({ role, kind: 'negative', steps: [{ action: 'click', selector: '#forbidden' }], expectedOutcome: { kind: 'denied', text: 'Denied' } }))
+        ] },
         management: {
           needed: true,
           authentication: { apiLogin: { path: '/api/auth/login' } },
@@ -119,8 +139,8 @@ fs.writeFileSync('users.json', JSON.stringify({
       }, requirementIds: []
     }, { signal: new AbortController().signal });
     const checks = result.result?.checks || [];
-    for (const name of ['management_demo_seed', 'management_role_login', 'api_role_create_allowed', 'api_role_create_denied', 'database_mutation_assertion']) {
-      assert.equal(checks.find(check => check.name === name)?.status, 'passed', `${name}: ${JSON.stringify(result).slice(0, 4000)}`);
+    for (const name of ['management_demo_seed', 'management_role_login', 'api_role_create_allowed', 'api_role_create_denied', 'database_mutation_assertion', 'browser_management_interaction']) {
+      assert.equal(checks.find(check => check.name === name)?.status, 'passed', `${name}: ${JSON.stringify(checks.filter(check => /management|role|api_|database/.test(check.name)))}`);
     }
   });
 

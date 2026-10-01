@@ -30,6 +30,7 @@ backend/data/artifacts/
 backend/data/*.zip
 backend/data/*.db-wal
 backend/data/llm-profiles.json
+**/llm-encryption.key
 
 # Log files
 *.log

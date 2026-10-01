@@ -150,7 +150,7 @@ await runAsyncTest('repeated generateLLMResponse operations remove abort listene
             await generateLLMResponse([{ role: 'user', content: 'hello' }], {
                 provider: 'openai',
                 apiKey: 'test-key',
-                baseURL: 'http://127.0.0.1/chat/completions',
+                baseURL: 'https://provider.example.test/chat/completions',
                 signal: new AbortController().signal,
                 signalCombiner: () => mergedController.signal
             });
@@ -170,7 +170,7 @@ await runAsyncTest('repeated generateLLMResponse operations remove abort listene
             const responsePromise = generateLLMResponse([{ role: 'user', content: 'hello' }], {
                 provider: 'openai',
                 apiKey: 'test-key',
-                baseURL: 'http://127.0.0.1/chat/completions',
+                baseURL: 'https://provider.example.test/chat/completions',
                 signal: new AbortController().signal,
                 signalCombiner: () => mergedController.signal
             });

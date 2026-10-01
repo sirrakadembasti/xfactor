@@ -4,6 +4,7 @@ import path from 'node:path';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { Router } from 'express';
+import { providerFetch } from './providerTransport.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const PROVIDERS = Object.freeze([
@@ -156,7 +157,7 @@ async function probeProfile(profile) {
     headers = { 'content-type': 'application/json', Authorization: `Bearer ${profile.apiKey}` };
     body = { model: profile.model, ...(profile.provider === 'openai' ? { max_completion_tokens: maxOutputTokens } : { max_tokens: maxOutputTokens }), messages: [{ role: 'user', content: 'OK yaz.' }] };
   }
-  const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: AbortSignal.timeout(45000), redirect: 'error' });
+  const response = await providerFetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: AbortSignal.timeout(45000) });
   if (!response.ok) throw new Error(`Sağlayıcı HTTP ${response.status} döndürdü.`);
   const payload = await response.json();
   const content = profile.transport === 'google'
@@ -231,7 +232,7 @@ export function mountLLMManagement(app, { store = createLLMProfileStore(), requi
           ? { 'x-goog-api-key': profile.apiKey }
           : { Authorization: `Bearer ${profile.apiKey}` };
       const url = providerEndpoint(profile, suffix);
-      const response = await fetch(url, { headers, signal: AbortSignal.timeout(10000), redirect: 'error' });
+      const response = await providerFetch(url, { headers, signal: AbortSignal.timeout(10000) });
       if (!response.ok) return res.status(502).json({ error: `Model listesi alınamadı (HTTP ${response.status}). Model kimliğini elle girebilirsiniz.` });
       const body = await response.json();
       const models = (body.data || body.models || []).map(item => item.id || item.name).filter(Boolean)

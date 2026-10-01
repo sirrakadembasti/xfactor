@@ -3,6 +3,8 @@
 .env.*
 !.env.example
 node_modules
+**/node_modules
+**/llm-encryption.key
 backend/tests/
 backend/data/
 backend/logs/

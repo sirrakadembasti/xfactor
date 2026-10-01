@@ -135,7 +135,7 @@ export async function verifyArtifact({ archiveBase64, archiveSha256, workspace =
         const detail = reason;
         return { passed: false, status: 'blocked', reason: `Archive extraction rejected: ${detail}`, runId: job.runId, archiveSha256: actual, evidence: { runId: job.runId, archiveBytes: archive.length, command: 'bounded ZIP metadata validation and extraction', exitCode: error?.result?.code ?? 1, stderr: rawFull, stderrSha256: error?.result?.stderrSha256 || digest(Buffer.from(rawFull)) } };
     }
-    const checks = await runVerificationChecks({ workspace: '/workspace', contract: job.contract || {}, requirementIds: job.requirementIds || [], adapter, signal, env, runId: job.runId, files: job.files || null });
+    const checks = await runVerificationChecks({ workspace: adapter.workspaceRoot || '/workspace', contract: job.contract || {}, requirementIds: job.requirementIds || [], adapter, signal, env, runId: job.runId, files: job.files || null });
     return { ...checks, archiveSha256: actual, evidence: { runId: job.runId, archiveBytes: archive.length } };
 }
 

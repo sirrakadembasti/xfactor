@@ -8,6 +8,26 @@ import { createLLMProfileStore, mountLLMManagement, PROVIDERS, validateProviderU
 import { generateLLMResponse, getCurrentLLMProvider } from '../llm.js';
 import { ensureLLMEncryptionKey } from '../llm-auth/setup.js';
 
+test('production persists its key beside profiles without writing the application directory', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-llm-production-'));
+  try {
+    const blocked = path.join(root, 'application');
+    fs.writeFileSync(blocked, 'read-only-application');
+    const examplePath = path.join(root, 'example');
+    fs.writeFileSync(examplePath, 'PORT=8000');
+    const profilePath = path.join(root, 'data', 'profiles.json');
+    const options = { envPath: path.join(blocked, '.env'), examplePath, profilePath };
+    const first = ensureLLMEncryptionKey({ ...options, environment: { NODE_ENV: 'production' } });
+    const store = createLLMProfileStore({ filePath: profilePath, encryptionKey: first });
+    const saved = store.save({ name: 'fixture', provider: 'openai', model: 'test', baseURL: 'https://api.openai.com/v1', apiKey: 'fixture-secret' });
+    store.activate(saved.id);
+    const second = ensureLLMEncryptionKey({ ...options, environment: { NODE_ENV: 'production' } });
+    assert.equal(second, first);
+    assert.equal(createLLMProfileStore({ filePath: profilePath, encryptionKey: second }).getActive().apiKey, 'fixture-secret');
+    assert.equal(fs.readFileSync(blocked, 'utf8'), 'read-only-application');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('first launch writes one installation-specific encryption key and reuses it', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-llm-setup-'));
   try {

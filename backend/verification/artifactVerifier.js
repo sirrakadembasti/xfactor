@@ -323,6 +323,9 @@ export async function verifyArtifact(
         }
 
         const allChecks = [...workerChecks, ...additionalChecks];
+        if (workerResult.runtime?.executionProfile === 'local-trusted' && workerResult.runtime.osIsolation === false) {
+            for (const check of allChecks) check.evidence = { ...(check.evidence || {}), executionProfile: 'local-trusted', osIsolation: false, isolation: false, runtime: 'local' };
+        }
         for (const check of allChecks) {
             const checkId = check.id || crypto.randomUUID();
             const gateName = check.gateName || check.name;

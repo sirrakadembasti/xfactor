@@ -15,10 +15,12 @@ export function ensureLLMEncryptionKey({
   envPath = path.join(backendDir, '.env'),
   examplePath = path.join(backendDir, '.env.example'),
   profilePath = process.env.LLM_CONFIG_PATH || path.join(backendDir, 'data', 'llm-profiles.json'),
-  environment = process.env
+  environment = process.env,
+  keyPath = environment.LLM_CONFIG_KEY_PATH || path.join(path.dirname(profilePath), 'llm-encryption.key')
 } = {}) {
   const envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : null;
-  const configured = environment.LLM_CONFIG_ENCRYPTION_KEY || (envContent && dotenv.parse(envContent).LLM_CONFIG_ENCRYPTION_KEY);
+  const configured = environment.LLM_CONFIG_ENCRYPTION_KEY || (envContent && dotenv.parse(envContent).LLM_CONFIG_ENCRYPTION_KEY)
+    || (fs.existsSync(keyPath) && fs.readFileSync(keyPath, 'utf8').trim());
   if (configured) {
     if (!validKey(configured)) throw new Error('LLM_CONFIG_ENCRYPTION_KEY 32 baytlık hex veya base64 anahtar olmalıdır.');
     environment.LLM_CONFIG_ENCRYPTION_KEY = configured;
@@ -33,6 +35,16 @@ export function ensureLLMEncryptionKey({
   }
 
   const key = crypto.randomBytes(32).toString('hex');
+  if (environment.NODE_ENV === 'production') {
+    fs.mkdirSync(path.dirname(keyPath), { recursive: true });
+    try { fs.writeFileSync(keyPath, `${key}\n`, { mode: 0o600, flag: 'wx' }); }
+    catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      return ensureLLMEncryptionKey({ envPath, examplePath, profilePath, environment, keyPath });
+    }
+    environment.LLM_CONFIG_ENCRYPTION_KEY = key;
+    return key;
+  }
   const base = envContent ?? fs.readFileSync(examplePath, 'utf8');
   const content = `${base.trimEnd()}\nLLM_CONFIG_ENCRYPTION_KEY=${key}\n`;
   fs.writeFileSync(envPath, content, { encoding: 'utf8', mode: 0o600, flag: envContent === null ? 'wx' : 'w' });

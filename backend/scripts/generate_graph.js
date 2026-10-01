@@ -110,7 +110,7 @@ async function extractCodeGraph() {
         { id: 'backend/engine/dag.js', label: 'dag.js (TaskDAG & Execution Waves)', desc: 'Topolojik sıra ve seviyeli dalga (wave) algoritması' },
         { id: 'backend/engine/stateMachine.js', label: 'stateMachine.js (Lifecycle & Revisions)', desc: 'Proje durum makinesi, CAS geçişleri ve revizyon kilit yönetimi' },
         { id: 'backend/engine/fileProtocol.js', label: 'fileProtocol.js (Agent=Klasör)', desc: 'projects/<id> altında canlı protokol dosyalarını yöneten motor' },
-        { id: 'backend/engine/codeGenerator.js', label: 'codeGenerator.js (Scaffold Guard)', desc: '.env, Next 14.2, Vite ve Express şablon koruması' },
+        { id: 'backend/engine/codeGenerator.js', label: 'codeGenerator.js (Scaffold Guard)', desc: '.env ve framework şablon koruması' },
         { id: 'backend/engine/selfCorrection.js', label: 'selfCorrection.js (Review Loop)', desc: 'Coder-Reviewer 2 turlu denetim ve veto döngüsü' }
     ];
 
@@ -127,11 +127,11 @@ async function extractCodeGraph() {
 
     // 4. Server & Backend Services (Group 4: Green)
     const backendServices = [
-        { id: 'backend/server.js', label: 'server.js (Express & WSS)', desc: 'REST API sunucusu ve Sec-WebSocket-Protocol yayıncısı' },
+        { id: 'backend/server.js', label: 'server.js (Express & WSS)', desc: 'REST API ve cookie oturumuyla doğrulanan, 64 KiB sınırlı WebSocket yayıncısı' },
         { id: 'backend/db.js', label: 'db.js (SQLite WAL & State)', desc: 'SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı' },
         { id: 'backend/projectRepository.js', label: 'projectRepository.js (Canonical Store)', desc: 'Kanonik proje CRUD, atomik SQLite işlemleri, disk-varlık kontrolleri ve .trash izolasyonu' },
         { id: 'backend/services/reconciliationService.js', label: 'services/reconciliationService.js (Disk-DB Sync)', desc: 'Disk ve SQLite arasında çift yönlü senkronizasyon, eksik klasör tespiti ve otomatik proje kaydı' },
-        { id: 'backend/executionClient.js', label: 'executionClient.js (Worker Client & Host Fallback)', desc: 'İzole execution worker HTTP istemcisi ve yerel host derleyici fallback köprüsü' },
+        { id: 'backend/executionClient.js', label: 'executionClient.js (Worker Client)', desc: 'Token doğrulamalı bağımsız worker HTTP istemcisi; yerel veya Docker profilinde artefakt doğrulama' },
         { id: 'execution/server.js', label: 'execution/server.js (Execution Worker)', desc: 'Ayrık mimari derleme/test çalıştırma worker servisi' },
         { id: 'backend/auth.js', label: 'auth.js (Scrypt & RBAC)', desc: 'Scrypt parola hashleme, timingSafeEqual ve rol erişim kontrolü' },
         { id: 'backend/security.js', label: 'security.js (Security Guard)', desc: 'Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama' },
@@ -141,7 +141,7 @@ async function extractCodeGraph() {
         { id: 'backend/contracts/projectContract.js', label: 'contracts/projectContract.js', desc: 'Proje sözleşme doğrulama şemaları, gereksinimler ve tip denetimi' },
         { id: 'backend/contracts/domainPolicy.js', label: 'contracts/domainPolicy.js', desc: 'Domain önceliklendirme, katman kuralları ve domain uyumluluğu' },
         { id: 'backend/contracts/traceability.js', label: 'contracts/traceability.js', desc: 'Gereksinim, görev ve dosya izlenebilirlik matrisi motoru' },
-        { id: 'backend/verification/qualityPolicy.js', label: 'verification/qualityPolicy.js (Quality Gates)', desc: '18 zorunlu kalite kapısı ve fail-closed bağımsız sandbox doğrulama politikası' },
+        { id: 'backend/verification/qualityPolicy.js', label: 'verification/qualityPolicy.js (Quality Gates)', desc: '18 zorunlu kalite kapısı ve fail-closed bağımsız worker doğrulama politikası' },
         { id: 'backend/verification/artifactVerifier.js', label: 'verification/artifactVerifier.js', desc: 'Temiz oda ZIP arşivleme, SHA-256 sağlama ve artefakt doğrulayıcısı' },
         { id: 'backend/verification/securityVerifier.js', label: 'verification/securityVerifier.js', desc: 'CORS, hardcoded secret, SQL enjeksiyonu ve güvenlik baseline denetleyicisi' },
         { id: 'backend/verification/sandboxRunner.js', label: 'verification/sandboxRunner.js', desc: 'İzole alt süreç yürütücüsü ve sandbox adaptör köprüsü' },

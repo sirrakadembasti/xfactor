@@ -8,7 +8,10 @@ RUN npm install -g npm@10.9.8
 RUN addgroup -S worker && adduser -S worker -G worker
 
 # Provide basic utilities and fixed archive extraction tooling.
-RUN apk add --no-cache curl bash jq unzip
+RUN apk add --no-cache curl bash jq unzip chromium
+COPY package.json package-lock.json /opt/browser/
+RUN cd /opt/browser && npm ci --ignore-scripts --no-audit --no-fund
+COPY browserRunner.cjs /opt/worker/browserRunner.cjs
 
 # Copy the portable executable translation entrypoint
 COPY entrypoint.js /opt/worker/entrypoint.js

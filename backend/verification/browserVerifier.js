@@ -111,6 +111,7 @@ export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, option
                 try {
                     const result = await adapter.interact({ url: frontendUrl, role: journey.role, kind: journey.kind,
                         authState: journey.authState || 'authenticated', steps: journey.steps,
+                        expectedOutcome: journey.expectedOutcome,
                         viewportWidth: 375, signal: opts.signal });
                     observed = validInteractionEvidence(journey, result);
                 } catch (error) {

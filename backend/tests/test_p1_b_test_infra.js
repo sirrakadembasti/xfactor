@@ -150,6 +150,13 @@ try {
         assert.equal(result.checks.find(check => check.name === 'test_script_presence')?.status, 'failed');
     });
 
+    await runAsyncTest('npm version banner cannot disguise a nonempty TAP suite as zero tests', async () => {
+        const adapter = { id: 'tap-fixture', getCapabilities: () => ({ available: true, isolation: true }),
+            async execute() { return { passed: true, exitCode: 0, stdout: '> fixture@1.0.0 test\n> node --test\nTAP version 13\n# Subtest: real fixture assertion\nok 1 - real fixture assertion\n# tests 1\n# pass 1\n# fail 0\n', stderr: '' }; } };
+        const result = await verifyTestInfrastructure('/workspace', {}, { adapter,
+            files: [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test' } }) }] });
+        assert.equal(result.passed, true);
+    });
     finish();
 } finally {
     for (const dir of tempDirs) {

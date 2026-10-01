@@ -2,6 +2,8 @@
 
 ## İlk kurulum
 
+Üretimde (`NODE_ENV=production`) otomatik anahtar `.env` yerine profil dosyasının yanındaki `llm-encryption.key` dosyasına, yalnız uygulama kullanıcısına açık izinlerle yazılır. Docker'ın `data` volume'ü bu dosyayı kalıcı saklar. `LLM_CONFIG_KEY_PATH` ile konumu değiştirebilir veya `LLM_CONFIG_ENCRYPTION_KEY` ortam değişkeniyle anahtarı sağlayabilirsiniz. Profil dosyası ile anahtarı birlikte güvenli yedekleyin; proje yedekleme CLI'si bu iki dosyayı içermez. Geliştirmedeki `.env` davranışı devam eder.
+
 1. XFactor ilk açılışta kurulumuna özel rastgele `LLM_CONFIG_ENCRYPTION_KEY` anahtarını yerel `backend/.env` içine otomatik yazar. Elle anahtar üretmeniz gerekmez. Sağlayıcı adresi, modeli ve API anahtarı bu dosyada tutulmaz. `.env` dosyasını Git'e koymayın; anahtar kaybolursa kayıtlı sağlayıcı anahtarları çözülemez. Şifreli profil dosyası varken anahtar eksikse XFactor yeni anahtar üretmez ve eski anahtarın yedekten kurtarılmasını ister.
 2. GitHub'dan yeni kurulumda kayıtlı profil veya sağlayıcı API anahtarı gelmez; yönetim ekranından kendi profilinizi oluşturun. Önceki yerel kurulumda taşınmış Google Gemini ve Xiaomi MiMo profilleri varsa yalnız o kurulumda görünür. Token Plan anahtarı ile Singapur adresi aynı plana/bölgeye ait olmalıdır.
 3. XFactor'a yönetici olarak giriş yapın. Sol menüden **LLM Yönetimi** sayfasını açın (`/llm`). Geliştirme sunucusu `/llm` isteğini backend'e yönlendirir.
@@ -26,6 +28,7 @@ Yalnızca API anahtarını değiştirmek yeterli değildir: sağlayıcı, model 
 - Kayıtlı anahtar arayüze geri gönderilmez. Sunucuda AES-256-GCM ile şifrelenir; profil dosyası varsayılan olarak `backend/data/llm-profiles.json` konumundadır. Bu dosya Git dışında tutulur.
 - Sayfa ve `/api/llm` uç noktaları yalnızca yönetici oturumuna açıktır. API'nin yazma istekleri XFactor'ın mevcut CSRF denetiminden geçer.
 - Genel adreslerde HTTPS zorunludur. Geliştirmede yerel HTTP modeli kullanmak için yalnız güvenilen ortamda `LLM_ALLOW_LOCAL_HTTP=true` ayarlanabilir.
+- Bağlantı anında DNS sonuçlarının tamamı denetlenir; özel ağ adresleri ve yönlendirmeler engellenir. Yerel HTTP istisnası yalnız loopback uç noktaları içindir.
 - Etkin profil silinirse XFactor eski kurulumlarla uyumluluk için varsa `.env` sağlayıcı ayarlarına dönebilir. Yeni kurulumlarda sağlayıcı bilgilerini yalnızca yönetim sayfasında tanımlayın.
 - Profil dosyasının yerini değiştirmek için `LLM_CONFIG_PATH` ayarlanabilir. Bu dosyanın ve şifreleme anahtarının yedeğini birlikte güvenli biçimde saklayın.
 

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { sendArtifactDownload } from './artifactDownload.js';
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import fsSync from 'fs';
@@ -887,7 +888,7 @@ export function createProjectRouter({
         `).get(req.params.runId, req.params.id);
         if (!run) return res.status(404).json({ error: 'Verification run not found' });
         const checks = db.prepare(`
-            SELECT id, gate_name, applicability, status, exit_code, stdout_digest, stderr_digest, started_at, ended_at, timed_out
+            SELECT id, gate_name, applicability, status, exit_code, stdout_digest, stderr_digest, started_at, ended_at, timed_out, evidence_json
             FROM verification_checks WHERE run_id = ? AND contract_id = ? ORDER BY started_at ASC, id ASC
         `).all(run.id, run.contract_id);
         const mappedChecks = checks.map(c => ({
@@ -900,7 +901,13 @@ export function createProjectRouter({
             stderr_digest: c.stderr_digest,
             started_at: c.started_at,
             ended_at: c.ended_at,
-            timed_out: c.timed_out
+            timed_out: c.timed_out,
+            ...(() => {
+                try {
+                    const evidence = JSON.parse(c.evidence_json || '{}');
+                    return evidence.executionProfile === 'local-trusted' && evidence.osIsolation === false ? { executionProfile: 'local-trusted', osIsolation: false } : {};
+                } catch { return {}; }
+            })()
         }));
         res.json({ run: { id: run.id, contract_id: run.contract_id, status: run.status, policy_version: run.policy_version, started_at: run.started_at, ended_at: run.ended_at }, checks: mappedChecks });
     }));
@@ -1146,7 +1153,7 @@ export function createProjectRouter({
         const willRebuild = tasksToReRun.length>0;
         res.json({ willRebuild, invalidatedCheckpointIds, tasksToReRun });
     }));
-    router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+    router.get('/:id/contracts/:contractId/artifacts/:artifactId/download', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res, next) => {
         const { id, contractId, artifactId } = req.params;
         const { getArtifact } = await import('../repositories/artifactRepository.js');
         const artifact = getArtifact({ projectId: id, contractId, artifactId });
@@ -1158,12 +1165,14 @@ export function createProjectRouter({
             return res.status(authorization.status).json({ error: authorization.error });
         }
         const actionId = getActionId(req);
-        appendProjectActionMessages(id, {
-            actionId,
-            userText: '📥 Doğrulanmış proje ZIP paketini indirdim.',
-            modelText: 'Doğrulanmış artefakt başarıyla indirildi.'
+        sendArtifactDownload(res, artifact, {
+            onComplete: () => appendProjectActionMessages(id, {
+                actionId,
+                userText: '📥 Doğrulanmış proje ZIP paketini indirdim.',
+                modelText: 'Doğrulanmış artefakt başarıyla indirildi.'
+            }),
+            onError: next
         });
-        res.download(artifact.path, path.basename(artifact.path));
     }));
 
     router.post('/:id/resume', requireAuth, projectAccess('owner'), async (req, res, next) => {

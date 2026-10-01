@@ -7,6 +7,20 @@ function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
+export function hasExecutedTests(output, { testScript = '', files = [] } = {}) {
+    if (/(?:^\s*0\s+(?:passing|passed|tests?)\b|^\s*#\s*(?:tests|pass)\s+0\b)/im.test(output)) return false;
+    const counted = /(?:#\s*(?:tests|pass)\s+[1-9]\d*\b|\b[1-9]\d*\s+(?:passing|passed|tests?|başarılı)\b)/i.test(output);
+    if (!counted) return false;
+    if (/\bnode(?:\.exe)?\s+--test(?:\s|$)/i.test(testScript) && /TAP version 13/.test(output)) {
+        const names = [...output.matchAll(/^\s*ok\s+\d+\s+-\s+(.+)$/gm)].filter(match => !/\s+#\s*(?:SKIP|TODO)\b/i.test(match[1])).map(match => match[1].trim().replace(/\\/g, '/'));
+        const paths = files.map(file => String(file.path || '').replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase());
+        // Node wraps an empty file in a successful file-level subtest. That wrapper
+        // counts as one in TAP but contains no actual test declaration.
+        return names.some(name => !paths.some(file => name.toLowerCase() === file || name.toLowerCase().endsWith('/' + file)) && !/^(?:[A-Za-z]:\/|\.\/|tests?\/).*\.[cm]?[jt]sx?$/i.test(name));
+    }
+    return true;
+}
+
 export async function verifyTestInfrastructure(projectDir, contract = {}, options = {}) {
     const checks = [];
     const issues = [];
@@ -62,8 +76,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
         });
 
         const testOutput = `${testRes.stdout || ''}\n${testRes.stderr || ''}`;
-        const emptySuite = /(?:\b0\s+(?:passing|passed|tests?)\b|#\s*(?:tests|pass)\s+0\b)/i.test(testOutput);
-        const executedTests = /(?:#\s*(?:tests|pass)\s+[1-9]\d*\b|\b[1-9]\d*\s+(?:passing|passed|tests?|başarılı)\b)/i.test(testOutput);
+        const emptySuite = /(?:^\s*0\s+(?:passing|passed|tests?)\b|^\s*#\s*(?:tests|pass)\s+0\b)/im.test(testOutput);
+        const executedTests = hasExecutedTests(testOutput, { testScript, files: options.files || [] });
         if (testRes.passed && !emptySuite && executedTests) {
             checks.push({
                 name: 'test_suite_execution',

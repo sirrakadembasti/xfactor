@@ -211,6 +211,7 @@ app.param('id', (req, res, next, id) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({
     server,
+    maxPayload: 64 * 1024,
     path: '/ws/logs',
     verifyClient: ({ req }, done) => {
         if (!isSecureTransportRequest(req, transportPolicy)) {

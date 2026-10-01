@@ -79,7 +79,7 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 ┌─────────────────────────────────────────────────────────────────┐
 │      WEB ORCHESTRATOR & ISOLATED EXECUTION WORKER BOUNDARY      │
 │ - 18 Zorunlu Kalite Kapısı (Aktif Politika 2.0 Fail-Closed Veto)│
-│ - OS Sandbox Yürütmesi (Docker --cap-drop ALL, limits)          │
+│ - Yerel Node worker veya Docker sandbox yürütmesi             │
 │ - Sunucu Tarafı ZIP Artefaktı & SHA-256 Hash Bütünlüğü          │
 │ - Değişmez Tamamlama Makbuzu (completion_receipts, Migrasyon 10)│
 │ - HTTP Bearer Token Authenticated İletişim                      │
@@ -92,7 +92,7 @@ Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uyg
 
 ### Sistem Gereksinimleri
 - **İşletim Sistemi:** Windows, macOS veya Linux
-- **Node.js:** v22.5.0 veya daha yenisi (veya Bun v1.0+)
+- **Node.js:** v22.23.2 ve npm v10.9.8; CI ve Docker bu sürümleri kullanır. Bun için yardımcı komutlar bulunur, ancak üretim doğrulaması Node.js üzerinde yapılır.
 - **İnternet Bağlantısı:** Seçtiğiniz LLM sağlayıcısının API adresine erişim için
 
 ### 1. Adım: Yapılandırma Dosyasını Hazırlama
@@ -153,16 +153,17 @@ cd ..
 ### 3. Adım: Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
-Proje kök dizininde tek bir `npm run dev` komutuyla platformun 3 ana servisi birlikte ayağa kalkar:
+Backend ve frontend bağımlılıklarını kurduktan sonra proje kökünde yerel araçları hazırlayın. `npm run dev:local` platformun üç servisini Docker olmadan başlatır:
 ```bash
-npm run dev
+npm run worker:local:setup -- --install
+npm run dev:local
 ```
 
 | Port | Servis | Açıklama |
 |:---:|---|---|
 | **`5173`** | **Frontend (Vite / React)** | **Kullanıcı Paneli:** Tarayıcınızda açtığınız ana ekran (`http://localhost:5173`). |
 | **`8000`** | **Backend (Web Orchestrator)** | **Yönetim Beyni:** REST API, SQLite veritabanı, WebSocket telemetrisi ve 6 yapay zekâ ajanı. |
-| **`8099`** | **Execution Worker** | **İzole Derleyici:** Güvensiz kodları ana sistemden ayrı sandbox içinde derleyen ve test eden iç RPC işçisi. |
+| **`8099`** | **Execution Worker** | **Bağımsız Derleyici/Test İşçisi:** Seçilen yerel veya Docker profilinde gerçek kalite kontrollerini yürütür. Yerel profil OS izolasyonu sağlamaz. |
 
 > ℹ️ **Önemli Not:** `8099` portu doğrudan kullanıcıların tarayıcıdan gezinmesi için değil; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile izole kod çalıştırma işlerini devrettiği korumalı bir iç servistir. Tarayıcıdan girildiğinde `{"error":"Unauthorized"}` dönmesi bu güvenlik önleminin gereğidir.
 
@@ -186,7 +187,7 @@ npm run dev
   ```bash
   node execution/server.js
   ```
-  > Komutu proje kökünden çalıştırın. Worker, `http://127.0.0.1:8099` adresinde yalnız backend isteklerini kabul eder.
+  > Bu doğrudan komut ve kökteki `npm run dev` varsayılan olarak Docker profilini seçer. Docker’sız kullanım için `npm run dev:local` veya [paketli yerel worker](docs/LOCAL-WORKER-PACKAGE.md) kullanın. Ayrı başlatmada backend ve worker URL/token ayarlarını eşleştirin. Worker, `http://127.0.0.1:8099` adresinde yalnız yetkili backend isteklerini kabul eder.
 
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS veya sunucu ortamında backend'i (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kurunuz. Oturum çerezlerinin güvenliği için HTTPS zorunludur.
@@ -385,7 +386,7 @@ npm --prefix frontend run build
 npm --prefix execution test
 ```
 
-Execution Worker'ın gerçek izolasyon entegrasyon testi çalışan bir Docker daemon gerektirir. Docker kapalıysa bu test başarısızlığı kod başarısı olarak gizlemez; açıkça `BLOCKED` raporlanır.
+Docker’sız gerçek worker entegrasyonu için `npm run test:local-worker`, bağımsız paket kabulü için `npm run test:local-worker-package -- --bundle dist/local-worker` çalıştırın. Bunlar gerçek kurulum/build/test, SQLite/API ve Chromium rol yolculuklarını doğrular. Docker izolasyon entegrasyonu ayrı bir testtir ve çalışan Docker daemon gerektirir; Docker kapalıysa açıkça `BLOCKED` raporlanır.
 Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artifact` komutu temsilî Express ve Next projelerinin son ZIP'inden build ve ilk HTTP yanıtını doğrular. Bu test gerçek kullanıcı projesinin ZIP'ine otomatik uygulanmaz; onu ayrıca doğrulanmış kabul etmeyin.
 
 ## 9. Sıkça Sorulan Sorular (SSS) ve Sorun Giderme
@@ -406,11 +407,11 @@ Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artif
 **C:** Evet. Tamamlanmış, duraklatılmış (`PAUSED`) veya doğrulama hatası almış (`VERIFICATION_FAILED`) bir projede sohbet paneline girip revizyon istediğinizde (örn: *"1"*, *"baştan başla"*, *"şunu ekle"*); Manager yeni mimari şartnameyi hazırlar, yeni bir sözleşme revizyonu açar ve sohbetin altında yeşil **"Planı Onayla ve Başlat"** onay kartını sunar. Onayladığınızda otonom motor yeni plan doğrultusunda temiz üretime geçer.
 
 ### S: Log ekranındaki hataları nasıl yorumlamalıyım?
-**C:** XFactor'da log ekranında anlamsız hexadecimal referans kodları gösterilmez; doğrudan insan tarafından anlaşılabilir net Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) basılır. Ayrıca Docker'ın çalışmadığı geliştirme ortamlarında sistem otomatik olarak yerel host üzerinden kilit dosyası (`package-lock.json`) üretme fallback'ini devreye sokarak döngüsel kilitlenmeleri engeller.
+**C:** Log ekranında Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) gösterilir. Bağımlılık hazırlığı ve doğrulama worker'a devredilir. `dev:local` kullanıyorsanız eksik Node/npm/Chromium araçlarını, paket bütünlüğünü ve backend-worker token eşleşmesini [yerel paket kılavuzuyla](docs/LOCAL-WORKER-PACKAGE.md) kontrol edin; hazır olma hataları üretimi engeller. Docker profilini seçtiyseniz Docker daemon ve `docker build -t xfactor-worker-runtime execution` ile hazırlanan imaj gerekir.
 
 ### S: 8099 portu nedir? Tarayıcıdan açtığımda neden `{"error":"Unauthorized"}` hatası alıyorum?
-**C:** XFactor, **Bölünmüş Güvenlik Mimarisi (Split Architecture)** ile çalışır. Yapay zekânın yazdığı kodların derlenmesi (`tsc`), paketlenmesi (`npm install`) ve çalıştırılması ana Backend sürecinde (`8000`) değil, izole bir **Execution Worker (`8099`)** servisinde yürütülür.
-- Bu port bir web sitesi veya kullanıcı arayüzü değildir; yalnızca Backend ile Worker arasındaki makine seviyesinde şifreli bir API'dir.
+**C:** XFactor, **ayrı worker mimarisi** ile çalışır. Yapay zekânın yazdığı kodların derlenmesi (`tsc`), paketlenmesi (`npm install`) ve çalıştırılması **Execution Worker (`8099`)** servisinde yürütülür. Docker profili container izolasyonu sağlar; `local-trusted` profili ayrı iş dizinleri ve süreç temizliği kullanır ancak kod mevcut kullanıcı yetkileriyle çalışır, OS izolasyonu sağlamaz.
+- Bu port Backend ile Worker arasındaki Bearer token ile kimlik doğrulanan API'dir. HTTP tek başına trafiği şifrelemez; farklı makineler arasında TLS kullanın. Üretimde operatöre özel worker token zorunludur.
 - Tarayıcınızla doğrudan bu porta istek attığınızda, sistem güvenlik amacıyla isteği reddeder ve `{"error":"Unauthorized"}` cevabı döner.
 - Kullanıcının bu portu doğrudan ziyaret etmesi gerekmez; Worker'ın yürüttüğü tüm işlemler (derleme logları, test sonuçları, 18 kalite kapısı kontrolleri) anlık olarak ana ön yüzdeki (`5173`) **Loglar**, **DAG Akış Şeması** ve **Kalite Paneli** ekranlarına canlı olarak yansıtılır.
 
@@ -475,20 +476,20 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 |---|:---:|---|
 | `server.js` | Sunucu / Giriş | REST API ve WebSocket sunucusunu ayağa kaldırır, veritabanını başlatır, `admin/xfactor` kullanıcısını garanti eder ve diskteki projeleri otomatik senkronize eder. |
 | `lifecycle.js` | Yaşam Döngüsü | `SIGINT`/`SIGTERM` anında WebSocket bağlantılarını, HTTP sunucusunu kapatan ve SQLite WAL checkpoint'ini diske yazan zarif kapanma (graceful shutdown) koordinatörüdür. |
-| `maintenance.js` | Bakım Zamanlayıcı | 15 dakikalık periyotlarla süresi dolmuş veya iptal edilmiş oturumları veritabanından temizleyerek şişmeyi önler. |
+| `maintenance.js` | Bakım Zamanlayıcı | Varsayılan olarak saatte bir süresi dolmuş ve yeterince eski iptal edilmiş oturumları veritabanından temizler. |
 | `productionStatic.js` | Statik Sunucu | Üretim ortamında Vite ile derlenmiş ön yüz dosyalarını sunar; SPA yönlendirmelerini (`isSpaNavigation`) yönetir. |
 | `websocketHub.js` | Gerçek Zamanlı İletişim | Proje bazlı WebSocket odaları yönetir; yapay zekâ kod yazarken logları ve DAG durumlarını ön yüze anında canlı akıtır. |
 | `networkResolver.js` | Ağ & DNS Kurtarma | Kurumsal veya kısıtlı ağlarda Node.js varsayılan IPv6 DNS çözümü tıkandığında doğrudan yerel IPv4 (`dns.resolve4`) çözümlemesine düşerek LLM bağlantısını korur. |
-| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; 1'den 13'e kadar sıralı ve geriye dönük uyumlu 13 adet şema göçünü (migrations) ve olay yayıncısını (`dbEvents`) barındırır. |
+| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; 15 şema göçünü (migrations) ve olay yayıncısını (`dbEvents`) barındırır. |
 | `projectRepository.js` | Kanonik Depo | Projelerin oluşturulması, okunması, güncellenmesi ve güvenli silinmesi işlemlerinin tek otoritesidir; başlıktan temiz klasör adı ve kısa numara (`slug-no`) üretir. |
 | `workflowAttempts.js` | Kilit & Heartbeat | Bir projede birden fazla motorun aynı anda çalışmasını engellemek için `workflow_attempts` üzerinde kiralama (lease) alır ve kalp atışı gönderir; çöken süreçleri kurtarır. |
-| `backupRestore.js` | Yedekleme & Kurtarma | Veritabanı ve `projects/` dizinini sıkıştırılmış `.tar.gz` arşivi olarak yedekleyen veya geri yükleyen felaket kurtarma motorudur. |
+| `backupRestore.js` | Yedekleme & Kurtarma | WAL verilerini içeren SQLite snapshot'ını, proje ve artefakt dosyalarını `manifest.json` ile SHA-256 doğrulanan bir dizine yedekler. CLI `--offline` kullanımı öncesinde yazan süreçler durdurulmalıdır; restore artefakt yollarını son hedefe taşır. LLM profil/anahtar dosyaları ayrıca güvenli yedeklenmelidir. |
 | `auth.js` | Kimlik & RBAC | Parolaları Scrypt ile tuzlayarak hash'ler; Google Authenticator uyumlu RFC-6238 TOTP üretir ve doğrular; proje sahiplik rollerini (`owner`, `editor`, `viewer`) denetler. |
 | `security.js` | Güvenlik Kalkanı | Path traversal sızma girişimlerini, CSRF saldırılarını, güvensiz WebSocket isteklerini ve XSS içeriklerini engeller; CSP, Frameguard ve HSTS başlıklarını ekler. |
 | `sessionAuth.js` | Oturum Yönetimi | 24 saat geçerli, HttpOnly ve SameSite nitelikli `xfactor_session` çerezini üretir; `createRequireAuth` middleware'i ile yetkisiz istekleri 401 ile keser. |
 | `backend/llm.js` | AI Yönlendirici | Etkin şifreli profili her çağrının başında çözer; Google Gemini, Anthropic ve OpenAI uyumlu sağlayıcı çağrılarını yürütür. |
 | `backend/llm-auth/` | LLM Profil Yönetimi | Yöneticiye özel sayfa/API; şifreli anahtar saklama, tek etkin profil, bağlantı testi geçmişi ve düzenlenebilir adres/model alanları. |
-| `executionClient.js` | Worker İstemcisi | Bağımlılık hazırlığı ve temiz oda testlerini `http://127.0.0.1:8099` portundaki izole Execution Worker servisine Bearer token ile delege eder. |
+| `executionClient.js` | Worker İstemcisi | Bağımlılık hazırlığı ve artefakt testlerini `http://127.0.0.1:8099` portundaki bağımsız Execution Worker servisine Bearer token ile delege eder. |
 | `config.js` | Yapılandırma | Çalışma zamanı çevre değişkenlerini doğrular; veritabanı yolları, CORS izin listesi, Worker adres/token bilgileri ve `READINESS_WORKER_TIMEOUT_MS` sınırını standardize eder. |
 | `projectPaths.js` | Dosya Yolu Muhafızı | `projects/` kök dizinini yönetir; proje kimlik formatını (`/^[a-zA-Z0-9_-]{3,64}$/`) denetler ve klasör dışına taşma ihlallerini engeller. |
 | `artifactPaths.js` | Artefakt Yolu | Kalite kapılarından geçen onaylı ZIP paketlerinin saklandığı `backend/data/artifacts/` dizinini izole eder. |
@@ -507,7 +508,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 |---|:---:|:---:|---|
 | `backend/agents/` | 9 Dosya | Yapay Zekâ Rolleri | 6 seviyeli ajan personelleri (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), şema kurtarıcı (`schemas.js`) ve yaşayan anayasa köprüsü (`agentLoader.js`). |
 | `backend/engine/` | 13 Dosya | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), deterministik DAG (`dag.js`), durum makinesi (`stateMachine.js`), scaffold koruması (`codeGenerator.js`), veto döngüsü (`selfCorrection.js`) ve derleyici denetleyicisi (`buildValidator.js`). |
-| `backend/routes/` | 3 Dosya | REST API Rotaları | Ön yüzün konuştuğu HTTP uç noktaları: `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz onaylı ZIP indirme). |
+| `backend/routes/` | 4 Dosya | REST API Rotaları | `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz denetimi), `artifactDownload.js` (tamamlanan aktarım sonrası başarı kaydı). |
 | `backend/verification/` | Değişken | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
 | `backend/services/` | 1 Dosya | Senkronizasyon Servisi | `reconciliationService.js`: `projects/` dizinini zarar vermeden tarar, geçerli kayıt dışı klasörleri keşfeder ve tarihsel dosya durumunu doğrulama kanıtı üretmeden yeniden kurar. Global HTTP senkronizasyonunu yalnız yönetici tetikleyebilir. |
 | `backend/contracts/` | 3 Dosya | Sözleşme & İzlenebilirlik | Sürümlü sözleşmeler (`projectContract.js`), kullanıcı isterlerinin kodla 1:1 eşleştirilmesi (`traceability.js`) ve şablon kirliliği denetimi (`domainPolicy.js`). |
@@ -524,7 +525,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 | Klasör / Yol | Katman | Açıklama ve Görevi |
 |---|:---:|---|
-| `execution/` | İzole Execution Worker | Port `8099` üzerinde çalışan; yapay zekânın ürettiği kodları ana backend'den tamamen ayrı bir sandbox/container içinde güvenle derleyen ve test eden bağımsız işçi servisi. |
+| `execution/` | Bağımsız Execution Worker | Port `8099` üzerinde çalışan derleme/test servisi. Docker profili container kullanır; açıkça seçilen yerel profil Node/npm/Playwright/Chromium ile Docker olmadan çalışır ve OS izolasyonu sağlamaz. |
 | `e2e/` | Playwright E2E Testleri | Sistemin kullanıcı arayüzünü gerçek Chromium tarayıcısı açarak (giriş yapma, TOTP doğrulama, DAG çizimi, gerçek ZIP indirme) uçtan uca test eden senaryo süitleri. |
 | `scripts/` | Operasyonel Betikler | `dev.mjs` (tüm servisleri tek komutla başlatan dev koşucusu) ve CI üretim imaj sözleşme test betikleri (`test-p6-production-image.mjs`). |
 | `projects/` | Proje Çalışma Alanı | Kullanıcıların ürettiği tüm uygulamaların fiziksel olarak yaşadığı klasör (`projects/<uygulama-adi>-<no>/`). |
@@ -557,3 +558,10 @@ XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamaml
 
 Her kapı, çalıştırılan komutun veya türetilmiş PASS kaynaklarının kanıtını; çıkış kodu, SHA-256 çıktı özetleri (`stdout_digest`, `stderr_digest`) ve ISO UTC zaman damgalarıyla `verification_checks` kayıtlarına yazar. Kanıtı eksik veya sahte olan hiçbir zorunlu kontrol tamamlanma makbuzunu geçemez.
 🎉 **XFactor ile otonom, güvenli ve hatasız yazılım geliştirmenin keyfini çıkarın!**
+## Docker olmadan yerel kalite worker'ı
+
+Kaynak kurulumu: Node 22.23.2 ve npm 10.9.8 ile `npm run worker:local:setup -- --install`, sonra `npm run dev:local`. İlk komut gözden geçirilmiş backend/execution lockfile'larını kurar ve Chromium indirir; internet bağlantısı gerekir. Linux'ta Chromium sistem kitaplıkları ayrıca sağlanır. Kalite kontrolleri uygulamanın gerçek kurulum, build, test, SQLite/API ve tarayıcı oturumlarını çalıştırır; geçmeyen zorunlu kontroller teslimi engeller.
+
+Paketli kullanım: `npm run worker:local:package -- --output dist/local-worker` ile mevcut platformun paketini üretin. Hedefte `start-worker.cmd` (Windows) veya `./start-worker.sh` (Linux/macOS) çalıştırın. Paket kendi araçlarını içerir. Backend URL/token bağlantısı ve sorun giderme için [yerel worker paket kılavuzunu](docs/LOCAL-WORKER-PACKAGE.md) izleyin. `npm run worker:local -- --bundle dist/local-worker` kaynak Node kuruluysa alternatif başlatma yoludur.
+
+Kalite paneli seçili yerel koşuda `local-trusted · OS izolasyonu yok` bilgisini gösterir. Bu profil güvenilen kod içindir; uygulama mevcut kullanıcının yetkileriyle çalışır. Kullanıcı/admin giriş bilgileri bu değişiklik kapsamında değiştirilmez. Docker imajını test etmek için Docker ayrıca gerekir.

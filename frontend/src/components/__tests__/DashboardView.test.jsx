@@ -60,7 +60,7 @@ test('renders authoritative run history and evidence identifiers without mutatio
 
   expect(await screen.findByText('run-evidence-001')).toBeInTheDocument();
   expect(screen.getByText('contract-007')).toBeInTheDocument();
-  expect(screen.getByText(/Bağımsız Sandbox Kanıtı|Independent Sandbox Evidence/i)).toBeInTheDocument();
+  expect(screen.getByText(/Bağımsız Worker Kanıtı|Independent Worker Evidence/i)).toBeInTheDocument();
   expect(screen.getByText(/Ajan Öz-Raporları|Agent Self-Reports/i)).toBeInTheDocument();
   expect(screen.getByText(/Salt-Okunur|read-only/i)).toBeInTheDocument();
 
@@ -212,4 +212,9 @@ test('shows a bounded error state when run history cannot be loaded', async () =
 
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Kalite geçmişi yüklenemedi|Quality history could not be loaded/i));
   expect(screen.queryByText('network secret')).not.toBeInTheDocument();
+});
+
+test('identifies native worker evidence without claiming OS isolation', async () => {
+  render(<DashboardView projectId={projectId} apiClient={createApi({ getVerificationRun: async () => ({ run, checks: [{ ...check, executionProfile: 'local-trusted', osIsolation: false }] }) })} />);
+  await waitFor(() => expect(screen.getByText(/Yerel worker · local-trusted · OS izolasyonu yok/)).toBeInTheDocument());
 });

@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logError, logWarning, writeStructuredLog } from './observability.js';
 import { initNetworkResolver } from './networkResolver.js';
 import { createLLMProfileStore } from './llm-auth/llm.js';
+import { providerFetch } from './llm-auth/providerTransport.js';
 
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(backendDir, '.env') });
@@ -39,7 +40,7 @@ async function fetchWithRetry(url, options, { retries = 3, signal = null } = {})
             throw new Error(`LLM fetch aborted: ${signal.reason || 'ABORTED'}`);
         }
         try {
-            const res = await fetch(url, { redirect: 'error', ...options, signal });
+            const res = await providerFetch(url, { ...options, signal });
             if (res.status === 429 || res.status >= 500) {
                 if (i < retries - 1 && !signal?.aborted) {
                     const backoffMs = 1000 * (i + 1);

@@ -60,7 +60,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
                 const passwords = await prepareManagementDemoUsers(options.adapter, contract.management, runtimeEnv,
                     { signal: options.signal });
                 apiAdapter = createRoleSessionAdapter(options.adapter, runtimeChecks.api.baseUrl,
-                    contract.management, passwords);
+                    contract.management, passwords, { browserUrl: runtimeChecks.browser?.url || runtimeChecks.api.baseUrl });
                 checks.push({ name: 'management_demo_seed', status: 'passed',
                     evidence: { adapterId: options.adapter?.id, roles: contract.management.roles.map(role => role.name) } });
             } catch (error) {
@@ -119,7 +119,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
         }
         if (runtimeChecks.browser?.url) {
             const browser = await verifyBrowserJourney(runtimeChecks.browser.url, runtimeChecks.browser.journey || {}, {
-                ...common, roleJourneys: runtimeChecks.browser.roleJourneys || options.roleJourneys
+                ...common, adapter: apiAdapter, roleJourneys: runtimeChecks.browser.roleJourneys || options.roleJourneys
             });
             checks.push(...browser.checks);
             issues.push(...browser.issues);

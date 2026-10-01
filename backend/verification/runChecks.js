@@ -5,7 +5,7 @@ import { verifyReadmeCommands } from './readmeVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 
-async function collectFiles(adapter, supplied = null) {
+async function collectFiles(adapter, supplied = null, workspace = '/workspace') {
     if (Array.isArray(supplied)) {
         return supplied.map(file => {
             if (!file || typeof file !== 'object' || typeof file.path !== 'string') throw new Error('Invalid supplied inventory entry');
@@ -15,7 +15,7 @@ async function collectFiles(adapter, supplied = null) {
         });
     }
     if (typeof adapter?.execute !== 'function') throw new Error('sandbox adapter inventory is required');
-    const result = await adapter.execute({ command: 'node', args: ['-e', "const fs=require('fs'); const p='/workspace'; function w(d,o=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','.git'].includes(e.name))continue;const f=d+'/'+e.name;e.isDirectory()?w(f,o):o.push({path:f.slice(p.length+1),contentBase64:fs.readFileSync(f).toString('base64')})}return o} process.stdout.write(JSON.stringify(w(p)))"], workspace: '/workspace' });
+    const result = await adapter.execute({ command: 'node', args: ['-e', "const fs=require('fs'),path=require('path'); const p=process.argv[1]; function w(d,o=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','.git','.npm','.home','.tmp'].includes(e.name)||e.name==='artifact.zip')continue;if(e.isSymbolicLink())throw Error('Inventory symlink');const f=path.join(d,e.name);e.isDirectory()?w(f,o):o.push({path:path.relative(p,f).split(path.sep).join('/'),contentBase64:fs.readFileSync(f).toString('base64')})}return o} process.stdout.write(JSON.stringify(w(p)))", workspace], workspace });
     const parsed = JSON.parse(result.stdout || '[]');
     return collectFiles(null, parsed);
 }
@@ -23,7 +23,7 @@ function withEvidence(check, runId, requirementIds) {
     return { ...check, runId, requirementIds: [...new Set([...(check.requirementIds || []), ...requirementIds])], evidence: { ...(check.evidence || {}), runId, requirementIds: [...requirementIds] } };
 }
 export async function runVerificationChecks({ workspace = '/workspace', contract = {}, requirementIds = [], adapter, signal, env = {}, runId = null, files = null, verifiers = {} } = {}) {
-    const inventory = await collectFiles(adapter, files);
+    const inventory = await collectFiles(adapter, files, workspace);
     const options = { adapter, signal, env, workspace, files: inventory };
     const checks = [];
     const dependency = await (verifiers.dependencies || verifyDependencies)(workspace, contract, options);

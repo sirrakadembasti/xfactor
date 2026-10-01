@@ -271,6 +271,18 @@ try {
     assert.strictEqual(projectB.response.status, 200);
 
     const productionWsUrl = `ws://127.0.0.1:${productionPort}/ws/logs`;
+    assert.strictEqual(runtime.wss.options.maxPayload, 64 * 1024, 'Transport must bound allocation before the hub receives a message');
+    const oversizedSocket = await connect(productionWsUrl, { cookie: cookieA });
+    let delivered = false;
+    const receivedByTransport = new Promise(resolve => {
+        const connection = [...runtime.wss.clients].find(ws => ws._socket.remotePort === oversizedSocket._socket.localPort);
+        connection.on('message', () => { delivered = true; });
+        connection.on('error', () => {});
+        oversizedSocket.once('close', code => resolve(code));
+    });
+    oversizedSocket.send('x'.repeat(65 * 1024));
+    assert.strictEqual(await receivedByTransport, 1009);
+    assert.strictEqual(delivered, false);
     assert.strictEqual(await expectUpgradeRejection(productionWsUrl), 401);
     assert.strictEqual(await expectUpgradeRejection(productionWsUrl, {
         cookie: cookieA,

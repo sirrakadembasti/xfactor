@@ -201,6 +201,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
   const passedCount = checks.filter(check => check.status === 'PASS').length;
   const failedCount = checks.filter(check => check.status === 'FAIL').length;
   const blockedCount = checks.filter(check => check.status === 'BLOCKED').length;
+  const localExecution = checks.some(check => check.executionProfile === 'local-trusted' && check.osIsolation === false);
 
   return (
     <main className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6" aria-label="Kalite geçmişi paneli">
@@ -232,8 +233,9 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
 
         <section className="grid gap-3 md:grid-cols-2" aria-label="Kanıt otoritesi">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-emerald-900"><ShieldCheck size={16} /> Bağımsız Sandbox Kanıtı</h2>
-            <p className="mt-1 text-xs text-emerald-800">Yetkili kalite politikası kanıtı. Durum ve özetler izole doğrulamadan üretilir.</p>
+            <h2 className="flex items-center gap-2 text-sm font-bold text-emerald-900"><ShieldCheck size={16} /> Bağımsız Worker Kanıtı</h2>
+            <p className="mt-1 text-xs text-emerald-800">Yetkili kalite politikası kanıtı. Durum ve özetler gerçek doğrulama kontrollerinden üretilir.</p>
+            {localExecution && <p className="mt-2 text-xs font-semibold text-amber-900">Yerel worker · local-trusted · OS izolasyonu yok. Üretilen kod bu bilgisayardaki kullanıcının yetkileriyle çalışır.</p>}
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800"><FileText size={16} /> Ajan Öz-Raporları Tavsiye Niteliğindedir</h2>

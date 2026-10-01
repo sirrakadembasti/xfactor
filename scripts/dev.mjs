@@ -3,11 +3,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backendDir = path.join(repoRoot, 'backend');
 const frontendDir = path.join(repoRoot, 'frontend');
 const executionDir = path.join(repoRoot, 'execution');
+if (process.argv.includes('--local-worker')) {
+    process.env.EXECUTION_WORKER_RUNTIME = 'local';
+    process.env.EXECUTION_WORKER_TRUST_LOCAL_CODE = '1';
+    process.env.HOST = '127.0.0.1';
+    process.env.EXECUTION_WORKER_TOKEN ||= process.env.WORKER_TOKEN || crypto.randomBytes(32).toString('hex');
+    console.log('Yerel worker: local-trusted (OS izolasyonu yok).');
+}
 
 console.log('\x1b[36m%s\x1b[0m', '=== XFactor Development Server Başlatılıyor ===');
 console.log(`Backend dizini:   ${backendDir}`);
@@ -93,7 +101,7 @@ function startWorker() {
             EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN || 'dev-worker-token-internal',
             PORT: process.env.PORT || '8099'
         },
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc']
     });
     pipeLogs(workerProcess, '[worker]', '\x1b[35m');
 
@@ -105,7 +113,7 @@ function startWorker() {
     });
 }
 
-function cleanup(exitCode = 0) {
+async function cleanup(exitCode = 0) {
     if (isExiting) return;
     isExiting = true;
     console.log('\n\x1b[33mServisler kapatılıyor...\x1b[0m');
@@ -125,7 +133,13 @@ function cleanup(exitCode = 0) {
 
     killProcess(backendProcess);
     killProcess(frontendProcess);
-    killProcess(workerProcess);
+    if (workerProcess?.connected && workerProcess.exitCode === null) {
+        await new Promise(resolve => {
+            const timer = setTimeout(() => { killProcess(workerProcess); resolve(); }, 60000);
+            workerProcess.once('close', () => { clearTimeout(timer); resolve(); });
+            workerProcess.send({ type: 'xfactor-worker-shutdown' }, error => { if (error) { clearTimeout(timer); killProcess(workerProcess); resolve(); } });
+        });
+    } else killProcess(workerProcess);
 
     setTimeout(() => {
         process.exit(exitCode);

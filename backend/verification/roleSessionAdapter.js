@@ -4,8 +4,8 @@ const LOCAL_PATH = /^\/(?!\/)/;
 const ROLE_SETUP_SCRIPT = `const { spawnSync } = require('node:child_process');
 const credentials = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
 const env = { ...process.env, ...credentials, NODE_ENV: 'test' };
-const result = spawnSync('npm', ['run', 'xfactor:test:setup'], {
-  cwd: '/workspace', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000
+const result = spawnSync(process.env.XFACTOR_NPM_CLI ? process.execPath : 'npm', process.env.XFACTOR_NPM_CLI ? [process.env.XFACTOR_NPM_CLI, 'run', 'xfactor:test:setup'] : ['run', 'xfactor:test:setup'], {
+  cwd: process.cwd(), env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000, windowsHide: true
 });
 if (result.error || result.status !== 0) {
   process.stderr.write('Management test setup failed.');
@@ -66,9 +66,10 @@ export async function prepareManagementDemoUsers(adapter, management, env = {}, 
     return passwords;
 }
 
-export function createRoleSessionAdapter(adapter, baseUrl, management, passwords = {}) {
+export function createRoleSessionAdapter(adapter, baseUrl, management, passwords = {}, { browserUrl = baseUrl } = {}) {
     if (typeof adapter?.execute !== 'function') throw new Error('Isolated executable adapter is required for role verification.');
     const origin = new URL(baseUrl).origin;
+    const browserOrigin = new URL(browserUrl).origin;
     const auth = management?.authentication?.apiLogin;
     const loginUrl = localUrl(origin, auth?.path).href;
     const identityField = auth.identityField || 'username';
@@ -80,6 +81,19 @@ export function createRoleSessionAdapter(adapter, baseUrl, management, passwords
     const roles = new Map((management.roles || []).map(role => [role.name, role]));
     return {
         ...adapter,
+        ...(typeof adapter.interact === 'function' ? {
+            interact: async request => {
+                if (new URL(request.url).origin !== browserOrigin) throw new Error('Browser journey must use the declared application origin.');
+                const entry = roles.get(request.role);
+                if (!entry || !passwords[request.role]) throw new Error('Isolated browser role credential is missing.');
+                return adapter.interact({ ...request,
+                    login: request.authState === 'anonymous' ? undefined : {
+                        url: loginUrl, username: entry.demoUser.username, password: passwords[request.role],
+                        identityField, passwordField, tokenField
+                    }
+                });
+            }
+        } : {}),
         requestAsRole: async ({ role, method = 'GET', url, data, timeoutMs = 5000, signal }) => {
             const entry = roles.get(role);
             if (!entry?.demoUser?.username || !passwords[role]) throw new Error(`Isolated credential is missing for role ${role}.`);

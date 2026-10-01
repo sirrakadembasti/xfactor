@@ -1,9 +1,17 @@
+import { setTimeout as pause } from 'node:timers/promises';
+
 export async function probeServiceHealth(healthUrl, startupTimeoutMs = 10000, options = {}) {
+    const throwIfCancelled = () => {
+        if (options.signal?.aborted) throw options.signal.reason instanceof Error
+            ? options.signal.reason : new Error('Cancelled by user');
+    };
+    throwIfCancelled();
     const started = Date.now();
     let delay = options.initialDelayMs || 50;
     let last = 'No response';
     let statusCode = 0;
     while (Date.now() - started < startupTimeoutMs) {
+        throwIfCancelled();
         try {
             let response;
             if (typeof options.adapter?.request === 'function') {
@@ -25,6 +33,7 @@ export async function probeServiceHealth(healthUrl, startupTimeoutMs = 10000, op
                     clearTimeout(timer);
                 }
             }
+            throwIfCancelled();
             const code = response.statusCode || 0;
             statusCode = code;
             if (code >= 200 && code < 300) {
@@ -33,10 +42,14 @@ export async function probeServiceHealth(healthUrl, startupTimeoutMs = 10000, op
             last = `Service responded with HTTP ${code}`;
             if (options.failFastOnServerError && code >= 400) break;
         } catch (e) {
+            // Cancellation ends readiness; it must not be treated as a transient probe failure.
+            throwIfCancelled();
             last = e.message;
         }
-        await new Promise(resolve => setTimeout(resolve, delay));
+        try { await pause(delay, undefined, { signal: options.signal }); }
+        catch (error) { throwIfCancelled(); throw error; }
         delay = Math.min(delay * 1.5, options.maxDelayMs || 500);
     }
+    throwIfCancelled();
     return { responsive: false, statusCode, error: `Readiness probe timed out after ${startupTimeoutMs}ms: ${last}` };
 }
