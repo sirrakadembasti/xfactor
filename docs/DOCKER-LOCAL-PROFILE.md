@@ -2,7 +2,7 @@
 
 ## Güncel kullanım — 1 Ekim 2026
 
-Kalite kontrolleri için `npm run dev:local` ile Node/npm/Playwright/Chromium tabanlı yerel worker seçilir; Docker Desktop veya Engine gerekmez. Bu belge aşağıdaki tarihsel Docker kaynak ayarlarını ve Docker profili/imaj build-run işlemlerini anlatır. `npm run dev` çalışma zamanı ayrıca seçilmedikçe Docker profilinde kalır. Yerel worker kurulumu ve güven sınırları için [paket kılavuzunu](LOCAL-WORKER-PACKAGE.md), gerçek test sonuçları için [doğrulama raporunu](LOCAL-WORKER-VALIDATION-2026-10-01.md) okuyun.
+Kalite kontrolleri için `npm run dev` ile Node/npm/Playwright/Chromium tabanlı yerel worker seçilir; Docker Desktop veya Engine gerekmez. `npm run dev:local` aynı akışın açık adıdır. Bu belge aşağıdaki tarihsel Docker kaynak ayarlarını ve Docker profili/imaj build-run işlemlerini anlatır. Docker profili yalnız `npm run dev:docker` ile başlatılır. Yerel worker kurulumu ve güven sınırları için [paket kılavuzunu](LOCAL-WORKER-PACKAGE.md), gerçek test sonuçları için [doğrulama raporunu](LOCAL-WORKER-VALIDATION-2026-10-01.md) okuyun.
 
 30 Eylül 2026 tarihinde 8 GB RAM / 4 mantıksal işlemcili Windows bilgisayarında uygulanan ayarlar.
 

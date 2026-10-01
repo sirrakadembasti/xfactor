@@ -153,10 +153,10 @@ cd ..
 ### 3. Adım: Uygulamayı Başlatma
 
 #### ⭐ Seçenek A: Kök Dizininden Tek Komutla Başlatma (Önerilen)
-Backend ve frontend bağımlılıklarını kurduktan sonra proje kökünde yerel araçları hazırlayın. `npm run dev:local` platformun üç servisini Docker olmadan başlatır:
+Backend ve frontend bağımlılıklarını kurduktan sonra proje kökünde yerel araçları hazırlayın. Normal `npm run dev` platformun üç servisini Docker olmadan başlatır:
 ```bash
 npm run worker:local:setup -- --install
-npm run dev:local
+npm run dev
 ```
 
 | Port | Servis | Açıklama |
@@ -187,7 +187,7 @@ npm run dev:local
   ```bash
   node execution/server.js
   ```
-  > Bu doğrudan komut ve kökteki `npm run dev` varsayılan olarak Docker profilini seçer. Docker’sız kullanım için `npm run dev:local` veya [paketli yerel worker](docs/LOCAL-WORKER-PACKAGE.md) kullanın. Ayrı başlatmada backend ve worker URL/token ayarlarını eşleştirin. Worker, `http://127.0.0.1:8099` adresinde yalnız yetkili backend isteklerini kabul eder.
+  > Kökteki `npm run dev` varsayılan olarak Docker olmadan yerel profili seçer; `npm run dev:local` aynı akıştır. Docker için `npm run dev:docker` kullanın. Bu doğrudan worker komutu ayrı runtime yapılandırması gerektirir; [paketli yerel worker](docs/LOCAL-WORKER-PACKAGE.md) alternatifini de kullanabilirsiniz. Ayrı başlatmada backend ve worker URL/token ayarlarını eşleştirin. Worker, `http://127.0.0.1:8099` adresinde yalnız yetkili backend isteklerini kabul eder.
 
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS veya sunucu ortamında backend'i (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kurunuz. Oturum çerezlerinin güvenliği için HTTPS zorunludur.

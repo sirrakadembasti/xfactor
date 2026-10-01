@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:local": "node scripts/dev.mjs --local-worker",
+    "dev:docker": "node scripts/dev.mjs --docker-worker",
     "worker:local:setup": "node scripts/setup-local-worker.mjs",
     "worker:local:package": "node scripts/package-local-worker.mjs",
     "worker:local": "node scripts/start-local-worker.mjs",

@@ -30,7 +30,7 @@ The worker binds to `127.0.0.1`, defaults to port `8099`, and sets `EXECUTION_WO
 
 ## Connect XFactor
 
-For the source checkout, install the normal backend/frontend dependencies, run `npm run worker:local:setup -- --install`, then `npm run dev:local`. The unified runner explicitly selects the local profile and shares the worker token with the backend. Plain `npm run dev` and direct `node execution/server.js` retain the Docker default. The standalone package below requires configuring the backend connection separately.
+For the source checkout, install the normal backend/frontend dependencies, run `npm run worker:local:setup -- --install`, then `npm run dev`. The unified runner selects the Docker-free local profile and shares the worker token with the backend, including when an inherited environment still names Docker. `npm run dev:local` is an equivalent explicit alias. Use `npm run dev:docker` to choose Docker. Direct `node execution/server.js` is a low-level server command requiring separate runtime/token configuration. The standalone package below requires configuring the backend connection separately.
 
 Set the XFactor backend's `EXECUTION_WORKER_URL=http://127.0.0.1:8099` and `EXECUTION_WORKER_TOKEN` to the token securely read from the state directory's `worker-token` file. Alternatively provide the same independently generated secret of at least 32 characters to both processes using `EXECUTION_WORKER_TOKEN`. Keep these values in operator configuration and out of source control/logs. Restart the backend after configuring it. This package supplies the worker; normal XFactor frontend/backend deployment configuration remains operator-owned. The bundled Node can run the existing repository backend, without changing default admin credentials.
 

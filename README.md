@@ -66,7 +66,7 @@ cd ..
 Backend ve frontend bağımlılıkları kurulduktan sonra yerel worker araçlarını hazırlayıp üç servisi Docker olmadan başlatın:
 ```bash
 npm run worker:local:setup -- --install
-npm run dev:local
+npm run dev
 ```
 
 | Port | Servis | Rolü ve Erişimi |
@@ -84,7 +84,7 @@ npm run dev:local
 Üç ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
 * **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
-* **Terminal 3 (Execution Worker):** yerel kullanımda [paket kılavuzundaki](docs/LOCAL-WORKER-PACKAGE.md) launcher ve backend URL/token bağlantısını kullanın *(İç servis: http://127.0.0.1:8099)*. Doğrudan `node execution/server.js` ve `npm run dev` çalışma zamanı seçilmedikçe Docker profilini kullanır; Docker'sız akış için `npm run dev:local` seçilmelidir.
+* **Terminal 3 (Execution Worker):** yerel kullanımda [paket kılavuzundaki](docs/LOCAL-WORKER-PACKAGE.md) launcher ve backend URL/token bağlantısını kullanın *(İç servis: http://127.0.0.1:8099)*. Normal `npm run dev` Docker olmadan yerel worker'ı başlatır; `npm run dev:local` aynı akışın açık adıdır. Docker profili yalnız `npm run dev:docker` ile seçilir. Doğrudan `node execution/server.js` düşük seviyeli sunucu komutudur ve ayrı runtime/token yapılandırması gerektirir.
 ### 3. Kullanmaya Başlayın
 1. Tarayıcınızda `http://localhost:5173` adresini açın.
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.

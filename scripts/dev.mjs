@@ -3,17 +3,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
 import fs from 'node:fs';
-import crypto from 'node:crypto';
+import { configureDevWorker } from './dev-worker-profile.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backendDir = path.join(repoRoot, 'backend');
 const frontendDir = path.join(repoRoot, 'frontend');
 const executionDir = path.join(repoRoot, 'execution');
-if (process.argv.includes('--local-worker')) {
-    process.env.EXECUTION_WORKER_RUNTIME = 'local';
-    process.env.EXECUTION_WORKER_TRUST_LOCAL_CODE = '1';
-    process.env.HOST = '127.0.0.1';
-    process.env.EXECUTION_WORKER_TOKEN ||= process.env.WORKER_TOKEN || crypto.randomBytes(32).toString('hex');
+configureDevWorker(process.env, process.argv.slice(2));
+if (process.env.EXECUTION_WORKER_RUNTIME === 'local') {
     console.log('Yerel worker: local-trusted (OS izolasyonu yok).');
 }
 

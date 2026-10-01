@@ -30,7 +30,13 @@ Güncel bağımsız paketin **tam kabulü PASS, çıkış kodu 0**: HTTP hazırl
 
 Son güncel kaynak kabulü de **PASS**: `node scripts/test-worker.mjs --local-integration` komutu 129/129 test, sıfır hata/iptal/skip ve çıkış kodu 0 verdi. Gerçek kaynak HTTP entegrasyonunda hatalı ve sıfır testli projeler reddedildi; Docker sentinel çağrılmadı. Kanıt günlüğü `.tmp/local-worker-final-all.log`. Paket ve kaynak kontrolleri seri çalıştırıldı; Linux/macOS fiili testi olarak sayılmaz.
 
-## Sınırlar
+## Varsayılan başlatma düzeltmesi
+
+Normal `npm run dev` artık Docker olmadan yerel worker seçer; `npm run dev:local` eşdeğer açık adıdır. Eski ortam değişkeni Docker dese de normal uygulama başlatması yerel profili seçer. `npm run dev:docker` Docker profilini açıkça seçer. Çelişen komut seçenekleri servis başlatılmadan reddedilir. Dört profil seçimi testi, yerel profil güven kontrolü ve üretim token kontrolü birlikte 6/6 geçti. Önceki 129 testlik kaynak kabulü bu yeni testleri içermez. Doğrudan worker sunucusu ayrı runtime/token yapılandırması gerektirir; düşük seviyeli güven kontrolleri değiştirilmedi.
+
+Varsayılan uygulama başlatmasının profil ayarlarıyla gerçek Chromium hazır olma kontrolü geçti: `selectedRuntime:local`, `executionCapacity:true`, `executionProfile:local-trusted`, `osIsolation:false`. İlk denemede Codex sandbox'ının kullanıcı tarayıcı dizinine erişim kısıtı nedeniyle kontrol çalışamadı; izinli tekrar başarılı oldu.
+
+## Platform ve güven sınırları
 
 Windows üzerinde gerçek test yapıldı. Linux/macOS için platform kodu ve CI matrisi eklendi; bu bilgisayarda bu platformlar çalıştırılmadı. İlgili CI ve gerçek paket entegrasyonu geçmeden o platform için doğrulanmış release iddiası yapılmaz.
 

@@ -547,7 +547,7 @@
       "group": "backend",
       "file": "scripts/dev.mjs",
       "description": "Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu",
-      "val": 13,
+      "val": 11.5,
       "provenance": "curated"
     },
     {
@@ -3251,6 +3251,16 @@
       "provenance": "ast"
     },
     {
+      "id": "execution/tests/devWorkerProfile.test.js",
+      "label": "devWorkerProfile.test.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "execution/tests/devWorkerProfile.test.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast"
+    },
+    {
       "id": "execution/tests/fixtures/localAppFixture.js",
       "label": "localAppFixture.js",
       "type": "SourceFile",
@@ -3626,6 +3636,16 @@
       "type": "SourceFile",
       "group": "backend",
       "file": "playwright.config.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast"
+    },
+    {
+      "id": "scripts/dev-worker-profile.mjs",
+      "label": "dev-worker-profile.mjs",
+      "type": "SourceFile",
+      "group": "backend",
+      "file": "scripts/dev-worker-profile.mjs",
       "description": "",
       "val": 3,
       "provenance": "ast"
@@ -11343,7 +11363,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 27,
+      "val": 27.5,
       "provenance": "ast"
     },
     {
@@ -11353,7 +11373,7 @@
       "group": "packages",
       "file": null,
       "description": "node:test",
-      "val": 16,
+      "val": 16.5,
       "provenance": "ast"
     },
     {
@@ -23677,6 +23697,17 @@
       "provenance": "ast"
     },
     {
+      "id": "scripts/dev-worker-profile.mjs#Function:configureDevWorker@3",
+      "label": "configureDevWorker",
+      "type": "Function",
+      "group": "backend",
+      "file": "scripts/dev-worker-profile.mjs",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 3
+    },
+    {
       "id": "package:node:readline",
       "label": "node:readline",
       "type": "Package",
@@ -23687,7 +23718,7 @@
       "provenance": "ast"
     },
     {
-      "id": "scripts/dev.mjs#Function:pipeLogs@30",
+      "id": "scripts/dev.mjs#Function:pipeLogs@27",
       "label": "pipeLogs",
       "type": "Function",
       "group": "backend",
@@ -23695,10 +23726,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 30
+      "line": 27
     },
     {
-      "id": "scripts/dev.mjs#Function:formatLine@31",
+      "id": "scripts/dev.mjs#Function:formatLine@28",
       "label": "formatLine",
       "type": "Function",
       "group": "backend",
@@ -23706,10 +23737,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 31
+      "line": 28
     },
     {
-      "id": "scripts/dev.mjs#Function:startBackend@43",
+      "id": "scripts/dev.mjs#Function:startBackend@40",
       "label": "startBackend",
       "type": "Function",
       "group": "backend",
@@ -23717,10 +23748,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 43
+      "line": 40
     },
     {
-      "id": "scripts/dev.mjs#Function:startFrontend@64",
+      "id": "scripts/dev.mjs#Function:startFrontend@61",
       "label": "startFrontend",
       "type": "Function",
       "group": "backend",
@@ -23728,10 +23759,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 64
+      "line": 61
     },
     {
-      "id": "scripts/dev.mjs#Function:startWorker@86",
+      "id": "scripts/dev.mjs#Function:startWorker@83",
       "label": "startWorker",
       "type": "Function",
       "group": "backend",
@@ -23739,10 +23770,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 86
+      "line": 83
     },
     {
-      "id": "scripts/dev.mjs#Function:cleanup@116",
+      "id": "scripts/dev.mjs#Function:cleanup@113",
       "label": "cleanup",
       "type": "Function",
       "group": "backend",
@@ -23750,10 +23781,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 116
+      "line": 113
     },
     {
-      "id": "scripts/dev.mjs#Function:killProcess@121",
+      "id": "scripts/dev.mjs#Function:killProcess@118",
       "label": "killProcess",
       "type": "Function",
       "group": "backend",
@@ -23761,7 +23792,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 121
+      "line": 118
     },
     {
       "id": "scripts/local-worker-tools.mjs#Function:localChromiumLaunchOptions@10",
@@ -25321,7 +25352,7 @@
       "group": "config",
       "file": null,
       "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
-      "val": 2.5,
+      "val": 2,
       "provenance": "ast"
     },
     {
@@ -25712,7 +25743,7 @@
       "group": "config",
       "file": null,
       "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
-      "val": 2.5,
+      "val": 2,
       "provenance": "ast"
     },
     {
@@ -25786,7 +25817,7 @@
       "group": "config",
       "file": null,
       "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
-      "val": 3,
+      "val": 2.5,
       "provenance": "ast"
     },
     {
@@ -25796,7 +25827,7 @@
       "group": "config",
       "file": null,
       "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
-      "val": 2,
+      "val": 1.5,
       "provenance": "ast"
     },
     {
@@ -55588,6 +55619,36 @@
       }
     },
     {
+      "source": "execution/tests/devWorkerProfile.test.js",
+      "target": "package:node:test",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/devWorkerProfile.test.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "execution/tests/devWorkerProfile.test.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/devWorkerProfile.test.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "execution/tests/devWorkerProfile.test.js",
+      "target": "scripts/dev-worker-profile.mjs",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/devWorkerProfile.test.js",
+        "line": 3
+      }
+    },
+    {
       "source": "execution/tests/fixtures/localAppFixture.js",
       "target": "execution/tests/fixtures/localAppFixture.js#Function:localAppFixture@4",
       "label": "contains",
@@ -60008,6 +60069,26 @@
       }
     },
     {
+      "source": "scripts/dev-worker-profile.mjs",
+      "target": "package:node:crypto",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/dev-worker-profile.mjs",
+        "line": 1
+      }
+    },
+    {
+      "source": "scripts/dev-worker-profile.mjs",
+      "target": "scripts/dev-worker-profile.mjs#Function:configureDevWorker@3",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/dev-worker-profile.mjs",
+        "line": 3
+      }
+    },
+    {
       "source": "scripts/dev.mjs",
       "target": "package:node:child_process",
       "label": "imports_package",
@@ -60059,8 +60140,8 @@
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "package:node:crypto",
-      "label": "imports_package",
+      "target": "scripts/dev-worker-profile.mjs",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
@@ -60069,72 +60150,72 @@
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:pipeLogs@30",
+      "target": "scripts/dev.mjs#Function:pipeLogs@27",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 30
+        "line": 27
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:formatLine@31",
+      "target": "scripts/dev.mjs#Function:formatLine@28",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 31
+        "line": 28
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startBackend@43",
+      "target": "scripts/dev.mjs#Function:startBackend@40",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 43
+        "line": 40
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startFrontend@64",
+      "target": "scripts/dev.mjs#Function:startFrontend@61",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 64
+        "line": 61
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startWorker@86",
+      "target": "scripts/dev.mjs#Function:startWorker@83",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 86
+        "line": 83
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:cleanup@116",
+      "target": "scripts/dev.mjs#Function:cleanup@113",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 116
+        "line": 113
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:killProcess@121",
+      "target": "scripts/dev.mjs#Function:killProcess@118",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 121
+        "line": 118
       }
     },
     {
@@ -84288,6 +84369,16 @@
       }
     },
     {
+      "source": "execution/tests/devWorkerProfile.test.js",
+      "target": "scripts/dev-worker-profile.mjs#Function:configureDevWorker@3",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/devWorkerProfile.test.js",
+        "line": 7
+      }
+    },
+    {
       "source": "execution/tests/healthCancellation.test.js",
       "target": "backend/verification/healthProber.js#Function:probeServiceHealth@3",
       "label": "calls",
@@ -86329,8 +86420,18 @@
     },
     {
       "source": "scripts/dev.mjs",
+      "target": "scripts/dev-worker-profile.mjs#Function:configureDevWorker@3",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/dev.mjs",
+        "line": 12
+      }
+    },
+    {
+      "source": "scripts/dev.mjs",
       "target": "env:EXECUTION_WORKER_RUNTIME",
-      "label": "writes_env",
+      "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
@@ -86338,203 +86439,163 @@
       }
     },
     {
-      "source": "scripts/dev.mjs",
-      "target": "env:EXECUTION_WORKER_TRUST_LOCAL_CODE",
-      "label": "writes_env",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/dev.mjs",
-        "line": 14
-      }
-    },
-    {
-      "source": "scripts/dev.mjs",
-      "target": "env:HOST",
-      "label": "writes_env",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/dev.mjs",
-        "line": 15
-      }
-    },
-    {
-      "source": "scripts/dev.mjs",
-      "target": "env:EXECUTION_WORKER_TOKEN",
-      "label": "writes_env",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/dev.mjs",
-        "line": 16
-      }
-    },
-    {
-      "source": "scripts/dev.mjs",
-      "target": "env:WORKER_TOKEN",
-      "label": "reads_env",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/dev.mjs",
-        "line": 16
-      }
-    },
-    {
-      "source": "scripts/dev.mjs#Function:pipeLogs@30",
-      "target": "scripts/dev.mjs#Function:formatLine@31",
+      "source": "scripts/dev.mjs#Function:pipeLogs@27",
+      "target": "scripts/dev.mjs#Function:formatLine@28",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 35
+        "line": 32
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startBackend@43",
+      "source": "scripts/dev.mjs#Function:startBackend@40",
       "target": "env:EXECUTION_WORKER_TOKEN",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 49
+        "line": 46
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startBackend@43",
+      "source": "scripts/dev.mjs#Function:startBackend@40",
       "target": "env:EXECUTION_WORKER_URL",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 50
+        "line": 47
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startBackend@43",
-      "target": "scripts/dev.mjs#Function:pipeLogs@30",
+      "source": "scripts/dev.mjs#Function:startBackend@40",
+      "target": "scripts/dev.mjs#Function:pipeLogs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 54
+        "line": 51
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startBackend@43",
-      "target": "scripts/dev.mjs#Function:cleanup@116",
+      "source": "scripts/dev.mjs#Function:startBackend@40",
+      "target": "scripts/dev.mjs#Function:cleanup@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 59
+        "line": 56
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startFrontend@64",
-      "target": "scripts/dev.mjs#Function:pipeLogs@30",
+      "source": "scripts/dev.mjs#Function:startFrontend@61",
+      "target": "scripts/dev.mjs#Function:pipeLogs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 77
+        "line": 74
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startFrontend@64",
-      "target": "scripts/dev.mjs#Function:cleanup@116",
+      "source": "scripts/dev.mjs#Function:startFrontend@61",
+      "target": "scripts/dev.mjs#Function:cleanup@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 82
+        "line": 79
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startWorker@86",
+      "source": "scripts/dev.mjs#Function:startWorker@83",
       "target": "env:EXECUTION_WORKER_TOKEN",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 101
+        "line": 98
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startWorker@86",
+      "source": "scripts/dev.mjs#Function:startWorker@83",
       "target": "env:PORT",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 102
+        "line": 99
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startWorker@86",
-      "target": "scripts/dev.mjs#Function:pipeLogs@30",
+      "source": "scripts/dev.mjs#Function:startWorker@83",
+      "target": "scripts/dev.mjs#Function:pipeLogs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 106
+        "line": 103
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:startWorker@86",
-      "target": "scripts/dev.mjs#Function:cleanup@116",
+      "source": "scripts/dev.mjs#Function:startWorker@83",
+      "target": "scripts/dev.mjs#Function:cleanup@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 111
+        "line": 108
       }
     },
     {
-      "source": "scripts/dev.mjs#Function:cleanup@116",
-      "target": "scripts/dev.mjs#Function:killProcess@121",
+      "source": "scripts/dev.mjs#Function:cleanup@113",
+      "target": "scripts/dev.mjs#Function:killProcess@118",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 134
-      }
-    },
-    {
-      "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:cleanup@116",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/dev.mjs",
-        "line": 149
+        "line": 131
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startWorker@86",
+      "target": "scripts/dev.mjs#Function:cleanup@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 156
+        "line": 146
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startBackend@43",
+      "target": "scripts/dev.mjs#Function:startWorker@83",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 157
+        "line": 153
       }
     },
     {
       "source": "scripts/dev.mjs",
-      "target": "scripts/dev.mjs#Function:startFrontend@64",
+      "target": "scripts/dev.mjs#Function:startBackend@40",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/dev.mjs",
-        "line": 158
+        "line": 154
+      }
+    },
+    {
+      "source": "scripts/dev.mjs",
+      "target": "scripts/dev.mjs#Function:startFrontend@61",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/dev.mjs",
+        "line": 155
       }
     },
     {
