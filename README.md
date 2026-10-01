@@ -30,6 +30,10 @@
 
 ## 🚀 Hızlı Başlangıç
 
+Platform ajanlarının dosyaları kökteki **`x-agents/`** dizinindedir: altı rol talimatı, orkestrasyon anayasası ve `GOREV/DURUM/TODO/RAPOR/ALT-TALIMATNAME` şablonları. Backend yalnız bu sabit dizindeki izinli dosyaları sistem istemi olarak okur; `docs/` veya üretilen proje belgeleri bu talimatların kaynağı değildir. Eksik/geçersiz talimat üretimi engeller.
+
+`docs/` geliştirme ve işletim belgelerine ayrılmıştır. Üretilen uygulamanın README ve belgeleri `projects/<proje-id>/` altında; o üretimin gerçek görev/durum kayıtları da aynı projenin `manager/` ve alt ajan klasörlerinde tutulur. `x-agents` altındaki durum dosyaları şablondur. Proje kökü veya proje klasörü `x-agents` ile çakışırsa backend bunu reddeder. Ayrıntılar: [ajan dosyaları kılavuzu](x-agents/README.md).
+
 ### 1. Hazırlık ve Bağımlılıklar
 ```bash
 # 1. Backend yapılandırması
@@ -179,7 +183,7 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
-* 📜 **[Master Talimatname & Ajan Anayasası (docs/ORKESTRASYON-TALIMATNAMESI.md)](docs/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
+* 📜 **[Master Talimatname & Ajan Anayasası (x-agents/ORKESTRASYON-TALIMATNAMESI.md)](x-agents/ORKESTRASYON-TALIMATNAMESI.md)** — Platformun 6 seviyeli orkestrasyon anayasası ve kural seti.
 ## Docker olmadan bağımsız yerel worker
 
 Yerel worker Node 22.23.2, npm 10.9.8, Playwright 1.62.1 ve Chromium ile gerçek kurulum, build, test, API, veritabanı ve tarayıcı kontrollerini yürütür. Python veya Docker gerekmez. İlk kurulumda `npm run worker:local:setup -- --install`, ardından `npm run dev:local` kullanılabilir. Chromium sistem kitaplıkları Linux'ta ayrıca kurulu olmalıdır.

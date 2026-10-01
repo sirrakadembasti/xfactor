@@ -49,13 +49,13 @@ async function extractCodeGraph() {
 
     // 1. Docs & Anayasa Düğüm Grubu (Group 1: Purple)
     const docs = [
-        { id: 'docs/ORKESTRASYON-TALIMATNAMESI.md', label: 'ORKESTRASYON-TALIMATNAMESI (Anayasa v3)', desc: 'Platformun en üst master orkestrasyon anayasası' },
-        { id: 'docs/manager.md', label: 'docs/manager.md', desc: 'Manager Ajanı canlı kural ve mimari şartname dosyası' },
-        { id: 'docs/director.md', label: 'docs/director.md', desc: 'Director Ajanı canlı domain şartname kuralları' },
-        { id: 'docs/teamleader.md', label: 'docs/teamleader.md', desc: 'Teamleader Ajanı atomik görev ve DAG kuralları' },
-        { id: 'docs/coder.md', label: 'docs/coder.md', desc: 'Coder Ajanı bileşen kompozisyonu ve kodlama kuralları' },
-        { id: 'docs/reviewer.md', label: 'docs/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
-        { id: 'docs/tester.md', label: 'docs/tester.md', desc: 'Tester Ajanı deterministik sentaks ve auto-repair kuralları' },
+        { id: 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', label: 'ORKESTRASYON-TALIMATNAMESI (Anayasa v4)', desc: 'Platformun en üst master orkestrasyon anayasası; proje belgelerinden ayrı güvenilen talimat kaynağı' },
+        { id: 'x-agents/manager.md', label: 'x-agents/manager.md', desc: 'Manager Ajanı canlı kural ve mimari şartname dosyası' },
+        { id: 'x-agents/director.md', label: 'x-agents/director.md', desc: 'Director Ajanı canlı domain şartname kuralları' },
+        { id: 'x-agents/teamleader.md', label: 'x-agents/teamleader.md', desc: 'Teamleader Ajanı atomik görev ve DAG kuralları' },
+        { id: 'x-agents/coder.md', label: 'x-agents/coder.md', desc: 'Coder Ajanı bileşen kompozisyonu ve kodlama kuralları' },
+        { id: 'x-agents/reviewer.md', label: 'x-agents/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
+        { id: 'x-agents/tester.md', label: 'x-agents/tester.md', desc: 'Tester Ajanı deterministik sentaks ve auto-repair kuralları' },
         { id: 'docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md', label: '2026-09-16 Orkestrasyon Planı', desc: 'Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı' },
         { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
         { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
@@ -71,14 +71,15 @@ async function extractCodeGraph() {
 
     docs.forEach(d => {
         addNode(d.id, d.label, 'Document', 'docs', d.id, d.desc);
-        if (d.id !== 'docs/ORKESTRASYON-TALIMATNAMESI.md') {
-            addLink('docs/ORKESTRASYON-TALIMATNAMESI.md', d.id, 'defines');
+        if (d.id !== 'x-agents/ORKESTRASYON-TALIMATNAMESI.md') {
+            addLink('x-agents/ORKESTRASYON-TALIMATNAMESI.md', d.id, 'defines');
         }
     });
 
     // 2. Agents Grubu (Group 2: Violet)
     const agents = [
-        { id: 'backend/agents/agentLoader.js', label: 'agentLoader.js (Living Docs Bridge)', desc: 'docs/*.md dosyalarını canlı yükleyip LLM promptlarına bağlayan köprü' },
+        { id: 'backend/agents/agentLoader.js', label: 'agentLoader.js (Trusted Agent Documents)', desc: 'Yalnız x-agents talimatlarını okuyup LLM promptlarına bağlayan köprü; eksik talimatta fail-closed' },
+        { id: 'backend/agents/agentPaths.js', label: 'agentPaths.js (Agent Document Boundary)', desc: 'Sabit ajan kökü, rol/dosya izin listesi, junction/symlink ve proje yolu çakışma kontrolü' },
         { id: 'backend/agents/index.js', label: 'agents/index.js (Registry & Factory)', desc: 'Merkezi Ajan Kayıt Defteri ve getAgent() fabrikası' },
         { id: 'backend/agents/schemas.js', label: 'schemas.js (Parser & Truncation Repair)', desc: 'JSON kurtarıcı, regex parser ve şema doğrulayıcıları' },
         { id: 'backend/agents/manager.js', label: 'manager.agent', desc: 'Manager Ajanı motoru' },
@@ -94,13 +95,13 @@ async function extractCodeGraph() {
         addLink('backend/agents/index.js', a.id, 'registers');
     });
 
-    addLink('backend/agents/agentLoader.js', 'docs/ORKESTRASYON-TALIMATNAMESI.md', 'reads');
-    addLink('backend/agents/manager.js', 'docs/manager.md', 'loads');
-    addLink('backend/agents/director.js', 'docs/director.md', 'loads');
-    addLink('backend/agents/teamleader.js', 'docs/teamleader.md', 'loads');
-    addLink('backend/agents/coder.js', 'docs/coder.md', 'loads');
-    addLink('backend/agents/reviewer.js', 'docs/reviewer.md', 'loads');
-    addLink('backend/agents/tester.js', 'docs/tester.md', 'loads');
+    addLink('backend/agents/agentLoader.js', 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', 'reads');
+    addLink('backend/agents/manager.js', 'x-agents/manager.md', 'loads');
+    addLink('backend/agents/director.js', 'x-agents/director.md', 'loads');
+    addLink('backend/agents/teamleader.js', 'x-agents/teamleader.md', 'loads');
+    addLink('backend/agents/coder.js', 'x-agents/coder.md', 'loads');
+    addLink('backend/agents/reviewer.js', 'x-agents/reviewer.md', 'loads');
+    addLink('backend/agents/tester.js', 'x-agents/tester.md', 'loads');
     addLink('backend/agents/manager.js', 'backend/agents/agentLoader.js', 'uses');
     addLink('backend/agents/coder.js', 'backend/agents/schemas.js', 'uses');
 
@@ -215,7 +216,7 @@ async function extractCodeGraph() {
         { id: 'backend/tests/test_concurrency_pool.js', label: 'test_concurrency_pool.js', desc: 'LLM eşzamanlılık havuzu (limit=2)' },
         { id: 'backend/tests/test_build_validator.js', label: 'test_build_validator.js', desc: 'tsc --noEmit ve prisma validate derleyici' },
         { id: 'backend/tests/test_quality_gate.js', label: 'test_quality_gate.js (40 Test)', desc: 'Prisma şema uyumu ve fail-closed kalite kapısı' },
-        { id: 'backend/tests/test_docs_agent_sync.js', label: 'test_docs_agent_sync.js (8 Test)', desc: 'Docs/*.md ile canlı ajan prompt senkronizasyonu' },
+        { id: 'backend/tests/test_docs_agent_sync.js', label: 'test_docs_agent_sync.js', desc: 'x-agents/*.md ile altı ajan ve Manager sohbeti prompt senkronizasyonu' },
         { id: 'backend/tests/test_deep_verification.js', label: 'test_deep_verification.js (17 Test)', desc: 'DAG motoru, dalga seviyeleme ve JSON onarım' },
         { id: 'backend/tests/test_tur2_edge_cases.js', label: 'test_tur2_edge_cases.js (8 Test)', desc: 'Döngü stresi, ayrık graf ve path traversal' },
         { id: 'backend/tests/test_runtime_verification.js', label: 'test_runtime_verification.js (6 Test)', desc: 'Sentaks denetimi, checkpoint veto ve dalga' },

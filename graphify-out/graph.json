@@ -1,71 +1,71 @@
 {
   "nodes": [
     {
-      "id": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "label": "ORKESTRASYON-TALIMATNAMESI (Anayasa v3)",
+      "id": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "label": "ORKESTRASYON-TALIMATNAMESI (Anayasa v4)",
       "type": "Document",
       "group": "docs",
-      "file": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "description": "Platformun en üst master orkestrasyon anayasası",
+      "file": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "description": "Platformun en üst master orkestrasyon anayasası; proje belgelerinden ayrı güvenilen talimat kaynağı",
       "val": 10,
       "provenance": "curated"
     },
     {
-      "id": "docs/manager.md",
-      "label": "docs/manager.md",
+      "id": "x-agents/manager.md",
+      "label": "x-agents/manager.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/manager.md",
+      "file": "x-agents/manager.md",
       "description": "Manager Ajanı canlı kural ve mimari şartname dosyası",
       "val": 2,
       "provenance": "curated"
     },
     {
-      "id": "docs/director.md",
-      "label": "docs/director.md",
+      "id": "x-agents/director.md",
+      "label": "x-agents/director.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/director.md",
+      "file": "x-agents/director.md",
       "description": "Director Ajanı canlı domain şartname kuralları",
       "val": 2,
       "provenance": "curated"
     },
     {
-      "id": "docs/teamleader.md",
-      "label": "docs/teamleader.md",
+      "id": "x-agents/teamleader.md",
+      "label": "x-agents/teamleader.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/teamleader.md",
+      "file": "x-agents/teamleader.md",
       "description": "Teamleader Ajanı atomik görev ve DAG kuralları",
       "val": 2,
       "provenance": "curated"
     },
     {
-      "id": "docs/coder.md",
-      "label": "docs/coder.md",
+      "id": "x-agents/coder.md",
+      "label": "x-agents/coder.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/coder.md",
+      "file": "x-agents/coder.md",
       "description": "Coder Ajanı bileşen kompozisyonu ve kodlama kuralları",
       "val": 2,
       "provenance": "curated"
     },
     {
-      "id": "docs/reviewer.md",
-      "label": "docs/reviewer.md",
+      "id": "x-agents/reviewer.md",
+      "label": "x-agents/reviewer.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/reviewer.md",
+      "file": "x-agents/reviewer.md",
       "description": "Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları",
       "val": 2,
       "provenance": "curated"
     },
     {
-      "id": "docs/tester.md",
-      "label": "docs/tester.md",
+      "id": "x-agents/tester.md",
+      "label": "x-agents/tester.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/tester.md",
+      "file": "x-agents/tester.md",
       "description": "Tester Ajanı deterministik sentaks ve auto-repair kuralları",
       "val": 2,
       "provenance": "curated"
@@ -182,12 +182,22 @@
     },
     {
       "id": "backend/agents/agentLoader.js",
-      "label": "agentLoader.js (Living Docs Bridge)",
+      "label": "agentLoader.js (Trusted Agent Documents)",
       "type": "AgentModule",
       "group": "agents",
       "file": "backend/agents/agentLoader.js",
-      "description": "docs/*.md dosyalarını canlı yükleyip LLM promptlarına bağlayan köprü",
-      "val": 10,
+      "description": "Yalnız x-agents talimatlarını okuyup LLM promptlarına bağlayan köprü; eksik talimatta fail-closed",
+      "val": 8.5,
+      "provenance": "curated"
+    },
+    {
+      "id": "backend/agents/agentPaths.js",
+      "label": "agentPaths.js (Agent Document Boundary)",
+      "type": "AgentModule",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "Sabit ajan kökü, rol/dosya izin listesi, junction/symlink ve proje yolu çakışma kontrolü",
+      "val": 6.5,
       "provenance": "curated"
     },
     {
@@ -667,7 +677,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 73,
+      "val": 73.5,
       "provenance": "curated"
     },
     {
@@ -832,11 +842,11 @@
     },
     {
       "id": "backend/tests/test_docs_agent_sync.js",
-      "label": "test_docs_agent_sync.js (8 Test)",
+      "label": "test_docs_agent_sync.js",
       "type": "TestSuite",
       "group": "tests",
       "file": "backend/tests/test_docs_agent_sync.js",
-      "description": "Docs/*.md ile canlı ajan prompt senkronizasyonu",
+      "description": "x-agents/*.md ile altı ajan ve Manager sohbeti prompt senkronizasyonu",
       "val": 10,
       "provenance": "curated"
     },
@@ -1237,7 +1247,7 @@
       "group": "backend",
       "file": "backend/observability.js",
       "description": "",
-      "val": 21.5,
+      "val": 21,
       "provenance": "ast"
     },
     {
@@ -1257,7 +1267,7 @@
       "group": "backend",
       "file": "backend/projectPaths.js",
       "description": "",
-      "val": 7,
+      "val": 8,
       "provenance": "ast"
     },
     {
@@ -1428,6 +1438,16 @@
       "file": "backend/tests/testInventory.js",
       "description": "",
       "val": 5,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_agent_document_boundary.js",
+      "label": "test_agent_document_boundary.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_agent_document_boundary.js",
+      "description": "",
+      "val": 6.5,
       "provenance": "ast"
     },
     {
@@ -2721,16 +2741,6 @@
       "provenance": "ast"
     },
     {
-      "id": "docs/ALT-TALIMATNAME.md",
-      "label": "ALT-TALIMATNAME.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/ALT-TALIMATNAME.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
       "id": "docs/AUDIT-REMEDIATION-2026-09-30.md",
       "label": "AUDIT-REMEDIATION-2026-09-30.md",
       "type": "Document",
@@ -2751,31 +2761,11 @@
       "provenance": "ast"
     },
     {
-      "id": "docs/DURUM.md",
-      "label": "DURUM.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/DURUM.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
       "id": "docs/EMLAK-URETIM-OLAYI-2026-09-28.md",
       "label": "EMLAK-URETIM-OLAYI-2026-09-28.md",
       "type": "Document",
       "group": "docs",
       "file": "docs/EMLAK-URETIM-OLAYI-2026-09-28.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/GOREV.md",
-      "label": "GOREV.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/GOREV.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -2796,26 +2786,6 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/LOCAL-WORKER-VALIDATION-2026-10-01.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/RAPOR.md",
-      "label": "RAPOR.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/RAPOR.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/TODO.md",
-      "label": "TODO.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/TODO.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -3006,6 +2976,16 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/superpowers/plans/2026-09-30-local-worker.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "docs/superpowers/plans/2026-10-01-x-agents-separation.md",
+      "label": "2026-10-01-x-agents-separation.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/superpowers/plans/2026-10-01-x-agents-separation.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -3761,48 +3741,78 @@
       "provenance": "ast"
     },
     {
-      "id": "package:fs",
-      "label": "fs",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "fs",
-      "val": 44,
+      "id": "x-agents/ALT-TALIMATNAME.md",
+      "label": "ALT-TALIMATNAME.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/ALT-TALIMATNAME.md",
+      "description": "",
+      "val": 1,
       "provenance": "ast"
     },
     {
-      "id": "package:path",
-      "label": "path",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "path",
-      "val": 46.5,
+      "id": "x-agents/DURUM.md",
+      "label": "DURUM.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/DURUM.md",
+      "description": "",
+      "val": 1,
       "provenance": "ast"
     },
     {
-      "id": "package:url",
-      "label": "url",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "url",
-      "val": 11.5,
+      "id": "x-agents/GOREV.md",
+      "label": "GOREV.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/GOREV.md",
+      "description": "",
+      "val": 1,
       "provenance": "ast"
     },
     {
-      "id": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
-      "label": "loadAgentPromptFromDocs",
+      "id": "x-agents/RAPOR.md",
+      "label": "RAPOR.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/RAPOR.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "x-agents/README.md",
+      "label": "README.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/README.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "x-agents/TODO.md",
+      "label": "TODO.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "x-agents/TODO.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
+      "label": "loadAgentPrompt",
       "type": "Function",
       "group": "agents",
       "file": "backend/agents/agentLoader.js",
       "description": "",
-      "val": 5.5,
+      "val": 6,
       "provenance": "ast",
-      "line": 14
+      "line": 7
     },
     {
-      "id": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@34",
+      "id": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@17",
       "label": "loadOrkestrasyonTalimatnamesi",
       "type": "Function",
       "group": "agents",
@@ -3810,10 +3820,95 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
+      "line": 17
+    },
+    {
+      "id": "package:node:fs",
+      "label": "node:fs",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "node:fs",
+      "val": 30.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "package:node:path",
+      "label": "node:path",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "node:path",
+      "val": 33,
+      "provenance": "ast"
+    },
+    {
+      "id": "package:node:url",
+      "label": "node:url",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "node:url",
+      "val": 18,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/agents/agentPaths.js#Function:agentRoleFile@12",
+      "label": "agentRoleFile",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 12
+    },
+    {
+      "id": "backend/agents/agentPaths.js#Function:readAgentDocument@17",
+      "label": "readAgentDocument",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 17
+    },
+    {
+      "id": "backend/agents/agentPaths.js#Function:canonicalPath@34",
+      "label": "canonicalPath",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
       "line": 34
     },
     {
-      "id": "backend/agents/coder.js#Function:buildCoderPrompt@32",
+      "id": "backend/agents/agentPaths.js#Function:contains@47",
+      "label": "contains",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 47
+    },
+    {
+      "id": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
+      "label": "assertProjectsSeparateFromAgents",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/agentPaths.js",
+      "description": "",
+      "val": 3.5,
+      "provenance": "ast",
+      "line": 52
+    },
+    {
+      "id": "backend/agents/coder.js#Function:buildCoderPrompt@6",
       "label": "buildCoderPrompt",
       "type": "Function",
       "group": "agents",
@@ -3821,10 +3916,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 32
+      "line": 6
     },
     {
-      "id": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "id": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "label": "parseCoderResponse",
       "type": "Function",
       "group": "agents",
@@ -3832,10 +3927,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 46
+      "line": 20
     },
     {
-      "id": "backend/agents/director.js#Function:buildDirectorPrompt@31",
+      "id": "backend/agents/director.js#Function:buildDirectorPrompt@5",
       "label": "buildDirectorPrompt",
       "type": "Function",
       "group": "agents",
@@ -3843,10 +3938,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 31
+      "line": 5
     },
     {
-      "id": "backend/agents/director.js#Function:parseDirectorResponse@43",
+      "id": "backend/agents/director.js#Function:parseDirectorResponse@17",
       "label": "parseDirectorResponse",
       "type": "Function",
       "group": "agents",
@@ -3854,10 +3949,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 43
+      "line": 17
     },
     {
-      "id": "backend/agents/director.js#Function:validatePlanTasks@53",
+      "id": "backend/agents/director.js#Function:validatePlanTasks@27",
       "label": "validatePlanTasks",
       "type": "Function",
       "group": "agents",
@@ -3865,10 +3960,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 53
+      "line": 27
     },
     {
-      "id": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
+      "id": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
       "label": "validateManagementTaskCoverage",
       "type": "Function",
       "group": "agents",
@@ -3876,10 +3971,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 88
+      "line": 62
     },
     {
-      "id": "backend/agents/director.js#Function:addFile@102",
+      "id": "backend/agents/director.js#Function:addFile@76",
       "label": "addFile",
       "type": "Function",
       "group": "agents",
@@ -3887,10 +3982,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 102
+      "line": 76
     },
     {
-      "id": "backend/agents/director.js#Function:isCodeFile@106",
+      "id": "backend/agents/director.js#Function:isCodeFile@80",
       "label": "isCodeFile",
       "type": "Function",
       "group": "agents",
@@ -3898,10 +3993,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 106
+      "line": 80
     },
     {
-      "id": "backend/agents/director.js#Function:matchesSurface@107",
+      "id": "backend/agents/director.js#Function:matchesSurface@81",
       "label": "matchesSurface",
       "type": "Function",
       "group": "agents",
@@ -3909,10 +4004,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 107
+      "line": 81
     },
     {
-      "id": "backend/agents/director.js#Function:formatManagementTaskDescription@162",
+      "id": "backend/agents/director.js#Function:formatManagementTaskDescription@136",
       "label": "formatManagementTaskDescription",
       "type": "Function",
       "group": "agents",
@@ -3920,7 +4015,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 162
+      "line": 136
     },
     {
       "id": "backend/agents/index.js#Function:getAgent@55",
@@ -3934,7 +4029,7 @@
       "line": 55
     },
     {
-      "id": "backend/agents/manager.js#Function:buildManagerPrompt@37",
+      "id": "backend/agents/manager.js#Function:buildManagerPrompt@5",
       "label": "buildManagerPrompt",
       "type": "Function",
       "group": "agents",
@@ -3942,10 +4037,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 37
+      "line": 5
     },
     {
-      "id": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "id": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "label": "parseManagerResponse",
       "type": "Function",
       "group": "agents",
@@ -3953,10 +4048,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 53
+      "line": 21
     },
     {
-      "id": "backend/agents/manager.js#Function:formatManagementProposal@65",
+      "id": "backend/agents/manager.js#Function:formatManagementProposal@33",
       "label": "formatManagementProposal",
       "type": "Function",
       "group": "agents",
@@ -3964,10 +4059,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 65
+      "line": 33
     },
     {
-      "id": "backend/agents/reviewer.js#Function:buildReviewerPrompt@24",
+      "id": "backend/agents/reviewer.js#Function:buildReviewerPrompt@5",
       "label": "buildReviewerPrompt",
       "type": "Function",
       "group": "agents",
@@ -3975,10 +4070,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 24
+      "line": 5
     },
     {
-      "id": "backend/agents/reviewer.js#Function:parseReviewerResponse@37",
+      "id": "backend/agents/reviewer.js#Function:parseReviewerResponse@18",
       "label": "parseReviewerResponse",
       "type": "Function",
       "group": "agents",
@@ -3986,7 +4081,17 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 37
+      "line": 18
+    },
+    {
+      "id": "package:path",
+      "label": "path",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "path",
+      "val": 46,
+      "provenance": "ast"
     },
     {
       "id": "backend/agents/schemas.js#Function:sanitizeEscapeSequences@14",
@@ -4187,7 +4292,7 @@
       "line": 861
     },
     {
-      "id": "backend/agents/teamleader.js#Function:buildTeamleaderPrompt@37",
+      "id": "backend/agents/teamleader.js#Function:buildTeamleaderPrompt@5",
       "label": "buildTeamleaderPrompt",
       "type": "Function",
       "group": "agents",
@@ -4195,10 +4300,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 37
+      "line": 5
     },
     {
-      "id": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@57",
+      "id": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@25",
       "label": "parseTeamleaderResponse",
       "type": "Function",
       "group": "agents",
@@ -4206,7 +4311,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 57
+      "line": 25
     },
     {
       "id": "package:node:module",
@@ -4229,7 +4334,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/agents/tester.js#Function:buildScriptParseIssue@40",
+      "id": "backend/agents/tester.js#Function:buildScriptParseIssue@21",
       "label": "buildScriptParseIssue",
       "type": "Function",
       "group": "agents",
@@ -4237,10 +4342,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 40
+      "line": 21
     },
     {
-      "id": "backend/agents/tester.js#Function:getScriptParseRecord@45",
+      "id": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "getScriptParseRecord",
       "type": "Function",
       "group": "agents",
@@ -4248,10 +4353,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 45
+      "line": 26
     },
     {
-      "id": "backend/agents/tester.js#Function:readEnvAssignments@68",
+      "id": "backend/agents/tester.js#Function:readEnvAssignments@49",
       "label": "readEnvAssignments",
       "type": "Function",
       "group": "agents",
@@ -4259,10 +4364,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 68
+      "line": 49
     },
     {
-      "id": "backend/agents/tester.js#Function:getScriptParsePlugins@81",
+      "id": "backend/agents/tester.js#Function:getScriptParsePlugins@62",
       "label": "getScriptParsePlugins",
       "type": "Function",
       "group": "agents",
@@ -4270,10 +4375,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 81
+      "line": 62
     },
     {
-      "id": "backend/agents/tester.js#Function:parseScriptAst@89",
+      "id": "backend/agents/tester.js#Function:parseScriptAst@70",
       "label": "parseScriptAst",
       "type": "Function",
       "group": "agents",
@@ -4281,10 +4386,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 89
+      "line": 70
     },
     {
-      "id": "backend/agents/tester.js#Function:walkAst@96",
+      "id": "backend/agents/tester.js#Function:walkAst@77",
       "label": "walkAst",
       "type": "Function",
       "group": "agents",
@@ -4292,10 +4397,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 96
+      "line": 77
     },
     {
-      "id": "backend/agents/tester.js#Function:isScriptFilePath@136",
+      "id": "backend/agents/tester.js#Function:isScriptFilePath@117",
       "label": "isScriptFilePath",
       "type": "Function",
       "group": "agents",
@@ -4303,10 +4408,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 136
+      "line": 117
     },
     {
-      "id": "backend/agents/tester.js#Function:isIdentifierNamed@140",
+      "id": "backend/agents/tester.js#Function:isIdentifierNamed@121",
       "label": "isIdentifierNamed",
       "type": "Function",
       "group": "agents",
@@ -4314,10 +4419,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 140
+      "line": 121
     },
     {
-      "id": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "id": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "unwrapExpression",
       "type": "Function",
       "group": "agents",
@@ -4325,10 +4430,10 @@
       "description": "",
       "val": 6.5,
       "provenance": "ast",
-      "line": 144
+      "line": 125
     },
     {
-      "id": "backend/agents/tester.js#Function:memberPropertyName@161",
+      "id": "backend/agents/tester.js#Function:memberPropertyName@142",
       "label": "memberPropertyName",
       "type": "Function",
       "group": "agents",
@@ -4336,10 +4441,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 161
+      "line": 142
     },
     {
-      "id": "backend/agents/tester.js#Function:propNamesFromTypeBody@169",
+      "id": "backend/agents/tester.js#Function:propNamesFromTypeBody@150",
       "label": "propNamesFromTypeBody",
       "type": "Function",
       "group": "agents",
@@ -4347,10 +4452,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 169
+      "line": 150
     },
     {
-      "id": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
+      "id": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
       "label": "collectComponentPropContracts",
       "type": "Function",
       "group": "agents",
@@ -4358,10 +4463,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 179
+      "line": 160
     },
     {
-      "id": "backend/agents/tester.js#Function:recordIssue@214",
+      "id": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "recordIssue",
       "type": "Function",
       "group": "agents",
@@ -4369,10 +4474,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 214
+      "line": 195
     },
     {
-      "id": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
+      "id": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
       "label": "collectZodAndComponentContractIssues",
       "type": "Function",
       "group": "agents",
@@ -4380,10 +4485,10 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 227
+      "line": 208
     },
     {
-      "id": "backend/agents/tester.js#Function:isSecretEnvMember@304",
+      "id": "backend/agents/tester.js#Function:isSecretEnvMember@285",
       "label": "isSecretEnvMember",
       "type": "Function",
       "group": "agents",
@@ -4391,10 +4496,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 304
+      "line": 285
     },
     {
-      "id": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@314",
+      "id": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@295",
       "label": "isInterpolationFreeTemplateLiteral",
       "type": "Function",
       "group": "agents",
@@ -4402,10 +4507,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 314
+      "line": 295
     },
     {
-      "id": "backend/agents/tester.js#Function:describeFallbackNode@318",
+      "id": "backend/agents/tester.js#Function:describeFallbackNode@299",
       "label": "describeFallbackNode",
       "type": "Function",
       "group": "agents",
@@ -4413,10 +4518,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 318
+      "line": 299
     },
     {
-      "id": "backend/agents/tester.js#Function:buildSecretFallbackIssue@330",
+      "id": "backend/agents/tester.js#Function:buildSecretFallbackIssue@311",
       "label": "buildSecretFallbackIssue",
       "type": "Function",
       "group": "agents",
@@ -4424,10 +4529,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 330
+      "line": 311
     },
     {
-      "id": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
+      "id": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
       "label": "getSecretFallbackMatch",
       "type": "Function",
       "group": "agents",
@@ -4435,10 +4540,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 337
+      "line": 318
     },
     {
-      "id": "backend/agents/tester.js#Function:isMemberExpressionNamed@359",
+      "id": "backend/agents/tester.js#Function:isMemberExpressionNamed@340",
       "label": "isMemberExpressionNamed",
       "type": "Function",
       "group": "agents",
@@ -4446,10 +4551,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 359
+      "line": 340
     },
     {
-      "id": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@365",
+      "id": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@346",
       "label": "isPrismaUserFindFirstCall",
       "type": "Function",
       "group": "agents",
@@ -4457,10 +4562,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 365
+      "line": 346
     },
     {
-      "id": "backend/agents/tester.js#Function:collectPatternBindingNames@374",
+      "id": "backend/agents/tester.js#Function:collectPatternBindingNames@355",
       "label": "collectPatternBindingNames",
       "type": "Function",
       "group": "agents",
@@ -4468,11 +4573,44 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 374
+      "line": 355
     },
     {
-      "id": "backend/agents/tester.js#Function:isFunctionNode@422",
+      "id": "backend/agents/tester.js#Function:isFunctionNode@403",
       "label": "isFunctionNode",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/tester.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 403
+    },
+    {
+      "id": "backend/agents/tester.js#Function:getFunctionParameterNames@411",
+      "label": "getFunctionParameterNames",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/tester.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 411
+    },
+    {
+      "id": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@419",
+      "label": "collectImmediateScopeBindingNames",
+      "type": "Function",
+      "group": "agents",
+      "file": "backend/agents/tester.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 419
+    },
+    {
+      "id": "backend/agents/tester.js#Function:visit@422",
+      "label": "visit",
       "type": "Function",
       "group": "agents",
       "file": "backend/agents/tester.js",
@@ -4482,40 +4620,7 @@
       "line": 422
     },
     {
-      "id": "backend/agents/tester.js#Function:getFunctionParameterNames@430",
-      "label": "getFunctionParameterNames",
-      "type": "Function",
-      "group": "agents",
-      "file": "backend/agents/tester.js",
-      "description": "",
-      "val": 3,
-      "provenance": "ast",
-      "line": 430
-    },
-    {
-      "id": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@438",
-      "label": "collectImmediateScopeBindingNames",
-      "type": "Function",
-      "group": "agents",
-      "file": "backend/agents/tester.js",
-      "description": "",
-      "val": 2.5,
-      "provenance": "ast",
-      "line": 438
-    },
-    {
-      "id": "backend/agents/tester.js#Function:visit@441",
-      "label": "visit",
-      "type": "Function",
-      "group": "agents",
-      "file": "backend/agents/tester.js",
-      "description": "",
-      "val": 2.5,
-      "provenance": "ast",
-      "line": 441
-    },
-    {
-      "id": "backend/agents/tester.js#Function:isCallerDerivedValue@494",
+      "id": "backend/agents/tester.js#Function:isCallerDerivedValue@475",
       "label": "isCallerDerivedValue",
       "type": "Function",
       "group": "agents",
@@ -4523,10 +4628,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 494
+      "line": 475
     },
     {
-      "id": "backend/agents/tester.js#Function:hasIdentityBoundWhere@513",
+      "id": "backend/agents/tester.js#Function:hasIdentityBoundWhere@494",
       "label": "hasIdentityBoundWhere",
       "type": "Function",
       "group": "agents",
@@ -4534,10 +4639,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 513
+      "line": 494
     },
     {
-      "id": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@578",
+      "id": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@559",
       "label": "callHasIdentityBoundWhere",
       "type": "Function",
       "group": "agents",
@@ -4545,10 +4650,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 578
+      "line": 559
     },
     {
-      "id": "backend/agents/tester.js#Function:getDeclarationName@603",
+      "id": "backend/agents/tester.js#Function:getDeclarationName@584",
       "label": "getDeclarationName",
       "type": "Function",
       "group": "agents",
@@ -4556,10 +4661,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 603
+      "line": 584
     },
     {
-      "id": "backend/agents/tester.js#Function:collectAuthFunctionNodes@626",
+      "id": "backend/agents/tester.js#Function:collectAuthFunctionNodes@607",
       "label": "collectAuthFunctionNodes",
       "type": "Function",
       "group": "agents",
@@ -4567,10 +4672,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 626
+      "line": 607
     },
     {
-      "id": "backend/agents/tester.js#Function:walkAuthFunctionBody@635",
+      "id": "backend/agents/tester.js#Function:walkAuthFunctionBody@616",
       "label": "walkAuthFunctionBody",
       "type": "Function",
       "group": "agents",
@@ -4578,10 +4683,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 635
+      "line": 616
     },
     {
-      "id": "backend/agents/tester.js#Function:visit@636",
+      "id": "backend/agents/tester.js#Function:visit@617",
       "label": "visit",
       "type": "Function",
       "group": "agents",
@@ -4589,10 +4694,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 636
+      "line": 617
     },
     {
-      "id": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
+      "id": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
       "label": "inspectAuthFunctionNode",
       "type": "Function",
       "group": "agents",
@@ -4600,10 +4705,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 688
+      "line": 669
     },
     {
-      "id": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@712",
+      "id": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@693",
       "label": "getPrismaDatasourceDefinitions",
       "type": "Function",
       "group": "agents",
@@ -4611,10 +4716,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 712
+      "line": 693
     },
     {
-      "id": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@727",
+      "id": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@708",
       "label": "isCompatibleDatabaseUrl",
       "type": "Function",
       "group": "agents",
@@ -4622,10 +4727,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 727
+      "line": 708
     },
     {
-      "id": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@732",
+      "id": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@713",
       "label": "buildIdentityFreeUserIssue",
       "type": "Function",
       "group": "agents",
@@ -4633,10 +4738,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 732
+      "line": 713
     },
     {
-      "id": "backend/agents/tester.js#Function:buildProviderMismatchIssue@736",
+      "id": "backend/agents/tester.js#Function:buildProviderMismatchIssue@717",
       "label": "buildProviderMismatchIssue",
       "type": "Function",
       "group": "agents",
@@ -4644,10 +4749,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 736
+      "line": 717
     },
     {
-      "id": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
+      "id": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
       "label": "collectEnvProviderAudit",
       "type": "Function",
       "group": "agents",
@@ -4655,10 +4760,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 743
+      "line": 724
     },
     {
-      "id": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
+      "id": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
       "label": "collectRawAuthAudit",
       "type": "Function",
       "group": "agents",
@@ -4666,10 +4771,10 @@
       "description": "",
       "val": 6,
       "provenance": "ast",
-      "line": 769
+      "line": 750
     },
     {
-      "id": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "id": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "runDeterministicProjectAudit",
       "type": "Function",
       "group": "agents",
@@ -4677,10 +4782,10 @@
       "description": "",
       "val": 8,
       "provenance": "ast",
-      "line": 800
+      "line": 781
     },
     {
-      "id": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1037",
+      "id": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1018",
       "label": "groupAuditIssuesByFile",
       "type": "Function",
       "group": "agents",
@@ -4688,10 +4793,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1037
+      "line": 1018
     },
     {
-      "id": "backend/agents/tester.js#Function:extractProjectManifest@1077",
+      "id": "backend/agents/tester.js#Function:extractProjectManifest@1058",
       "label": "extractProjectManifest",
       "type": "Function",
       "group": "agents",
@@ -4699,10 +4804,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1077
+      "line": 1058
     },
     {
-      "id": "backend/agents/tester.js#Function:buildTesterPrompt@1197",
+      "id": "backend/agents/tester.js#Function:buildTesterPrompt@1178",
       "label": "buildTesterPrompt",
       "type": "Function",
       "group": "agents",
@@ -4710,10 +4815,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 1197
+      "line": 1178
     },
     {
-      "id": "backend/agents/tester.js#Function:parseTesterResponse@1254",
+      "id": "backend/agents/tester.js#Function:parseTesterResponse@1235",
       "label": "parseTesterResponse",
       "type": "Function",
       "group": "agents",
@@ -4721,7 +4826,17 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 1254
+      "line": 1235
+    },
+    {
+      "id": "package:fs",
+      "label": "fs",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "fs/promises",
+      "val": 43.5,
+      "provenance": "ast"
     },
     {
       "id": "backend/artifactInventory.js#Function:collectArtifactFiles@9",
@@ -4744,36 +4859,6 @@
       "val": 2,
       "provenance": "ast",
       "line": 19
-    },
-    {
-      "id": "package:node:fs",
-      "label": "node:fs",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "node:fs",
-      "val": 29.5,
-      "provenance": "ast"
-    },
-    {
-      "id": "package:node:path",
-      "label": "node:path",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "node:path",
-      "val": 32,
-      "provenance": "ast"
-    },
-    {
-      "id": "package:node:url",
-      "label": "node:url",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "node:url",
-      "val": 17,
-      "provenance": "ast"
     },
     {
       "id": "backend/artifactPaths.js#Function:getArtifactsRoot@9",
@@ -5980,6 +6065,16 @@
       "val": 4.5,
       "provenance": "ast",
       "line": 98
+    },
+    {
+      "id": "package:url",
+      "label": "url",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "url",
+      "val": 11,
+      "provenance": "ast"
     },
     {
       "id": "package:events",
@@ -8641,7 +8736,7 @@
       "group": "backend",
       "file": "backend/observability.js",
       "description": "",
-      "val": 10,
+      "val": 9,
       "provenance": "ast",
       "line": 117
     },
@@ -8932,7 +9027,7 @@
       "line": 78
     },
     {
-      "id": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "id": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "isValidProjectId",
       "type": "Function",
       "group": "backend",
@@ -8940,32 +9035,32 @@
       "description": "",
       "val": 6.5,
       "provenance": "ast",
-      "line": 9
+      "line": 10
     },
     {
-      "id": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "id": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "getProjectsRoot",
       "type": "Function",
       "group": "backend",
       "file": "backend/projectPaths.js",
       "description": "",
-      "val": 4,
+      "val": 5,
       "provenance": "ast",
-      "line": 16
+      "line": 17
     },
     {
-      "id": "backend/projectPaths.js#Function:getProjectDir@21",
+      "id": "backend/projectPaths.js#Function:getProjectDir@24",
       "label": "getProjectDir",
       "type": "Function",
       "group": "backend",
       "file": "backend/projectPaths.js",
       "description": "",
-      "val": 4.5,
+      "val": 5.5,
       "provenance": "ast",
-      "line": 21
+      "line": 24
     },
     {
-      "id": "backend/projectPaths.js#Function:resolveSafeProjectPath@34",
+      "id": "backend/projectPaths.js#Function:resolveSafeProjectPath@38",
       "label": "resolveSafeProjectPath",
       "type": "Function",
       "group": "backend",
@@ -8973,7 +9068,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 34
+      "line": 38
     },
     {
       "id": "package:os",
@@ -11017,7 +11112,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@170",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@171",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -11025,10 +11120,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 170
+      "line": 171
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@174",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@175",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -11036,10 +11131,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 174
+      "line": 175
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@179",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@180",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -11047,7 +11142,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 179
+      "line": 180
     },
     {
       "id": "package:assert",
@@ -11357,24 +11452,35 @@
       "line": 21
     },
     {
-      "id": "package:node:assert",
-      "label": "node:assert",
-      "type": "Package",
-      "group": "packages",
-      "file": null,
-      "description": "node:assert/strict",
-      "val": 27.5,
-      "provenance": "ast"
-    },
-    {
       "id": "package:node:test",
       "label": "node:test",
       "type": "Package",
       "group": "packages",
       "file": null,
       "description": "node:test",
-      "val": 16.5,
+      "val": 17,
       "provenance": "ast"
+    },
+    {
+      "id": "package:node:assert",
+      "label": "node:assert",
+      "type": "Package",
+      "group": "packages",
+      "file": null,
+      "description": "node:assert/strict",
+      "val": 28,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_agent_document_boundary.js#Function:fixture@14",
+      "label": "fixture",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_agent_document_boundary.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 14
     },
     {
       "id": "backend/tests/test_backend.js#Function:mockResponse@260",
@@ -21441,7 +21547,7 @@
       "line": 14
     },
     {
-      "id": "execution/tests/localPackaging.test.js#Function:fixture@68",
+      "id": "execution/tests/localPackaging.test.js#Function:fixture@77",
       "label": "fixture",
       "type": "Function",
       "group": "tests",
@@ -21449,7 +21555,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 68
+      "line": 77
     },
     {
       "id": "execution/tests/localProcesses.test.js#Function:setup@9",
@@ -26183,103 +26289,103 @@
   ],
   "links": [
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/manager.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/manager.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/director.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/director.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/teamleader.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/teamleader.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/coder.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/coder.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/reviewer.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/reviewer.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
-      "target": "docs/tester.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/tester.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "docs/OPERATIONS.md",
       "label": "defines",
       "provenance": "curated"
     },
     {
-      "source": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "source": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "target": "kullanici-kilavuzu.md",
       "label": "defines",
       "provenance": "curated"
@@ -26287,6 +26393,12 @@
     {
       "source": "backend/agents/index.js",
       "target": "backend/agents/agentLoader.js",
+      "label": "registers",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/agents/index.js",
+      "target": "backend/agents/agentPaths.js",
       "label": "registers",
       "provenance": "curated"
     },
@@ -26334,43 +26446,43 @@
     },
     {
       "source": "backend/agents/agentLoader.js",
-      "target": "docs/ORKESTRASYON-TALIMATNAMESI.md",
+      "target": "x-agents/ORKESTRASYON-TALIMATNAMESI.md",
       "label": "reads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/manager.js",
-      "target": "docs/manager.md",
+      "target": "x-agents/manager.md",
       "label": "loads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/director.js",
-      "target": "docs/director.md",
+      "target": "x-agents/director.md",
       "label": "loads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/teamleader.js",
-      "target": "docs/teamleader.md",
+      "target": "x-agents/teamleader.md",
       "label": "loads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/coder.js",
-      "target": "docs/coder.md",
+      "target": "x-agents/coder.md",
       "label": "loads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/reviewer.js",
-      "target": "docs/reviewer.md",
+      "target": "x-agents/reviewer.md",
       "label": "loads",
       "provenance": "curated"
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "docs/tester.md",
+      "target": "x-agents/tester.md",
       "label": "loads",
       "provenance": "curated"
     },
@@ -26809,6 +26921,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_admin_cli.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_agent_document_boundary.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -27600,8 +27718,8 @@
     },
     {
       "source": "backend/agents/agentLoader.js",
-      "target": "package:fs",
-      "label": "imports_package",
+      "target": "backend/agents/agentPaths.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/agentLoader.js",
@@ -27610,55 +27728,105 @@
     },
     {
       "source": "backend/agents/agentLoader.js",
-      "target": "package:path",
-      "label": "imports_package",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
+      "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/agentLoader.js",
-        "line": 2
+        "line": 7
       }
     },
     {
       "source": "backend/agents/agentLoader.js",
-      "target": "package:url",
-      "label": "imports_package",
+      "target": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@17",
+      "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/agentLoader.js",
+        "line": 17
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js",
+      "target": "package:node:url",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
         "line": 3
       }
     },
     {
-      "source": "backend/agents/agentLoader.js",
-      "target": "backend/observability.js",
-      "label": "imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/agentLoader.js",
-        "line": 4
-      }
-    },
-    {
-      "source": "backend/agents/agentLoader.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "source": "backend/agents/agentPaths.js",
+      "target": "backend/agents/agentPaths.js#Function:agentRoleFile@12",
       "label": "contains",
       "provenance": "ast",
       "location": {
-        "file": "backend/agents/agentLoader.js",
-        "line": 14
+        "file": "backend/agents/agentPaths.js",
+        "line": 12
       }
     },
     {
-      "source": "backend/agents/agentLoader.js",
-      "target": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@34",
+      "source": "backend/agents/agentPaths.js",
+      "target": "backend/agents/agentPaths.js#Function:readAgentDocument@17",
       "label": "contains",
       "provenance": "ast",
       "location": {
-        "file": "backend/agents/agentLoader.js",
+        "file": "backend/agents/agentPaths.js",
+        "line": 17
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js",
+      "target": "backend/agents/agentPaths.js#Function:canonicalPath@34",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
         "line": 34
       }
     },
     {
+      "source": "backend/agents/agentPaths.js",
+      "target": "backend/agents/agentPaths.js#Function:contains@47",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 47
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js",
+      "target": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 52
+      }
+    },
+    {
       "source": "backend/agents/coder.js",
       "target": "backend/agents/schemas.js",
       "label": "imports",
@@ -27680,22 +27848,22 @@
     },
     {
       "source": "backend/agents/coder.js",
-      "target": "backend/agents/coder.js#Function:buildCoderPrompt@32",
+      "target": "backend/agents/coder.js#Function:buildCoderPrompt@6",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 32
+        "line": 6
       }
     },
     {
       "source": "backend/agents/coder.js",
-      "target": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "target": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 46
+        "line": 20
       }
     },
     {
@@ -27720,82 +27888,82 @@
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:buildDirectorPrompt@31",
+      "target": "backend/agents/director.js#Function:buildDirectorPrompt@5",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 31
+        "line": 5
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:parseDirectorResponse@43",
+      "target": "backend/agents/director.js#Function:parseDirectorResponse@17",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 43
+        "line": 17
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:validatePlanTasks@53",
+      "target": "backend/agents/director.js#Function:validatePlanTasks@27",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 53
+        "line": 27
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
+      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 88
+        "line": 62
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:addFile@102",
+      "target": "backend/agents/director.js#Function:addFile@76",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 102
+        "line": 76
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:isCodeFile@106",
+      "target": "backend/agents/director.js#Function:isCodeFile@80",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 106
+        "line": 80
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:matchesSurface@107",
+      "target": "backend/agents/director.js#Function:matchesSurface@81",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 107
+        "line": 81
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@162",
+      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@136",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 162
+        "line": 136
       }
     },
     {
@@ -27900,32 +28068,32 @@
     },
     {
       "source": "backend/agents/manager.js",
-      "target": "backend/agents/manager.js#Function:buildManagerPrompt@37",
+      "target": "backend/agents/manager.js#Function:buildManagerPrompt@5",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 37
+        "line": 5
       }
     },
     {
       "source": "backend/agents/manager.js",
-      "target": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "target": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 53
+        "line": 21
       }
     },
     {
       "source": "backend/agents/manager.js",
-      "target": "backend/agents/manager.js#Function:formatManagementProposal@65",
+      "target": "backend/agents/manager.js#Function:formatManagementProposal@33",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 65
+        "line": 33
       }
     },
     {
@@ -27950,22 +28118,22 @@
     },
     {
       "source": "backend/agents/reviewer.js",
-      "target": "backend/agents/reviewer.js#Function:buildReviewerPrompt@24",
+      "target": "backend/agents/reviewer.js#Function:buildReviewerPrompt@5",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/reviewer.js",
-        "line": 24
+        "line": 5
       }
     },
     {
       "source": "backend/agents/reviewer.js",
-      "target": "backend/agents/reviewer.js#Function:parseReviewerResponse@37",
+      "target": "backend/agents/reviewer.js#Function:parseReviewerResponse@18",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/reviewer.js",
-        "line": 37
+        "line": 18
       }
     },
     {
@@ -28210,22 +28378,22 @@
     },
     {
       "source": "backend/agents/teamleader.js",
-      "target": "backend/agents/teamleader.js#Function:buildTeamleaderPrompt@37",
+      "target": "backend/agents/teamleader.js#Function:buildTeamleaderPrompt@5",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/teamleader.js",
-        "line": 37
+        "line": 5
       }
     },
     {
       "source": "backend/agents/teamleader.js",
-      "target": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@57",
+      "target": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@25",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/teamleader.js",
-        "line": 57
+        "line": 25
       }
     },
     {
@@ -28280,167 +28448,187 @@
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:buildScriptParseIssue@40",
+      "target": "backend/agents/tester.js#Function:buildScriptParseIssue@21",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 40
+        "line": 21
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getScriptParseRecord@45",
+      "target": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 45
+        "line": 26
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:readEnvAssignments@68",
+      "target": "backend/agents/tester.js#Function:readEnvAssignments@49",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 68
+        "line": 49
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getScriptParsePlugins@81",
+      "target": "backend/agents/tester.js#Function:getScriptParsePlugins@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 81
+        "line": 62
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:parseScriptAst@89",
+      "target": "backend/agents/tester.js#Function:parseScriptAst@70",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 89
+        "line": 70
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:walkAst@96",
+      "target": "backend/agents/tester.js#Function:walkAst@77",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 96
+        "line": 77
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isScriptFilePath@136",
+      "target": "backend/agents/tester.js#Function:isScriptFilePath@117",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 136
+        "line": 117
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isIdentifierNamed@140",
+      "target": "backend/agents/tester.js#Function:isIdentifierNamed@121",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 140
+        "line": 121
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 144
+        "line": 125
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:memberPropertyName@161",
+      "target": "backend/agents/tester.js#Function:memberPropertyName@142",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 161
+        "line": 142
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:propNamesFromTypeBody@169",
+      "target": "backend/agents/tester.js#Function:propNamesFromTypeBody@150",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 169
+        "line": 150
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
+      "target": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 179
+        "line": 160
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 214
+        "line": 195
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
+      "target": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 227
+        "line": 208
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isSecretEnvMember@304",
+      "target": "backend/agents/tester.js#Function:isSecretEnvMember@285",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 304
+        "line": 285
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@314",
+      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@295",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 314
+        "line": 295
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:describeFallbackNode@318",
+      "target": "backend/agents/tester.js#Function:describeFallbackNode@299",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 299
+      }
+    },
+    {
+      "source": "backend/agents/tester.js",
+      "target": "backend/agents/tester.js#Function:buildSecretFallbackIssue@311",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 311
+      }
+    },
+    {
+      "source": "backend/agents/tester.js",
+      "target": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -28450,57 +28638,67 @@
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:buildSecretFallbackIssue@330",
+      "target": "backend/agents/tester.js#Function:isMemberExpressionNamed@340",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 330
+        "line": 340
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
+      "target": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@346",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 337
+        "line": 346
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isMemberExpressionNamed@359",
+      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@355",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 359
+        "line": 355
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@365",
+      "target": "backend/agents/tester.js#Function:isFunctionNode@403",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 365
+        "line": 403
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@374",
+      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@411",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 374
+        "line": 411
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isFunctionNode@422",
+      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@419",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 419
+      }
+    },
+    {
+      "source": "backend/agents/tester.js",
+      "target": "backend/agents/tester.js#Function:visit@422",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -28510,37 +28708,17 @@
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@430",
+      "target": "backend/agents/tester.js#Function:isCallerDerivedValue@475",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 430
+        "line": 475
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@438",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 438
-      }
-    },
-    {
-      "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:visit@441",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 441
-      }
-    },
-    {
-      "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isCallerDerivedValue@494",
+      "target": "backend/agents/tester.js#Function:hasIdentityBoundWhere@494",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -28550,182 +28728,172 @@
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:hasIdentityBoundWhere@513",
+      "target": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@559",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 513
+        "line": 559
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@578",
+      "target": "backend/agents/tester.js#Function:getDeclarationName@584",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 578
+        "line": 584
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getDeclarationName@603",
+      "target": "backend/agents/tester.js#Function:collectAuthFunctionNodes@607",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 603
+        "line": 607
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectAuthFunctionNodes@626",
+      "target": "backend/agents/tester.js#Function:walkAuthFunctionBody@616",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 626
+        "line": 616
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:walkAuthFunctionBody@635",
+      "target": "backend/agents/tester.js#Function:visit@617",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 635
+        "line": 617
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:visit@636",
+      "target": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 636
+        "line": 669
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
+      "target": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@693",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 688
+        "line": 693
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@712",
+      "target": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@708",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 712
+        "line": 708
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@727",
+      "target": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@713",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 727
+        "line": 713
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@732",
+      "target": "backend/agents/tester.js#Function:buildProviderMismatchIssue@717",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 732
+        "line": 717
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:buildProviderMismatchIssue@736",
+      "target": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 736
+        "line": 724
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
+      "target": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 743
+        "line": 750
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 769
+        "line": 781
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1018",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 800
+        "line": 1018
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1037",
+      "target": "backend/agents/tester.js#Function:extractProjectManifest@1058",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 1037
+        "line": 1058
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:extractProjectManifest@1077",
+      "target": "backend/agents/tester.js#Function:buildTesterPrompt@1178",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 1077
+        "line": 1178
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:buildTesterPrompt@1197",
+      "target": "backend/agents/tester.js#Function:parseTesterResponse@1235",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 1197
-      }
-    },
-    {
-      "source": "backend/agents/tester.js",
-      "target": "backend/agents/tester.js#Function:parseTesterResponse@1254",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 1254
+        "line": 1235
       }
     },
     {
@@ -33900,42 +34068,52 @@
     },
     {
       "source": "backend/projectPaths.js",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
-      "label": "contains",
+      "target": "backend/agents/agentPaths.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 9
+        "line": 3
       }
     },
     {
       "source": "backend/projectPaths.js",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 16
+        "line": 10
       }
     },
     {
       "source": "backend/projectPaths.js",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 21
+        "line": 17
       }
     },
     {
       "source": "backend/projectPaths.js",
-      "target": "backend/projectPaths.js#Function:resolveSafeProjectPath@34",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 34
+        "line": 24
+      }
+    },
+    {
+      "source": "backend/projectPaths.js",
+      "target": "backend/projectPaths.js#Function:resolveSafeProjectPath@38",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectPaths.js",
+        "line": 38
       }
     },
     {
@@ -36810,32 +36988,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@170",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@171",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 170
+        "line": 171
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@174",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@175",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 174
+        "line": 175
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@179",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@180",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 179
+        "line": 180
       }
     },
     {
@@ -37236,6 +37414,76 @@
       "location": {
         "file": "backend/tests/test_agent_contract_schemas.js",
         "line": 21
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "package:node:test",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "package:node:url",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "backend/projectPaths.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "backend/tests/test_agent_document_boundary.js#Function:fixture@14",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 14
       }
     },
     {
@@ -56290,12 +56538,12 @@
     },
     {
       "source": "execution/tests/localPackaging.test.js",
-      "target": "execution/tests/localPackaging.test.js#Function:fixture@68",
+      "target": "execution/tests/localPackaging.test.js#Function:fixture@77",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 68
+        "line": 77
       }
     },
     {
@@ -61499,203 +61747,233 @@
       }
     },
     {
-      "source": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
-      "target": "backend/observability.js#Function:logWarning@117",
+      "source": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
+      "target": "backend/agents/agentPaths.js#Function:readAgentDocument@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/agentLoader.js",
-        "line": 26
+        "line": 8
       }
     },
     {
-      "source": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@34",
-      "target": "backend/observability.js#Function:logWarning@117",
+      "source": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
+      "target": "backend/agents/agentPaths.js#Function:agentRoleFile@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/agentLoader.js",
-        "line": 44
+        "line": 8
+      }
+    },
+    {
+      "source": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@17",
+      "target": "backend/agents/agentPaths.js#Function:readAgentDocument@17",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentLoader.js",
+        "line": 18
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
+      "target": "backend/agents/agentPaths.js#Function:canonicalPath@34",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 54
+      }
+    },
+    {
+      "source": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
+      "target": "backend/agents/agentPaths.js#Function:contains@47",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/agentPaths.js",
+        "line": 55
       }
     },
     {
       "source": "backend/agents/coder.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 30
+        "line": 4
       }
     },
     {
-      "source": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "source": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 53
+        "line": 27
       }
     },
     {
-      "source": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "source": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "target": "backend/agents/schemas.js#Function:validateCoderFiles@664",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 55
+        "line": 29
       }
     },
     {
-      "source": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "source": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "target": "backend/agents/schemas.js#Function:extractCoderFilesFromText@106",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/coder.js",
-        "line": 63
+        "line": 37
       }
     },
     {
       "source": "backend/agents/director.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 30
+        "line": 4
       }
     },
     {
-      "source": "backend/agents/director.js#Function:parseDirectorResponse@43",
+      "source": "backend/agents/director.js#Function:parseDirectorResponse@17",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 46
+        "line": 20
       }
     },
     {
-      "source": "backend/agents/director.js#Function:parseDirectorResponse@43",
+      "source": "backend/agents/director.js#Function:parseDirectorResponse@17",
       "target": "backend/agents/schemas.js#Function:normalizeDirectorSpec@507",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 50
+        "line": 24
       }
     },
     {
-      "source": "backend/agents/director.js#Function:matchesSurface@107",
-      "target": "backend/agents/director.js#Function:isCodeFile@106",
+      "source": "backend/agents/director.js#Function:matchesSurface@81",
+      "target": "backend/agents/director.js#Function:isCodeFile@80",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 109
+        "line": 83
       }
     },
     {
-      "source": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
-      "target": "backend/agents/director.js#Function:matchesSurface@107",
+      "source": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
+      "target": "backend/agents/director.js#Function:matchesSurface@81",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 128
+        "line": 102
       }
     },
     {
-      "source": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
-      "target": "backend/agents/director.js#Function:addFile@102",
+      "source": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
+      "target": "backend/agents/director.js#Function:addFile@76",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/director.js",
-        "line": 134
+        "line": 108
       }
     },
     {
       "source": "backend/agents/manager.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 36
+        "line": 4
       }
     },
     {
-      "source": "backend/agents/manager.js#Function:buildManagerPrompt@37",
+      "source": "backend/agents/manager.js#Function:buildManagerPrompt@5",
       "target": "backend/agents/schemas.js#Function:formatUntrustedPromptContext@861",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 41
+        "line": 9
       }
     },
     {
-      "source": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "source": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 56
+        "line": 24
       }
     },
     {
-      "source": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "source": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "target": "backend/agents/schemas.js#Function:normalizeManagerPlan@256",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 60
+        "line": 28
       }
     },
     {
-      "source": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "source": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "target": "backend/agents/schemas.js#Function:validateManagerPlan@340",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/manager.js",
-        "line": 61
+        "line": 29
       }
     },
     {
       "source": "backend/agents/reviewer.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/reviewer.js",
-        "line": 23
+        "line": 4
       }
     },
     {
-      "source": "backend/agents/reviewer.js#Function:parseReviewerResponse@37",
+      "source": "backend/agents/reviewer.js#Function:parseReviewerResponse@18",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/reviewer.js",
-        "line": 40
+        "line": 21
       }
     },
     {
-      "source": "backend/agents/reviewer.js#Function:parseReviewerResponse@37",
+      "source": "backend/agents/reviewer.js#Function:parseReviewerResponse@18",
       "target": "backend/agents/schemas.js#Function:normalizeReviewResult@701",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/reviewer.js",
-        "line": 44
+        "line": 25
       }
     },
     {
@@ -61830,167 +62108,197 @@
     },
     {
       "source": "backend/agents/teamleader.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/teamleader.js",
-        "line": 36
+        "line": 4
       }
     },
     {
-      "source": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@57",
+      "source": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@25",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/teamleader.js",
-        "line": 60
+        "line": 28
       }
     },
     {
-      "source": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@57",
+      "source": "backend/agents/teamleader.js#Function:parseTeamleaderResponse@25",
       "target": "backend/agents/schemas.js#Function:normalizeTeamleaderTasks@570",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/teamleader.js",
-        "line": 64
+        "line": 32
       }
     },
     {
       "source": "backend/agents/tester.js",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 25
+        "line": 7
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:getScriptParseRecord@45",
-      "target": "backend/agents/tester.js#Function:parseScriptAst@89",
+      "source": "backend/agents/tester.js#Function:getScriptParseRecord@26",
+      "target": "backend/agents/tester.js#Function:parseScriptAst@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 59
+        "line": 40
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:parseScriptAst@89",
-      "target": "backend/agents/tester.js#Function:getScriptParsePlugins@81",
+      "source": "backend/agents/tester.js#Function:parseScriptAst@70",
+      "target": "backend/agents/tester.js#Function:getScriptParsePlugins@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 92
+        "line": 73
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:memberPropertyName@161",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:memberPropertyName@142",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 162
+        "line": 143
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
-      "target": "backend/agents/tester.js#Function:getScriptParseRecord@45",
+      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
+      "target": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 194
+        "line": 175
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
-      "target": "backend/agents/tester.js#Function:walkAst@96",
+      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
+      "target": "backend/agents/tester.js#Function:walkAst@77",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 196
+        "line": 177
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
-      "target": "backend/agents/tester.js#Function:propNamesFromTypeBody@169",
+      "source": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
+      "target": "backend/agents/tester.js#Function:propNamesFromTypeBody@150",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 198
+        "line": 179
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:collectComponentPropContracts@179",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:collectComponentPropContracts@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 228
+        "line": 209
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:getScriptParseRecord@45",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 232
+        "line": 213
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:walkAst@96",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:walkAst@77",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 236
+        "line": 217
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:memberPropertyName@161",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:memberPropertyName@142",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 254
+        "line": 235
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 256
+        "line": 237
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "source": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 262
+        "line": 243
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isSecretEnvMember@304",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:isSecretEnvMember@285",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 286
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:isSecretEnvMember@285",
+      "target": "backend/agents/tester.js#Function:isIdentifierNamed@121",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 290
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:describeFallbackNode@299",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 300
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:describeFallbackNode@299",
+      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@295",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -61999,18 +62307,18 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isSecretEnvMember@304",
-      "target": "backend/agents/tester.js#Function:isIdentifierNamed@140",
+      "source": "backend/agents/tester.js#Function:buildSecretFallbackIssue@311",
+      "target": "backend/agents/tester.js#Function:describeFallbackNode@299",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 309
+        "line": 313
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:describeFallbackNode@318",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62019,38 +62327,28 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:describeFallbackNode@318",
-      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@314",
+      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
+      "target": "backend/agents/tester.js#Function:isSecretEnvMember@285",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 324
+        "line": 322
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:buildSecretFallbackIssue@330",
-      "target": "backend/agents/tester.js#Function:describeFallbackNode@318",
+      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
+      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@295",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 332
+        "line": 328
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 338
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
-      "target": "backend/agents/tester.js#Function:isSecretEnvMember@304",
+      "source": "backend/agents/tester.js#Function:isMemberExpressionNamed@340",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62059,8 +62357,18 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
-      "target": "backend/agents/tester.js#Function:isInterpolationFreeTemplateLiteral@314",
+      "source": "backend/agents/tester.js#Function:isMemberExpressionNamed@340",
+      "target": "backend/agents/tester.js#Function:isIdentifierNamed@121",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 343
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@346",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62069,78 +62377,58 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isMemberExpressionNamed@359",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@346",
+      "target": "backend/agents/tester.js#Function:isMemberExpressionNamed@340",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 360
+        "line": 352
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isMemberExpressionNamed@359",
-      "target": "backend/agents/tester.js#Function:isIdentifierNamed@140",
+      "source": "backend/agents/tester.js#Function:getFunctionParameterNames@411",
+      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@355",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 362
+        "line": 414
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@365",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:visit@422",
+      "target": "backend/agents/tester.js#Function:isFunctionNode@403",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 366
+        "line": 432
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@365",
-      "target": "backend/agents/tester.js#Function:isMemberExpressionNamed@359",
+      "source": "backend/agents/tester.js#Function:visit@422",
+      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@355",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 371
+        "line": 440
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:getFunctionParameterNames@430",
-      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@374",
+      "source": "backend/agents/tester.js#Function:isCallerDerivedValue@475",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 433
+        "line": 476
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:visit@441",
-      "target": "backend/agents/tester.js#Function:isFunctionNode@422",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 451
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:visit@441",
-      "target": "backend/agents/tester.js#Function:collectPatternBindingNames@374",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 459
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:isCallerDerivedValue@494",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:hasIdentityBoundWhere@494",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62149,208 +62437,228 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:hasIdentityBoundWhere@513",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:hasIdentityBoundWhere@494",
+      "target": "backend/agents/tester.js#Function:isCallerDerivedValue@475",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 514
+        "line": 524
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:hasIdentityBoundWhere@513",
-      "target": "backend/agents/tester.js#Function:isCallerDerivedValue@494",
+      "source": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@559",
+      "target": "backend/agents/tester.js#Function:unwrapExpression@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 543
+        "line": 560
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@578",
-      "target": "backend/agents/tester.js#Function:unwrapExpression@144",
+      "source": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@559",
+      "target": "backend/agents/tester.js#Function:hasIdentityBoundWhere@494",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 579
+        "line": 581
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@578",
-      "target": "backend/agents/tester.js#Function:hasIdentityBoundWhere@513",
+      "source": "backend/agents/tester.js#Function:collectAuthFunctionNodes@607",
+      "target": "backend/agents/tester.js#Function:walkAst@77",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 600
+        "line": 609
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectAuthFunctionNodes@626",
-      "target": "backend/agents/tester.js#Function:walkAst@96",
+      "source": "backend/agents/tester.js#Function:collectAuthFunctionNodes@607",
+      "target": "backend/agents/tester.js#Function:getDeclarationName@584",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 628
+        "line": 610
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectAuthFunctionNodes@626",
-      "target": "backend/agents/tester.js#Function:getDeclarationName@603",
+      "source": "backend/agents/tester.js#Function:visit@617",
+      "target": "backend/agents/tester.js#Function:isFunctionNode@403",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 629
+        "line": 631
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:visit@636",
-      "target": "backend/agents/tester.js#Function:isFunctionNode@422",
+      "source": "backend/agents/tester.js#Function:visit@617",
+      "target": "backend/agents/tester.js#Function:getDeclarationName@584",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 650
+        "line": 632
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:visit@636",
-      "target": "backend/agents/tester.js#Function:getDeclarationName@603",
+      "source": "backend/agents/tester.js#Function:visit@617",
+      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@411",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 651
+        "line": 636
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:visit@636",
-      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@430",
+      "source": "backend/agents/tester.js#Function:visit@617",
+      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@419",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 655
+        "line": 637
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:visit@636",
-      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@438",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@411",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 656
+        "line": 673
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:getFunctionParameterNames@430",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@419",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 692
+        "line": 674
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:collectImmediateScopeBindingNames@438",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:walkAuthFunctionBody@616",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 693
+        "line": 677
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:walkAuthFunctionBody@635",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@346",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 696
+        "line": 678
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:isPrismaUserFindFirstCall@365",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@559",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 697
+        "line": 678
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:callHasIdentityBoundWhere@578",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 697
+        "line": 679
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
+      "target": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@713",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 698
+        "line": 683
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
-      "target": "backend/agents/tester.js#Function:buildIdentityFreeUserIssue@732",
+      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
+      "target": "backend/agents/tester.js#Function:readEnvAssignments@49",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 702
+        "line": 725
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
-      "target": "backend/agents/tester.js#Function:readEnvAssignments@68",
+      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
+      "target": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@693",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 744
+        "line": 732
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
-      "target": "backend/agents/tester.js#Function:getPrismaDatasourceDefinitions@712",
+      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
+      "target": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@708",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 751
+        "line": 735
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
-      "target": "backend/agents/tester.js#Function:isCompatibleDatabaseUrl@727",
+      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 754
+        "line": 736
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
+      "target": "backend/agents/tester.js#Function:buildProviderMismatchIssue@717",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 740
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:isScriptFilePath@117",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 753
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62359,8 +62667,18 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
-      "target": "backend/agents/tester.js#Function:buildProviderMismatchIssue@736",
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:walkAst@77",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 758
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:getSecretFallbackMatch@318",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62369,8 +62687,38 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:isScriptFilePath@136",
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 761
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:buildSecretFallbackIssue@311",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 765
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:collectAuthFunctionNodes@607",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/agents/tester.js",
+        "line": 771
+      }
+    },
+    {
+      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
+      "target": "backend/agents/tester.js#Function:inspectAuthFunctionNode@669",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -62379,183 +62727,113 @@
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:getScriptParseRecord@45",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:recordIssue@195",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 774
+        "line": 789
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:walkAst@96",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:collectEnvProviderAudit@724",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 777
+        "line": 817
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:getSecretFallbackMatch@337",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:isScriptFilePath@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 778
+        "line": 848
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:getScriptParseRecord@26",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 780
+        "line": 850
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:buildSecretFallbackIssue@330",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:buildScriptParseIssue@21",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 784
+        "line": 859
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:collectAuthFunctionNodes@626",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:collectRawAuthAudit@750",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 790
+        "line": 870
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "target": "backend/agents/tester.js#Function:inspectAuthFunctionNode@688",
+      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
+      "target": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@208",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 791
+        "line": 871
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:recordIssue@214",
+      "source": "backend/agents/tester.js#Function:buildTesterPrompt@1178",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 808
+        "line": 1179
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:collectEnvProviderAudit@743",
+      "source": "backend/agents/tester.js#Function:buildTesterPrompt@1178",
+      "target": "backend/agents/tester.js#Function:extractProjectManifest@1058",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 836
+        "line": 1181
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:isScriptFilePath@136",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 867
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:getScriptParseRecord@45",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 869
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:buildScriptParseIssue@40",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 878
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:collectRawAuthAudit@769",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 889
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "target": "backend/agents/tester.js#Function:collectZodAndComponentContractIssues@227",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 890
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:buildTesterPrompt@1197",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 1198
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:buildTesterPrompt@1197",
-      "target": "backend/agents/tester.js#Function:extractProjectManifest@1077",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/agents/tester.js",
-        "line": 1200
-      }
-    },
-    {
-      "source": "backend/agents/tester.js#Function:parseTesterResponse@1254",
+      "source": "backend/agents/tester.js#Function:parseTesterResponse@1235",
       "target": "backend/agents/schemas.js#Function:extractAndParseJSON@199",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 1257
+        "line": 1238
       }
     },
     {
-      "source": "backend/agents/tester.js#Function:parseTesterResponse@1254",
+      "source": "backend/agents/tester.js#Function:parseTesterResponse@1235",
       "target": "backend/agents/schemas.js#Function:normalizeReviewResult@701",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/agents/tester.js",
-        "line": 1261
+        "line": 1242
       }
     },
     {
@@ -65250,7 +65528,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@625",
-      "target": "backend/agents/director.js#Function:validatePlanTasks@53",
+      "target": "backend/agents/director.js#Function:validatePlanTasks@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -65310,7 +65588,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:processSingleTask@880",
-      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@162",
+      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@136",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -65490,7 +65768,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@625",
-      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
+      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67369,18 +67647,18 @@
       }
     },
     {
-      "source": "backend/projectPaths.js#Function:getProjectDir@21",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "source": "backend/projectPaths.js#Function:getProjectsRoot@17",
+      "target": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 22
+        "line": 20
       }
     },
     {
-      "source": "backend/projectPaths.js#Function:getProjectDir@21",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "source": "backend/projectPaths.js#Function:getProjectDir@24",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67389,13 +67667,33 @@
       }
     },
     {
-      "source": "backend/projectPaths.js#Function:resolveSafeProjectPath@34",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "source": "backend/projectPaths.js#Function:getProjectDir@24",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/projectPaths.js",
-        "line": 38
+        "line": 28
+      }
+    },
+    {
+      "source": "backend/projectPaths.js#Function:getProjectDir@24",
+      "target": "backend/agents/agentPaths.js#Function:assertProjectsSeparateFromAgents@52",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectPaths.js",
+        "line": 34
+      }
+    },
+    {
+      "source": "backend/projectPaths.js#Function:resolveSafeProjectPath@38",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/projectPaths.js",
+        "line": 42
       }
     },
     {
@@ -67410,7 +67708,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:generateNextProjectId@38",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67440,7 +67738,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:createProject@80",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67450,7 +67748,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:getProject@127",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67460,7 +67758,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:getProject@127",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67520,7 +67818,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@266",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67600,7 +67898,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:completeVerifiedProject@467",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67640,7 +67938,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:appendProjectChatMessage@540",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67650,7 +67948,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:appendProjectActionMessages@554",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67680,7 +67978,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:saveProjectState@620",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67720,7 +68018,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:trashRootFor@770",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67780,7 +68078,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:deleteProject@881",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -67810,7 +68108,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:deleteProject@881",
-      "target": "backend/projectPaths.js#Function:getProjectDir@21",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -68220,7 +68518,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@151",
-      "target": "backend/agents/agentLoader.js#Function:loadAgentPromptFromDocs@14",
+      "target": "backend/agents/agentLoader.js#Function:loadAgentPrompt@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -68230,7 +68528,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@151",
-      "target": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@34",
+      "target": "backend/agents/agentLoader.js#Function:loadOrkestrasyonTalimatnamesi@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -68570,7 +68868,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@291",
-      "target": "backend/agents/manager.js#Function:formatManagementProposal@65",
+      "target": "backend/agents/manager.js#Function:formatManagementProposal@33",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -69315,7 +69613,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 280
+        "line": 281
       }
     },
     {
@@ -69325,17 +69623,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 281
+        "line": 282
       }
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@170",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@171",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 285
+        "line": 286
       }
     },
     {
@@ -69345,7 +69643,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 297
+        "line": 298
       }
     },
     {
@@ -69355,7 +69653,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 298
+        "line": 299
       }
     },
     {
@@ -69365,7 +69663,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 299
+        "line": 300
       }
     },
     {
@@ -69375,7 +69673,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 308
+        "line": 309
       }
     },
     {
@@ -70510,7 +70808,7 @@
     },
     {
       "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@964",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -70520,7 +70818,7 @@
     },
     {
       "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@964",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -70570,7 +70868,7 @@
     },
     {
       "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1058",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@16",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -70580,7 +70878,7 @@
     },
     {
       "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1058",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@9",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -70719,13 +71017,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@179",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@174",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@180",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@175",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 180
+        "line": 181
       }
     },
     {
@@ -70876,6 +71174,36 @@
       "location": {
         "file": "backend/tests/test_agent_contract_schemas.js",
         "line": 239
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "backend/tests/test_agent_document_boundary.js#Function:fixture@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 38
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 66
+      }
+    },
+    {
+      "source": "backend/tests/test_agent_document_boundary.js",
+      "target": "backend/projectPaths.js#Function:getProjectDir@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_agent_document_boundary.js",
+        "line": 90
       }
     },
     {
@@ -71580,7 +71908,7 @@
     },
     {
       "source": "backend/tests/test_deep_verification.js",
-      "target": "backend/agents/coder.js#Function:parseCoderResponse@46",
+      "target": "backend/agents/coder.js#Function:parseCoderResponse@20",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72060,7 +72388,7 @@
     },
     {
       "source": "backend/tests/test_e2e_simulation.js#Function:runE2E@35",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72780,7 +73108,7 @@
     },
     {
       "source": "backend/tests/test_manager_management_discovery.js",
-      "target": "backend/agents/manager.js#Function:parseManagerResponse@53",
+      "target": "backend/agents/manager.js#Function:parseManagerResponse@21",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72790,7 +73118,7 @@
     },
     {
       "source": "backend/tests/test_manager_management_discovery.js",
-      "target": "backend/agents/manager.js#Function:formatManagementProposal@65",
+      "target": "backend/agents/manager.js#Function:formatManagementProposal@33",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72800,7 +73128,7 @@
     },
     {
       "source": "backend/tests/test_manager_management_discovery.js",
-      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@88",
+      "target": "backend/agents/director.js#Function:validateManagementTaskCoverage@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72820,7 +73148,7 @@
     },
     {
       "source": "backend/tests/test_manager_management_discovery.js",
-      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@162",
+      "target": "backend/agents/director.js#Function:formatManagementTaskDescription@136",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72830,7 +73158,7 @@
     },
     {
       "source": "backend/tests/test_manager_management_discovery.js",
-      "target": "backend/agents/reviewer.js#Function:buildReviewerPrompt@24",
+      "target": "backend/agents/reviewer.js#Function:buildReviewerPrompt@5",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -72840,7 +73168,7 @@
     },
     {
       "source": "backend/tests/test_next_generated_import_audit.js",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -75280,7 +75608,7 @@
     },
     {
       "source": "backend/tests/test_p2_scope_priority.js",
-      "target": "backend/agents/director.js#Function:validatePlanTasks@53",
+      "target": "backend/agents/director.js#Function:validatePlanTasks@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -77990,7 +78318,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@179",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@180",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -78890,7 +79218,7 @@
     },
     {
       "source": "backend/tests/test_quality_gate.js",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -78900,7 +79228,7 @@
     },
     {
       "source": "backend/tests/test_quality_gate.js",
-      "target": "backend/agents/tester.js#Function:parseTesterResponse@1254",
+      "target": "backend/agents/tester.js#Function:parseTesterResponse@1235",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79090,7 +79418,7 @@
     },
     {
       "source": "backend/tests/test_quiz_runtime_remediation.js",
-      "target": "backend/agents/tester.js#Function:buildTesterPrompt@1197",
+      "target": "backend/agents/tester.js#Function:buildTesterPrompt@1178",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79110,7 +79438,7 @@
     },
     {
       "source": "backend/tests/test_quiz_runtime_remediation.js",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79120,7 +79448,7 @@
     },
     {
       "source": "backend/tests/test_quiz_runtime_remediation.js",
-      "target": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1037",
+      "target": "backend/agents/tester.js#Function:groupAuditIssuesByFile@1018",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79210,7 +79538,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@170",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@171",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79220,7 +79548,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@179",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@180",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -79290,7 +79618,7 @@
     },
     {
       "source": "backend/tests/test_runtime_verification.js",
-      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@800",
+      "target": "backend/agents/tester.js#Function:runDeterministicProjectAudit@781",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -84535,17 +84863,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 21
+        "line": 12
       }
     },
     {
       "source": "execution/tests/localPackaging.test.js",
-      "target": "execution/tests/localPackaging.test.js#Function:fixture@68",
+      "target": "execution/tests/localPackaging.test.js#Function:fixture@77",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 22
+        "line": 31
       }
     },
     {
@@ -84555,7 +84883,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 136
+        "line": 145
       }
     },
     {
@@ -84565,7 +84893,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 165
+        "line": 174
       }
     },
     {
@@ -84575,7 +84903,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 228
+        "line": 237
       }
     },
     {
@@ -84585,7 +84913,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 246
+        "line": 255
       }
     },
     {
@@ -84595,7 +84923,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 247
+        "line": 256
       }
     },
     {

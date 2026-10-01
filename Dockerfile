@@ -22,6 +22,7 @@ RUN addgroup -S xfactor && adduser -S xfactor -G xfactor
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY backend/ ./
 COPY docs/ /app/docs/
+COPY x-agents/ /app/x-agents/
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 RUN mkdir -p /app/backend/data/artifacts /app/projects \
     && chown -R xfactor:xfactor /app/backend/data /app/projects

@@ -20,7 +20,7 @@
 
 ### Task 1: Structured Manager discovery
 
-**Files:** `docs/manager.md`, `backend/agents/manager.js`, `backend/agents/schemas.js`, `backend/tests/test_agent_contract_schemas.js`, new focused Manager test.
+**Files:** `x-agents/manager.md`, `backend/agents/manager.js`, `backend/agents/schemas.js`, `backend/tests/test_agent_contract_schemas.js`, new focused Manager test.
 
 **Interfaces:** `normalizeManagerPlan(plan)` preserves `management`; `validateManagerPlan(plan)` checks the assessment and project-specific matrix. The Manager prompt asks for an assessment on every request.
 

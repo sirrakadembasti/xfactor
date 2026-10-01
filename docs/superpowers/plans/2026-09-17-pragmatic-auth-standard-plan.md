@@ -28,21 +28,21 @@
 
 ### Task 2: Ajan Canlı Dokümanları ve Sistem İstemlerinin Güncellenmesi
 **Hedef Dosyalar:**
-- `docs/coder.md`
-- `docs/manager.md`
-- `docs/ORKESTRASYON-TALIMATNAMESI.md`
+- `x-agents/coder.md`
+- `x-agents/manager.md`
+- `x-agents/ORKESTRASYON-TALIMATNAMESI.md`
 - `backend/tests/test_docs_agent_sync.js`
 
 **Gereksinimler:**
-- `docs/coder.md`:
+- `x-agents/coder.md`:
   - Coder ajanına "Sade ve Standart Kimlik Doğrulama (Pragmatic Auth)" kuralını ekle:
     - Login/Register gereken projelerde standart rotaları uygula: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`.
     - Token'ları standart JWT veya sade oturum çerezi olarak yönet; aşırı karmaşık TOTP/MFA veya ağır CSRF mekanizmalarıyla kullanıcıyı kilitleme.
     - Rol kontrolünü basit tut (`user.role === 'admin'`).
     - Parolaları açık metin (plaintext) saklama; yerleşik Scrypt veya Bcrypt kullan.
-- `docs/manager.md`:
+- `x-agents/manager.md`:
   - Manager ajanına, kullanıcı auth istediğinde şartnameye sade JWT/Cookie ve `admin`/`user` rol mimarisini yazmasını, gereksiz bankacılık kısıtları koymamasını emreden yönerge ekle.
-- `docs/ORKESTRASYON-TALIMATNAMESI.md`:
+- `x-agents/ORKESTRASYON-TALIMATNAMESI.md`:
   - Anayasa içine "Pragmatic Application Auth Standard" başlığını ekle.
 - **Doğrulama:**
   - `node backend/tests/test_docs_agent_sync.js` çalıştırarak canlı dokümanların ajan promptlarıyla birebir senkron olduğunu doğrula.

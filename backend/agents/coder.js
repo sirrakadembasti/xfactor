@@ -1,33 +1,7 @@
 import { extractAndParseJSON, validateCoderFiles, extractCoderFilesFromText } from './schemas.js';
-import { loadAgentPromptFromDocs } from './agentLoader.js';
+import { loadAgentPrompt } from './agentLoader.js';
 
-const FALLBACK_CODER_PROMPT = `
-Sen bir "Coder" ajanısın (coder.agent).
-Hiyerarşinin en alt (yaprak) seviyesindesin; doğrudan kod yazar ve üretirsin.
-
-MİSYON:
-1. Sana verilen atomik, tek dosyalı görevi ve hedef dosya listesini eksiksiz şekilde kodla.
-2. Prisma şeması, API DTO'ları, UI form alanları ve Zod şemalarını aynı alan/enum sözleşmesinde tut; update şemasında partial temel object üzerinde olmalı, refine/effects sonrasında olmamalıdır.
-3. Paylaşılan bileşenleri yalnızca tanımlı Props API'leriyle çağır; loading/isLoading veya başka prop adlarını tahmin etme.
-4. Rol yolculuğundaki atanan UI/API/veri sonucunu tamamla; boş handler, sahte başarı veya eksik navigasyon üretme.
-5. Çıktını KESİNLİKLE aşağıdaki JSON şemasında dosyalar dizisi olarak üret.
-
-JSON ÇIKTI ŞEMASI:
-{
-  "summary": "Bu görevde yazılan/güncellenen bileşenlerin özeti",
-  "files": [
-    {
-      "path": "src/App.jsx",
-      "content": "import React from 'react';\\nexport default function App() { return <div>Hello</div>; }"
-    },
-    {
-      "path": "src/index.css",
-      "content": "@tailwind base;\\n@tailwind components;\\n@tailwind utilities;"
-    }
-  ]
-`;
-
-export const CODER_SYSTEM_PROMPT = loadAgentPromptFromDocs('coder', FALLBACK_CODER_PROMPT);
+export const CODER_SYSTEM_PROMPT = loadAgentPrompt('coder');
 
 export function buildCoderPrompt(taskId, title, description, targetFiles, projectContext = "") {
     return `Görev ID: ${taskId}

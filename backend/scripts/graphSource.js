@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse } from '@babel/parser';
 
-const SOURCE_DIRS = ['backend', 'frontend', 'execution', 'e2e', 'scripts', 'docs'];
+const SOURCE_DIRS = ['backend', 'frontend', 'execution', 'e2e', 'scripts', 'docs', 'x-agents'];
 const SOURCE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 const IGNORED_DIRS = new Set(['node_modules', 'data', 'dist', 'build', 'coverage', 'test-results']);
 

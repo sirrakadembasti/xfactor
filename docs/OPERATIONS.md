@@ -189,6 +189,8 @@ contract test `backend/tests/test_p8_ci_contract.js`:
 
 ## 10. Yerel worker işletimi
 
+Platform ajan talimatları ve protokol şablonları kökteki [`x-agents/`](../x-agents/README.md) altında tutulur; `docs/` artık sistem istemi kaynağı değildir. Backend sabit dosya izin listesi kullanır ve eksik/geçersiz talimatta başka kaynağa dönmez. Proje kökleri ve proje klasörleri ajan diziniyle doğrudan veya bağlantı üzerinden çakışamaz. Üretim Dockerfile bu dizini `/app/x-agents` altında root sahipliğinde kopyalar; çalışma verisi volume'lerini burada bağlamayın. Yerel worker için aynı hesapla çalışan kodun OS yetkileri bu dizin ayrımıyla değişmez.
+
 Docker olmadan gerçek doğrulama için `npm run dev:local` veya paketli worker kullanılabilir. `local-trusted` profili açık operatör seçimi gerektirir; OS izolasyonu sağlamaz. Setup/paket/bağlantı komutları [yerel paket kılavuzundadır](LOCAL-WORKER-PACKAGE.md). Kaynak, paketli worker ve Docker entegrasyon testleri ayrı komutlarla çalıştırılır; Docker'ın bulunmaması yerel testleri devre dışı bırakmaz.
 
 `npm run dev` ve `npm run dev:local` varsayılan uygulama akışında Docker olmadan yerel profili seçer. Docker profili `npm run dev:docker` ile açıkça seçilir. Doğrudan `node execution/server.js` düşük seviyeli worker komutudur; runtime/token yapılandırması ayrıca yapılır. Yerel kaynak kurulumu için `npm run worker:local:setup -- --install`, ardından `npm run dev` kullanın; backend/frontend bağımlılıkları ayrıca kurulmalıdır. `npm run test:local-worker` kaynak entegrasyonunu, `npm run test:local-worker-package -- --bundle dist/local-worker` gerçek dağıtım paketini doğrular. Üretilen uygulamanın Docker imajını build/run etmek ve container izolasyonunu test etmek ayrı işlemlerdir; Docker gerektirir.

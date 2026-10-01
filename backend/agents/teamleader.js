@@ -1,39 +1,7 @@
 import { extractAndParseJSON, validateTeamleaderTasks, normalizeTeamleaderTasks } from './schemas.js';
-import { loadAgentPromptFromDocs } from './agentLoader.js';
+import { loadAgentPrompt } from './agentLoader.js';
 
-const FALLBACK_TEAMLEADER_PROMPT = `
-Sen bir "Teamleader" ajanısın (teamleader.agent).
-MİSYON:
-1. Director'dan aldığın ALT-TALIMATNAME ve görevleri, Coder ajanlarının tek seferde tamamlayabileceği atomik alt görevlere böl.
-2. ATOMİK TEK DOSYA KURALI: Her görev tam olarak bir targetFiles öğesi içerir. Servis, API rotası, şema, bileşen ve sayfa sarmalayıcısını ayrı DAG görevleri yap.
-3. Her rol yolculuğundaki UI, API, şema/veri ve sonuç adımını requirementIds ile tek-dosya görevlere bağla; Zod update şeması ve paylaşılan component prop sözleşmesini açıklamada belirt.
-3a. MGMT-RESOURCE görevlerinde managementCoverage dizisine her kaynak işlemi için ayrı ui/api kaydı; MGMT-ROLE görevlerinde login/positive/negative yolculuk kaydı ekle. Bir tek-dosya görevine hem ui hem api kapsamı yazma.
-4. GÖREV SIRALAMASI VE BAĞIMLILIKLAR: Şema -> Tipler -> Veritabanı Yardımcısı -> Servis Fonksiyonları -> API Rotaları -> UI Alt Bileşenleri -> Sayfa Sarmalayıcıları sıralamasını takip et.
-5. Çıktını KESİNLİKLE aşağıdaki JSON şemasına uygun olarak üret. JSON dışında hiçbir açıklama metni üretme.
-JSON ÇIKTI ŞEMASI:
-{
-  "tasks": [
-    {
-      "id": "gorev-1-setup",
-      "title": "Proje Kurulumu",
-      "description": "Yalnızca package.json için çalışan stack ve seed yapılandırması",
-      "dependencies": [],
-      "targetFiles": ["package.json"],
-      "requirementIds": ["REQ-1"]
-    },
-    {
-      "id": "gorev-2-entry",
-      "title": "Uygulama Girişi",
-      "description": "Yalnızca src/main.jsx; önceki yapılandırmaya bağımlı",
-      "dependencies": ["gorev-1-setup"],
-      "targetFiles": ["src/main.jsx"],
-      "requirementIds": ["REQ-1"]
-    }
-  ]
-}
-`;
-
-export const TEAMLEADER_SYSTEM_PROMPT = loadAgentPromptFromDocs('teamleader', FALLBACK_TEAMLEADER_PROMPT);
+export const TEAMLEADER_SYSTEM_PROMPT = loadAgentPrompt('teamleader');
 export function buildTeamleaderPrompt(teamleaderName, mission, altTalimatname, requirements = []) {
     const reqList = Array.isArray(requirements) && requirements.length > 0
         ? `\nOnaylı Sözleşme Gereksinimleri (Her görevin "requirementIds" dizisinde YALNIZCA bu listedeki ID'leri kullanabilirsin):\n` +

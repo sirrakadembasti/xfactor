@@ -4,6 +4,7 @@ const names = `
 testInventory.js
 testHarness.js
 test_admin_cli.js
+test_agent_document_boundary.js
 test_agent_contract_schemas.js
 test_artifact_inventory_private_files.js
 test_backend.js

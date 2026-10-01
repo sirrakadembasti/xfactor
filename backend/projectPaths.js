@@ -1,5 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertProjectsSeparateFromAgents } from './agents/agentPaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +16,9 @@ export function isValidProjectId(projectId) {
 
 export function getProjectsRoot(env = process.env) {
     const configured = typeof env?.PROJECTS_ROOT === 'string' ? env.PROJECTS_ROOT.trim() : '';
-    return configured ? path.resolve(configured) : DEFAULT_PROJECTS_DIR;
+    const root = configured ? path.resolve(configured) : DEFAULT_PROJECTS_DIR;
+    assertProjectsSeparateFromAgents(root);
+    return root;
 }
 
 export function getProjectDir(projectId, env = process.env) {
@@ -28,6 +31,7 @@ export function getProjectDir(projectId, env = process.env) {
     if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
         throw new Error(`Path containment violation: "${projectId}" escapes projects root "${root}"`);
     }
+    assertProjectsSeparateFromAgents(resolved);
     return resolved;
 }
 

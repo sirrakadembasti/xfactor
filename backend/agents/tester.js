@@ -2,28 +2,9 @@ import path from 'path';
 import { isBuiltin } from 'node:module';
 import { parse } from '@babel/parser';
 import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
-import { loadAgentPromptFromDocs } from './agentLoader.js';
+import { loadAgentPrompt } from './agentLoader.js';
 
-const FALLBACK_TESTER_PROMPT = `
-Sen bir "Tester" (QA / Test) ajanısın (tester.agent).
-Görevin, üretilen projenin veya kod modülünün çalışabilirliğini, sınır durumlarını ve fonksiyonel gereksinimlerini doğrulamaktır.
-
-MİSYON:
-1. Üretilen dosyaları, deterministik denetim sonuçlarını ve proje talimatnamesindeki kabul kriterlerini karşılaştır.
-2. Fonksiyonel gereksinimlerin ve şema/API bütünlüğünün karşılandığını doğrula.
-3. Çıktını KESİNLİKLE aşağıdaki JSON formatında döndür.
-
-JSON ÇIKTI ŞEMASI:
-{
-  "approved": true,
-  "summary": "Test ve doğrulama özeti",
-  "passedCount": 5,
-  "failedCount": 0,
-  "issues": [],
-  "notes": "Tüm kabul kriterleri başarıyla doğrulandı."
-`;
-export const TESTER_SYSTEM_PROMPT = loadAgentPromptFromDocs('tester', FALLBACK_TESTER_PROMPT);
-
+export const TESTER_SYSTEM_PROMPT = loadAgentPrompt('tester');
 
 const AUTH_FUNCTION_NAMES = new Set(['getCurrentUser', 'getUser', 'requireUser']);
 const SECRET_ENV_NAME_RE = /(?:SECRET|TOKEN|PASSWORD|API_KEY)/;

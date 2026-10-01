@@ -1,20 +1,20 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-01T15:20:59.747Z
+Üretim tarihi: 2026-10-01T16:15:15.179Z
 
-- 376 kaynak ve belge dosyası
-- 2426 düğüm
-- 6258 ilişki
+- 380 kaynak ve belge dosyası
+- 2436 düğüm
+- 6281 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1180 |
+| Function | 1186 |
 | Method | 636 |
-| SourceFile | 240 |
+| SourceFile | 241 |
 | EnvVar | 78 |
-| Document | 56 |
+| Document | 58 |
 | Package | 52 |
 | HttpRoute | 49 |
 | HttpRequest | 40 |
@@ -22,20 +22,20 @@
 | BackendService | 22 |
 | Class | 15 |
 | FrontendComponent | 11 |
-| AgentModule | 9 |
+| AgentModule | 10 |
 | EngineCore | 6 |
 
 ## İlişki türleri
 
 | Tür | Adet |
 |---|---:|
-| calls | 1972 |
-| contains | 1895 |
-| imports_package | 898 |
-| imports | 597 |
+| calls | 1980 |
+| contains | 1901 |
+| imports_package | 903 |
+| imports | 599 |
 | dynamic_imports | 268 |
 | reads_env | 148 |
-| runs | 132 |
+| runs | 133 |
 | writes_env | 124 |
 | registers_route | 49 |
 | sends_request | 40 |
@@ -43,7 +43,7 @@
 | verifies | 20 |
 | defines | 17 |
 | renders | 10 |
-| registers | 8 |
+| registers | 9 |
 | loads | 6 |
 | uses | 6 |
 | mounts | 2 |

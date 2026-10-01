@@ -1,6 +1,6 @@
 /**
  * XFactor Dosya-Bazlı Ajan Koordinasyon Protokolü ("Agent = Klasör")
- * Referans: docs/ORKESTRASYON-TALIMATNAMESI.md
+ * Referans: x-agents/ORKESTRASYON-TALIMATNAMESI.md
  */
 
 import fs from 'fs/promises';

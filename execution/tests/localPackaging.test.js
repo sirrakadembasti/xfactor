@@ -8,6 +8,15 @@ import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 
 const toolsUrl = new URL('../../scripts/local-worker-tools.mjs', import.meta.url);
+test('worker packaging cannot write into platform agent instructions', async () => {
+  const { packageLocalWorker } = await import('../../scripts/package-local-worker.mjs');
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  await assert.rejects(packageLocalWorker({
+    destination: path.join(root, 'x-agents/generated-worker'),
+    sourceRoot: root,
+    env: { XFACTOR_LOCAL_NODE: path.join(root, 'missing-node') }
+  }), /overwrite application source/);
+});
 test('native Chromium logging uses stderr and a protected device target without weakening sandbox', async () => {
   const { localChromiumLaunchOptions } = await import(toolsUrl);
   const options = localChromiumLaunchOptions('/operator/browser', { CHROME_LOG_FILE: '/bundle/debug.log', SECRET: 'operator' });

@@ -12,7 +12,7 @@ import { db, getProjectLogs } from '../db.js';
 import { generateLLMResponse, getCurrentLLMProvider } from '../llm.js';
 import { recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
-import { loadAgentPromptFromDocs, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
+import { loadAgentPrompt, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
 import { extractAndParseJSON, normalizeManagerPlan, validateManagerPlan } from '../agents/schemas.js';
 import { formatManagementProposal } from '../agents/manager.js';
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
@@ -262,12 +262,12 @@ Aşağıdaki 4 adımlı yapılandırılmış iç muhakeme zincirini işleterek B
 `;
     }
 
-    const managerDoc = loadAgentPromptFromDocs('manager', 'Sen XFactor platformunun Manager adlı kıdemli yazılım mimarısın.');
+    const managerDoc = loadAgentPrompt('manager');
     const orkestrasyonDoc = loadOrkestrasyonTalimatnamesi();
 
     return `${managerDoc}
 
-${orkestrasyonDoc ? `### PLATFORM ORKESTRASYON ANAYASASI (docs/ORKESTRASYON-TALIMATNAMESI.md):\n"""\n${orkestrasyonDoc.slice(0, 3000)}\n"""\n` : ''}
+${orkestrasyonDoc ? `### PLATFORM ORKESTRASYON ANAYASASI (x-agents/ORKESTRASYON-TALIMATNAMESI.md):\n"""\n${orkestrasyonDoc.slice(0, 3000)}\n"""\n` : ''}
 
 ### GÜNCEL PROJE DURUMU VE TALİMATLAR:
 ${extraContext}

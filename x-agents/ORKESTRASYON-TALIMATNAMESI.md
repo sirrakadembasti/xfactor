@@ -6,6 +6,12 @@
 
 ---
 
+## Platform talimatı ve proje kayıtları ayrımı
+
+Platformun rol talimatları, bu anayasa ve protokol şablonları kökteki `x-agents/` dizinindedir. Bu dizin üretim çıktısı veya canlı proje durum kaydı için kullanılmaz. Gerçek görev/durum/rapor kayıtları `projects/<id>/manager/` ve alt ajan klasörlerinde; üretilen uygulama belgeleri ilgili proje klasöründe tutulur. Kökteki `docs/` geliştirme ve işletim belgeleridir, ajan sistem istemi kaynağı değildir.
+
+Backend yalnız sabit `x-agents` kökünden izinli talimatları okur; eksik veya geçersiz talimatta başka dizine ya da kod içi yedek isteme dönmez. Proje çalışma alanı bu talimat kaynağıyla doğrudan veya bağlantı üzerinden çakışamaz.
+
 ## 0. Orkestrasyon Senaryosu ve Gerçek İş Akışı
 
 ```text
