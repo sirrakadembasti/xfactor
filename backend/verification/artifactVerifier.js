@@ -12,7 +12,6 @@ import { verifyPlaceholders } from './placeholderVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 import {
-    aggregateVerificationRun,
     combineRuntimeGate,
     captureHardeningGate,
     RUNTIME_GATE_MEMBERS,

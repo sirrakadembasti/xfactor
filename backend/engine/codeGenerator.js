@@ -4,7 +4,6 @@
  */
 
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { isBuiltin } from 'node:module';
 import { isSafeProjectPath, assertPathInsideRoot, assertSafeExistingParent } from '../security.js';

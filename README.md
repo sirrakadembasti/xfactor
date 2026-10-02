@@ -75,7 +75,7 @@ npm run dev
 
 | Port | Servis | Rolü ve Erişimi |
 |:---:|---|---|
-| **`5173`** | **Frontend (Vite/React)** | **Kullanıcı Arayüzü:** Tarayıcınızda açacağınız ana panel (`http://localhost:5173`). |
+| **`5173`** | **Frontend (Vite/React)** | **Kullanıcı Arayüzü:** Tarayıcınızda açacağınız ana panel (`http://127.0.0.1:5173`). |
 | **`8000`** | **Backend (Web Orchestrator)** | **Platform Beyni:** REST API, SQLite WAL, WebSocket telemetrisi ve 6 yapay zekâ ajanı. |
 | **`8099`** | **Execution Worker** | **Bağımsız Derleyici/Test:** Yerel veya Docker profiliyle çalışan, token korumalı iç servis. |
 
@@ -87,13 +87,15 @@ npm run dev
 #### Seçenek B: Ayrı Terminallerde Başlatma
 Üç ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
-* **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://localhost:5173)*
+* **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://127.0.0.1:5173)*
 * **Terminal 3 (Execution Worker):** yerel kullanımda [paket kılavuzundaki](docs/LOCAL-WORKER-PACKAGE.md) launcher ve backend URL/token bağlantısını kullanın *(İç servis: http://127.0.0.1:8099)*. Normal `npm run dev` Docker olmadan yerel worker'ı başlatır; `npm run dev:local` aynı akışın açık adıdır. Docker profili yalnız `npm run dev:docker` ile seçilir. Doğrudan `node execution/server.js` düşük seviyeli sunucu komutudur ve ayrı runtime/token yapılandırması gerektirir.
 ### 3. Kullanmaya Başlayın
-1. Tarayıcınızda `http://localhost:5173` adresini açın.
+1. Tarayıcınızda `http://127.0.0.1:5173` adresini açın.
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.
 3. Sol menüden **`+ Yeni Proje`** oluşturun.
-4. Manager ile sohbet ederek istediğiniz uygulamayı tarif edin ve **`Planı Onayla ve Başlat`** butonuna tıklayın!
+4. Manager ile istediğiniz uygulamayı tarif edin. Geçerli planı **`Planı Onayla ve Başlat`** düğmesiyle veya **“varsayımlarla devam et”** yazarak onaylayın.
+
+Manager planı kısa özetle sunar; tam şartname ve kapsam **Planın kapsamını ve kabul kriterlerini incele** bölümündedir. Mevcut bekleyen planın sohbetten açık onayında yeniden LLM çağrılmaz; düğmeyle aynı yetki, sözleşme ve tek yürütme kontrolleri uygulanır. Geçersiz JSON/eksik test sözleşmesi için bir sınırlı düzeltme denenir. Düzelmezse hata gösterilir, onay düğmesi açılmaz ve üretim başlamaz.
 
 Yeni proje açıldığında ilk ekran **Sohbet & Mimari** olur; üst sekmelerde de önce sohbet, ardından **Kalite Paneli**, **Canlı DAG Grafiği** ve **Canlı Süreç Logları** yer alır. Kalite Paneli üstte amacını ve durumların anlamını açıklar; altta koşu geçmişi, yapılan kontroller, çıkış kodu, zaman damgası, SHA-256 özetleri ve gizli bilgileri temizlenmiş loglar bulunur. Manager tamamlanma mesajı kaynak kodu incelemek için doğrulanmış ZIP indirmesine yönlendirir.
 
@@ -180,6 +182,8 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 
 ## 📚 Kapsamlı Dokümantasyon
 
+* 🧹 **[Depo temizliği ve refactor raporu](docs/REPOSITORY-CLEANUP.md)** — Kaldırılan dosyalar, korunan giriş noktaları, kurtarma kopyaları ve doğrulama sonuçları.
+
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.
 * 🛠️ **[Operasyon Kılavuzu (docs/OPERATIONS.md)](docs/OPERATIONS.md)** — Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri, kalıcı volumeler, reverse proxy/TLS sözleşmesi, bakım aralığı ve yatay ölçekleme önkoşulları.
@@ -191,3 +195,11 @@ Yerel worker Node 22.23.2, npm 10.9.8, Playwright 1.62.1 ve Chromium ile gerçek
 Paket üretmek için `npm run worker:local:package -- --output dist/local-worker` çalıştırın. Aynı işletim sistemi ve mimariye sahip bilgisayarda paketin `start-worker.cmd` veya `start-worker.sh` dosyasını başlatın. Backend'in worker URL ve token ayarlarını [paket kılavuzuna](docs/LOCAL-WORKER-PACKAGE.md) göre eşleştirin. Paket kendi Node/npm/Chromium dosyalarını içerir; Node kurulmamış hedef bilgisayarda da başlatılabilir.
 
 Profil `local-trusted` olarak raporlanır: gerçek bağımsız testler vardır, **OS izolasyonu yoktur**. Üretilen kod yerel kullanıcının yetkileriyle çalışır. Kaynak üzerinden doğrudan worker başlatılırken `EXECUTION_WORKER_RUNTIME=local` ve `EXECUTION_WORKER_TRUST_LOCAL_CODE=1` açıkça seçilmelidir; Docker'dan sessiz geçiş yapılmaz. Docker imajı üretme/çalıştırma doğrulaması ayrı bir işlem olarak Docker gerektirir. Windows gerçek uçtan uca testleri çalıştırılır; Linux/macOS platform doğrulaması CI matrisinde bulunur.
+
+## Bağımsız LLM yönetimi eklentisi
+
+LLM sayfası ve API artık depodaki `llm-yonetimi/` paketinden sunulur. Başka uygulamalara taşınabilecek bağımsız kopya `F:/projeler/llm-yonetimi` dizinindedir; GitHub kurulumu için depodaki paket yeterlidir. Kurulum, Express entegrasyonu, runtime çağrıları ve güvenlik sorumlulukları [eklenti README dosyasında](llm-yonetimi/README.md) açıklanır. Mevcut profil ve şifreleme anahtarı konumları korunur; paket başka uygulamaya taşınırken bu özel veriler kopyalanmaz.
+
+Profilde yanıt süresi, çıktı token bütçesi ve düşünme ayarı düzenlenebilir. **Bağlantıyı sına** kısa erişim çağrısıdır; **Sohbeti sına** Manager benzeri bir istektir. Test türü, süre ve hata kodu ayrı kaydedilir. Profil değişirse sonuçlar geçersizleşir; eski ekran aynı profili kaydetmeye çalışırsa çakışma bildirilir.
+
+MiMo için otomatik düşünme ayarı Manager sohbetinde düşünmeyi kapatır; üretim ajanlarında sağlayıcının varsayılanını korur. Açıkça seçilen düşünme ayarı korunur. Süre aşımı, kota, sağlayıcı yetkisi, ağ ve kesilmiş yanıt hataları ayrı gösterilir. Token sınırında kesilmiş Manager yanıtı tamamlanmış plan sayılmaz. Model hızı, sağlayıcı yükü, kota, bölge ve ağ koşulları uygulama tarafından garanti edilemez. Uzun planlar daha fazla çıktı ve süre gerektirir.

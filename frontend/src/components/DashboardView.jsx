@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FileText, History, Loader2, SearchCheck, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
 

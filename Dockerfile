@@ -5,6 +5,11 @@ RUN npm ci --ignore-scripts
 COPY frontend/ ./
 RUN npm run build
 
+FROM node:22.23.2-alpine AS llm-plugin-deps
+WORKDIR /app/llm-yonetimi
+COPY llm-yonetimi/package.json llm-yonetimi/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
 FROM node:22.23.2-alpine AS backend-deps
 WORKDIR /app/backend
 COPY backend/package.json backend/package-lock.json ./
@@ -21,6 +26,8 @@ ENV NODE_ENV=production \
 RUN addgroup -S xfactor && adduser -S xfactor -G xfactor
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY backend/ ./
+COPY llm-yonetimi/ /app/llm-yonetimi/
+COPY --from=llm-plugin-deps /app/llm-yonetimi/node_modules /app/llm-yonetimi/node_modules
 COPY docs/ /app/docs/
 COPY x-agents/ /app/x-agents/
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist

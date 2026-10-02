@@ -2,11 +2,17 @@
 .env
 .env.*
 !.env.example
+**/.env
+**/.env.*
+!**/.env.example
 node_modules
 **/node_modules
 **/llm-encryption.key
 backend/tests/
 backend/data/
+llm-yonetimi/data/
+llm-yonetimi/*.tgz
+.tmp/
 backend/logs/
 backend/coverage/
 dist

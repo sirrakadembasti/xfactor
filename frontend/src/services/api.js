@@ -1,5 +1,27 @@
 const LOCAL_API_URL = 'http://127.0.0.1:8000/api';
 
+export const formatChatError = (error = {}) => {
+  const messages = {
+    LLM_TIMEOUT: 'Model yanıtı süre sınırını aştı. LLM yönetiminde süre ve düşünme ayarını kontrol edin.',
+    LLM_RATE_LIMIT: 'Sağlayıcı hız veya kota sınırına ulaşıldı. Bir süre bekleyip kotayı kontrol edin.',
+    LLM_AUTH: 'Model sağlayıcısı API anahtarını veya erişim yetkisini kabul etmedi.',
+    LLM_REQUEST_REJECTED: 'Model sağlayıcısı istek ayarını reddetti. LLM yönetiminde modeli ve adresi sınayın.',
+    LLM_EMPTY_RESPONSE: 'Model kullanılabilir yanıt üretmedi. Token bütçesini ve düşünme ayarını kontrol edin.',
+    LLM_TRUNCATED: 'Model yanıtı token bütçesine takıldı. Bütçeyi artırın veya isteği küçültün.',
+    LLM_NETWORK: 'Model sağlayıcısına ağ bağlantısı kurulamadı. İnternet, DNS ve proxy ayarlarını kontrol edin.',
+    LLM_PROVIDER_ERROR: 'Model sağlayıcısından yanıt alınamadı. LLM yönetimindeki sohbet testini çalıştırın.',
+    NETWORK_ERROR: 'Sunucuya bağlantı kurulamadı. Uygulamanın çalıştığını kontrol edin.'
+  };
+  const message = messages[error.code] || (error.status === 401 ? 'Oturum süresi doldu. Yeniden giriş yapın.'
+    : error.status === 403 ? 'Bu proje için mesaj gönderme yetkisi yok.'
+      : error.status === 429 ? 'İstek sınırına ulaşıldı. Bir süre bekleyin.'
+        : /Timeout|Abort/.test(error.name || '') || /Timeout/.test(error.message || '')
+          ? messages.LLM_TIMEOUT : 'Mesaj iletilemedi. LLM yönetimindeki sohbet testini çalıştırın.');
+  const requestId = error.details?.requestId;
+  return typeof requestId === 'string' && /^[a-zA-Z0-9-]{1,80}$/.test(requestId)
+    ? `${message} Hata kaydı: ${requestId}.` : message;
+};
+
 export const resolveApiBaseUrl = (
   configuredBase = '',
   locationLike = typeof globalThis !== 'undefined' ? globalThis.location : null,
@@ -275,6 +297,9 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       request(`/projects/${encodePathSegment(id)}/chat`, {
         method: 'POST',
         body: JSON.stringify({ message }),
+        // Manager generation is bounded by the backend LLM deadline. A short
+        // browser deadline can report failure while that reply is still running.
+        timeoutMs: 0,
         ...opts
       }),
 

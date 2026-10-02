@@ -1,23 +1,23 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-01T16:15:15.179Z
+Üretim tarihi: 2026-10-02T17:50:05.214Z
 
-- 380 kaynak ve belge dosyası
-- 2436 düğüm
-- 6281 ilişki
+- 431 kaynak ve belge dosyası
+- 2527 düğüm
+- 6433 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1186 |
-| Method | 636 |
-| SourceFile | 241 |
-| EnvVar | 78 |
-| Document | 58 |
+| Function | 1211 |
+| Method | 653 |
+| SourceFile | 254 |
+| Document | 96 |
+| EnvVar | 81 |
 | Package | 52 |
-| HttpRoute | 49 |
-| HttpRequest | 40 |
+| HttpRoute | 48 |
+| HttpRequest | 36 |
 | TestSuite | 32 |
 | BackendService | 22 |
 | Class | 15 |
@@ -29,17 +29,17 @@
 
 | Tür | Adet |
 |---|---:|
-| calls | 1980 |
-| contains | 1901 |
-| imports_package | 903 |
-| imports | 599 |
-| dynamic_imports | 268 |
-| reads_env | 148 |
-| runs | 133 |
+| calls | 2043 |
+| contains | 1943 |
+| imports_package | 916 |
+| imports | 624 |
+| dynamic_imports | 269 |
+| reads_env | 159 |
+| runs | 136 |
 | writes_env | 124 |
-| registers_route | 49 |
-| sends_request | 40 |
-| requests_route | 31 |
+| registers_route | 48 |
+| sends_request | 36 |
+| requests_route | 29 |
 | verifies | 20 |
 | defines | 17 |
 | renders | 10 |
@@ -81,6 +81,7 @@
 | manages_websockets | 1 |
 | launches_server | 1 |
 | launches_worker | 1 |
+| handles | 1 |
 
 ## Yorum sınırları
 

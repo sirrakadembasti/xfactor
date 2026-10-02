@@ -29,7 +29,10 @@ async function reservePort() {
 async function waitForReady(child) {
     await new Promise((resolve, reject) => {
         let stderr = '';
-        const timer = setTimeout(() => reject(new Error(`Backend readiness timeout: ${stderr}`)), 25_000);
+        let stdout = '';
+        const configured = Number(process.env.TEST_BACKEND_READY_TIMEOUT_MS || (process.platform === 'win32' ? 120000 : 25000));
+        const readinessTimeoutMs = Number.isFinite(configured) && configured > 0 ? Math.min(configured, 180000) : 25000;
+        const timer = setTimeout(() => { cleanup(); reject(new Error(`Backend readiness timeout (${readinessTimeoutMs}ms): stdout=${stdout}; stderr=${stderr}`)); }, readinessTimeoutMs);
         const cleanup = () => {
             clearTimeout(timer);
             child.stdout.off('data', onData);
@@ -38,7 +41,8 @@ async function waitForReady(child) {
             child.off('error', onError);
         };
         const onData = chunk => {
-            if (String(chunk).includes('Backend hazır:')) {
+            stdout = (stdout + String(chunk)).slice(-8000);
+            if (stdout.includes('Backend hazır:')) {
                 cleanup();
                 resolve();
             }
@@ -296,10 +300,11 @@ try {
         headers: authA,
         body: JSON.stringify({ message: 'Güvenli hata yanıtını doğrula' })
     });
-    assert.strictEqual(failedChat.response.status, 500);
-    assert.deepStrictEqual(Object.keys(failedChat.body).sort(), ['code', 'error', 'requestId']);
-    assert.strictEqual(failedChat.body.code, 'INTERNAL_ERROR');
-    assert.strictEqual(failedChat.body.error, 'İşlem başarısız oldu.');
+    assert.strictEqual(failedChat.response.status, 502);
+    assert.deepStrictEqual(Object.keys(failedChat.body).sort(), ['code', 'durationMs', 'error', 'requestId', 'retryable', 'status', 'upstreamStatus']);
+    assert.strictEqual(failedChat.body.code, 'LLM_PROVIDER_ERROR');
+    assert.ok(failedChat.body.error.includes('sağlayıcısından'));
+    assert.ok(failedChat.body.durationMs >= 0);
     assert.ok(/^[a-f0-9]{16}$/.test(failedChat.body.requestId));
     assert.ok(!JSON.stringify(failedChat.body).includes('API key'));
 

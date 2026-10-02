@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Terminal, Play, Search } from 'lucide-react';
 import { canResumeProject } from '../utils/canResumeProject';
 

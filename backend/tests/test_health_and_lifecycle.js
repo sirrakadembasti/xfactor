@@ -24,7 +24,9 @@ function startServer(env) {
 async function waitForStart(child) {
     let output = '';
     return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(`Server start timed out: ${output}`)), 10000);
+        const configured = Number(process.env.TEST_BACKEND_READY_TIMEOUT_MS || (process.platform === 'win32' ? 120000 : 10000));
+        const timeoutMs = Number.isFinite(configured) && configured > 0 ? Math.min(configured, 180000) : 10000;
+        const timer = setTimeout(() => reject(new Error(`Server start timed out: ${output}`)), timeoutMs);
         const onData = chunk => {
             output += chunk;
             if (output.includes('Backend hazır')) {

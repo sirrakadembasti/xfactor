@@ -1,4 +1,3 @@
-import React from 'react';
 
 const STATUS_BY_STATE = {
   connected: {

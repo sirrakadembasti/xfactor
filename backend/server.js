@@ -38,7 +38,8 @@ import {
 } from './productionStatic.js';
 import { createLifecycleCoordinator } from './lifecycle.js';
 import { initNetworkResolver } from './networkResolver.js';
-import { mountLLMManagement } from './llm-auth/llm.js';
+import { generateLLMResponse } from './llm.js';
+import { mountLLMManagement, createLLMProfileStore } from './llm-auth/llm.js';
 import { ensureLLMEncryptionKey } from './llm-auth/setup.js';
 dotenv.config();
 ensureLLMEncryptionKey();
@@ -290,7 +291,7 @@ app.use('/api', createAuthRouter({
     requireAuth,
     production: runtimeConfig.production
 }));
-mountLLMManagement(app, { requireAuth });
+mountLLMManagement(app, { requireAuth, store: createLLMProfileStore(), generate: generateLLMResponse });
 app.use('/api/projects', createProjectRouter({ requireAuth, projectAccess, wsHub, lifecycle }));
 
 app.use('/api', (req, res) => {

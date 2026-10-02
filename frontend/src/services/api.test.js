@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { buildActionRequestOptions, createApiClient } from './api';
+import { buildActionRequestOptions, createApiClient, formatChatError } from './api';
+
+test('chat failures identify the cause without exposing provider secrets', () => {
+  expect(formatChatError({ code: 'LLM_TIMEOUT', message: 'secret-key-value', details: { requestId: 'abc123' } })).toContain('süre');
+  expect(formatChatError({ code: 'LLM_TIMEOUT', message: 'secret-key-value' })).not.toContain('secret-key-value');
+  expect(formatChatError({ code: 'LLM_RATE_LIMIT' })).toContain('kota');
+  expect(formatChatError({ code: 'NETWORK_ERROR' })).toContain('bağlantı');
+  expect(formatChatError({ status: 401 })).toContain('Oturum');
+});
 
 afterEach(() => {
   vi.useRealTimers();
@@ -8,6 +16,48 @@ afterEach(() => {
 });
 
 describe('API request cancellation and identity handling', () => {
+  test('waits for a slow Manager reply while ordinary requests retain their 15 second timeout', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn((_url, { signal }) => new Promise((resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+      setTimeout(() => resolve({ ok: true, status: 200, json: async () => ({ status: 'planning' }) }), 45000);
+    })));
+    const client = createApiClient('https://api.example.test/api');
+    let chatSettled = false;
+    const chat = client.sendChatMessage('hotel', 'Otel projesini planla.').then(
+      value => { chatSettled = true; return { value }; },
+      error => { chatSettled = true; return { error }; }
+    );
+    const ordinary = client.getProject('hotel').catch(error => ({ error }));
+    await vi.advanceTimersByTimeAsync(15001);
+    expect(chatSettled).toBe(false);
+    expect((await ordinary).error.message).toContain('Timeout');
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(await chat).toEqual({ value: { status: 'planning' } });
+  });
+
+  test('a Manager request still respects an explicit caller timeout', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn((_url, { signal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+    })));
+    const client = createApiClient('https://api.example.test/api');
+    const result = client.sendChatMessage('hotel', 'Merhaba', { timeoutMs: 100 }).catch(error => error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect((await result).message).toContain('Timeout');
+  });
+
+  test('a Manager request can still be cancelled by its caller', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url, { signal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+    })));
+    const client = createApiClient('https://api.example.test/api');
+    const controller = new AbortController();
+    const result = client.sendChatMessage('hotel', 'Merhaba', { signal: controller.signal }).catch(error => error);
+    controller.abort();
+    expect((await result).name).toBe('AbortError');
+  });
+
   test('rejects a pre-aborted request without calling fetch', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

@@ -61,7 +61,21 @@ async function fetchWithRetry(url, options, { retries = 3, signal = null } = {})
             }
         }
     }
-    throw new Error(`Fetch ${retries} denemeden sonra başarısız oldu. Son hata: ${lastError?.message || lastError}`);
+    throw new Error(`Fetch ${retries} denemeden sonra başarısız oldu.`, { cause: lastError });
+}
+
+function boundedPositiveInteger(value, name, maximum) {
+    const number = Number(value);
+    if (!Number.isInteger(number) || number <= 0 || number > maximum) {
+        throw new RangeError(`Invalid ${name}: must be a positive integer <= ${maximum}.`);
+    }
+    return number;
+}
+
+function providerHttpError(provider, status) {
+    const error = new Error(`${provider.toUpperCase()} API Hatası: ${status}`);
+    error.upstreamStatus = status;
+    return error;
 }
 
 function createAbortError(signal) {
@@ -104,7 +118,9 @@ export async function generateLLMResponse(messages, options = {}) {
     
     let apiKey = options.apiKey !== undefined ? options.apiKey?.trim() : '';
     let baseURL = options.baseURL?.trim() || '';
-    const timeoutMs = Number(options.timeoutMs ?? process.env.LLM_TIMEOUT_MS ?? 60000);
+    // Profile validation sets the user-facing lower bounds; direct calls may use short test deadlines.
+    const timeoutMs = boundedPositiveInteger(options.timeoutMs ?? process.env.LLM_TIMEOUT_MS ?? 60000, 'timeoutMs', 300000);
+    const maxOutputTokens = boundedPositiveInteger(options.maxOutputTokens ?? 8192, 'maxOutputTokens', 32768);
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
     const combineSignals = options.signalCombiner || (signals => AbortSignal.any(signals));
     const mergedSignal = options.signal ? combineSignals([options.signal, timeoutSignal]) : timeoutSignal;
@@ -202,7 +218,7 @@ export async function generateLLMResponse(messages, options = {}) {
             const model = genAI.getGenerativeModel({
                 model: aiModel,
                 systemInstruction: systemInstruction,
-                generationConfig: { maxOutputTokens: 8192 }
+                generationConfig: { maxOutputTokens }
             });
 
             let contents = messages
@@ -224,7 +240,8 @@ export async function generateLLMResponse(messages, options = {}) {
             const result = await raceWithAbort(generatePromise, mergedSignal);
             const candidate = result.response.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
-                writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'sdk', tokenLimit: 8192 });
+                writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'sdk', tokenLimit: maxOutputTokens });
+                if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
             }
             const responseText = result.response.text();
             if (responseText) {
@@ -232,7 +249,7 @@ export async function generateLLMResponse(messages, options = {}) {
                 return responseText;
             }
         } catch (sdkError) {
-            if (mergedSignal?.aborted || sdkError.name === 'AbortError' || sdkError.name === 'TimeoutError') {
+            if (sdkError.code === 'LLM_TRUNCATED' || mergedSignal?.aborted || sdkError.name === 'AbortError' || sdkError.name === 'TimeoutError') {
                 throw sdkError;
             }
             logWarning('llm.google_sdk_failed', sdkError, { fallback: 'rest' });
@@ -257,7 +274,7 @@ export async function generateLLMResponse(messages, options = {}) {
 
             const requestPayload = {
                 contents,
-                generationConfig: { maxOutputTokens: 8192 }
+                generationConfig: { maxOutputTokens }
             };
             if (systemMsg) {
                 requestPayload.systemInstruction = { parts: [{ text: systemMsg.content }] };
@@ -270,13 +287,13 @@ export async function generateLLMResponse(messages, options = {}) {
             };
             const response = await fetchWithRetry(nativeUrl, restOptions, { signal: mergedSignal });
             if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Google REST API Hatası (${response.status}): ${errText}`);
+                throw providerHttpError(provider, response.status);
             }
             const data = await response.json();
             const candidate = data.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'rest' });
+                if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
             }
             const textPart = candidate?.content?.parts?.[0]?.text;
             if (textPart) {
@@ -304,10 +321,11 @@ export async function generateLLMResponse(messages, options = {}) {
         const response = await fetchWithRetry(endpoint, {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({ model: aiModel, max_tokens: 8192, ...(system ? { system } : {}), messages: conversation.length ? conversation : [{ role: 'user', content: system || 'Devam et.' }] })
+            body: JSON.stringify({ model: aiModel, max_tokens: maxOutputTokens, ...(system ? { system } : {}), messages: conversation.length ? conversation : [{ role: 'user', content: system || 'Devam et.' }] })
         }, { signal: mergedSignal });
-        if (!response.ok) throw new Error(`ANTHROPIC API Hatası: ${response.status}`);
+        if (!response.ok) throw providerHttpError(provider, response.status);
         const body = await response.json();
+        if (body.stop_reason === 'max_tokens' && options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
         const content = body.content?.filter(item => item.type === 'text').map(item => item.text).join('\n');
         if (!content) throw new Error('ANTHROPIC API boş içerik döndürdü.');
         options.onUsage?.(body.usage ?? null);
@@ -326,8 +344,14 @@ export async function generateLLMResponse(messages, options = {}) {
         'Authorization': `Bearer ${apiKey}`
     };
 
-    const tokenLimit = provider === 'openai' ? { max_completion_tokens: 8192 } : { max_tokens: 8192 };
-    const requestBody = JSON.stringify({ model: aiModel, messages: messages, ...tokenLimit });
+    const tokenLimit = ['openai', 'xiaomi_mimo'].includes(provider)
+        ? { max_completion_tokens: maxOutputTokens } : { max_tokens: maxOutputTokens };
+    const thinkingMode = options.thinking ?? 'auto';
+    const mimoThinking = provider === 'xiaomi_mimo'
+        ? (thinkingMode === 'auto' ? (options.purpose === 'manager' ? 'disabled' : null) : thinkingMode)
+        : null;
+    const requestBody = JSON.stringify({ model: aiModel, messages: messages, ...tokenLimit,
+        ...(['enabled', 'disabled'].includes(mimoThinking) ? { thinking: { type: mimoThinking } } : {}) });
 
     let response;
     try {
@@ -344,12 +368,11 @@ export async function generateLLMResponse(messages, options = {}) {
             logWarning('llm.mock_fallback_used', err, { provider });
             return '(Sistem Mesajı: Yapay zekâ sunucusuna erişilemedi. Ancak mimari planınız onaylandı, varsayılan şablonla üretime geçebilirsiniz.)';
         }
-        throw new Error(`Yapay zeka sunucusuna bağlanılamadı. Ağ/DNS Hatası: ${err.message}. Lütfen İnternet/VPN/Proxy bağlantınızı kontrol edin.`);
+        throw new Error('Yapay zeka sunucusuna bağlanılamadı. Ağ/DNS Hatası. Lütfen İnternet/VPN/Proxy bağlantınızı kontrol edin.', { cause: err });
     }
 
     if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`${provider.toUpperCase()} API Hatası: ${response.status} - ${errorData}`);
+        throw providerHttpError(provider, response.status);
     }
 
     const data = await response.json();
@@ -364,6 +387,7 @@ export async function generateLLMResponse(messages, options = {}) {
     const choice = data.choices?.[0];
     if (choice?.finish_reason === 'length') {
         writeStructuredLog('warn', 'llm.response_truncated', { provider });
+        if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
     }
 
     const content = choice?.message?.content;

@@ -32,6 +32,16 @@ Yalnızca API anahtarını değiştirmek yeterli değildir: sağlayıcı, model 
 - Etkin profil silinirse XFactor eski kurulumlarla uyumluluk için varsa `.env` sağlayıcı ayarlarına dönebilir. Yeni kurulumlarda sağlayıcı bilgilerini yalnızca yönetim sayfasında tanımlayın.
 - Profil dosyasının yerini değiştirmek için `LLM_CONFIG_PATH` ayarlanabilir. Bu dosyanın ve şifreleme anahtarının yedeğini birlikte güvenli biçimde saklayın.
 
+## Bağımsız paket ve çalışma ayarları
+
+Sayfanın ve API'nin asıl kaynağı `llm-yonetimi/` paketidir. `backend/llm-auth/` yalnız XFactor'ın mevcut veri ve anahtar konumlarını koruyan uyumluluk katmanıdır. Bağımsız kullanım ve entegrasyon için [eklenti README dosyasına](../../llm-yonetimi/README.md) bakın.
+
+Profilde yanıt süresi (varsayılan 120000 ms, sınır 5000–300000 ms), çıktı bütçesi (varsayılan 8192 token, sınır 256–32768) ve düşünme ayarı yönetilir. `auto`, MiMo Manager çağrısında düşünmeyi kapatır; üretim ajanlarında sağlayıcının varsayılanını korur. `enabled` ve `disabled` açık seçimleri korunur. Bu ayar hız garantisi vermez.
+
+**Bağlantıyı sına** 512 token sınırıyla kısa bir çağrı yapar; **Sohbeti sına** profil bütçesiyle Manager benzeri bir çağrı yapar. İkisinin sonucu, zamanı ve süresi ayrı saklanır. Profil değişince önceki sonuçlar temizlenir. Aynı profile eşzamanlı test reddedilir; test sürerken düzenlenen profil eski test sonucuyla güncellenmez. Kesilmiş metin dahi Manager/test çağrısında başarı sayılmaz.
+
+Hata kodları: `LLM_TIMEOUT`, `LLM_RATE_LIMIT`, `LLM_AUTH`, `LLM_REQUEST_REJECTED`, `LLM_NETWORK`, `LLM_EMPTY_RESPONSE`, `LLM_TRUNCATED`. Kota ve yetki için sağlayıcı hesabını; ağ hatası için internet/DNS/proxy koşullarını kontrol edin. Token kesilmesinde bütçeyi artırın veya isteği küçültün.
+
 ## Başka Express uygulamasına ekleme
 
 `backend/llm-auth/llm.js` içindeki `mountLLMManagement` uygulamanın mevcut oturum ara yazılımını alır. `requireAuth` isteğe `req.user` eklemeli; yönetici için `req.user.isAdmin === true` sağlamalıdır. JSON body ve CSRF korumasını montajdan önce kurun.
@@ -40,7 +50,7 @@ Başka uygulamada yalnız eklentiyi kullanırken `LLM_CONFIG_ENCRYPTION_KEY` ort
 
 ```js
 import express from 'express';
-import { mountLLMManagement, createLLMProfileStore } from './llm-auth/llm.js';
+import { mountLLMManagement, createLLMProfileStore } from '@xfactor/llm-yonetimi';
 
 const app = express();
 app.use(express.json());

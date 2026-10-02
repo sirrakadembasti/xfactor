@@ -30,6 +30,8 @@ backend/data/artifacts/
 backend/data/*.zip
 backend/data/*.db-wal
 backend/data/llm-profiles.json
+backend/data/library-worker-jobs.json
+backend/data/library-worker-jobs.json
 **/llm-encryption.key
 
 # Log files
@@ -40,3 +42,8 @@ graphify-out/cache/
 # Test output
 test-results/
 playwright-report/
+
+# Local recovery copies of untracked one-off experiments
+.tmp/cleanup-recovery-*/
+.tmp/
+.tmp/

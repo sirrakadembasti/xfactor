@@ -1,4 +1,4 @@
-import { extractAndParseJSON, validateTeamleaderTasks, normalizeTeamleaderTasks } from './schemas.js';
+import { extractAndParseJSON, normalizeTeamleaderTasks } from './schemas.js';
 import { loadAgentPrompt } from './agentLoader.js';
 
 export const TEAMLEADER_SYSTEM_PROMPT = loadAgentPrompt('teamleader');

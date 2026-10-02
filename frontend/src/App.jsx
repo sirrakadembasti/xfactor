@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { applyNodeChanges, applyEdgeChanges } from 'reactflow';
 import {
   LayoutDashboard,
@@ -9,7 +9,8 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-import { api, buildActionRequestOptions, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError } from './services/api';
+import { api, buildActionRequestOptions, buildWebSocketUrl, requestVerifiedArtifactDownload, ApiError, formatChatError } from './services/api';
+import { mergeProjectLogs, MAX_LOGS } from './utils/projectLogs';
 import { computeHierarchicalDAG } from './utils/dagLayout';
 import LoginView from './components/LoginView';
 import Sidebar from './components/Sidebar';
@@ -20,35 +21,6 @@ import LogsView from './components/LogsView';
 import DashboardView from './components/DashboardView';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
-const MAX_LOGS = 500;
-const mergeProjectLogs = (incoming, current) => {
-  const seenIds = new Set();
-  const seenEvents = new Set();
-  return [...incoming, ...current]
-    .sort((left, right) => Number(right.id != null) - Number(left.id != null))
-    .filter(log => {
-      const eventKey = log.created_at
-        ? JSON.stringify([log.created_at, log.node_id, log.action, log.message, log.agent, log.file])
-        : null;
-      if (log.id != null) {
-        if (seenIds.has(log.id)) return false;
-        seenIds.add(log.id);
-      } else if (eventKey && seenEvents.has(eventKey)) {
-        return false;
-      }
-      if (eventKey) seenEvents.add(eventKey);
-      return true;
-    })
-    .sort((left, right) => {
-      const leftTime = Date.parse(left.created_at || '');
-      const rightTime = Date.parse(right.created_at || '');
-      if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) {
-        return rightTime - leftTime;
-      }
-      return (Number(right.id) || 0) - (Number(left.id) || 0);
-    })
-    .slice(0, MAX_LOGS);
-};
 export const createActionId = action =>
   `${action}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
 export default function App() {
@@ -675,7 +647,7 @@ export default function App() {
         setProjectState(prev => {
           const newHistory = (prev?.chatHistory || []).slice(0, -1);
           newHistory.push({ role: 'user', parts: [{ text: message }] });
-          newHistory.push({ role: 'model', isError: true, parts: [{ text: '⚠️ Mesaj iletilemedi, lütfen tekrar deneyin.' }] });
+          newHistory.push({ role: 'model', isError: true, parts: [{ text: `⚠️ ${formatChatError(error)}` }] });
           return { ...prev, chatHistory: newHistory };
         });
       }

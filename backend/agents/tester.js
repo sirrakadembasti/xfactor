@@ -1,7 +1,7 @@
 import path from 'path';
 import { isBuiltin } from 'node:module';
 import { parse } from '@babel/parser';
-import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
+import { extractAndParseJSON, normalizeReviewResult } from './schemas.js';
 import { loadAgentPrompt } from './agentLoader.js';
 
 export const TESTER_SYSTEM_PROMPT = loadAgentPrompt('tester');

@@ -1,4 +1,4 @@
-import { extractAndParseJSON, validateDirectorSpec, normalizeDirectorSpec } from './schemas.js';
+import { extractAndParseJSON, normalizeDirectorSpec } from './schemas.js';
 import { loadAgentPrompt } from './agentLoader.js';
 
 export const DIRECTOR_SYSTEM_PROMPT = loadAgentPrompt('director');

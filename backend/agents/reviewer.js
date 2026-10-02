@@ -1,4 +1,4 @@
-import { extractAndParseJSON, validateReviewResult, normalizeReviewResult } from './schemas.js';
+import { extractAndParseJSON, normalizeReviewResult } from './schemas.js';
 import { loadAgentPrompt } from './agentLoader.js';
 
 export const REVIEWER_SYSTEM_PROMPT = loadAgentPrompt('reviewer');

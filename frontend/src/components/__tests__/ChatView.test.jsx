@@ -115,7 +115,7 @@ describe('ChatView Component', () => {
   });
 
   test('renders pending_approval banner and triggers handleApprove', () => {
-    const pendingState = { ...defaultProjectState, status: 'pending_approval' };
+    const pendingState = { ...defaultProjectState, status: 'pending_approval', plan: { summary: 'Otel planı', talimatname: 'Rezervasyon çakışmaları engellenir.', requirements: [{ id: 'REQ-1', statement: 'Oda yönetimi' }] } };
     render(
       <ChatView
         projectState={pendingState}
@@ -129,6 +129,8 @@ describe('ChatView Component', () => {
     );
 
     expect(screen.getByText(/Mimari Plan Hazırlandı — Onayınız Bekleniyor/)).toBeInTheDocument();
+    expect(screen.getByText(/Planın kapsamını ve kabul kriterlerini incele/)).toBeInTheDocument();
+    expect(screen.getByText(/Rezervasyon çakışmaları engellenir/)).toBeInTheDocument();
     const approveBtn = screen.getByRole('button', { name: /Planı Onayla ve Başlat/ });
     fireEvent.click(approveBtn);
     expect(mockHandleApprove).toHaveBeenCalledTimes(1);

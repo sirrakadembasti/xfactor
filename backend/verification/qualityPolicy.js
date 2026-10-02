@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
-import { listProjectTree } from '../engine/codeGenerator.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { db, dbEvents } from '../db.js';
 import {

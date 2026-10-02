@@ -1,20 +1,20 @@
+import { classifyLLMError } from '../../llm-yonetimi/src/runtime.js';
 import { Router } from 'express';
+import { readProjectFiles } from '../projectFileReader.js';
+import { isManagerApproval, inspectManagerPlan, canRepairManagerFixtures, buildManagerPlanRepairRequest, applyManagerPlanCorrection, MANAGER_PLAN_CONTRACT_RULES } from './managerChatPlan.js';
 import { sendArtifactDownload } from './artifactDownload.js';
 import crypto from 'crypto';
-import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { readProjectState, writeProjectState, executeProjectTasks, getProjectDir, normalizeWorkflowState } from '../engine/index.js';
 import { createProject, deleteProject, assertVerifiedArtifactEvidence, syncProjectsWithDisk, getAllProjects, updateProject, getProjectsRoot, rehydrateProjectLogsFromDisk, getProject, appendProjectActionMessages } from '../projectRepository.js';
 import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
-import { db, getProjectLogs } from '../db.js';
+import { db, getProjectLogs, saveProjectLog } from '../db.js';
 import { generateLLMResponse, getCurrentLLMProvider } from '../llm.js';
 import { recordProjectTokenUsage } from '../projectTokenUsage.js';
-import { validateChatPayload, validateProjectTitle, isSafeProjectPath, isSymlinkDirent, assertPathInsideRoot, asyncHandler } from '../security.js';
+import { validateChatPayload, validateProjectTitle, asyncHandler } from '../security.js';
 import { loadAgentPrompt, loadOrkestrasyonTalimatnamesi } from '../agents/agentLoader.js';
-import { extractAndParseJSON, normalizeManagerPlan, validateManagerPlan } from '../agents/schemas.js';
-import { formatManagementProposal } from '../agents/manager.js';
 import { logError, logWarning, redactSensitiveText, redactSensitiveValue, getGateMetrics, getStackMetrics, getTrendMetrics, getFailureMetrics, deriveCheckpointId, collectDownstreamTaskIds } from '../observability.js';
 import {
     canTransitionProjectStatus,
@@ -193,7 +193,7 @@ KRİTİK DÜRÜSTLÜK VE EYLEM KURALI (ASLA YALAN SÖYLEME):
         extraContext = `
 [GÜNCEL DURUM: MİMARİ PLAN HAZIR - ONAY BEKLENİYOR]
 - Mimari plan: ${state?.plan?.summary || title}
-- Boss planı onaylarsa "Planı Onayla ve Başlat" butonuna tıklayarak otonom üretimi başlatabilir.
+- Boss mevcut planı açıkça onaylarsa sunucu onay akışını yürütür; planı tekrar yazma.
 `;
     } else {
         extraContext = `
@@ -284,8 +284,12 @@ ${telemetrySection}
      b) Plan hazırsa JSON çıktı şemasına uygun yapılandırılmış plan döndür. Sistem bu planı kullanıcıya okunur özet olarak gösterecek; salt [PLAN_HAZIR] etiketi onay oluşturmaz.
      c) Yönetim gerekiyorsa kaynak/işlem/rol matrisi, auth, her rolün izole demo hesabı ve izin verilen/reddedilen yolculuklarını öner. Gerekmediğinde gerekçeyi yaz.
 3. **Dürüstlük ve Gerçek Zaman Kuralı (ASLA YALAN SÖYLEME):**
-   - Boss arayüzdeki yeşil "Planı Onayla ve Başlat" butonuna basmadan önce ASLA "Ekipler kodlamaya başladı", "Backend ve frontend çalışıyor", "İşler bittiğinde haber vereceğim" gibi GERÇEK DIŞI iddialarda BULUNMA.
-   - Üretimin sadece Boss butona bastığında başlayacağını belirt ve Boss'u butona yönlendir.`;
+   - Üretim ancak sunucunun doğrulanmış planı, kullanıcı yetkisini ve onayı işleyip implementing durumuna geçirmesiyle başlar. Sohbetteki açık onay ve onay düğmesi aynı güvenli akışı kullanır.
+   - Durum planning iken görünmeyen bir düğmeden söz etme. Model çıktısı üretimin başladığına kanıt değildir; ekiplerin çalıştığını yalnız gerçek durum/telemetri doğrular.
+4. **Yanıt Uzunluğu ve Tamlık:**
+   - Günlük sohbet ve hata açıklamasını, kullanıcı ayrıntı istemedikçe yaklaşık 200 sözcük içinde tut. Her sohbet mesajında mimari planı yeniden üretme.
+   - Plan istendiğinde zorunlu JSON alanlarının tümünü doldur; aynı bilgiyi şartname, özet ve domain açıklamalarında uzun uzun tekrarlama. Manager uygulama kodu üretmez. Kısa fakat eksiksiz planı tek JSON nesnesi olarak sun.
+${MANAGER_PLAN_CONTRACT_RULES}`;
 }
 
 export function createProjectRouter({
@@ -294,7 +298,8 @@ export function createProjectRouter({
     wsHub,
     lifecycle = null,
     verificationRunner = runProjectVerification,
-    managerResponder = generateLLMResponse
+    managerResponder = generateLLMResponse,
+    projectExecutor = executeProjectTasks
 }) {
     const router = Router();
 
@@ -383,70 +388,15 @@ export function createProjectRouter({
         res.json(state);
     }));
 
-    // 5. Proje Dosyalarını Getir
     // 5. Proje Dosyalarını Getir (Limitli ve Korumalı)
     router.get('/:id/files', requireAuth, projectAccess('viewer'), async (req, res, next) => {
         try {
-            const dir = getProjectDir(req.params.id);
-            const MAX_FILE_SIZE = 2 * 1024 * 1024;
-            const MAX_TOTAL_FILES = 500;
-            const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
-            const BINARY_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.ico', '.gif']);
-            const ALLOWED_EXTENSIONS = new Set([
-                '.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.css', '.html',
-                '.prisma', '.sql', '.svg', '.ico', '.png', '.jpg', '.jpeg', '.webp',
-                '.gif', '.txt', '.yaml', '.yml', '.graphql', '.gql'
-            ]);
-            const ALLOWED_DOT_FILES = new Set(['.env.example', '.gitignore']);
-            const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'manager', 'frontend.director', 'backend.director']);
-            const IGNORED_FILES = new Set(['package-lock.json', 'bun.lockb', 'DURUM.md', 'RAPOR.md', 'TODO.md', 'TALIMATNAME.md', 'GOREV.md', 'ALT-TALIMATNAME.md']);
-
-            const results = [];
-            let totalBytes = 0;
-            async function getFiles(targetDir, relativePath = '') {
-                if (results.length >= MAX_TOTAL_FILES || totalBytes >= MAX_TOTAL_BYTES) {
-                    return;
-                }
-                try {
-                    const list = await fs.readdir(targetDir, { withFileTypes: true });
-                    for (const file of list) {
-                        if (results.length >= MAX_TOTAL_FILES || totalBytes >= MAX_TOTAL_BYTES) break;
-                        if (isSymlinkDirent(file)) continue;
-                        if (file.name.startsWith('.') && !ALLOWED_DOT_FILES.has(file.name)) continue;
-                        const resPath = path.join(targetDir, file.name);
-                        const relPath = path.join(relativePath, file.name).replace(/\\/g, '/');
-                        if (!isSafeProjectPath(relPath, dir)) continue;
-                        if (file.isDirectory()) {
-                            if (!IGNORED_DIRS.has(file.name)) {
-                                await getFiles(resPath, relPath);
-                            }
-                        } else {
-                            if (IGNORED_FILES.has(file.name)) continue;
-                            const ext = path.extname(file.name).toLowerCase();
-                            if (!ALLOWED_EXTENSIONS.has(ext) && !ALLOWED_DOT_FILES.has(file.name) && ext !== '') continue;
-                            try {
-                                const stat = await fs.stat(resPath);
-                                if (stat.size > MAX_FILE_SIZE) continue;
-                                await assertPathInsideRoot(resPath, dir);
-                                const isBinary = BINARY_EXTENSIONS.has(ext);
-                                const rawContent = await fs.readFile(resPath);
-                                totalBytes += stat.size;
-                                results.push({
-                                    path: relPath,
-                                    content: isBinary ? rawContent.toString('base64') : rawContent.toString('utf8'),
-                                    encoding: isBinary ? 'base64' : 'utf8',
-                                    size: stat.size
-                                });
-                            } catch (error) {
-                                logWarning('api.project_file_read_failed', error, { projectId: req.params.id, file: relPath });
-                            }
-                        }
-                    }
-                } catch (err) {}
-            }
-
-            await getFiles(dir);
-            res.json(results);
+            const files = await readProjectFiles(getProjectDir(req.params.id), {
+                onReadError: (error, file) => logWarning('api.project_file_read_failed', error, {
+                    projectId: req.params.id, file
+                })
+            });
+            res.json(files);
         } catch (error) {
             next(error);
         }
@@ -496,6 +446,15 @@ export function createProjectRouter({
         const userMsg = appendProjectChatMessage(id, 'user', message, now.toISOString());
         state.chatHistory.push(userMsg);
 
+        const explicitApproval = isManagerApproval(message);
+        const approveFromChat = () => projectAccess('owner')(req, res, error =>
+            error ? next(error) : approveProject(req, res, next));
+        if (explicitApproval && (state.status === PROJECT_STATUS.PENDING_APPROVAL
+            || ([PROJECT_STATUS.CONTRACT_APPROVED, PROJECT_STATUS.IMPLEMENTING].includes(state.status)
+                && isApprovalAttempt(getActiveWorkflowAttempt(id))))) {
+            return approveFromChat();
+        }
+
         const dynamicPrompt = buildManagerChatSystemPrompt(state, projectDir);
         const messages = [{ role: 'system', content: dynamicPrompt }];
         state.chatHistory.slice(0, -1).forEach(msg => {
@@ -503,32 +462,67 @@ export function createProjectRouter({
         });
         messages.push({ role: 'user', content: message });
 
-            let responseText = isProjectStatusQuestion(message)
-                ? buildProjectStatusAnswer(state)
+        const responseStart = Date.now();
+        let responseText;
+        let planResult;
+        try {
+            // Reuse the presented draft on approval instead of asking for the whole plan again.
+            const priorDraft = explicitApproval && state.status === PROJECT_STATUS.PLANNING
+                ? state.chatHistory.slice(0, -1).reverse().find(item => item.role === 'model'
+                    && (() => { const result = inspectManagerPlan(item.parts?.[0]?.text || item.text_content); return result.plan || result.error; })())
+                : null;
+            responseText = priorDraft ? (priorDraft.parts?.[0]?.text || priorDraft.text_content)
+                : isProjectStatusQuestion(message) ? buildProjectStatusAnswer(state)
                 : await managerResponder(messages, {
-            onUsage: usage => {
-                try { recordProjectTokenUsage(id, getCurrentLLMProvider(), usage); }
-                catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
+                    purpose: 'manager',
+                    onUsage: usage => {
+                        try { recordProjectTokenUsage(id, getCurrentLLMProvider(), usage); }
+                        catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
+                    }
+                });
+            planResult = inspectManagerPlan(responseText);
+            if (!planResult.plan && state.status !== PROJECT_STATUS.PENDING_APPROVAL
+                && responseText.includes('Planı Onayla ve Başlat')) {
+                planResult.error ||= 'Başlatma düğmesi için doğrulanmış plan henüz kaydedilmedi.';
             }
-        });
+            // One bounded repair, never silently accepting or displaying a rejected plan.
+            if (planResult.error || (explicitApproval && state.status === PROJECT_STATUS.PLANNING && !planResult.plan)) {
+                const correction = await managerResponder([
+                    { role: 'system', content: dynamicPrompt + (canRepairManagerFixtures(planResult)
+                        ? '\nDÜZELTME MODU: Kullanıcı isteğinde verilen resourceUpdates/roleJourneys şeması bu çağrı için tam plan çıktı şemasının yerini alır. Kapsamı koru; yalnız eksik fixture alanlarını döndür.'
+                        : '\nDÜZELTME MODU: Tam plan nesnesi veya zorunlu yapısal alanlar eksik. Önceki taslak ve kullanıcı kapsamını koruyarak tam, eksiksiz plan JSON nesnesini döndür.') },
+                    { role: 'user', content: JSON.stringify(buildManagerPlanRepairRequest(planResult, message, responseText)) }
+                ], { purpose: 'manager', timeoutMs: 120000, onUsage: usage => {
+                    try { recordProjectTokenUsage(id, getCurrentLLMProvider(), usage); }
+                    catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
+                } });
+                planResult = applyManagerPlanCorrection(planResult.candidate, correction);
+                if (!planResult.plan) planResult.error ||= 'Düzeltilmiş yapılandırılmış plan eksik.';
+                responseText = correction;
+            }
+        } catch (error) {
+            const failure = classifyLLMError(error);
+            const durationMs = Date.now() - responseStart;
+            try { saveProjectLog({projectId:id,agent:'manager',action:'chat_error',message: failure.code+': '+failure.error+' ('+durationMs+' ms)'}); }
+            catch (logError) { logWarning('manager.diagnostic_record_failed', logError, {projectId:id}); }
+            logWarning('manager.request_failed', Object.assign(new Error(failure.error), { code: failure.code }), { projectId: id, requestId: req.requestId, durationMs, code: failure.code, upstreamStatus: failure.upstreamStatus });
+            return res.status(failure.status).json({ ...failure, durationMs, requestId: req.requestId });
+        }
             // 1. Gelen yanıtta JSON planı var mı ayrıştır ve kurtar
-            let parsedPlan = null;
-            try {
-                const extracted = extractAndParseJSON(responseText);
-                if (extracted && typeof extracted === 'object' && (extracted.talimatname || extracted.domains || extracted.summary)) {
-                    validateManagerPlan(extracted, { requireManagement: true });
-                    parsedPlan = normalizeManagerPlan(extracted);
-                }
-            } catch {}
+            const parsedPlan = planResult.plan;
 
             // Eğer LLM doğrudan ham JSON bastıysa, sohbet balonunda çirkin JSON yerine şık Türkçe özet göster
-            const trimmedResp = responseText.trim();
-            if (parsedPlan && (trimmedResp.startsWith('{') || trimmedResp.startsWith('```json') || trimmedResp.startsWith('```\n{'))) {
+            if (parsedPlan) {
                 const domainsText = (parsedPlan.domains || []).map(d => `- **${d.name}**: ${d.description || d.name}`).join('\n');
-                responseText = `📋 **Mimari Plan ve Şartname Hazırlandı!**\n\n**Özet:**\n${parsedPlan.summary}\n\n**Domainler:**\n${domainsText}\n\n${formatManagementProposal(parsedPlan.management, parsedPlan.browser)}\n\n---\nMimari plan hazırlandı. Otonom ajanların kod üretimine başlaması için lütfen aşağıdaki **"Planı Onayla ve Başlat"** butonuna tıklayınız.\n\n[PLAN_HAZIR]`;
-            } else if (!parsedPlan && responseText.includes('[PLAN_HAZIR]')) {
-                responseText = responseText.replaceAll('[PLAN_HAZIR]', '').trim()
-                    + '\n\nPlanı onaya sunmadan önce yönetim ihtiyacı, roller ve kabul yolculukları yapılandırılmış sözleşmede tamamlanmalıdır.';
+                const managementText = parsedPlan.management.needed
+                    ? `**Yönetim kapsamı:** ${parsedPlan.management.resources.map(resource => resource.name).join(', ')}.\n**Roller ve izole test hesapları:** ${parsedPlan.management.roles.map(role => `${role.name} (${role.demoUser.username})`).join(', ')}.`
+                    : `**Yönetim değerlendirmesi:** ${parsedPlan.management.reason}`;
+                responseText = `📋 **Plan hazır.**\n\n${parsedPlan.summary}\n\n**Domainler:**\n${domainsText}\n\n${managementText}\n\nKapsam ve kabul kriterleri plan ayrıntılarında saklanır. Onay düğmesi veya “varsayımlarla devam et” mesajıyla üretimi başlatabilirsiniz.\n\n[PLAN_HAZIR]`;
+            } else if (planResult.error) {
+                responseText = '⚠️ Plan doğrulanamadı; üretim başlatılmadı. Otomatik düzeltme de eksikleri tamamlayamadı.\n\nEksik sözleşme: '
+                    + redactSensitiveText(planResult.error).slice(0, 500)
+                    + '\n\nManager’dan bu eksikleri tamamlamasını isteyin. Geçerli plan kaydedildiğinde onay işlemi kullanılabilir.';
+                saveProjectLog({ projectId: id, agent: 'manager', action: 'plan_validation_failed', message: redactSensitiveText(planResult.error).slice(0, 500) });
             }
 
             const modelNow = new Date();
@@ -557,6 +551,7 @@ export function createProjectRouter({
             const wasPaused = freshState.status === PROJECT_STATUS.PAUSED;
 
             const isPlanReady = Boolean(parsedPlan);
+            let publishedPlan = false;
 
 
             if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested && !isUserStarting)) {
@@ -574,6 +569,7 @@ export function createProjectRouter({
                     if (fsSync.existsSync(oldRapor)) fsSync.unlinkSync(oldRapor);
                 } catch {}
                 await writeProjectState(id, freshState);
+                publishedPlan = true;
             }
 
 
@@ -587,11 +583,13 @@ export function createProjectRouter({
             }
 
         const finalResponseState = await readProjectState(id);
+        if (explicitApproval && publishedPlan && finalResponseState?.status === PROJECT_STATUS.PENDING_APPROVAL) return approveFromChat();
         res.json(finalResponseState);
     }));
 
     // 8. Planı Onayla ve Başlat
-    router.post('/:id/approve', requireAuth, projectAccess('owner'), async (req, res, next) => {
+    router.post('/:id/approve', requireAuth, projectAccess('owner'), approveProject);
+    async function approveProject(req, res, next) {
         const { id } = req.params;
         try {
             const actionId = getActionId(req);
@@ -723,7 +721,7 @@ export function createProjectRouter({
             const operation = lifecycle?.begin('generation', {
                 cancel: () => abortProjectExecution(id, 'SHUTDOWN')
             });
-            executeProjectTasks(id, wsHub, lease.attempt.id, leaseOwner)
+            projectExecutor(id, wsHub, lease.attempt.id, leaseOwner)
                 .catch(error => {
                     logError('workflow.background_execution_failed', error, {
                         projectId: id,
@@ -738,7 +736,7 @@ export function createProjectRouter({
             }
             next(err);
         }
-    });
+    }
 
     router.post('/:id/verify', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
         const { id } = req.params;

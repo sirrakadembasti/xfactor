@@ -39,7 +39,7 @@ export async function packageLocalWorker({ destination, sourceRoot = repo, env =
   if (!destination) throw new Error('Specify an empty destination: --output <directory>');
   const target = path.resolve(destination);
   const sourceRelative = path.relative(sourceRoot, target);
-  if (!sourceRelative || ['execution', 'backend', 'frontend', 'scripts', 'docs', 'x-agents', '.git'].some(dir => sourceRelative === dir || sourceRelative.startsWith(`${dir}${path.sep}`))) throw new Error('Output cannot overwrite application source.');
+  if (!sourceRelative || ['execution', 'backend', 'frontend', 'scripts', 'docs', 'x-agents', 'llm-yonetimi', '.git'].some(dir => sourceRelative === dir || sourceRelative.startsWith(`${dir}${path.sep}`))) throw new Error('Output cannot overwrite application source.');
   const existing = await fs.stat(target).catch(() => null);
   if (existing) throw new Error('Output directory already exists; choose a new destination.');
   const tools = await resolveTools(env);

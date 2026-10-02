@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+const adminFetch = (url, options={}) => globalThis.fetch(url, {...options, headers: {'X-XFactor-CSRF':'1', ...options.headers}});
 import { test } from 'node:test';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -111,10 +112,10 @@ test('connection endpoint records success and failure for the selected profile',
   await new Promise(resolve => server.once('listening', resolve));
   const testURL = `http://127.0.0.1:${server.address().port}/api/llm/profiles/${profile.id}/test`;
   try {
-    assert.equal((await fetch(testURL, { method: 'POST' })).status, 200);
+    assert.equal((await adminFetch(testURL, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} })).status, 200);
     assert.equal(store.list().profiles[0].lastTest.status, 'passed');
     shouldFail = true;
-    assert.equal((await fetch(testURL, { method: 'POST' })).status, 502);
+    assert.equal((await adminFetch(testURL, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} })).status, 502);
     assert.equal(store.list().profiles[0].lastTest.status, 'failed');
   } finally {
     await new Promise(resolve => server.close(resolve));
@@ -127,6 +128,25 @@ test('provider URL validation rejects local and unsafe endpoints', () => {
   assert.throws(() => validateProviderUrl('https://localhost/v1'), /yerel/i);
   assert.throws(() => validateProviderUrl('https://user:pass@example.com/v1'), /kimlik/i);
   assert.equal(validateProviderUrl('https://api.example.com/v1'), 'https://api.example.com/v1');
+});
+
+test('profile runtime controls persist, validate and keep timed diagnostics separate', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'llm-runtime-controls-'));
+  try {
+    const store = createLLMProfileStore({ filePath: path.join(root, 'profiles.json'), encryptionKey: 'ab'.repeat(32) });
+    const input = { name: 'MiMo', provider: 'xiaomi_mimo', model: 'mimo-v2.6-pro', baseURL: 'https://token-plan-sgp.xiaomimimo.com/v1', apiKey: 'fixture-key', timeoutMs: 120000, maxOutputTokens: 4096, thinking: 'disabled' };
+    const saved = store.save(input);
+    assert.equal(saved.timeoutMs, 120000);
+    assert.equal(saved.maxOutputTokens, 4096);
+    assert.equal(saved.thinking, 'disabled');
+    assert.throws(() => store.save({ ...input, timeoutMs: 1 }), /süre|timeout/i);
+    assert.throws(() => store.save({ ...input, maxOutputTokens: -1 }), /token/i);
+    assert.throws(() => store.save({ ...input, thinking: 'unknown' }), /düşünme|thinking/i);
+    store.recordTest(saved.id, 'passed', undefined, { mode: 'conversation', durationMs: 45000 });
+    const tested = store.list().profiles[0];
+    assert.equal(tested.lastTest.mode, 'conversation');
+    assert.equal(tested.lastTest.durationMs, 45000);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
 test('Xiaomi MiMo Singapore catalog offers the supplied endpoint and four models', () => {
@@ -154,7 +174,7 @@ test('every catalog provider accepts a manually entered address and model for a 
     for (const provider of PROVIDERS) {
       const manualURL = provider.id === 'custom' ? 'https://custom.example/v2' : `${provider.baseURL}/alternate`;
       const saved = store.save({ name: provider.name, provider: provider.id, baseURL: manualURL, model: 'manual-model-id', apiKey: 'example-secret' });
-      const response = await fetch(`${base}/api/llm/profiles/${saved.id}/test`, { method: 'POST' });
+      const response = await adminFetch(`${base}/api/llm/profiles/${saved.id}/test`, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} });
       assert.equal(response.status, 200, `${provider.id} probe failed`);
       const options = generated.at(-1);
       assert.equal(options.provider, provider.id);
@@ -208,27 +228,27 @@ test('management page and API require an administrator and redact secrets', asyn
   await new Promise(resolve => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    assert.equal((await fetch(`${base}/llm`)).status, 401);
-    assert.equal((await fetch(`${base}/llm`, { headers: { 'x-test-role': 'viewer' } })).status, 403);
-    assert.equal((await fetch(`${base}/api/llm/profiles`, { headers: { 'x-test-role': 'viewer' } })).status, 403);
-    const page = await fetch(`${base}/llm`, { headers: { 'x-test-role': 'admin' } });
+    assert.equal((await adminFetch(`${base}/llm`)).status, 401);
+    assert.equal((await adminFetch(`${base}/llm`, { headers: { 'x-test-role': 'viewer' } })).status, 403);
+    assert.equal((await adminFetch(`${base}/api/llm/profiles`, { headers: { 'x-test-role': 'viewer' } })).status, 403);
+    const page = await adminFetch(`${base}/llm`, { headers: { 'x-test-role': 'admin' } });
     assert.equal(page.status, 200);
     assert.match(await page.text(), /LLM Yönetimi/);
-    const saved = await fetch(`${base}/api/llm/profiles`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-test-role': 'admin' }, body: JSON.stringify({ name: 'Deneme', provider: 'openai', baseURL: 'https://api.openai.com/v1', model: 'test-model', apiKey: 'http-test-secret' }) });
+    const saved = await adminFetch(`${base}/api/llm/profiles`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-test-role': 'admin' }, body: JSON.stringify({ name: 'Deneme', provider: 'openai', baseURL: 'https://api.openai.com/v1', model: 'test-model', apiKey: 'http-test-secret' }) });
     assert.equal(saved.status, 201);
     const savedBody = await saved.json();
     assert.equal(JSON.stringify(savedBody).includes('http-test-secret'), false);
-    const list = await fetch(`${base}/api/llm/profiles`, { headers: { 'x-test-role': 'admin' } });
+    const list = await adminFetch(`${base}/api/llm/profiles`, { headers: { 'x-test-role': 'admin' } });
     assert.equal((await list.text()).includes('http-test-secret'), false);
-    const updated = await fetch(`${base}/api/llm/profiles/${savedBody.id}`, { method: 'PUT', headers: { 'content-type': 'application/json', 'x-test-role': 'admin' }, body: JSON.stringify({ ...savedBody, name: 'Yeni ad' }) });
+    const updated = await adminFetch(`${base}/api/llm/profiles/${savedBody.id}`, { method: 'PUT', headers: { 'content-type': 'application/json', 'x-test-role': 'admin' }, body: JSON.stringify({ ...savedBody, name: 'Yeni ad' }) });
     assert.equal(updated.status, 200);
     assert.equal((await updated.json()).name, 'Yeni ad');
-    const activated = await fetch(`${base}/api/llm/profiles/${savedBody.id}/activate`, { method: 'POST', headers: { 'x-test-role': 'admin' } });
+    const activated = await adminFetch(`${base}/api/llm/profiles/${savedBody.id}/activate`, { method: 'POST', headers: { 'x-test-role': 'admin' } });
     assert.equal((await activated.json()).activeId, savedBody.id);
-    const tested = await fetch(`${base}/api/llm/profiles/${savedBody.id}/test`, { method: 'POST', headers: { 'x-test-role': 'admin' } });
+    const tested = await adminFetch(`${base}/api/llm/profiles/${savedBody.id}/test`, { method: 'POST', headers: { 'x-test-role': 'admin' } });
     assert.equal(tested.status, 502);
     assert.equal((await tested.text()).includes('http-test-secret'), false);
-    const removed = await fetch(`${base}/api/llm/profiles/${savedBody.id}`, { method: 'DELETE', headers: { 'x-test-role': 'admin' } });
+    const removed = await adminFetch(`${base}/api/llm/profiles/${savedBody.id}`, { method: 'DELETE', headers: { 'x-test-role': 'admin' } });
     assert.equal((await removed.json()).activeId, null);
   } finally { await new Promise(resolve => server.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
 });
@@ -254,7 +274,7 @@ test('portable management plugin tests a profile without the XFactor adapter', a
     };
     const catalogResponse = await originalFetch(`http://127.0.0.1:${server.address().port}/api/llm/catalog`);
     assert.equal((await catalogResponse.json()).providers.some(item => item.id === 'custom'), true);
-    const response = await originalFetch(expectedUrl, { method: 'POST' });
+    const response = await originalFetch(expectedUrl, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} });
     assert.equal(response.status, 200);
     assert.equal(outbound.url, 'https://llm.example.com/v1/chat/completions');
     assert.equal(outbound.options.headers.Authorization, 'Bearer portable-key');
@@ -267,7 +287,7 @@ test('portable management plugin tests a profile without the XFactor adapter', a
     assert.equal(outbound.options.headers['x-goog-api-key'], 'google-key');
     assert.equal(Object.hasOwn(outbound.options.headers, 'Authorization'), false);
     const openai = store.save({ name: 'Reasoning', provider: 'openai', model: 'o3', baseURL: 'https://api.openai.com/v1', apiKey: 'openai-key' });
-    const openaiTest = await originalFetch(`http://127.0.0.1:${server.address().port}/api/llm/profiles/${openai.id}/test`, { method: 'POST' });
+    const openaiTest = await originalFetch(`http://127.0.0.1:${server.address().port}/api/llm/profiles/${openai.id}/test`, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} });
     assert.equal(openaiTest.status, 200);
     assert.equal(JSON.parse(outbound.options.body).max_completion_tokens, 512);
   } finally { globalThis.fetch = originalFetch; await new Promise(resolve => server.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
@@ -288,10 +308,10 @@ test('Xiaomi Pro connection probe leaves enough output tokens after reasoning', 
   try {
     globalThis.fetch = async (url, options) => {
       if (String(url) === testURL) return originalFetch(url, options);
-      tokenLimit = JSON.parse(options.body).max_tokens;
+      tokenLimit = JSON.parse(options.body).max_completion_tokens;
       return new Response(JSON.stringify({ choices: [{ finish_reason: tokenLimit < 256 ? 'length' : 'stop', message: { content: tokenLimit < 256 ? '' : 'OK', reasoning_content: 'reasoning' } }] }), { status: 200 });
     };
-    const response = await originalFetch(testURL, { method: 'POST' });
+    const response = await originalFetch(testURL, { method: 'POST', headers: {'X-XFactor-CSRF':'1'} });
     assert.equal(response.status, 200);
     assert.equal((await response.json()).ok, true);
     assert.ok(tokenLimit >= 256);

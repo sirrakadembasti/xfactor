@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 22.23.2
       - run: npm install --global npm@10.9.8
+      - run: npm --prefix llm-yonetimi ci --ignore-scripts
       - run: npm --prefix backend ci --ignore-scripts
       - run: npm --prefix execution ci --ignore-scripts
       - name: Install native Chromium
@@ -47,6 +48,9 @@ jobs:
           node-version: 22.23.2
           cache: 'npm'
           cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install reusable LLM plugin
+        run: npm --prefix llm-yonetimi ci --ignore-scripts
 
       - name: Install backend dependencies
         run: |

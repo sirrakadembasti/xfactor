@@ -109,6 +109,7 @@ test_project_action_chat_audit.js
 test_project_repository.js
 test_project_token_usage.js
 test_project_tree_env_exclusion.js
+test_project_file_reader.js
 test_project_state_rehydration.js
 test_quality_gate.js
 test_scaffold_auth_standards.js
@@ -132,6 +133,8 @@ test_workflow_failure_chat_event.js
 test_manager_error_telemetry.js
 test_manager_management_discovery.js
 test_llm_auth.js
+test_manager_chat_failures.js
+test_llm_runtime_controls.js
 test_backup_wal.js
 test_provider_dns.js
 test_download_completion.js

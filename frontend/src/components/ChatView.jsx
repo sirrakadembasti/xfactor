@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Send, Clock, Sparkles, Loader2, User, Copy, Check, CornerDownLeft } from 'lucide-react';
 import { canResumeProject } from '../utils/canResumeProject';
 
@@ -68,7 +68,7 @@ export default function ChatView({
                 Mimari Plan Hazırlandı — Onayınız Bekleniyor
               </h4>
               <p className="text-emerald-700 text-[11px] mt-0.5">
-                Manager mimari şartnameyi hazırladı. Otonom üretimi başlatmak için onay veriniz.
+                Plan doğrulandı. Düğmeyle veya “varsayımlarla devam et” yazarak üretimi başlatabilirsiniz.
               </p>
             </div>
           </div>
@@ -79,6 +79,35 @@ export default function ChatView({
             <Play size={14} /> Planı Onayla ve Başlat
           </button>
         </div>
+      )}
+
+      {projectState?.status === 'pending_approval' && projectState.plan && (
+        <details className="mx-6 my-2 rounded-xl border border-emerald-200 bg-white p-3 text-xs shrink-0">
+          <summary className="cursor-pointer font-semibold text-emerald-900">Planın kapsamını ve kabul kriterlerini incele</summary>
+          <div className="mt-3 max-h-64 overflow-y-auto space-y-3 text-gray-700">
+            <p>{projectState.plan.summary}</p>
+            <ul className="list-disc pl-5 space-y-1">
+              {(projectState.plan.requirements || []).map((requirement, index) => (
+                <li key={requirement.id || index}>{typeof requirement === 'string' ? requirement : `${requirement.id}: ${requirement.statement}`}</li>
+              ))}
+            </ul>
+            {projectState.plan.management?.needed && (
+              <>
+                <p>Yönetim: {projectState.plan.management.reason}</p>
+                <p>Giriş: {projectState.plan.management.authentication?.login} · Hesap oluşturma: {projectState.plan.management.authentication?.accountProvisioning}</p>
+                {(projectState.plan.management.resources || []).map(resource => (
+                  <p key={resource.name}><strong>{resource.name}</strong>: {resource.operations.join(', ')} · {resource.uiPath} · {resource.apiPath} · Okuma: {resource.readAccess}
+                    {resource.deletionPolicy && ` · İlişkili kayıtlar: ${resource.deletionPolicy.relatedData} — ${resource.deletionPolicy.reason}${resource.deletionPolicy.retentionRule ? ` · Saklama: ${resource.deletionPolicy.retentionRule}` : ''}`}</p>
+                ))}
+                {(projectState.plan.management.roles || []).map(role => (
+                  <p key={role.name}><strong>{role.name}</strong>: {role.permissions.map(permission => `${permission.resource} (${permission.operations.join(', ')})`).join('; ')}
+                    {` · İzinli yolculuklar: ${role.journeys.positive.join('; ')} · Engellenen yolculuklar: ${role.journeys.negative.join('; ')}`}</p>
+                ))}
+              </>
+            )}
+            <p className="whitespace-pre-wrap break-words">{projectState.plan.talimatname}</p>
+          </div>
+        </details>
       )}
 
       {canResumeProject(projectState?.status, projectState?.last_error) && (
