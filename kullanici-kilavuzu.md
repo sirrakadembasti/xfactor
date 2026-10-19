@@ -282,6 +282,16 @@ Log ekranı ve DAG, veritabanındaki en yeni 500 olay ile canlı WebSocket olayl
 4. **Diskteki görevlerden kurtarma:** Manager `TODO.md` ve `DURUM.md` dosyaları korunur. Director'ın `ALT-TALIMATNAME.md` dosyası ve Teamleader planları varsa yeniden kullanılır; görevlerin `GOREV.md` dosyasındaki tek hedef dosya ve açıklama geri yüklenir. Disk senkronizasyonu mevcut canlı olayları silmeden, yalnızca tamamlandığına ilişkin kanıtı bulunan eksik görev loglarını DAG'a ekler.
 5. **Checkpoint koruması:** Motor aynı onaylı sözleşmeye ait görev checkpoint'lerini plan, bağımlılık ve fiziksel dosya kanıtıyla denetler. Açık kabul onarım kaydı varsa uygun tamamlanmış görevleri yeniden kullanabilir; reddedilmiş veya kanıtsız görevleri bitmiş saymaz. Yeni sözleşme revizyonu eski checkpoint'e dayanmaz.
 
+#### Log ekranında kaldığınız yeri izleme
+
+- **İşlerin son durumu:** Varsayılan görünüm, yüklenmiş kayıtlardan her iş için son durumu gösterir. Gerçek bir tekrar yürütme **Yeniden çalıştırılıyor** olarak görünür; bitmemiş işler tamamlandı sayılmaz.
+- **Son çalışma kayıtları:** Son yürütmenin olaylarını gösterir. Önceki yürütmelerin olayları bu akışa tekrar eklenmez.
+- **Yüklenen kayıt geçmişi:** Yüklenmiş olayların tümünü incelemek ve hata araştırmak içindir. Görünümler kayıtları silmez veya ajan çağrısı başlatmaz; henüz yüklenmemiş geçmiş kayıtları kapsamaz.
+
+**Devam Ettir** sırasında motor aynı sözleşme, plan, görev kapsamı, bağımlılık girdileri, hedef dosya içerikleri ve kalite kapısı sürümü için geçerli checkpoint bulursa o işin Coder/Reviewer çağrılarını atlar. Dosyası veya kapsamı değişmiş, reddedilmiş ya da checkpoint'i bulunmayan işler yeniden çalışabilir. Log satırları tek başına tamamlanma kanıtı değildir.
+
+Yeni bir Reviewer onayından sonra aynı dosyalar tekrar üretilse bile checkpoint kaydı yenilenebilir. Kalıcı kayıt oluşmadan görev tamamlandı gösterilmez. Checkpoint okuma/yazma hatasında süreç durur; veritabanı veya disk sorunu giderildikten sonra **Devam Ettir** kullanılmalıdır. Depo erişim hatası otomatik olarak baştan üretime dönüşmez. Duraklatma anında devam eden ve checkpoint'i henüz kaydedilmemiş iş için tekrar çalışma gerekebilir; tüm token tüketiminin sıfırlanacağı garantisi verilmez.
+
 ### Adım 7: Doğrulanmış Projeyi ZIP Olarak İndirme
 1. Tüm ajanlar görevlerini bitirdiğinde süreç hemen tamamlandı sayılmaz. Bağımsız temiz oda doğrulayıcısı (`artifactVerifier`) devreye girer:
    - Sunucu tarafında ZIP arşivi oluşturulur ve disk SHA-256 özeti hesaplanır (`artifacts`).

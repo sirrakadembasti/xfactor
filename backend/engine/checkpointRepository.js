@@ -19,8 +19,14 @@ export function saveCheckpoint({
     createdAt = new Date().toISOString(),
     invalidatedAt = null,
     attemptId = null,
-    leaseOwner = null
+    leaseOwner = null,
+    refreshReviewed = false
 }) {
+    // Only a fresh successful review may renew identical CAS evidence. Resume
+    // reads never call this path and cannot revive an invalidated checkpoint.
+    if (refreshReviewed && (status !== 'completed' || invalidatedAt !== null || invalidationReason !== null)) {
+        throw new Error('Only newly reviewed completed checkpoints may be refreshed.');
+    }
     const reqIdsJson = Array.isArray(requirementIds)
         ? JSON.stringify(requirementIds)
         : (typeof requirementIds === 'string' ? requirementIds : '[]');
@@ -39,6 +45,18 @@ export function saveCheckpoint({
                 input_hash, output_hash, gate_version, status, requirement_ids,
                 invalidation_reason, revision, created_at, invalidated_at, attempt_id, lease_owner
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ${refreshReviewed ? `ON CONFLICT (
+                project_id, task_id, contract_id, plan_hash, task_spec_hash,
+                input_hash, output_hash, gate_version
+            ) DO UPDATE SET
+                status = excluded.status,
+                requirement_ids = excluded.requirement_ids,
+                invalidation_reason = excluded.invalidation_reason,
+                invalidated_at = excluded.invalidated_at,
+                revision = task_checkpoints.revision + 1,
+                created_at = excluded.created_at,
+                attempt_id = excluded.attempt_id,
+                lease_owner = excluded.lease_owner` : ''}
         `).run(
             projectId,
             taskId,

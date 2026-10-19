@@ -1068,11 +1068,6 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             .filter(file => writtenPathSet.has(path.normalize(file.path).replace(/\\/g, '/')))
                             .map(file => ({ path: file.path, content: file.content }));
 
-                        const statusDetail = `Görev başarıyla tamamlandı ve Reviewer tarafından onaylandı: ${coderOutput.summary}`;
-                        await writeDurum(coderDir, 'TAMAMLANDI', statusDetail);
-                        await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ONAYLANDI\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
-                        await checkTodoItem(path.join(tlDir, 'TODO.md'), task.title);
-
                         try {
                             const latestContract = db.prepare(`
                                 SELECT id, contract_hash FROM project_contracts
@@ -1093,14 +1088,24 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                                     outputHash: outHash,
                                     gateVersion: '1.0.0',
                                     status: 'completed',
+                                    requirementIds: task.requirementIds || [],
+                                    refreshReviewed: true,
                                     attemptId,
                                     leaseOwner: effectiveLeaseOwner
                                 });
+                            } else {
+                                throw new Error('Onaylı sözleşme bulunamadı; görev checkpoint kaydı oluşturulamadı.');
                             }
                         } catch (cpErr) {
                             if (cpErr?.code === 'WORKFLOW_LEASE_FENCED') throw cpErr;
                             logWarning('workflow.checkpoint_save_failed', cpErr, { projectId, taskId });
+                            throw cpErr;
                         }
+                        // Publish completion only after durable resume evidence exists.
+                        const statusDetail = `Görev başarıyla tamamlandı ve Reviewer tarafından onaylandı: ${coderOutput.summary}`;
+                        await writeDurum(coderDir, 'TAMAMLANDI', statusDetail);
+                        await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ONAYLANDI\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
+                        await checkTodoItem(path.join(tlDir, 'TODO.md'), task.title);
                         dag.setTaskStatus(taskId, 'completed', coderOutput);
                         await workflowLogEvent(wsHub,
                         projectId,

@@ -12,6 +12,7 @@ test_build_sandbox_gate.js
 test_build_validator.js
 test_build_verifier.js
 test_cancellation_and_deadlines.js
+test_checkpoint_resume.js
 test_concurrency_pool.js
 test_database_migrations.js
 test_deep_verification.js

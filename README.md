@@ -111,6 +111,14 @@ Next.js projelerinde `public/` dizini boş veya yoksa üretilen Dockerfile derle
 
 ### Üretim sırasında hata ve devam etme
 
+#### Log izleme ve kalıcı checkpoint
+
+Loglar ekranı varsayılan olarak **İşlerin son durumu** görünümünde her işin yüklenmiş kayıtlardaki son durumunu gösterir. **Son çalışma kayıtları** son yürütmeyi, **Yüklenen kayıt geçmişi** ise yüklenmiş olayların tamamını gösterir. Eski olaylar silinmez; görünüm değişikliği üretim motorunu çalıştırmaz. Gerçekte yeniden çalışan görevler **Yeniden çalıştırılıyor** olarak belirtilir.
+
+Motor, aynı onaylı sözleşme ve plan için görev kapsamını, bağımlılık girdilerini, hedef dosyaların içeriklerini ve kalite kapısı sürümünü doğrular. Değişmeyen geçerli checkpoint, o görevin Coder/Reviewer çağrılarını atlar. Kapsam, sözleşme veya dosya değişiklikleri ile açık geçersiz kılma kayıtları yeniden çalışma gerektirebilir; yalnızca logdaki “tamamlandı” satırı yeterli değildir.
+
+Yeni bir Coder/Reviewer çalışması aynı çıktıyı tekrar onaylarsa checkpoint anahtar çakışması yerine kayıt yenilenir. Görev, checkpoint kalıcı olarak kaydedildikten sonra tamamlandı olarak yayımlanır. Checkpoint deposu okunamaz veya kayıt yazılamazsa motor hata verir ve durur; bu durum sessizce önbellek yokluğu sayılarak ücretli üretime çevrilmez. Devam eden fakat henüz checkpoint oluşturmamış görevlerin kesinti sonrası yeniden çalışması mümkündür.
+
 Plan onayından sonra Manager'ın `TODO.md` dosyası, Director şartnameleri ve Teamleader görev dosyaları üretim ilerlemesini diskte tutar. Kesinti sonrası **Devam Ettir**, mevcut `TODO.md` ve `GOREV.md` kayıtlarındaki tek dosyalık görev hedeflerini geri yükler. Aynı sözleşmeye ait geçerli checkpoint'ler yeniden kullanılır; kabul hatası nedeniyle açık onarım kaydı varsa tamamlanmış görevler denetlenerek sürdürülür.
 
 Sohbet, üst çubuk ve Loglar ekranı `paused` ile `verification_failed` durumlarında **Devam Ettir** gösterir. `artifact_verified` durumunda son hata kayıtlıysa da aynı seçenek görünür. İş akışı hata bildirdiğinde sohbet ekranı açılır; neden ve varsa ilgili kalite kapısı burada ve süreç loglarında gösterilir. Diskten kurtarılan görevler canlı logları silmeden DAG'a eklenir; tamamlanmamış görevler bitmiş gibi işaretlenmez.

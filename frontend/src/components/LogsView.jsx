@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Terminal, Play, Search } from 'lucide-react';
 import { canResumeProject } from '../utils/canResumeProject';
+import { buildProjectLogMonitor, logMonitorStatus } from '../utils/projectLogMonitor';
+import { MAX_LOGS } from '../utils/projectLogs';
+
+const monitorLabels = { completed: 'Tamamlanma kaydı var', running: 'İşlem sürüyor',
+  paused: 'Duraklatıldı', failed: 'Hata / veto' };
 
 export default function LogsView({
   logs = [],
@@ -11,9 +16,21 @@ export default function LogsView({
 }) {
   const [filterAction, setFilterAction] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [view, setView] = useState('monitor');
+  useEffect(() => {
+    setView('monitor');
+    setFilterAction('ALL');
+    setSearchQuery('');
+  }, [projectState?.id]);
+  const monitor = useMemo(() => buildProjectLogMonitor(logs), [logs]);
+  const visibleLogs = view === 'monitor' ? monitor.rows : view === 'current' ? monitor.currentLogs : monitor.history;
 
-  const filteredLogs = logs.filter(log => {
-    if (filterAction !== 'ALL' && (log.action || '').toUpperCase() !== filterAction) {
+  const filteredLogs = visibleLogs.filter(log => {
+    const matchesAction = filterAction === 'ERROR'
+      ? logMonitorStatus(log) === 'failed'
+      : filterAction === 'FINISH' && view === 'monitor'
+        ? log.monitorStatus === 'completed' : (log.action || '').toUpperCase() === filterAction;
+    if (filterAction !== 'ALL' && !matchesAction) {
       return false;
     }
     if (searchQuery.trim()) {
@@ -36,7 +53,7 @@ export default function LogsView({
             <Terminal size={17} className="text-indigo-400" /> CANLI SÜREÇ İZLEME LOGLARI
           </div>
           <span className="bg-gray-800 text-indigo-300 px-2.5 py-0.5 rounded-full text-[11px] font-mono border border-gray-700">
-            {filteredLogs.length} / {logs.length} Kayıt
+            {filteredLogs.length} / {visibleLogs.length} {view === 'monitor' ? 'Son durum' : 'Kayıt'}
           </span>
         </div>
 
@@ -56,6 +73,7 @@ export default function LogsView({
 
           {/* Action Filtre Seçici */}
           <select
+            aria-label="Eylem filtresi"
             value={filterAction}
             onChange={e => setFilterAction(e.target.value)}
             className="bg-gray-800 border border-gray-700 text-white rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
@@ -86,6 +104,23 @@ export default function LogsView({
         </div>
       </div>
 
+      <div className="border-b border-gray-200 bg-slate-50 px-6 py-3 shrink-0">
+        <div role="group" aria-label="Süreç izleme görünümü" className="flex flex-wrap gap-2">
+          {[['monitor', 'İşlerin son durumu'], ['current', 'Son çalışma kayıtları'], ['history', 'Yüklenen kayıt geçmişi']].map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${view === value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-gray-600">
+          {view === 'monitor' ? 'Her işin son kaydı gösterilir. Yeni bir çalışma başladığında önceki tamamlanma kayıtları korunur.'
+            : view === 'current' ? 'Yalnız son çalışmanın olayları gösterilir. Önceki çalışmalar kayıt geçmişinde korunur.'
+              : `Yüklenmiş en fazla ${MAX_LOGS} olay gösterilir; arama ve filtreler bu kayıtlar üzerinde çalışır.`}
+        </p>
+        <p className="mt-1 text-xs text-gray-500">Bu ekran izleme amaçlıdır; teslim uygunluğunu Kalite Paneli gösterir.</p>
+      </div>
+
       {/* Tablo Alanı */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -93,7 +128,7 @@ export default function LogsView({
             <tr>
               <th className="py-2.5 px-4 w-44 font-semibold border-b border-gray-700">Tarih & Saat (created_at)</th>
               <th className="py-2.5 px-4 w-32 font-semibold border-b border-gray-700">Ajan (agent)</th>
-              <th className="py-2.5 px-3 w-28 font-semibold border-b border-gray-700">Eylem (action)</th>
+              <th className="py-2.5 px-3 w-28 font-semibold border-b border-gray-700">{view === 'monitor' ? 'Son durum' : 'Eylem (action)'}</th>
               <th className="py-2.5 px-4 w-52 font-semibold border-b border-gray-700">Hedef Dosya (file)</th>
               <th className="py-2.5 px-4 w-44 font-semibold border-b border-gray-700">Düğüm ID (node_id)</th>
               <th className="py-2.5 px-4 font-semibold border-b border-gray-700">İşlem Mesajı (message)</th>
@@ -108,7 +143,7 @@ export default function LogsView({
               </tr>
             ) : (
               filteredLogs.map((log, idx) => {
-                const isError = log.action === 'error';
+                const isError = logMonitorStatus(log) === 'failed';
                 const isVeto = log.action === 'veto';
                 const isFeedback = log.action === 'feedback';
                 const rowBg = isError
@@ -122,7 +157,7 @@ export default function LogsView({
                   : 'bg-gray-50/50 hover:bg-gray-100/70';
 
                 return (
-                  <tr key={idx} className={`${rowBg} transition-colors`}>
+                  <tr key={log.monitorKey || log.id || JSON.stringify([log.created_at, log.node_id, log.action, log.message])} className={`${rowBg} transition-colors`}>
                     <td className="py-2 px-4 whitespace-nowrap text-gray-500 text-[11px] align-top">
                       {log.timestamp || log.created_at || '—'}
                     </td>
@@ -130,7 +165,11 @@ export default function LogsView({
                       {log.agent || '—'}
                     </td>
                     <td className="py-2 px-3 align-top">
-                      {getActionBadge ? getActionBadge(log.action) : log.action}
+                      {view === 'monitor' ? (
+                        <span className={`inline-block rounded px-2 py-1 font-sans font-semibold ${isError ? 'bg-red-100 text-red-800' : log.monitorStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                          {projectState?.status === 'paused' && log.monitorStatus === 'running' ? 'Duraklatıldı' : log.reexecuting ? 'Yeniden çalıştırılıyor' : monitorLabels[log.monitorStatus]}
+                        </span>
+                      ) : getActionBadge?.(log.action) || String(log.action || '—').toUpperCase()}
                     </td>
                     <td className="py-2 px-4 text-gray-600 text-[11px] truncate max-w-xs align-top font-sans" title={log.file}>
                       {log.file || '—'}
@@ -140,6 +179,12 @@ export default function LogsView({
                     </td>
                     <td className="py-2 px-4 text-gray-900 font-sans text-xs whitespace-pre-wrap leading-relaxed align-top">
                       {log.message}
+                      {view === 'monitor' && (
+                        <div className="mt-1 text-[11px] text-gray-500">
+                          {log.eventCount} olay
+                          {log.reexecuting && ` · Önceki tamamlanma: ${log.lastCompletedAt}. Bu iş yeniden başlatılmış; tamamlandı sayılmıyor.`}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

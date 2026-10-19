@@ -401,8 +401,12 @@ export async function isTaskCheckpointValid(projectDir, projectId, task, options
             dependencyTargetFiles: options.dependencyTargetFiles || [],
             gateVersion: options.gateVersion || '1.0.0'
         });
-    } catch {
-        return false;
+    } catch (cause) {
+        // An unreadable checkpoint store is not a cache miss: retrying paid
+        // generation here could regenerate every completed task during an outage.
+        const error = new Error(`Görev checkpoint kaydı doğrulanamadı (${task?.id || 'unknown'}); yeniden üretim güvenle durduruldu.`, { cause });
+        error.code = 'CHECKPOINT_READ_FAILED';
+        throw error;
     }
 }
 

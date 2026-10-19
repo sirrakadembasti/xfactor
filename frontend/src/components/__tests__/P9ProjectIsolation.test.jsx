@@ -350,6 +350,7 @@ describe('P9 project/auth request isolation', () => {
       { ...event, id: 41, created_at: '2026-09-24T18:25:38.115Z', message: 'Earlier work' }
     ]);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Yüklenen kayıt geçmişi' }));
     await screen.findByText('Earlier work');
     expect(screen.getByText('3 / 3 Kayıt')).toBeInTheDocument();
     expect(screen.getAllByText('Saved once')).toHaveLength(2);
