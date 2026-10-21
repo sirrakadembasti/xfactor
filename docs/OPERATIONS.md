@@ -107,6 +107,42 @@ available for older installations; new installations should select a profile.
   restricted to loopback development endpoints.
 ## 6. Artifacts and verified ZIP downloads
 
+Filesystem availability and historical verification are separate. An artifact
+row may retain `verified` evidence while its ZIP is missing or no longer matches
+its recorded SHA-256. The project response reports availability separately;
+the download route still requires valid evidence and matching bytes. Missing
+source directories never implicitly delete projects or artifacts.
+
+Migration 16 adds the durable `artifact_maintenance` journal without foreign-key
+cascades to deleted projects. Normal project deletion refuses a project with a
+completion receipt. For a permitted deletion, registered, hash-matching ZIPs
+are queued inside the database deletion transaction and moved after commit to
+`ARTIFACTS_ROOT/.quarantine/`. A delivered `PROJECTS_ROOT/<project-id>.zip` copy
+is owned only when its digest matches a registered artifact; its quarantine is
+`PROJECTS_ROOT/.artifact-quarantine/`, keeping the move on its source filesystem.
+Pending moves are retried on startup and disk synchronization. Failed moves
+remain journaled; no permanent purge is implemented.
+
+From the repository root, `node backend/scripts/artifact-maintenance.js` opens
+the existing DB read-only and audits storage without applying migrations.
+For maintenance writes, start the updated backend once to apply migration 16,
+then stop backend and worker and run
+`node backend/scripts/artifact-maintenance.js --quarantine --offline`.
+Use the same `DB_PATH`, `PROJECTS_ROOT`, and `ARTIFACTS_ROOT` environment settings
+as the deployment. The CLI does not load the backend environment file itself.
+`--offline` is an operator declaration, not a service-stop command; a running
+workflow blocks CLI writes. `--orphans-only` filters newly selected candidates,
+but recovery can also retry previously journaled pending operations.
+
+Unprotected `rejected`/`superseded` artifacts become retention candidates after
+seven days from their DB creation time, provided their project is not running
+or deleting. Unregistered ZIPs need a file modification age of at least 24 hours
+and no running workflow anywhere. Recovery rechecks receipt/status protection,
+running production, path ownership and digest under the database write lock.
+Inventory and synchronization do not automatically enqueue retention candidates.
+See [artifact lifecycle and recovery](ARTIFACT-LIFECYCLE.md) for current findings
+and operational limits; these controls do not recover already missing ZIPs.
+
 - ZIP artifacts are produced server-side and recorded with SHA-256 hashes;
   downloads go through the authenticated route
   `GET /api/projects/:id/contracts/:contractId/artifacts/:artifactId/download`

@@ -170,6 +170,12 @@ test('shows and dismisses the verified-artifact policy alert', async () => {
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
 });
 
+test('shows a missing output explanation without a ZIP action', () => {
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'completed', latestArtifact: null, artifactAvailability: 'missing' }} />);
+  expect(screen.getByText('ZIP dosyası bulunamadı')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /zip/i })).not.toBeInTheDocument();
+});
+
 test('shows the ZIP button only for a completed project with a verified artifact', () => {
   const view = render(<Header {...headerProps} projectState={{ title: 'Project', status: 'completed', latestArtifact: null }} />);
 

@@ -677,6 +677,19 @@ export const MIGRATIONS = [
             `);
         }
     },
+    {
+        version: 16,
+        name: '016_artifact_maintenance',
+        up: database => database.exec(`
+            CREATE TABLE IF NOT EXISTS artifact_maintenance (
+                id TEXT PRIMARY KEY, project_id TEXT, artifact_id TEXT,
+                source_path TEXT NOT NULL, quarantine_path TEXT NOT NULL,
+                sha256 TEXT NOT NULL, reason TEXT NOT NULL, phase TEXT NOT NULL,
+                error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_artifact_maintenance_phase ON artifact_maintenance(phase);
+        `)
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');

@@ -368,10 +368,13 @@ export function createProjectRouter({
                 const missing = Array.isArray(syncResult.missingOnDisk)
                     ? syncResult.missingOnDisk.length
                     : 0;
+                const artifactAudit = syncResult.artifactInventory;
+                const missingZipCount = artifactAudit?.artifacts?.filter(a => ['missing', 'quarantine_missing'].includes(a.availability)).length || 0;
+                const orphanZipCount = artifactAudit?.orphans?.length || 0;
                 appendProjectActionMessages(activeProjectId, {
                     actionId,
                     userText: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
-                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.updatedCount) || 0} güncellenen proje.`
+                    modelText: `Senkronizasyon tamamlandı: ${registered} yeni, ${missing} eksik, ${Number(syncResult.updatedCount) || 0} güncellenen proje. ${artifactAudit?.success ? `ZIP envanteri: ${missingZipCount} eksik, ${orphanZipCount} kayıt dışı dosya. Eksik klasörler otomatik silinmedi.` : 'ZIP deposu kontrol edilemedi; otomatik temizlik yapılmadı.'}`
                 });
             }
             res.json(syncResult);

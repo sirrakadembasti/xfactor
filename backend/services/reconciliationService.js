@@ -1176,8 +1176,14 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
         throw error;
     }
 
+    const { auditArtifacts, recoverArtifactMaintenance } = await import('./artifactLifecycle.js');
+    const artifactEnv = { ...env, PROJECTS_ROOT: root };
+    const artifactMaintenance = recoverArtifactMaintenance({ database, env: artifactEnv });
+    const artifactInventory = auditArtifacts({ database, env: artifactEnv });
     return {
         success: true,
+        artifactMaintenance,
+        artifactInventory,
         syncedCount,
         updatedCount,
         missingOnDisk,

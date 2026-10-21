@@ -19,6 +19,7 @@
 * **Çok servisli yerel doğrulama:** Vite/Express projelerinin web ve API servisleri birlikte sınanır. Yönetim testleri, sınırlı ve yetkili önkoşul adımlarından gerçek kayıt kimlikleri alır; uydurma kimlik veya eksik test sözleşmesi başarı sayılmaz. Koşuya özel giriş imza anahtarları teslim paketine yazılmaz.
 * 📜 **Sürümlü Sözleşme & Çoklu Yığın Sürüm Koruması:** Next.js 15+ (App Router), React 18.3+, Prisma 6.4+, Zod 3.24+ ve Tailwind 3.4+ kararlı sürümleri kilitlidir. Otomatik `service-manifest.json`, `layout.tsx` ve `page.tsx` iskele koruması sağlanır.
 * 📦 **Sunucu Tarafı Temiz Oda ZIP Doğrulaması:** Dosya listesinden tahminî ZIP üretimi engellenmiştir. Sunucu tarafında üretilen ZIP artefaktı (`artifacts`), SHA-256 hash'i kilitlenerek `artifactVerifier` tarafından ayrı temiz iş dizininde sıfırdan açılıp test edilmeden ve dayanıklı tamamlama makbuzu (`completion_receipts`, Migrasyon 10) üretilmeden indirilemez (Unverified 409 Conflict).
+* **Proje ve ZIP yaşam döngüsü:** Kaynak klasörünün kaybolması veritabanını veya ZIP'leri otomatik silmez. ZIP'in fiziksel bulunabilirliği tarihsel kalite durumundan ayrı raporlanır; eksik veya değiştirilmiş paket indirilemez. Normal proje silme işlemi tamamlama makbuzuyla korunan projeyi reddeder; silinebilen projenin hash ile sahipliği doğrulanan ZIP'leri kalıcı DB günlüğü üzerinden karantinaya alınır. [Envanter, saklama ve karantina kılavuzu](docs/ARTIFACT-LIFECYCLE.md).
 * 🔒 **Bağımsız Execution Worker:** Web Orchestrator ve Execution Worker ayrı süreçlerdir; iş API'si Bearer token (`EXECUTION_WORKER_TOKEN`) ile korunur. `npm run dev:local` kalite kontrollerini Docker olmadan Node/npm/Playwright/Chromium ile yürütür. `local-trusted` profili işletim sistemi izolasyonu sağlamaz; üretilen kod worker kullanıcısının yetkileriyle çalışır.
 * 🛡️ **Profile Göre Güvenlik Sınırları:** Docker profili container kaynak/ağ sınırlarını uygular. Yerel profil ayrı iş dizini, ortam temizliği, arşiv sınırları, iptal ve süreç ağacı temizliği sağlar; container sandbox garantisi vermez. HttpOnly oturum, CSRF, HSTS ve yöneticiye özel disk senkronizasyonu platformun ortak korumalarıdır.
 * 🔄 **Dayanıklı LLM Görev Katmanı & Hedefli Onarım:** Geçici ağ ve zaman aşımı hatalarında 3 denemeli sınırlı retry (`llmTaskRetry.js`), Babel AST tabanlı sentaks denetimi ve güvensiz secret fallback hatalarını dosya bazlı sıralı gideren hedefli onarım döngüsü (`executeStaticRepairLoop`).
@@ -196,6 +197,8 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 ---
 
 ## 📚 Kapsamlı Dokümantasyon
+
+* **[Proje ve ZIP yaşam döngüsü](docs/ARTIFACT-LIFECYCLE.md)** — Salt okunur envanter, eksik dosyalar, proje silme bağlantısı ve durdurulmuş servislerle kontrollü karantina; kalıcı ZIP silme uygulanmaz.
 
 * 🧹 **[Depo temizliği ve refactor raporu](docs/REPOSITORY-CLEANUP.md)** — Kaldırılan dosyalar, korunan giriş noktaları, kurtarma kopyaları ve doğrulama sonuçları.
 * **[21 Ekim 2026 yerel worker ve otel üretimi kabul kaydı](docs/LOCAL-WORKER-VALIDATION-2026-10-21.md)** — Docker olmadan tamamlanan üretimin doğrulama koşusu, kalite kanıtları ve ZIP teslim sınırları.

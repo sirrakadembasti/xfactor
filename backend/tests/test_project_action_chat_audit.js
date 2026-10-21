@@ -48,7 +48,7 @@ const actionMessages = {
     },
     sync: {
         user: '🔄 Diskteki projeleri uygulamayla senkronize ettim.',
-        model: result => `Senkronizasyon tamamlandı: ${result.registered} yeni, ${result.missing} eksik, ${result.updated} güncellenen proje.`
+        model: result => `Senkronizasyon tamamlandı: ${result.registered} yeni, ${result.missing} eksik, ${result.updated} güncellenen proje. ZIP envanteri: 0 eksik, 0 kayıt dışı dosya. Eksik klasörler otomatik silinmedi.`
     },
     pin: {
         user: '📌 Projeyi başa sabitledim.',
@@ -846,6 +846,7 @@ await runAsyncTest('action message append rolls back the user row when the model
     );
 });
 
-assert.strictEqual(getSchemaVersion(), 15);
+assert.strictEqual(getSchemaVersion(), 16);
+assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='artifact_maintenance'").get());
 finish();
 await isolated.cleanup();

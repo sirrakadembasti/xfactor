@@ -28,6 +28,7 @@ backend/.env.local
 **/*.db-shm
 backend/data/*.db-shm
 backend/data/artifacts/
+backend/data/maintenance-backups/
 backend/data/*.zip
 backend/data/*.db-wal
 backend/data/llm-profiles.json

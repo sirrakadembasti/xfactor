@@ -40,6 +40,11 @@ export default function Header({
         <h2 className="font-bold text-base text-gray-900 truncate">{projectState.title}</h2>
         <div>{getStatusBadge(projectState.status)}</div>
         <ConnectionStatus state={wsState} />
+        {['missing', 'hash_mismatch', 'unreadable', 'unsafe_path', 'invalid_evidence'].includes(projectState.artifactAvailability) && (
+          <span role="status" className="text-xs text-red-700 bg-red-50 px-2 py-1 rounded border border-red-200">
+            {projectState.artifactAvailability === 'missing' ? 'ZIP dosyası bulunamadı' : 'ZIP doğrulanamıyor'}
+          </span>
+        )}
         {latestArtifact && latestArtifact.sha256 && latestArtifact.status === 'verified' && (
           <div className="flex flex-col text-left text-[10px] text-gray-500 font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
             <span className="text-emerald-700 font-bold">Artifact verified</span>

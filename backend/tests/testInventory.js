@@ -8,6 +8,7 @@ test_agent_document_boundary.js
 test_agent_contract_schemas.js
 test_api_fixture_setup.js
 test_artifact_inventory_private_files.js
+test_artifact_lifecycle.js
 test_backend.js
 test_build_sandbox_gate.js
 test_build_validator.js
@@ -31,6 +32,7 @@ test_generated_docker_artifact.js
 test_graphify.js
 test_health_and_lifecycle.js
 test_http_integration.js
+test_isolated_storage_roots.js
 test_p0_a_capability_check.js
 test_p0_a_contract_flow.js
 test_p0_a_cutover.js

@@ -4,6 +4,7 @@ import fsSync from 'fs';
 import path from 'path';
 import express from 'express';
 import http from 'http';
+import crypto from 'node:crypto';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 
@@ -21,6 +22,44 @@ try {
     const { createProjectRouter } = await import('../routes/projectRoutes.js');
 
     const projectRow = (id) => db.prepare('SELECT id, status FROM projects WHERE id = ?').get(id);
+
+    await runAsyncTest('artifact files and delivery copies follow committed project deletion into quarantine', async () => {
+        const project = await createProject({ title: 'Artifact Delete Lifecycle' });
+        const { getArtifactsRoot } = await import('../artifactPaths.js');
+        const root = getArtifactsRoot();
+        await fs.mkdir(root, { recursive: true });
+        const artifactPath = path.join(root, `${project.id}-fixture.zip`);
+        const content = Buffer.from('isolated test bytes');
+        await fs.writeFile(artifactPath, content);
+        const sha256 = crypto.createHash('sha256').update(content).digest('hex');
+        const contractId = `contract-${project.id}`;
+        db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,1,'draft','{}',?)").run(contractId, project.id, 'a'.repeat(64));
+        db.prepare("INSERT INTO artifacts (id,project_id,contract_id,kind,path,sha256,size,status) VALUES (?,?,?,'zip',?,?,?,'rejected')").run(`artifact-${project.id}`, project.id, contractId, artifactPath, sha256, content.length);
+        const deliveryPath = path.join(process.env.PROJECTS_ROOT, `${project.id}.zip`);
+        await fs.writeFile(deliveryPath, content);
+        const { recoverPendingProjectDeletions } = await import('../projectRepository.js');
+        db.exec(`CREATE TRIGGER fail_lifecycle_journal BEFORE INSERT ON artifact_maintenance BEGIN SELECT RAISE(ABORT, 'test journal failure'); END;`);
+        await assert.rejects(deleteProject(project.id), /test journal failure/);
+        assert.ok(projectRow(project.id));
+        assert.ok(db.prepare('SELECT id FROM artifacts WHERE project_id=?').get(project.id));
+        assert.ok(fsSync.existsSync(artifactPath));
+        db.exec('DROP TRIGGER fail_lifecycle_journal');
+        // A failed DB transaction must not move bytes or leave a committed queue.
+        db.exec(`CREATE TRIGGER fail_lifecycle_delete BEFORE DELETE ON projects BEGIN SELECT RAISE(ABORT, 'test rollback'); END;`);
+        await assert.rejects(recoverPendingProjectDeletions(), /test rollback/);
+        assert.equal(db.prepare('SELECT count(*) AS n FROM artifact_maintenance WHERE project_id=?').get(project.id).n, 0);
+        assert.ok(fsSync.existsSync(artifactPath));
+        db.exec('DROP TRIGGER fail_lifecycle_delete');
+        await recoverPendingProjectDeletions();
+        assert.ok(!fsSync.existsSync(artifactPath));
+        assert.ok(!fsSync.existsSync(deliveryPath));
+        const maintenance = db.prepare('SELECT * FROM artifact_maintenance WHERE project_id=?').all(project.id);
+        assert.equal(maintenance.length, 2);
+        for (const item of maintenance) {
+            assert.equal(item.phase, 'quarantined');
+            assert.equal(crypto.createHash('sha256').update(await fs.readFile(item.quarantine_path)).digest('hex'), sha256);
+        }
+    });
 
     function seedCompletionReceipt(projectId, tag) {
         const contractId = `p7del-contract-${tag}`;

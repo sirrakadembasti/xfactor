@@ -16,6 +16,7 @@ import { isManagementArtifactDetail, evidencePayload, assertWorkerReceipt, asser
 export * from './projectPaths.js';
 import { getProjectDir, getProjectsRoot, isValidProjectId } from './projectPaths.js';
 import { reconcileProjectsWithDisk, autoRegisterDiscoveredProjects, rehydrateProjectStateFromDisk, rehydrateProjectChatHistoryFromDisk, rehydrateProjectLogsFromDisk } from './services/reconciliationService.js';
+import { artifactAvailability, queueProjectArtifacts, recoverArtifactMaintenance } from './services/artifactLifecycle.js';
 
 export function slugifyTitle(title) {
     if (!title || typeof title !== 'string') return 'proje';
@@ -217,6 +218,7 @@ export function getProject(projectId) {
         size: artifact.size,
         verificationRunId: artifact.verificationRunId
     };
+    const candidateAvailability = artifactCandidate ? artifactAvailability(artifactCandidate) : 'none';
 
     return {
         id: project.id,
@@ -231,7 +233,10 @@ export function getProject(projectId) {
         last_error: lastError,
         chatHistory,
         contractId: contractRow?.id || null,
-        latestArtifact: latestArtifact || null
+        latestArtifact: latestArtifact || null,
+        artifactAvailability: artifact ? 'available' : artifactCandidate
+            ? (candidateAvailability === 'available' ? 'invalid_evidence' : candidateAvailability)
+            : 'none'
     };
 }
 export function getAllProjects() {
@@ -893,6 +898,7 @@ async function finalizeDeletion(intent, { env, force, fsOps, database }) {
                     END`);
             }
         }
+        queueProjectArtifacts({ database, projectId: intent.project_id, env });
         database.prepare('DELETE FROM chat_history WHERE project_id = ?').run(intent.project_id);
         database.prepare('DELETE FROM project_logs WHERE project_id = ?').run(intent.project_id);
         database.prepare('DELETE FROM project_owners WHERE project_id = ?').run(intent.project_id);
@@ -914,6 +920,7 @@ async function finalizeDeletion(intent, { env, force, fsOps, database }) {
         throw error;
     }
 
+    recoverArtifactMaintenance({ database, env });
     try {
         updateIntent(database, intent.id, 'cleanup_pending');
         await removeOwnedTrash(intent, fsOps);
@@ -985,6 +992,7 @@ export async function deleteProject(projectId, envOrOptions = process.env, maybe
 }
 
 export async function recoverPendingProjectDeletions({ env = process.env, database = db, fsOps = fs, force = false } = {}) {
+    recoverArtifactMaintenance({ database, env });
     const intents = database.prepare(`
         SELECT id, project_id, source_path, trash_path, original_status, phase, error
         FROM project_deletion_intents ORDER BY created_at, id

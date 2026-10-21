@@ -11,6 +11,7 @@
     "test:local-worker": "node scripts/test-worker.mjs --local-integration",
     "test:local-worker-package": "node scripts/test-local-worker-package.mjs",
     "graph": "node backend/scripts/generate_graph.js",
+    "artifacts:audit": "node backend/scripts/artifact-maintenance.js",
     "test:e2e": "playwright test",
     "test:production-image": "node scripts/test-p6-production-image.mjs"
   },
