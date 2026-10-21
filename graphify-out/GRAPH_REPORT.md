@@ -1,9 +1,9 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-21T19:02:52.600Z
+Üretim tarihi: 2026-10-21T19:37:10.395Z
 
-- 449 kaynak ve belge dosyası
-- 2768 düğüm
+- 450 kaynak ve belge dosyası
+- 2769 düğüm
 - 6992 ilişki
 
 ## Düğüm türleri
@@ -13,7 +13,7 @@
 | Function | 1322 |
 | Method | 764 |
 | SourceFile | 270 |
-| Document | 98 |
+| Document | 99 |
 | EnvVar | 82 |
 | Package | 52 |
 | HttpRoute | 48 |

@@ -199,6 +199,7 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 
 * 🧹 **[Depo temizliği ve refactor raporu](docs/REPOSITORY-CLEANUP.md)** — Kaldırılan dosyalar, korunan giriş noktaları, kurtarma kopyaları ve doğrulama sonuçları.
 * **[21 Ekim 2026 yerel worker ve otel üretimi kabul kaydı](docs/LOCAL-WORKER-VALIDATION-2026-10-21.md)** — Docker olmadan tamamlanan üretimin doğrulama koşusu, kalite kanıtları ve ZIP teslim sınırları.
+* **[21 Ekim 2026 Docker doğrulaması](docs/DOCKER-VALIDATION-2026-10-21.md)** — Gerçek worker/izolasyon, fixture imajları ve HTTPS üretim testi; imajdaki ortak limit modülü paketleme düzeltmesi.
 
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.

@@ -82,6 +82,12 @@ try {
   ]);
   requireSuccess('backend JSZip import', jszip);
 
+  const verificationBudget = run('docker', [
+    'run', '--rm', imageTag, 'node', '--input-type=module', '-e',
+    "const { verificationJobTimeoutMs, MAX_VERIFICATION_JOB_MS } = await import('./verification/verificationBudget.js'); if (verificationJobTimeoutMs({}) !== 900000 || MAX_VERIFICATION_JOB_MS !== 1500000) process.exit(1);",
+  ]);
+  requireSuccess('verification budget runtime dependency and limits', verificationBudget);
+
   const layout = run('docker', [
     'run', '--rm', '--entrypoint', 'sh', imageTag, '-c',
     'test -f /app/frontend/dist/index.html && test ! -e /app/frontend/node_modules',

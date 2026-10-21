@@ -1,10 +1,12 @@
 # Yerel Docker kaynak profili
 
-## Güncel kullanım — 1 Ekim 2026
+## Güncel kullanım — 21 Ekim 2026
 
 Kalite kontrolleri için `npm run dev` ile Node/npm/Playwright/Chromium tabanlı yerel worker seçilir; Docker Desktop veya Engine gerekmez. `npm run dev:local` aynı akışın açık adıdır. Bu belge aşağıdaki tarihsel Docker kaynak ayarlarını ve Docker profili/imaj build-run işlemlerini anlatır. Docker profili yalnız `npm run dev:docker` ile başlatılır. Yerel worker kurulumu ve güven sınırları için [paket kılavuzunu](LOCAL-WORKER-PACKAGE.md), gerçek test sonuçları için [doğrulama raporunu](LOCAL-WORKER-VALIDATION-2026-10-01.md) okuyun.
 
 30 Eylül 2026 tarihinde 8 GB RAM / 4 mantıksal işlemcili Windows bilgisayarında uygulanan ayarlar.
+
+Güncel Docker testlerinin sonuçları ve üretim imajındaki ortak limit modülü paketleme düzeltmesi [21 Ekim doğrulama raporundadır](DOCKER-VALIDATION-2026-10-21.md). Aşağıdaki kaynak ayarı ve yükseltme kayıtları kendi tarihleriyle korunur.
 
 ## Yapılandırma
 
@@ -40,8 +42,7 @@ Worker imajı ve testleri:
 ```powershell
 docker build -t xfactor-worker-runtime -f execution/Dockerfile execution
 cd execution
-$env:EXECUTION_WORKER_INTEGRATION='1'
-npm test
+npm run test:docker
 ```
 
 Depo kökünde uygulama imajı build / çalıştırma / HTTPS testi:
@@ -50,7 +51,21 @@ Depo kökünde uygulama imajı build / çalıştırma / HTTPS testi:
 npm run test:production-image
 ```
 
-Bu test geçici uygulama ve TLS proxy konteynerleri oluşturur; test sonunda kendi kaynaklarını temizler. Üretilen uygulamaların bağımsız kalite kontrolleri worker'ın mevcut Docker izolasyonu içinde kalır.
+Bu test geçici uygulama ve TLS proxy konteynerleri oluşturur; test sonunda kendi kaynaklarını temizler. Yerel kalite akışı Docker'sız kalır; Docker profili ayrıca container izolasyonunu sınar. Güncel test çalıştırıcısında yalnız `EXECUTION_WORKER_INTEGRATION=1` verip `npm test` çağırmak Docker entegrasyon dosyalarını seçmez; açık `npm run test:docker` komutunu kullanın.
+
+Depo kökünden diğer Docker kontrolleri:
+
+```powershell
+$env:P8_REQUIRE_DOCKER_LIMITS='1'
+$env:XFACTOR_TEST_RUNNER_FILES='test_p8_sandbox_limits.js'
+npm --prefix backend test
+Remove-Item Env:XFACTOR_TEST_RUNNER_FILES
+Remove-Item Env:P8_REQUIRE_DOCKER_LIMITS
+npm --prefix backend run test:docker:artifact
+node scripts/test-p6-image-contract.mjs
+```
+
+İlk test gerçek CPU/RAM/PID sınırlarını ve zaman aşımı temizliğini doğrular. Artefakt testi geçici Express/Next fixture ZIP'lerinden imaj üretip HTTP yanıtı alır; kullanıcının teslim ZIP'ini çalıştırmaz. İmaj sözleşmesi testi temiz build, ortak doğrulama bütçesi modülünün imaj içinde yüklenmesi, non-root kullanıcı ve paket/kilit dosyası uyumsuzluğunun reddini kontrol eder. HTTPS testi için kök Playwright bağımlılıkları ve onun Chromium kurulumu da gerekir.
 
 İşler tamamlandığında, çalışan konteynerleri kontrol ederek Engine'i kapatmak için:
 

@@ -26,6 +26,9 @@ ENV NODE_ENV=production \
 RUN addgroup -S xfactor && adduser -S xfactor -G xfactor
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY backend/ ./
+# Backend verification budgets share the worker's pure hard-limit module.
+# Preserve its ESM package scope without including the execution service.
+COPY execution/package.json execution/limits.js /app/execution/
 COPY llm-yonetimi/ /app/llm-yonetimi/
 COPY --from=llm-plugin-deps /app/llm-yonetimi/node_modules /app/llm-yonetimi/node_modules
 COPY docs/ /app/docs/
