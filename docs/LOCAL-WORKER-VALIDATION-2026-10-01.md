@@ -1,5 +1,7 @@
 # Yerel worker doğrulaması — 1 Ekim 2026
 
+> Bu dosya 1 Ekim tarihli paket/kaynak kabulünün tarihsel kaydıdır; aşağıdaki sayılar o kapsama aittir. Gerçek otel üretiminin tamamlanmış sonucu ve güncel süre/cache/readiness açıklamaları için [21 Ekim 2026 kabul raporunu](LOCAL-WORKER-VALIDATION-2026-10-21.md) okuyun.
+
 Bu çalışma Docker çağırmadan Node 22.23.2, npm 10.9.8, Playwright Core 1.62.1 ve Chromium kullanan `local-trusted` worker'ı ekler. Admin ve varsayılan kullanıcı bilgileri bu çalışma kapsamında değiştirilmedi. Önceki çalışma değişiklikleri korunmuştur.
 
 ## Doğrulanan davranışlar

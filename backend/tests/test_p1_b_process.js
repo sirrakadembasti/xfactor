@@ -46,4 +46,18 @@ await runAsyncTest('2. spawnService should scrub host secrets from subprocess en
     await killService(handle.processTreeHandle);
 });
 
+await runAsyncTest('3. only a valid explicit test secret crosses the scrubbed service boundary', async () => {
+    const supplied = { AUTH_SECRET: 'host-secret', JWT_SECRET: 'host-jwt', NEXTAUTH_SECRET: 'host-session' };
+    for (const secret of [undefined, 'invalid', 'a'.repeat(64)]) {
+        let received;
+        const adapter = { id: 'fixture', getCapabilities: () => ({ available: true, isolation: true }),
+            async spawn(request) { received = request.env; return { pid: 1 }; }, async kill() {} };
+        await spawnService('fixture', { command: 'node', args: [] }, supplied,
+            { adapter, applicationTestSecret: secret });
+        for (const key of Object.keys(supplied)) {
+            assert.equal(received[key], secret?.length === 64 ? secret : undefined);
+        }
+    }
+});
+
 finish();

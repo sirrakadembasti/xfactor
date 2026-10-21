@@ -31,8 +31,16 @@ export function killProcessTree() {
 
 export async function spawnService(serviceId, config = {}, env = {}, options = {}) {
     const adapter = requireAdapter(options.adapter);
+    const serviceEnv = scrubEnvironmentVariables(env);
+    // Only an explicitly supplied per-run test value can cross this boundary.
+    // Host/application credentials in env remain scrubbed.
+    if (/^[a-f0-9]{64}$/.test(options.applicationTestSecret || '')) {
+        for (const name of ['AUTH_SECRET', 'JWT_SECRET', 'NEXTAUTH_SECRET']) {
+            serviceEnv[name] = options.applicationTestSecret;
+        }
+    }
     if (adapter) {
-        const child = await adapter.spawn({ command: config.command, args: config.args || [], workspace: options.workspace || config.cwd || '/workspace', cwd: options.workspace || config.cwd, port: config.port, env: scrubEnvironmentVariables(env), signal: options.signal, networkMode: options.networkMode || 'service' });
+        const child = await adapter.spawn({ command: config.command, args: config.args || [], workspace: options.workspace || config.cwd || '/workspace', cwd: options.workspace || config.cwd, port: config.port, env: serviceEnv, signal: options.signal, networkMode: options.networkMode || 'service' });
         if (!child) throw new Error(`Failed to spawn service "${serviceId}".`);
         let stdout = '', stderr = '';
         child.stdout?.on('data', c => { stdout += c.toString(); });
@@ -41,7 +49,7 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
         return { serviceId, pid: child.pid, port: config.port, child, adapter, processTreeHandle: { pid: child.pid, serviceId, adapter }, exitCodePromise };
     }
 
-    const scrubbed = scrubEnvironmentVariables({ ...process.env, ...env });
+    const scrubbed = { ...scrubEnvironmentVariables(process.env), ...serviceEnv };
     const child = spawn(config.command, config.args || [], {
         cwd: options.workspace || config.cwd || process.cwd(),
         env: scrubbed,

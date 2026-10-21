@@ -101,14 +101,14 @@ await runAsyncTest('1. mandatory runtime and smoke gates are part of quality pol
 
 await runAsyncTest('1b. a runtime gate blocks when one required member is missing', async () => {
     const gate = combineRuntimeGate('api_contract', [
-        { name: 'database_file_accessible', status: 'passed' },
+        { name: 'database_connectivity', status: 'passed' },
         { name: 'api_status_check', status: 'passed' },
         { name: 'database_mutation_assertion', status: 'passed' }
     ]);
     assert.equal(gate.status, 'BLOCKED');
     assert.match(gate.reason, /api_query_check/);
     const failed = combineRuntimeGate('api_contract', [
-        { name: 'database_file_accessible', status: 'failed' }
+        { name: 'database_connectivity', status: 'failed' }
     ]);
     assert.equal(failed.status, 'FAIL', 'a concrete failure takes precedence over missing evidence');
 });
@@ -314,7 +314,7 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
                     checks: [
                         'manifest_presence', 'service_definitions', 'port_uniqueness',
                         'prisma_schema_presence', 'prisma_db_push', 'database_connectivity',
-                        'database_write_capability', 'database_file_accessible', 'api_status_check',
+                        'database_write_capability', 'api_status_check',
                         'api_query_check', 'database_mutation_assertion', 'browser_page_load',
                         'browser_journey_steps', 'service_spawn', 'smoke_liveness_probe',
                         'smoke_gate', 'test_script_presence', 'test_suite_execution'

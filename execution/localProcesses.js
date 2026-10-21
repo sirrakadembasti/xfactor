@@ -1,21 +1,28 @@
 import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, realpath, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, writeFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { ensureWindowsProcessHost, isWindows } from './windowsProcessHost.js';
+import { describeCommand } from './commandDiagnostics.js';
 
 const RETAIN_BYTES = 1024 * 1024;
 const HARD_BYTES = 8 * RETAIN_BYTES;
-const PROTECTED_ENV = /^(?:PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|HOME|USERPROFILE|HOMEDRIVE|HOMEPATH|TEMP|TMP|TMPDIR|APPDATA|LOCALAPPDATA|NODE_OPTIONS|NODE_PATH|NPM_CONFIG_CACHE|NPM_CONFIG_USERCONFIG|NPM_CONFIG_GLOBALCONFIG|XFACTOR_NPM_CLI|XFACTOR_LOCAL_PARENT_PID|XFACTOR_LOCAL_JOB_.*)$/i;
+const PROTECTED_ENV = /^(?:PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|HOME|USERPROFILE|HOMEDRIVE|HOMEPATH|TEMP|TMP|TMPDIR|APPDATA|LOCALAPPDATA|NODE_OPTIONS|NODE_PATH|NPM_CONFIG_CACHE|NPM_CONFIG_LOGS_DIR|NPM_CONFIG_USERCONFIG|NPM_CONFIG_GLOBALCONFIG|XFACTOR_NPM_CLI|XFACTOR_LOCAL_PARENT_PID|XFACTOR_LOCAL_JOB_.*)$/i;
 
-export async function createLocalProcessManager({ tools, workspace, deadline = Date.now() + 900000, signal, onResource, cacheRoot, resourceLimits = {} } = {}) {
+export async function createLocalProcessManager({ tools, workspace, deadline = Date.now() + 900000, signal, onResource, onProgress, cacheRoot, npmCacheDirectory, resourceLimits = {} } = {}) {
   if (!path.isAbsolute(workspace || '') || !path.isAbsolute(cacheRoot || '') || !path.isAbsolute(tools?.node || '') || !path.isAbsolute(tools?.npm || '')) throw new Error('Local process manager requires absolute owned workspace, cacheRoot, and trusted tools');
   const root = await realpath(workspace);
   const host = await ensureWindowsProcessHost({ cacheRoot, signal, deadline });
   const home = path.join(root, '.home'); const temporary = path.join(root, '.tmp');
-  const npmCache = path.join(root, '.npm');
+  if (npmCacheDirectory !== undefined && !path.isAbsolute(npmCacheDirectory)) throw new Error('Operator npm cache requires an absolute path');
+  const npmCache = npmCacheDirectory || path.join(root, '.npm');
+  const npmLogs = path.join(root, '.npm', '_logs');
   const commandBin = path.join(home, 'bin');
-  await Promise.all([home, temporary, npmCache, commandBin, path.join(home, 'AppData', 'Roaming'), path.join(home, 'AppData', 'Local')].map(directory => mkdir(directory, { recursive: true })));
+  await Promise.all([home, temporary, npmCache, npmLogs, commandBin, path.join(home, 'AppData', 'Roaming'), path.join(home, 'AppData', 'Local')].map(directory => mkdir(directory, { recursive: true })));
+  if (npmCacheDirectory) {
+    const relative = path.relative(root, await realpath(npmCache));
+    if ((await lstat(npmCache)).isSymbolicLink() || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative))) throw new Error('Operator npm cache must stay outside the job workspace');
+  }
   const shellQuote = value => "'" + value.replaceAll("'", "'\\''") + "'";
   const batchQuote = value => { if (/["\r\n]/.test(value)) throw new Error('Invalid trusted tool path'); return '"' + value.replaceAll('%', '%%') + '"'; };
   for (const name of ['npm', 'npx']) {
@@ -29,13 +36,15 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
     PATH: [commandBin, path.dirname(tools.node), isWindows ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32') : '/usr/bin:/bin'].join(path.delimiter),
     HOME: home, USERPROFILE: home, TEMP: temporary, TMP: temporary, TMPDIR: temporary,
     APPDATA: path.join(home, 'AppData', 'Roaming'), LOCALAPPDATA: path.join(home, 'AppData', 'Local'),
-    NPM_CONFIG_CACHE: npmCache, NPM_CONFIG_USERCONFIG: path.join(home, '.npmrc'), NPM_CONFIG_GLOBALCONFIG: path.join(home, 'global.npmrc'), NODE_ENV: 'test', CI: 'true', XFACTOR_NPM_CLI: tools.npm,
+    NPM_CONFIG_CACHE: npmCache, NPM_CONFIG_LOGS_DIR: npmLogs, NPM_CONFIG_USERCONFIG: path.join(home, '.npmrc'), NPM_CONFIG_GLOBALCONFIG: path.join(home, 'global.npmrc'), NODE_ENV: 'test', CI: 'true', XFACTOR_NPM_CLI: tools.npm,
+    ...(npmCacheDirectory ? { NPM_CONFIG_REGISTRY: 'https://registry.npmjs.org' } : {}),
     NODE_OPTIONS: '--max-old-space-size=1024', NODE_PATH: '',
     XFACTOR_LOCAL_JOB_MEMORY_BYTES: String(resourceLimits.memoryBytes || 1024 * 1024 * 1024), XFACTOR_LOCAL_JOB_PIDS: String(resourceLimits.pids || 100),
     XFACTOR_LOCAL_PARENT_PID: String(process.pid),
   });
   for (const name of ['XFACTOR_LOCAL_JOB_MEMORY_BYTES', 'XFACTOR_LOCAL_JOB_PIDS']) if (process.env[name]) baseEnv[name] = process.env[name];
-  const tracked = new Set(); let disposed = false;
+  const tracked = new Set(); let disposed = false, commandSequence = 0;
+  const progress = event => { try { onProgress?.(event); } catch {} };
   const check = options => {
     if (disposed) throw new Error('Local process manager disposed');
     if (signal?.aborted || options.signal?.aborted) throw new Error('Cancelled by user');
@@ -66,16 +75,19 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
     try { if (isWindows) record.child.kill('SIGKILL'); else if (record.child.pid) process.kill(-record.child.pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') record.failure ||= error; }
   }
   async function start(command, args, options, capture) {
+    const description = command && typeof command === 'object' ? describeCommand(command.command, command.args || []) : describeCommand(command, args);
     const spec = request(command, args, options); options = spec.options; check(options);
     const cwd = await cwdFor(options.cwd ?? options.workspace);
     check(options);
     const env = { ...baseEnv };
     for (const [name, value] of Object.entries(options.env || {})) {
-      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !PROTECTED_ENV.test(name) && value !== undefined && value !== null) env[name] = String(value);
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !PROTECTED_ENV.test(name)
+        && !(npmCacheDirectory && /^NPM_CONFIG_REGISTRY$/i.test(name)) && value !== undefined && value !== null) env[name] = String(value);
     }
     const actualArgs = host ? [tools.node, ...spec.args] : spec.args;
     const child = cp.spawn(host || tools.node, actualArgs, { cwd, env, shell: false, windowsHide: true, detached: !isWindows, stdio: ['pipe', 'pipe', 'pipe'] });
-    const record = { child, closedDone: false, failure: null }; tracked.add(record);
+    const record = { child, closedDone: false, failure: null, commandId: ++commandSequence, timedOut: false }; tracked.add(record);
+    progress({ state: 'started', commandId: record.commandId, ...description, startedAt: Date.now() });
     const output = { stdout: [], stderr: [] }; const retained = { stdout: 0, stderr: 0 }; const sizes = { stdout: 0, stderr: 0 };
     const hashes = { stdout: createHash('sha256'), stderr: createHash('sha256') };
     for (const stream of ['stdout', 'stderr']) child[stream].on('data', chunk => {
@@ -98,10 +110,13 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
         for (const item of signals) item.removeEventListener('abort', abort);
         const result = { exitCode, code: exitCode, signal: exitSignal, stdout: Buffer.concat(output.stdout).toString(), stderr: Buffer.concat(output.stderr).toString(), stdoutBytes: sizes.stdout, stderrBytes: sizes.stderr, stdoutTruncated: sizes.stdout > RETAIN_BYTES, stderrTruncated: sizes.stderr > RETAIN_BYTES, stdoutSha256: hashes.stdout.digest('hex'), stderrSha256: hashes.stderr.digest('hex') };
         result.passed = exitCode === 0 && !record.failure && !result.stdoutTruncated && !result.stderrTruncated;
+        progress({ state: 'finished', commandId: record.commandId, endedAt: Date.now(), exitCode,
+          timedOut: record.timedOut, stdoutTruncated: result.stdoutTruncated, stderrTruncated: result.stderrTruncated,
+          stdoutSha256: result.stdoutSha256, stderrSha256: result.stderrSha256 });
         resolve(result);
       });
     });
-    timer = setTimeout(() => { record.failure ||= new Error(Date.now() >= deadline ? 'Job deadline exceeded' : 'Command timed out'); terminate(record); }, ms);
+    timer = setTimeout(() => { record.timedOut = true; record.failure ||= new Error(Date.now() >= deadline ? 'Job deadline exceeded' : 'Command timed out'); terminate(record); }, ms);
     for (const item of signals) item.addEventListener('abort', abort, { once: true });
     if (signals.some(item => item.aborted)) abort();
     child.stdin.on('error', error => { if (error.code !== 'EPIPE' && error.code !== 'ERR_STREAM_DESTROYED') { record.failure ||= error; terminate(record); } });

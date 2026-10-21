@@ -8,10 +8,56 @@ export function isManagerApproval(message) {
     return /^(?:varsayimlarla devam (?:et|edelim)|(?:bu |mevcut )?plani onayliyorum|onayliyorum|onayla|(?:projeyi |uretimi |uretime )?(?:baslat|basla|baslayalim|gec)|tamam|tamamdir|yapalim|insa et|uret)$/.test(text);
 }
 
-export function inspectManagerPlan(text) {
+const patchFailure = error => ({ plan: null, candidate: null, error, isPatch: true });
+function inspectBrowserPatch(envelope, baseContract) {
+    try {
+        if (Buffer.byteLength(JSON.stringify(envelope), 'utf8') > 131072) throw new Error('Plan patch exceeds size limit.');
+        let nodes = 0;
+        const checkKeys = (value, depth = 0) => {
+            if (++nodes > 4096 || depth > 24) throw new Error('Plan patch exceeds structural limits.');
+            if (!value || typeof value !== 'object') return;
+            for (const key of Object.keys(value)) {
+                if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new Error('Unsafe plan patch key.');
+                checkKeys(value[key], depth + 1);
+            }
+        };
+        checkKeys(envelope);
+        const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
+            && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+        const patch = envelope.planPatch;
+        if (!exactKeys(envelope, ['planPatch']) || !exactKeys(patch, ['baseContractId', 'baseContractHash', 'set'])
+            || !exactKeys(patch.set, ['browser']) || !exactKeys(patch.set.browser, ['roleJourneys'])
+            || !Array.isArray(patch.set.browser.roleJourneys)) throw new Error('Plan patch accepts only set.browser.roleJourneys.');
+        if (!baseContract || baseContract.status !== 'approved' || typeof patch.baseContractId !== 'string'
+            || !/^[a-f0-9]{64}$/.test(patch.baseContractHash)
+            || patch.baseContractId !== baseContract.id || patch.baseContractHash !== baseContract.contract_hash) {
+            return { ...patchFailure('Plan patch approved base is missing or stale.'), stale: true };
+        }
+        const base = typeof baseContract.contract_json === 'string' ? JSON.parse(baseContract.contract_json) : structuredClone(baseContract.contract_json);
+        const draft = structuredClone(base);
+        draft.browser = { ...draft.browser, ...structuredClone(patch.set.browser) };
+        validateManagerPlan(draft, { requireManagement: true });
+        // Normalize a separate copy: normalization must never rewrite approved non-browser scope.
+        const normalized = normalizeManagerPlan(structuredClone(draft));
+        draft.browser = normalized.browser;
+        validateManagerPlan(draft, { requireManagement: true });
+        return { plan: draft, candidate: draft, error: null, isPatch: true,
+            baseContractId: patch.baseContractId, baseContractHash: patch.baseContractHash };
+    } catch (error) { return patchFailure(error.message); }
+}
+
+export function inspectManagerPlan(text, baseContract = null) {
     const source = String(text || '').trim();
     const blocks = [...source.matchAll(/```json\s*\n?([\s\S]*?)```/gi)].map(match => match[1]);
     if (source.startsWith('{')) blocks.push(source);
+    // Typed patches cannot fall through to prose, legacy full plans, or automatic repair.
+    for (const block of blocks) {
+        try {
+            const value = JSON.parse(block);
+            if (value && typeof value === 'object' && Object.hasOwn(value, 'planPatch')) return inspectBrowserPatch(value, baseContract);
+        } catch {}
+    }
+    if (/"planPatch"\s*:/.test(source)) return patchFailure('Plan patch JSON is malformed.');
     let candidate = null;
     let error = null;
     for (const block of blocks) {
@@ -120,9 +166,13 @@ export function applyManagerPlanCorrection(original, response) {
 }
 
 export const MANAGER_PLAN_CONTRACT_RULES = `
+Yalnız onaylı planın tarayıcı yolculuklarını değiştirme istendiğinde tam planı tekrar üretme. Sunucunun verdiği mevcut APPROVED baseContractId/baseContractHash değerlerini aynen kullan: {"planPatch":{"baseContractId":"...","baseContractHash":"64 hex","set":{"browser":{"roleJourneys":[...]}}}}. Başka set/envelope anahtarı yasaktır. Pending taslak base değildir. Tüm rol positive/negative yolculuklarını gerçek navigate/fill/select/submit adımlarıyla koru; patch yalnız yeni onay bekleyen taslak oluşturur, onay veya üretim başlatmaz.
 PLAN SÖZLEŞMESİ: Yalnız tek, eksiksiz JSON nesnesi döndür; önsöz, Markdown kod bloğu, SQL/uygulama kodu veya düğme talimatı yazma.
 summary, talimatname, domains, requirements, management alanları zorunlu. management.needed=false ise somut gerekçe yaz; yönetim gerektiren bir projede doğrulamadan kaçmak için false seçme.
 management.needed=true ise authentication, resources, roles ve her rol için browser.roleJourneys positive/negative zorunlu.
+Yeni/revize create kaynaklarında verification.createBody gerçek zorunlu model alanlarını ve identityField ile seçilen benzersiz alanda tam "{nonce}" değerini içermeli; update varsa somut updateBody içinde aynı identityField ve "{nonce}" bulunmalı. Genel name/title gövdesini başka modellere uygulama. Mevcut kanonik verification, deletionPolicy ve retention alanlarını koruyarak eksikleri tamamla.
+Yabancı anahtar için gerçek kayıt oluştur: verification.setup veya ayrı verification.retention.setup en fazla 8 adım içerir. Adım yalnız name/resource/role/createPath/createBody alanlarını taşır; name benzersiz harfle başlayan en fazla 32 harf/rakam/alt çizgi, resource create işlemi olan tanımlı kaynak, createPath onun apiPath değeriyle aynı güvenli yerel yoldur. role isteğe bağlıdır; varsa ilgili create izni olmalıdır. Global URL, method, headers veya sabit/uydurma ID kullanma.
+Önceki setup adımının ID'sini tam "{fixture:room.id}" değeriyle türünü koruyarak kullan; gömülü/ileri/bilinmeyen referans üretme. Ana createBody/updateBody kendi setup adlarını; retention.createBody yalnız retention.setup adlarını ve "{parentId}" kullanır. Göreli tarih tam "{date:+1d}"/"{date:-1d}"/"{date:0d}" biçimindedir, ofset -3650..3650 gün; bilinmeyen şablon yasak. Her gövde boş olmayan JSON nesnesi, en fazla 32768 UTF-8 bayt, derinlik 20 ve 2048 düğümdür.
 Silme beklentisi deleteExpectation: {"kind":"absent"} veya {"kind":"field","field":"status","equals":"void"}; "changed"/"value" kullanma.
 deletionPolicy.relatedData preserve/cascade olduğunda somut retentionRule VE verification.retention zorunlu:
 {"createPath":"/api/related","createBody":{"parentId":"{parentId}","note":"{nonce}"},"parentField":"parentId","itemPath":"/api/related/{id}"}.

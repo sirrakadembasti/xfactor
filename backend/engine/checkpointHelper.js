@@ -20,6 +20,17 @@ function canonicalizeFilePaths(filePaths) {
     return [...canonical].sort();
 }
 
+function canonicalizeCoverageValue(value) {
+    if (Array.isArray(value)) return value.map(canonicalizeCoverageValue);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalizeCoverageValue(value[key])]));
+    }
+    return value;
+}
+
+// Obligation fields intentionally migrate legacy task hashes, including empty
+// assignments. Old checkpoints need fresh acceptance; their hashes must not be
+// rewritten to reuse evidence produced for an unbound requirement assignment.
 export function computeTaskSpecHash(task) {
     if (!task || typeof task !== 'object') return '0'.repeat(64);
 
@@ -29,7 +40,10 @@ export function computeTaskSpecHash(task) {
         description: task.description || '',
         targetFiles: canonicalizeFilePaths(task.targetFiles),
         dependencies: canonicalizeTaskDependencies(task.dependencies || []),
-        domain: task.domain || ''
+        domain: task.domain || '',
+        requirementIds: [...new Set(Array.isArray(task.requirementIds) ? task.requirementIds : [])].sort(),
+        managementCoverage: (Array.isArray(task.managementCoverage) ? task.managementCoverage : [])
+            .map(entry => JSON.stringify(canonicalizeCoverageValue(entry))).sort()
     };
 
     return crypto.createHash('sha256')

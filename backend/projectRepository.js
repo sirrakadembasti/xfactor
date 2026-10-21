@@ -9,6 +9,8 @@ import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactRepository.js';
+import { isManagementArtifactDetail, evidencePayload, assertWorkerReceipt, assertWorkerCheck,
+    assertManagementCoverage, WORKER_RECEIPT_GATE } from './verification/artifactEvidencePolicy.js';
 
 
 export * from './projectPaths.js';
@@ -385,7 +387,7 @@ function assertMutationLease(projectId, options) {
  */
 export function assertVerifiedArtifactEvidence({ projectId, contractId, artifactId, strict = true } = {}) {
     const latestContract = db.prepare(`
-        SELECT id FROM project_contracts WHERE project_id = ? AND status = 'approved'
+        SELECT id, revision, contract_hash, contract_json FROM project_contracts WHERE project_id = ? AND status = 'approved'
         ORDER BY revision DESC LIMIT 1
     `).get(projectId);
     if (!latestContract || latestContract.id !== contractId) {
@@ -408,13 +410,58 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         SELECT * FROM verification_checks WHERE contract_id = ? AND run_id = ?
         ORDER BY id
     `).all(contractId, run.id);
-    const mandatory = checks.filter(check => check.applicability === 'MANDATORY');
+    let contract;
+    try { contract = JSON.parse(latestContract.contract_json); } catch { throw new Error('Approved artifact contract is invalid.'); }
+    const mandatory = checks.filter(check => P4_MANDATORY_GATES.includes(check.gate_name));
     const names = mandatory.map(check => check.gate_name);
     const expected = [...P4_MANDATORY_GATES].sort();
-    if (names.length !== expected.length || [...names].sort().some((name, i) => name !== expected[i])) {
+    if (names.length !== expected.length || [...names].sort().some((name, i) => name !== expected[i])
+        || mandatory.some(check => check.applicability !== 'MANDATORY')) {
         throw new Error(`Verification run ${run.id} has an incomplete mandatory gate set.`);
     }
+    const anchors = checks.filter(check => check.gate_name === WORKER_RECEIPT_GATE);
+    let workerReceipt = null;
+    if (anchors.length) {
+        if (anchors.length !== 1 || anchors[0].status !== 'PASS') throw new Error('Worker verification receipt is ambiguous or failed.');
+        workerReceipt = evidencePayload(anchors[0].evidence_json);
+        assertWorkerReceipt(workerReceipt, { projectId, contractId, contractHash: latestContract.contract_hash,
+            revision: latestContract.revision, artifactId, inputSha256: artifact.sha256, runId: run.id });
+        for (const id of Object.keys(workerReceipt.checkDigests)) {
+            const source = checks.find(check => check.id === id);
+            if (!source) throw new Error('Worker verification receipt check is missing.');
+            assertWorkerCheck(source, workerReceipt);
+        }
+    }
+    for (const check of checks) {
+        const detail = isManagementArtifactDetail(check.gate_name, contract);
+        if (check.applicability === 'MANDATORY' && !P4_MANDATORY_GATES.includes(check.gate_name) && !detail) {
+            throw new Error(`Unknown mandatory artifact gate: ${check.gate_name}.`);
+        }
+        if (detail) {
+            if (check.status !== 'PASS' || check.applicability !== 'MANDATORY') throw new Error(`Mandatory management gate ${check.gate_name} failed or was downgraded.`);
+            assertWorkerCheck(check, workerReceipt);
+        } else if (evidencePayload(check.evidence_json).workerReceipt) {
+            assertWorkerCheck(check, workerReceipt);
+        }
+    }
+    assertManagementCoverage(checks, contract);
+    const checkById = new Map(checks.map(check => [check.id, check]));
+    const assertSourceGraph = (check, ancestors = new Set()) => {
+        if (ancestors.has(check.id)) throw new Error(`Cyclic derived artifact evidence: ${check.gate_name}.`);
+        const evidence = evidencePayload(check.evidence_json);
+        if (evidence.workerReceipt) { assertWorkerCheck(check, workerReceipt); return; }
+        const payload = evidence.evidence && typeof evidence.evidence === 'object' ? { ...evidence, ...evidence.evidence } : evidence;
+        if (!payload.sourceCheckIds) return;
+        if (!Array.isArray(payload.sourceCheckIds) || !payload.sourceCheckIds.length) throw new Error('Derived artifact evidence has no source checks.');
+        const next = new Set(ancestors).add(check.id);
+        for (const id of payload.sourceCheckIds) {
+            const source = checkById.get(id);
+            if (!source || source.status !== 'PASS') throw new Error('Derived artifact evidence source is missing or failed.');
+            assertSourceGraph(source, next);
+        }
+    };
     for (const check of mandatory) {
+        assertSourceGraph(check);
         const evidence = parseEvidence(check.evidence_json);
         const payload = evidence?.evidence && typeof evidence.evidence === 'object'
             ? { ...evidence, ...evidence.evidence } : evidence;

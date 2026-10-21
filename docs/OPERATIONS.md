@@ -6,9 +6,9 @@ referenced source files for the authoritative implementation.
 
 ## 1. Deployment boundary: Split architecture (Web & Execution Worker)
 
-The platform operates across two distinct trust boundaries:
+The platform separates orchestration from generated-code execution:
 1. **Web Orchestrator (`backend/server.js`)**: A Node.js process backed by a SQLite database (WAL mode). Handles authentication, project state, and the DAG engine.
-2. **Execution Worker (`execution/server.js`)**: An isolated boundary running in a separate environment (or dedicated host). Executes untrusted generated code under rigid OS sandbox constraints (Docker/Bubblewrap).
+2. **Execution Worker (`execution/server.js`)**: A separate process, optionally on a dedicated host. The selected runtime determines its isolation: `local-trusted` runs generated code with the worker account's privileges; the Docker runtime provides a container boundary. Process separation alone is not OS isolation.
 
 The Web Orchestrator connects to the Execution Worker via an authenticated HTTP API.
 
@@ -16,7 +16,7 @@ The Web Orchestrator connects to the Execution Worker via an authenticated HTTP 
 - Projects: `PROJECTS_ROOT` (default `<backend>/../projects`).
 - Artifacts: `ARTIFACTS_ROOT` (default `<backend>/data/artifacts`).
 - Worker Token: `EXECUTION_WORKER_TOKEN` (Shared secret between Web and Worker).
-- Worker URL: `EXECUTION_WORKER_URL` (Points to the isolated worker).
+- Worker URL: `EXECUTION_WORKER_URL` (Points to the selected worker).
 
 Do not run two web instances against the same paths without the prerequisites in section 8.
 ## 2. Prerequisites
@@ -88,19 +88,20 @@ available for older installations; new installations should select a profile.
 
 ## 5. Execution sandbox and generated code
 
-- Generated/build code executes exclusively inside the isolated Execution Worker boundary. The web backend NEVER executes generated code.
-- The worker utilizes a proven sandbox adapter (`XFACTOR_BUILD_SANDBOX`, Docker or Bubblewrap). Without a proven capability the run is `BLOCKED`.
+- Generated/build code executes in the Execution Worker; the web backend does not execute generated code. Normal `npm run dev` and `npm run dev:local` select the Docker-free `local-trusted` runtime with explicit launcher consent. This runtime is not an OS sandbox. Use a dedicated account/machine when that trust boundary is required.
+- `npm run dev:docker` selects container execution. Direct `node execution/server.js` defaults to Docker unless `EXECUTION_WORKER_RUNTIME=local` is configured; local execution additionally requires `EXECUTION_WORKER_TRUST_LOCAL_CODE=1`. Missing runtime capability blocks verification rather than producing a PASS or silently choosing another profile. The legacy in-process sandbox adapter configuration is not a substitute for worker evidence.
 - Docker isolation enforces exactly: `--cpus 2.0`, `--memory 1g`, `--memory-swap 1g`, `--pids-limit 100`, `--security-opt no-new-privileges:true`, `--cap-drop ALL`, `--tmpfs /tmp:rw,noexec,nosuid,size=64m`, and loopback-only port publishing.
-- Sandboxed processes start with a scrubbed environment and a strict execution deadline bounded by the worker.
-- CI enforces real Docker evidence.
-- The built-in worker uses Docker. Build its operator-owned runtime with
+- Both runtimes start job processes with controlled environments and execution deadlines. Local execution does not inherit the operator's npm credentials or environment wholesale; these controls do not remove the account privileges available to generated code.
+- The Docker CI lane enforces real Docker evidence; the native worker CI lane is separate.
+- For Docker execution, build the operator-owned runtime with
   `docker build -t xfactor-worker-runtime execution`. It includes Chromium and
   pinned Playwright Core, independent of generated project dependencies.
   Interactive role journeys use temporary demo accounts and a fresh browser
   context; role/session proof, visible outcomes, keyboard access and mobile
   overflow are measured. Missing evidence never becomes PASS.
-- Worker `/readyz` checks the Docker daemon and runtime image; missing resources
-  produce 503. A running job is aborted at its deadline, including subprocesses.
+- Authenticated worker `/readyz` checks the selected runtime: Docker checks its daemon/image; local execution resolves pinned tools and launches Chromium to prove real renderer JavaScript and DOM execution. Missing resources produce 503. An unauthenticated 401 only proves the API is listening. A running job is aborted at its deadline, including subprocesses.
+- Local readiness failures expose a generic 503 response. Worker logs contain only allowlisted `phase`, `name` and `code` values; they omit error messages, stacks, paths and tokens. Tool resolution precedes the 30-second renderer probe, so a cold startup can take longer than that probe alone.
+- `VERIFICATION_JOB_TIMEOUT_MS` defaults to 900000 ms (15 minutes). The local development launcher supplies 1500000 ms (25 minutes) only when unset/blank; an explicitly smaller value is preserved. The hard cap is 1500000 ms, invalid values fail validation, and per-command limits still apply. Changing configuration affects new jobs after restart; it does not extend an active job's deadline.
 - Provider connections validate all DNS answers at socket connection time and
   reject non-public addresses and redirects. The explicit local HTTP switch is
   restricted to loopback development endpoints.
@@ -152,8 +153,12 @@ available for older installations; new installations should select a profile.
   capability is unavailable. The production image adds a 30s-interval Docker
   `HEALTHCHECK` on `http://127.0.0.1:8000/healthz`.
 - **Readiness timeout:** `READINESS_WORKER_TIMEOUT_MS` bounds the worker
-  capability check (default `2000` ms). A stalled worker makes `/readyz`
-  return HTTP 503 instead of leaving the probe open indefinitely.
+  capability check (backend default `2000` ms). The local development launcher
+  uses `35000` ms when this setting is unset/empty and preserves an explicitly
+  configured value. A stalled worker makes `/readyz` return HTTP 503 instead of
+  leaving the probe open indefinitely. The local cold tool/browser checks can
+  exceed this budget on a busy machine; inspect the safe worker phase diagnostic
+  and retry after the required tools are available.
 
 ## 8. Horizontal-scaling prerequisites
 
@@ -185,7 +190,7 @@ contract test `backend/tests/test_p8_ci_contract.js`:
   CPU, memory and PID limits.
 - `production-image` job: declares `needs: test`, contains no
   `continue-on-error`, and proves the production HTTPS container surface.
-- `local-worker` job: Windows, Linux ve macOS matrisi üzerinde sabit sürümlü araçları kurar, yerel entegrasyonu çalıştırır, platform paketini üretir ve gerçek paket/kapanış kabulünü doğrular. Docker gerektirmez. Matrisin tanımlanması bu platformlarda CI'nın geçtiği anlamına gelmez; yerel Windows kanıtı [doğrulama raporundadır](LOCAL-WORKER-VALIDATION-2026-10-01.md).
+- `local-worker` job: Windows, Linux ve macOS matrisi üzerinde sabit sürümlü araçları kurar, yerel entegrasyonu çalıştırır, platform paketini üretir ve gerçek paket/kapanış kabulünü doğrular. Docker gerektirmez. Matrisin tanımlanması bu platformlarda CI'nın geçtiği anlamına gelmez; ilk paket kabulü [1 Ekim raporunda](LOCAL-WORKER-VALIDATION-2026-10-01.md), son Windows uygulama üretim kanıtı [21 Ekim raporundadır](LOCAL-WORKER-VALIDATION-2026-10-21.md).
 
 ## 10. Yerel worker işletimi
 
@@ -197,4 +202,6 @@ Docker olmadan gerçek doğrulama için `npm run dev:local` veya paketli worker 
 
 Paket manifesti her dosyanın SHA256 bütünlüğünü doğrular; imzalı yayın yerine geçmez. Chromium, doğrulanmış kaynak paketten paket dışındaki benzersiz ve hashleri tekrar doğrulanan çalışma kopyasına alınır. Normal kapanış ve açılış hataları bu kopyayı temizler; ani launcher çöküşünden kalan kopyalar operatör tarafından temizlenebilir. Linux Chromium sistem kitaplıkları ve platforma özgü işletim sistemi gereksinimleri kılavuzda belirtilmiştir.
 
-Worker'a kapatma mesajı gönderildiğinde önce aktif işler iptal edilip süreçler ve çalışma dizinleri temizlenir. Windows'ta launcher IPC kullanır; native Job Object yardımcısı ayrıca worker'ın beklenmedik kapanışını izleyip çocuk süreçleri sonlandırır. İlk helper derlemesi iptal ve job deadline'a tabidir. Her iş kendi HOME/npm cache/geçici dizinlerini kullanır. Worker kapanışı sırasında bekleyen yeni işler başlatılmaz; kesilen aktif işler `failed_interrupted` olarak kaydedilir.
+Worker'a kapatma mesajı gönderildiğinde önce aktif işler iptal edilip süreçler ve çalışma dizinleri temizlenir. Windows'ta launcher IPC kullanır; native Job Object yardımcısı ayrıca worker'ın beklenmedik kapanışını izleyip çocuk süreçleri sonlandırır. İlk helper derlemesi iptal ve job deadline'a tabidir. Her işin HOME, npmrc, npm logları, geçici dizinleri ve uygulama veritabanı çalışma alanıyla birlikte temizlenir. Public npm paket önbelleği işlerin dışında `xfactor-local-cache/npm` altında kalır (varsayılan üst dizin `os.tmpdir()`, `XFACTOR_LOCAL_WORKER_DATA` ayarlıysa o dizin); registry `https://registry.npmjs.org` olarak sabitlenir ve operatörün npm kimlik bilgileri aktarılmaz. Bu önbellek kaynak kodu veya doğrulama sonucu yerine geçmez; iş sonlanınca silinmez. Windows helper önbelleği de ayrıdır. Worker kapanışı sırasında bekleyen yeni işler başlatılmaz; kesilen aktif işler `failed_interrupted` olarak kaydedilir.
+
+Worker'ın son 64 komuta ait aşama, çalıştırılabilir dosya adı, başlangıç/bitiş, çıkış kodu ve timeout bilgisi tanılama içindir. İş/lease sınırıyla kaydedilir; ham argüman, ortam değişkeni ve çıktı içermez. Bu kayıtlar kalite PASS kanıtının veya tamamlanma makbuzunun yerine kullanılamaz.

@@ -20,3 +20,17 @@ export function resolveDependencyResume(checkpoint, contract, files) {
         && checkpoint.artifactHash
         && checkpoint.artifactHash === fingerprintArtifactFiles(files));
 }
+
+// Generation completion proves only which contract finished code generation.
+// It deliberately does not bind source bytes: all acceptance/build/runtime
+// checks must run again against a fresh snapshot after source repairs.
+export function resolveGenerationResume(marker, contract, planHash) {
+    return Boolean(marker && typeof marker === 'object' && !Array.isArray(marker) && contract
+        && marker.stage === 'generation_finished'
+        && typeof marker.contractId === 'string' && marker.contractId.length > 0
+        && marker.contractId === contract.id
+        && /^[a-f0-9]{64}$/.test(marker.contractHash || '')
+        && marker.contractHash === contract.contract_hash
+        && /^[a-f0-9]{64}$/.test(marker.planHash || '')
+        && marker.planHash === planHash);
+}

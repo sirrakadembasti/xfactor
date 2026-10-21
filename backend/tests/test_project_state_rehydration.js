@@ -14,6 +14,45 @@ const database = await isolated.initializeDatabase();
 const { runAsyncTest, finish } = createTestHarness();
 
 try {
+    for (const mode of ['sync', 'direct']) {
+        await runAsyncTest(`canonical DAG survives ${mode} recovery with NULL legacy plan and stale disk tasks`, async () => {
+            const root = await fs.mkdtemp(path.join(os.tmpdir(), 'canonical-dag-recovery-'));
+            const projectId = `canonical-${mode}-${Date.now()}`;
+            const projectDir = path.join(root, projectId);
+            const teamDir = path.join(projectDir, 'manager/backend.director/backend');
+            await fs.mkdir(teamDir, { recursive: true });
+            await fs.writeFile(path.join(projectDir, 'manager/TALIMATNAME.md'), '# Stale previous plan\n');
+            await fs.writeFile(path.join(projectDir, 'DURUM.md'), 'TAMAMLANDI\n');
+            await fs.writeFile(path.join(teamDir, 'TODO.md'), '| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n'
+                + Array.from({ length: 18 }, (_, i) => `| ${i + 1} | old-task-${i} | Stale task | — | completed |`).join('\n'));
+            const staleOtherTeam = path.join(projectDir, 'manager/backend.director/obsolete');
+            await fs.mkdir(staleOtherTeam, { recursive: true });
+            await fs.writeFile(path.join(staleOtherTeam, 'TODO.md'), '| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n| 1 | stale-extra | Stale | — | completed |\n');
+            const workflow = { planHash: 'current-plan-hash', directorSpecs: { backend: { altTalimatname: 'Canonical specification' } },
+                dependencyPreparation: { status: 'prepared', contractId: 'current' }, last_error: 'Keep diagnostic',
+                teamleaderPlans: { 'backend.backend': { tasks: Array.from({ length: 50 }, (_, i) => ({ id: `backend-${i}`, title: `Current ${i}`,
+                    description: `Exact task ${i}`, dependencies: i ? [`backend-${i - 1}`] : [], targetFiles: [`src/task${i}.ts`],
+                    requirementIds: ['REQ-1'], managementCoverage: ['Room.create'], status: i < 8 ? 'completed' : 'pending' })) } } };
+            database.prepare("INSERT INTO projects (id,title,status,revision,plan,workflow_state) VALUES (?,?,'paused',26,NULL,?)")
+                .run(projectId, 'Canonical current project', JSON.stringify(workflow));
+            const contract = { summary: 'Current plan', talimatname: 'Current', domains: [{ name: 'backend', prefix: 'backend' }], requirements: [{ id: 'REQ-1' }], management: { needed: false } };
+            database.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,7,'approved',?,'current-contract-hash')")
+                .run(`contract-${projectId}`, projectId, JSON.stringify(contract));
+            const before = database.prepare('SELECT status,revision,plan,workflow_state FROM projects WHERE id=?').get(projectId);
+            const contractBefore = database.prepare('SELECT * FROM project_contracts WHERE project_id=?').get(projectId);
+            if (mode === 'sync') await reconcileProjectsWithDisk({ projectsRoot: root, database });
+            else {
+                const result = await rehydrateProjectStateFromDisk(projectDir, { projectId, database });
+                assert.equal(result.status, 'paused');
+                assert.deepStrictEqual(result.workflow, workflow);
+                assert.deepStrictEqual(result.plan, contract);
+            }
+            assert.deepStrictEqual(database.prepare('SELECT status,revision,plan,workflow_state FROM projects WHERE id=?').get(projectId), before,
+                'Canonical DAG/status/revision and intentional legacy plan=NULL must survive stale recovery');
+            assert.deepStrictEqual(database.prepare('SELECT * FROM project_contracts WHERE project_id=?').get(projectId), contractBefore);
+            await fs.rm(root, { recursive: true, force: true });
+        });
+    }
     await runAsyncTest('task targets are recovered from each coder GOREV without inventing missing targets', async () => {
         const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-targets-'));
         const taskDir = path.join(root, 'task-a');

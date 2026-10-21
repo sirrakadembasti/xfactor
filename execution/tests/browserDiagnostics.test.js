@@ -4,6 +4,94 @@ import { createRequire } from 'node:module';
 
 const { browserFailureDiagnostic, localBrowserFailureDiagnostic, runBrowserJourney } = createRequire(import.meta.url)('../browserRunner.cjs');
 
+function formFixture({ accessibleName = 'Room', focusable = true, tagName = 'SELECT', nativeElement } = {}) {
+  const calls = [];
+  const locator = {
+    waitFor: async () => {},
+    evaluate: async fn => {
+      const source = fn.toString();
+      if (source.includes("tagName === 'SELECT'")) return tagName === 'SELECT';
+      if (source.includes('activeElement')) return focusable;
+      if (nativeElement) return fn(nativeElement);
+      return accessibleName;
+    },
+    fill: async value => { calls.push(['fill', value]); },
+    selectOption: async value => { calls.push(['select', value]); return ['seed-uuid-option']; },
+    press: async key => { calls.push(['press', key]); }
+  };
+  const page = { goto: async () => {}, locator: () => locator, keyboard: { press: async () => {} },
+    getByText: () => ({ last: () => ({ waitFor: async () => {}, innerText: async () => 'Saved' }) }),
+    evaluate: async () => ({ width: 375, horizontalOverflow: false }) };
+  const chromium = { launch: async () => ({ close: async () => { calls.push(['close']); }, newContext: async () => ({
+    setDefaultTimeout() {}, route: async () => {}, newPage: async () => page
+  }) }) };
+  const request = steps => ({ url: 'http://127.0.0.1:3000/', authState: 'anonymous', steps,
+    expectedOutcome: { kind: 'success', text: 'Saved' } });
+  return { calls, chromium, request };
+}
+
+test('native select executes label/index choices with the same accessible action receipts', async () => {
+  const fixture = formFixture();
+  const result = await runBrowserJourney(fixture.request([
+    { action: 'select', selector: '#room', optionIndex: 1 },
+    { action: 'select', selector: '#method', optionLabel: 'Credit card' }
+  ]), { chromium: fixture.chromium });
+  assert.deepEqual(fixture.calls.filter(([kind]) => kind === 'select'), [['select', { index: 1 }], ['select', { label: 'Credit card' }]]);
+  assert.deepEqual(result.actions.map(action => [action.index, action.action, action.completed, action.accessibleName, action.keyboardReachable]),
+    [[0, 'select', true, 'Room', true], [1, 'select', true, 'Room', true]]);
+});
+
+test('select rejects invalid options and inaccessible or non-native controls', async () => {
+  const invalid = [{}, { optionIndex: -1 }, { optionIndex: 1001 }, { optionIndex: 1.5 }, { optionIndex: '1' },
+    { optionLabel: '' }, { optionLabel: '  ' }, { optionLabel: 1 }, { optionIndex: 1, optionLabel: 'Room' }, { optionValue: 'made-up-id' }];
+  for (const spec of invalid) {
+    const fixture = formFixture();
+    await assert.rejects(runBrowserJourney(fixture.request([{ action: 'select', selector: '#room', ...spec }]), { chromium: fixture.chromium }));
+    assert.ok(!fixture.calls.some(([kind]) => kind === 'select'));
+  }
+  for (const settings of [{ accessibleName: '' }, { focusable: false }, { tagName: 'INPUT' }]) {
+    const fixture = formFixture(settings);
+    await assert.rejects(runBrowserJourney(fixture.request([{ action: 'select', selector: '#room', optionIndex: 1 }]), { chromium: fixture.chromium }));
+    assert.ok(!fixture.calls.some(([kind]) => kind === 'select'));
+  }
+});
+
+test('native select option text cannot substitute for an accessible control name', async () => {
+  const fixture = formFixture({ nativeElement: { tagName: 'SELECT', labels: [], innerText: 'Choose guest\nDemo guest', getAttribute: () => null } });
+  await assert.rejects(runBrowserJourney(fixture.request([{ action: 'select', selector: '#guest', optionIndex: 1 }]), { chromium: fixture.chromium }));
+  assert.ok(!fixture.calls.some(([kind]) => kind === 'select'));
+});
+
+test('fill expands bounded UTC date templates and one nonce per journey without evaluation', async () => {
+  const { resolveFillValue } = createRequire(import.meta.url)('../browserRunner.cjs');
+  const values = { now: new Date('2026-03-28T23:30:00.000Z'), nonce: 'abcd1234' };
+  assert.equal(resolveFillValue('{date:+2d}', values), '2026-03-30');
+  assert.equal(resolveFillValue('{date:-2d}', values), '2026-03-26');
+  assert.equal(resolveFillValue('{date:+0d}', values), '2026-03-28');
+  assert.equal(resolveFillValue('{nonce}', values), 'abcd1234');
+  assert.equal(resolveFillValue('', values), '');
+  for (const value of [undefined, null, 42, '{date:+3651d}', '{date:-3651d}', '{date:2d}', 'prefix-{date:+2d}', '{unknown}', '{nonce:eval}', 'prefix-{nonce}', '{{nonce}}', '{date:+{nonce}d}', '{date:+2d', 'value}']) {
+    assert.throws(() => resolveFillValue(value, values));
+  }
+  const fixture = formFixture();
+  const steps = [{ action: 'fill', selector: '#name', value: '{nonce}' }, { action: 'fill', selector: '#note', text: '{nonce}' }];
+  await runBrowserJourney(fixture.request(steps), { chromium: fixture.chromium });
+  const filled = fixture.calls.filter(([kind]) => kind === 'fill').map(([, value]) => value);
+  assert.match(filled[0], /^[a-f0-9]{8}$/);
+  assert.equal(filled[0], filled[1]);
+  await runBrowserJourney(fixture.request(steps), { chromium: fixture.chromium });
+  const next = fixture.calls.filter(([kind]) => kind === 'fill')[2][1];
+  assert.notEqual(next, filled[0]);
+});
+
+test('invalid fill templates fail before any control is filled', async () => {
+  for (const value of [undefined, 4, '{unknown}', '{date:+3651d}', '{date:+2d} suffix']) {
+    const fixture = formFixture();
+    await assert.rejects(runBrowserJourney(fixture.request([{ action: 'fill', selector: '#date', value }]), { chromium: fixture.chromium }));
+    assert.ok(!fixture.calls.some(([kind]) => kind === 'fill'));
+  }
+});
+
 function timeoutFixture() {
   const observed = {};
   const page = { goto: async () => {}, getByText: () => ({ last: () => ({ waitFor: async () => {}, innerText: async () => 'Ready' }) }),

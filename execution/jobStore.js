@@ -1,5 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { sanitizeCommandEvent } from './commandDiagnostics.js';
+
+const identityOf = job => Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId']
+  .map(key => [key, job[key]]));
+function failureDiagnostics(job, status, result) {
+  if (!job.diagnostics || !['failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(status)) return result;
+  return { ...result, diagnostics: { commands: job.diagnostics.commands.slice(-64).map(command => ({ ...command,
+    ...(status === 'failed_timeout' && command.endedAt === undefined ? { timedOut: true } : {}) })) } };
+}
 
 export class JobStore {
   constructor(dbPath = ':memory:') {
@@ -19,6 +28,8 @@ export class JobStore {
             if (job.status === 'running') {
               job.status = 'failed_interrupted';
               job.completedAt = Date.now();
+              if (job.diagnostics) job.result = { ...failureDiagnostics(job, job.status, { error: 'Worker interrupted during execution' }), ...identityOf(job) };
+              delete job.diagnosticsLease;
               recovered = true;
             } else if (['completed', 'failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(job.status) && !Number.isFinite(job.completedAt)) {
               job.completedAt = Date.now();
@@ -45,8 +56,7 @@ export class JobStore {
     const now = Date.now();
     for (const [id, j] of this.jobs.entries()) {
       if (j.deadline <= now && (j.status === 'pending' || j.status === 'running')) {
-        j.status = 'failed_timeout';
-        j.completedAt = now;
+        this.updateJobStatus(id, j.status, 'failed_timeout', { error: 'Deadline exceeded during expiry sweep' });
       }
       if (j.completedAt && (now - j.completedAt) > 24 * 60 * 60 * 1000) this.jobs.delete(id);
     }
@@ -84,13 +94,41 @@ export class JobStore {
     const job = this.jobs.get(jobId);
     if (!job || job.status !== fromStatus) return false;
     job.status = toStatus;
+    if (result) result = failureDiagnostics(job, toStatus, result);
     if (result) {
-      const identity = Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId']
-        .map(key => [key, job[key]]));
-      job.result = { ...result, ...identity };
+      job.result = { ...result, ...identityOf(job) };
     }
     if (toStatus === 'completed' || toStatus === 'failed' || toStatus === 'cancelled' || toStatus === 'failed_timeout' || toStatus === 'failed_interrupted') {
       job.completedAt = Date.now();
+      delete job.diagnosticsLease;
+    }
+    this._save();
+    return true;
+  }
+
+  beginDiagnostics(jobId, lease) {
+    const job = this.jobs.get(jobId);
+    if (!job || job.status !== 'running' || job.diagnosticsLease || typeof lease !== 'string' || !lease) return false;
+    job.diagnosticsLease = lease;
+    job.diagnostics = { commands: [] };
+    this._save();
+    return true;
+  }
+
+  recordCommandDiagnostic(jobId, lease, event) {
+    const job = this.jobs.get(jobId);
+    if (!job || job.status !== 'running' || job.diagnosticsLease !== lease) return false;
+    const safe = sanitizeCommandEvent(event);
+    if (!safe) return false;
+    const commands = job.diagnostics.commands;
+    const existing = commands.find(command => command.commandId === safe.commandId);
+    if (event.state === 'started') {
+      if (existing) return false;
+      commands.push(safe);
+      if (commands.length > 64) commands.shift();
+    } else {
+      if (!existing || existing.endedAt !== undefined || safe.endedAt < existing.startedAt) return false;
+      Object.assign(existing, safe);
     }
     this._save();
     return true;

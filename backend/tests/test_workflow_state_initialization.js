@@ -14,7 +14,7 @@ process.env.PROJECTS_ROOT = tempProjectsRoot;
 
 try {
     const workflowModule = await import('../engine/workflow.js');
-    const { normalizeWorkflowState, restoreDirectorSpecFromDisk } = workflowModule;
+    const { normalizeWorkflowState, restoreDirectorSpecFromDisk, buildExecutionDAG } = workflowModule;
 
     console.log('1. normalizeWorkflowState(null) should return the empty workflow shape');
     const emptyState = normalizeWorkflowState(null);
@@ -61,6 +61,55 @@ try {
     );
     assert.strictEqual(restored.altTalimatname, '# Existing frontend architecture');
     assert.deepStrictEqual(restored.teamleaders.map(tl => tl.prefix), ['domain']);
+
+    console.log('5. cached canonical task obligations reach Coder fixtures and browser selectors through the execution DAG');
+    const { normalizeTeamleaderTasks } = await import('../agents/schemas.js');
+    const { formatManagementTaskDescription } = await import('../agents/director.js');
+    const { restoreTaskTargetsFromProtocol } = await import('../services/reconciliationService.js');
+    const contract = {
+        requirements: [{ id: 'MGMT-RESOURCE-1', statement: 'Create rooms with persistent API results.' },
+            { id: 'MGMT-ROLE-1', statement: 'Admin creates rooms using accessible controls.' }],
+        management: {
+            resources: [{ name: 'Room', verification: { identityField: 'roomNumber', createBody: { roomNumber: '{nonce}' } } }],
+            roles: [{ name: 'admin' }], authentication: { apiLogin: { path: '/api/auth/login' } }
+        },
+        browser: { roleJourneys: [{ role: 'admin', kind: 'positive',
+            steps: [{ action: 'click', selector: '#actual-create-room' }], expectedOutcome: { kind: 'success', text: 'Room saved' } }] }
+    };
+    const cachedPlan = normalizeTeamleaderTasks({ tasks: [
+        { id: 'room-api', description: 'Implement room creation', targetFiles: ['src/routes/rooms.ts'],
+            requirementIds: ['MGMT-RESOURCE-1'], managementCoverage: [{ requirementId: 'MGMT-RESOURCE-1', surface: 'api', operation: 'create' }] },
+        { id: 'admin-room-ui', description: 'Implement admin create journey', dependencies: ['room-api'], targetFiles: ['src/components/Rooms.tsx'],
+            requirementIds: ['MGMT-ROLE-1'], managementCoverage: [{ requirementId: 'MGMT-ROLE-1', journey: 'positive' }] }
+    ] }, contract.requirements);
+    const restoredTasks = restoreTaskTargetsFromProtocol(directorDir, cachedPlan.tasks);
+    const executionDag = buildExecutionDAG(restoredTasks);
+    assert.deepStrictEqual(executionDag.getTask('room-api').requirementIds, ['MGMT-RESOURCE-1']);
+    assert.match(formatManagementTaskDescription(executionDag.getTask('room-api'), contract), /"roomNumber":"\{nonce\}"/);
+    const uiDescription = formatManagementTaskDescription(executionDag.getTask('admin-room-ui'), contract);
+    assert.match(uiDescription, /#actual-create-room/);
+    assert.match(uiDescription, /\/api\/auth\/login/);
+    assert.match(uiDescription, /Room saved/);
+    assert.deepStrictEqual(executionDag.getExecutionOrder(), ['room-api', 'admin-room-ui']);
+
+    console.log('6. legacy and revised planning caches cannot revive obsolete disk tasks');
+    const { reconcilePlanningCache, computePlanHash } = workflowModule;
+    const legacyCache = { planHash: '0123456789abcdef', directorSpecs, teamleaderPlans,
+        dependencyPreparation: { status: 'completed' } };
+    const migrated = reconcilePlanningCache(legacyCache, contract);
+    assert.deepStrictEqual(migrated.directorSpecs, {});
+    assert.deepStrictEqual(migrated.teamleaderPlans, {});
+    assert.equal(migrated.dependencyPreparation, null);
+    assert.equal(migrated.planHash, computePlanHash(contract));
+    const unversioned = reconcilePlanningCache({ directorSpecs, teamleaderPlans }, contract);
+    assert.deepStrictEqual(unversioned.teamleaderPlans, {});
+    const currentCache = { ...legacyCache, planHash: computePlanHash(contract) };
+    const retained = reconcilePlanningCache(currentCache, contract);
+    assert.strictEqual(retained.directorSpecs, directorSpecs);
+    assert.strictEqual(retained.teamleaderPlans, teamleaderPlans);
+    const revised = structuredClone(contract);
+    revised.management.resources[0].verification.createBody.capacity = 2;
+    assert.deepStrictEqual(reconcilePlanningCache(currentCache, revised).teamleaderPlans, {});
 
     console.log('workflow state initialization tests passed');
 } finally {

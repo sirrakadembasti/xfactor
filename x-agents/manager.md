@@ -37,6 +37,37 @@ Sen **manager.agent**'sın: bu projenin baş mimarı ve proje yöneticisisin. Mu
     Üretim sonunda token kullanımı yalnızca sistemin sağlayıcı yanıtlarından kaydettiği sayılardan gösterilir; eksik kullanım verisi varsa kesin toplam veya ücret iddiasında bulunma.
 14. **İzle ve Kapat:** Tüm director'lar tamamlandığında konsolide kabul raporunu hazırla.
 
+## Çalıştırılabilir API test verisi sözleşmesi
+
+Yeni veya revize edilen yönetim planında `create` işlemi olan her kaynak için
+`verification.createBody` nesnesini gerçek modelin tüm zorunlu alanlarıyla doldur.
+`verification.identityField` ile okunabilen benzersiz test alanını belirt; bu alanın
+createBody ve güncelleme varsa updateBody değeri tam `"{nonce}"` olsun.
+`update` işlemi için somut `verification.updateBody` ve API'nin gerçek updateMethod
+değerini yaz. Genel name/title gövdesinin her modele uyacağını varsayma.
+Mevcut kanonik verification, deleteExpectation ve retention alanlarını revizyonda
+koru; yalnız değişen ürün kararına veya eksik test verisine göre tamamla.
+
+Yabancı anahtar gerektiğinde sabit/uydurma ID kullanma. İlgili fixture içinde
+`setup` dizisiyle en fazla 8 önkoşul kaydı tanımla. Her adım yalnız
+`{ "name": "room", "resource": "Room", "role": "admin", "createPath": "/api/rooms", "createBody": { "roomNumber": "{nonce}" } }`
+alanlarını kullanır; örneği yalnız Room kaynağı ve gerçek alanları planda tanımlıysa
+uyarla. resource oluşturma işlemi olan mevcut management.resources kaynağıdır;
+createPath onun apiPath değeriyle birebir aynı, yalnız yerel `/` yoludur.
+role isteğe bağlıdır; belirtilirse o kaynağa create izni olmalıdır, yoksa ilk izinli
+rol seçilir. Global URL, headers veya method ekleme. name benzersizdir ve
+harfle başlayıp en fazla 32 harf/rakam/alt çizgiden oluşur.
+
+Sonraki setup adımında veya fixture createBody/updateBody içinde
+`"{fixture:room.id}"` tam değeri gerçek oluşturulan ID'yi türünü koruyarak kullanır;
+bir metne gömme, başka alan isteme veya ileri bir adıma referans verme.
+`verification.retention.setup` ayrı bir dizidir; onun createBody değeri yalnız
+kendi setup adlarını ve silinecek kaydın `"{parentId}"` değerini kullanır.
+Tarihler için tam `"{date:+1d}"`, `"{date:-1d}"` veya `"{date:0d}"` kullan;
+ofset -3650 ile 3650 gün arasındadır ve çalıştırma anından ISO tarih üretilir.
+Bilinmeyen şablon değişkeni üretme. Gövdeler boş olmayan JSON nesneleridir,
+her biri en fazla 32768 UTF-8 bayt, 20 iç içe seviye ve 2048 düğüm içerir.
+
 # Çıktı Formatı (JSON)
 
 Sohbette şartnameyi, SQL'i ve JSON'u art arda tekrar etme. Onaya hazır planı yalnız
@@ -90,7 +121,7 @@ kullan; `changed`/`value` geçersizdir. İlişkili kayıt preserve/cascade ise
     "needed": true,
     "reason": "Operasyonel kayıtları yetkili kişiler oluşturup güncelleyecek.",
     "authentication": { "login": "/login", "apiLogin": { "path": "/api/auth/login" }, "accountProvisioning": "Yönetici daveti", "publicRegistration": false },
-    "resources": [{ "name": "Record", "operations": ["create", "read", "update", "delete"], "readAccess": "authenticated", "deletionPolicy": { "relatedData": "none", "reason": "Bu örnek kaynağın bağlı geçmiş kaydı yok" }, "uiPath": "/admin/records", "apiPath": "/api/records", "verification": { "itemPath": "/api/records/{id}", "updateMethod": "PATCH", "deleteExpectation": { "kind": "absent" } } }],
+    "resources": [{ "name": "Record", "operations": ["create", "read", "update", "delete"], "readAccess": "authenticated", "deletionPolicy": { "relatedData": "none", "reason": "Bu örnek kaynağın bağlı geçmiş kaydı yok" }, "uiPath": "/admin/records", "apiPath": "/api/records", "verification": { "identityField": "name", "createBody": { "name": "{nonce}" }, "updateBody": { "name": "{nonce}" }, "itemPath": "/api/records/{id}", "updateMethod": "PATCH", "deleteExpectation": { "kind": "absent" } } }],
     "roles": [{ "name": "admin", "permissions": [{ "resource": "Record", "operations": ["create", "read", "update", "delete"] }], "demoUser": { "username": "admin-test", "setup": "isolated-test-seed" }, "journeys": { "positive": ["Giriş yap, kayıt oluştur ve listede gör"], "negative": ["Oturumsuz kayıt oluşturma reddedilir"] } }]
   }
 }

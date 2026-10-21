@@ -7,6 +7,7 @@ const isolated = await setupIsolatedTestDb('workflow-failure-chat-event');
 process.env.PROJECTS_ROOT = path.join(path.dirname(isolated.dbPath), 'projects');
 const { db } = await import('../db.js');
 const { createProject, getProject } = await import('../projectRepository.js');
+const { acquireWorkflowLease } = await import('../workflowAttempts.js');
 const { executeProjectTasks, computePlanHash, resolveStaticAuditRepairIssues } = await import('../engine/workflow.js');
 const { normalizeManagerPlan } = await import('../agents/schemas.js');
 const { formatVerificationFailure } = await import('../verification/verificationCli.js');
@@ -55,23 +56,36 @@ try {
                 title: 'Prisma schema',
                 description: 'Schema task',
                 dependencies: [],
-                targetFiles: [],
+                targetFiles: ['prisma/schema.prisma'],
                 requirementIds: ['REQ-1']
             }] } }
         }),
         project.id
     );
 
+    const leaseOwner = 'workflow-failure-chat-event-test';
+    const lease = acquireWorkflowLease(project.id, leaseOwner);
+    assert.strictEqual(lease.acquired, true);
     let notificationState = null;
+    let taskFailureInjected = false;
     const wsHub = { publish(event) {
         if (event.type === 'project_state_updated') notificationState = getProject(project.id);
+        // Fail at the real task boundary before any provider call. An invalid
+        // cached plan is replanned now, so an empty target list cannot provide
+        // a deterministic task failure for this notification regression.
+        if (event.action === 'delegate' && event.node_id?.endsWith('.backend-prisma-schema')) {
+            taskFailureInjected = true;
+            throw new Error('Controlled task failure: backend-prisma-schema');
+        }
     } };
-    await executeProjectTasks(project.id, wsHub);
+    await executeProjectTasks(project.id, wsHub, lease.attempt.id, leaseOwner);
 
+    assert.ok(taskFailureInjected, 'fixture must reach the intended task failure without an LLM call');
     assert.ok(notificationState, 'workflow must publish a project state update');
     assert.strictEqual(notificationState.status, 'paused');
     assert.match(notificationState.last_error, /backend-prisma-schema/);
     assert.match(notificationState.chatHistory.at(-1).parts[0].text, /backend-prisma-schema/);
+    assert.strictEqual(db.prepare('SELECT status FROM workflow_attempts WHERE id = ?').get(lease.attempt.id).status, 'failed');
     console.log('workflow failure chat event test passed');
 } finally {
     await isolated.cleanup();

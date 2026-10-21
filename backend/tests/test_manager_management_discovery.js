@@ -188,6 +188,19 @@ assert.match(directorAgent.formatManagementTaskDescription(completeTasks.app.tas
     'the Coder and Reviewer must receive the UI operation obligation');
 assert.match(directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[0], delegated), /\/api\/assets\/\{id\}/,
     'Coder must receive the approved resource behavior and paths');
+const resourceDescription = directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[1], delegated);
+assert.match(resourceDescription, /resource role permissions:/,
+    'resource tasks must receive role grants as well as authenticated read policy');
+for (const role of delegated.management.roles) {
+    assert.ok(resourceDescription.includes(JSON.stringify({ name: role.name,
+        permissions: role.permissions.filter(permission => permission.resource === managed.resources[0].name) })),
+    'resource tasks must receive exact approved role permissions, including empty grants');
+}
+assert.ok(directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[1], {
+    ...delegated, management: { ...delegated.management,
+        roles: [...delegated.management.roles, { name: 'outside', permissions: [] }] }
+}).includes('{"name":"outside","permissions":[]}'),
+    'a role without a grant must remain explicit rather than inherit authenticated access');
 assert.match(directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[2], delegated), /\/api\/auth\/login/,
     'role login tasks must receive approved authentication paths and provisioning');
 assert.match(directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[3], delegated), /#forbidden/,
@@ -195,5 +208,60 @@ assert.match(directorAgent.formatManagementTaskDescription(completeTasks.app.tas
 assert.match(reviewerAgent.buildReviewerPrompt('Asset UI', ['src/assets/page.tsx'], [],
     directorAgent.formatManagementTaskDescription(completeTasks.app.tasks[0])), /MGMT-RESOURCE-1.*ui.*create/s,
     'review prompt must show the same operation obligation');
+
+const setupFixture = {
+    ...managed.resources[0].verification,
+    identityField: 'name',
+    setup: [{ name: 'parent', resource: 'Asset', role: 'owner', createPath: '/api/assets', createBody: { name: '{nonce}' } }],
+    createBody: { name: '{nonce}', parentId: '{fixture:parent.id}', dueAt: '{date:+2d}' },
+    updateBody: { name: '{nonce}' }
+};
+const withFixture = fixture => ({ ...base, management: { ...managed,
+    resources: [{ ...managed.resources[0], verification: fixture }]
+} });
+assert.equal(validateManagerPlan(withFixture(setupFixture), { requireManagement: true }), true,
+    'setup fixtures may reference prior created IDs and bounded relative dates');
+const chainedFixture = structuredClone(setupFixture);
+delete chainedFixture.setup[0].role;
+chainedFixture.setup.push({ name: 'child', resource: 'Asset', createPath: '/api/assets',
+    createBody: { name: '{nonce}', parentId: '{fixture:parent.id}', dueAt: '{date:-3650d}' } });
+chainedFixture.createBody.parentId = '{fixture:child.id}';
+assert.equal(validateManagerPlan(withFixture(chainedFixture), { requireManagement: true }), true,
+    'setup role may default to a creator and references may use earlier setup IDs');
+const retentionFixture = { ...setupFixture, retention: { ...preservedResource.verification.retention,
+    setup: [{ name: 'related', resource: 'Asset', createPath: '/api/assets', createBody: { name: '{nonce}', assetId: '{parentId}' } }],
+    createBody: { assetId: '{parentId}', relatedId: '{fixture:related.id}', note: '{nonce}' } } };
+assert.equal(validateManagerPlan(withFixture(retentionFixture), { requireManagement: true }), true,
+    'retention prerequisites have their own reference scope and may use the actual parent ID');
+assert.throws(() => validateManagerPlan(withFixture({ ...retentionFixture, retention: {
+    ...retentionFixture.retention, createBody: { assetId: '{parentId}', relatedId: '{fixture:parent.id}' }
+} }), { requireManagement: true }), /verification|fixture/i,
+    'retention must not reuse IDs from a separate resource fixture execution');
+for (const [label, change] of [
+    ['too many setup steps', f => { f.setup = Array.from({ length: 9 }, (_, i) => ({ ...f.setup[0], name: `fixture${i}` })); }],
+    ['duplicate setup name', f => { f.setup.push({ ...f.setup[0] }); }],
+    ['unsafe setup name', f => { f.setup[0].name = '../outside'; }],
+    ['global setup URL', f => { f.setup[0].createPath = 'https://external.example/api/assets'; }],
+    ['undeclared setup path', f => { f.setup[0].createPath = '/api/unknown'; }],
+    ['undeclared setup resource', f => { f.setup[0].resource = 'Unknown'; }],
+    ['forbidden setup role', f => { f.setup[0].role = 'viewer'; }],
+    ['extra setup request controls', f => { f.setup[0].headers = { authorization: 'secret' }; }],
+    ['empty setup body', f => { f.setup[0].createBody = {}; }],
+    ['unsafe body key', f => { f.setup[0].createBody.constructor = 'unsafe'; }],
+    ['oversized UTF-8 body', f => { f.setup[0].createBody.note = 'ğ'.repeat(17000); }],
+    ['forward setup reference', f => { f.setup[0].createBody.parentId = '{fixture:parent.id}'; }],
+    ['unknown main reference', f => { f.createBody.parentId = '{fixture:missing.id}'; }],
+    ['embedded fixture reference', f => { f.createBody.parentId = 'prefix-{fixture:parent.id}'; }],
+    ['unsupported fixture property', f => { f.createBody.parentId = '{fixture:parent.password}'; }],
+    ['out of bounds relative date', f => { f.createBody.dueAt = '{date:+3651d}'; }],
+    ['unknown template', f => { f.createBody.note = '{unknown}'; }],
+    ['unavailable main parent ID', f => { f.createBody.parentId = '{parentId}'; }],
+    ['invalid identity field', f => { f.identityField = 'name.password'; }],
+    ['embedded relative date', f => { f.createBody.dueAt = 'date={date:+2d}'; }]
+]) {
+    const fixture = structuredClone(setupFixture);
+    change(fixture);
+    assert.throws(() => validateManagerPlan(withFixture(fixture), { requireManagement: true }), /verification|setup|fixture|date/i, label);
+}
 
 console.log('Manager management discovery contract passed');

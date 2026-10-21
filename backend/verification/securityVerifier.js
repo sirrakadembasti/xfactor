@@ -5,7 +5,7 @@ const MUTATION_METHODS = new Set(['post', 'put', 'delete', 'patch']);
 const AUTH_MIDDLEWARE_PATTERN = /(?:auth|jwt|protect|token|user|session|guard|passport|verify|security)/i;
 const AUTH_FILE_TOKENS = new Set(['auth', 'authentication', 'login', 'jwt']);
 const AUTH_LOGIC_PATTERN = /(?:from\s+['"]jsonwebtoken['"]|require\s*\(\s*['"]jsonwebtoken['"]\s*\)|['"`]\/(?:api\/)?(?:auth|login|logout|register|session)\b|type\s*=\s*['"]password['"]|\b(?:jwt|jsonwebtoken)\s*\.|\b(?:signIn|logIn|authenticateUser)\s*\()/i;
-const PUBLIC_AUTH_ROUTE_PATTERN = /^(?:\/api)?(?:\/v\d+)?\/(?:auth(?:\/(?:login|register|signin|signup|token|refresh|logout|forgot-password|reset-password|verify|session)?)?|login|register|signin|signup|token|refresh)$/i;
+const PUBLIC_AUTH_ROUTE_PATTERN = /^(?:\/api)?(?:\/v\d+)?\/(?:auth(?:\/(?:login|register|signin|signup|token|refresh|forgot-password|reset-password|verify|session)?)?|login|register|signin|signup|token|refresh)$/i;
 
 function isPublicAuthRoute(routePath) {
     if (!routePath || typeof routePath !== 'string') return false;
@@ -92,6 +92,104 @@ function isPrismaReceiver(node) {
     return false;
 }
 
+function collectRouteContext(ast) {
+    const calls = new WeakMap(), records = [], rebindings = [];
+    function visit(node, scope, ancestors = []) {
+        if (!node || typeof node !== 'object') return;
+        if (node.type === 'Program' || node.type === 'BlockStatement') {
+            scope = { parent: scope, bindings: new Map(), fallback: new Map() };
+            const parent = ancestors.at(-1);
+            if (parent && /Function/.test(parent.type)) for (const param of parent.params || []) {
+                if (param.type === 'Identifier') scope.bindings.set(param.name, { kind: /^(?:app|router)$/.test(param.name) ? 'router' : 'other' });
+            }
+        }
+        if (node.type === 'ImportDeclaration') for (const spec of node.specifiers || []) {
+            scope.bindings.set(spec.local.name, { kind: node.source.value === 'express'
+                ? spec.imported?.name === 'Router' ? 'routerFactory' : 'express' : 'other', imported: true });
+        }
+        if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier') {
+            const existing = scope.bindings.get(node.id.name);
+            if (existing?.initializers) existing.initializers.push(node.init);
+            else scope.bindings.set(node.id.name, { init: node.init, initializers: [node.init], scope });
+            rebindings.push({ node, scope, name: node.id.name });
+        }
+        if (node.type === 'AssignmentExpression' && node.left.type === 'Identifier') rebindings.push({ node, scope, name: node.left.name });
+        if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression') {
+            const parent = ancestors.at(-1), container = ancestors.at(-2);
+            const record = { node, scope, container: parent?.type === 'ExpressionStatement'
+                && ['Program', 'BlockStatement'].includes(container?.type) ? container : null };
+            calls.set(node, record); records.push(record);
+        }
+        for (const value of Object.values(node)) {
+            if (Array.isArray(value)) for (const child of value) { if (child?.type) visit(child, scope, [...ancestors, node]); }
+            else if (value?.type) visit(value, scope, [...ancestors, node]);
+        }
+    }
+    visit(ast, null);
+    const findBinding = (scope, name) => {
+        for (let current = scope; current; current = current.parent) if (current.bindings.has(name)) return current.bindings.get(name);
+        return null;
+    };
+    function kindOf(node, scope, seen = new Set()) {
+        if (!node) return 'other';
+        if (node.type === 'Identifier') {
+            const binding = findBinding(scope, node.name);
+            if (!binding) return node.name === 'express' ? 'express' : node.name === 'Router' ? 'routerFactory' : 'other';
+            if (binding.kind) return binding.kind;
+            if (seen.has(binding)) return 'other';
+            const kinds = (binding.initializers || [binding.init]).map(init => kindOf(init, binding.scope, new Set([...seen, binding])));
+            return kinds.includes('router') ? 'router' : kinds[0] || 'other';
+        }
+        if (node.type === 'MemberExpression' && node.property?.name === 'Router' && kindOf(node.object, scope, seen) === 'express') return 'routerFactory';
+        if (node.type === 'CallExpression') {
+            if (node.callee.type === 'Identifier' && node.callee.name === 'require' && node.arguments[0]?.value === 'express') return 'express';
+            if (['express', 'routerFactory'].includes(kindOf(node.callee, scope, seen))) return 'router';
+        }
+        return 'other';
+    }
+    function receiver(node, scope) {
+        if (node?.type !== 'Identifier') return null;
+        const binding = findBinding(scope, node.name);
+        if (binding) return kindOf(node, scope) === 'router' ? binding : null;
+        // Existing importless app/router snippets remain route declarations.
+        if (!/^(?:app|router)$/.test(node.name)) return null;
+        if (!scope.fallback.has(node.name)) scope.fallback.set(node.name, {});
+        return scope.fallback.get(node.name);
+    }
+    const routeInfo = node => {
+        const record = calls.get(node);
+        if (!record) return null;
+        let object = node.callee.object, args = node.arguments;
+        if (object?.type === 'CallExpression' && object.callee?.type === 'MemberExpression' && object.callee.property?.name === 'route') {
+            args = [object.arguments[0], ...args]; object = object.callee.object;
+        }
+        const key = receiver(object, record.scope);
+        return key ? { ...record, key, args } : null;
+    };
+    const protections = records.filter(record => record.node.callee.property?.name === 'use').flatMap(record => {
+        const key = receiver(record.node.callee.object, record.scope);
+        if (!key || !record.container) return [];
+        const args = record.node.arguments, first = args[0];
+        const hasPath = first?.type === 'StringLiteral';
+        // Dynamic/array mount paths and nested router mounts do not establish auth proof.
+        if (first?.type === 'ArrayExpression' && first.elements.some(item => item?.type === 'StringLiteral')) return [];
+        const middleware = hasPath ? args.slice(1) : args;
+        if (!middleware.some(arg => !/router/i.test(arg?.name || '') && checkAuthNode(arg))) return [];
+        const firstBinding = first?.type === 'Identifier' ? findBinding(record.scope, first.name) : null;
+        const firstName = first?.name || first?.property?.name || '';
+        if (!hasPath && (!checkAuthNode(first) || /(?:path|prefix|url)$/i.test(firstName)
+            || (firstBinding && !firstBinding.imported && !(firstBinding.initializers || [firstBinding.init])
+                .every(init => ['FunctionExpression', 'ArrowFunctionExpression'].includes(init?.type))))) return [];
+        return [{ ...record, key, path: hasPath ? first.value.replace(/\/+$/, '') : '' }];
+    });
+    return { routeInfo, protectedByUse(route, routePath) {
+        return protections.some(use => use.key === route.key && use.container === route.container && use.node.start < route.node.start
+            && !rebindings.some(change => change.node.start > use.node.start && change.node.start < route.node.start
+                && receiver({ type: 'Identifier', name: change.name }, change.scope) === route.key)
+            && (use.path === '' || routePath === use.path || routePath.startsWith(`${use.path}/`)));
+    } };
+}
+
 export function verifySecurityBaseline(contract = {}, files = [], sandbox = null) {
     const issues = [];
     const isAuthRequired = Boolean(
@@ -135,6 +233,8 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
         } catch {
             continue;
         }
+
+        const routeContext = collectRouteContext(ast);
 
         function walk(node) {
             if (!node) return;
@@ -199,8 +299,9 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
             if (isAuthRequired && node.type === 'CallExpression' && node.callee && node.callee.type === 'MemberExpression') {
                 const prop = node.callee.property?.name;
                 const propLower = prop ? prop.toLowerCase() : '';
-                if (MUTATION_METHODS.has(propLower) && Array.isArray(node.arguments) && node.arguments.length >= 2) {
-                    const firstArg = node.arguments[0];
+                const route = routeContext.routeInfo(node);
+                if (MUTATION_METHODS.has(propLower) && route && route.args.length >= 2) {
+                    const firstArg = route.args[0];
                     let routePath = '';
                     if (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') {
                         routePath = String(firstArg.value || '');
@@ -208,7 +309,7 @@ export function verifySecurityBaseline(contract = {}, files = [], sandbox = null
                         routePath = firstArg.quasis.map(q => q.value?.cooked || q.value?.raw || '').join('');
                     }
 
-                    if (!isPublicAuthRoute(routePath) && !hasAuthMiddleware(node.arguments)) {
+                    if (!isPublicAuthRoute(routePath) && !hasAuthMiddleware(route.args) && !routeContext.protectedByUse(route, routePath)) {
                         issues.push(`Mandatory authentication missing on mutate route ${propLower.toUpperCase()} ${routePath || 'unknown'} in ${file.path}`);
                     }
                 }

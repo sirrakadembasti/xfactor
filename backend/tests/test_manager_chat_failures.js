@@ -4,6 +4,7 @@ import { createProjectRouter } from '../routes/projectRoutes.js';
 import { createProject } from '../projectRepository.js';
 import { readProjectState } from '../engine/index.js';
 import { getProjectLogs } from '../db.js';
+import { getLatestRevision } from '../contracts/projectContract.js';
 
 const app = express(); app.use(express.json());
 let nextFailure = new DOMException('secret-provider-text', 'TimeoutError');
@@ -145,6 +146,76 @@ try {
   assert.equal(result.state.status, 'implementing');
   assert.equal(executions, 4);
   assert.equal(result.state.plan.management.resources[0].verification.deleteExpectation.equals, true);
+  const pause = await fetch(url.replace(project.id, scopedRecovery.id).replace(/\/chat$/, '/pause'), { method: 'POST' });
+  assert.equal(pause.status, 200);
+  assert.equal((await readProjectState(scopedRecovery.id)).status, 'paused');
+  const previousRevision = getLatestRevision(scopedRecovery.id).revision;
+  responder = async () => 'Düzeltme talimatı alındı; devam ettiğinizde uygulayacağım.';
+  result = await postChat(scopedRecovery.id, 'Hatayı düzelt, devam için talimatı kaydet.');
+  assert.equal(result.state.status, 'paused');
+  assert.equal(result.state.remediation.ready, true);
+  assert.equal(getLatestRevision(scopedRecovery.id).revision, previousRevision,
+    'a natural-language remediation without a plan must retain the existing contract');
+  const revisedPlan = { ...result.state.plan, summary: 'Hotel with corrected verification fixtures' };
+  responder = async () => JSON.stringify(revisedPlan);
+  result = await postChat(scopedRecovery.id, 'Plan fixture sözleşmesini düzelt, tam plan sun, henüz başlatma.');
+  assert.equal(result.status, 200);
+  assert.equal(result.state.status, 'pending_approval',
+    'a validated revised plan must expose the approval UI even when the request says düzelt');
+  assert.equal(result.state.plan.summary, revisedPlan.summary);
+  assert.equal(result.state.remediation, null);
+  assert.equal((await readProjectState(scopedRecovery.id)).status, 'pending_approval');
+  const revisedContract = getLatestRevision(scopedRecovery.id);
+  assert.equal(revisedContract.revision, previousRevision + 1);
+  assert.equal(revisedContract.status, 'pending_approval');
+  assert.equal(JSON.parse(revisedContract.contract_json).summary, revisedPlan.summary);
+  assert.match(result.state.chatHistory.at(-1).parts[0].text, /\[PLAN_HAZIR\]/);
+  assert.equal(executions, 4, 'publishing a revision must wait for explicit approval before execution');
+  const { db } = await import('../db.js');
+  const approvedBase = db.prepare("SELECT * FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(scopedRecovery.id);
+  const basePlan = JSON.parse(approvedBase.contract_json);
+  const patchBrowser = structuredClone(basePlan.browser);
+  patchBrowser.roleJourneys[0].steps = [{ action: 'fill', selector: '#real-resource-name', value: '{nonce}' }, { action: 'click', selector: '#real-resource-submit' }];
+  const patch = { planPatch: { baseContractId: approvedBase.id, baseContractHash: approvedBase.contract_hash, set: { browser: patchBrowser } } };
+  let patchCalls = 0;
+  responder = async () => { patchCalls++; return JSON.stringify(patch); };
+  result = await postChat(scopedRecovery.id, 'Yalnız browser alanını düzelt; yeni planı henüz onaylama.');
+  assert.equal(result.status, 200);
+  assert.equal(result.state.status, 'pending_approval');
+  assert.deepEqual(result.state.plan.browser, patchBrowser);
+  const withoutBrowser = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'browser'));
+  assert.deepEqual(withoutBrowser(result.state.plan), withoutBrowser(basePlan), 'patch preserves every non-browser field exactly from APPROVED base, not pending draft');
+  assert.equal(result.state.plan.requirements.length, basePlan.requirements.length);
+  const patchRevision = getLatestRevision(scopedRecovery.id);
+  assert.equal(patchRevision.revision, revisedContract.revision + 1);
+  assert.equal(executions, 4);
+  result = await postChat(scopedRecovery.id, 'Yalnız browser alanını düzelt, tekrar gönder.');
+  assert.equal(result.status, 200);
+  assert.equal(getLatestRevision(scopedRecovery.id).id, patchRevision.id, 'identical patch publication is idempotent');
+  for (const bad of [
+    { ...patch.planPatch, baseContractHash: '0'.repeat(64) },
+    { ...patch.planPatch, baseContractId: revisedContract.id },
+    { ...patch.planPatch, set: { browser: patchBrowser, summary: 'Scope drift' } },
+    { ...patch.planPatch, set: JSON.parse('{"browser":{},"__proto__":{"polluted":true}}') }
+  ]) {
+    responder = async () => { patchCalls++; return JSON.stringify({ planPatch: bad }); };
+    const beforeCalls = patchCalls;
+    result = await postChat(scopedRecovery.id, 'Browser alanını düzelt; başlatma.');
+    assert.ok([400, 409].includes(result.status), JSON.stringify(result));
+    assert.equal(patchCalls, beforeCalls + 1, 'invalid patch must never enter full-plan remediation');
+    assert.equal(getLatestRevision(scopedRecovery.id).id, patchRevision.id);
+    assert.equal((await readProjectState(scopedRecovery.id)).status, 'pending_approval');
+  }
+  for (const badText of [JSON.stringify(patch).slice(0, -1), JSON.stringify({ ...patch, summary: 'Envelope scope drift' }),
+    JSON.stringify({ planPatch: { ...patch.planPatch, set: { browser: { roleJourneys: [] } } } }),
+    JSON.stringify({ planPatch: { ...patch.planPatch, set: { browser: { roleJourneys: [{ constructor: 'unsafe' }] } } } })]) {
+    const inspectedPatch = inspectManagerPlan(badText, approvedBase);
+    assert.equal(inspectedPatch.isPatch, true);
+    assert.equal(inspectedPatch.plan, null);
+    assert.ok(inspectedPatch.error);
+    assert.equal(canRepairManagerFixtures(inspectedPatch), false);
+  }
+  assert.equal(inspectManagerPlan(JSON.stringify(patch)).plan, null, 'patch requires a server-provided approved base');
   console.log('PASS: mixed JSON is summarized, explicit chat approval starts once, invalid plans are repaired or explained, owner authorization preserved');
   console.log('PASS: Manager deadlines/quota/auth produce safe correlated failures, persist diagnostics, preserve planning');
 } finally { await new Promise(resolve => server.close(resolve)); }

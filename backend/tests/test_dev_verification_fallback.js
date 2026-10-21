@@ -63,30 +63,35 @@ const result = await verifyArtifactDevFallback({
     ]
 });
 
-assert.strictEqual(result.passed, true);
-assert.strictEqual(result.status, 'verified');
+assert.strictEqual(result.passed, false, 'Static inspection cannot establish executable verification');
+assert.strictEqual(result.status, 'rejected');
+const fallbackChecks = db.prepare('SELECT gate_name,status,evidence_json FROM verification_checks WHERE run_id = ?').all(runId);
+for (const name of ['clean_install', 'typecheck', 'framework_build', 'api_contract', 'browser_journey']) {
+    const check = fallbackChecks.find(item => item.gate_name === name);
+    assert.equal(check.status, 'BLOCKED', name);
+    const evidence = JSON.parse(check.evidence_json);
+    assert.equal(evidence.kind, 'not_executed');
+    assert.equal(evidence.sourceCheckIds, undefined, 'No synthetic self-referencing provenance');
+}
 
 // Verify that assertVerifiedArtifactEvidence passes strictly
-const verifiedEvidence = assertVerifiedArtifactEvidence({
+assert.throws(() => assertVerifiedArtifactEvidence({
     projectId: project.id,
     contractId,
     artifactId,
     strict: true
-});
-assert.ok(verifiedEvidence.artifact, 'Artifact evidence must be verified');
-assert.strictEqual(verifiedEvidence.run.status, 'verified');
+}));
 
 // Verify completeVerifiedProject
 db.prepare("UPDATE projects SET status = 'artifact_verified' WHERE id = ?").run(project.id);
-const completionResult = completeVerifiedProject({
+assert.throws(() => completeVerifiedProject({
     projectId: project.id,
     contractId,
     artifactId,
     expectedRevision: 1
-});
-assert.strictEqual(completionResult.status, PROJECT_STATUS.COMPLETED);
-assert.ok(completionResult.completionReceiptId);
-console.log('[PASS] Test Case 1: Success path and completeVerifiedProject transitioned project to completed');
+}));
+assert.notEqual(db.prepare('SELECT status FROM projects WHERE id = ?').get(project.id).status, PROJECT_STATUS.COMPLETED);
+console.log('[PASS] Test Case 1: Static inspection cannot verify or complete an artifact without execution');
 
 
 // -------------------------------------------------------------

@@ -4,6 +4,7 @@ const DEFAULT_MAX_ATTEMPTS = 3;
 const MAX_ATTEMPTS = 3;
 const TRANSIENT_FAILURE = /\b(?:timeout|timed\s*out|eai_again|econnreset|econnrefused|enetunreach|enotfound|network(?:\s+error)?|socket\s+hang\s+up|429|5\d\d)\b/i;
 const TERMINAL_ABORT = /\b(?:lease[_\s-]*lost|cancel(?:led|ed|lation)?|paused?)\b/i;
+const TRANSIENT_CAUSE_CODE = /^(?:EAI_AGAIN|ECONNRESET|ECONNREFUSED|ENETUNREACH|ENOTFOUND|ETIMEDOUT)$/i;
 
 function boundedAttemptCount(value) {
     const parsed = Number(value);
@@ -30,11 +31,23 @@ function sleep(ms, signal) {
 
 export function isTransientLLMTaskFailure(error, signal = null) {
     if (signal?.aborted) return false;
-    const message = String(error?.message || error || '');
-    if (TERMINAL_ABORT.test(message)) return false;
-    if (error?.name === 'TimeoutError') return true;
-    if (error?.name === 'AbortError') return /timeout|timed\s*out/i.test(message);
-    return TRANSIENT_FAILURE.test(message);
+    const chain = [], seen = new Set();
+    let current = error;
+    // A malformed, cyclic or excessively deep chain is not retry evidence.
+    for (let depth = 0; current != null && depth < 5; depth++) {
+        if (seen.has(current)) return false;
+        seen.add(current);
+        chain.push({ name: current?.name,
+            message: typeof current === 'string' ? current : String(current?.message || ''),
+            code: typeof current?.code === 'string' ? current.code : '' });
+        current = current?.cause;
+    }
+    if (current != null) return false;
+    // Cancellation/lease loss anywhere wins even when an outer wrapper says timeout.
+    if (chain.some(item => TERMINAL_ABORT.test(item.message) || TERMINAL_ABORT.test(item.code)
+        || (item.name === 'AbortError' && !/timeout|timed\s*out/i.test(item.message)))) return false;
+    return chain.some(item => item.name === 'TimeoutError' || TRANSIENT_CAUSE_CODE.test(item.code)
+        || TRANSIENT_FAILURE.test(item.message));
 }
 
 function diagnosticFor({ agentRole, taskId, attempt, maxAttempts, startedAt, disposition, retry, error = null }) {

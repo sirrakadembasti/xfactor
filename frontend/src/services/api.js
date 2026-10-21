@@ -15,6 +15,8 @@ export const formatChatError = (error = {}) => {
   const message = messages[error.code] || (error.status === 401 ? 'Oturum süresi doldu. Yeniden giriş yapın.'
     : error.status === 403 ? 'Bu proje için mesaj gönderme yetkisi yok.'
       : error.status === 429 ? 'İstek sınırına ulaşıldı. Bir süre bekleyin.'
+        : error.status === 400 ? 'Mesaj geçersiz. Boş olmadığını ve 4000 karakter sınırını aşmadığını kontrol edin.'
+          : error.status === 413 ? 'Mesaj isteği boyut sınırını aşıyor. İçeriği kısaltıp yeniden gönderin.'
         : /Timeout|Abort/.test(error.name || '') || /Timeout/.test(error.message || '')
           ? messages.LLM_TIMEOUT : 'Mesaj iletilemedi. LLM yönetimindeki sohbet testini çalıştırın.');
   const requestId = error.details?.requestId;

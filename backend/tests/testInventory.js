@@ -6,6 +6,7 @@ testHarness.js
 test_admin_cli.js
 test_agent_document_boundary.js
 test_agent_contract_schemas.js
+test_api_fixture_setup.js
 test_artifact_inventory_private_files.js
 test_backend.js
 test_build_sandbox_gate.js
@@ -13,6 +14,7 @@ test_build_validator.js
 test_build_verifier.js
 test_cancellation_and_deadlines.js
 test_checkpoint_resume.js
+test_coder_context.js
 test_concurrency_pool.js
 test_database_migrations.js
 test_deep_verification.js
@@ -22,6 +24,9 @@ test_domain_policy.js
 test_e2e_simulation.js
 test_execution_client_poll.js
 test_generation_isolation.js
+test_generation_resume.js
+test_verification_budget.js
+test_frontend_runtime_plan.js
 test_generated_docker_artifact.js
 test_graphify.js
 test_health_and_lifecycle.js
@@ -113,6 +118,7 @@ test_project_tree_env_exclusion.js
 test_project_file_reader.js
 test_project_state_rehydration.js
 test_quality_gate.js
+test_reviewer_context.js
 test_scaffold_auth_standards.js
 test_scaffold_dependency_scan.js
 test_quiz_runtime_remediation.js
@@ -136,6 +142,7 @@ test_manager_management_discovery.js
 test_llm_auth.js
 test_manager_chat_failures.js
 test_llm_runtime_controls.js
+test_llm_task_retry.js
 test_backup_wal.js
 test_provider_dns.js
 test_download_completion.js

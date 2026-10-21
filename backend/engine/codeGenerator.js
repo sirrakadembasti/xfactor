@@ -39,6 +39,7 @@ const KNOWN_PACKAGE_VERSIONS = {
     'uuid': LATEST_STABLE_VERSION,
     '@types/uuid': LATEST_STABLE_VERSION,
     'express': LATEST_STABLE_VERSION,
+    'express-rate-limit': '8.6.1', // Generated skip/header options require the modern API; 1.x adds progressive delays.
     'cors': LATEST_STABLE_VERSION,
     'helmet': LATEST_STABLE_VERSION,
     'dotenv': LATEST_STABLE_VERSION,
@@ -403,7 +404,8 @@ export function ensureUserModelInSchema(schemaText) {
         if (!/\bcreatedAt\b/.test(newBody)) {
             newBody += `\n  createdAt DateTime @default(now())`;
         }
-        return `model User {${newBody}\n}`;
+        if (newBody === body) return match;
+        return `${match.slice(0, match.indexOf('{') + 1)}${newBody}\n}`;
     });
 }
 
@@ -456,6 +458,9 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
     }
 
     const isNext = hasNextApp || (!hasVite && !isExpressOnly);
+    // Supported split runtime: Vite owns the UI, src/server.ts starts the
+    // default-exported Express application in src/httpApp.ts (legacy app.ts is preserved).
+    const hasExpressApi = !isNext && hasVite && /\bexpress(?:\.js)?\b/.test(specText);
     const framework = isNext ? 'nextjs' : (hasVite ? 'vite' : (isExpressOnly ? 'express' : 'node'));
 
     return {
@@ -463,6 +468,7 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
         isNext,
         hasNextApp,
         hasVite,
+        hasExpressApi,
         isExpressOnly,
         isVue,
         hasPrisma,
@@ -477,7 +483,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     // 1. Proje Türü / Framework Algılama
     const isAuthRequired = isAuthRequested(state, plan);
     const stack = await detectProjectStack(projectDir, state, plan);
-    let { isNext, hasPrisma, isExpressOnly, isVue } = stack;
+    let { isNext, hasPrisma, isExpressOnly, isVue, hasExpressApi } = stack;
     if (isAuthRequired) {
         hasPrisma = true;
     }
@@ -577,12 +583,20 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         };
     }
 
+    if (hasExpressApi) {
+        Object.assign(baseDependencies, { express: '^4.21.2', cors: LATEST_STABLE_VERSION, dotenv: LATEST_STABLE_VERSION });
+        Object.assign(baseDevDependencies, { '@types/express': '^4.17.21', '@types/cors': LATEST_STABLE_VERSION, tsx: LATEST_STABLE_VERSION });
+        scripts['dev:api'] = 'tsx watch src/server.ts';
+        scripts['start:api'] = 'tsx src/server.ts';
+    }
+
     // Otomatik İthalat Taraması: Dosyalarda kullanılan harici paketleri bul ve ekle
     const scannedPackages = await scanUsedNpmPackages(projectDir);
     const scannedDeps = {};
     const scannedDevDeps = {};
     for (const pkg of scannedPackages) {
-        const version = KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
+        const version = (pkg === 'express-rate-limit' && (currentPkg.dependencies?.[pkg] || currentPkg.devDependencies?.[pkg]))
+            || KNOWN_PACKAGE_VERSIONS[pkg] || '^1.0.0';
         if (isDevPackage(pkg)) {
             scannedDevDeps[pkg] = version;
         } else {
@@ -594,10 +608,11 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         name: currentPkg.name || safeName,
         version: currentPkg.version || '1.0.0',
         private: true,
+        ...(currentPkg.type ? { type: currentPkg.type } : {}),
         scripts: {
             ...scripts,
             ...(currentPkg.scripts || {}),
-            ...(hasPrisma ? { 'prisma:seed': 'prisma db seed' } : {}),
+            ...(hasPrisma ? { 'prisma:seed': currentPkg.scripts?.['prisma:seed'] || 'prisma db seed' } : {}),
             ...(plan?.management?.needed === true && hasPrisma ? {
                 'xfactor:test:setup': currentPkg.scripts?.['xfactor:test:setup'] || 'prisma db push && prisma db seed'
             } : {})
@@ -605,7 +620,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         ...(hasPrisma ? {
             prisma: {
                 ...(currentPkg.prisma && typeof currentPkg.prisma === 'object' ? currentPkg.prisma : {}),
-                seed: 'tsx prisma/seed.ts'
+                seed: currentPkg.prisma?.seed || 'tsx prisma/seed.ts'
             }
         } : {}),
         dependencies: {
@@ -627,6 +642,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             } : {})
         }
     };
+
+    // Imported packages must not replace the compatible Express 4 runtime/types.
+    if (hasExpressApi) {
+        finalPkg.dependencies.express = currentPkg.dependencies?.express || '^4.21.2';
+        finalPkg.devDependencies['@types/express'] = currentPkg.devDependencies?.['@types/express'] || '^4.17.21';
+    }
 
     if (isVue && !isNext) {
         for (const packageName of ['react', 'react-dom']) delete finalPkg.dependencies[packageName];
@@ -660,9 +681,48 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 : { type: 'vite', command: 'npm', args: ['run', 'preview', '--', '--host', '0.0.0.0', '--port', '4173'], port: 4173, healthEndpoint: '/' };
         await fs.writeFile(
             serviceManifestPath,
-            JSON.stringify({ version: '1.0', services: { web: service } }, null, 2),
+            JSON.stringify({ version: '1.0', services: {
+                web: service,
+                ...(hasExpressApi ? { api: {
+                    type: 'express', command: 'npm', args: ['run', 'start:api'], port: 3001, healthEndpoint: '/api/health'
+                } } : {})
+            } }, null, 2),
             'utf8'
         );
+    }
+
+    let apiPort = 3001;
+    if (hasExpressApi) {
+        // Upgrade an earlier UI-only scaffold without replacing declared services.
+        // Invalid/user-defined manifests remain for the verifier to diagnose.
+        let manifest;
+        try { manifest = JSON.parse(await fs.readFile(serviceManifestPath, 'utf8')); } catch {}
+        if (manifest?.services && typeof manifest.services === 'object' && !Array.isArray(manifest.services)
+            && !manifest.services.api && !Object.values(manifest.services).some(service => service?.type === 'express')) {
+            const occupiedPorts = new Set(Object.values(manifest.services).map(service => Number(service?.port)));
+            if (!occupiedPorts.has(3001)) {
+                manifest.services.api = { type: 'express', command: 'npm', args: ['run', 'start:api'], port: 3001, healthEndpoint: '/api/health' };
+                await fs.writeFile(serviceManifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+            }
+        }
+        const api = manifest?.services?.api || Object.values(manifest?.services || {}).find(service => service?.type === 'express');
+        if (Number.isInteger(api?.port) && api.port >= 1024 && api.port <= 65535) apiPort = api.port;
+        await fs.mkdir(path.join(projectDir, 'src'), { recursive: true });
+        const existingRuntimeFiles = await fs.readdir(path.join(projectDir, 'src'));
+        // Existing bootstraps own their imports. Injecting an unused app.ts can
+        // collide with the React App module on case-insensitive filesystems.
+        if (!existingRuntimeFiles.some(name => name.toLowerCase() === 'server.ts')) {
+            const apiModule = existingRuntimeFiles.includes('httpApp.ts') ? 'httpApp'
+                : existingRuntimeFiles.includes('app.ts') ? 'app' : 'httpApp';
+            const runtimeFiles = {
+                [`src/${apiModule}.ts`]: "import express from 'express';\nimport cors from 'cors';\n\nconst app = express();\napp.use(cors());\napp.use(express.json());\napp.get('/api/health', (_req, res) => res.json({ status: 'healthy' }));\n\n// Register application routers here; src/server.ts owns the listener.\nexport default app;\n",
+                'src/server.ts': `import 'dotenv/config';\nimport app from './${apiModule}';\n\n// XFactor Vite + Express runtime contract: API ${apiPort}, UI 4173.\nconst port = Number(process.env.PORT || ${apiPort});\nconst server = app.listen(port, '127.0.0.1');\nfor (const signal of ['SIGTERM', 'SIGINT'] as const) {\n  process.once(signal, () => server.close(() => process.exit(0)));\n}\n`
+            };
+            for (const [relativePath, content] of Object.entries(runtimeFiles)) {
+                try { await fs.writeFile(path.join(projectDir, relativePath), content, { encoding: 'utf8', flag: 'wx' }); }
+                catch (error) { if (error.code !== 'EEXIST') throw error; }
+            }
+        }
     }
 
     // 3. tsconfig.json Kontrolü (@/* Path Alias Çözümü)
@@ -779,12 +839,16 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         const viteConfigPath = path.join(projectDir, 'vite.config.js');
         const reactConfigContent = `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
         const vueConfigContent = `import { defineConfig } from 'vite';\nimport vue from '@vitejs/plugin-vue';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [vue()],\n  resolve: {\n    alias: { '@': path.resolve(__dirname, './src') }\n  }\n});\n`;
+        const withApiProxy = content => hasExpressApi
+            ? content.replace('  plugins:', `  server: { proxy: { '/api': 'http://127.0.0.1:${apiPort}' } },\n  preview: { proxy: { '/api': 'http://127.0.0.1:${apiPort}' } },\n  plugins:`)
+            : content;
         const existingConfig = await fs.readFile(viteConfigPath, 'utf8').catch(error => {
             if (error.code === 'ENOENT') return null;
             throw error;
         });
-        if (existingConfig === null || (isVue && existingConfig === reactConfigContent)) {
-            const viteConfigContent = isVue ? vueConfigContent : reactConfigContent;
+        if (existingConfig === null || (isVue && existingConfig === reactConfigContent)
+            || (hasExpressApi && [reactConfigContent, vueConfigContent].includes(existingConfig))) {
+            const viteConfigContent = withApiProxy(isVue ? vueConfigContent : reactConfigContent);
             await fs.writeFile(viteConfigPath, viteConfigContent, 'utf8');
         }
     }
@@ -825,7 +889,8 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     try {
         await fs.stat(postcssConfigPath);
     } catch {
-        const postcssContent = `module.exports = {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n`;
+        const postcssExport = finalPkg.type === 'module' ? 'export default' : 'module.exports =';
+        const postcssContent = `${postcssExport} {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n`;
         await fs.writeFile(postcssConfigPath, postcssContent, 'utf8');
     }
     // 7. .env.example (Prisma / Database URL Koruması)
@@ -841,6 +906,14 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         await fs.stat(envExamplePath);
     } catch {
         await fs.writeFile(envExamplePath, envExampleContent, 'utf8');
+    }
+    if (hasExpressApi) {
+        const example = await fs.readFile(envExamplePath, 'utf8');
+        if (!/^\s*AUTH_SECRET\s*=/m.test(example)) {
+            await fs.writeFile(envExamplePath,
+                `${example}${example.endsWith('\n') ? '' : '\n'}# Express authentication: set a random secret of at least 32 characters.\nAUTH_SECRET=\n`,
+                'utf8');
+        }
     }
     if (plan?.management?.needed === true) {
         let example = await fs.readFile(envExamplePath, 'utf8');

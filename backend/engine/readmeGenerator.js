@@ -67,6 +67,17 @@ function detectRunCommand(pkg) {
   return null;
 }
 
+function detectMixedServices(manifest) {
+  const services = manifest?.services;
+  if (!services || typeof services !== 'object' || Array.isArray(services)) return null;
+  const entries = Object.values(services);
+  if (entries.length > 16) return null;
+  const validPort = service => Number.isInteger(service?.port) && service.port >= 1 && service.port <= 65535;
+  const web = entries.find(service => service?.type === 'vite' && validPort(service));
+  const api = entries.find(service => service?.type === 'express' && validPort(service));
+  return web && api && web.port !== api.port ? { web, api } : null;
+}
+
 export async function generateProjectReadme({
   projectTitle,
   summary,
@@ -106,6 +117,8 @@ export async function generateProjectReadme({
 
   const port = detectPort({ pkg, manifest: effectiveManifest, detectedStack });
   const runCommand = detectRunCommand(pkg);
+  const mixedServices = detectMixedServices(effectiveManifest);
+  const apiScript = pkg.scripts?.['dev:api'] ? 'dev:api' : pkg.scripts?.['start:api'] ? 'start:api' : null;
   const notes = sanitizeArchitectureNotes(talimatname);
 
   const lines = [];
@@ -159,7 +172,23 @@ export async function generateProjectReadme({
     step += 1;
   }
 
-  if (runCommand) {
+  if (mixedServices && apiScript && pkg.scripts?.dev) {
+    lines.push(`### ${step}. Adım: API ve Web Servislerini Başlatın`);
+    lines.push(`API için \`.env\` dosyasında \`PORT=${mixedServices.api.port}\` kullanın. İki ayrı terminal açın ve her ikisini de proje kök dizininde çalıştırın.`);
+    lines.push('');
+    lines.push('Terminal 1 — API:');
+    lines.push('```bash');
+    lines.push(`npm run ${apiScript}`);
+    lines.push('```');
+    lines.push(`API adresi: \`http://localhost:${mixedServices.api.port}\`.`);
+    lines.push('');
+    lines.push('Terminal 2 — Web:');
+    lines.push('```bash');
+    lines.push(`npm run dev -- --host 127.0.0.1 --port ${mixedServices.web.port}`);
+    lines.push('```');
+    lines.push(`Uygulama adresi: \`http://localhost:${mixedServices.web.port}\`. Web uygulamasının \`/api\` istekleri API servisine yönlendirilir; iki servis de çalışır durumda olmalıdır.`);
+    lines.push('');
+  } else if (runCommand) {
     lines.push(`### ${step}. Adım: Uygulamayı Başlatın`);
     lines.push('```bash');
     lines.push(runCommand);
@@ -167,7 +196,7 @@ export async function generateProjectReadme({
     lines.push(`Uygulamanız varsayılan olarak \`http://localhost:${port}\` adresinde çalışacaktır.`);
     lines.push('');
   }
-  if (projectDir && await fileExists(path.join(projectDir, 'Dockerfile'))) {
+  if (!mixedServices && projectDir && await fileExists(path.join(projectDir, 'Dockerfile'))) {
     const imageName = String(pkg.name || 'xfactor-app').toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'xfactor-app';
     const dockerfile = await fs.readFile(path.join(projectDir, 'Dockerfile'), 'utf8');
     const containerPort = Number(dockerfile.match(/^EXPOSE\s+(\d+)/m)?.[1]) || port;

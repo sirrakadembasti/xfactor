@@ -22,23 +22,39 @@ function trustedTools(options) {
 }
 export async function probeLocalReadiness(options = {}) {
   if (!consent(options)) throw new Error('Local execution requires EXECUTION_WORKER_TRUST_LOCAL_CODE=1 operator consent.');
-  const tools = await trustedTools(options);
-  const { chromium } = await import(pathToFileURL(tools.playwright).href);
+  let phase = 'tool_resolution';
+  const labelError = (error, failedPhase) => {
+    // Keep the original error private; consumers may expose only this fixed label.
+    if (error && (typeof error === 'object' || typeof error === 'function')) {
+      try { Object.defineProperty(error, 'readinessPhase', { value: failedPhase, configurable: true }); } catch {}
+    }
+    return error;
+  };
+  const atPhase = async (nextPhase, operation) => {
+    phase = nextPhase;
+    try { return await operation(); }
+    catch (error) { throw labelError(error, nextPhase); }
+  };
+  const tools = await atPhase('tool_resolution', () => trustedTools(options));
+  const { chromium } = await atPhase('tool_resolution', () => import(pathToFileURL(tools.playwright).href));
   let browser, timer, finished = false;
   const timeoutError = new Error('Local browser readiness timed out.');
   const preflight = (async () => {
-    browser = await chromium.launch({ ...localChromiumLaunchOptions(tools.chromium), timeout: 30000 });
+    browser = await atPhase('browser_launch', () => chromium.launch({ ...localChromiumLaunchOptions(tools.chromium), timeout: 30000 }));
     // A late launch must still be closed after the overall readiness deadline.
-    if (finished) { await browser.close(); browser = null; throw timeoutError; }
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    await page.setContent('<!doctype html><html><body><p id="xfactor-readiness"></p><script>globalThis.__xfactorReadiness=6*7;document.getElementById("xfactor-readiness").textContent="renderer-ready";</script></body></html>', { timeout: 30000, waitUntil: 'load' });
-    const rendered = await page.evaluate(() => globalThis.__xfactorReadiness === 42 && document.getElementById('xfactor-readiness')?.textContent === 'renderer-ready');
-    if (rendered !== true) throw new Error('Local browser renderer verification produced no proof.');
+    if (finished) { await atPhase('browser_close', () => browser.close()); browser = null; throw timeoutError; }
+    const context = await atPhase('renderer_context', () => browser.newContext());
+    const page = await atPhase('renderer_page', () => context.newPage());
+    await atPhase('renderer_content', () => page.setContent('<!doctype html><html><body><p id="xfactor-readiness"></p><script>globalThis.__xfactorReadiness=6*7;document.getElementById("xfactor-readiness").textContent="renderer-ready";</script></body></html>', { timeout: 30000, waitUntil: 'load' }));
+    await atPhase('renderer_evaluate', async () => {
+      const rendered = await page.evaluate(() => globalThis.__xfactorReadiness === 42 && document.getElementById('xfactor-readiness')?.textContent === 'renderer-ready');
+      if (rendered !== true) throw new Error('Local browser renderer verification produced no proof.');
+    });
   })();
   try {
     await Promise.race([preflight, new Promise((_, reject) => { timer = setTimeout(() => reject(timeoutError), 30000); })]);
-  } finally { finished = true; clearTimeout(timer); if (browser) await browser.close(); }
+  } catch (error) { throw labelError(error, phase); }
+  finally { finished = true; clearTimeout(timer); if (browser) await atPhase('browser_close', () => browser.close()); }
   return { ...profile, executionCapacity: true, versions: tools.versions };
 }
 export async function executeLocalJob(job, options = {}) {
@@ -58,7 +74,10 @@ export async function executeLocalJob(job, options = {}) {
     workspace = await fs.mkdtemp(path.join(base, 'job-'));
     onResource?.({ type: 'workspace', path: workspace, executionProfile: 'local-trusted' });
     const fullApp = Array.isArray(job.contract?.domains) && job.contract.domains.length > 0;
-    processes = await createLocalProcessManager({ tools, workspace, deadline: job.deadline, signal, onResource, cacheRoot: path.join(path.dirname(base), 'xfactor-local-process-host'), resourceLimits: { memoryBytes: (fullApp ? 4 : 1) * 1024 ** 3, pids: fullApp ? 250 : 100 } });
+    processes = await createLocalProcessManager({ tools, workspace, deadline: job.deadline, signal, onResource, onProgress: options.onProgress,
+      cacheRoot: path.join(path.dirname(base), 'xfactor-local-process-host'),
+      npmCacheDirectory: path.join(path.dirname(base), 'xfactor-local-cache', 'npm'),
+      resourceLimits: { memoryBytes: (fullApp ? 4 : 1) * 1024 ** 3, pids: fullApp ? 250 : 100 } });
     function target(value) {
       const raw = String(value);
       const translated = raw === '/workspace' ? workspace : raw.startsWith('/workspace/') ? path.join(workspace, raw.slice(11)) : path.resolve(raw);

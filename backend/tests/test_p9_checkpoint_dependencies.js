@@ -39,6 +39,21 @@ function checkpointFor(task, inputHash, outputHash) {
 }
 
 try {
+    await runAsyncTest('DAG execution owns independent typed copies of approved management obligations', async () => {
+        const requirementIds = ['MGMT-RESOURCE-1'];
+        const managementCoverage = [{ requirementId: 'MGMT-RESOURCE-1', surface: 'api', operation: 'create' }];
+        const dag = new TaskDAG();
+        dag.addTask({ id: 'room-api', requirementIds, managementCoverage });
+        requirementIds[0] = 'OTHER';
+        managementCoverage[0].operation = 'delete';
+        const task = dag.getTask('room-api');
+        assert.deepStrictEqual(task.requirementIds, ['MGMT-RESOURCE-1']);
+        assert.deepStrictEqual(task.managementCoverage, [{ requirementId: 'MGMT-RESOURCE-1', surface: 'api', operation: 'create' }]);
+        assert.throws(() => dag.addTask({ id: 'bad-ids', requirementIds: 'MGMT-RESOURCE-1' }), /requirementIds/i);
+        assert.throws(() => dag.addTask({ id: 'bad-coverage', managementCoverage: [null] }), /managementCoverage/i);
+        assert.throws(() => dag.addTask({ id: 'bad-field', managementCoverage: [{ requirementId: 'MGMT-RESOURCE-1', operation: 3 }] }), /managementCoverage/i);
+    });
+
     await runAsyncTest('Set dependency identities must not collide in task spec hashes', async () => {
         const task = { id: 'consumer', name: 'Consumer', targetFiles: ['src/output.js'] };
         const first = computeTaskSpecHash({ ...task, dependencies: new Set(['upstream-a']) });
@@ -48,6 +63,40 @@ try {
         const reordered = computeTaskSpecHash({ ...task, dependencies: new Set(['upstream-b', 'upstream-a']) });
         const sorted = computeTaskSpecHash({ ...task, dependencies: ['upstream-a', 'upstream-b'] });
         assert.strictEqual(reordered, sorted, 'dependency identity hashing must be deterministic');
+    });
+
+    await runAsyncTest('task obligation hashes ignore ordering but preserve every coverage field', async () => {
+        const task = { id: 'consumer', targetFiles: ['src/output.js'], requirementIds: ['REQ-2', 'REQ-1'],
+            managementCoverage: [
+                { requirementId: 'REQ-2', journey: 'positive', acceptanceSelector: '#create' },
+                { requirementId: 'REQ-1', surface: 'api', operation: 'create' }
+            ] };
+        const reordered = { ...task, requirementIds: ['REQ-1', 'REQ-2', 'REQ-1'],
+            managementCoverage: [
+                { operation: 'create', surface: 'api', requirementId: 'REQ-1' },
+                { acceptanceSelector: '#create', journey: 'positive', requirementId: 'REQ-2' }
+            ] };
+        assert.strictEqual(computeTaskSpecHash(task), computeTaskSpecHash(reordered));
+        const changedField = structuredClone(task);
+        changedField.managementCoverage[0].acceptanceSelector = '#different';
+        assert.notStrictEqual(computeTaskSpecHash(task), computeTaskSpecHash(changedField),
+            'validated coverage fields beyond the current four keys must participate');
+    });
+
+    await runAsyncTest('reassigning obligations within the same approved plan invalidates a completed checkpoint', async () => {
+        const workspace = await createWorkspace();
+        const task = { id: 'consumer', description: 'Implement room API', targetFiles: ['src/output.js'],
+            requirementIds: ['MGMT-RESOURCE-1'],
+            managementCoverage: [{ requirementId: 'MGMT-RESOURCE-1', surface: 'api', operation: 'create' }] };
+        const checkpoint = checkpointFor(task, await computeInputHash(workspace, []), await computeOutputHash(workspace, task.targetFiles));
+        const verify = candidate => verifyTaskCheckpoint({ projectDir: workspace, checkpoint,
+            task: candidate, dependencyTargetFiles: [], planHash: 'plan-1' });
+        assert.strictEqual(await verify(task), true);
+        assert.strictEqual(await verify({ ...task, requirementIds: ['MGMT-RESOURCE-2'] }), false,
+            'a changed requirement assignment must not reuse the old acceptance');
+        assert.strictEqual(await verify({ ...task, managementCoverage: [
+            { requirementId: 'MGMT-RESOURCE-1', surface: 'api', operation: 'update' }
+        ] }), false, 'changed operation coverage must not reuse the old acceptance');
     });
 
     await runAsyncTest('Set dependencies remain iterable and unknown IDs fail explicitly', async () => {

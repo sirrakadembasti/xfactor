@@ -19,11 +19,13 @@ export async function executeCorrectionLoop({
     targetFiles,
     initialCoderOutput,
     coderPrompt,
+    projectContext = '',
     maxRetries = 2,
     onFeedback,
     onLLMDiagnostic = null,
     onUsage = null,
-    signal = null
+    signal = null,
+    generate = undefined
 }) {
     let currentOutput = initialCoderOutput;
     let iterations = 0;
@@ -61,13 +63,14 @@ export async function executeCorrectionLoop({
             };
         } else {
             // 1. Reviewer İncelemesi
-            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files, taskDescription);
+            const reviewPrompt = reviewer.buildPrompt(taskTitle, targetFiles, currentOutput.files, taskDescription, projectContext);
             reviewResult = await runLLMTaskWithRetry({
                 agentRole: 'reviewer',
                 taskId: `${taskId}.review.${iterations}`,
                 signal,
                 onDiagnostic: onLLMDiagnostic || undefined,
                 onUsage,
+                generate,
                 messages: [
                     { role: 'system', content: reviewer.systemPrompt },
                     { role: 'user', content: reviewPrompt }
@@ -113,6 +116,7 @@ export async function executeCorrectionLoop({
                 signal,
                 onDiagnostic: onLLMDiagnostic || undefined,
                 onUsage,
+                generate,
                 messages: [
                     { role: 'system', content: coder.systemPrompt },
                     { role: 'user', content: fixPrompt }

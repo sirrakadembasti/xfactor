@@ -33,9 +33,10 @@ import {
     normalizeDirectorSpec,
     normalizeTeamleaderTasks
 } from '../agents/schemas.js';
-import { validatePlanTasks, validateManagementTaskCoverage, formatManagementTaskDescription } from '../agents/director.js';
+import { validatePlanTasks, validateManagementTaskCoverage, formatManagementTaskDescription, resolveFrontendRuntimePlan } from '../agents/director.js';
 import { db, dbEvents, saveProjectLog } from '../db.js';
 import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack } from './codeGenerator.js';
+import { buildCoderProjectContext } from './coderContext.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
 import { runLLMTaskWithRetry } from './llmTaskRetry.js';
 import { getCurrentLLMProvider } from '../llm.js';
@@ -59,9 +60,9 @@ import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
 import { generateProjectReadme } from './readmeGenerator.js';
+import { verificationJobDeadline } from '../verification/verificationBudget.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
-import { fingerprintArtifactFiles, resolveDependencyResume } from './resumeStage.js';
-import { restoreTaskTargetsFromProtocol } from '../services/reconciliationService.js';
+import { fingerprintArtifactFiles, resolveDependencyResume, resolveGenerationResume } from './resumeStage.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
@@ -78,16 +79,14 @@ export function extractPreparedLockfile(prepResult, prepError = null) {
     };
 }
 export function computePlanHash(plan) {
-    if (!plan || typeof plan !== 'object') return '0'.repeat(16);
-    const normalized = {
-        summary: String(plan.summary || '').trim(),
-        talimatname: String(plan.talimatname || '').trim(),
-        domains: (plan.domains || []).map(d => ({
-            name: typeof d === 'string' ? d : d.name,
-            prefix: typeof d === 'string' ? d : (d.prefix || d.name)
-        }))
-    };
-    return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex').slice(0, 16);
+    if (!plan || typeof plan !== 'object') return '0'.repeat(64);
+    const canonicalize = value => Array.isArray(value) ? value.map(canonicalize)
+        : value && typeof value === 'object'
+            ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalize(value[key])]))
+            : value;
+    // All approved obligations participate. The full digest also retires the
+    // old 16-character cache format, which could contain disk-recovered tasks.
+    return crypto.createHash('sha256').update(JSON.stringify(canonicalize(plan))).digest('hex');
 }
 
 export function orderDomainsCoreFirst(domains = []) {
@@ -125,8 +124,33 @@ export function normalizeWorkflowState(value) {
         planHash: workflow.planHash ?? null,
         directorSpecs,
         teamleaderPlans,
-        ...(workflow.dependencyPreparation ? { dependencyPreparation: workflow.dependencyPreparation } : {})
+        ...(workflow.dependencyPreparation ? { dependencyPreparation: workflow.dependencyPreparation } : {}),
+        ...(workflow.generationCompletion !== undefined ? { generationCompletion: workflow.generationCompletion } : {})
     };
+}
+
+export function reconcilePlanningCache(value, plan) {
+    const workflow = normalizeWorkflowState(value);
+    const planHash = computePlanHash(plan);
+    return workflow.planHash === planHash ? workflow : {
+        ...workflow, planHash, directorSpecs: {}, teamleaderPlans: {}, dependencyPreparation: null, generationCompletion: null
+    };
+}
+
+export function buildExecutionDAG(tasks = []) {
+    const dag = new TaskDAG();
+    for (const task of tasks) {
+        dag.addTask({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            dependencies: task.dependencies || [],
+            targetFiles: task.targetFiles || [],
+            requirementIds: task.requirementIds || [],
+            managementCoverage: task.managementCoverage || []
+        });
+    }
+    return dag;
 }
 
 export function resolveStaticAuditRepairIssues(database, projectId, contractId) {
@@ -677,10 +701,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             ORDER BY revision DESC LIMIT 1
         `).get(projectId);
         let resumeFiles = null;
-        if (state.workflow.dependencyPreparation && approvedResumeContract) {
+        const hasGenerationCompletion = state.workflow.generationCompletion !== undefined;
+        if (!hasGenerationCompletion && state.workflow.dependencyPreparation && approvedResumeContract) {
             resumeFiles = await collectArtifactFiles(projectDir);
         }
-        const resumeAtDependencyPreparation = resolveDependencyResume(
+        const resumeAtDependencyPreparation = !hasGenerationCompletion && resolveDependencyResume(
             state.workflow.dependencyPreparation,
             approvedResumeContract,
             resumeFiles
@@ -712,14 +737,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         plan = normalizeManagerPlan(plan);
         validateManagerPlan(plan);
         const planHash = computePlanHash(plan);
-        if (state.workflow.planHash && state.workflow.planHash !== planHash) {
+        if (state.workflow.planHash !== planHash) {
             logWarning('workflow.plan_revised_cache_cleared', null, { projectId, previousHash: state.workflow.planHash, newHash: planHash });
-            state.workflow.directorSpecs = {};
-            state.workflow.teamleaderPlans = {};
-            state.workflow.dependencyPreparation = null;
         }
-        state.workflow.planHash = planHash;
+        state.workflow = reconcilePlanningCache(state.workflow, plan);
         await workflowWriteState(projectId, state);
+        const resumeAfterGeneration = resolveGenerationResume(state.workflow.generationCompletion, approvedResumeContract, planHash);
 
         const sortedRawDomains = orderDomainsCoreFirst(plan.domains);
         const domainList = sortedRawDomains.map(d => ({
@@ -744,28 +767,19 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         ]);
         const managerDir = path.join(projectDir, 'manager');
         await ensureDir(managerDir);
+        // Reuse generated source, never its old quality evidence. Source repairs
+        // invalidate task output hashes but are accepted only by the full gates below.
+        if (!resumeAfterGeneration) {
         // 2. AŞAMA: DİREKTÖRLER (DIRECTORS - manager/ altında yuvalanır)
         for (const domain of domainList) {
             if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
 
             const directorId = `${domain.prefix}.director`;
             let directorDir = path.join(managerDir, `${domain.prefix}.director`);
-            const legacyDirectorDir = path.join(projectDir, `${domain.prefix}.director`);
-
             let altTalimatOnDisk = await readAltTalimatname(directorDir);
-            if (!altTalimatOnDisk && await readAltTalimatname(legacyDirectorDir)) {
-                altTalimatOnDisk = await readAltTalimatname(legacyDirectorDir);
-                directorDir = legacyDirectorDir;
-            }
-
             let directorSpec = state.workflow.directorSpecs[domain.prefix];
-            if (!directorSpec) {
-                directorSpec = restoreDirectorSpecFromDisk(domain, altTalimatOnDisk, directorDir, state.workflow.teamleaderPlans);
-                if (directorSpec) {
-                    state.workflow.directorSpecs[domain.prefix] = directorSpec;
-                    await workflowWriteState(projectId, state);
-                }
-            }
+            const newlyPlannedDirector = !directorSpec || Array.isArray(directorSpec)
+                || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0);
             if (!directorSpec || Array.isArray(directorSpec) || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0)) {
                 await workflowLogEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
@@ -788,7 +802,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 ? directorSpec.teamleaders
                 : [{ name: `${domain.prefix}.teamleader`, prefix: domain.prefix, mission: `${domain.name} geliştirme` }];
 
-            if (!altTalimatOnDisk) {
+            if (!altTalimatOnDisk || newlyPlannedDirector) {
                 directorDir = await setupDirectorProtocol(
                     managerDir,
                     domain.prefix,
@@ -808,26 +822,59 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
                 let taskPlan = state.workflow.teamleaderPlans[tlId];
                 const tasksOnDisk = await readTasksFromTodoFile(tlTodoPath);
-
-                if (!taskPlan) {
+                const normalizeTaskPlan = candidate => normalizeTeamleaderPlanForStack(
+                    normalizeTeamleaderTasks(candidate, plan.requirements || []), stack);
+                const resolution = await resolveFrontendRuntimePlan({
+                    cachedPlan: taskPlan,
+                    validateCandidate: candidate => {
+                        const normalized = normalizeTaskPlan(candidate);
+                        validateTeamleaderTasks(normalized);
+                        const dependencies = validateTaskDependencies(normalized.tasks);
+                        if (!dependencies.valid) throw new Error(`Geçersiz görev bağımlılıkları (${tl.name}): ${dependencies.errors.join(', ')}`);
+                        const scope = validatePlanTasks(normalized.tasks, plan);
+                        if (!scope.passed) throw new Error(`Geçersiz görev kapsamı (${tl.name}): ${scope.issues.join(', ')}`);
+                        return normalized;
+                    },
+                    context: { stack, domain, files: generatedProjectFiles, contract: plan,
+                        teamleaderId: tlId, teamleaderPlans: state.workflow.teamleaderPlans,
+                        isLastTeamleader: tl === teamleaders[teamleaders.length - 1] },
+                    onInvalidCachedPlan: async () => {
+                        delete state.workflow.teamleaderPlans[tlId];
+                        await workflowWriteState(projectId, state);
+                    },
+                    onInvalidCandidate: async diagnostic => {
+                        await workflowLogEvent(wsHub, projectId, 'Teamleader', 'plan_rejected', '',
+                            JSON.stringify(diagnostic), tlId, directorId);
+                    },
+                    generatePlan: async ({ attempt, missingPaths, missingCoverage, validationErrors }) => {
                     await workflowLogEvent(wsHub, projectId, "Teamleader", "start", "", `${tl.name} görevleri atomik parçalara (DAG) ayırıyor...`, tlId, directorId);
                     const tlAgent = getAgent('teamleader');
-                    const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || []);
-                    taskPlan = await callAgentLLM('teamleader', tlPrompt, {
+                    const existingFiles = generatedProjectFiles.filter(file => typeof file.content === 'string' && file.content.trim()
+                        && /\.(?:[cm]?[jt]sx?|html|vue|svelte|prisma)$/i.test(file.path || '')).map(file => file.path);
+                    const availablePaths = new Set(existingFiles);
+                    const existingTasks = Object.entries(state.workflow.teamleaderPlans).flatMap(([team, cached]) =>
+                        (Array.isArray(cached?.tasks) ? cached.tasks : []).filter(task => task && typeof task === 'object'
+                            && Array.isArray(task.targetFiles) && task.targetFiles.length && task.targetFiles.every(file => availablePaths.has(file)))
+                            .map(task => ({ team, taskId: task.id, targetFiles: task.targetFiles,
+                                requirementIds: task.requirementIds || [], managementCoverage: task.managementCoverage || [] })));
+                    const planningContext = { domain: domain.prefix, framework: stack.framework,
+                        existingFiles: existingFiles.slice(0, 400), omittedFileCount: Math.max(0, existingFiles.length - 400),
+                        existingTasks: existingTasks.slice(0, 100), omittedTaskCount: Math.max(0, existingTasks.length - 100),
+                        previousTasks: (Array.isArray(taskPlan?.tasks) ? taskPlan.tasks : []).filter(task => task && typeof task === 'object').slice(0, 100).map(task => ({ id: task.id, title: task.title,
+                            description: String(task.description || '').slice(0, 2000), targetFiles: task.targetFiles,
+                            dependencies: task.dependencies, requirementIds: task.requirementIds, managementCoverage: task.managementCoverage })),
+                        missingRuntimePaths: missingPaths, missingCoverage, validationErrors };
+                    const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || [], planningContext);
+                    return await callAgentLLM('teamleader', tlPrompt, {
                         signal: abortController.signal,
-                        taskId: `${tlId}.plan`,
+                        taskId: `${tlId}.plan${attempt > 1 ? '.correction' : ''}`,
                         onUsage: recordTokenUsage,
                         onDiagnostic: recordLLMDiagnostic
                     });
-                }
-                taskPlan = normalizeTeamleaderTasks(taskPlan, plan.requirements || []);
-                taskPlan = {
-                    ...taskPlan,
-                    tasks: restoreTaskTargetsFromProtocol(tlDir, taskPlan.tasks)
-                };
-                taskPlan = normalizeTeamleaderPlanForStack(taskPlan, stack);
-                state.workflow.teamleaderPlans[tlId] = taskPlan;
-                await workflowWriteState(projectId, state);
+                    }
+                });
+                taskPlan = resolution.plan;
+                const newlyPlannedTasks = resolution.newlyPlanned;
                 validateTeamleaderTasks(taskPlan);
                 const depCheck = validateTaskDependencies(taskPlan.tasks);
                 if (!depCheck.valid) {
@@ -839,13 +886,15 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         `Geçersiz görev kapsamı (${tl.name}): ${scopeValidation.issues.join(', ')}`
                     );
                 }
+                state.workflow.teamleaderPlans[tlId] = taskPlan;
+                await workflowWriteState(projectId, state);
                 for (const task of taskPlan.tasks) {
                     for (const targetFile of task.targetFiles || []) {
                         repairTargetFiles.add(targetFile);
                     }
                 }
 
-                if (!tasksOnDisk || tasksOnDisk.length === 0) {
+                if (!tasksOnDisk || tasksOnDisk.length === 0 || newlyPlannedTasks) {
                     await setupTeamleaderProtocol(
                         directorDir,
                         tl.prefix,
@@ -855,16 +904,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 }
 
                 // 4. AŞAMA: DAG KURULUMU VE CODER / REVIEWER YÜRÜTÜCÜSÜ
-                const dag = new TaskDAG();
-                for (const t of taskPlan.tasks) {
-                    dag.addTask({
-                        id: t.id,
-                        title: t.title,
-                        description: t.description,
-                        dependencies: t.dependencies || [],
-                        targetFiles: t.targetFiles || []
-                    });
-                }
+                const dag = buildExecutionDAG(taskPlan.tasks);
 
                 // DAG Dalgaları (Execution Waves): Bağımsız görevler paralel dalgalarda kontrollü çalışır
                 const executionWaves = dag.getExecutionWaves ? dag.getExecutionWaves() : [dag.getExecutionOrder()];
@@ -943,28 +983,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             `# Atomik Görev: ${task.title}\n\nAçıklama: ${taskDescription}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`
                         );
 
-                        // Yapılandırılmış Proje Bağlamı (Şemalar, Tipler, Route'lar)
-                        // Şema daima en başta ve kesilmeden tam metin olarak verilmelidir!
-                        const schemaFile = generatedProjectFiles.find(f => f.path.includes('schema.prisma'));
-                        const otherContextFiles = generatedProjectFiles.filter(f =>
-                            !f.path.includes('schema.prisma') && (
-                                f.path.endsWith('.d.ts') ||
-                                f.path.includes('types') ||
-                                f.path.includes('validations') ||
-                                f.path.includes('/api/') ||
-                                f.path.includes('service')
-                            )
-                        );
-
-                        const contextParts = [];
-                        if (schemaFile && schemaFile.content) {
-                            contextParts.push(`⚠️ PROJE PRISMA ŞEMASI (Veritabanı modelleri ve ilişki isimleri kesinlikle bu şemaya uymalıdır):\nDosya: ${schemaFile.path}\n\`\`\`prisma\n${schemaFile.content}\n\`\`\``);
-                        }
-                        for (const f of otherContextFiles) {
-                            const snippet = f.content.length > 2000 ? f.content.slice(0, 2000) + '\n// ... [kesildi]' : f.content;
-                            contextParts.push(`Dosya: ${f.path}\n\`\`\`\n${snippet}\n\`\`\``);
-                        }
-                        const projectContext = contextParts.join('\n\n');
+                        const projectContext = await buildCoderProjectContext({
+                            projectDir,
+                            files: await listProjectTree(projectDir, { strict: true }),
+                            dependencyTargetFiles: depTargetFiles,
+                            targetFiles: task.targetFiles
+                        });
 
                         // Coder LLM çağrısı
                         const coderAgent = getAgent('coder');
@@ -986,6 +1010,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             targetFiles: task.targetFiles,
                             initialCoderOutput: coderOutput,
                             coderPrompt,
+                            projectContext,
                             maxRetries: 2,
                             signal: abortController.signal,
                             onLLMDiagnostic: recordLLMDiagnostic,
@@ -1161,10 +1186,25 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
         }
 
+        }
+        // Cancellation can arrive during the final wave; it must not publish a
+        // completion marker for a partially dispatched generation.
+        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+        // Preserve the same repair allowlist when generation is bypassed.
+        for (const taskPlan of Object.values(state.workflow.teamleaderPlans)) {
+            for (const task of taskPlan.tasks || []) {
+                for (const target of task.targetFiles || []) repairTargetFiles.add(target);
+            }
+        }
         // 6. AŞAMA: TESTER AJANI VE NİHAİ KONSOLİDE RAPOR
         const managementCoverage = validateManagementTaskCoverage(plan, state.workflow.teamleaderPlans);
         if (!managementCoverage.passed) {
             throw new Error(`Yönetim sözleşmesi için görev kapsamı eksik: ${managementCoverage.missing.join(', ')}`);
+        }
+        if (!resumeAfterGeneration && approvedResumeContract) {
+            state.workflow.generationCompletion = { stage: 'generation_finished',
+                contractId: approvedResumeContract.id, contractHash: approvedResumeContract.contract_hash, planHash };
+            await workflowWriteState(projectId, state);
         }
         if (isExecutionActive(await checkPause(projectId, abortController.signal))) {
             // 1. Tüm fiziksel disk dosyalarını topla (Önceki dalgalarda üretilmiş tüm dosyalar dahil!)
@@ -1452,7 +1492,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const contract = JSON.parse(latestContract.contract_json);
             const nonce = crypto.randomBytes(32).toString('hex');
             const runId = `verification-${crypto.randomUUID()}`;
-            const deadline = Date.now() + 15 * 60 * 1000;
+            const deadline = verificationJobDeadline({ env: config });
             const activeJob = {
                 version: 1,
                 projectId,
@@ -1508,7 +1548,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 ...activeJob,
                 jobId: crypto.randomUUID(),
                 nonce: crypto.randomBytes(32).toString('hex'),
-                deadline: Date.now() + 15 * 60 * 1000,
+                deadline: verificationJobDeadline({ env: config }),
                 artifactId: artifact.id,
                 inputSha256: artifactSha256,
                 archiveBase64: archiveBytes.toString('base64')

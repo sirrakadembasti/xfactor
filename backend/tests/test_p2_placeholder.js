@@ -296,4 +296,34 @@ if (!filteredTest || filteredTest === 'comments-bypasses') {
     });
 }
 
+await runAsyncTest('structural route exceptions preserve business mock rejection', async () => {
+    const check = content => verifyPlaceholders([{ path: 'src/routes/example.ts', content }]);
+    const allowed = [
+        `app.get('/api/health', (_req,res)=>res.json({status:'ok',uptime:process.uptime(),timestamp:new Date().toISOString()}));`,
+        `router.post('/register',(_req,res)=>res.status(403).json({error:'Registration disabled'}));`,
+        `router.delete('/:id',(_req,res)=>res.status(405).json({error:'Deletion forbidden'}));`,
+        `const ACCOUNTS=[{username:'admin_demo',role:'admin',label:'Administrator',description:'Demo administrator'}]; router.get('/demo-accounts',(_req,res)=>res.json({success:true,accounts:ACCOUNTS}));`,
+        `import {ROLE_PERMISSIONS} from '../middleware/auth'; function permissionsFor(role){return (ROLE_PERMISSIONS[role]||[]).map(entry=>({resource:entry.resource,operations:[...entry.operations]}));} router.get('/permissions',(_req,res)=>{const roles=['admin'];res.json({success:true,roles:roles.map(role=>({role,permissions:permissionsFor(role)}))});});`
+    ];
+    for (const source of allowed) assert.equal(check(source).passed, true, source);
+    const denied = [
+        `router.get('/api/health',(_req,res)=>res.json({status:'ok',users:[{id:1}]}));`,
+        `router.get('/items',(_req,res)=>res.status(200).json([{id:1}]));`,
+        `router.get('/items',(_req,res)=>{if(false)res.status(403).json({error:'denied'});res.json([{id:1}]);});`,
+        `const ACCOUNTS=[{username:'admin_demo',role:'admin',password:'secret'}];router.get('/demo-accounts',(_req,res)=>res.json({accounts:ACCOUNTS}));`,
+        `const ITEMS=[{id:1,name:'fake'}];router.get('/items',(_req,res)=>res.json({items:ITEMS}));`,
+        `router.get('/permissions',(_req,res)=>res.json({roles:[{role:'admin',permissions:[]}]}));`,
+        `const ROLE_PERMISSIONS={admin:[{resource:'Fake',operations:['read']}]};function permissionsFor(role){return (ROLE_PERMISSIONS[role]||[]).map(entry=>({resource:entry.resource,operations:[...entry.operations]}));}const roles=['admin'];router.get('/permissions',(_req,res)=>res.json({roles:roles.map(role=>({role,permissions:permissionsFor(role)}))}));`,
+        `import {ROLE_PERMISSIONS} from '../middleware/auth';function permissionsFor(role){(ROLE_PERMISSIONS[role]||[]).map(entry=>({resource:entry.resource,operations:[...entry.operations]}));return [];}const roles=['admin'];router.get('/permissions',(_req,res)=>res.json({roles:roles.map(role=>({role,permissions:permissionsFor(role)}))}));`,
+        `import {ROLE_PERMISSIONS} from '../middleware/auth';function permissionsFor(role){return ((ROLE_PERMISSIONS[role]||[]).map(entry=>({resource:entry.resource,operations:[...entry.operations]})),[]);}const roles=['admin'];router.get('/permissions',(_req,res)=>res.json({roles:roles.map(role=>({role,permissions:permissionsFor(role)}))}));`
+    ];
+    for (const source of denied) assert.equal(check(source).passed, false, source);
+});
+
+await runAsyncTest('conditional forms require both local branches to reach network actions', async () => {
+    const check = second => verifyPlaceholders([{ path:'src/pages/Users.tsx', content:`const create=async()=>{await fetch('/api/users',{method:'POST'});};const update=${second};export default()=> <form onSubmit={editing ? update : create}/>;` }]);
+    assert.equal(check(`async()=>{await fetch('/api/users/1',{method:'PATCH'});}`).passed,true);
+    for (const dead of [`e=>e.preventDefault()`, `()=>console.log('no request')`, `()=>{}`]) assert.equal(check(dead).passed,false);
+});
+
 finish();

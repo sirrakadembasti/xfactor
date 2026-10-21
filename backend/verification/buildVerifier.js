@@ -8,6 +8,38 @@ function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
+function isPrismaValidationTransportReset(failure, signal) {
+    if (signal?.aborted || failure?.timedOut || failure?.name === 'AbortError') return false;
+    const text = [failure?.code, failure?.message, failure?.stderr, failure?.stdout].filter(Boolean).join('\n');
+    if (/\b(?:[A-Z_]*CERT[A-Z_]*|UNABLE_TO_VERIFY_LEAF_SIGNATURE)\b/.test(text)) return false;
+    if (/\b(?:PAUSED|LEASE_LOST|ABORT_ERR|ERR_CANCELED|cancel(?:led|ed)?|deadline|P10\d{2}|CERT_[A-Z_]+|ERR_TLS_CERT[A-Z_]*|ERR_SSL[A-Z_]*)\b|schema\s+validation|validation\s+error|certificate.*(?:verification|verify|expired|invalid)|(?:user|operator).*(?:abort|cancel)|checksum\s+(?:mismatch|verification\s+failed)|integrity\s+(?:mismatch|failed)|unauthori[sz]ed|forbidden|\b(?:401|403)\b/i.test(text)) return false;
+    const engineUrl = /https?:\/\/[^\s"']+\/(?:[^\s"']*\/)?(?:schema-engine|query[_-]engine|libquery_engine)[^\s"']*/i.test(text);
+    // The real Prisma transport failure can omit its URL. This is network-reset
+    // evidence during validate, not a claim that an engine URL was observed.
+    const prismaTransport = /\bTLSSocket\.socketCloseListener\b/.test(text)
+        && /\battemptNumber\s*:\s*\d+/.test(text) && /\bretriesLeft\s*:\s*\d+/.test(text);
+    return /\bECONNRESET\b/.test(text) && (engineUrl || prismaTransport);
+}
+
+async function executePrismaValidation(command, args, options) {
+    const phaseDeadline = Date.now() + Math.min(options.timeoutMs, 120000);
+    const priorTransientCodes = [];
+    let last, attemptCount = 0;
+    while (attemptCount < 2) {
+        const remaining = phaseDeadline - Date.now();
+        if (remaining <= 0 || options.signal?.aborted) break;
+        attemptCount++;
+        try { last = { result: await executeInSandbox(command, args, { ...options, timeoutMs: remaining }) }; }
+        catch (error) { last = { error }; }
+        const failure = last.error || last.result;
+        if (last.result?.passed || attemptCount === 2 || !isPrismaValidationTransportReset(failure, options.signal)
+            || Date.now() >= phaseDeadline) break;
+        priorTransientCodes.push('ECONNRESET');
+    }
+    if (!last) throw new Error(options.signal?.aborted ? 'Prisma validation cancelled.' : 'Prisma validation phase deadline exceeded.');
+    return { ...last, advisory: { attemptCount, priorTransientCodes } };
+}
+
 
 export function ensureLocalBinShims(projectDir) {
     const nodeModulesDir = path.join(projectDir, 'node_modules');
@@ -44,16 +76,25 @@ async function runSandboxCheck(checks, {
     timeoutMs,
     adapter,
     env,
+    signal,
     successReason,
     failurePrefix
 }) {
+    let advisory;
     try {
-        const result = await executeInSandbox(command, args, {
+        const executionOptions = {
             workspace,
             timeoutMs,
             adapter,
-            env
-        });
+            env,
+            signal
+        };
+        const execution = name === 'prisma_validate'
+            ? await executePrismaValidation(command, args, executionOptions)
+            : { result: await executeInSandbox(command, args, executionOptions) };
+        advisory = execution.advisory;
+        if (execution.error) throw execution.error;
+        const result = execution.result;
         const passed = Boolean(result.passed);
         checks.push({
             name,
@@ -64,6 +105,7 @@ async function runSandboxCheck(checks, {
             stderr: result.stderr || '',
             stdoutDigest: computeDigest(result.stdout),
             stderrDigest: computeDigest(result.stderr),
+            ...(advisory ? { advisory } : {}),
             reason: passed ? successReason : `${failurePrefix}: ${result.stderr || result.stdout}`
         });
         return passed;
@@ -77,6 +119,7 @@ async function runSandboxCheck(checks, {
             stderr: error.stderr || error.message || '',
             stdoutDigest: computeDigest(error.stdout),
             stderrDigest: computeDigest(error.stderr || error.message),
+            ...(advisory ? { advisory } : {}),
             reason: `${failurePrefix}: ${error.message}`
         });
         return false;
@@ -142,6 +185,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 workspace,
                 timeoutMs: options.timeoutMs || 120000,
                 adapter: options.adapter,
+                signal: options.signal,
                 env: prismaEnv,
                 successReason: 'Prisma schema is semantically valid.',
                 failurePrefix: 'Prisma validation failed'

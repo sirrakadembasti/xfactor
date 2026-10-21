@@ -94,14 +94,20 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingLog, setLoadingLog] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshingRuns, setRefreshingRuns] = useState(false);
   const runsRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
   const logRequestRef = useRef(0);
+  const historySessionRef = useRef(null);
+  const selectionRef = useRef({ projectId: null, runId: null });
   const [error, setError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
-    const requestId = ++runsRequestRef.current;
+    const session = { controller, disposed: false, pending: false, loadingMore: false, paginated: false };
+    historySessionRef.current = session;
+    selectionRef.current = { projectId: null, runId: null };
+    let latestRunId = null;
     detailRequestRef.current += 1;
     logRequestRef.current += 1;
     setRuns([]);
@@ -114,25 +120,52 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
     setLog(null);
     setError('');
     setLoadingRuns(true);
+    setLoadingMore(false);
 
-    apiClient.getVerificationRuns(projectId, { limit: 50, signal: controller.signal })
-      .then(data => {
-        if (runsRequestRef.current !== requestId) return;
+    const refreshRuns = async () => {
+      if (session.disposed || session.pending || session.loadingMore) return;
+      session.pending = true;
+      setRefreshingRuns(true);
+      const requestId = ++runsRequestRef.current;
+      try {
+        const data = await apiClient.getVerificationRuns(projectId, { limit: 50, signal: controller.signal });
+        if (session.disposed || runsRequestRef.current !== requestId) return;
         const nextRuns = Array.isArray(data?.runs) ? data.runs : [];
         setRunsProjectId(projectId);
-        setRuns(nextRuns);
-        setNextCursor(data?.nextCursor || null);
-        setSelectedRunProjectId(nextRuns[0] ? projectId : null);
-        setSelectedRunId(nextRuns[0]?.id || null);
-      })
-      .catch(requestError => {
-        if (requestError?.name !== 'AbortError') setError('Kalite geçmişi yüklenemedi.');
-      })
-      .finally(() => {
-        if (runsRequestRef.current === requestId) setLoadingRuns(false);
-      });
-
-    return () => controller.abort();
+        const nextIds = new Set(nextRuns.map(run => run.id));
+        setRuns(current => [...nextRuns, ...current.filter(run => !nextIds.has(run.id))]);
+        if (!session.paginated) setNextCursor(data?.nextCursor || null);
+        const selected = selectionRef.current;
+        if (!selected.runId || (selected.projectId === projectId && selected.runId === latestRunId)) {
+          const runId = nextRuns[0]?.id || null;
+          selectionRef.current = { projectId, runId };
+          setSelectedRunProjectId(runId ? projectId : null);
+          setSelectedRunId(runId);
+        }
+        latestRunId = nextRuns[0]?.id || null;
+      } catch (requestError) {
+        if (!session.disposed && runsRequestRef.current === requestId && requestError?.name !== 'AbortError') {
+          setError('Kalite geçmişi yüklenemedi.');
+        }
+      } finally {
+        session.pending = false;
+        if (!session.disposed && runsRequestRef.current === requestId) {
+          setLoadingRuns(false);
+          setRefreshingRuns(false);
+        }
+      }
+    };
+    refreshRuns();
+    const interval = setInterval(refreshRuns, 15000);
+    return () => {
+      session.disposed = true;
+      clearInterval(interval);
+      controller.abort();
+      runsRequestRef.current += 1;
+      detailRequestRef.current += 1;
+      logRequestRef.current += 1;
+      if (historySessionRef.current === session) historySessionRef.current = null;
+    };
   }, [apiClient, projectId]);
 
   useEffect(() => {
@@ -142,39 +175,60 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
       return undefined;
     }
     const controller = new AbortController();
-    const requestId = ++detailRequestRef.current;
+    let disposed = false;
+    let pending = false;
     logRequestRef.current += 1;
     setLoadingDetail(true);
+    setRunDetail(null);
     setSelectedCheckId(null);
     setLog(null);
-    apiClient.getVerificationRun(projectId, selectedRunId, { signal: controller.signal })
-      .then(detail => {
-        if (detailRequestRef.current === requestId) setRunDetail(detail);
-      })
-      .catch(requestError => {
-        if (requestError?.name !== 'AbortError' && detailRequestRef.current === requestId) {
+    const refreshDetail = async () => {
+      if (disposed || pending) return;
+      pending = true;
+      const requestId = ++detailRequestRef.current;
+      try {
+        const detail = await apiClient.getVerificationRun(projectId, selectedRunId, { signal: controller.signal });
+        if (!disposed && detailRequestRef.current === requestId) setRunDetail(detail);
+      } catch (requestError) {
+        if (!disposed && requestError?.name !== 'AbortError' && detailRequestRef.current === requestId) {
           setError('Doğrulama kanıtı yüklenemedi.');
         }
-      })
-      .finally(() => {
-        if (detailRequestRef.current === requestId) setLoadingDetail(false);
-      });
-    return () => controller.abort();
+      } finally {
+        pending = false;
+        if (!disposed && detailRequestRef.current === requestId) setLoadingDetail(false);
+      }
+    };
+    refreshDetail();
+    const interval = setInterval(refreshDetail, 15000);
+    return () => {
+      disposed = true;
+      clearInterval(interval);
+      controller.abort();
+      detailRequestRef.current += 1;
+      logRequestRef.current += 1;
+    };
   }, [apiClient, projectId, selectedRunId, selectedRunProjectId]);
 
   const loadMoreRuns = async () => {
-    if (!nextCursor || loadingMore) return;
+    const session = historySessionRef.current;
+    if (!session || !nextCursor || session.pending || session.loadingMore || loadingMore) return;
+    session.loadingMore = true;
     const requestId = ++runsRequestRef.current;
     setLoadingMore(true);
     try {
-      const data = await apiClient.getVerificationRuns(projectId, { cursor: nextCursor, limit: 50 });
-      if (runsRequestRef.current !== requestId) return;
-      setRuns(currentRuns => [...currentRuns, ...(Array.isArray(data?.runs) ? data.runs : [])]);
+      const data = await apiClient.getVerificationRuns(projectId, { cursor: nextCursor, limit: 50, signal: session.controller.signal });
+      if (session.disposed || runsRequestRef.current !== requestId) return;
+      session.paginated = true;
+      setRuns(currentRuns => {
+        const existingIds = new Set(currentRuns.map(run => run.id));
+        return [...currentRuns, ...(Array.isArray(data?.runs) ? data.runs : []).filter(run => !existingIds.has(run.id))];
+      });
       setNextCursor(data?.nextCursor || null);
     } catch {
-      if (runsRequestRef.current === requestId) setError('Daha eski kalite geçmişi yüklenemedi.');
+      if (!session.disposed && runsRequestRef.current === requestId) setError('Daha eski kalite geçmişi yüklenemedi.');
     } finally {
-      if (runsRequestRef.current === requestId) setLoadingMore(false);
+      session.loadingMore = false;
+      if (!session.disposed && runsRequestRef.current === requestId) setLoadingMore(false);
     }
   };
 
@@ -184,7 +238,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
     setLoadingLog(true);
     setLog(null);
     try {
-      const nextLog = await apiClient.getVerificationCheckLog(projectId, selectedRunId, check.id);
+      const nextLog = await apiClient.getVerificationCheckLog(projectId, selectedRunId, check.id, { signal: historySessionRef.current?.controller.signal });
       if (logRequestRef.current === requestId) setLog(nextLog);
     } catch {
       if (logRequestRef.current === requestId) setError('Kanıt logu yüklenemedi.');
@@ -194,7 +248,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
   };
 
   const runsMatchProject = runsProjectId === projectId;
-  const detailMatchesProject = selectedRunProjectId === projectId;
+  const detailMatchesProject = selectedRunProjectId === projectId && runDetail?.run?.id === selectedRunId;
   const visibleRuns = runsMatchProject ? runs : [];
   const checks = detailMatchesProject && Array.isArray(runDetail?.checks) ? runDetail.checks : [];
   const selectedCheck = checks.find(check => check.id === selectedCheckId);
@@ -284,6 +338,7 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
                           <button
                             type="button"
                             onClick={() => {
+                              selectionRef.current = { projectId, runId: run.id };
                               setSelectedRunProjectId(projectId);
                               setSelectedRunId(run.id);
                             }}
@@ -307,7 +362,9 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
                 <button
                   type="button"
                   onClick={loadMoreRuns}
-                  disabled={loadingMore}
+                  disabled={loadingMore || refreshingRuns}
+                  aria-busy={loadingMore || refreshingRuns}
+                  title={refreshingRuns ? 'Yeni koşular güncelleniyor…' : undefined}
                   className="rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:cursor-wait disabled:opacity-60"
                 >
                   {loadingMore ? 'Daha eski koşular yükleniyor…' : 'Daha Eski Koşuları Yükle'}

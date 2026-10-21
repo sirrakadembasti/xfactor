@@ -9,6 +9,23 @@ test('chat failures identify the cause without exposing provider secrets', () =>
   expect(formatChatError({ status: 401 })).toContain('Oturum');
 });
 
+test.each([
+  [400, 'Mesaj geçersiz. Boş olmadığını ve 4000 karakter sınırını aşmadığını kontrol edin.'],
+  [413, 'Mesaj isteği boyut sınırını aşıyor. İçeriği kısaltıp yeniden gönderin.']
+])('chat HTTP %s gives fixed request guidance without echoing server details', (status, expected) => {
+  expect(formatChatError({ status, code: 'UNKNOWN_REQUEST_ERROR', message: 'Timeout secret-provider-key',
+    details: { error: 'secret-provider-key', requestId: '<unsafe secret>' } })).toBe(expected);
+  expect(formatChatError({ status, details: { requestId: 'safe-request-123' } })).toBe(`${expected} Hata kaydı: safe-request-123.`);
+});
+
+test('known LLM codes and existing HTTP auth/rate-limit guidance retain precedence', () => {
+  expect(formatChatError({ status: 400, code: 'LLM_AUTH' })).toBe(formatChatError({ code: 'LLM_AUTH' }));
+  expect(formatChatError({ status: 413, code: 'LLM_TIMEOUT' })).toBe(formatChatError({ code: 'LLM_TIMEOUT' }));
+  expect(formatChatError({ status: 401, message: 'Timeout secret' })).toBe('Oturum süresi doldu. Yeniden giriş yapın.');
+  expect(formatChatError({ status: 403, message: 'Timeout secret' })).toBe('Bu proje için mesaj gönderme yetkisi yok.');
+  expect(formatChatError({ status: 429, message: 'Timeout secret' })).toBe('İstek sınırına ulaşıldı. Bir süre bekleyin.');
+});
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();

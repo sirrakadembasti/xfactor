@@ -1,64 +1,32 @@
-# Graphify Kullanım ve Bilgi Notu
+# Graphify görsel haritası: üretim ve kapsam
 
-> **Bu deponun görsel haritası:** `npm run graph` komutu `backend/scripts/generate_graph.js` ile güncel kaynaklardan `graph.json`, `graph.html`, `GRAPH_TREE.html` ve `GRAPH_REPORT.md` dosyalarını yeniden üretir. Aşağıdaki Python Graphify komutları ayrı bir araçtır; bu dört görsel çıktının güncelliği için `npm run graph` kullanın. `manifest.json` Python aracının önbelleğidir ve bu görsel haritanın güncellik göstergesi değildir.
+XFactor'ın güncel kaynak haritasını depo kökünde şu komutla oluşturun:
 
-Bu doküman, **Graphify** aracının kısıtlı ağlarda (MEB vb.) kullanımı, komutları ve bu uygulama (Gemini / Antigravity AI Asistanı) içerisindeki çalışma mantığına dair rehberdir.
-
----
-
-## 1. Graphify Nedir ve Ne İşe Yarar?
-
-Graphify, projenizdeki kod dosyalarını AST (Abstract Syntax Tree / Soyut Sözdizimi Ağacı) seviyesinde analiz ederek sınıflar, fonksiyonlar ve bağımlılıklar arasındaki ilişkileri çıkaran bir **Bilgi Grafiği (Knowledge Graph)** motorudur.
-
-* **Token Tasarrufu:** Yapay zekanın tüm projedeki kodları tek tek okuması yerine grafik üzerinden sorgulama yapmasını sağlayarak %90'a varan token tasarrufu sağlar.
-* **Hızlı Anlama:** Yapay zeka asistanının projenin genel mimarisini ve bileşenler arası ilişkileri saniyeler içinde kavramasını sağlar.
-* **Tamamen Yerel:** Analiz tamamen kendi bilgisayarınızda yapılır, kodlarınız dışarı aktarılmaz.
-
----
-
-## 2. Kısıtlı Ağlarda (MEB vb.) IPv4 ile Çalıştırma
-
-Ağınızda IPv6 DNS çözünürlüğü kısıtlı olduğu için standart `graphify` komutu yerine Python üzerinden **IPv4 zorlamalı** komutları kullanabilirsiniz.
-
-### A. Standart Komut (İnternet/Ağ Normal Olduğunda):
 ```bash
-python -m graphify <komut>
+npm run graph
 ```
 
-### B. Kısıtlı Ağ / IPv4 Zorlamalı Komut (Garanti Çalışan Yöntem):
-```bash
-python -c "import socket; orig=socket.getaddrinfo; socket.getaddrinfo=lambda h,p,f=0,t=0,pr=0,fl=0: orig(h,p,socket.AF_INET,t,pr,fl); from graphify.cli import main; import sys; sys.argv=['graphify'] + sys.argv[1:]; main()" <komut_ve_parametreler>
-```
+Komut `backend/scripts/generate_graph.js` dosyasını çalıştırır. Kaynak taraması ve AST/import analizi yereldir; bu komut LLM çağrısı yapmaz. Sonuçları:
 
----
+| Dosya | Kullanım |
+|---|---|
+| `graph.json` | Kaynak dosyaları, semboller, bağımlılıklar ve küratörlü mimari bağlantılar |
+| `graph.html` | Etkileşimli mimari ve kaynak haritası |
+| `GRAPH_TREE.html` | Kaynak/dosya ağacı |
+| `GRAPH_REPORT.md` | Oluşturulan kapsam, sayılar ve mimari özeti |
 
-## 3. Temel Graphify Komutları ve Kullanımları
+Harita `backend`, `frontend`, `execution`, `e2e`, `scripts`, `docs`, `x-agents` ve `llm-yonetimi` kaynaklarını kapsar. `projects/` altındaki üretilen uygulamalar, canlı `backend/data/`, `node_modules`, derleme çıktıları ve `.tmp` kanıtları platform haritasına katılmaz. Güncel düğüm/bağlantı sayıları üretilmiş rapordan okunmalıdır.
 
-| Komut | Açıklama |
-| :--- | :--- |
-| `python -m graphify extract . --code-only` | Python Graphify verisini çıkarır; bu deponun görsel çıktılarını yeniden üretmek için ardından `npm run graph` çalıştırın. |
-| `python -m graphify query "<soru>"` | Bilgi grafiği üzerinde belirli bir fonksiyon/modül hakkında sorgulama yapar. |
-| `python -m graphify explain "<kavram>"` | Projedeki belirli bir mimariyi veya sınıfı grafik üzerinden detaylı açıklar. |
-| `python -m graphify path "<bileşen_A>" "<bileşen_B>"` | İki kod bileşeni (fonksiyon/sınıf) arasındaki çağrı yolunu ve ilişkileri gösterir. |
-| `python -m graphify god-nodes` | Projedeki en çok bağlantıya sahip merkez (mimari odak) düğümleri listeler. |
-| `python -m graphify tree` | Python Graphify ağacını üretir; bu deponun tam kaynak ağacı için `npm run graph` kullanın. |
-| `python -m graphify reflect` | Başarılı sorgulardan çıkarılan dersleri `LESSONS.md` hafıza dosyasına kaydeder. |
-| `python -m graphify gemini install` | Gemini CLI / Antigravity asistanı entegrasyonunu ve hook'larını yeniden kurar. |
+## Güncel iş akışını okuma
 
----
+- `x-agents/`: güvenilen platform ajan talimatları; `docs/` işletim ve geliştirme belgeleridir. Projeye ait canlı protokol kayıtları `projects/<id>/` altında kalır.
+- `backend/engine/workflow.js`, `resumeStage.js` ve `checkpointHelper.js`: onaylı sözleşme/plan ile eşleşen kod üretimini koruma ve kalite aşamasını tekrar yürütme.
+- `backend/verification/`: süre bütçesi, 18 ana zorunlu kapı, yönetim/rol ayrıntıları ve kabul edilmiş artefaktın kanıt kontrolü.
+- `execution/`: bağımsız worker, yerel çalışma profili, gerçek Chromium/API testleri ve sınırlı komut teşhisleri.
+- `frontend/src/components/`: proje oluşturma diyaloğu, sohbet ve kalite geçmişi/ayrıntı ekranları.
 
-## 4. Bu Uygulama (Gemini / Antigravity AI) İçinde Kullanımı
+Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Gerçek otel üretiminin sonucunu [21 Ekim 2026 kabul raporunda](../docs/LOCAL-WORKER-VALIDATION-2026-10-21.md), kullanım adımlarını [kullanıcı kılavuzunda](../kullanici-kilavuzu.md) okuyun.
 
-Bu proje dizininde (`xfactor`) `graphify gemini install` komutu başarıyla çalıştırıldığı için:
+## Ayrı Python Graphify aracı
 
-1. **Otomatik Grafiği Kullanma:**
-   Siz bu sohbet ekranında projeyle ilgili genel mimari veya kod soruları sorduğunuzda (Örn: *"Bu projede veri tabanı bağlantısı nerede kuruluyor?"* veya *"Projedeki ana bileşenler nasıl haberleşiyor?"*), Gemini asistanı arka planda `graphify query` komutunu çalıştırarak doğrudan haritadan yanıt verir.
-
-2. **Kod Değişikliklerinden Sonra Güncelleme:**
-   Projenize yeni dosyalar eklediğinizde veya önemli fonksiyon güncellemeleri yaptığınızda, haritayı tazelemek için terminalinizde şu komutu çalıştırmanız yeterlidir:
-   ```bash
-   npm run graph
-   ```
-
-3. **Öğrenen Hafıza (Memory):**
-   Karmaşık bir hatayı çözdüğümüzde veya mimari bir karara vardığımızda asistan `graphify reflect` mekanizmasını kullanarak bu tecrübeyi projeye özel `LESSONS.md` dosyasına kaydeder ve gelecekte aynı hataların tekrarlanmasını engeller.
+Python `graphify` aracının sorguları ve `manifest.json`/cache çıktıları bu deponun görsel üreticisinden ayrıdır. Kurulu sürümün desteklediği komutlar için `python -m graphify --help` kullanın. Python cache güncellemesi yukarıdaki dört dosyanın yeniden üretildiği anlamına gelmez; kaynak değişikliklerinden sonra `npm run graph` çalıştırın. Asistan entegrasyonu veya otomatik sorgulama, yalnız `graphify-out/` dizini bulunduğu için etkin kabul edilmez.

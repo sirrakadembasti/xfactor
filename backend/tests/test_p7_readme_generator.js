@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createTestHarness } from './testHarness.js';
 import { generateProjectReadme } from '../engine/readmeGenerator.js';
+import { verifyReadmeCommands } from '../verification/readmeVerifier.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 const filteredTest = process.argv.find((arg) => arg.startsWith('--test='))?.split('=')[1];
@@ -144,5 +145,30 @@ if (!filteredTest || filteredTest === 'management') {
     assert.match(readme, /target=\/data/);
   });
 }
+
+await runAsyncTest('mixed Vite Express README starts both declared services and validates against canonical ports', async () => {
+  const manifest = { version: '1.0', services: { web: { type: 'vite', port: 4173 }, api: { type: 'express', port: 3001 } } };
+  for (const apiScript of ['dev:api', 'start:api']) {
+    const pkg = { name: 'mixed', scripts: { dev: 'vite', [apiScript]: 'tsx src/server.ts' }, dependencies: { vite: 'latest', express: 'latest' } };
+    const dir = await makeDir({ 'package.json': JSON.stringify(pkg), 'service-manifest.json': JSON.stringify(manifest),
+      '.env.example': 'AUTH_SECRET=\nPORT=3001\n', Dockerfile: 'FROM node:22\nEXPOSE 4173\n' });
+    const readme = await generateProjectReadme({ projectDir: dir });
+    assert.match(readme, new RegExp(`npm run ${apiScript}`));
+    assert.match(readme, /npm run dev -- --host 127\.0\.0\.1 --port 4173/);
+    assert.match(readme, /PORT=3001/);
+    assert.match(readme, /localhost:3001/); assert.match(readme, /localhost:4173/);
+    assert.match(readme, /\/api/); assert.ok(!readme.includes('docker run'));
+    const result = await verifyReadmeCommands({}, [{ path: 'README.md', content: readme }, { path: 'package.json', content: JSON.stringify(pkg) },
+      { path: 'service-manifest.json', content: JSON.stringify(manifest) }, { path: 'src/server.ts', content: 'const port = process.env.PORT || 3001;' }]);
+    assert.equal(result.passed, true, JSON.stringify(result.issues));
+  }
+});
+
+await runAsyncTest('mixed manifest without API scripts must not invent an API command', async () => {
+  const dir = await makeDir({ 'package.json': JSON.stringify({ scripts: { dev: 'vite' } }),
+    'service_manifest.json': JSON.stringify({ services: { web: { type: 'vite', port: 4173 }, api: { type: 'express', port: 3001 } } }) });
+  const readme = await generateProjectReadme({ projectDir: dir });
+  assert.ok(!readme.includes('npm run dev:api')); assert.ok(!readme.includes('npm run start:api'));
+});
 
 finish();

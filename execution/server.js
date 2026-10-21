@@ -46,6 +46,8 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
     
     if (store.updateJobStatus(job.jobId, 'pending', 'running')) {
       isExecuting = true;
+      const diagnosticsLease = crypto.randomUUID();
+      store.beginDiagnostics(job.jobId, diagnosticsLease);
       const abortController = new AbortController();
       const deadlineTimer = setTimeout(() => {
         store.updateJobStatus(job.jobId, 'running', 'failed_timeout', { ...terminalMetadata, error: 'Deadline exceeded during execution' });
@@ -58,7 +60,8 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
       }
       const p = executeJob(executionJob, {
         signal: abortController.signal,
-        onResource: () => {}
+        onResource: () => {},
+        onProgress: event => !abortController.signal.aborted && store.recordCommandDiagnostic(job.jobId, diagnosticsLease, event)
       }).then((result) => {
         if (abortController.signal.aborted) return;
         if (Date.now() >= job.deadline) {
@@ -105,7 +108,12 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
           const runtime = await probeRuntime();
           res.writeHead(200);
           return res.end(JSON.stringify({ ...runtime, supportedTypes: ['prepare_dependencies', 'verify_artifact'], executionCapacity: true }));
-        } catch {
+        } catch (error) {
+          // Never include runtime messages, stacks, paths, or arbitrary error properties.
+          const phase = ['tool_resolution', 'browser_launch', 'renderer_context', 'renderer_page', 'renderer_content', 'renderer_evaluate', 'browser_close'].includes(error?.readinessPhase) ? error.readinessPhase : 'unknown';
+          const name = ['Error', 'TimeoutError', 'TypeError'].includes(error?.name) ? error.name : 'unknown';
+          const code = ['ECONNRESET', 'ENOENT', 'EACCES', 'EPERM', 'ETIMEDOUT'].includes(error?.code) ? error.code : 'unknown';
+          console.warn('[execution-worker] readiness failed ' + JSON.stringify({ phase, name, code }));
           res.writeHead(503);
           return res.end(JSON.stringify({ supportedTypes: [], executionCapacity: false, error: 'Isolated runtime is unavailable' }));
         }

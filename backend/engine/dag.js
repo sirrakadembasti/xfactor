@@ -36,9 +36,18 @@ export class TaskDAG {
     /**
      * DAG'a yeni bir görev ekler
      */
-    addTask({ id, title, description, dependencies = [], targetFiles = [], meta = {} }) {
+    addTask({ id, title, description, dependencies = [], targetFiles = [], meta = {}, requirementIds = [], managementCoverage = [] }) {
         if (!id) throw new Error('Görev id zorunludur.');
         if (this.tasks.has(id)) throw new Error(`Görev "${id}" zaten DAG içinde mevcut.`);
+        if (!Array.isArray(requirementIds) || requirementIds.some(value => typeof value !== 'string' || !value.trim())) {
+            throw new TypeError('Task requirementIds must be an array of nonempty strings.');
+        }
+        if (!Array.isArray(managementCoverage) || managementCoverage.some(entry => !entry
+            || typeof entry !== 'object' || Array.isArray(entry)
+            || typeof entry.requirementId !== 'string' || !entry.requirementId.trim()
+            || Object.values(entry).some(value => typeof value !== 'string'))) {
+            throw new TypeError('Task managementCoverage must contain objects with string fields and a requirementId.');
+        }
 
         this.tasks.set(id, {
             id,
@@ -46,6 +55,8 @@ export class TaskDAG {
             description: description || '',
             dependencies: new Set(canonicalizeTaskDependencies(dependencies)),
             targetFiles: targetFiles || [],
+            requirementIds: [...requirementIds],
+            managementCoverage: managementCoverage.map(entry => ({ ...entry })),
             meta: { ...meta },
             status: 'pending',
             result: null,

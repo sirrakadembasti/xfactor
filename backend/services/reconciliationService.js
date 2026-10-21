@@ -421,12 +421,39 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     let pendingContract = null;
     try {
         approvedContract = database.prepare(
-            'SELECT id, revision FROM project_contracts WHERE project_id = ? AND status = \'approved\' ORDER BY revision DESC LIMIT 1'
+            'SELECT id, revision, contract_json FROM project_contracts WHERE project_id = ? AND status = \'approved\' ORDER BY revision DESC LIMIT 1'
         ).get(pId);
         pendingContract = database.prepare(
-            'SELECT id, revision FROM project_contracts WHERE project_id = ? AND status = \'pending_approval\' ORDER BY revision DESC LIMIT 1'
+            'SELECT id, revision, contract_json FROM project_contracts WHERE project_id = ? AND status = \'pending_approval\' ORDER BY revision DESC LIMIT 1'
         ).get(pId);
     } catch {}
+
+    // Protocol Markdown is a legacy recovery source, not an authority over a
+    // canonical contract's DAG or lifecycle. In particular, plan=NULL is the
+    // normal canonical storage format and must never trigger a disk replacement.
+    const canonicalContract = pendingContract || approvedContract;
+    const hasExecutionMetadata = Boolean(existingWorkflow.planHash
+        || Object.keys(existingWorkflow.directorSpecs || {}).length);
+    // A legacy import may be recovered again only when its entire persisted
+    // contract still matches the disk-derived plan and has no canonical cache.
+    const matchingLegacyImport = !hasExecutionMetadata && canonicalContract?.contract_json === planJson;
+    if (existingProj && canonicalContract && !matchingLegacyImport) {
+        let canonicalStatus = pendingContract ? 'pending_approval' : existingProj.status;
+        if (!pendingContract && ['planning', 'pending_approval'].includes(canonicalStatus)) canonicalStatus = 'paused';
+        const preservedWorkflowJson = JSON.stringify(existingWorkflow);
+        const existingParsedJson = (() => {
+            try { return JSON.stringify(JSON.parse(existingProj.workflow_state || '{}')); } catch { return '{}'; }
+        })();
+        if (canonicalStatus !== existingProj.status || preservedWorkflowJson !== existingParsedJson) {
+            database.prepare('UPDATE projects SET status = ?, workflow_state = ? WHERE id = ?')
+                .run(canonicalStatus, preservedWorkflowJson, pId);
+        }
+        let canonicalPlan = null;
+        try { canonicalPlan = JSON.parse(canonicalContract.contract_json); } catch {}
+        return { success: true, projectId: pId, status: canonicalStatus, plan: canonicalPlan,
+            workflow: existingWorkflow, preservedCanonical: true,
+            tasksCount: Object.values(existingWorkflow.teamleaderPlans || {}).reduce((sum, item) => sum + (item.tasks?.length || 0), 0) };
+    }
 
     // Determine safe reconciled status
     let finalStatus = status;
@@ -1109,7 +1136,9 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
         }
     }
 
-    const dbProjectsWithState = database.prepare('SELECT id, plan, workflow_state FROM projects').all();
+    const dbProjectsWithState = database.prepare(`SELECT id, plan, workflow_state,
+        EXISTS(SELECT 1 FROM project_contracts c WHERE c.project_id = projects.id
+            AND c.status IN ('approved', 'pending_approval')) AS has_contract FROM projects`).all();
     const dbSet = new Set(dbProjectsWithState.map(p => p.id));
     const unverified = [];
 
@@ -1134,7 +1163,8 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             if (!fsSync.existsSync(expectedDir)) {
                 missingOnDisk.push(proj.id);
             } else {
-                if (!proj.plan || !proj.workflow_state || proj.plan === 'null' || proj.workflow_state === 'null') {
+                if (!proj.workflow_state || proj.workflow_state === 'null'
+                    || (!proj.has_contract && (!proj.plan || proj.plan === 'null'))) {
                     await rehydrateProjectStateFromDisk(expectedDir, { projectId: proj.id, database });
                     updatedCount += 1;
                 }

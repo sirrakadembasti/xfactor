@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { verifyArtifact } from './artifactVerifier.js';
+import { verificationJobDeadline } from './verificationBudget.js';
 import { getArtifact } from '../repositories/artifactRepository.js';
 import {
     completeVerifiedProject,
@@ -155,7 +156,7 @@ if (process.argv[1] && process.argv[1].endsWith('verificationCli.js')) {
             const artifact = getArtifact({ projectId, contractId, artifactId });
             if (!contract || contract.id !== contractId || !artifact) throw new Error('Latest approved contract and artifact are required.');
             const archiveBytes = await fs.readFile(artifact.path);
-            const activeJob = { version: 1, jobId: crypto.randomUUID(), projectId, contractId, contractHash: contract.contract_hash, revision: contract.revision, artifactId, nonce: crypto.randomBytes(32).toString('hex'), runId, deadline: Date.now() + 15 * 60 * 1000, contract: JSON.parse(contract.contract_json) };
+            const activeJob = { version: 1, jobId: crypto.randomUUID(), projectId, contractId, contractHash: contract.contract_hash, revision: contract.revision, artifactId, nonce: crypto.randomBytes(32).toString('hex'), runId, deadline: verificationJobDeadline(), contract: JSON.parse(contract.contract_json) };
             const receipt = await verifyArtifactAndProject({ projectId, contractId, artifactId, complete, expectedRevision, options: { runId, activeJob, archiveBase64: archiveBytes.toString('base64') } });
             console.log(JSON.stringify(receipt));
         } catch (error) {

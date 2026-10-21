@@ -1,6 +1,10 @@
 import { URL } from 'url';
 import { executeInSandbox } from './sandboxRunner.js';
 import { isDeepStrictEqual } from 'node:util';
+import { randomBytes } from 'node:crypto';
+
+// Correlation values must also fit bounded domain fields, including fixture suffixes.
+function probeNonce() { return randomBytes(9).toString('base64url'); }
 
 function containsCreatedRecord(value, createdId, nonce, identityField = null) {
     if (Array.isArray(value)) return value.some(item => containsCreatedRecord(item, createdId, nonce, identityField));
@@ -21,20 +25,100 @@ function findRecordByNonce(value, nonce, identityField = null) {
     if ((identityField ? value[identityField] === nonce : value.name === nonce || value.title === nonce) && value.id != null) return value;
     return Object.values(value).map(item => typeof item === 'object' ? findRecordByNonce(item, nonce, identityField) : null).find(Boolean) || null;
 }
-function renderBody(template, nonce, fallback, parentId = null) {
+function renderBody(template, nonce, fallback, parentId = null, ids = new Map(), now = new Date()) {
     if (!template) return fallback;
     const render = value => {
-        if (typeof value === 'string') return value.replaceAll('{nonce}', nonce)
-            .replaceAll('{parentId}', parentId == null ? '{parentId}' : String(parentId));
+        if (typeof value === 'string') {
+            const reference = /^\{fixture:([A-Za-z][A-Za-z0-9_]{0,31})\.id\}$/.exec(value);
+            if (reference) {
+                if (!ids.has(reference[1])) throw new Error(`Unresolved fixture reference: ${reference[1]}`);
+                return ids.get(reference[1]);
+            }
+            const date = /^\{date:([+-]?\d{1,4})d\}$/.exec(value);
+            if (date) {
+                const days = Number(date[1]);
+                if (Math.abs(days) > 3650) throw new Error('Fixture date offset exceeds 3650 days.');
+                return new Date(now.getTime() + days * 86400000).toISOString();
+            }
+            const rendered = value.replaceAll('{nonce}', nonce)
+                .replaceAll('{parentId}', parentId == null ? '{parentId}' : String(parentId));
+            if (/\{[^{}]*\}/.test(rendered)) throw new Error('Unknown or embedded fixture reference/template.');
+            return rendered;
+        }
         if (Array.isArray(value)) return value.map(render);
         if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, part]) => [key, render(part)]));
         return value;
     };
     return render(template);
 }
+
+function safeFixturePath(value, apiBaseUrl) {
+    if (typeof value !== 'string' || !/^\/(?!\/)[A-Za-z0-9/_-]+$/.test(value)) return false;
+    try { return new URL(value, apiBaseUrl).origin === new URL(apiBaseUrl).origin; } catch { return false; }
+}
+
+function validateFixtureBody(body) {
+    if (!body || typeof body !== 'object' || Array.isArray(body) || !Object.keys(body).length
+        || Buffer.byteLength(JSON.stringify(body), 'utf8') > 32768) throw new Error('Fixture body must be a bounded nonempty object.');
+    let nodes = 0;
+    const visit = (value, depth) => {
+        if (++nodes > 2048 || depth > 20) throw new Error('Fixture body complexity limit exceeded.');
+        if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
+            if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new Error('Unsafe fixture body key.');
+            visit(child, depth + 1);
+        }
+    };
+    visit(body, 0);
+}
+
+// All prerequisite paths, roles and references are validated before any request.
+// Only declared create endpoints may receive authenticated setup mutations.
+export async function prepareAPIFixture({ fixture = {}, management, apiBaseUrl, nonce, roleRequest,
+    parentId = null, now = new Date() }) {
+    const setup = fixture.setup === undefined ? [] : fixture.setup;
+    if (!Array.isArray(setup) || setup.length > 8) throw new Error('Fixture setup must contain at most 8 prerequisites.');
+    const validatedIds = new Map();
+    const steps = [];
+    for (const step of setup) {
+        if (!step || typeof step !== 'object' || Array.isArray(step)
+            || Object.keys(step).some(key => !['name', 'resource', 'role', 'createPath', 'createBody'].includes(key))
+            || !/^[A-Za-z][A-Za-z0-9_]{0,31}$/.test(step.name || '') || validatedIds.has(step.name)) {
+            throw new Error('Invalid or duplicate fixture setup name.');
+        }
+        const resource = management?.resources?.find(resource => resource.name === step.resource);
+        if (!resource?.operations?.includes('create') || resource.apiPath !== step.createPath
+            || !safeFixturePath(step.createPath, apiBaseUrl)) throw new Error('Fixture path/resource is not a declared local create endpoint.');
+        const role = management?.roles?.find(role => (step.role === undefined || role.name === step.role)
+            && role.permissions?.some(permission => permission.resource === step.resource && permission.operations?.includes('create')));
+        if (!role) throw new Error('Fixture setup role has no declared create permission.');
+        validateFixtureBody(step.createBody);
+        renderBody(step.createBody, nonce, null, parentId, validatedIds, now);
+        steps.push({ ...step, role: role.name });
+        validatedIds.set(step.name, 'validated-reference');
+    }
+    for (const body of [fixture.createBody, fixture.updateBody].filter(body => body !== undefined)) {
+        validateFixtureBody(body);
+        renderBody(body, nonce, null, parentId, validatedIds, now);
+    }
+    if (steps.length && typeof roleRequest !== 'function') throw new Error('Fixture setup requires an authenticated role adapter.');
+    const ids = new Map();
+    for (const step of steps) {
+        const response = await roleRequest({ url: new URL(step.createPath, apiBaseUrl).href, method: 'POST', role: step.role,
+            data: renderBody(step.createBody, nonce, null, parentId, ids, now) });
+        const id = response.data?.id ?? response.data?.data?.id;
+        if (!(response.statusCode >= 200 && response.statusCode < 300)
+            || !((typeof id === 'string' && id.length > 0 && id.length <= 256) || (typeof id === 'number' && Number.isFinite(id)))) {
+            throw new Error(`Fixture setup failed to create ${step.name} with an actual ID.`);
+        }
+        ids.set(step.name, id);
+    }
+    return { ids, now,
+        createBody: renderBody(fixture.createBody, nonce, null, parentId, ids, now),
+        updateBody: renderBody(fixture.updateBody, nonce, null, parentId, ids, now) };
+}
 function validRetentionFixture(fixture) {
     return fixture && typeof fixture.createPath === 'string'
-        && /^\/(?!\/)/.test(fixture.createPath) && !/\.\.|[?#\\]/.test(fixture.createPath)
+        && safeFixturePath(fixture.createPath, 'http://service')
         && typeof fixture.itemPath === 'string' && /^\/(?!\/)/.test(fixture.itemPath)
         && !/\.\.|[?#\\]/.test(fixture.itemPath)
         && (fixture.itemPath.match(/\{id\}/g) || []).length === 1
@@ -66,7 +150,7 @@ function validItemFixture(fixture, operations) {
 }
 
 async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, management, recordId,
-    readerRole, roleRequest, options, adapterId }) {
+    readerRole, roleRequest, options, adapterId, fixtureContext }) {
     const checks = [], issues = [];
     const operations = ['update', 'delete'].filter(operation => resource.operations.includes(operation));
     if (!operations.length) return { checks, issues };
@@ -91,9 +175,9 @@ async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, manage
             issues.push(`No allowed ${operation} role for ${resource.name}.`);
             continue;
         }
-        const forbiddenNonce = `xfactor-forbidden-${operation}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const forbiddenNonce = probeNonce();
         const deniedBody = operation === 'update'
-            ? renderBody(fixture.updateBody, forbiddenNonce, { name: forbiddenNonce, title: forbiddenNonce }) : null;
+            ? renderBody(fixture.updateBody, forbiddenNonce, { name: forbiddenNonce, title: forbiddenNonce }, null, fixtureContext?.ids, fixtureContext?.now) : null;
         try {
             const baseline = await read();
             const baselineRecord = findRecordById(baseline.data, recordId);
@@ -118,9 +202,9 @@ async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, manage
             checks.push({ name: `api_${operation}_denial_persistence`, status: unchanged ? 'passed' : 'failed',
                 evidence: { adapterId, resource: resource.name, recordId } });
             if (!unchanged) issues.push(`Denied ${operation} changed or removed ${resource.name}.`);
-            const updatedNonce = `xfactor-updated-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const updatedNonce = probeNonce();
             const body = operation === 'update'
-                ? renderBody(fixture.updateBody, updatedNonce, { name: updatedNonce, title: updatedNonce }) : null;
+                ? renderBody(fixture.updateBody, updatedNonce, { name: updatedNonce, title: updatedNonce }, null, fixtureContext?.ids, fixtureContext?.now) : null;
             let related = null;
             const relatedPolicy = operation === 'delete' ? resource.deletionPolicy?.relatedData : null;
             if (relatedPolicy === 'preserve' || relatedPolicy === 'cascade') {
@@ -131,11 +215,13 @@ async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, manage
                     issues.push(`Related-record retention could not be verified for ${resource.name}.`);
                     continue;
                 }
-                const relatedNonce = `xfactor-related-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                const relatedNonce = probeNonce();
+                const retentionContext = await prepareAPIFixture({ fixture: retention, management, apiBaseUrl,
+                    nonce: relatedNonce, parentId: recordId, roleRequest });
                 const createUrl = new URL(retention.createPath, `${String(apiBaseUrl).replace(/\/+$/, '')}/`).href;
                 const createdRelated = await roleRequest({ url: createUrl, method: 'POST', role: allowed[0].name,
-                    data: renderBody(retention.createBody, relatedNonce, null, recordId) });
-                const relatedId = createdRelated.data?.id;
+                    data: retentionContext.createBody });
+                const relatedId = createdRelated.data?.id ?? createdRelated.data?.data?.id;
                 const relatedPath = retention.itemPath.replace('{id}', encodeURIComponent(String(relatedId)));
                 const relatedUrl = new URL(relatedPath, `${String(apiBaseUrl).replace(/\/+$/, '')}/`).href;
                 const beforeRelated = relatedId == null ? null
@@ -173,7 +259,9 @@ async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, manage
             checks.push({ name: `api_role_${operation}_allowed`, status: changedStatus ? 'passed' : 'failed',
                 statusCode: changed.statusCode, evidence: { adapterId, role: allowed[0].name, resource: resource.name } });
             if (!changedStatus) issues.push(`Allowed ${operation} failed for ${resource.name}.`);
-            const after = await read();
+            const after = operation === 'delete' && fixture.deleteExpectation.kind === 'field'
+                ? await roleRequest({ url: itemUrl, method: 'GET', role: readerRole })
+                : await read();
             const record = findRecordById(after.data, recordId);
             const persisted = operation === 'update'
                 ? after.statusCode >= 200 && after.statusCode < 300
@@ -257,6 +345,9 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
     const checks = [], issues = [];
     const adapter = opts.adapter;
     const adapterId = adapter?.id || 'direct-fetch';
+    const roleRequest = typeof adapter?.requestAsRole === 'function'
+        ? request => adapter.requestAsRole({ ...request, timeoutMs: opts.timeoutMs || 5000, signal: opts.signal })
+        : null;
     const domains = Array.isArray(contract.domains) && contract.domains.length ? contract.domains : [{ name: 'items', prefix: 'items' }];
     if (contract.management?.needed === true) {
         for (const resource of contract.management.resources || []) {
@@ -274,9 +365,11 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
             }
             const mutationUrl = new URL(resource.apiPath, `${String(apiBaseUrl).replace(/\/+$/, '')}/`).href;
             try {
-                const anonymousNonce = `xfactor-unauthorized-${Date.now()}`;
+                const anonymousNonce = probeNonce();
+                const fixtureContext = await prepareAPIFixture({ fixture: resource.verification, management: contract.management,
+                    apiBaseUrl, nonce: anonymousNonce, roleRequest });
                 const response = await sendHttpRequest(mutationUrl, 'POST',
-                    renderBody(resource.verification?.createBody, anonymousNonce, { name: anonymousNonce, title: anonymousNonce }),
+                    fixtureContext.createBody || { name: anonymousNonce, title: anonymousNonce },
                     opts.timeoutMs || 5000, { ...opts, headers: {} });
                 const denied = response.statusCode === 401 || response.statusCode === 403;
                 checks.push({ name: 'api_anonymous_mutation_denied', status: denied ? 'passed' : 'failed',
@@ -291,10 +384,12 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
     }
     if (contract.management?.needed === true) {
         const management = contract.management;
-        const roleRequest = typeof adapter?.requestAsRole === 'function'
-            ? request => adapter.requestAsRole({ ...request, timeoutMs: opts.timeoutMs || 5000, signal: opts.signal })
-            : null;
         for (const resource of management.resources || []) {
+            if (!safeFixturePath(resource.apiPath, apiBaseUrl)) {
+                checks.push({ name: 'api_status_check', status: 'blocked', reason: 'Management API path must be a safe local path.' });
+                issues.push(`Invalid local API path for ${resource.name}.`);
+                continue;
+            }
             if (resource.operations?.includes('read') && resource.readAccess !== undefined) {
                 const policy = resource.readAccess;
                 if (!['public', 'authenticated'].includes(policy)
@@ -375,14 +470,16 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
                 issues.push(`Authenticated create/read evidence is missing for ${resource.name}.`);
                 continue;
             }
-            const nonce = `xfactor-role-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const nonce = probeNonce();
             const identityField = resource.verification?.identityField || null;
             let created;
             let recordId = null;
+            let fixtureContext;
             try {
+                fixtureContext = await prepareAPIFixture({ fixture: resource.verification, management,
+                    apiBaseUrl, nonce, roleRequest });
                 created = await roleRequest({ url, method: 'POST', role: allowed[0].name,
-                    data: renderBody(resource.verification?.createBody, nonce,
-                        { name: nonce, title: nonce, description: 'Created by XFactor API Verifier' }) });
+                    data: fixtureContext.createBody || { name: nonce, title: nonce, description: 'Created by XFactor API Verifier' } });
                 const ok = created.statusCode >= 200 && created.statusCode < 300;
                 checks.push({ name: 'api_role_create_allowed', status: ok ? 'passed' : 'failed',
                     statusCode: created.statusCode, evidence: { adapterId, role: allowed[0].name, resource: resource.name } });
@@ -392,13 +489,14 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
             } catch (error) {
                 checks.push({ name: 'api_role_create_allowed', status: 'blocked', reason: error.message });
                 issues.push(`Authenticated create failed for ${resource.name}: ${error.message}`);
+                if (!fixtureContext) continue;
             }
             const deniedProbes = [];
             for (const role of denied) {
                 try {
-                    const deniedNonce = `xfactor-forbidden-${role.name}-${nonce}`;
+                    const deniedNonce = probeNonce();
                     const response = await roleRequest({ url, method: 'POST', role: role.name,
-                        data: renderBody(resource.verification?.createBody, deniedNonce, { name: deniedNonce, title: deniedNonce }) });
+                        data: renderBody(resource.verification?.createBody, deniedNonce, { name: deniedNonce, title: deniedNonce }, null, fixtureContext.ids, fixtureContext.now) });
                     const blocked = response.statusCode === 401 || response.statusCode === 403;
                     const check = { name: 'api_role_create_denied', status: blocked ? 'passed' : 'failed',
                         statusCode: response.statusCode, evidence: { adapterId, role: role.name, resource: resource.name } };
@@ -438,7 +536,7 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
             if (itemFixtureReady && resource.operations.some(operation => operation === 'update' || operation === 'delete')) {
                 const mutations = await verifyItemMutations({
                     apiBaseUrl, collectionUrl: url, resource, management, recordId,
-                    readerRole: readers[0].name, roleRequest, options: opts, adapterId
+                    readerRole: readers[0].name, roleRequest, options: opts, adapterId, fixtureContext
                 });
                 checks.push(...mutations.checks);
                 issues.push(...mutations.issues);

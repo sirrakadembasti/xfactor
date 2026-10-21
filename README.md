@@ -5,7 +5,7 @@
 [![SQLite](https://img.shields.io/badge/Database-SQLite%20WAL%20Migrations-003B57.svg)](https://www.sqlite.org/)
 [![Tests](https://img.shields.io/badge/Tests-run%20npm%20test-blue.svg)](backend/tests/test_runner.js)
 
-**XFactor**, kullanıcıların doğal dilde ilettiği yazılım fikirlerini analiz ederek 6 seviyeli rol uzmanlaşması, deterministik **DAG dalga motoru**, sürümlü **yazılım sözleşmeleri (PROJECT_CONTRACT)**, 18 zorunlu **kalite kapısı** (Aktif Politika 2.0 Fail-Closed Veto) ve izole **temiz oda (clean-room) ZIP doğrulayıcısı** ile sıfırdan çalışan tam teşekküllü projelere dönüştüren otonom bir yazılım üretim platformudur.
+**XFactor**, kullanıcıların doğal dilde ilettiği yazılım fikirlerini analiz ederek 6 seviyeli rol uzmanlaşması, deterministik **DAG dalga motoru**, sürümlü **yazılım sözleşmeleri (PROJECT_CONTRACT)**, 18 zorunlu **kalite kapısı** (Aktif Politika 2.0 Fail-Closed Veto) ve bağımsız **temiz oda (clean-room) ZIP doğrulayıcısı** ile yazılım projelerine dönüştüren otonom bir yazılım üretim platformudur.
 
 ---
 
@@ -16,8 +16,9 @@
 * 🤖 **6 Seviyeli Rol Uzmanlaşması:** `Manager` (Mimar), `Director` (Domain), `Teamleader` (DAG/Plan), `Coder` (Geliştirici), `Reviewer` (Kod Denetim) ve `Tester` (Kabul & QA).
 * ⚡ **Deterministik DAG Dalga Yürütücüsü:** Görevleri katı atomik tek dosya parçalarına (`targetFiles.length === 1`) böler, bağımsız işleri paralel dalgalar halinde çalıştırır.
 * 🛡️ **18 Zorunlu Kalite Kapısı (Aktif Politika 2.0):** Kodlar yalnızca sentaks değil; `clean_install`, `typecheck`, `framework_build`, `service_manifest`, `database_verification`, `api_contract`, `browser_journey`, `smoke_gate`, `placeholder_check`, `contamination_check`, `security_baseline` ve `readme_check` olmak üzere 18 zorunlu kapının makine tarafından doğrulanmış yürütme kanıtı (SHA-256 digest, exit code, ISO UTC zaman damgası) olmadan onaylanmaz (Fail-Closed Veto).
+* **Çok servisli yerel doğrulama:** Vite/Express projelerinin web ve API servisleri birlikte sınanır. Yönetim testleri, sınırlı ve yetkili önkoşul adımlarından gerçek kayıt kimlikleri alır; uydurma kimlik veya eksik test sözleşmesi başarı sayılmaz. Koşuya özel giriş imza anahtarları teslim paketine yazılmaz.
 * 📜 **Sürümlü Sözleşme & Çoklu Yığın Sürüm Koruması:** Next.js 15+ (App Router), React 18.3+, Prisma 6.4+, Zod 3.24+ ve Tailwind 3.4+ kararlı sürümleri kilitlidir. Otomatik `service-manifest.json`, `layout.tsx` ve `page.tsx` iskele koruması sağlanır.
-* 📦 **Sunucu Tarafı Temiz Oda ZIP Doğrulaması:** Dosya listesinden tahminî ZIP üretimi engellenmiştir. Sunucu tarafında üretilen ZIP artefaktı (`artifacts`), SHA-256 hash'i kilitlenerek izole `artifactVerifier` temiz odasında sıfırdan açılıp test edilmeden ve dayanıklı tamamlama makbuzu (`completion_receipts`, Migrasyon 10) üretilmeden indirilemez (Unverified 409 Conflict).
+* 📦 **Sunucu Tarafı Temiz Oda ZIP Doğrulaması:** Dosya listesinden tahminî ZIP üretimi engellenmiştir. Sunucu tarafında üretilen ZIP artefaktı (`artifacts`), SHA-256 hash'i kilitlenerek `artifactVerifier` tarafından ayrı temiz iş dizininde sıfırdan açılıp test edilmeden ve dayanıklı tamamlama makbuzu (`completion_receipts`, Migrasyon 10) üretilmeden indirilemez (Unverified 409 Conflict).
 * 🔒 **Bağımsız Execution Worker:** Web Orchestrator ve Execution Worker ayrı süreçlerdir; iş API'si Bearer token (`EXECUTION_WORKER_TOKEN`) ile korunur. `npm run dev:local` kalite kontrollerini Docker olmadan Node/npm/Playwright/Chromium ile yürütür. `local-trusted` profili işletim sistemi izolasyonu sağlamaz; üretilen kod worker kullanıcısının yetkileriyle çalışır.
 * 🛡️ **Profile Göre Güvenlik Sınırları:** Docker profili container kaynak/ağ sınırlarını uygular. Yerel profil ayrı iş dizini, ortam temizliği, arşiv sınırları, iptal ve süreç ağacı temizliği sağlar; container sandbox garantisi vermez. HttpOnly oturum, CSRF, HSTS ve yöneticiye özel disk senkronizasyonu platformun ortak korumalarıdır.
 * 🔄 **Dayanıklı LLM Görev Katmanı & Hedefli Onarım:** Geçici ağ ve zaman aşımı hatalarında 3 denemeli sınırlı retry (`llmTaskRetry.js`), Babel AST tabanlı sentaks denetimi ve güvensiz secret fallback hatalarını dosya bazlı sıralı gideren hedefli onarım döngüsü (`executeStaticRepairLoop`).
@@ -81,7 +82,9 @@ npm run dev
 
 > ℹ️ **Execution Worker (`8099`) Hakkında:** Bu port tarayıcıyla açılacak bir web sayfası değildir; Backend'in Bearer token (`EXECUTION_WORKER_TOKEN`) ile iletişim kurduğu korumalı bir iç RPC servisidir. Tarayıcıdan açıldığında `{"error":"Unauthorized"}` dönmesi güvenlik kalkanının çalıştığını gösterir. Worker'ın derleme ve test logları doğrudan Frontend arayüzündeki **Loglar**, **DAG Akışı** ve **Kalite Paneli** sekmelerine canlı yansıtılır.
 
-> Backend `GET /healthz` ile yalnız süreç canlılığını, `GET /readyz` ile veritabanı, depolama, üretim frontend'i ve Worker kapasitesini birlikte denetler. Worker yanıt vermezse readiness, varsayılan `READINESS_WORKER_TIMEOUT_MS=2000` süresi sonunda HTTP 503 döner.
+> Backend `GET /healthz` ile yalnız süreç canlılığını, `GET /readyz` ile veritabanı, depolama, üretim frontend'i ve Worker kapasitesini birlikte denetler. `READINESS_WORKER_TIMEOUT_MS` temel varsayılanı `2000` ms'dir; yerel geliştirme başlatıcısı ayar verilmemişse `35000` ms kullanır, açıkça verilmiş değeri korur. Yerel worker gerçek Chromium başlatma ve sayfa çizimini de sınar; soğuk başlangıç süreyi aşabilir. Yetkisiz `8099` isteğinin 401 dönmesi bu kapasitenin hazır olduğunu kanıtlamaz. Worker hazır değilse `/readyz` HTTP 503 döner; worker günlükleri hata aşaması, hata adı ve güvenli kodla tanı sağlar.
+
+> Temiz oda doğrulama bütçesi operatörün `VERIFICATION_JOB_TIMEOUT_MS` ayarıyla belirlenir: varsayılan 15 dakika (`900000`), yerel geliştirme launcher'ında ayar verilmemişse 25 dakika (`1500000`). Docker profili varsayılan 15 dakikayı korur. Pozitif tam sayı değerler mevcut 25 dakika worker sınırını aşamaz; açıkça verilen daha düşük bütçe korunur. Ayar yalnız yeni işlerin deadline'ını belirler; çalışan iş uzatılmaz, iptal ve kalite kapıları değişmez. Bu ayar proje sözleşmesi veya üretilen uygulamanın `.env` dosyasından okunmaz.
 
 > Kısıtlı Windows kurumsal ortamlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
 #### Seçenek B: Ayrı Terminallerde Başlatma
@@ -98,6 +101,8 @@ npm run dev
 Manager planı kısa özetle sunar; tam şartname ve kapsam **Planın kapsamını ve kabul kriterlerini incele** bölümündedir. Mevcut bekleyen planın sohbetten açık onayında yeniden LLM çağrılmaz; düğmeyle aynı yetki, sözleşme ve tek yürütme kontrolleri uygulanır. Geçersiz JSON/eksik test sözleşmesi için bir sınırlı düzeltme denenir. Düzelmezse hata gösterilir, onay düğmesi açılmaz ve üretim başlamaz.
 
 Yeni proje açıldığında ilk ekran **Sohbet & Mimari** olur; üst sekmelerde de önce sohbet, ardından **Kalite Paneli**, **Canlı DAG Grafiği** ve **Canlı Süreç Logları** yer alır. Kalite Paneli üstte amacını ve durumların anlamını açıklar; altta koşu geçmişi, yapılan kontroller, çıkış kodu, zaman damgası, SHA-256 özetleri ve gizli bilgileri temizlenmiş loglar bulunur. Manager tamamlanma mesajı kaynak kodu incelemek için doğrulanmış ZIP indirmesine yönlendirir.
+
+Kalite Paneli açıkken koşu geçmişi ve seçili koşunun kanıtları 15 saniyede bir yenilenir. En güncel koşuyu izliyorsanız yeni koşuya geçilir; özellikle seçtiğiniz eski koşu, log ve yüklenmiş geçmiş sayfaları korunur. Önceki istek bitmeden aynı yenileme tekrar başlatılmaz.
 
 Manager'ın tamamlanma mesajı, sağlayıcının bildirdiği ve proje bazında kaydedilen giriş, çıkış ve toplam token kullanımını da gösterir. Bir çağrıda sağlayıcı kullanım bilgisi vermezse yalnız bilinen en düşük toplam ve eksik çağrı sayısı gösterilir. Bu sayaç geçmişte kaydedilmemiş çağrıları geriye dönük hesaplamaz; API ücreti anlamına gelmez.
 
@@ -124,6 +129,8 @@ Plan onayından sonra Manager'ın `TODO.md` dosyası, Director şartnameleri ve 
 Sohbet, üst çubuk ve Loglar ekranı `paused` ile `verification_failed` durumlarında **Devam Ettir** gösterir. `artifact_verified` durumunda son hata kayıtlıysa da aynı seçenek görünür. İş akışı hata bildirdiğinde sohbet ekranı açılır; neden ve varsa ilgili kalite kapısı burada ve süreç loglarında gösterilir. Diskten kurtarılan görevler canlı logları silmeden DAG'a eklenir; tamamlanmamış görevler bitmiş gibi işaretlenmez.
 
 Derlemenin veya ZIP oluşturmanın bitmesi teslimin doğrulandığı anlamına gelmez. Zorunlu kapılardan biri başarısız ya da atlanmışsa proje tamamlanmaz; isteğe bağlı ve uygulanamayan kontrol `NOT_APPLICABLE` olabilir. **ZIP indir** yalnızca geçerli Worker doğrulaması, zorunlu PASS kanıtları ve tamamlama makbuzu oluştuğunda açılır. Ayrıntılı müdahale adımları [kullanıcı kılavuzunda](kullanici-kilavuzu.md#adım-6-canlı-müdahale-duraklatma-ve-kaldığı-yerden-devam-etme-pause--resume) yer alır.
+
+Yalnız tarayıcı kabul adımları revize edilirken Manager, onaylı sözleşmenin kimliği ve özetiyle bağlı bir güncelleme sunabilir. Bu yol yalnız `browser.roleJourneys` alanını değiştirir; gereksinimler, kaynaklar ve rol izinleri korunur. Eski tabana veya başka alanlara yönelen güncellemeler reddedilir; geçerli revizyon da yeniden onay bekler. Sohbet mesajı sınırı 4000 karakterdir; doğrulama ve boyut hataları LLM bağlantı hatasından ayrı gösterilir.
 
 ---
 
@@ -168,7 +175,7 @@ Normal tamamlama akışı Worker hatasını yerel bir geliştirme doğrulamasın
 
 Backend açıldığında yarım kalmış ve kalp atışı süresi dolmuş üretim girişimleri güvenli biçimde `paused` durumuna alınır. Manager'ın tamamlanma sorusuna verdiği yanıt, Tester'ın statik `FINISH` kaydı yerine tamamlama makbuzu ve doğrulanmış ZIP kanıtına dayanır. Bağımlılık hazırlığı başarısız olursa worker'ın hata mesajı süreç hatasına taşınır. [Emlak üretim olayı incelemesi](docs/EMLAK-URETIM-OLAYI-2026-09-28.md) bu davranışın dayandığı gerçek olayı ve doğrulanamayan npm hata nedenini açıklar.
 
-Statik denetim tamamlandığında onaylı sözleşme ile artefakt içeriğinin özeti saklanır. Bu kanıt değişmemişse bağımlılık hazırlığındaki bir hatadan sonra **Devam Ettir** doğrudan aynı aşamayı yeniden dener; Manager, DAG ve Tester aşamaları tekrar loglanmaz. Hazırlık başarılı olduğunda bu aşama kaydı temizlenir; sonraki doğrulama hatası bağımlılık hazırlığı hatası gibi tekrar denenmez. Vue/Vite üretiminde Vue 3 uyumlu bağımlılıklar ve `@vitejs/plugin-vue` kullanılır.
+Tüm kod üretimi tamamlandığında `generationCompletion` aşama kaydı tutulur. **Devam Ettir**, bu kaydın sözleşme kimliği, sözleşme SHA-256 özeti ve plan SHA-256 özeti güncel onayla eşleşirse tamamlanan Coder/DAG üretimini atlar ve mevcut kaynak düzeltmelerini korur. Statik denetim, Tester, bağımlılık hazırlığı, yeni ZIP üretimi ve bağımsız worker doğrulaması yeniden çalışır; bu kayıt çalışma zamanı başarısının kanıtı değildir. Eski PASS sonuçları veya eski ZIP yeniden kullanılmaz. Plan veya sözleşme değişirse normal DAG üretimine dönülür. Bu üretim kaydı bulunmayan eski akışlarda, değişmemiş sözleşme ve içerik özetiyle bağımlılık hazırlığından devam desteği korunur. Vue/Vite üretiminde Vue 3 uyumlu bağımlılıklar ve `@vitejs/plugin-vue` kullanılır.
 
 ---
 
@@ -191,6 +198,7 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 ## 📚 Kapsamlı Dokümantasyon
 
 * 🧹 **[Depo temizliği ve refactor raporu](docs/REPOSITORY-CLEANUP.md)** — Kaldırılan dosyalar, korunan giriş noktaları, kurtarma kopyaları ve doğrulama sonuçları.
+* **[21 Ekim 2026 yerel worker ve otel üretimi kabul kaydı](docs/LOCAL-WORKER-VALIDATION-2026-10-21.md)** — Docker olmadan tamamlanan üretimin doğrulama koşusu, kalite kanıtları ve ZIP teslim sınırları.
 
 * 📖 **[A'dan Z'ye Kullanıcı ve Operasyon Kılavuzu (kullanici-kilavuzu.md)](kullanici-kilavuzu.md)** — Arayüz kullanımı, revizyon adımları, kurtarma rehberi ve projeyi çalıştırma talimatları.
 * 📝 **[Kütüphane Takip Sistemi süreç raporu (surec-raporu.md)](surec-raporu.md)** — Manager sohbetinden başlayan örnek üretimin görevleri, doğrulama denemeleri ve karşılaşılan hatalar. Örnek proje `kutuphane-takip-sistemi-2` kimliğiyle görünür; ZIP yalnızca doğrulama makbuzu oluşup proje tamamlandığında arayüzden indirilebilir.
@@ -200,9 +208,11 @@ Bu komut ile `graphify-out/` altında aşağıdaki görsel çıktılar üretilir
 
 Yerel worker Node 22.23.2, npm 10.9.8, Playwright 1.62.1 ve Chromium ile gerçek kurulum, build, test, API, veritabanı ve tarayıcı kontrollerini yürütür. Python veya Docker gerekmez. İlk kurulumda `npm run worker:local:setup -- --install`, ardından `npm run dev:local` kullanılabilir. Chromium sistem kitaplıkları Linux'ta ayrıca kurulu olmalıdır.
 
+Yerel işler genel npm registry indirme önbelleğini `os.tmpdir()/xfactor-local-cache/npm` altında paylaşır; kaynak, veritabanı, HOME, npm ayarları ve günlükler iş başına ayrılıp temizlenir. Ana bilgisayarın npm kimlik bilgileri aktarılmaz. Hata tanısı için en fazla 64 komutun aşaması, çalıştırıcı adı, zamanı, çıkış kodu, zaman aşımı/kesilme işaretleri ve çıktı SHA-256 özetleri tutulur; argümanlar, çıktı metni veya ortam değerleri kaydedilmez. Bu kayıtlar kalite PASS kanıtı değildir.
+
 Paket üretmek için `npm run worker:local:package -- --output dist/local-worker` çalıştırın. Aynı işletim sistemi ve mimariye sahip bilgisayarda paketin `start-worker.cmd` veya `start-worker.sh` dosyasını başlatın. Backend'in worker URL ve token ayarlarını [paket kılavuzuna](docs/LOCAL-WORKER-PACKAGE.md) göre eşleştirin. Paket kendi Node/npm/Chromium dosyalarını içerir; Node kurulmamış hedef bilgisayarda da başlatılabilir.
 
-Profil `local-trusted` olarak raporlanır: gerçek bağımsız testler vardır, **OS izolasyonu yoktur**. Üretilen kod yerel kullanıcının yetkileriyle çalışır. Kaynak üzerinden doğrudan worker başlatılırken `EXECUTION_WORKER_RUNTIME=local` ve `EXECUTION_WORKER_TRUST_LOCAL_CODE=1` açıkça seçilmelidir; Docker'dan sessiz geçiş yapılmaz. Docker imajı üretme/çalıştırma doğrulaması ayrı bir işlem olarak Docker gerektirir. Windows gerçek uçtan uca testleri çalıştırılır; Linux/macOS platform doğrulaması CI matrisinde bulunur.
+Profil `local-trusted` olarak raporlanır: gerçek bağımsız testler vardır, **OS izolasyonu yoktur**. Üretilen kod yerel kullanıcının yetkileriyle çalışır. Kaynak üzerinden doğrudan worker başlatılırken `EXECUTION_WORKER_RUNTIME=local` ve `EXECUTION_WORKER_TRUST_LOCAL_CODE=1` açıkça seçilmelidir; Docker'dan sessiz geçiş yapılmaz. Docker imajı üretme/çalıştırma doğrulaması ayrı bir işlem olarak Docker gerektirir. 21 Ekim otel kabul koşusu Windows üzerinde tamamlandı; bu sonuç Linux/macOS üzerinde aynı uygulamanın doğrulandığı anlamına gelmez. Her hedef işletim sistemi ve mimarisi için kendi paket ve entegrasyon kabulü gerekir.
 
 ## Bağımsız LLM yönetimi eklentisi
 

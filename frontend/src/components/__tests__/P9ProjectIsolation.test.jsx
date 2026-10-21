@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import App from '../../App';
 import { api } from '../../services/api';
@@ -502,23 +502,93 @@ describe('P9 project/auth request isolation', () => {
   });
 
   test('does not let delayed create response force the old project active', async () => {
-    let delayedCreate;
-    const createPromise = new Promise(resolve => {
-      delayedCreate = { resolve };
-    });
-    const promptMock = vi.fn().mockReturnValue('Gamma');
-    vi.stubGlobal('prompt', promptMock);
+    const delayedCreate = deferred();
     const spies = setupApi();
-    spies.createProject.mockReturnValue(createPromise);
+    spies.createProject.mockReturnValue(delayedCreate.promise);
 
     render(<App />);
-    fireEvent.click(await screen.findByText(projectB.title, { selector: 'span' }));
-    await waitForHeading(projectB.title);
+    await waitForHeading(projectA.title);
 
     fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
-    delayedCreate.resolve({ id: 'project-c', title: 'Gamma', status: 'planning' });
-    await waitForHeading(projectB.title);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Proje başlığı' }), { target: { value: 'Gamma' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Proje Oluştur' }));
+    expect(spies.createProject).toHaveBeenCalledExactlyOnceWith('Gamma');
 
+    // A pending modal normally blocks pointer navigation, but an external project
+    // change must still invalidate its response.
+    fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+    await waitForHeading(projectB.title);
+    await act(async () => delayedCreate.resolve({ id: 'project-c', title: 'Gamma', status: 'planning' }));
+
+    expect(screen.getByRole('heading', { name: projectB.title })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Gamma' })).not.toBeInTheDocument();
+    expect(spies.getProject).not.toHaveBeenCalledWith('project-c', expect.anything());
+  });
+
+  test('does not restore projects from a delayed create response after logout', async () => {
+    const delayedCreate = deferred();
+    const spies = setupApi();
+    spies.createProject.mockReturnValue(delayedCreate.promise);
+
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Proje başlığı' }), { target: { value: 'Gamma' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Proje Oluştur' }));
+    expect(spies.createProject).toHaveBeenCalledExactlyOnceWith('Gamma');
+
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
+    await screen.findByRole('button', { name: 'Giriş Yap' });
+    const listRequestsAtLogout = spies.getProjects.mock.calls.length;
+    await act(async () => delayedCreate.resolve({ id: 'project-c', title: 'Gamma', status: 'planning' }));
+
+    expect(screen.getByRole('button', { name: 'Giriş Yap' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Gamma' })).not.toBeInTheDocument();
+    expect(spies.getProjects).toHaveBeenCalledTimes(listRequestsAtLogout);
+  });
+
+  test('keeps the create dialog closed after logout and a new login', async () => {
+    setupApi();
+    vi.spyOn(api, 'login').mockResolvedValue({ user: { username: 'admin' } });
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
+    const loginButton = await screen.findByRole('button', { name: 'Giriş Yap' });
+    await waitFor(() => expect(loginButton).not.toBeDisabled());
+    fireEvent.change(screen.getByLabelText('Kullanıcı Adı'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: 'password' } });
+    fireEvent.click(loginButton);
+    await waitForHeading(projectA.title);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  test('does not let an old create completion close a new session dialog', async () => {
+    const delayedCreate = deferred();
+    const spies = setupApi();
+    spies.createProject.mockReturnValue(delayedCreate.promise);
+    vi.spyOn(api, 'login').mockResolvedValue({ user: { username: 'admin' } });
+    render(<App />);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
+    fireEvent.click(screen.getByRole('button', { name: 'Proje Oluştur' }));
+    expect(spies.createProject).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /Oturumu Kapat|Çıkış/i }));
+    const loginButton = await screen.findByRole('button', { name: 'Giriş Yap' });
+    await waitFor(() => expect(loginButton).not.toBeDisabled());
+    fireEvent.change(screen.getByLabelText('Kullanıcı Adı'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: 'password' } });
+    fireEvent.click(loginButton);
+    await waitForHeading(projectA.title);
+    fireEvent.click(screen.getByTitle('Yeni Proje Başlat'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Proje başlığı' }), { target: { value: 'New session project' } });
+    await act(async () => delayedCreate.resolve({ id: 'project-c' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Proje başlığı' })).toHaveValue('New session project');
   });
 });

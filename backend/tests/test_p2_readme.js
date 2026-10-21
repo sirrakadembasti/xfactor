@@ -5,6 +5,20 @@ import { verifyReadmeCommands } from '../verification/readmeVerifier.js';
 const { runAsyncTest, finish } = createTestHarness();
 const filteredTest = process.argv.find(arg => arg.startsWith('--test='))?.split('=')[1];
 
+await runAsyncTest('canonical service manifest ports supplement source ports while undeclared docs ports remain rejected', async () => {
+    for (const manifestName of ['service-manifest.json', 'service_manifest.json']) {
+        const files = [{ path: 'README.md', content: 'Web http://localhost:4173 API http://localhost:3001' },
+            { path: 'src/server.ts', content: 'const port = process.env.PORT || 3001;' },
+            { path: manifestName, content: JSON.stringify({ services: { web: { type: 'vite', port: 4173 }, api: { type: 'express', port: 3001 } } }) }];
+        assert.equal((await verifyReadmeCommands({}, files)).passed, true);
+        assert.equal((await verifyReadmeCommands({}, [{ ...files[0], content: 'Web http://localhost:5173' }, ...files.slice(1)])).passed, false);
+        const nested = files.map(file => file.path === manifestName ? { ...file, path: `manager/${manifestName}` } : file);
+        assert.equal((await verifyReadmeCommands({}, nested)).passed, false, 'a nested historical manifest is not runtime port authority');
+        const invalid = files.map(file => file.path === manifestName ? { ...file, content: JSON.stringify({ services: { web: { port: '4173' }, invalid: { port: 99999 } } }) } : file);
+        assert.equal((await verifyReadmeCommands({}, invalid)).passed, false);
+    }
+});
+
 if (!filteredTest || filteredTest === 'readme-scripts') {
     await runAsyncTest('P2.5.1: verifyReadmeCommands rejects documented npm scripts missing from package.json', async () => {
         const files = [

@@ -8,10 +8,6 @@ import { verifyContamination } from './contaminationVerifier.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
 import { verifyReadmeCommands } from './readmeVerifier.js';
 
-function computeDigest(val) {
-    return crypto.createHash('sha256').update(String(val ?? '')).digest('hex');
-}
-
 /**
  * Plan 2: Docker Olmadığında Yerel Geliştirme Doğrulayıcısı (Dev Verification Fallback)
  * 
@@ -19,9 +15,8 @@ function computeDigest(val) {
  * 1. Tüm statik hardening ve sentaks denetimlerini (AST, domain, placeholder, contamination, security)
  *    gerçek kod dosyaları üzerinde eksiksiz çalıştırır.
  * 2. Üretilen 'service-manifest.json', 'prisma/schema.prisma', 'package.json' varlıklarını doğrular.
- * 3. 18 zorunlu kalite kapısı için Policy 2.0 uyumlu geçerli derived kanıtlar üreterek, tüm denetimlerin
- *    başarılı olması durumunda artefaktı ve projeyi doğrulanmış (verified) olarak mühürler.
- * 4. Herhangi bir denetim başarısız olursa, fail-closed prensibi uyarınca doğrulama başarısız (failed/rejected) sayılır.
+ * 3. Çalıştırılmayan kurulum/build/API/tarayıcı kontrollerini BLOCKED olarak kaydeder.
+ * 4. Statik inceleme çalışan worker'ın yerine geçmez ve verified teslim üretemez.
  */
 export async function verifyArtifactDevFallback({
     projectId,
@@ -44,6 +39,7 @@ export async function verifyArtifactDevFallback({
     const createRunFn = options.createRun || (await import('../repositories/verificationRepository.js')).createRun;
     const updateRunStatusFn = options.updateRunStatus || (await import('../repositories/verificationRepository.js')).updateRunStatus;
     const createCheckFn = options.createCheck || (await import('../repositories/verificationRepository.js')).createCheck;
+    const endCheckFn = options.endCheck || (await import('../repositories/verificationRepository.js')).endCheck;
     const linkRequirementToCheckFn = options.linkRequirementToCheck || (await import('../contracts/traceability.js')).linkRequirementToCheck;
 
     const artifact = getArtifactFn({ projectId, contractId, artifactId });
@@ -105,10 +101,10 @@ export async function verifyArtifactDevFallback({
     for (const gateName of MANDATORY_GATES) {
         const checkId = crypto.randomUUID();
         const startIso = timestamp;
-        const endIso = new Date(now.getTime() + 10).toISOString();
+        const endIso = new Date().toISOString();
 
-        let status = 'PASS';
-        let reason = `Dev verification fallback: validated via static file inspection and Plan 2 local development evidence.`;
+        let status = 'BLOCKED';
+        let reason = 'Not executed: this gate requires a running verification worker.';
 
         if (gateName === 'domain_entity_check') {
             status = domainRes.passed ? 'PASS' : 'FAIL';
@@ -144,28 +140,26 @@ export async function verifyArtifactDevFallback({
                     manifestOk = true;
                 }
             } catch {}
-            status = manifestOk ? 'PASS' : 'FAIL';
+            status = manifestOk ? 'BLOCKED' : 'FAIL';
             reason = manifestOk
-                ? 'Service manifest verified from generated service-manifest.json.'
+                ? 'Manifest JSON exists; service startup and runtime validation were not executed.'
                 : 'Service manifest verification failed: service-manifest.json is missing or invalid.';
         } else if (gateName === 'database_verification') {
             const prismaContent = fileMap.get('prisma/schema.prisma');
             const hasPrisma = prismaContent && prismaContent.includes('model ');
-            status = hasPrisma ? 'PASS' : 'FAIL';
+            status = hasPrisma ? 'BLOCKED' : 'FAIL';
             reason = hasPrisma
-                ? 'Database schema verified from generated prisma/schema.prisma.'
+                ? 'Database schema exists; connectivity, writes and seed were not executed.'
                 : 'Database schema verification failed: prisma/schema.prisma is missing or contains no models.';
         }
 
-        if (status === 'FAIL') {
+        if (status !== 'PASS') {
             allPassed = false;
         }
 
         const evidencePayload = {
-            kind: 'derived_gate',
-            producer: 'aggregate-verification',
-            sourceGateNames: [gateName],
-            sourceCheckIds: [checkId],
+            kind: status === 'BLOCKED' ? 'not_executed' : 'static_inspection',
+            producer: 'dev-static-inspection',
             computedAt: startIso,
             policyVersion: ACTIVE_POLICY_VERSION,
             details: {
@@ -185,8 +179,8 @@ export async function verifyArtifactDevFallback({
             status,
             startedAt: startIso,
             endedAt: endIso,
-            stdoutDigest: computeDigest(`stdout:${gateName}:${startIso}`),
-            stderrDigest: computeDigest(reason),
+            stdoutDigest: null,
+            stderrDigest: null,
             evidenceJson: JSON.stringify(evidencePayload)
         });
     }
@@ -206,6 +200,7 @@ export async function verifyArtifactDevFallback({
             stderrDigest: c.stderrDigest,
             evidenceJson: c.evidenceJson
         });
+        if (c.status === 'BLOCKED') endCheckFn({ ...c, evidenceJson: c.evidenceJson });
     }
 
     // 7. Mandatory Requirements Bağlantılarını Kur

@@ -136,6 +136,91 @@ function checkSendCall(callExpr) {
     return false;
 }
 
+function visit(node, callback) {
+    if (!node || typeof node !== 'object' || !node.type) return;
+    callback(node);
+    for (const [key, value] of Object.entries(node)) {
+        if (key === 'loc' || key === 'comments') continue;
+        if (Array.isArray(value)) value.forEach(child => visit(child, callback));
+        else visit(value, callback);
+    }
+}
+
+const propertyName = node => node?.property?.name;
+function objectFields(node, allowed) {
+    if (node?.type !== 'ObjectExpression' || node.properties.some(property => property.type !== 'ObjectProperty'
+        || property.computed || !allowed.includes(property.key.name || property.key.value))) return null;
+    const entries = node.properties.map(property => [property.key.name || property.key.value, property.value]);
+    if (new Set(entries.map(([key]) => key)).size !== entries.length) return null;
+    return Object.fromEntries(entries);
+}
+
+// These are metadata/readiness/error responses, never successful business data.
+// Every literal response in the handler must have its own structural proof.
+function hasProvenNonMockResponses(body, route, constants, functions, hasPermissionTableImport) {
+    const responses = [];
+    visit(body, node => { if (checkSendCall(node)) responses.push(node); });
+    return responses.length > 0 && responses.every(call => {
+        const payload = call.arguments[0];
+        const receiver = call.callee.object;
+        const status = receiver?.type === 'CallExpression' && propertyName(receiver.callee) === 'status'
+            ? receiver.arguments[0]?.value : 200;
+        const denied = objectFields(payload, ['success', 'error', 'message', 'code']);
+        if (Number.isInteger(status) && status >= 400 && status <= 599 && denied
+            && (!denied.success || denied.success.value === false)
+            && [denied.error, denied.message].some(value => value?.type === 'StringLiteral' && value.value.trim())) return true;
+        if (status !== 200) return false;
+        const health = objectFields(payload, ['status', 'uptime', 'timestamp']);
+        if (/^\/?api(?:\/v1)?\/(?:health|healthz|ready|readyz|ping)\/?$/i.test(route) && health
+            && health.status?.value === 'ok') {
+            const uptime = health.uptime;
+            const timestamp = health.timestamp;
+            const realUptime = uptime?.type === 'CallExpression' && uptime.arguments.length === 0
+                && uptime.callee.object?.name === 'process' && propertyName(uptime.callee) === 'uptime';
+            const realTimestamp = timestamp?.type === 'CallExpression' && timestamp.arguments.length === 0
+                && propertyName(timestamp.callee) === 'toISOString' && timestamp.callee.object?.type === 'NewExpression'
+                && timestamp.callee.object.callee?.name === 'Date' && timestamp.callee.object.arguments.length === 0;
+            if ((realUptime || realTimestamp) && (!uptime || realUptime) && (!timestamp || realTimestamp)) return true;
+        }
+        const metadata = objectFields(payload, ['success', 'accounts', 'roles']);
+        if (!metadata || (metadata.success && metadata.success.value !== true)) return false;
+        if (metadata.accounts && !metadata.roles) {
+            const list = constants.get(metadata.accounts.name);
+            return list?.type === 'ArrayExpression' && list.elements.length > 0 && list.elements.length <= 128
+                && list.elements.every(item => {
+                    const fields = objectFields(item, ['username', 'role', 'label', 'description']);
+                    return fields?.username && fields.role && Object.values(fields).every(value => value.type === 'StringLiteral' && value.value.trim());
+                });
+        }
+        // A role matrix projection must read the declared permission table and
+        // project its actual resource/operations, not return a canned role list.
+        const roles = metadata.roles;
+        if (!roles || metadata.accounts || roles.type !== 'CallExpression' || propertyName(roles.callee) !== 'map') return false;
+        const list = constants.get(roles.callee.object?.name);
+        const mapper = roles.arguments[0];
+        const fields = objectFields(mapper?.body, ['role', 'permissions']);
+        const helper = fields?.permissions?.type === 'CallExpression' && functions.get(fields.permissions.callee?.name);
+        if (!hasPermissionTableImport || constants.has('ROLE_PERMISSIONS') || list?.type !== 'ArrayExpression' || !list.elements.length || !list.elements.every(value => value?.type === 'StringLiteral')
+            || !fields?.role || fields.role.name !== mapper.params?.[0]?.name || !helper
+            || fields.permissions.arguments[0]?.name !== fields.role.name) return false;
+        const statements = helper.body?.body;
+        if (!Array.isArray(statements) || statements.length !== 1 || statements[0].type !== 'ReturnStatement') return false;
+        const node = statements[0].argument;
+        if (node?.type !== 'CallExpression' || propertyName(node.callee) !== 'map' || node.arguments.length !== 1) return false;
+            const table = node.callee.object;
+            const lookup = table?.type === 'LogicalExpression' && table.operator === '||' ? table.left : table;
+            if (table?.type === 'LogicalExpression' && (table.right?.type !== 'ArrayExpression' || table.right.elements.length)) return false;
+            const result = objectFields(node.arguments[0]?.body, ['resource', 'operations']);
+            const entry = node.arguments[0]?.params?.[0]?.name;
+            return Boolean(lookup?.type === 'MemberExpression' && lookup.computed && lookup.object?.name === 'ROLE_PERMISSIONS'
+                && lookup.property?.name === helper.params?.[0]?.name && result?.resource?.object?.name === entry
+                && propertyName(result.resource) === 'resource' && result.operations?.type === 'ArrayExpression'
+                && result.operations.elements.length === 1 && result.operations.elements[0]?.type === 'SpreadElement'
+                && result.operations.elements[0].argument?.object?.name === entry
+                && propertyName(result.operations.elements[0].argument) === 'operations');
+    });
+}
+
 export function verifyPlaceholders(files = []) {
     const issues = [];
     const scriptFiles = files.filter(f => f.path && !f.path.startsWith('manager/') && !f.path.includes('/manager/') && !f.path.startsWith('node_modules/') && /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(f.path));
@@ -166,10 +251,19 @@ export function verifyPlaceholders(files = []) {
         }
 
         const declaredFunctions = new Map();
+        const constants = new Map();
+        let hasPermissionTableImport = false;
 
         // Pass 1: Map all declared function identifiers in the file (including useCallback wrappers)
         function collectFunctions(node) {
             if (!node) return;
+
+            if (node.type === 'ImportDeclaration' && node.specifiers.some(specifier => specifier.type === 'ImportSpecifier'
+                && specifier.imported?.name === 'ROLE_PERMISSIONS' && specifier.local?.name === 'ROLE_PERMISSIONS')) hasPermissionTableImport = true;
+
+            if (node.type === 'VariableDeclaration' && node.kind === 'const') {
+                for (const declaration of node.declarations) if (declaration.id?.type === 'Identifier') constants.set(declaration.id.name, declaration.init);
+            }
 
             if (node.type === 'FunctionDeclaration' && node.id && node.id.name) {
                 declaredFunctions.set(node.id.name, node);
@@ -251,7 +345,8 @@ export function verifyPlaceholders(files = []) {
 
                         const normalizedRoute = String(routePath || '').replace(/^\/+|\/+$/g, '').toLowerCase();
                         const isExemptRoute = /^(health|healthz|ping|ready|readyz|info|status|api|api\/v1)?$/.test(normalizedRoute);
-                        if (isMockOnly && !isDynamicReference(handlerBody) && !isExemptRoute) {
+                        if (isMockOnly && !isDynamicReference(handlerBody) && !isExemptRoute
+                            && !hasProvenNonMockResponses(handlerBody, routePath, constants, declaredFunctions, hasPermissionTableImport)) {
                             issues.push(`Static mock handler detected for endpoint: ${routePath || 'unknown route'} in ${file.path}`);
                         }
                     }
@@ -265,6 +360,23 @@ export function verifyPlaceholders(files = []) {
 
                 if (onSubmitAttr && onSubmitAttr.value && onSubmitAttr.value.type === 'JSXExpressionContainer') {
                     const expr = onSubmitAttr.value.expression;
+                    if (expr.type === 'ConditionalExpression') {
+                        const branchHasNetwork = branch => {
+                            if (branch.type === 'ConditionalExpression') return branchHasNetwork(branch.consequent) && branchHasNetwork(branch.alternate);
+                            const handler = branch.type === 'Identifier' ? declaredFunctions.get(branch.name) : branch;
+                            let network = false;
+                            visit(handler, node => {
+                                if (node.type !== 'CallExpression') return;
+                                const callee = node.callee;
+                                if (callee?.name === 'fetch' || (callee?.type === 'MemberExpression'
+                                    && ['api', 'axios'].includes(callee.object?.name)
+                                    && ['get', 'post', 'put', 'patch', 'delete', 'request'].includes(propertyName(callee)))) network = true;
+                            });
+                            return network;
+                        };
+                        if (!branchHasNetwork(expr)) issues.push(`Dead UI form detected with no network/API action in ${file.path}`);
+                        return;
+                    }
                     let handlerFn = null;
                     let isDirectProp = false;
 

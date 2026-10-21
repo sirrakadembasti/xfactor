@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import JSZip from 'jszip';
+import EventEmitter from 'node:events';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
 
@@ -21,6 +22,9 @@ assert.equal(isMandatoryArtifactCheck('management_demo_seed', { management: { ne
 assert.equal(isMandatoryArtifactCheck('management_role_login', { management: { needed: true } }), true);
 assert.equal(isMandatoryArtifactCheck('api_role_create_allowed', { management: { needed: false } }), false);
 const { RUNTIME_GATE_MEMBERS } = await import('../verification/qualityPolicy.js');
+const { assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
+const { verifyProjectSmoke } = await import('../verification/smokeVerifier.js');
+const { assertManagementCoverage } = await import('../verification/artifactEvidencePolicy.js');
 
 const { runAsyncTest, finish } = createTestHarness();
 const projectId = 'pipeline-proj-123';
@@ -284,6 +288,202 @@ try {
             }),
             /not found/i
         );
+    });
+
+    // Bridge the authenticated execution-client boundary to completion/download.
+    // This is an isolated worker-response fixture, never a real app or final ZIP.
+    let managementFixture;
+    await runAsyncTest('5. identity-verified management worker evidence authorizes completion without downgrading details', async () => {
+        const management = {
+            needed: true, authentication: { apiLogin: { path: '/api/auth/login' } },
+            roles: [
+                { name: 'manager', demoUser: { username: 'manager-fixture' }, permissions: [{ resource: 'rooms', operations: ['create', 'read', 'update', 'delete'] }] },
+                { name: 'visitor', demoUser: { username: 'visitor-fixture' }, permissions: [] }
+            ],
+            resources: [{ name: 'rooms', apiPath: '/api/rooms', uiPath: '/rooms', operations: ['create', 'read', 'update', 'delete'],
+                readAccess: 'authenticated', deletionPolicy: { relatedData: 'preserve', reason: 'Keep historical records' },
+                verification: { itemPath: '/api/rooms/{id}', updateMethod: 'PATCH', deleteExpectation: { kind: 'absent' },
+                    retention: { createPath: '/api/reservations', itemPath: '/api/reservations/{id}', parentField: 'roomId',
+                        createBody: { roomId: '{parentId}', name: '{nonce}' } } } }]
+        };
+        const journeys = management.roles.flatMap(role => ['positive', 'negative'].map(kind => ({ role: role.name, kind,
+            steps: [{ action: 'click', selector: '#fixture' }], expectedOutcome: { kind: kind === 'positive' ? 'success' : 'denied', text: 'fixture' } })));
+        db.prepare('UPDATE project_contracts SET contract_json = ? WHERE id = ?')
+            .run(JSON.stringify({ name: 'management fixture', management, browser: { roleJourneys: journeys } }), contractId);
+        const zipPath = await createTestZip('management-bridge.zip', [
+            { path: 'package.json', content: '{"name":"management-bridge"}' },
+            { path: 'package-lock.json', content: '{"lockfileVersion":3}' },
+            { path: 'service-manifest.json', content: '{"services":{"web":{"port":4173},"api":{"port":3001}}}' }
+        ]);
+        const artifactId = 'artifact-management-bridge', runId = 'run-management-bridge';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const runtimeNames = new Set(Object.keys(RUNTIME_GATE_MEMBERS));
+        const baseChecks = allGates.filter(name => !runtimeNames.has(name)).map(name => ({ ...passingCheck(name),
+            requirementIds: [requirementId], evidence: { adapterId: 'local-worker', policyVersion: '2.0' } }));
+        const members = [...new Set(Object.values(RUNTIME_GATE_MEMBERS).flatMap(set => [...set]))].map(name => ({
+            ...passingCheck(name), requirementIds: [requirementId], evidence: { adapterId: 'local-worker', policyVersion: '2.0',
+                ...(name === 'database_mutation_assertion' ? { resource: 'rooms', createdId: 'fixture-1', readback: true } : {}) }
+        }));
+        const detail = (name, evidence) => ({ name, status: 'passed', requirementIds: [requirementId],
+            evidence: { adapterId: 'local-worker', runId, ...evidence } });
+        const details = [
+            detail('management_demo_seed', { roles: ['manager', 'visitor'] }),
+            ...management.roles.map(role => detail('management_role_login', { role: role.name, authenticatedTargetStatus: 200 })),
+            detail('api_anonymous_mutation_denied', { method: 'POST', url: 'http://127.0.0.1:3001/api/rooms' }),
+            detail('api_anonymous_read_policy', { resource: 'rooms', policy: 'authenticated', statusCode: 401 }),
+            ...['create', 'read', 'update', 'delete'].flatMap(operation => [
+                detail(`api_role_${operation}_allowed`, { resource: 'rooms', role: 'manager', statusCode: 200, readback: true }),
+                detail(`api_role_${operation}_denied`, { resource: 'rooms', role: 'visitor', statusCode: 403, persisted: false })
+            ]),
+            detail('api_anonymous_update_denied', { resource: 'rooms', statusCode: 401 }),
+            detail('api_anonymous_delete_denied', { resource: 'rooms', statusCode: 401 }),
+            ...['update', 'delete'].flatMap(operation => [
+                detail(`api_${operation}_persistence`, { resource: 'rooms', recordId: 'fixture-1', readback: true }),
+                detail(`api_${operation}_denial_persistence`, { resource: 'rooms', recordId: 'fixture-1' })
+            ]),
+            detail('api_delete_related_retention', { resource: 'rooms', policy: 'preserve', relatedId: 'reservation-fixture-1', statusCode: 200 }),
+            detail('browser_management_interaction', { roles: ['manager', 'visitor'], journeyCount: journeys.length,
+                journeys: journeys.map(journey => ({ role: journey.role, kind: journey.kind, passed: true })) })
+        ];
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId, activeJob: identity, archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => {
+                const response = workerResponse(identity, [...baseChecks, ...members, ...details], 'completed');
+                response.result.runtime = { runtime: 'local', executionProfile: 'local-trusted', osIsolation: false };
+                return response;
+            } }
+        });
+        assert.equal(result.passed, true, JSON.stringify(result));
+        managementFixture = { projectId, contractId, artifactId, runId, contract: { management, browser: { roleJourneys: journeys } } };
+        assert.doesNotThrow(() => assertVerifiedArtifactEvidence(managementFixture));
+        const rows = db.prepare('SELECT gate_name, applicability FROM verification_checks WHERE run_id = ?').all(runId);
+        for (const name of allGates) assert.equal(rows.filter(row => row.gate_name === name && row.applicability === 'MANDATORY').length, 1,
+            `one authoritative base aggregate required: ${name}`);
+        for (const name of ['management_demo_seed', 'management_role_login', 'browser_management_interaction', 'api_role_create_allowed']) {
+            assert.ok(rows.some(row => row.gate_name === name && row.applicability === 'MANDATORY'), `${name} must remain mandatory`);
+        }
+    });
+
+    await runAsyncTest('5b. management coverage binds read and retention policy to the approved resource', async () => {
+        const rows = db.prepare('SELECT * FROM verification_checks WHERE run_id = ?').all(managementFixture.runId);
+        for (const name of ['api_anonymous_read_policy', 'api_delete_related_retention']) {
+            const altered = rows.map(row => row.gate_name === name
+                ? { ...row, evidence_json: JSON.stringify({ ...JSON.parse(row.evidence_json), policy: 'different-policy' }) } : row);
+            assert.throws(() => assertManagementCoverage(altered, managementFixture.contract), /management evidence missing/);
+        }
+    });
+
+    for (const scenario of ['missing', 'failed', 'downgraded', 'unproven', 'unknown extra', 'base provenance missing', 'missing persistence', 'failed persistence', 'wrong resource sibling', 'same-name failed sibling', 'stripped raw receipt', 'cyclic aggregate']) {
+        await runAsyncTest(`6. management completion denies ${scenario} evidence`, async () => {
+            assert.ok(managementFixture, 'management bridge fixture must exist');
+            assert.doesNotThrow(() => assertVerifiedArtifactEvidence(managementFixture), 'negative case must begin with valid worker evidence');
+            const row = db.prepare("SELECT * FROM verification_checks WHERE run_id = ? AND gate_name = ? LIMIT 1")
+                .get(managementFixture.runId, scenario === 'base provenance missing' ? 'clean_install'
+                    : scenario === 'stripped raw receipt' ? 'clean_install' : scenario === 'cyclic aggregate' ? 'api_contract'
+                        : scenario.includes('persistence') ? 'api_update_persistence' : 'api_role_create_allowed');
+            db.exec('SAVEPOINT management_negative');
+            try {
+                if (scenario === 'missing' || scenario === 'missing persistence') db.prepare('DELETE FROM verification_checks WHERE id = ?').run(row.id);
+                if (scenario === 'failed' || scenario === 'failed persistence') db.prepare("UPDATE verification_checks SET status='FAIL' WHERE id = ?").run(row.id);
+                if (scenario === 'downgraded') db.prepare("UPDATE verification_checks SET applicability='OPTIONAL' WHERE id = ?").run(row.id);
+                if (scenario === 'unproven') db.prepare('UPDATE verification_checks SET evidence_json = ? WHERE id = ?')
+                    .run(JSON.stringify({ adapterId: 'local-worker', resource: 'rooms', role: 'manager' }), row.id);
+                if (scenario === 'base provenance missing') db.prepare('UPDATE verification_checks SET command=NULL, evidence_json=? WHERE id = ?')
+                    .run(JSON.stringify({ claimed: true }), row.id);
+                if (scenario === 'stripped raw receipt') {
+                    const evidence = JSON.parse(row.evidence_json); delete evidence.workerReceipt;
+                    db.prepare('UPDATE verification_checks SET evidence_json=? WHERE id=?').run(JSON.stringify(evidence), row.id);
+                }
+                if (scenario === 'cyclic aggregate') db.prepare('UPDATE verification_checks SET evidence_json=? WHERE id=?')
+                    .run(JSON.stringify({ ...JSON.parse(row.evidence_json), sourceCheckIds: [row.id] }), row.id);
+                if (scenario === 'wrong resource sibling') db.prepare('UPDATE verification_checks SET evidence_json = ? WHERE id = ?')
+                    .run(JSON.stringify({ ...JSON.parse(row.evidence_json), resource: 'different-resource', role: 'different-role' }), row.id);
+                if (scenario === 'same-name failed sibling') db.prepare(`INSERT INTO verification_checks
+                    (id,contract_id,run_id,gate_name,applicability,status,started_at,ended_at,stdout_digest,stderr_digest,evidence_json)
+                    VALUES (?,?,?,?,'MANDATORY','FAIL',?,?,?,?,?)`)
+                    .run('same-name-failed-check', contractId, managementFixture.runId, row.gate_name,
+                        row.started_at, row.ended_at, row.stdout_digest, row.stderr_digest, row.evidence_json);
+                if (scenario === 'unknown extra') db.prepare(`INSERT INTO verification_checks
+                    (id,contract_id,run_id,gate_name,applicability,status,command,exit_code,started_at,ended_at,stdout_digest,stderr_digest,evidence_json)
+                    VALUES (?,?,?,'unknown_management_gate','MANDATORY','PASS','node fake',0,?,?,?,?,?)`)
+                    .run('unknown-management-check', contractId, managementFixture.runId, new Date().toISOString(), new Date().toISOString(), 'stdout', 'stderr', '{"ok":true}');
+                assert.throws(() => assertVerifiedArtifactEvidence(managementFixture), `${scenario} must block completion/download`);
+            } finally { db.exec('ROLLBACK TO management_negative; RELEASE management_negative'); }
+        });
+    }
+    await runAsyncTest('7. fresh smoke/API/browser emitter payloads authorize management completion and require public role read evidence', async () => {
+        const management = { needed: true, authentication: { apiLogin: { path: '/api/auth/login' } },
+            roles: [
+                { name: 'manager', demoUser: { username: 'manager-fixture' }, permissions: [{ resource: 'rooms', operations: ['create', 'read'] }] },
+                { name: 'viewer', demoUser: { username: 'viewer-fixture' }, permissions: [{ resource: 'rooms', operations: ['read'] }] }
+            ], resources: [{ name: 'rooms', apiPath: '/api/rooms', uiPath: '/rooms', readAccess: 'public', operations: ['create', 'read'] }] };
+        const roleJourneys = management.roles.flatMap(role => ['positive', 'negative'].map(kind => ({ role: role.name, kind,
+            steps: [{ action: 'click', selector: '#fixture' }], expectedOutcome: { kind: kind === 'positive' ? 'success' : 'denied', text: kind } })));
+        const contract = { management, browser: { roleJourneys } };
+        db.prepare('UPDATE project_contracts SET contract_json = ? WHERE id = ?').run(JSON.stringify(contract), contractId);
+        const files = [
+            { path: 'package.json', content: JSON.stringify({ name: 'fresh-smoke', scripts: { test: 'node --test test.js' } }) },
+            { path: 'package-lock.json', content: '{"lockfileVersion":3}' },
+            { path: 'prisma/schema.prisma', content: 'datasource db { provider = "sqlite" url = env("DATABASE_URL") }\nmodel Room { id String @id }' },
+            { path: 'service-manifest.json', content: JSON.stringify({ services: {
+                web: { type: 'vite', port: 4173, command: 'npm', args: ['run', 'preview'] },
+                api: { type: 'express', port: 3001, command: 'npm', args: ['run', 'start:api'], healthEndpoint: '/api/health' }
+            } }) }
+        ];
+        let created;
+        const adapter = { id: 'local-worker', getCapabilities: () => ({ available: true, isolation: true }),
+            async spawn(request) { const child = new EventEmitter(); child.pid = request.port; return child; },
+            async kill() {},
+            async request(request) {
+                if (request.method === 'POST') return { statusCode: 403, data: {} };
+                return { statusCode: 200, html: '<main>Rooms</main>', rawBody: '<main>Rooms</main>', data: created ? [created] : [] };
+            },
+            async execute(request) {
+                let stdout = '# tests 1\n# pass 1';
+                if (request.args?.[1]?.includes('Role login')) {
+                    const method = request.args[4], username = request.args[5];
+                    let response = { statusCode: 200, data: created ? [created] : [] };
+                    if (method === 'POST' && username === 'viewer-fixture') response = { statusCode: 403, data: {} };
+                    else if (method === 'POST') {
+                        created = { id: 'room-fixture-1', name: JSON.parse(request.args[9]).name };
+                        response = { statusCode: 201, data: created };
+                    }
+                    stdout = JSON.stringify(response);
+                } else if (request.args?.[1]?.includes('DatabaseSync')) stdout = JSON.stringify({ schemaExists: true, databaseExists: true, writeSucceeded: true });
+                return { passed: true, exitCode: 0, stdout, stderr: '' };
+            },
+            async interact(request) { return { passed: true, session: { authenticatedRole: request.role },
+                actions: request.steps.map((step, index) => ({ index, action: step.action, target: step.selector, completed: true, accessibleName: 'Fixture', keyboardReachable: true })),
+                outcome: { ...request.expectedOutcome, visible: true }, viewport: { width: 375, horizontalOverflow: false } }; }
+        };
+        const smoke = await verifyProjectSmoke('/workspace', contract, { adapter, files });
+        assert.equal(smoke.passed, true, JSON.stringify(smoke));
+        const coverageRows = smoke.checks.map(check => ({ gateName: check.name, status: check.status === 'passed' ? 'PASS' : 'FAIL',
+            applicability: 'MANDATORY', evidenceJson: check.evidence }));
+        assert.throws(() => assertManagementCoverage(coverageRows.filter(check => check.gateName !== 'api_role_read_allowed'), contract), /read.*missing|missing.*read/i);
+        const anonymous = smoke.checks.find(check => check.name === 'api_anonymous_mutation_denied');
+        assert.equal(anonymous.evidence.resource, undefined, 'exercise the actual URL-only anonymous emitter');
+        const zipPath = await createTestZip('fresh-smoke-bridge.zip', files);
+        const artifactId = 'artifact-fresh-smoke', runId = 'run-fresh-smoke';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const runtimeNames = new Set(Object.keys(RUNTIME_GATE_MEMBERS));
+        const prerequisiteChecks = allGates.filter(name => !runtimeNames.has(name)).map(name => ({
+            ...passingCheck(name), requirementIds: [requirementId], evidence: { adapterId: 'local-worker', policyVersion: '2.0' }
+        }));
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId, activeJob: identity, archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity,
+                [...prerequisiteChecks, passingCheck('prisma_db_push'), ...smoke.checks].map(check => ({ ...check, requirementIds: [requirementId] })), 'completed') }
+        });
+        assert.equal(result.passed, true, JSON.stringify({ ...result, failed: db.prepare("SELECT gate_name,status,evidence_json FROM verification_checks WHERE run_id=? AND status!='PASS'").all(runId) }));
+        assert.doesNotThrow(() => assertVerifiedArtifactEvidence({ projectId, contractId, artifactId }));
+        db.exec('SAVEPOINT public_reader');
+        try {
+            db.prepare("DELETE FROM verification_checks WHERE run_id = ? AND gate_name = 'api_role_read_allowed'").run(runId);
+            assert.throws(() => assertVerifiedArtifactEvidence({ projectId, contractId, artifactId }), /management.*read|read.*missing|receipt check is missing/i);
+        } finally { db.exec('ROLLBACK TO public_reader; RELEASE public_reader'); }
     });
 } finally {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});

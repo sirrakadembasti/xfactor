@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { validateRuntimeConfig } from '../config.js';
 import { createExecutionClient } from '../executionClient.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
+import { verificationJobDeadline } from './verificationBudget.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
@@ -17,6 +18,8 @@ import {
     RUNTIME_GATE_MEMBERS,
     MANDATORY_GATES
 } from './qualityPolicy.js';
+import { isManagementArtifactDetail, bindWorkerCheck, createWorkerReceipt, WORKER_RECEIPT_GATE,
+    assertManagementCoverage } from './artifactEvidencePolicy.js';
 
 async function loadRepositoryDefaults() {
     const [{ db }, artifactRepo, verificationRepo, traceability] = await Promise.all([
@@ -61,8 +64,7 @@ export function normalizeWorkerCheckStatus(value, mandatory = false) {
 
 export function isMandatoryArtifactCheck(gateName, contract = {}) {
     if (MANDATORY_GATES.includes(gateName)) return true;
-    if (contract.management?.needed !== true) return false;
-    return /^(?:api_role_(?:create|read|update|delete)_(?:allowed|denied)|api_anonymous_(?:mutation_denied|read_policy)|api_delete_related_retention|api_unverified_mutation_operation|management_(?:runtime_contract|demo_seed|role_login)|browser_management_interaction|database_mutation_assertion)$/.test(gateName);
+    return isManagementArtifactDetail(gateName, contract);
 }
 
 export function hasMandatoryGateCoverage(checks = []) {
@@ -191,7 +193,7 @@ export async function verifyArtifact(
         revision: contract.revision,
         artifactId,
         nonce: activeJob.nonce,
-        deadline: activeJob.deadline || (Date.now() + 15 * 60 * 1000),
+        deadline: verificationJobDeadline({ deadline: activeJob.deadline, env: config || options.env || process.env, now }),
         inputSha256: artifact.sha256,
         runId
     };
@@ -266,7 +268,9 @@ export async function verifyArtifact(
             throw new Error(`Worker returned illegal terminal status: ${result.status}`);
         }
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
-        const workerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
+        const workerChecks = (Array.isArray(workerResult.checks) ? workerResult.checks : [])
+            .map(check => ({ ...check, id: crypto.randomUUID() }));
+        const workerCheckIds = new Set(workerChecks.map(check => check.id));
         const existingGateNames = new Set(workerChecks.map(c => c.gateName || c.name));
         const additionalChecks = [];
 
@@ -275,7 +279,16 @@ export async function verifyArtifact(
         `).all(contractId).map(row => row.id);
 
         for (const gateName of Object.keys(RUNTIME_GATE_MEMBERS)) {
-            additionalChecks.push(combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds));
+            const aggregate = combineRuntimeGate(gateName, workerChecks, mandatoryRequirementIds);
+            aggregate.id = crypto.randomUUID();
+            // Raw runtime gates are sources, not a second authoritative base row.
+            aggregate.evidence.sourceCheckIds = workerChecks.filter(check => RUNTIME_GATE_MEMBERS[gateName].has(check.gateName || check.name)).map(check => check.id);
+            delete aggregate.evidence.sourceGateNames;
+            additionalChecks.push(aggregate);
+        }
+        for (const check of workerChecks) {
+            const name = check.gateName || check.name;
+            if (RUNTIME_GATE_MEMBERS[name]) { check.name = `detail:${name}`; check.gateName = `detail:${name}`; check.applicability = 'OPTIONAL'; }
         }
 
             let parsedContract = {};
@@ -298,6 +311,7 @@ export async function verifyArtifact(
 
         if (!existingGateNames.has('requirement_traceability')) {
             const allSoFar = [...workerChecks, ...additionalChecks];
+            for (const check of allSoFar) check.id ||= crypto.randomUUID();
             const allPassed = allSoFar.every(c => c.status === 'passed' || c.status === 'PASS' || c.status === 'skipped');
             const timestamp = new Date().toISOString();
             additionalChecks.push({
@@ -315,6 +329,7 @@ export async function verifyArtifact(
                     kind: 'derived_gate',
                     producer: 'quality-policy',
                     sourceGateNames: passingVerificationSourceNames(allSoFar),
+                    sourceCheckIds: allSoFar.filter(check => check.status === 'passed' || check.status === 'PASS').map(check => check.id),
                     computedAt: timestamp,
                     policyVersion: ACTIVE_POLICY_VERSION
                 }
@@ -325,14 +340,14 @@ export async function verifyArtifact(
         if (workerResult.runtime?.executionProfile === 'local-trusted' && workerResult.runtime.osIsolation === false) {
             for (const check of allChecks) check.evidence = { ...(check.evidence || {}), executionProfile: 'local-trusted', osIsolation: false, isolation: false, runtime: 'local' };
         }
+        const records = [];
         for (const check of allChecks) {
             const checkId = check.id || crypto.randomUUID();
             const gateName = check.gateName || check.name;
             const isMandatory = isMandatoryArtifactCheck(gateName, parsedContract);
             const applicability = isMandatory ? 'MANDATORY' : (check.applicability || 'OPTIONAL');
             const status = normalizeWorkerCheckStatus(check.status, isMandatory);
-            runLeaseTransaction(database, assertLease, () => {
-                createCheck({
+            let record = {
                     id: checkId,
                     contractId,
                     runId,
@@ -343,12 +358,16 @@ export async function verifyArtifact(
                     cwd: check.cwd || null,
                     startedAt: check.startedAt || new Date().toISOString(),
                     endedAt: check.endedAt || new Date().toISOString(),
-                    exitCode: check.exitCode ?? (status === 'PASS' ? 0 : null),
-                    stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(gateName).digest('hex'),
+                    exitCode: check.exitCode ?? null,
+                    stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(check.stdout || JSON.stringify(check.evidence || {})).digest('hex'),
                     stderrDigest: check.stderrDigest || crypto.createHash('sha256').update('').digest('hex'),
                     evidenceJson: check.evidence ?? check.evidenceJson ?? null,
                     timedOut: Boolean(check.timedOut)
-                });
+                };
+            if (workerCheckIds.has(checkId) && result.status === 'completed') record = bindWorkerCheck(record, expected);
+            records.push(record);
+            runLeaseTransaction(database, assertLease, () => {
+                createCheck(record);
             });
             for (const requirementId of check.requirementIds || []) {
                 runLeaseTransaction(database, assertLease, () => {
@@ -357,7 +376,19 @@ export async function verifyArtifact(
             }
         }
 
-        const passed = hasMandatoryGateCoverage(allChecks)
+        if (result.status === 'completed') {
+            const receipt = createWorkerReceipt(expected, records.filter(record => workerCheckIds.has(record.id)));
+            runLeaseTransaction(database, assertLease, () => createCheck({ id: crypto.randomUUID(), contractId, runId,
+                gateName: WORKER_RECEIPT_GATE, applicability: 'OPTIONAL', status: 'PASS',
+                evidenceJson: receipt, startedAt: new Date().toISOString(), endedAt: new Date().toISOString() }));
+        }
+
+        let managementError = null;
+        try { assertManagementCoverage(records, parsedContract); } catch (error) { managementError = error.message; }
+        const uniqueBaseGates = MANDATORY_GATES.every(name => allChecks.filter(check => (check.gateName || check.name) === name).length === 1);
+        const unknownMandatory = allChecks.some(check => check.applicability === 'MANDATORY' && !isMandatoryArtifactCheck(check.gateName || check.name, parsedContract));
+        const passed = result.status === 'completed' && !managementError && uniqueBaseGates && !unknownMandatory
+            && !allChecks.some(check => check.timedOut) && hasMandatoryGateCoverage(allChecks)
             && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, isMandatoryArtifactCheck(c.gateName || c.name, parsedContract))));
         runLeaseTransaction(database, assertLease, () => {
             updateArtifactStatus({
@@ -371,7 +402,8 @@ export async function verifyArtifact(
             status: passed ? 'verified' : 'failed',
             passed,
             runId,
-            error: passed ? null : (result.error || `Worker status: ${result.status}`)
+            error: passed ? null : (result.error || managementError || (!uniqueBaseGates ? 'Mandatory base gate set is missing or duplicated.' : null)
+                || (unknownMandatory ? 'Worker returned an unknown mandatory gate.' : null) || `Worker status: ${result.status}`)
         };
     } catch (error) {
         if (runCreated) {

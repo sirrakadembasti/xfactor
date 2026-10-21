@@ -2,6 +2,7 @@ import assert from 'assert';
 import http from 'http';
 import { createTestHarness } from './testHarness.js';
 import { verifyBrowserJourney } from '../verification/browserVerifier.js';
+import { isValidRoleJourney, interactiveJourneySteps } from '../contracts/browserJourneyContract.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -155,6 +156,44 @@ await runAsyncTest('9. a role can prove anonymous denial after logging out', asy
         adapter, management: { needed: true, roles: [{ name: 'manager' }] }, roleJourneys
     });
     assert.equal(result.checks.find(check => check.name === 'browser_management_interaction')?.status, 'passed');
+});
+
+await runAsyncTest('10. role contracts validate native select choices and bounded fill templates', async () => {
+    const journey = step => ({ role: 'manager', kind: 'positive', steps: [step], expectedOutcome: { kind: 'success', text: 'Created' } });
+    for (const step of [
+        { action: 'click', selector: '#save' }, { action: 'fill', selector: '#empty', value: '' },
+        { action: 'fill', selector: '#name', text: 'legacy text' }, { action: 'fill', selector: '#name', value: '{nonce}' },
+        { action: 'fill', selector: '#date', value: '{date:+3650d}' }, { action: 'fill', selector: '#date', value: '{date:-0d}' },
+        { action: 'select', selector: '#room', optionIndex: 0 }, { action: 'select', selector: '#room', optionIndex: 1000 },
+        { action: 'select', selector: '#method', optionLabel: 'Credit card' }
+    ]) assert.equal(isValidRoleJourney(journey(step), 'manager', 'positive'), true, JSON.stringify(step));
+    for (const step of [
+        { action: 'select', selector: '#room' }, { action: 'select', selector: '#room', optionValue: 'uuid' },
+        { action: 'select', selector: '#room', optionIndex: -1 }, { action: 'select', selector: '#room', optionIndex: 1001 },
+        { action: 'select', selector: '#room', optionIndex: 1.5 }, { action: 'select', selector: '#room', optionIndex: '1' },
+        { action: 'select', selector: '#room', optionLabel: ' ' }, { action: 'select', selector: '#room', optionLabel: 3 },
+        { action: 'select', selector: '#room', optionLabel: 'Room', optionIndex: 1 },
+        { action: 'fill', selector: '#date', value: '{date:+3651d}' }, { action: 'fill', selector: '#date', value: '{date:-3651d}' },
+        { action: 'fill', selector: '#date', value: '{date:2d}' }, { action: 'fill', selector: '#date', value: 'prefix-{date:+2d}' },
+        { action: 'fill', selector: '#date', value: '{unknown}' }, { action: 'fill', selector: '#name', value: 'room-{nonce}' },
+        { action: 'fill', selector: '#name', value: '{{nonce}}' }, { action: 'fill', selector: '#name' },
+        { action: 'fill', selector: '#name', value: 42 }, { action: 'unknown', selector: '#name' }
+    ]) assert.equal(isValidRoleJourney({ ...journey(step), steps: [{ action: 'click', selector: '#save' }, step] }, 'manager', 'positive'), false, JSON.stringify(step));
+    assert.deepEqual(interactiveJourneySteps(journey({ action: 'select', selector: '#room', optionIndex: 1 })).map(step => step.action), ['select']);
+});
+
+await runAsyncTest('11. select receipts count and require the same observed accessibility as other actions', async () => {
+    const roleJourneys = [{ ...managedJourneys[0], steps: [{ action: 'select', selector: '#room', optionIndex: 1 }] }, managedJourneys[1]];
+    for (const accessible of [true, false]) {
+        const adapter = { id: 'select-observed', request: async () => ({ statusCode: 200, html: '<main />' }),
+            interact: async request => ({ ...observedJourney(request), actions: observedJourney(request).actions.map(action => ({
+                ...action, accessibleName: accessible ? action.accessibleName : '', keyboardReachable: accessible
+            })) }) };
+        const result = await verifyBrowserJourney('http://service', { steps: [] }, {
+            adapter, management: { needed: true, roles: [{ name: 'manager' }] }, roleJourneys
+        });
+        assert.equal(result.checks.find(check => check.name === 'browser_management_interaction')?.status, accessible ? 'passed' : 'failed');
+    }
 });
 
 finish();

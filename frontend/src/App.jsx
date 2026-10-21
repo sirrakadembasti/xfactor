@@ -19,6 +19,7 @@ import ChatView from './components/ChatView';
 import DAGFlowView from './components/DAGFlowView';
 import LogsView from './components/LogsView';
 import DashboardView from './components/DashboardView';
+import CreateProjectDialog from './components/CreateProjectDialog';
 
 // XFactor Modular Dashboard: Supports pending_approval ('Planı Onayla ve Başlat') and ReactFlow DAG view.
 export const createActionId = action =>
@@ -33,6 +34,7 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
 
   const [projects, setProjects] = useState([]);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [uiError, setUiError] = useState('');
@@ -137,6 +139,7 @@ export default function App() {
     setWsState('disconnected');
     activeProjectRef.current = null;
     setProjects([]);
+    setCreateProjectOpen(false);
     setSearchQuery('');
     setActiveProjectId(null);
     setProjectState(null);
@@ -277,6 +280,20 @@ export default function App() {
       return null;
     }
   }, [beginRequest, becomeAnonymous, isCurrentRequest]);
+
+  // Recover a missed state-change notification using the polled active status.
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || !activeProjectId) return;
+    const listedProject = projects.find(project => project.id === activeProjectId);
+    const currentProject = projectStateRef.current;
+    if (
+      currentProject?.id === activeProjectId
+      && listedProject?.status
+      && listedProject.status !== currentProject.status
+    ) {
+      fetchProjectState(activeProjectId);
+    }
+  }, [projects, activeProjectId, authStatus, fetchProjectState]);
 
   useEffect(() => {
     projectEpochRef.current += 1;
@@ -536,9 +553,9 @@ export default function App() {
     }
   };
 
-  const handleCreateProject = async () => {
-    const title = prompt('Proje Başlığı Girin:', 'Yeni Otonom Proje');
-    if (!title || !title.trim()) return;
+  const handleCreateProject = () => setCreateProjectOpen(true);
+
+  const submitCreateProject = async title => {
     const identity = captureRequest('createProject');
     try {
       const newProj = await api.createProject(title.trim());
@@ -546,7 +563,7 @@ export default function App() {
       await fetchProjects();
       if (isCurrentRequest(identity)) setActiveProjectId(newProj.id);
     } catch (e) {
-      if (isCurrentRequest(identity)) alert('Proje oluşturulamadı: ' + e.message);
+      if (isCurrentRequest(identity)) throw e;
     }
   };
 
@@ -733,6 +750,18 @@ export default function App() {
             <Play size={12} /> Üretiliyor
           </span>
         );
+      case 'implementation_finished':
+      case 'verification_pending':
+      case 'verification_running':
+      case 'build_verified':
+      case 'runtime_verified':
+      case 'acceptance_verified':
+      case 'artifact_verified':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+            <Clock size={12} /> Kalite kontrolü
+          </span>
+        );
       case 'paused':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -811,6 +840,9 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-cream-100 font-sans text-stone-800">
+      {createProjectOpen && (
+        <CreateProjectDialog onCreate={submitCreateProject} onClose={() => setCreateProjectOpen(false)} />
+      )}
       {/* SIDEBAR */}
       <Sidebar
         projects={projects}

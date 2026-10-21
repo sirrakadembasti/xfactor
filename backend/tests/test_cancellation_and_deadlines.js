@@ -125,7 +125,16 @@ await runAsyncTest('5. computePlanHash should produce stable hash and detect pla
 
     assert.strictEqual(hash1, hash2, 'Identical plans must produce identical hashes');
     assert.notStrictEqual(hash1, hashRevised, 'Revised plan must produce different hash');
-    assert.match(hash1, /^[a-f0-9]{16}$/);
+    assert.match(hash1, /^[a-f0-9]{64}$/);
+    assert.strictEqual(hash1, computePlanHash({ domains: plan1.domains, talimatname: plan1.talimatname, summary: plan1.summary }));
+    const managed = { ...plan1, requirements: [{ id: 'REQ-1', mandatory: true }],
+        management: { roles: [{ name: 'admin', permissions: ['read'] }] },
+        browser: { roleJourneys: [{ role: 'admin', kind: 'positive' }] } };
+    for (const change of [
+        { requirements: [{ id: 'REQ-1', mandatory: false }] },
+        { management: { roles: [{ name: 'admin', permissions: ['delete'] }] } },
+        { browser: { roleJourneys: [{ role: 'admin', kind: 'negative' }] } }
+    ]) assert.notStrictEqual(computePlanHash(managed), computePlanHash({ ...managed, ...change }));
 });
 
 finish();

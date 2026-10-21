@@ -337,6 +337,83 @@ export function normalizeManagerPlan(plan) {
     return plan;
 }
 
+function validateManagementFixtureTemplates(management) {
+    const resources = new Map(management.resources.map(resource => [resource.name, resource]));
+    const plainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
+        && [Object.prototype, null].includes(Object.getPrototypeOf(value));
+    const fail = reason => { throw new Error(`management.resources.verification ${reason}`); };
+    const validateBody = (body, names, allowParent) => {
+        if (!plainObject(body) || !Object.keys(body).length) fail('fixture body must be a nonempty JSON object.');
+        let nodes = 0;
+        const walk = (value, depth = 0) => {
+            if (++nodes > 2048 || depth > 20) fail('fixture body exceeds depth/node bounds.');
+            if (typeof value === 'string') {
+                if (value.includes('{fixture:')) {
+                    const ref = value.match(/^\{fixture:([A-Za-z][A-Za-z0-9_]{0,31})\.id\}$/);
+                    if (!ref || !names.has(ref[1])) fail('fixture reference must be an exact token naming an earlier setup ID.');
+                    return;
+                }
+                if (value.includes('{date:')) {
+                    const date = value.match(/^\{date:([+-]?\d{1,4})d\}$/);
+                    if (!date || Math.abs(Number(date[1])) > 3650) fail('date token must be an exact bounded relative day offset.');
+                    return;
+                }
+                let literal = value.replaceAll('{nonce}', '');
+                if (allowParent) literal = literal.replaceAll('{parentId}', '');
+                if (/\{[^{}]*\}/.test(literal)) fail('fixture template contains an unknown or unavailable token.');
+            } else if (Array.isArray(value)) {
+                for (const part of value) walk(part, depth + 1);
+            } else if (plainObject(value)) {
+                for (const [key, part] of Object.entries(value)) {
+                    if (['__proto__', 'constructor', 'prototype'].includes(key)) fail('fixture body contains an unsafe key.');
+                    walk(part, depth + 1);
+                }
+            } else if (value !== null && !['number', 'boolean'].includes(typeof value)) fail('fixture body must contain JSON values.');
+        };
+        walk(body);
+        if (Buffer.byteLength(JSON.stringify(body)) > 32768) fail('fixture body exceeds 32768 bytes.');
+    };
+    const validateSetup = (fixture, allowParent) => {
+        const names = new Set();
+        if (fixture.setup === undefined) return names;
+        if (!Array.isArray(fixture.setup) || fixture.setup.length > 8) fail('setup must be an array of at most 8 steps.');
+        for (const step of fixture.setup) {
+            const resource = resources.get(step?.resource);
+            if (!plainObject(step) || Object.keys(step).some(key => !['name', 'resource', 'role', 'createPath', 'createBody'].includes(key))
+                || !/^[A-Za-z][A-Za-z0-9_]{0,31}$/.test(step.name || '') || names.has(step.name)
+                || !resource?.operations.includes('create') || step.createPath !== resource.apiPath
+                || typeof step.createPath !== 'string' || !/^\/(?!\/)[A-Za-z0-9/_-]+$/.test(step.createPath)) {
+                fail('setup requires unique names, declared creatable resources and their exact safe local createPath.');
+            }
+            const creators = management.roles.filter(role => role.permissions.some(permission =>
+                permission.resource === resource.name && permission.operations.includes('create')));
+            if (!creators.length || (step.role !== undefined && !creators.some(role => role.name === step.role))) {
+                fail('setup role must have create permission for the declared resource.');
+            }
+            validateBody(step.createBody, names, allowParent);
+            names.add(step.name);
+        }
+        return names;
+    };
+    for (const resource of management.resources) {
+        const fixture = resource.verification;
+        if (fixture === undefined) continue;
+        if (!plainObject(fixture)) fail('fixture must be an object.');
+        if (fixture.identityField !== undefined && !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(fixture.identityField)) {
+            fail('identityField must be a valid field name.');
+        }
+        const names = validateSetup(fixture, false);
+        for (const body of [fixture.createBody, fixture.updateBody]) {
+            if (body !== undefined) validateBody(body, names, false);
+        }
+        if (fixture.retention !== undefined) {
+            if (!plainObject(fixture.retention)) fail('retention fixture must be an object.');
+            const retentionNames = validateSetup(fixture.retention, true);
+            if (fixture.retention.createBody !== undefined) validateBody(fixture.retention.createBody, retentionNames, true);
+        }
+    }
+}
+
 export function validateManagerPlan(plan, { requireManagement = false } = {}) {
     if (!plan || typeof plan !== 'object') {
         throw new Error('Manager planı bir nesne olmalıdır.');
@@ -492,6 +569,7 @@ export function validateManagerPlan(plan, { requireManagement = false } = {}) {
                     }
                 }
             }
+            validateManagementFixtureTemplates(management);
             if (requireManagement && !hasRoleJourneyCoverage(plan.browser?.roleJourneys,
                 management.roles.map(role => role.name))) {
                 throw new Error('management browser.roleJourneys requires positive and negative interactive journeys with visible outcomes for every role.');

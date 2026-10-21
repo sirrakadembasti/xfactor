@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { verificationJobTimeoutMs } from './verification/verificationBudget.js';
 import { getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
 function normalize(value) {
     return String(value ?? '').trim();
@@ -77,6 +78,9 @@ export function validateRuntimeConfig(env = process.env) {
     const dbPath = normalize(env.DB_PATH);
     const workerUrl = normalize(env.EXECUTION_WORKER_URL) || 'http://127.0.0.1:8099';
     const readinessWorkerTimeoutMs = Number.parseInt(normalize(env.READINESS_WORKER_TIMEOUT_MS) || '2000', 10);
+    let verificationTimeoutMs;
+    try { verificationTimeoutMs = verificationJobTimeoutMs(env); }
+    catch (error) { issues.push(error.message); }
     let workerToken = normalize(env.EXECUTION_WORKER_TOKEN);
     if (!production && !workerToken) {
         workerToken = 'dev-worker-token-internal';
@@ -129,5 +133,6 @@ export function validateRuntimeConfig(env = process.env) {
         EXECUTION_WORKER_URL: workerUrl,
         EXECUTION_WORKER_TOKEN: workerToken,
         READINESS_WORKER_TIMEOUT_MS: readinessWorkerTimeoutMs,
+        VERIFICATION_JOB_TIMEOUT_MS: verificationTimeoutMs,
     };
 }

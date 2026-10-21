@@ -560,6 +560,44 @@ try {
         assert.equal(result.passed, true);
     });
 
+    await runAsyncTest('20. field soft-delete persistence reads the canonical item when default collections hide inactive records', async () => {
+        let item = null;
+        let itemReads = 0;
+        const adapter = {
+            id: 'filtered-soft-delete',
+            request: async () => ({ statusCode: 403, data: {} }),
+            requestAsRole: async ({ url, method, data }) => {
+                if (url.endsWith('/api/guests') && method === 'POST') {
+                    item = { id: 'guest-soft-delete', name: data.name, isVoid: false };
+                    return { statusCode: 201, data: structuredClone(item) };
+                }
+                if (url.endsWith('/api/guests') && method === 'GET') {
+                    return { statusCode: 200, data: item && !item.isVoid ? [structuredClone(item)] : [] };
+                }
+                if (url.endsWith('/api/guests/guest-soft-delete') && method === 'GET') {
+                    itemReads++;
+                    return { statusCode: 200, data: structuredClone(item) };
+                }
+                if (url.endsWith('/api/guests/guest-soft-delete') && method === 'DELETE') {
+                    item.isVoid = true;
+                    return { statusCode: 200, data: structuredClone(item) };
+                }
+                return { statusCode: 404, data: {} };
+            }
+        };
+        const result = await verifyAPIContract('http://service', null, {
+            management: { needed: true,
+                resources: [{ name: 'Guest', apiPath: '/api/guests', operations: ['create', 'read', 'delete'],
+                    deletionPolicy: { relatedData: 'none', reason: 'Isolated fixture has no linked records.' },
+                    verification: { itemPath: '/api/guests/{id}', deleteExpectation: { kind: 'field', field: 'isVoid', equals: true } } }],
+                roles: [{ name: 'admin', permissions: [{ resource: 'Guest', operations: ['create', 'read', 'delete'] }] }]
+            }
+        }, { adapter });
+        assert.equal(result.passed, true, JSON.stringify(result));
+        assert.equal(result.checks.find(check => check.name === 'api_delete_persistence')?.status, 'passed');
+        assert.ok(itemReads > 0, 'canonical itemPath must corroborate the actual soft-deleted record');
+    });
+
     finish();
 } finally {
     for (const dir of tempDirs) {

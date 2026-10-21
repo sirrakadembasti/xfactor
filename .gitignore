@@ -8,6 +8,7 @@ test-sandbox/
 
 # Generated project workspaces
 projects/*/
+projects/*.zip
 .DS_Store
 dist/
 frontend/dist/

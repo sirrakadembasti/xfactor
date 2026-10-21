@@ -240,5 +240,135 @@ try {
         assert.equal(result.checks.find(check => check.name === 'browser_management_interaction')?.status, 'passed');
         assert.equal(interactions.length, 2);
     });
+    await runAsyncTest('8. mixed services each start and become ready with independent ports before web browser verification', async () => {
+        const workspace = await createTempWorkspace();
+        await fs.writeFile(path.join(workspace, 'service-manifest.json'), JSON.stringify({ services: {
+            api: { type: 'express', command: 'npm', args: ['run', 'start:api'], port: 3001, healthEndpoint: '/api/health' },
+            web: { type: 'vite', command: 'npm', args: ['run', 'preview'], port: 4173, healthEndpoint: '/' }
+        } }));
+        await fs.writeFile(path.join(workspace, 'package.json'), JSON.stringify({ scripts: { test: 'node --test test.js' } }));
+        const calls = [], running = new Map();
+        let created;
+        const adapter = {
+            id: 'mixed-fixture', getCapabilities: () => ({ available: true, isolation: true }),
+            async spawn(request) {
+                calls.push(['spawn', request]);
+                const child = new EventEmitter(); child.pid = request.port;
+                running.set(request.port, child); return child;
+            },
+            async request(request) {
+                const port = Number(new URL(request.url).port);
+                assert.ok(running.has(port), `request reached unstarted service: ${port}`);
+                calls.push(['request', request]);
+                if (request.method === 'POST') {
+                    created = { id: 'mixed-1', name: request.data.name };
+                    return { statusCode: 201, data: created };
+                }
+                if (request.url.endsWith('/api/items')) return { statusCode: 200, data: [created] };
+                return { statusCode: 200, html: '<main>Dashboard</main>', rawBody: '<main>Dashboard</main>' };
+            },
+            async execute() { return { passed: true, exitCode: 0, stdout: '# tests 1\n# pass 1', stderr: '' }; },
+            async kill(pid) { calls.push(['kill', pid]); running.delete(pid); }
+        };
+        const result = await verifyProjectSmoke(workspace, {
+            api: { domains: [{ prefix: 'items' }] },
+            browser: { journey: { steps: [{ action: 'assert_element', selector: 'main' }] } }
+        }, { adapter, env: { PORT: '9999' }, startupTimeoutMs: 50,
+            files: undefined });
+        assert.equal(result.passed, true, JSON.stringify(result));
+        assert.deepEqual(calls.filter(([kind]) => kind === 'spawn').map(([, request]) => [request.port, request.env.PORT]), [[3001, '3001'], [4173, '4173']]);
+        const serviceEnvs = calls.filter(([kind]) => kind === 'spawn').map(([, request]) => request.env);
+        assert.match(serviceEnvs[0].AUTH_SECRET, /^[a-f0-9]{64}$/);
+        assert.equal(serviceEnvs[1].AUTH_SECRET, serviceEnvs[0].AUTH_SECRET);
+        assert.equal(serviceEnvs[0].JWT_SECRET, serviceEnvs[0].AUTH_SECRET);
+        assert.equal(serviceEnvs[0].NEXTAUTH_SECRET, serviceEnvs[0].AUTH_SECRET);
+        assert.ok(calls.some(([kind, request]) => kind === 'request' && request.url === 'http://127.0.0.1:3001/api/health'));
+        assert.ok(calls.some(([kind, request]) => kind === 'request' && request.url === 'http://127.0.0.1:4173/'));
+        assert.equal(result.baseUrl, 'http://127.0.0.1:4173');
+        assert.deepEqual([...running.keys()], []);
+        assert.equal(result.checks.filter(check => check.name === 'smoke_liveness_probe' && check.status === 'passed').length, 2);
+        const repeat = await verifyProjectSmoke(workspace, {
+            api: { domains: [{ prefix: 'items' }] },
+            browser: { journey: { steps: [{ action: 'assert_element', selector: 'main' }] } }
+        }, { adapter, startupTimeoutMs: 50 });
+        assert.equal(repeat.passed, true, JSON.stringify(repeat));
+        const repeatedEnvs = calls.filter(([kind]) => kind === 'spawn').map(([, request]) => request.env);
+        assert.notEqual(repeatedEnvs[2].AUTH_SECRET, serviceEnvs[0].AUTH_SECRET);
+    });
+    await runAsyncTest('9. every started service is cleaned after readiness failure even if another cleanup fails', async () => {
+        const workspace = await createTempWorkspace();
+        await fs.writeFile(path.join(workspace, 'service-manifest.json'), JSON.stringify({ services: {
+            web: { command: 'npm', args: ['run', 'preview'], port: 4173 },
+            api: { command: 'npm', args: ['run', 'start:api'], port: 3001 }
+        } }));
+        const killed = [];
+        const adapter = {
+            id: 'mixed-failure', getCapabilities: () => ({ available: true, isolation: true }),
+            async spawn(request) { const child = new EventEmitter(); child.pid = request.port; return child; },
+            async request(request) { return { statusCode: request.url.includes(':3001') ? 503 : 200 }; },
+            async kill(pid) { killed.push(pid); if (pid === 4173) throw new Error('fixture cleanup failure'); }
+        };
+        const result = await verifyProjectSmoke(workspace, {}, { adapter, startupTimeoutMs: 1 });
+        assert.equal(result.passed, false);
+        assert.deepEqual(killed.sort(), [3001, 4173]);
+        assert.ok(result.issues.some(issue => issue.includes('cleanup')));
+    });
+    await runAsyncTest('10. Manager-shaped mixed contract infers endpoints and executes SQLite evidence from inventory', async () => {
+        const workspace = await createTempWorkspace();
+        const calls = [];
+        const adapter = {
+            id: 'manager-shape', getCapabilities: () => ({ available: true, isolation: true }),
+            async request(request) { calls.push(request); return { statusCode: 200, html: '<main>Rooms</main>', data: [] }; },
+            async execute(request) {
+                calls.push(request);
+                if (request.args?.[1]?.includes('DatabaseSync')) return { passed: true, exitCode: 0,
+                    stdout: JSON.stringify({ schemaExists: true, databaseExists: true, writeSucceeded: true }) };
+                if (request.args?.[1]?.includes('Role login')) return { passed: true, exitCode: 0,
+                    stdout: JSON.stringify({ statusCode: 200, data: [] }) };
+                return { passed: true, exitCode: 0, stdout: '# tests 1\n# pass 1' };
+            }
+        };
+        const result = await verifyProjectSmoke(workspace, {
+            summary: 'Hotel', domains: [{ prefix: 'rooms' }],
+            management: { needed: true, authentication: { apiLogin: { path: '/api/auth/login' } },
+                roles: [{ name: 'manager', demoUser: { username: 'manager-fixture' }, permissions: [{ resource: 'rooms', operations: ['read'] }] }],
+                resources: [{ name: 'rooms', apiPath: '/api/rooms', readAccess: 'public', operations: ['read'] }] },
+            browser: { roleJourneys: [] }
+        }, { adapter, skipSpawnForLiveServer: true, files: [
+            { path: 'service-manifest.json', content: JSON.stringify({ services: {
+                web: { type: 'vite', port: 4173 }, api: { type: 'express', port: 3001, healthEndpoint: '/api/health' }
+            } }) },
+            { path: 'prisma/schema.prisma', content: 'datasource db {\n provider = "sqlite"\n url = env("DATABASE_URL")\n}' },
+            { path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test test.js' } }) }
+        ] });
+        assert.ok(!result.checks.some(check => check.name === 'management_runtime_contract'), JSON.stringify(result));
+        assert.equal(result.checks.find(check => check.name === 'database_connectivity')?.status, 'passed');
+        assert.equal(result.checks.find(check => check.name === 'database_write_capability')?.status, 'passed');
+        assert.ok(calls.some(request => request.url === 'http://127.0.0.1:3001/api/rooms'));
+        assert.ok(calls.some(request => request.url === 'http://127.0.0.1:4173/'));
+        assert.ok(calls.some(request => request.args?.[1]?.includes('DatabaseSync') && request.args.at(-1) === 'prisma/schema.prisma'));
+    });
+    await runAsyncTest('11. split Manager domains never become guessed API resources', async () => {
+        for (const domains of [[{ name: 'frontend', prefix: 'frontend' }, { name: 'backend', prefix: 'backend' }], []]) {
+            const workspace = await createTempWorkspace();
+            const requests = [];
+            const adapter = {
+                id: 'missing-api-contract', getCapabilities: () => ({ available: true, isolation: true }),
+                async request(request) { requests.push(request); return { statusCode: 200, html: '<main>Hotel</main>', data: [] }; },
+                async execute() { return { passed: true, exitCode: 0, stdout: '# tests 1\n# pass 1' }; }
+            };
+            const result = await verifyProjectSmoke(workspace, { domains, management: { needed: false } }, {
+                adapter, skipSpawnForLiveServer: true, files: [
+                    { path: 'service-manifest.json', content: JSON.stringify({ services: {
+                        web: { type: 'vite', port: 4173 }, api: { type: 'express', port: 3001, healthEndpoint: '/api/health' }
+                    } }) },
+                    { path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test test.js' } }) }
+                ]
+            });
+            assert.deepEqual(requests.filter(request => request.method !== 'GET' || /\/api\/(?:frontend|backend|items)$/.test(request.url)), []);
+            assert.equal(result.passed, false);
+            assert.ok(result.checks.some(check => check.name === 'api_runtime_contract' && check.status === 'blocked'), JSON.stringify(result));
+        }
+    });
     finish();
 } finally { await Promise.all(tempDirs.map(dir => fs.rm(dir, { recursive: true, force: true }))); }

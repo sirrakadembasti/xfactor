@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import DashboardView from '../DashboardView';
 
 const projectId = 'project-dashboard';
@@ -217,4 +217,132 @@ test('shows a bounded error state when run history cannot be loaded', async () =
 test('identifies native worker evidence without claiming OS isolation', async () => {
   render(<DashboardView projectId={projectId} apiClient={createApi({ getVerificationRun: async () => ({ run, checks: [{ ...check, executionProfile: 'local-trusted', osIsolation: false }] }) })} />);
   await waitFor(() => expect(screen.getByText(/Yerel worker · local-trusted · OS izolasyonu yok/)).toBeInTheDocument());
+});
+
+test('polling discovers a new run and follows the latest selected evidence without remounting', async () => {
+  vi.useFakeTimers();
+  try {
+    let head = { ...run, status: 'failed' };
+    const apiClient = createApi({
+      getVerificationRuns: vi.fn(async () => ({ runs: [head], nextCursor: null })),
+      getVerificationRun: async (_, id) => ({ run: { ...head, id }, checks: [] })
+    });
+    await act(async () => render(<DashboardView projectId={projectId} apiClient={apiClient} />));
+    head = { ...run, id: 'new-running-run', status: 'running' };
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    expect(screen.getByText('new-running-run')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Seçili koşu özeti' })).getByText('Sürüyor')).toBeInTheDocument();
+    expect(apiClient.getVerificationRuns).toHaveBeenCalledTimes(2);
+  } finally { vi.useRealTimers(); }
+});
+
+test('polling skips overlapping history and detail requests then refreshes running check evidence', async () => {
+  vi.useFakeTimers();
+  try {
+    const pendingHistory = deferred();
+    const pendingDetail = deferred();
+    const getVerificationRuns = vi.fn().mockReturnValueOnce(pendingHistory.promise)
+      .mockResolvedValue({ runs: [run], nextCursor: null });
+    const getVerificationRun = vi.fn().mockReturnValueOnce(pendingDetail.promise)
+      .mockResolvedValue({ run, checks: [check, secondCheck] });
+    await act(async () => render(<DashboardView projectId={projectId} apiClient={createApi({ getVerificationRuns, getVerificationRun })} />));
+    await act(async () => { await vi.advanceTimersByTimeAsync(30000); });
+    expect(getVerificationRuns).toHaveBeenCalledTimes(1);
+    await act(async () => pendingHistory.resolve({ runs: [{ ...run, status: 'running' }], nextCursor: null }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(30000); });
+    expect(getVerificationRun).toHaveBeenCalledTimes(1);
+    await act(async () => pendingDetail.resolve({ run: { ...run, status: 'running' }, checks: [] }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    expect(getVerificationRun).toHaveBeenCalledTimes(2);
+    const summary = within(screen.getByRole('region', { name: 'Seçili koşu özeti' }));
+    expect(summary.getByText('Doğrulandı')).toBeInTheDocument();
+    expect(summary.getByText(/2 kontrol geçti/)).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+test('polling preserves an older selected run, its log and the loaded history cursor', async () => {
+  vi.useFakeTimers();
+  try {
+    let newest = run;
+    const getVerificationRuns = vi.fn(async (_, options) => options.cursor
+      ? { runs: [olderRun], nextCursor: 'tail-cursor' }
+      : { runs: [newest], nextCursor: 'head-cursor' });
+    const apiClient = createApi({ getVerificationRuns, getVerificationRun: async (_, id) => ({ run: id === olderRun.id ? olderRun : newest, checks: [check] }) });
+    await act(async () => render(<DashboardView projectId={projectId} apiClient={apiClient} />));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Daha Eski Koşuları Yükle/ })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: new RegExp(olderRun.id + '.*doğrulama koşusunu incele') })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /api_contract.*check-evidence-009/ })));
+    newest = { ...run, id: 'latest-added-run', status: 'running' };
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    expect(screen.getByText('latest-added-run')).toBeInTheDocument();
+    expect(screen.getAllByText(olderRun.id)).toHaveLength(1);
+    expect(screen.getByText(run.id)).toBeInTheDocument();
+    expect(screen.getByText('database_url=[REDACTED]')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Seçili koşu özeti' })).getByText('Doğrulandı')).toBeInTheDocument();
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Daha Eski Koşuları Yükle/ })));
+    expect(getVerificationRuns).toHaveBeenLastCalledWith(projectId, expect.objectContaining({ cursor: 'tail-cursor' }));
+    expect(screen.getAllByText(olderRun.id)).toHaveLength(1);
+  } finally { vi.useRealTimers(); }
+});
+
+test('polling aborts and discards old project history and detail after a project switch', async () => {
+  vi.useFakeTimers();
+  try {
+    const staleHistory = deferred();
+    const staleDetail = deferred();
+    const nextRun = { ...run, id: 'project-b-run' };
+    let historySignal;
+    let detailSignal;
+    let poll = false;
+    const apiClient = createApi({
+      getVerificationRuns: async (id, options) => {
+        if (id !== projectId) return { runs: [nextRun], nextCursor: null };
+        if (poll) { historySignal = options.signal; return staleHistory.promise; }
+        return { runs: [run], nextCursor: null };
+      },
+      getVerificationRun: async (id, _, options) => {
+        if (id !== projectId) return { run: nextRun, checks: [secondCheck] };
+        if (poll) { detailSignal = options.signal; return staleDetail.promise; }
+        return { run, checks: [check] };
+      }
+    });
+    let view;
+    await act(async () => { view = render(<DashboardView projectId={projectId} apiClient={apiClient} />); });
+    poll = true;
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    await act(async () => view.rerender(<DashboardView projectId="project-b" apiClient={apiClient} />));
+    await act(async () => {
+      staleHistory.resolve({ runs: [{ ...run, id: 'stale-a-run' }], nextCursor: null });
+      staleDetail.resolve({ run, checks: [check] });
+    });
+    expect(historySignal?.aborted).toBe(true);
+    expect(detailSignal?.aborted).toBe(true);
+    expect(screen.getByText('project-b-run')).toBeInTheDocument();
+    expect(screen.queryByText('stale-a-run')).not.toBeInTheDocument();
+    expect(screen.queryByText('api_contract')).not.toBeInTheDocument();
+    expect(screen.getAllByText('browser_e2e').length).toBeGreaterThan(0);
+  } finally { vi.useRealTimers(); }
+});
+
+test('serializes older-page navigation behind a pending history poll and re-enables it afterward', async () => {
+  vi.useFakeTimers();
+  try {
+    const pendingHead = deferred();
+    const getVerificationRuns = vi.fn()
+      .mockResolvedValueOnce({ runs: [run], nextCursor: 'older-cursor' })
+      .mockReturnValueOnce(pendingHead.promise)
+      .mockResolvedValueOnce({ runs: [olderRun], nextCursor: null });
+    await act(async () => render(<DashboardView projectId={projectId} apiClient={createApi({ getVerificationRuns })} />));
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    const olderButton = screen.getByRole('button', { name: /Daha Eski Koşuları Yükle/ });
+    expect(olderButton).toBeDisabled();
+    await act(async () => fireEvent.click(olderButton));
+    expect(getVerificationRuns).toHaveBeenCalledTimes(2);
+    await act(async () => pendingHead.resolve({ runs: [run], nextCursor: 'older-cursor' }));
+    expect(olderButton).toBeEnabled();
+    await act(async () => fireEvent.click(olderButton));
+    expect(getVerificationRuns).toHaveBeenCalledTimes(3);
+    expect(getVerificationRuns).toHaveBeenLastCalledWith(projectId, expect.objectContaining({ cursor: 'older-cursor' }));
+    expect(screen.getByText(olderRun.id)).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
 });

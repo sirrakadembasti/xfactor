@@ -5,6 +5,41 @@ import { verifySecurityBaseline } from '../verification/securityVerifier.js';
 const { runAsyncTest, finish } = createTestHarness();
 const filteredTest = process.argv.find(arg => arg.startsWith('--test='))?.split('=')[1];
 
+await runAsyncTest('P2 auth: HTTP client mutations are not server route registrations', async () => {
+    const result = verifySecurityBaseline({ requiresAuth: true }, [{ path: 'src/api/guests/createGuest.ts', content: `
+        import apiClient from '../client';
+        export const createGuest = (body: unknown) => apiClient.post('/api/guests', body);
+        const router = axios.create(); router.post('/api/guests', { name: 'guest' });
+    ` }]);
+    assert.equal(result.passed, true, JSON.stringify(result.issues));
+});
+
+await runAsyncTest('P2 auth: same-router preceding use protects only matching paths and lexical scope', async () => {
+    const check = content => verifySecurityBaseline({ requiresAuth: true }, [{ path: 'src/routes/guests.ts', content }]);
+    for (const content of [
+        `router.use(authenticateToken); router.post('/guests', requirePermission('Guest','create'), handler);`,
+        `const r = Router(); r.use('/api', authenticateToken); r.post('/api/guests', handler);`,
+        `router.use('/api', [authenticateToken]); router.post('/api', handler);`
+    ]) assert.equal(check(content).passed, true, content);
+    for (const content of [
+        `router.post('/guests', handler); router.use(authenticateToken);`,
+        `other.use(authenticateToken); router.post('/guests', handler);`,
+        `router.use('/api', authenticateToken); router.post('/apievil/guests', handler);`,
+        `if (enabled) { router.use(authenticateToken); } router.post('/guests', handler);`,
+        `router.use(authenticateToken); function routes(router) { router.post('/guests', handler); }`,
+        `router.use('/api', nestedRouter); router.post('/api/guests', handler);`,
+        `router.use(getMountPath(), authenticateToken); router.post('/guests', handler);`,
+        `const authPath = '/admin'; router.use(authPath, authenticateToken); router.post('/guests', handler);`,
+        `import {Router} from 'express'; const router=Router(); const authMount=getConfiguredPrefix(); router.use(authMount,(req,res,next)=>next()); router.post('/outside',(req,res)=>res.json({ok:true}));`,
+        `import express from 'express'; var router=express.Router(); router.post('/outside',(req,res)=>res.json({ok:true})); var router=client;`,
+        'router.use(`/admin/${tenant}`, authenticateToken); router.post("/guests", handler);',
+        `router.use(authenticateToken); { const router = Router(); router.post('/guests', handler); }`,
+        `let router = Router(); router.use(authenticateToken); router = Router(); router.post('/guests', handler);`,
+        `var router = Router(); router.use(authenticateToken); var router = Router(); router.post('/guests', handler);`,
+        `router.post('/api/auth/logout', handler);`
+    ]) assert.equal(check(content).passed, false, content);
+});
+
 if (!filteredTest || filteredTest === 'cors-wildcard') {
     await runAsyncTest('P2.4.1: verifySecurityBaseline rejects unrestricted cors() and Access-Control-Allow-Origin *', async () => {
         const contract = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ConnectionStatus from '../ConnectionStatus';
 import Header from '../Header';
 import App from '../../App';
@@ -98,6 +98,53 @@ test('project in implementing state is labelled as production, not planning', as
   await screen.findByRole('heading', { name: 'Project' });
   expect(screen.getAllByText('Üretiliyor').length).toBeGreaterThan(0);
   expect(screen.queryByText('Planlama')).not.toBeInTheDocument();
+});
+
+function setupStatusProject(status) {
+  vi.stubGlobal('WebSocket', class {
+    static OPEN = 1;
+    readyState = 1;
+    close() {}
+    send() {}
+  });
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.spyOn(api, 'getSession').mockResolvedValue({ user: { username: 'admin' } });
+  vi.spyOn(api, 'syncProjects').mockResolvedValue({});
+  const project = { id: 'project-1', title: 'Project', status, chatHistory: [] };
+  const list = vi.spyOn(api, 'getProjects').mockResolvedValue([project]);
+  const detail = vi.spyOn(api, 'getProject').mockResolvedValue(project);
+  vi.spyOn(api, 'getProjectLogs').mockResolvedValue([]);
+  return { project, list, detail };
+}
+
+test.each(['implementation_finished', 'verification_pending', 'verification_running', 'build_verified', 'runtime_verified', 'acceptance_verified', 'artifact_verified'])(
+  '%s shows quality control in both sidebar and header without claiming completion', async status => {
+    setupStatusProject(status);
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Project' });
+    expect(screen.getAllByText('Kalite kontrolü')).toHaveLength(2);
+    expect(screen.queryByText('Planlama')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tamamlandı')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ZIP.*İndir/ })).not.toBeInTheDocument();
+  }
+);
+
+test('polling reconciles a stale production header when the active project reaches quality control without a websocket event', async () => {
+  vi.useFakeTimers();
+  try {
+    const { project, list, detail } = setupStatusProject('implementing');
+    await act(async () => render(<App />));
+    expect(screen.getAllByText('Üretiliyor')).toHaveLength(2);
+    const updated = { ...project, status: 'implementation_finished' };
+    list.mockResolvedValue([updated]);
+    detail.mockResolvedValue(updated);
+    await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
+    expect(screen.getAllByText('Kalite kontrolü')).toHaveLength(2);
+    expect(screen.queryByText('Üretiliyor')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tamamlandı')).not.toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('focuses a new UI error alert and keyboard-dismiss restores initiating control', async () => {

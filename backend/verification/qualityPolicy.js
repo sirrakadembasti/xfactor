@@ -61,7 +61,7 @@ export const RUNTIME_GATE_MEMBERS = {
         'database_write_capability'
     ]),
     api_contract: new Set([
-        'database_file_accessible',
+        'database_connectivity',
         'api_status_check',
         'api_query_check',
         'database_mutation_assertion'

@@ -1,4 +1,34 @@
 // Runs inside the operator-owned image, independently of generated dependencies.
+const { randomBytes } = require('node:crypto');
+
+function resolveFillValue(value, { now = new Date(), nonce } = {}) {
+  if (typeof value !== 'string') throw new Error('Browser fill requires an explicit string value.');
+  if (value === '{nonce}') {
+    if (!/^[a-f0-9]{8}$/.test(nonce || '')) throw new Error('Browser journey nonce is unavailable.');
+    return nonce;
+  }
+  const date = /^\{date:([+-])(\d{1,4})d\}$/.exec(value);
+  if (date) {
+    const days = Number(date[2]);
+    if (days > 3650) throw new Error('Browser relative date exceeds the allowed range.');
+    const result = new Date(now);
+    if (!Number.isFinite(result.getTime())) throw new Error('Browser date reference is invalid.');
+    result.setUTCDate(result.getUTCDate() + (date[1] === '+' ? days : -days));
+    return result.toISOString().slice(0, 10);
+  }
+  if (/[{}]/.test(value)) throw new Error('Unsupported browser fill template.');
+  return value;
+}
+
+function selectChoice(step) {
+  const label = Object.prototype.hasOwnProperty.call(step, 'optionLabel');
+  const index = Object.prototype.hasOwnProperty.call(step, 'optionIndex');
+  if (label === index) throw new Error('Browser select requires one label or index.');
+  if (label && typeof step.optionLabel === 'string' && step.optionLabel.trim()) return { label: step.optionLabel };
+  if (index && Number.isInteger(step.optionIndex) && step.optionIndex >= 0 && step.optionIndex <= 1000) return { index: step.optionIndex };
+  throw new Error('Browser select option is invalid.');
+}
+
 async function runBrowserJourney(request, { chromium, launchOptions = {}, containerized = process.platform === 'linux', interactionTimeout = 5000, navigationTimeout = interactionTimeout } = {}) {
   let workerPhase = 'launch', workerStep;
   try {
@@ -8,6 +38,16 @@ async function runBrowserJourney(request, { chromium, launchOptions = {}, contai
   for (const value of allowedOrigins) {
     if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(value).hostname)) throw new Error('Browser requires an isolated loopback application.');
   }
+  const fillValues = { now: new Date(), nonce: randomBytes(4).toString('hex') };
+  if (request.steps !== undefined && !Array.isArray(request.steps)) throw new Error('Browser steps must be an array.');
+  const steps = (request.steps || []).map((step, index) => {
+    workerPhase = 'control_visible'; workerStep = index;
+    if (!step || !['click', 'fill', 'submit', 'select', 'navigate', 'reload', 'assert_text', 'assert_element'].includes(step.action)) throw new Error('Unsupported browser action.');
+    if (step.action === 'fill') return { ...step, value: resolveFillValue(step.value ?? step.text, fillValues) };
+    if (step.action === 'select') selectChoice(step);
+    return step;
+  });
+  workerPhase = 'launch'; workerStep = undefined;
   const browser = await chromium.launch({ headless: true,
     ...(containerized ? { env: { ...process.env, HOME: '/tmp', XDG_CONFIG_HOME: '/tmp', XDG_CACHE_HOME: '/tmp' } } : {}),
     ...launchOptions,
@@ -52,7 +92,7 @@ async function runBrowserJourney(request, { chromium, launchOptions = {}, contai
     workerPhase = 'navigate';
     await page.goto(request.url, { waitUntil: 'domcontentloaded' });
     const actions = [];
-    for (const [stepIndex, step] of (request.steps || []).entries()) {
+    for (const [stepIndex, step] of steps.entries()) {
       workerStep = stepIndex;
       workerPhase = 'control_visible';
       if (step.action === 'navigate' || step.action === 'reload') {
@@ -65,7 +105,7 @@ async function runBrowserJourney(request, { chromium, launchOptions = {}, contai
       let locator = step.selector ? page.locator(step.selector) : page.getByText(step.target || '', { exact: true });
       if (step.action === 'assert_text') { await page.getByText(step.expectedText, { exact: false }).last().waitFor({ state: 'visible' }); continue; }
       if (step.action === 'assert_element') { await locator.waitFor({ state: 'visible' }); continue; }
-      if (!['click', 'fill', 'submit'].includes(step.action)) throw new Error(`Unsupported browser action: ${step.action}`);
+      if (!['click', 'fill', 'submit', 'select'].includes(step.action)) throw new Error('Unsupported browser action.');
       if (step.action === 'submit') {
         workerPhase = 'control_name';
         if (await locator.evaluate(el => el.tagName === 'FORM')) locator = locator.locator('button[type="submit"], input[type="submit"], button:not([type])').first();
@@ -76,7 +116,7 @@ async function runBrowserJourney(request, { chromium, launchOptions = {}, contai
       const accessibleName = await locator.evaluate(el => {
         const named = el.getAttribute('aria-labelledby');
         return (el.getAttribute('aria-label') || (named && named.split(/\s+/).map(id => document.getElementById(id)?.textContent || '').join(' '))
-          || (el.labels && Array.from(el.labels).map(label => label.textContent).join(' ')) || el.innerText || el.getAttribute('alt') || el.getAttribute('title') || (el.type === 'submit' ? el.value : '') || '').trim();
+          || (el.labels && Array.from(el.labels).map(label => label.textContent).join(' ')) || (el.tagName !== 'SELECT' && el.innerText) || el.getAttribute('alt') || el.getAttribute('title') || (el.type === 'submit' ? el.value : '') || '').trim();
       });
       let keyboardReachable = false;
       workerPhase = 'control_focus';
@@ -86,7 +126,12 @@ async function runBrowserJourney(request, { chromium, launchOptions = {}, contai
       }
       if (!accessibleName || !keyboardReachable) throw new Error('Browser control lacks accessible name or keyboard reachability.');
       workerPhase = 'action';
-      if (step.action === 'fill') await locator.fill(String(step.value ?? step.text ?? ''));
+      if (step.action === 'fill') await locator.fill(step.value);
+      else if (step.action === 'select') {
+        if (!await locator.evaluate(el => el.tagName === 'SELECT')) throw new Error('Browser select requires a native select control.');
+        const selected = await locator.selectOption(selectChoice(step));
+        if (!Array.isArray(selected) || selected.length !== 1) throw new Error('Browser select did not observe one selected option.');
+      }
       else await locator.press('Enter');
       actions.push({ index: actions.length, action: step.action, target: step.selector || step.target, completed: true, accessibleName, keyboardReachable });
     }
@@ -123,7 +168,7 @@ function localBrowserFailureDiagnostic(stderr) {
   return `Local browser journey ${match[1]}.${match[2] ? ` [phase=${match[2]}${match[3] !== undefined ? ` step=${match[3]}` : ''}]` : ''}`;
 }
 
-module.exports = { runBrowserJourney, browserFailureDiagnostic, localBrowserFailureDiagnostic };
+module.exports = { runBrowserJourney, resolveFillValue, browserFailureDiagnostic, localBrowserFailureDiagnostic };
 if (require.main === module) {
   const fs = require('node:fs');
   const { chromium } = require('/opt/browser/node_modules/playwright-core');

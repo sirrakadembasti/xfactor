@@ -37,6 +37,21 @@ function extractDocumentedPorts(readme) {
 }
 function extractConfiguredPorts(files) {
     const ports = new Set();
+    for (const file of files) {
+        const name = String(file.path || '').replace(/\\/g, '/');
+        if (!['service-manifest.json', 'service_manifest.json'].includes(name)) continue;
+        const content = String(file.content || '');
+        if (Buffer.byteLength(content, 'utf8') > 131072) continue;
+        try {
+            const manifest = JSON.parse(content);
+            const addDeclaredPort = value => { if (Number.isInteger(value) && value >= 1 && value <= 65535) ports.add(value); };
+            addDeclaredPort(manifest?.port);
+            if (manifest?.services && typeof manifest.services === 'object' && !Array.isArray(manifest.services)) {
+                const services = Object.values(manifest.services);
+                if (services.length <= 16) for (const service of services) addDeclaredPort(service?.port);
+            }
+        } catch { /* Invalid manifests cannot authorize a documented port. */ }
+    }
     const scriptFiles = files.filter(file => /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(String(file.path || '')));
 
     function isProcessEnvPort(node) {

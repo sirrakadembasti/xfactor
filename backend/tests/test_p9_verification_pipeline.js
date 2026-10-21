@@ -4,6 +4,7 @@ import os from 'os';
 import path from 'path';
 import { createTestHarness } from './testHarness.js';
 import crypto from 'crypto';
+import { EventEmitter } from 'node:events';
 import { verifyDependencies } from '../verification/packageVerifier.js';
 import { verifyReadmeCommands } from '../verification/readmeVerifier.js';
 import { verifyBuild } from '../verification/buildVerifier.js';
@@ -198,8 +199,17 @@ try {
     });
 
     await runAsyncTest('P9.3: simple inventory path avoids host workspace reads', async () => {
-        const adapter = { id: 'inventory-adapter', getCapabilities: () => ({ available: true, isolation: true }), async execute() { return { passed: true, exitCode: 0, stdout: '', stderr: '' }; } };
-        const result = await runVerificationChecks({ workspace: '/workspace', contract: {}, requirementIds: ['simple'], adapter, files: [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test test.js' } }) }, { path: 'package-lock.json', content: '{}' }] });
+        const adapter = { id: 'inventory-adapter', getCapabilities: () => ({ available: true, isolation: true }),
+            async spawn() { return Object.assign(new EventEmitter(), { pid: 101 }); }, async kill() {},
+            async request() { return { statusCode: 200 }; },
+            async execute() { return { passed: true, exitCode: 0, stdout: '', stderr: '' }; } };
+        const result = await runVerificationChecks({ workspace: '/workspace', contract: {}, requirementIds: ['simple'], adapter, files: [
+            { path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test test.js' } }) },
+            { path: 'package-lock.json', content: '{}' },
+            { path: 'service-manifest.json', content: JSON.stringify({ services: { api: {
+                type: 'node', command: 'node', args: ['server.js'], port: 3000, healthEndpoint: '/health'
+            } } }) }
+        ] });
         assert.ok(result.checks.some(check => check.name === 'test_script_presence'));
         assert.ok(result.checks.every(check => !String(check.reason || '').includes('F:\\workspace')));
     });

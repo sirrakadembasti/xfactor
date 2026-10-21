@@ -455,7 +455,10 @@ export function createProjectRouter({
             return approveFromChat();
         }
 
-        const dynamicPrompt = buildManagerChatSystemPrompt(state, projectDir);
+        const readApprovedBase = () => db.prepare("SELECT * FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(id);
+        const approvedBase = readApprovedBase();
+        const dynamicPrompt = buildManagerChatSystemPrompt(state, projectDir) + (approvedBase
+            ? `\nAPPROVED browser patch base: ${JSON.stringify({ baseContractId: approvedBase.id, baseContractHash: approvedBase.contract_hash })}` : '');
         const messages = [{ role: 'system', content: dynamicPrompt }];
         state.chatHistory.slice(0, -1).forEach(msg => {
             messages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: msg.parts ? msg.parts[0].text : (msg.text_content || '') });
@@ -480,13 +483,15 @@ export function createProjectRouter({
                         catch (error) { logWarning('manager.token_usage_record_failed', error, { projectId: id }); }
                     }
                 });
-            planResult = inspectManagerPlan(responseText);
+            planResult = inspectManagerPlan(responseText, approvedBase);
+            if (planResult.isPatch && planResult.error) return res.status(planResult.stale ? 409 : 400)
+                .json({ code: 'MANAGER_PLAN_PATCH_INVALID', error: redactSensitiveText(planResult.error) });
             if (!planResult.plan && state.status !== PROJECT_STATUS.PENDING_APPROVAL
                 && responseText.includes('Planı Onayla ve Başlat')) {
                 planResult.error ||= 'Başlatma düğmesi için doğrulanmış plan henüz kaydedilmedi.';
             }
             // One bounded repair, never silently accepting or displaying a rejected plan.
-            if (planResult.error || (explicitApproval && state.status === PROJECT_STATUS.PLANNING && !planResult.plan)) {
+            if (!planResult.isPatch && (planResult.error || (explicitApproval && state.status === PROJECT_STATUS.PLANNING && !planResult.plan))) {
                 const correction = await managerResponder([
                     { role: 'system', content: dynamicPrompt + (canRepairManagerFixtures(planResult)
                         ? '\nDÜZELTME MODU: Kullanıcı isteğinde verilen resourceUpdates/roleJourneys şeması bu çağrı için tam plan çıktı şemasının yerini alır. Kapsamı koru; yalnız eksik fixture alanlarını döndür.'
@@ -548,16 +553,27 @@ export function createProjectRouter({
                 'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
             ];
             const isRemediationRequested = remediationKeywords.some(kw => userTrimmed.includes(kw));
-            const wasPaused = freshState.status === PROJECT_STATUS.PAUSED;
 
             const isPlanReady = Boolean(parsedPlan);
             let publishedPlan = false;
 
+            if (planResult.isPatch && !revisableStatuses.has(freshState.status)) {
+                return res.status(409).json({ code: 'MANAGER_PLAN_PATCH_INVALID', error: 'Project is not accepting a revised plan.' });
+            }
 
-            if (isPlanReady && revisableStatuses.has(freshState.status) && !(wasPaused && isRemediationRequested && !isUserStarting)) {
+
+            if (isPlanReady && revisableStatuses.has(freshState.status)) {
                 const draftPlan = parsedPlan;
                 const { createContractRevision } = await import('../contracts/projectContract.js');
-                createContractRevision(id, draftPlan, modelMsg.id);
+                // Synchronous recheck/publication: a changed approved base cannot be overwritten by an in-flight patch.
+                if (planResult.isPatch) {
+                    const currentBase = readApprovedBase();
+                    if (!currentBase || currentBase.id !== planResult.baseContractId || currentBase.contract_hash !== planResult.baseContractHash) {
+                        return res.status(409).json({ code: 'MANAGER_PLAN_PATCH_INVALID', error: 'Plan patch approved base is stale.' });
+                    }
+                }
+                const pending = planResult.isPatch && db.prepare("SELECT contract_json FROM project_contracts WHERE project_id=? AND status='pending_approval' ORDER BY revision DESC LIMIT 1").get(id);
+                if (!pending || pending.contract_json !== JSON.stringify(draftPlan)) createContractRevision(id, draftPlan, modelMsg.id);
 
                 freshState.status = PROJECT_STATUS.PENDING_APPROVAL;
                 freshState.plan = draftPlan;
@@ -573,7 +589,7 @@ export function createProjectRouter({
             }
 
 
-            if (freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested && !isUserStarting) {
+            if (!planResult.isPatch && freshState.status === PROJECT_STATUS.PAUSED && isRemediationRequested && !isUserStarting) {
                 freshState.remediation = {
                     ready: true,
                     instruction: message,
@@ -583,7 +599,7 @@ export function createProjectRouter({
             }
 
         const finalResponseState = await readProjectState(id);
-        if (explicitApproval && publishedPlan && finalResponseState?.status === PROJECT_STATUS.PENDING_APPROVAL) return approveFromChat();
+        if (!planResult.isPatch && explicitApproval && publishedPlan && finalResponseState?.status === PROJECT_STATUS.PENDING_APPROVAL) return approveFromChat();
         res.json(finalResponseState);
     }));
 
