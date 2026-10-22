@@ -136,6 +136,8 @@ export async function generateLLMResponse(messages, options = {}) {
     // Profile validation sets the user-facing lower bounds; direct calls may use short test deadlines.
     const timeoutMs = boundedPositiveInteger(options.timeoutMs ?? process.env.LLM_TIMEOUT_MS ?? 60000, 'timeoutMs', 300000);
     const maxOutputTokens = boundedPositiveInteger(options.maxOutputTokens ?? 8192, 'maxOutputTokens', 32768);
+    const maxTransportAttempts = boundedPositiveInteger(options.maxTransportAttempts ?? 3, 'maxTransportAttempts', 3);
+    const transportOptions = { retries: maxTransportAttempts };
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
     const combineSignals = options.signalCombiner || (signals => AbortSignal.any(signals));
     const mergedSignal = options.signal ? combineSignals([options.signal, timeoutSignal]) : timeoutSignal;
@@ -224,7 +226,10 @@ export async function generateLLMResponse(messages, options = {}) {
     // =========================================================================
     if (provider === 'google') {
         // Önce Resmi SDK'yı dene
-        if (!baseURL) {
+        // Agent tasks already own a bounded retry loop. Use the native REST
+        // path directly when its budget is explicit: SDK fallback would add
+        // requests below that boundary and can leave an ignored SDK call live.
+        if (!baseURL && options.maxTransportAttempts === undefined) {
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
             
@@ -301,7 +306,7 @@ export async function generateLLMResponse(messages, options = {}) {
                 headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
                 body: JSON.stringify(requestPayload)
             };
-            const response = await fetchWithRetry(nativeUrl, restOptions, { signal: mergedSignal });
+            const response = await fetchWithRetry(nativeUrl, restOptions, { ...transportOptions, signal: mergedSignal });
             if (!response.ok) {
                 throw providerHttpError(provider, response.status);
             }
@@ -338,7 +343,7 @@ export async function generateLLMResponse(messages, options = {}) {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
             body: JSON.stringify({ model: aiModel, max_tokens: maxOutputTokens, ...(system ? { system } : {}), messages: conversation.length ? conversation : [{ role: 'user', content: system || 'Devam et.' }] })
-        }, { signal: mergedSignal });
+        }, { ...transportOptions, signal: mergedSignal });
         if (!response.ok) throw providerHttpError(provider, response.status);
         const body = await response.json();
         if (body.stop_reason === 'max_tokens' && options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
@@ -375,7 +380,7 @@ export async function generateLLMResponse(messages, options = {}) {
             method: 'POST',
             headers: headers,
             body: requestBody
-        }, { signal: mergedSignal });
+        }, { ...transportOptions, signal: mergedSignal });
     } catch (err) {
         if (mergedSignal?.aborted || err.name === 'AbortError' || err.name === 'TimeoutError') {
             throw err;

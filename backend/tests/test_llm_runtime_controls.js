@@ -90,6 +90,9 @@ test('runtime rejects invalid budgets before contacting the provider', async () 
     for (const maxOutputTokens of [0, -1, 1.5, NaN, Infinity, 32769]) {
       await assert.rejects(() => generateLLMResponse(messages, { ...defaults, provider: 'openai', maxOutputTokens }), /token/i);
     }
+    for (const maxTransportAttempts of [0, -1, 1.5, NaN, Infinity, 4]) {
+      await assert.rejects(() => generateLLMResponse(messages, { ...defaults, provider: 'openai', maxTransportAttempts }), /maxTransportAttempts/);
+    }
   });
 });
 
