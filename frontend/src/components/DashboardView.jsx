@@ -81,7 +81,7 @@ function formatTimestamp(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-export default function DashboardView({ projectId, projectTitle, apiClient = api }) {
+export default function DashboardView({ projectId, projectTitle, projectStatus, apiClient = api }) {
   const [runs, setRuns] = useState([]);
   const [runsProjectId, setRunsProjectId] = useState(null);
   const [selectedRunId, setSelectedRunId] = useState(null);
@@ -273,6 +273,15 @@ export default function DashboardView({ projectId, projectTitle, apiClient = api
             <ShieldCheck size={14} /> Salt-Okunur
           </span>
         </header>
+
+        {projectStatus && projectStatus !== 'completed' && (
+          <div role="status" aria-label="Güncel proje durumu" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <p className="font-semibold">{projectStatus === 'verification_failed'
+              ? 'Güncel doğrulama başarısız.'
+              : projectStatus === 'paused' ? 'Güncel çalışma duraklatıldı.' : 'Güncel çalışma henüz tamamlanmadı.'}</p>
+            <p className="mt-1">Aşağıdaki sonuçlar ayrı doğrulama koşularına aittir; geçmiş bir PASS güncel teslim onayı değildir.</p>
+          </div>
+        )}
 
         <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm" aria-labelledby="panel-purpose-heading">
           <h2 id="panel-purpose-heading" className="text-base font-bold text-slate-900">Bu panel neyi gösterir?</h2>

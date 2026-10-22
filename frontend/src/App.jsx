@@ -951,6 +951,7 @@ export default function App() {
                 <DashboardView
                   projectId={activeProjectId}
                   projectTitle={projectState.title}
+                  projectStatus={projectState.status}
                 />
               )}
             </div>

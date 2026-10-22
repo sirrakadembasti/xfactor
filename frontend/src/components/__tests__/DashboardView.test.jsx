@@ -69,6 +69,22 @@ test('renders authoritative run history and evidence identifiers without mutatio
   }
 });
 
+test('a verified historical run never hides the current failed or paused project state', async () => {
+  const apiClient = createApi();
+  const { rerender } = render(<DashboardView projectId={projectId} projectStatus="verification_failed" apiClient={apiClient} />);
+  expect(await screen.findByText(run.id)).toBeInTheDocument();
+  const current = screen.getByRole('status', { name: 'Güncel proje durumu' });
+  expect(current).toHaveTextContent('Güncel doğrulama başarısız');
+  expect(current).toHaveTextContent(/geçmiş.*güncel teslim onayı değildir/i);
+  // The immutable historical PASS remains visible; it cannot silently become
+  // an assertion about this failed revision.
+  expect(screen.getByText('Doğrulandı')).toBeInTheDocument();
+  rerender(<DashboardView projectId={projectId} projectStatus="paused" apiClient={apiClient} />);
+  expect(current).toHaveTextContent('Güncel çalışma duraklatıldı');
+  rerender(<DashboardView projectId={projectId} projectStatus="completed" apiClient={apiClient} />);
+  expect(screen.queryByRole('status', { name: 'Güncel proje durumu' })).not.toBeInTheDocument();
+});
+
 test('names management login, role permissions, CRUD denial and browser checks', async () => {
   const managementChecks = [
     'management_demo_seed', 'management_role_login', 'api_role_create_allowed', 'api_role_delete_denied',
