@@ -49,7 +49,7 @@ async function extractCodeGraph() {
 
     // 1. Docs & Anayasa Düğüm Grubu (Group 1: Purple)
     const docs = [
-        { id: 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', label: 'ORKESTRASYON-TALIMATNAMESI (Anayasa v4)', desc: 'Platformun en üst master orkestrasyon anayasası; proje belgelerinden ayrı güvenilen talimat kaynağı' },
+        { id: 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', label: 'ORKESTRASYON-TALIMATNAMESI (Anayasa v5)', desc: 'Altı role ve Manager sohbetine tam metin aktarılan ortak platform politikası; kod ve şema denetimleri önceliklidir' },
         { id: 'x-agents/manager.md', label: 'x-agents/manager.md', desc: 'Manager Ajanı canlı kural ve mimari şartname dosyası' },
         { id: 'x-agents/director.md', label: 'x-agents/director.md', desc: 'Director Ajanı canlı domain şartname kuralları' },
         { id: 'x-agents/teamleader.md', label: 'x-agents/teamleader.md', desc: 'Teamleader Ajanı atomik görev ve DAG kuralları' },
@@ -96,6 +96,10 @@ async function extractCodeGraph() {
     });
 
     addLink('backend/agents/agentLoader.js', 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', 'reads');
+    for (const role of ['manager', 'director', 'teamleader', 'coder', 'reviewer', 'tester']) {
+        addLink(`backend/agents/${role}.js`, 'backend/agents/agentLoader.js', 'composes_policy');
+        addLink(`backend/agents/${role}.js`, 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', 'inherits_policy');
+    }
     addLink('backend/agents/manager.js', 'x-agents/manager.md', 'loads');
     addLink('backend/agents/director.js', 'x-agents/director.md', 'loads');
     addLink('backend/agents/teamleader.js', 'x-agents/teamleader.md', 'loads');

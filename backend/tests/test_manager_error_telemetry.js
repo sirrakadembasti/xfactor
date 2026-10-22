@@ -23,7 +23,40 @@ try {
     isolated.registerDatabase(db);
     const { createProject } = await import('../projectRepository.js');
     const { readProjectState, writeProjectState } = await import('../engine/index.js');
-    const { buildManagerChatSystemPrompt, createProjectRouter } = await import('../routes/projectRoutes.js');
+    const { buildManagerChatSystemPrompt, buildManagerChatContext, createProjectRouter } = await import('../routes/projectRoutes.js');
+
+    await runAsyncTest('untrusted project values never enter Manager system authority', async () => {
+        const marker = 'PROJECT_DATA_IGNORE_ALL_PLATFORM_RULES';
+        const project = await createProject({ title: marker });
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        await fs.mkdir(projectDir, { recursive: true });
+        await fs.writeFile(path.join(projectDir, 'RAPOR.md'), `Hata: ${marker}`);
+        const state = { ...(await readProjectState(project.id)), status: 'completed', last_error: marker };
+        assert.ok(!buildManagerChatSystemPrompt(state, projectDir).includes(marker));
+        const context = buildManagerChatContext(state, projectDir);
+        assert.ok(context.includes(marker), 'real diagnostics remain available as lower-priority data');
+        assert.ok(context.length < 50000, 'context has a fixed budget');
+    });
+
+    await runAsyncTest('completed chat never reads a regular report behind a linked project directory', async () => {
+        const marker = 'EXTERNAL_REPORT_MUST_NOT_BE_READ';
+        const external = path.join(process.env.PROJECTS_ROOT, 'external-report-fixture');
+        const alias = path.join(process.env.PROJECTS_ROOT, 'linked-report-fixture');
+        await fs.mkdir(external, { recursive: true });
+        await fs.writeFile(path.join(external, 'RAPOR.md'), marker);
+        await fs.symlink(external, alias, process.platform === 'win32' ? 'junction' : 'dir');
+        const context = buildManagerChatContext({ status: 'completed' }, alias);
+        assert.ok(!context.includes(marker));
+    });
+
+    await runAsyncTest('large report context stays bounded and valid JSON', async () => {
+        const root = path.join(process.env.PROJECTS_ROOT, 'large-report-fixture');
+        await fs.mkdir(root, { recursive: true });
+        await fs.writeFile(path.join(root, 'RAPOR.md'), 'Hata ' + 'x'.repeat(100000));
+        const context = buildManagerChatContext({ title: 'x'.repeat(100000), status: 'completed', last_error: 'x'.repeat(100000) }, root);
+        assert.ok(context.length < 33000);
+        assert.ok(JSON.parse(context.slice(context.indexOf('\n') + 1)).report.length <= 4096);
+    });
 
     function buildTestApp(managerResponder) {
         const requireAuth = (req, _res, next) => {
@@ -56,11 +89,11 @@ try {
         `).run(`attempt-test-1-${Date.now()}`, project.id, 'failed', 'test-lease-owner', testError, new Date().toISOString(), new Date().toISOString());
 
         const state = await readProjectState(project.id);
-        const prompt = buildManagerChatSystemPrompt(state, process.env.PROJECTS_ROOT);
+        const prompt = buildManagerChatContext(state, process.env.PROJECTS_ROOT);
 
         assert.ok(prompt.includes(testError), `Prompt should contain the exact error string '${testError}'`);
-        assert.ok(prompt.includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
-        assert.ok(prompt.includes('SON GERÇEK MOTOR HATASI VE TEKNİK DETAY'), 'Prompt should contain error section header');
+        assert.ok(buildManagerChatSystemPrompt().includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
+        assert.ok(buildManagerChatSystemPrompt().includes('SON GERÇEK MOTOR HATASI VE TEKNİK DETAY'), 'Prompt should contain error section header');
     });
 
     await runAsyncTest('2. buildManagerChatSystemPrompt falls back to state.last_error if workflow attempt has no error', async () => {
@@ -69,10 +102,10 @@ try {
 
         const state = await readProjectState(project.id);
         state.last_error = fallbackError;
-        const prompt = buildManagerChatSystemPrompt(state, process.env.PROJECTS_ROOT);
+        const prompt = buildManagerChatContext(state, process.env.PROJECTS_ROOT);
 
         assert.ok(prompt.includes(fallbackError), `Prompt should contain state.last_error '${fallbackError}'`);
-        assert.ok(prompt.includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
+        assert.ok(buildManagerChatSystemPrompt().includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
     });
 
     await runAsyncTest('2x. Manager telemetry selects the latest attempt by time, not random attempt ID', async () => {
@@ -82,7 +115,7 @@ try {
             VALUES (?, ?, 'failed', 'old-owner', ?, ?, 'old error')`).run('z-old', project.id, new Date(base - 1000).toISOString(), base - 1000);
         db.prepare(`INSERT INTO workflow_attempts (id, project_id, status, lease_owner, started_at, started_epoch, error)
             VALUES (?, ?, 'failed', 'new-owner', ?, ?, 'new error')`).run('a-new', project.id, new Date(base).toISOString(), base);
-        const prompt = buildManagerChatSystemPrompt(await readProjectState(project.id), process.env.PROJECTS_ROOT);
+        const prompt = buildManagerChatContext(await readProjectState(project.id), process.env.PROJECTS_ROOT);
         assert.match(prompt, /new error/);
         assert.doesNotMatch(prompt, /old error/);
     });
@@ -217,7 +250,7 @@ try {
 
         const state = await readProjectState(project.id);
         state.last_error = rawErrorWithHex;
-        const prompt = buildManagerChatSystemPrompt(state, process.env.PROJECTS_ROOT);
+        const prompt = buildManagerChatContext(state, process.env.PROJECTS_ROOT);
 
         assert.ok(!prompt.includes('Referans:'), 'Prompt should not contain Referans: prefix');
         assert.ok(!prompt.includes('3a9f81b2c4d5e6f7'), 'Prompt should not contain raw hex requestId');

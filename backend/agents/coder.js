@@ -1,7 +1,7 @@
 import { extractAndParseJSON, validateCoderFiles, extractCoderFilesFromText } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const CODER_SYSTEM_PROMPT = loadAgentPrompt('coder');
+export const CODER_SYSTEM_PROMPT = loadAgentSystemPrompt('coder');
 
 export function buildCoderPrompt(taskId, title, description, targetFiles, projectContext = "") {
     return `Görev ID: ${taskId}

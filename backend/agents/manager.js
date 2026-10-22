@@ -1,7 +1,7 @@
 import { extractAndParseJSON, validateManagerPlan, normalizeManagerPlan, formatUntrustedPromptContext } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const MANAGER_SYSTEM_PROMPT = loadAgentPrompt('manager');
+export const MANAGER_SYSTEM_PROMPT = loadAgentSystemPrompt('manager');
 export function buildManagerPrompt(userRequest, conversationHistory = []) {
     let historyContext = "";
     if (conversationHistory.length > 0) {

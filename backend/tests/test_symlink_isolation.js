@@ -2,7 +2,7 @@
  * P0.3: Proje dosya API'si ve generated-file yazımlarında symlink ile
  * proje dışı okuma/yazmayı engelleme (canonical realpath containment).
  *
- * Hedef testler (yalnız bu üç):
+ * Hedef testler:
  *   (a) security helper davranış testleri (isSymlinkDirent, assertPathInsideRoot)
  *   (b) writeGeneratedFiles symlink-parent'lı hedefi reddetmeli (kısmi yazma olmaz)
  *   (c) getFiles HTTP: symlink file/dir üzerinden proje dışı sızma yapılamaz
@@ -188,6 +188,91 @@ async function testWriteSymlinkParentNested() {
     }
 }
 
+// Each invalid destination must be discovered before any source is replaced.
+async function testLinkedWriteDestination(kind) {
+    const name = `writeGeneratedFiles rejects ${kind} before changing source or outside sentinel`;
+    const base = await fs.mkdtemp(path.join(os.tmpdir(), 'sym-destination-'));
+    const proj = path.join(base, 'project');
+    const outside = path.join(base, 'outside');
+    try {
+        await fs.mkdir(proj);
+        await fs.mkdir(outside);
+        await fs.mkdir(path.join(proj, 'src'));
+        const source = path.join(proj, 'src/app.js');
+        const sentinel = path.join(outside, 'sentinel.js');
+        await fs.writeFile(source, 'SOURCE_BEFORE');
+        await fs.writeFile(sentinel, 'OUTSIDE_BEFORE');
+        let root = proj;
+        let coder = null;
+        let linkTarget = sentinel;
+        let linkPath = path.join(proj, 'target.js');
+        let linkType = 'file';
+        const files = [{ path: 'src/app.js', content: 'SOURCE_AFTER' }];
+        if (kind === 'output leaf symlink') {
+            files.push({ path: 'target.js', content: 'OUTSIDE_AFTER' });
+        } else if (kind === 'coder copy leaf symlink') {
+            coder = path.join(proj, 'coder');
+            await fs.mkdir(coder);
+            linkPath = path.join(coder, 'src__app.js');
+        } else if (kind === 'coder directory junction') {
+            coder = path.join(proj, 'coder');
+            linkPath = coder;
+            linkTarget = outside;
+            linkType = process.platform === 'win32' ? 'junction' : 'dir';
+        } else if (kind === 'project root junction') {
+            root = path.join(base, 'alias');
+            linkPath = root;
+            linkTarget = proj;
+            linkType = process.platform === 'win32' ? 'junction' : 'dir';
+        } else if (kind === 'internal ancestor junction') {
+            linkPath = path.join(proj, 'alias');
+            linkTarget = path.join(proj, 'src');
+            linkType = process.platform === 'win32' ? 'junction' : 'dir';
+            files.push({ path: 'alias/new.js', content: 'MUST_NOT_EXIST' });
+        }
+        const linked = await trySymlink(linkTarget, linkPath, linkType);
+        if (linked !== true) {
+            skip(name, `symlink creation failed: ${linked.reason}`);
+            return;
+        }
+        await assert.rejects(writeGeneratedFiles(root, coder, files, files.map(file => file.path)), /link|symbolic|junction/i);
+        assert.strictEqual(await fs.readFile(source, 'utf8'), 'SOURCE_BEFORE');
+        assert.strictEqual(await fs.readFile(sentinel, 'utf8'), 'OUTSIDE_BEFORE');
+        await assert.rejects(fs.access(path.join(outside, 'src__app.js')), { code: 'ENOENT' });
+        await assert.rejects(fs.access(path.join(proj, 'src/new.js')), { code: 'ENOENT' });
+        pass(name);
+    } catch (error) {
+        fail(name, error);
+    } finally {
+        const relative = path.relative(os.tmpdir(), base);
+        assert(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+        await fs.rm(base, { recursive: true, force: true });
+    }
+}
+
+async function testRegularWriteReplacement() {
+    const name = 'writeGeneratedFiles replaces regular source and coder copy';
+    const proj = await fs.mkdtemp(path.join(os.tmpdir(), 'sym-replace-'));
+    try {
+        const coder = path.join(proj, 'manager/coder');
+        await fs.mkdir(coder, { recursive: true });
+        await fs.mkdir(path.join(proj, 'src'));
+        await fs.writeFile(path.join(proj, 'src/app.js'), 'OLD_SOURCE');
+        await fs.writeFile(path.join(coder, 'src__app.js'), 'OLD_COPY');
+        const written = await writeGeneratedFiles(proj, coder, [{ path: 'src/app.js', content: 'NEW_SOURCE' }], ['src/app.js']);
+        assert.deepStrictEqual(written, [{ path: 'src/app.js', size: 10 }]);
+        assert.strictEqual(await fs.readFile(path.join(proj, 'src/app.js'), 'utf8'), 'NEW_SOURCE');
+        assert.strictEqual(await fs.readFile(path.join(coder, 'src__app.js'), 'utf8'), 'NEW_SOURCE');
+        assert.deepStrictEqual(await fs.readdir(path.join(proj, 'src')), ['app.js']);
+        assert.deepStrictEqual(await fs.readdir(coder), ['src__app.js']);
+        pass(name);
+    } catch (error) {
+        fail(name, error);
+    } finally {
+        await fs.rm(proj, { recursive: true, force: true });
+    }
+}
+
 // ---------------------------------------------------------------------------
 // (c) getFiles HTTP entegrasyonu: symlink üzerinden dışarı sızma olmamalı
 // ---------------------------------------------------------------------------
@@ -276,6 +361,10 @@ async function main() {
     await testHelperBehavior();
     await testWriteSymlinkParent();
     await testWriteSymlinkParentNested();
+    for (const kind of ['output leaf symlink', 'coder directory junction', 'coder copy leaf symlink', 'project root junction', 'internal ancestor junction']) {
+        await testLinkedWriteDestination(kind);
+    }
+    await testRegularWriteReplacement();
     await testGetFilesHttp();
     console.log('==================================================');
     console.log(`📊 Sonuç: ${passed} Başarılı, ${failed} Hatalı, ${skipped} Atlanan`);

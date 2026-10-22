@@ -11,6 +11,7 @@ import { acquireWorkflowLease } from '../workflowAttempts.js';
 import { abortProjectExecution } from '../engine/cancellation.js';
 import { readProjectState } from '../engine/index.js';
 import { db } from '../db.js';
+import * as workflowEngine from '../engine/workflow.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 const hash = 'a'.repeat(64);
@@ -100,6 +101,15 @@ await runAsyncTest('marked normal workflow resume keeps repaired source and reac
             const persisted = JSON.parse(db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(project.id).workflow_state);
             assert.deepEqual(persisted.generationCompletion, { stage: 'generation_finished', contractId, contractHash, planHash },
                 'the normal completed DAG must persist the marker before acceptance begins');
+            if (mode === 'generation-finishes') {
+                const projected = db.prepare(`SELECT ct.task_spec_json, r.stable_key AS requirementKey
+                    FROM contract_tasks ct JOIN requirement_task_links rtl
+                      ON rtl.contract_id = ct.contract_id AND rtl.task_id = ct.id
+                    JOIN requirements r ON r.contract_id = rtl.contract_id AND r.id = rtl.requirement_id
+                    WHERE ct.contract_id = ?`).all(contractId);
+                assert.ok(projected.some(row => JSON.parse(row.task_spec_json).executionTaskId === 'source-task'
+                    && row.requirementKey === 'REQ-1'), 'real generation must project its execution task and requirement link');
+            }
         } else {
             assert.ok(events.some(event => event.action === 'start' && /director/i.test(event.agent || '')),
                 'a malformed generation marker must use the normal DAG path: ' + JSON.stringify(events.map(event => ({ agent: event.agent, action: event.action, message: event.message }))));
@@ -215,6 +225,169 @@ await runAsyncTest('normal workflow rejects cached backend infrastructure-only c
         assert.ok(!events.some(event => /Cannot read properties of null|\.map is not a function/.test(event.message || '')),
             'malformed cached tasks must not crash planning hint construction');
     } finally { await deleteProject(project.id); }
+    }
+});
+
+await runAsyncTest('Tester advisory resume repairs only its mapped source and records its paid attempt before calling Coder', async () => {
+    assert.equal(typeof workflowEngine.executeTesterAdvisoryRepairs, 'function');
+    const project = await createProject({ title: 'Mapped advisory repair fixture' });
+    const directory = getProjectDir(project.id);
+    try {
+        await fs.mkdir(path.join(directory, 'src'), { recursive: true });
+        await fs.writeFile(path.join(directory, 'src/price.js'), 'export const price = 100;');
+        await fs.writeFile(path.join(directory, 'src/untouched.js'), 'export const untouched = true;');
+        const files = [{ path: 'package.json', content: '{"name":"advisory-fixture"}' },
+            { path: 'src/price.js', content: 'export const price = 100;' },
+            { path: 'src/untouched.js', content: 'export const untouched = true;' }];
+        const completion = { ...marker };
+        const workflow = { generationCompletion: completion, teamleaderPlans: { unchanged: { tasks: [] } } };
+        let calls = 0, saved = 0;
+        const result = await workflowEngine.executeTesterAdvisoryRepairs({
+            projectDir: directory, contractId: contract.id, contractHash: hash, workflow,
+            repairIssues: [{ id: 'old-issue', detail_json: JSON.stringify({ issue: '`src/price.js`: apply the approved discount.' }) }],
+            generatedProjectFiles: files, repairTargetFiles: ['src/price.js'],
+            persistWorkflow: async () => { saved++; },
+            callAgent: async (role, prompt) => {
+                calls++;
+                assert.equal(role, 'coder');
+                assert.equal(saved, 1, 'consume the durable retry budget before a paid call');
+                assert.match(prompt, /apply the approved discount/);
+                assert.match(prompt, /price = 100/);
+                return { files: [{ path: 'src/price.js', content: 'export const price = 90;' }] };
+            }
+        });
+        assert.equal(calls, 1);
+        assert.equal(result.requiresFreshAcceptance, true, 'a write must not resolve a semantic Tester finding');
+        assert.equal(await fs.readFile(path.join(directory, 'src/price.js'), 'utf8'), 'export const price = 90;');
+        assert.equal(await fs.readFile(path.join(directory, 'src/untouched.js'), 'utf8'), 'export const untouched = true;');
+        assert.deepEqual(workflow.generationCompletion, completion);
+        assert.deepEqual(normalizeWorkflowState(workflow).testerAdvisoryRepairs, workflow.testerAdvisoryRepairs);
+    } finally { await deleteProject(project.id); }
+});
+
+await runAsyncTest('Tester advisory pause after provider response never writes its returned patch', async () => {
+    const project = await createProject({ title: 'Cancelled advisory repair fixture' });
+    const directory = getProjectDir(project.id);
+    try {
+        await fs.mkdir(path.join(directory, 'src'), { recursive: true });
+        const source = 'export const price = 100;';
+        await fs.writeFile(path.join(directory, 'src/price.js'), source);
+        const controller = new AbortController();
+        const workflow = {};
+        await assert.rejects(workflowEngine.executeTesterAdvisoryRepairs({
+            projectDir: directory, contractId: contract.id, contractHash: hash, workflow,
+            repairIssues: [{ detail_json: JSON.stringify({ issue: 'src/price.js: apply discount.' }) }],
+            generatedProjectFiles: [{ path: 'src/price.js', content: source }], repairTargetFiles: ['src/price.js'],
+            persistWorkflow: async () => {}, signal: controller.signal,
+            callAgent: async () => {
+                controller.abort('PAUSED');
+                return { files: [{ path: 'src/price.js', content: 'export const price = 90;' }] };
+            }
+        }), /iptal|abort/i);
+        assert.equal(await fs.readFile(path.join(directory, 'src/price.js'), 'utf8'), source);
+        assert.equal(workflow.testerAdvisoryRepairs.length, 1, 'already-paid calls retain their retry record');
+    } finally { await deleteProject(project.id); }
+});
+
+await runAsyncTest('Tester advisory resume stops unchanged paid retries and never expands an ambiguous or unknown target', async () => {
+    assert.equal(typeof workflowEngine.executeTesterAdvisoryRepairs, 'function');
+    const project = await createProject({ title: 'Bounded advisory repair fixture' });
+    const directory = getProjectDir(project.id);
+    try {
+        await fs.mkdir(path.join(directory, 'src'), { recursive: true });
+        await fs.writeFile(path.join(directory, 'src/a.js'), 'export const a = 1;');
+        await fs.writeFile(path.join(directory, 'src/b.js'), 'export const b = 2;');
+        const files = [{ path: 'src/a.js', content: 'export const a = 1;' }, { path: 'src/b.js', content: 'export const b = 2;' }];
+        let calls = 0;
+        const workflow = {};
+        const base = { projectDir: directory, contractId: contract.id, contractHash: hash, workflow,
+            generatedProjectFiles: files, repairTargetFiles: ['src/a.js', 'src/b.js'], persistWorkflow: async () => {},
+            callAgent: async () => { calls++; return { files: [{ path: 'src/a.js', content: 'export const a = 1;' }] }; } };
+        const issue = { detail_json: JSON.stringify({ issue: 'src/a.js: implement the approved calculation.' }) };
+        await assert.rejects(workflowEngine.executeTesterAdvisoryRepairs({ ...base, repairIssues: [issue] }), /revision|revizyon|değiş/i);
+        assert.equal(calls, 1);
+        await assert.rejects(workflowEngine.executeTesterAdvisoryRepairs({ ...base, repairIssues: [{ ...issue, id: 'duplicate-row-new-id' }] }), /revision|revizyon|tekrar/i);
+        assert.equal(calls, 1, 'same issue and input must never pay twice even with a new database row id');
+        for (const text of ['No concrete file was identified.', 'src/a.js and src/b.js disagree.', '../outside.js: modify this.', 'src/unknown.js: missing behavior.']) {
+            await assert.rejects(workflowEngine.executeTesterAdvisoryRepairs({ ...base,
+                repairIssues: [{ detail_json: JSON.stringify({ issue: text }) }] }), /revision|revizyon|hedef/i);
+        }
+        assert.equal(calls, 1, 'unsafe or ambiguous reports must stop before Coder');
+        assert.equal(await fs.readFile(path.join(directory, 'src/a.js'), 'utf8'), 'export const a = 1;');
+        let cappedCalls = 0, cappedPersists = 0;
+        const cappedWorkflow = { testerAdvisoryRepairs: Array.from({ length: 63 }, (_, index) => ({ issueFingerprint: `prior-${index}` })) };
+        await assert.rejects(workflowEngine.executeTesterAdvisoryRepairs({ ...base, workflow: cappedWorkflow,
+            repairIssues: ['src/a.js: correct its calculation.', 'src/b.js: correct its calculation.']
+                .map(issue => ({ detail_json: JSON.stringify({ issue }) })),
+            persistWorkflow: async () => { cappedPersists++; },
+            callAgent: async () => { cappedCalls++; throw new Error('budget preflight must prevent provider access'); }
+        }), /revizyon|bütçe/i);
+        assert.equal(cappedCalls, 0, 'the complete two-target repair must fit before any paid call');
+        assert.equal(cappedPersists, 0, 'a rejected batch must not consume partial retry records');
+        assert.equal(cappedWorkflow.testerAdvisoryRepairs.length, 63);
+        assert.equal(await fs.readFile(path.join(directory, 'src/a.js'), 'utf8'), 'export const a = 1;');
+        assert.equal(await fs.readFile(path.join(directory, 'src/b.js'), 'utf8'), 'export const b = 2;');
+        let currentCalls = 0;
+        const revisedWorkflow = { testerAdvisoryRepairs: Array.from({ length: 63 }, (_, index) => ({
+            contractId: 'superseded-contract', issueFingerprint: `historical-${index}`
+        })) };
+        const currentResult = await workflowEngine.executeTesterAdvisoryRepairs({ ...base, workflow: revisedWorkflow,
+            generatedProjectFiles: files.map(file => ({ ...file })),
+            repairIssues: ['src/a.js: correct its calculation.', 'src/b.js: correct its calculation.']
+                .map(issue => ({ detail_json: JSON.stringify({ issue }) })),
+            callAgent: async (_role, prompt) => {
+                currentCalls++;
+                const target = prompt.includes('"src/a.js"') ? 'src/a.js' : 'src/b.js';
+                return { files: [{ path: target, content: target === 'src/a.js' ? 'export const a = 3;' : 'export const b = 4;' }] };
+            }
+        });
+        assert.equal(currentCalls, 2, 'superseded-contract attempts must not consume current contract budget');
+        assert.equal(currentResult.requiresFreshAcceptance, true);
+        assert.equal(revisedWorkflow.testerAdvisoryRepairs.length, 2);
+        assert.ok(revisedWorkflow.testerAdvisoryRepairs.every(entry => entry.contractId === contract.id));
+        assert.equal(await fs.readFile(path.join(directory, 'src/a.js'), 'utf8'), 'export const a = 3;');
+        assert.equal(await fs.readFile(path.join(directory, 'src/b.js'), 'utf8'), 'export const b = 4;');
+    } finally { await deleteProject(project.id); }
+});
+
+await runAsyncTest('same-contract unmappable Tester veto stops before another Tester call while old-contract issues are ignored', async () => {
+    for (const sameContract of [true, false]) {
+        const project = await createProject({ title: `Advisory routing fixture ${sameContract}` });
+        const directory = getProjectDir(project.id);
+        try {
+            const plan = normalizeManagerPlan({ summary: 'Vite React static fixture', talimatname: '# Static fixture',
+                domains: [{ name: 'frontend', prefix: 'frontend' }], requirements: [{ id: 'REQ-1', statement: 'Static fixture', mandatory: true }],
+                management: { needed: false, reason: 'No managed data.' } });
+            const contractId = `contract-${crypto.randomUUID()}`, oldId = `old-${crypto.randomUUID()}`;
+            const json = JSON.stringify(plan), contractHash = crypto.createHash('sha256').update(json).digest('hex');
+            for (const [id, revision, status] of [[oldId, 1, 'superseded'], [contractId, 2, 'approved']]) {
+                db.prepare('INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,?,?,?,?)')
+                    .run(id, project.id, revision, status, json, contractHash);
+            }
+            await fs.mkdir(path.join(directory, 'src'), { recursive: true });
+            await fs.writeFile(path.join(directory, 'package.json'), '{"name":"advisory-routing"}');
+            await fs.writeFile(path.join(directory, 'index.html'), '<div id="root"></div><script type="module" src="/src/main.tsx"></script>');
+            await fs.writeFile(path.join(directory, 'src/main.tsx'), "import App from './App'; export default App;");
+            await fs.writeFile(path.join(directory, 'src/App.tsx'), 'export default function App() { return null; }');
+            const generationCompletion = { stage: 'generation_finished', contractId, contractHash, planHash: computePlanHash(plan) };
+            db.prepare("UPDATE projects SET status='implementing', workflow_state=? WHERE id=?")
+                .run(JSON.stringify({ planHash: computePlanHash(plan), generationCompletion }), project.id);
+            const owner = 'advisory-routing', lease = acquireWorkflowLease(project.id, owner);
+            db.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,run_id,fingerprint,severity,status,detail_json)
+                VALUES (?,?,?,?,?,'critical','open',?)`).run(`repair-${crypto.randomUUID()}`, project.id,
+                    sameContract ? contractId : oldId, lease.attempt.id, 'semantic-no-path', JSON.stringify({ issue: 'The required journey is incomplete; identify its file in a revision.' }));
+            const events = [];
+            await executeProjectTasks(project.id, { publish(event) {
+                events.push(event);
+                if (event.action === 'start' && /tester|coder|director|teamleader/i.test(event.agent || '')) abortProjectExecution(project.id, 'PAUSED');
+            } }, lease.attempt.id, owner);
+            assert.equal(events.some(event => event.action === 'start' && event.agent === 'Tester'), !sameContract,
+                'only same-contract pending veto must stop the blind Tester retry');
+            const persisted = await readProjectState(project.id);
+            if (sameContract) assert.match(persisted.last_error, /revizyon|hedef/i);
+            assert.deepEqual(persisted.workflow.generationCompletion, generationCompletion);
+            assert.equal(await fs.readFile(path.join(directory, 'src/App.tsx'), 'utf8'), 'export default function App() { return null; }');
+        } finally { await deleteProject(project.id); }
     }
 });
 

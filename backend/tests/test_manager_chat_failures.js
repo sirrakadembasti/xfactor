@@ -61,12 +61,17 @@ try {
   assert.equal(executions, 1, 'duplicate approval must not launch twice');
   let calls = 0;
   responder = async messages => {
+    assert.equal(messages[0].role, 'system');
+    assert.ok(!messages[0].content.includes('PROJECT_TITLE_POLICY_OVERRIDE'));
+    assert.equal(messages[1].role, 'user');
+    assert.match(messages[1].content, /UNTRUSTED_PROJECT_CONTEXT/);
+    assert.match(messages[1].content, /PROJECT_TITLE_POLICY_OVERRIDE/);
     if (++calls === 1) return JSON.stringify(invalidPlan);
     assert.match(messages[0].content, /zorunlu yapısal alanlar eksik/);
-    assert.match(JSON.parse(messages[1].content).task, /Eksiksiz plan JSON/);
+    assert.match(JSON.parse(messages[2].content).task, /Eksiksiz plan JSON/);
     return JSON.stringify(validPlan);
   };
-  const repaired = await createProject({ title: 'Repair then approve' });
+  const repaired = await createProject({ title: 'PROJECT_TITLE_POLICY_OVERRIDE' });
   result = await postChat(repaired.id, 'varsayımlarla devam et');
   assert.equal(calls, 2);
   assert.equal(result.state.status, 'implementing');
@@ -138,7 +143,7 @@ try {
   appendProjectChatMessage(scopedRecovery.id, 'model', JSON.stringify(managedDraft), new Date().toISOString());
   responder = async messages => {
     assert.match(messages[0].content, /yalnız eksik fixture alanlarını döndür/);
-    assert.match(JSON.parse(messages[1].content).task, /resourceUpdates/);
+    assert.match(JSON.parse(messages[2].content).task, /resourceUpdates/);
     return JSON.stringify(correction);
   };
   result = await postChat(scopedRecovery.id, 'varsayımlarla devam et');

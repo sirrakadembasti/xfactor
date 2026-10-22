@@ -102,6 +102,21 @@ export function getCurrentLLMProvider() {
     return createLLMProfileStore().getActive()?.provider || process.env.AI_PROVIDER || 'google';
 }
 
+function mockAgentRole(messages) {
+    const systemText = String(messages.find(message => message.role === 'system')?.content || '');
+    // Shared policy mentions every role. Only its explicit specialization header
+    // identifies this invocation; user task/source content cannot select a role.
+    const markers = [...systemText.matchAll(/^ROL TALİMATI \(([^;\r\n]+); tam metin\):\r?$/gm)];
+    if (markers.length) {
+        const role = markers.length === 1 ? markers[0][1] : null;
+        return ['manager', 'director', 'teamleader', 'coder', 'reviewer', 'tester'].includes(role) ? role : null;
+    }
+    // Compatibility with older, uncomposed trusted system prompts.
+    if (/\breviewer\b/i.test(systemText)) return 'reviewer';
+    if (/\bcoder\b/i.test(systemText)) return 'coder';
+    return null;
+}
+
 export async function generateLLMResponse(messages, options = {}) {
     dotenv.config(); // Her istekte güncel .env değişkenlerini yükle
 
@@ -178,8 +193,8 @@ export async function generateLLMResponse(messages, options = {}) {
     // API Key Kontrolü: güvenli fail-closed davranışı; yalnızca açıkça allowMockFallback=true ise mock döner.
     if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.startsWith('your_')) {
         if (allowMockFallback) {
-            const allText = messages.map(m => String(m.content || '')).join(' ');
-            if (/reviewer/i.test(allText)) {
+            const role = mockAgentRole(messages);
+            if (role === 'reviewer') {
                 return JSON.stringify({
                     approved: true,
                     summary: "Simüle Edilen LLM Yanıtı: Reviewer onayladı.",
@@ -187,8 +202,9 @@ export async function generateLLMResponse(messages, options = {}) {
                     issues: []
                 });
             }
-            if (/coder/i.test(allText)) {
-                const targetFilesMatch = allText.match(/Hedef Dosyalar:\s*(\[[^\]]*\])/);
+            if (role === 'coder') {
+                const taskText = messages.filter(message => message.role === 'user').map(message => String(message.content || '')).join('\n');
+                const targetFilesMatch = taskText.match(/Hedef Dosyalar:\s*(\[[^\]]*\])/);
                 let targetFiles = ['src/valid.js'];
                 if (targetFilesMatch) {
                     try { targetFiles = JSON.parse(targetFilesMatch[1]); } catch {}

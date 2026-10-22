@@ -1,7 +1,7 @@
 import { extractAndParseJSON, normalizeReviewResult } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const REVIEWER_SYSTEM_PROMPT = loadAgentPrompt('reviewer');
+export const REVIEWER_SYSTEM_PROMPT = loadAgentSystemPrompt('reviewer');
 export function buildReviewerPrompt(taskTitle, targetFiles, producedFiles, taskDescription = '', projectContext = '') {
     return `Görev Başlığı: ${taskTitle}
 Görev Gereksinimleri: ${taskDescription}

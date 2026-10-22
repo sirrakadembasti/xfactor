@@ -4,6 +4,8 @@
  */
 
 import assert from 'assert';
+import { validatePlanTasks } from '../agents/director.js';
+import { parseTeamleaderResponse } from '../agents/teamleader.js';
 import {
     validateManagerPlan,
     validateDirectorSpec,
@@ -224,6 +226,93 @@ function runTests() {
         passed++;
     } catch (err) {
         console.log('  [FAIL] 4. Schema normalization of malicious identifiers:', err.message);
+        failed++;
+    }
+
+    try {
+        const tasks = [
+            { id: 'first', dependencies: [], targetFiles: ['src/App.tsx'] },
+            { id: 'second', dependencies: [], targetFiles: ['src/app.tsx'] }
+        ];
+        assert.strictEqual(validateTaskDependencies(tasks, { platform: 'win32' }).valid, false,
+            'Windows case aliases must not be owned by parallel tasks');
+        assert.strictEqual(validateTaskDependencies(tasks, { platform: 'linux' }).valid, true,
+            'Linux case-sensitive paths remain distinct');
+        assert.strictEqual(validateTaskDependencies([
+            tasks[0], { ...tasks[1], targetFiles: ['src\\APP.tsx'] }
+        ], { platform: 'win32' }).valid, false,
+            'Windows mixed separators and case must identify the same file');
+        console.log('  [PASS] 5. File ownership follows platform path identity');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 5. Platform file ownership:', err.message);
+        failed++;
+    }
+
+    try {
+        const makeTask = (id, dependencies, target = 'src/shared.ts') => ({ id, dependencies, targetFiles: [target] });
+        assert.strictEqual(validateTaskDependencies([
+            makeTask('a', []), makeTask('b', ['a'], 'src/bridge.ts'), makeTask('c', ['b'])
+        ]).valid, true, 'Transitive dependency ordering makes shared ownership sequential');
+        assert.strictEqual(validateTaskDependencies([
+            makeTask('a', []), makeTask('b', ['a']), makeTask('c', ['a'])
+        ]).valid, false, 'Every owner pair must be ordered: sibling owners can run concurrently');
+        assert.strictEqual(validateTaskDependencies([
+            makeTask('c', ['b']), makeTask('a', []), makeTask('b', ['a'])
+        ]).valid, true, 'Ownership validation must not depend on task listing order');
+        console.log('  [PASS] 6. File ownership uses transitive DAG ordering for every pair');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 6. Transitive file ownership:', err.message);
+        failed++;
+    }
+
+    try {
+        const requirements = [{ id: 'REQ-1', statement: 'Approved scope' }];
+        const makeTask = (extra = {}) => ({ id: 'one', title: 'Task', targetFiles: ['src/one.ts'], dependencies: [], ...extra });
+        for (const ids of [['REQ-UNKNOWN'], ['REQ-1', 'REQ-UNKNOWN']]) {
+            const normalized = normalizeTeamleaderTasks({ tasks: [makeTask({ requirementIds: ids })] }, requirements);
+            assert.deepStrictEqual(normalized.tasks[0].requirementIds, ids, 'Unknown IDs must remain visible to scope validation');
+            assert.strictEqual(validatePlanTasks(normalized.tasks, { requirements }).passed, false);
+        }
+        const missing = normalizeTeamleaderTasks({ tasks: [makeTask()] }, requirements);
+        assert.deepStrictEqual(missing.tasks[0].requirementIds, [], 'Missing assignments must not be invented');
+        assert.throws(() => validateTeamleaderTasks(missing), /requirementIds/);
+        const empty = normalizeTeamleaderTasks({ tasks: [] }, requirements);
+        assert.throws(() => validateTeamleaderTasks(empty), /en az bir atomik/,
+            'An empty response must not be replaced with an invented approved task');
+        const supportedLegacy = normalizeTeamleaderTasks({ tasks: [makeTask({ requirementId: 'REQ-1' })] }, requirements);
+        assert.strictEqual(validateTeamleaderTasks(supportedLegacy), true);
+        assert.strictEqual(validatePlanTasks(supportedLegacy.tasks, { requirements }).passed, true);
+        console.log('  [PASS] 7. Requirement normalization preserves validation evidence');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 7. Requirement assignment integrity:', err.message);
+        failed++;
+    }
+
+    try {
+        const requirements = [{ id: 'REQ-1', statement: 'Approved scope' }];
+        const rawResponses = [
+            JSON.stringify({ tasks: [{ id: 'one', targetFiles: ['src/one.ts'] }] }),
+            JSON.stringify({ tasks: [] }),
+            '{}',
+            'unparseable response'
+        ];
+        for (const raw of rawResponses) {
+            const parsed = parseTeamleaderResponse(raw);
+            const normalized = normalizeTeamleaderTasks(parsed, requirements);
+            assert.throws(() => validateTeamleaderTasks(normalized), /requirementIds|en az bir atomik/,
+                `The actual parser must preserve missing assignments/empty output: ${raw}`);
+        }
+        const unknown = normalizeTeamleaderTasks(parseTeamleaderResponse(JSON.stringify({ tasks: [
+            { id: 'one', targetFiles: ['src/one.ts'], requirementIds: ['REQ-UNKNOWN'] }
+        ] })), requirements);
+        assert.strictEqual(validatePlanTasks(unknown.tasks, { requirements }).passed, false);
+        console.log('  [PASS] 8. Actual Teamleader parser cannot synthesize approved assignments');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 8. Teamleader parser requirement integrity:', err.message);
         failed++;
     }
 

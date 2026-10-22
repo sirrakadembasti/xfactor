@@ -313,31 +313,39 @@ export async function writeRapor(folderPath, reportContent) {
 /**
  * TODO.md içerisindeki görevi tamamlandı ([x]) olarak işaretler
  */
-export async function checkTodoItem(todoFilePath, taskIdOrName) {
-    try {
-        let content = await fs.readFile(todoFilePath, 'utf8');
+const todoMutations = new Map();
+
+function updateTodoItem(todoFilePath, taskIdOrName, checked) {
+    const resolvedPath = path.resolve(todoFilePath);
+    const key = process.platform === 'win32' ? resolvedPath.toLowerCase() : resolvedPath;
+    const previous = todoMutations.get(key) || Promise.resolve();
+    const mutation = previous.catch(() => {}).then(async () => {
+        let content = await fs.readFile(resolvedPath, 'utf8');
         const escaped = taskIdOrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`- \\[ \\] (.*${escaped}.*)`, 'g');
-        content = content.replace(regex, '- [x] $1');
-        await fs.writeFile(todoFilePath, content, 'utf8');
-    } catch (error) {
-        logWarning('protocol.todo_update_failed', error, { file: path.basename(todoFilePath) });
-    }
+        const regex = checked
+            ? new RegExp(`- \\[ \\] (.*${escaped}.*)`, 'g')
+            : new RegExp(`- \\[x\\] (.*${escaped}.*)`, 'gi');
+        content = content.replace(regex, checked ? '- [x] $1' : '- [ ] $1');
+        await fs.writeFile(resolvedPath, content, 'utf8');
+    });
+    todoMutations.set(key, mutation);
+    return mutation.catch(error => {
+        logWarning(checked ? 'protocol.todo_update_failed' : 'protocol.todo_uncheck_failed', error,
+            { file: path.basename(todoFilePath) });
+    }).finally(() => {
+        if (todoMutations.get(key) === mutation) todoMutations.delete(key);
+    });
+}
+
+export async function checkTodoItem(todoFilePath, taskIdOrName) {
+    await updateTodoItem(todoFilePath, taskIdOrName, true);
 }
 
 /**
  * TODO.md içerisindeki tamamlanmış görevin işaretini kaldırır ([- [ ]])
  */
 export async function uncheckTodoItem(todoFilePath, taskIdOrName) {
-    try {
-        let content = await fs.readFile(todoFilePath, 'utf8');
-        const escaped = taskIdOrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`- \\[x\\] (.*${escaped}.*)`, 'gi');
-        content = content.replace(regex, '- [ ] $1');
-        await fs.writeFile(todoFilePath, content, 'utf8');
-    } catch (error) {
-        logWarning('protocol.todo_uncheck_failed', error, { file: path.basename(todoFilePath) });
-    }
+    await updateTodoItem(todoFilePath, taskIdOrName, false);
 }
 
 /**

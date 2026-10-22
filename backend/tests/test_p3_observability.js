@@ -89,6 +89,25 @@ function createRealProjectAccess() {
   };
 }
 
+async function requestFromFixture(server, url, options) {
+  try {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    let body;
+    try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+    return { status: response.status, body, text };
+  } catch (error) {
+    const endpoint = new URL(url);
+    const cause = error.cause;
+    throw new Error(`HTTP fixture ${options.method} ${endpoint.hostname}:${endpoint.port}${endpoint.pathname}: ${error.message}; cause=${cause?.code || cause?.name || 'unknown'} ${cause?.message || ''}`, { cause: error });
+  } finally {
+    await new Promise(resolve => {
+      server.close(resolve);
+      server.closeAllConnections();
+    });
+  }
+}
+
 async function requestWithMocks(pathname, { authed = true, userId = ownerUserId, method = 'GET' } = {}) {
   const requireAuth = (req, res, next) => {
     if (!authed) return res.status(401).json({ error: 'Unauthorized' });
@@ -103,12 +122,7 @@ async function requestWithMocks(pathname, { authed = true, userId = ownerUserId,
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const port = server.address().port;
   const url = `http://127.0.0.1:${port}${pathname}`;
-  const res = await fetch(url, { method, headers: { 'x-forwarded-proto': 'https' } });
-  let body = null;
-  const text = await res.text();
-  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-  await new Promise(r => server.close(r));
-  return { status: res.status, body, text };
+  return requestFromFixture(server, url, { method, headers: { 'x-forwarded-proto': 'https' } });
 }
 
 function encodeCursor(id, started_at) {
@@ -754,12 +768,7 @@ async function requestWithBody(pathname, { authed = true, userId = ownerUserId, 
     opts.headers['content-type'] = 'application/json';
     opts.body = JSON.stringify(body);
   }
-  const res = await fetch(url, opts);
-  let b = null;
-  const text = await res.text();
-  try { b = text ? JSON.parse(text) : null; } catch { b = text; }
-  await new Promise(r => server.close(r));
-  return { status: res.status, body: b, text };
+  return requestFromFixture(server, url, opts);
 }
 function snapshotDbState() {
   const tables = ['project_contracts','requirements','contract_tasks','requirement_task_links','requirement_file_links','artifact_files','artifacts','task_checkpoints'];
@@ -1228,4 +1237,159 @@ await runAsyncTest('P3.4 compaction rolls back every payload when one update fai
      assert.ok(typeof purged === 'number', 'Cleanup returns purged count');
  });
  
+async function projectionFixture() {
+  const suffix = crypto.randomUUID();
+  const projectId = `projection-${suffix}`;
+  const contractId = `projection-contract-${suffix}`;
+  const oldContractId = `projection-old-${suffix}`;
+  const canonical = { requirements: [
+    { id: 'REQ-1', statement: 'Create records', kind: 'functional', priority: 'high', mandatory: true },
+    { id: 'REQ-2', statement: 'Show records', kind: 'functional', priority: 'normal', mandatory: false }
+  ] };
+  db.prepare("INSERT INTO projects (id,title,status) VALUES (?, 'Projection fixture', 'implementing')").run(projectId);
+  db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,1,'superseded',?,?)")
+    .run(oldContractId, projectId, JSON.stringify(canonical), 'old-hash');
+  db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,2,'approved',?,?)")
+    .run(contractId, projectId, JSON.stringify(canonical), 'projection-hash');
+  const existingRequirementId = `existing-req-${suffix}`;
+  db.prepare("INSERT INTO requirements (id,contract_id,stable_key,statement,kind,priority,mandatory,status) VALUES (?,?,'REQ-1','Create records','functional','high',1,'approved')")
+    .run(existingRequirementId, contractId);
+  const historicalTaskId = `historical-${suffix}`;
+  db.prepare("INSERT INTO contract_tasks (id,contract_id,stable_key,task_spec_json) VALUES (?,?,'old/task',?)")
+    .run(historicalTaskId, oldContractId, JSON.stringify({ dependencies: [], targetFiles: ['old.js'] }));
+  const { acquireWorkflowLease } = await import('../workflowAttempts.js');
+  const leaseOwner = `projection-owner-${suffix}`;
+  const lease = acquireWorkflowLease(projectId, leaseOwner);
+  assert.equal(lease.acquired, true);
+  const teamleaderPlans = {
+    'frontend.lead': { tasks: [
+      { id: 'base', title: 'Base view', dependencies: [], targetFiles: ['src/base.tsx'], requirementIds: ['REQ-1'] },
+      { id: 'detail', title: 'Detail view', dependencies: ['base'], targetFiles: ['src/detail.tsx'], requirementIds: ['REQ-2'] }
+    ] },
+    'backend.lead': { tasks: [
+      { id: 'base', title: 'Backend base', dependencies: [], targetFiles: ['src/routes/base.ts'], requirementIds: ['REQ-1'] }
+    ] }
+  };
+  return { projectId, contractId, oldContractId, historicalTaskId, existingRequirementId,
+    teamleaderPlans, contractHash: 'projection-hash', attemptId: lease.attempt.id, leaseOwner };
+}
+
+await runAsyncTest('task projection persists scoped requirements and namespaced DAG tasks idempotently without touching proofs', async () => {
+  const { projectContractTasks } = await import('../contracts/taskProjection.js');
+  const { collectDownstreamTaskIds } = await import('../observability.js');
+  const fixture = await projectionFixture();
+  const proofsBefore = db.prepare('SELECT * FROM verification_checks ORDER BY id').all();
+  const result = projectContractTasks(fixture);
+  assert.equal(result.taskCount, 3);
+  assert.equal(result.linkCount, 3);
+  const other = await projectionFixture();
+  const otherResult = projectContractTasks(other);
+  assert.ok(result.tasks.every(task => !otherResult.tasks.some(otherTask => otherTask.id === task.id)),
+    'identical team/local task IDs in distinct contracts must have distinct global IDs');
+  const rows = db.prepare('SELECT * FROM contract_tasks WHERE contract_id=? ORDER BY stable_key').all(fixture.contractId);
+  assert.equal(new Set(rows.map(row => row.id)).size, 3, 'same local task ID in different teams must stay distinct');
+  const base = rows.find(row => row.stable_key === 'frontend.lead/base');
+  const detail = rows.find(row => row.stable_key === 'frontend.lead/detail');
+  assert.deepEqual(JSON.parse(detail.task_spec_json).dependencies, [base.id]);
+  assert.deepEqual(collectDownstreamTaskIds(rows, [base.id]), [base.id, detail.id].sort());
+  assert.equal(JSON.parse(base.task_spec_json).executionTaskId, 'base');
+  const requirements = db.prepare('SELECT * FROM requirements WHERE contract_id=? ORDER BY stable_key').all(fixture.contractId);
+  assert.equal(requirements.length, 2, 'missing canonical requirements must be hydrated from approved contract');
+  assert.equal(requirements[0].id, fixture.existingRequirementId, 'existing requirement identity/proof links must survive');
+  const links = db.prepare('SELECT requirement_id,task_id FROM requirement_task_links WHERE contract_id=? ORDER BY task_id').all(fixture.contractId);
+  assert.equal(links.filter(link => link.requirement_id === fixture.existingRequirementId).length, 2);
+  assert.deepEqual(projectContractTasks(fixture), result);
+  assert.deepEqual(db.prepare('SELECT * FROM contract_tasks WHERE contract_id=? ORDER BY stable_key').all(fixture.contractId), rows);
+  const smaller = structuredClone(fixture);
+  smaller.teamleaderPlans['frontend.lead'].tasks.pop();
+  assert.equal(projectContractTasks(smaller).taskCount, 2);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM requirement_task_links WHERE contract_id=?').get(fixture.contractId).n, 2);
+  assert.equal(db.prepare('SELECT id FROM contract_tasks WHERE contract_id=?').get(fixture.oldContractId).id, fixture.historicalTaskId);
+  assert.deepEqual(db.prepare('SELECT * FROM verification_checks ORDER BY id').all(), proofsBefore);
+});
+
+await runAsyncTest('task projection rejects unknown scope and invalid DAG atomically', async () => {
+  const { projectContractTasks } = await import('../contracts/taskProjection.js');
+  const fixture = await projectionFixture();
+  projectContractTasks(fixture);
+  const snapshot = () => JSON.stringify({
+    tasks: db.prepare('SELECT * FROM contract_tasks WHERE contract_id=? ORDER BY id').all(fixture.contractId),
+    requirements: db.prepare('SELECT * FROM requirements WHERE contract_id=? ORDER BY id').all(fixture.contractId),
+    links: db.prepare('SELECT * FROM requirement_task_links WHERE contract_id=? ORDER BY task_id,requirement_id').all(fixture.contractId)
+  });
+  const before = snapshot();
+  for (const mutate of [
+    value => { value.teamleaderPlans['frontend.lead'].tasks[0].requirementIds = ['REQ-UNKNOWN']; },
+    value => { value.teamleaderPlans['frontend.lead'].tasks[0].requirementIds = []; },
+    value => { value.teamleaderPlans['frontend.lead'].tasks[1].dependencies = ['missing']; },
+    value => { value.teamleaderPlans['frontend.lead'].tasks[0].dependencies = ['detail']; },
+    value => { value.teamleaderPlans['frontend.lead'].tasks.push(value.teamleaderPlans['frontend.lead'].tasks[0]); }
+  ]) {
+    const invalid = structuredClone(fixture);
+    mutate(invalid);
+    assert.throws(() => projectContractTasks(invalid), /requirement|scope|dependency|cycle|duplicate/i);
+    assert.equal(snapshot(), before, 'failed projection must preserve all prior rows');
+  }
+  db.exec(`CREATE TEMP TRIGGER projection_link_fault BEFORE INSERT ON requirement_task_links
+    WHEN NEW.contract_id = '${fixture.contractId}' BEGIN SELECT RAISE(ABORT, 'projection fixture fault'); END;`);
+  try {
+    const changed = structuredClone(fixture);
+    changed.teamleaderPlans['frontend.lead'].tasks[0].title = 'Must roll back changed title';
+    assert.throws(() => projectContractTasks(changed), /projection fixture fault/);
+    assert.equal(snapshot(), before, 'a failure after deletes/upserts must roll back the entire projection');
+  } finally { db.exec('DROP TRIGGER projection_link_fault'); }
+});
+
+await runAsyncTest('task projection fences wrong-project leases and unapproved/stale contracts before writes', async () => {
+  const { projectContractTasks } = await import('../contracts/taskProjection.js');
+  const fixture = await projectionFixture();
+  const other = await projectionFixture();
+  assert.throws(() => projectContractTasks({ ...fixture, attemptId: other.attemptId, leaseOwner: other.leaseOwner }),
+    error => error.code === 'WORKFLOW_LEASE_FENCED');
+  assert.throws(() => projectContractTasks({ ...fixture, leaseOwner: 'wrong-owner' }), error => error.code === 'WORKFLOW_LEASE_FENCED');
+  assert.throws(() => projectContractTasks({ ...fixture, contractId: fixture.oldContractId }), /approved|current|contract/i);
+  assert.throws(() => projectContractTasks({ ...fixture, contractId: other.contractId }), /approved|current|contract/i);
+  assert.throws(() => projectContractTasks({ ...fixture, contractHash: 'stale-hash' }), /hash|contract/i);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM contract_tasks WHERE contract_id=?').get(fixture.contractId).n, 0);
+});
+
+await runAsyncTest('projected task impact and preview resolve raw checkpoint identities without cross-team/contract leakage', async () => {
+  const { projectContractTasks } = await import('../contracts/taskProjection.js');
+  const { computeTaskSpecHash } = await import('../engine/checkpointHelper.js');
+  const fixture = await projectionFixture();
+  fixture.teamleaderPlans['backend.lead'].tasks[0].requirementIds = ['REQ-2'];
+  const projected = projectContractTasks(fixture);
+  db.prepare("INSERT INTO project_owners (project_id,user_id,role) VALUES (?,?,'owner')").run(fixture.projectId, ownerUserId);
+  const checkpoints = new Map();
+  const insertCheckpoint = (projectId, contractId, teamleaderId, task) => {
+    const row = { project_id: projectId, task_id: task.id, contract_id: contractId,
+      plan_hash: 'projection-hash', task_spec_hash: computeTaskSpecHash(task),
+      input_hash: `input-${teamleaderId}-${task.id}`, output_hash: 'output', gate_version: '1.0.0' };
+    db.prepare(`INSERT INTO task_checkpoints (project_id,task_id,contract_id,plan_hash,task_spec_hash,input_hash,output_hash,gate_version,status,requirement_ids,revision)
+      VALUES (?,?,?,?,?,?,?,?,'completed','[]',1)`).run(...Object.values(row));
+    return deriveExpectedCheckpointId(row);
+  };
+  for (const [team, plan] of Object.entries(fixture.teamleaderPlans)) {
+    for (const task of plan.tasks) checkpoints.set(`${team}/${task.id}`, insertCheckpoint(fixture.projectId, fixture.contractId, team, task));
+  }
+  const frontendBase = fixture.teamleaderPlans['frontend.lead'].tasks[0];
+  insertCheckpoint(fixture.projectId, fixture.oldContractId, 'frontend.lead', frontendBase);
+  const other = await projectionFixture();
+  insertCheckpoint(other.projectId, other.contractId, 'frontend.lead', frontendBase);
+  const before = snapshotDbState();
+  const impact = await requestWithBody(`/api/projects/${fixture.projectId}/requirements/${fixture.existingRequirementId}/impact`,
+    { authed: true, userId: ownerUserId });
+  const preview = await requestWithBody(`/api/projects/${fixture.projectId}/rebuild-preview`,
+    { authed: true, userId: ownerUserId, method: 'POST', body: { changedRequirementKeys: ['REQ-1'] } });
+  assert.equal(impact.status, 200);
+  assert.equal(preview.status, 200);
+  assert.deepEqual({ impact: impact.body.impactedCheckpoints, preview: preview.body.invalidatedCheckpointIds }, {
+    impact: [{ checkpointId: checkpoints.get('frontend.lead/base') }],
+    preview: [checkpoints.get('frontend.lead/base'), checkpoints.get('frontend.lead/detail')].sort()
+  });
+  assert.deepEqual(preview.body.tasksToReRun,
+    projected.tasks.filter(task => task.teamleaderId === 'frontend.lead').map(task => task.id).sort());
+  assert.equal(snapshotDbState(), before, 'impact and preview must preserve every checkpoint and projection row');
+});
+
 await finish();

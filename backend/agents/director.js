@@ -1,7 +1,7 @@
 import { extractAndParseJSON, normalizeDirectorSpec } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const DIRECTOR_SYSTEM_PROMPT = loadAgentPrompt('director');
+export const DIRECTOR_SYSTEM_PROMPT = loadAgentSystemPrompt('director');
 export function buildDirectorPrompt(domain, domainDescription, rootTalimatname) {
     return `Sorumlu Olduğun Domain: ${domain}
 Domain Açıklaması: ${domainDescription}

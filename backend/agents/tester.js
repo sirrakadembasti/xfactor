@@ -2,9 +2,9 @@ import path from 'path';
 import { isBuiltin } from 'node:module';
 import { parse } from '@babel/parser';
 import { extractAndParseJSON, normalizeReviewResult } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const TESTER_SYSTEM_PROMPT = loadAgentPrompt('tester');
+export const TESTER_SYSTEM_PROMPT = loadAgentSystemPrompt('tester');
 
 const AUTH_FUNCTION_NAMES = new Set(['getCurrentUser', 'getUser', 'requireUser']);
 const SECRET_ENV_NAME_RE = /(?:SECRET|TOKEN|PASSWORD|API_KEY)/;

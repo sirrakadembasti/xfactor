@@ -6,7 +6,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { isBuiltin } from 'node:module';
-import { isSafeProjectPath, assertPathInsideRoot, assertSafeExistingParent } from '../security.js';
+import { randomUUID } from 'node:crypto';
+import { isSafeProjectPath } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
 
 // The worker resolves this dist-tag into the artifact lockfile. Keeping the
@@ -264,6 +265,32 @@ export function validateGenerationQuotas(files = []) {
 // Geriye uyum için yeniden dışa aktarılır; burada duplicate implementasyon yok.
 export { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
 
+// Check existing components, including the project root and its ancestors.
+// lstat also detects dangling links, which realpath alone cannot reject safely.
+async function assertGeneratedWriteDestination(target, projectDir) {
+    const root = path.resolve(projectDir);
+    const absolute = path.resolve(target);
+    const relative = path.relative(root, absolute);
+    if (relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+        throw new Error('Generated write destination must be inside its project root.');
+    }
+    let current = absolute;
+    for (;;) {
+        try {
+            const stat = await fs.lstat(current);
+            if (stat.isSymbolicLink()) throw new Error(`Symbolic link or junction in generated write destination: ${current}`);
+            if (current === absolute ? !stat.isFile() : !stat.isDirectory()) {
+                throw new Error(`Invalid generated write destination type: ${current}`);
+            }
+        } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+        }
+        const parent = path.dirname(current);
+        if (parent === current) break;
+        current = parent;
+    }
+}
+
 
 /**
  * Coder tarafından üretilen dosyaları doğrular ve hem ajanın kendi klasörüne
@@ -330,38 +357,43 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = [], allo
         candidates.push({ file, targetPath });
     }
 
-    // Tüm hedefler için üst dizin doğrulaması + oluşturma (aday başına tek akış).
-    // (1) mkdir'DEN ÖNCE: mevcut üst dizin zinciri kök içinde mi? (symlink ile kök dışına
-    //     dizin oluşturulmasını engeller — P0.3 F1). (2) mkdir sonrası: tam üst dizin
-    //     zinciri kök içinde mi? Herhangi biri başarısız olursa yazım başlamadan throw
-    //     edilir; aşağıdaki yazım döngüsü henüz çalışmadığı için kısmi yazma OLMAZ.
-    for (const { targetPath } of candidates) {
-        const parent = path.dirname(targetPath);
-        await assertSafeExistingParent(parent, projectDir);
-        await fs.mkdir(parent, { recursive: true });
-        await assertPathInsideRoot(parent, projectDir);
-    }
+    const destinations = candidates.flatMap(({ file, targetPath }) => [
+        { targetPath, content: file.content },
+        ...(coderDir ? [{ targetPath: path.join(coderDir, file.path.replace(/[\\/]/g, '__')), content: file.content }] : [])
+    ]);
+    // Preflight both source and coder-copy destinations before creating anything.
+    for (const { targetPath } of destinations) await assertGeneratedWriteDestination(targetPath, projectDir);
 
-    // 3. Tüm dosyaları yaz.
-    const writtenFiles = [];
-    for (const { file, targetPath } of candidates) {
-        // Proje kök dizinine yaz (örn: src/App.jsx)
-        await fs.writeFile(targetPath, file.content, 'utf8');
-
-        // Ajanın kendi yerel klasörüne izole kopya yaz (Agent = Klasör ilkesi)
-        if (coderDir) {
-            const agentFileName = file.path.replace(/[\\/]/g, '__');
-            const agentFilePath = path.join(coderDir, agentFileName);
-            await fs.writeFile(agentFilePath, file.content, 'utf8');
+    const staged = [];
+    try {
+        for (const { targetPath, content } of destinations) {
+            await assertGeneratedWriteDestination(targetPath, projectDir);
+            const parent = path.dirname(targetPath);
+            await fs.mkdir(parent, { recursive: true });
+            await assertGeneratedWriteDestination(targetPath, projectDir);
+            const temporaryPath = path.join(parent, `.xfactor-generated-${randomUUID()}.tmp`);
+            const mode = await fs.lstat(targetPath).then(stat => stat.mode & 0o777, error => {
+                if (error.code !== 'ENOENT') throw error;
+                return 0o666;
+            });
+            // Exclusive staging never opens or truncates a pre-existing linked file.
+            const handle = await fs.open(temporaryPath, 'wx', mode);
+            staged.push({ targetPath, temporaryPath });
+            try { await handle.writeFile(content, 'utf8'); }
+            finally { await handle.close(); }
         }
-
-        writtenFiles.push({
-            path: file.path,
-            size: Buffer.byteLength(file.content, 'utf8')
-        });
+        for (const { targetPath } of staged) await assertGeneratedWriteDestination(targetPath, projectDir);
+        for (const { targetPath, temporaryPath } of staged) {
+            await assertGeneratedWriteDestination(targetPath, projectDir);
+            // Rename replaces the directory entry rather than following a leaf link.
+            await fs.rename(temporaryPath, targetPath);
+        }
+    } finally {
+        for (const { temporaryPath } of staged) {
+            await fs.unlink(temporaryPath).catch(error => { if (error.code !== 'ENOENT') throw error; });
+        }
     }
-
-    return writtenFiles;
+    return candidates.map(({ file }) => ({ path: file.path, size: Buffer.byteLength(file.content, 'utf8') }));
 }
 
 export function isAuthRequested(state = {}, plan = {}) {

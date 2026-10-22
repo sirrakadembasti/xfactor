@@ -16,6 +16,7 @@ import { CODER_SYSTEM_PROMPT } from '../agents/coder.js';
 import { REVIEWER_SYSTEM_PROMPT } from '../agents/reviewer.js';
 import { TESTER_SYSTEM_PROMPT } from '../agents/tester.js';
 import { buildManagerChatSystemPrompt } from '../routes/projectRoutes.js';
+import * as agentLoader from '../agents/agentLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +29,20 @@ let failed = 0;
 
 function cleanDoc(content) {
     return content.replace(/^---[\s\S]*?---\s*/, '').trim();
+}
+
+function assertCompleteSystemPrompt(prompt, role) {
+    const constitution = fs.readFileSync(path.join(AGENT_DOCS_DIR, 'ORKESTRASYON-TALIMATNAMESI.md'), 'utf8').trim();
+    const roleDoc = cleanDoc(fs.readFileSync(path.join(AGENT_DOCS_DIR, `${role}.md`), 'utf8'));
+    assert.ok(prompt.includes(constitution), `${role}: entire constitution including its final section must be present`);
+    assert.ok(prompt.includes(roleDoc), `${role}: entire role instructions including output schema must be present`);
+    assert.equal(prompt.split(constitution).length - 1, 1, `${role}: constitution must occur exactly once`);
+    assert.ok(prompt.indexOf(constitution) < prompt.indexOf(roleDoc), `${role}: role specialization must follow constitution`);
+    assert.match(prompt, /Kod.*şema.*doğrulayıcı.*önceliklidir/i);
+    assert.match(prompt, /rol.*çıktı.*şema.*uzmanlaştır/i);
+    assert.equal(prompt, agentLoader.loadAgentSystemPrompt(role), `${role}: registry must use shared composition`);
+    // Legacy loader deliberately remains role-only for explicit role readers.
+    assert.equal(agentLoader.loadAgentPrompt(role), roleDoc);
 }
 
 function check(name, fn) {
@@ -46,13 +61,13 @@ check("1. manager.js -> x-agents/manager.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'manager.md');
     assert.ok(fs.existsSync(docPath), "x-agents/manager.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(MANAGER_SYSTEM_PROMPT.trim(), docContent, "manager.js SYSTEM_PROMPT x-agents/manager.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(MANAGER_SYSTEM_PROMPT, 'manager');
 });
 
 // 1b. manager.js trusted prompt loader contract
 check("1b. manager.js trusted prompt loader contract", () => {
     const managerSrc = fs.readFileSync(path.join(__dirname, '../agents/manager.js'), 'utf8');
-    assert.ok(managerSrc.includes("loadAgentPrompt('manager'"), "manager.js loadAgentPrompt('manager', ...) kullanmalı");
+    assert.ok(managerSrc.includes("loadAgentSystemPrompt('manager'"), "manager.js shared system composition kullanmalı");
 });
 
 // 2. Director Ajanı Denetimi
@@ -60,7 +75,7 @@ check("2. director.js -> x-agents/director.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'director.md');
     assert.ok(fs.existsSync(docPath), "x-agents/director.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(DIRECTOR_SYSTEM_PROMPT.trim(), docContent, "director.js SYSTEM_PROMPT x-agents/director.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(DIRECTOR_SYSTEM_PROMPT, 'director');
 });
 
 // 3. Teamleader Ajanı Denetimi
@@ -68,7 +83,7 @@ check("3. teamleader.js -> x-agents/teamleader.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'teamleader.md');
     assert.ok(fs.existsSync(docPath), "x-agents/teamleader.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(TEAMLEADER_SYSTEM_PROMPT.trim(), docContent, "teamleader.js SYSTEM_PROMPT x-agents/teamleader.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(TEAMLEADER_SYSTEM_PROMPT, 'teamleader');
 });
 
 // 4. Coder Ajanı Denetimi
@@ -76,7 +91,7 @@ check("4. coder.js -> x-agents/coder.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'coder.md');
     assert.ok(fs.existsSync(docPath), "x-agents/coder.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(CODER_SYSTEM_PROMPT.trim(), docContent, "coder.js SYSTEM_PROMPT x-agents/coder.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(CODER_SYSTEM_PROMPT, 'coder');
 });
 
 // 5. Reviewer Ajanı Denetimi
@@ -84,7 +99,7 @@ check("5. reviewer.js -> x-agents/reviewer.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'reviewer.md');
     assert.ok(fs.existsSync(docPath), "x-agents/reviewer.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(REVIEWER_SYSTEM_PROMPT.trim(), docContent, "reviewer.js SYSTEM_PROMPT x-agents/reviewer.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(REVIEWER_SYSTEM_PROMPT, 'reviewer');
 });
 
 // 6. Tester Ajanı Denetimi
@@ -92,13 +107,17 @@ check("6. tester.js -> x-agents/tester.md eşleşmesi", () => {
     const docPath = path.join(AGENT_DOCS_DIR, 'tester.md');
     assert.ok(fs.existsSync(docPath), "x-agents/tester.md dosyası mevcut olmalı");
     const docContent = cleanDoc(fs.readFileSync(docPath, 'utf8'));
-    assert.strictEqual(TESTER_SYSTEM_PROMPT.trim(), docContent, "tester.js SYSTEM_PROMPT x-agents/tester.md ile birebir eşleşmeli");
+    assertCompleteSystemPrompt(TESTER_SYSTEM_PROMPT, 'tester');
 });
 
 // 7. projectRoutes.js -> ORKESTRASYON-TALIMATNAMESI.md ve manager.md Denetimi
 check("7. projectRoutes.js -> x-agents/ORKESTRASYON-TALIMATNAMESI.md ve manager.md yüklemesi", () => {
     const prompt = buildManagerChatSystemPrompt();
-    assert.ok(prompt.length > 50, "buildManagerChatSystemPrompt manager.md içeriğini barındırmalı");
+    const constitution = fs.readFileSync(path.join(AGENT_DOCS_DIR, 'ORKESTRASYON-TALIMATNAMESI.md'), 'utf8').trim();
+    const roleDoc = cleanDoc(fs.readFileSync(path.join(AGENT_DOCS_DIR, 'manager.md'), 'utf8'));
+    assert.ok(prompt.includes(constitution), 'Manager chat must include the entire constitution');
+    assert.ok(prompt.includes(roleDoc), 'Manager chat must include the entire Manager role');
+    assert.equal(prompt.split(constitution).length - 1, 1, 'Manager chat must include constitution exactly once');
 });
 
 // 8. Requirement-Aware Prompt Instructions Check

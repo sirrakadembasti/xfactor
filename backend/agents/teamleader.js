@@ -1,7 +1,7 @@
 import { extractAndParseJSON, normalizeTeamleaderTasks } from './schemas.js';
-import { loadAgentPrompt } from './agentLoader.js';
+import { loadAgentSystemPrompt } from './agentLoader.js';
 
-export const TEAMLEADER_SYSTEM_PROMPT = loadAgentPrompt('teamleader');
+export const TEAMLEADER_SYSTEM_PROMPT = loadAgentSystemPrompt('teamleader');
 export function buildTeamleaderPrompt(teamleaderName, mission, altTalimatname, requirements = [], planningContext = null) {
     const reqList = Array.isArray(requirements) && requirements.length > 0
         ? `\nOnaylı Sözleşme Gereksinimleri (Her görevin "requirementIds" dizisinde YALNIZCA bu listedeki ID'leri kullanabilirsin):\n` +

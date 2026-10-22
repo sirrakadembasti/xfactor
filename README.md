@@ -32,7 +32,7 @@
 
 ## 🚀 Hızlı Başlangıç
 
-Platform ajanlarının dosyaları kökteki **`x-agents/`** dizinindedir: altı rol talimatı, orkestrasyon anayasası ve `GOREV/DURUM/TODO/RAPOR/ALT-TALIMATNAME` şablonları. Backend yalnız bu sabit dizindeki izinli dosyaları sistem istemi olarak okur; `docs/` veya üretilen proje belgeleri bu talimatların kaynağı değildir. Eksik/geçersiz talimat üretimi engeller.
+Platform ajanlarının dosyaları kökteki **`x-agents/`** dizinindedir. Her rolün sistem istemi ortak yükleyiciyle tam orkestrasyon anayasası ve tam rol talimatından oluşur; kod/şema doğrulayıcıları önceliklidir, rolün çıktı şeması genel anlatımı uzmanlaştırır. `GOREV/DURUM/TODO/RAPOR/ALT-TALIMATNAME` şablonları insan için biçim referansıdır; backend bunları okumaz, gerçek kayıtları merkezi protokol kodu üretir. `docs/` veya üretilen proje belgeleri sistem talimatı kaynağı değildir. Eksik/geçersiz rol veya anayasa üretimi engeller.
 
 `docs/` geliştirme ve işletim belgelerine ayrılmıştır. Üretilen uygulamanın README ve belgeleri `projects/<proje-id>/` altında; o üretimin gerçek görev/durum kayıtları da aynı projenin `manager/` ve alt ajan klasörlerinde tutulur. `x-agents` altındaki durum dosyaları şablondur. Proje kökü veya proje klasörü `x-agents` ile çakışırsa backend bunu reddeder. Ayrıntılar: [ajan dosyaları kılavuzu](x-agents/README.md).
 

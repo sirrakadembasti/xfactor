@@ -6,9 +6,9 @@ Bu klasör XFactor platformunun güvenilen talimat kaynağıdır. Üretilen uygu
 |---|---|
 | `manager.md`, `director.md`, `teamleader.md`, `coder.md`, `reviewer.md`, `tester.md` | Altı platform ajanının sistem talimatları |
 | `ORKESTRASYON-TALIMATNAMESI.md` | Platform orkestrasyon anayasası |
-| `ALT-TALIMATNAME.md`, `GOREV.md`, `DURUM.md`, `TODO.md`, `RAPOR.md` | Proje içindeki protokol kayıtlarının biçim şablonları; canlı durum kayıtları değildir |
+| `ALT-TALIMATNAME.md`, `GOREV.md`, `DURUM.md`, `TODO.md`, `RAPOR.md` | İnsan için protokol biçim referansları; backend bunları okuyup genişletmez, canlı kayıt değildir |
 
-Backend sabit `x-agents` kökünden yalnız izinli dosya adlarını okur. `docs/` ve proje belgelerine veya kod içi yedek istemlere dönüş yapmaz. Eksik/kısa talimatlar, bilinmeyen roller, dosya/dizin bağlantıları ve büyük/geçersiz dosyalar reddedilir. Rol talimatları modül yüklenirken alınır; değiştirildikten sonra backend yeniden başlatılmalıdır. Sohbet anayasası ve Manager talimatı sohbet istemi hazırlanırken tekrar okunur.
+Backend sabit `x-agents` kökünden yalnız izinli dosya adlarını okur. Ortak `loadAgentSystemPrompt(role)` anayasanın tamamını ve frontmatter dışında rolün tamamını birleştirir; üretim rolleri bu bileşimi modül yüklenirken önbelleğe alır. Değişiklikten sonra backend yeniden başlatılmalıdır. Manager sohbeti aynı bileşimi istem hazırlanırken yeniden okur; anayasa karakter sınırıyla kesilmez. Kod/şema doğrulayıcıları önceliklidir, rolün çıktı şeması ve aşama kapsamı genel anlatımı uzmanlaştırır. `docs/`, proje belgeleri veya kod içi yedek isteme dönüş yoktur. Eksik/kısa talimatlar, bilinmeyen roller, dosya/dizin bağlantıları ve büyük/geçersiz dosyalar reddedilir. Gerçek proje Markdown kayıtlarını `backend/engine/fileProtocol.js` ve orkestratör üretir; beş referans şablonunu değiştirmek çalışma zamanı biçimini değiştirmez.
 
 `docs/` geliştirme/işletim belgeleri içindir. Üretilen uygulamanın README ve belgeleri `projects/<id>/` altında; o projeye ait canlı görev/durum/rapor kayıtları aynı projenin `manager/` ve alt ajan klasörlerinde kalır. Şablonların taşınması mevcut projelerin disk protokolünü veya devam ettirme kayıtlarını taşımaz.
 

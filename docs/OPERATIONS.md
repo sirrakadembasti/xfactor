@@ -4,6 +4,36 @@ Single-node deployment boundary, production prerequisites, and the scaling
 contract. Everything below describes observed runtime behavior — see the
 referenced source files for the authoritative implementation.
 
+## Agent instruction and recovery boundaries (2026-10-22)
+
+`agents/agentLoader.js:loadAgentSystemPrompt` composes the complete trusted
+`x-agents/ORKESTRASYON-TALIMATNAMESI.md` and role document. Production roles cache
+this at module import; Manager chat rereads it. Policy edits therefore require
+a planned backend restart to refresh all production roles. Protocol templates
+are human references; `fileProtocol.js` serializes live records.
+
+Manager project reports, titles, summaries, logs and errors are bounded,
+redacted user-message data, never system policy. Linked report paths are
+rejected. This is a message-authority boundary, not a guarantee that a model
+cannot be influenced. Code-enforced scope, approval and worker evidence remain
+required.
+
+Resume retains generation checkpoints. Open same-contract static Tester issues
+can trigger repairs only for unambiguous existing allowlisted files, with a
+durable issue/input retry budget recorded before a model call. Unmapped issues,
+unchanged source or exhausted retries stop with a revision request instead of
+silently repeating paid acceptance calls. A patch does not resolve an issue:
+fresh deterministic checks and Tester acceptance are still required, followed
+by the independent runtime/ZIP gates. Old-contract issues do not authorize new
+repairs.
+
+Validated Teamleader plans project task/requirement links transactionally into
+the current approved contract's impact index under its workflow lease. This
+projection is not runtime evidence, does not rewrite checkpoints or historical
+contracts, and is refreshed during normal planning/resume rather than through
+a production-wide backfill. See the [architecture audit](audits/x-agents-architecture-2026-10-22.md)
+for the baseline evidence and verification results.
+
 ## 1. Deployment boundary: Split architecture (Web & Execution Worker)
 
 The platform separates orchestration from generated-code execution:

@@ -11,7 +11,7 @@ process.env.DB_PATH = isolated.dbPath;
 const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 
-const { uncheckTodoItem, reconcileTaskCache, readDurum, isTaskCheckpointValid, setupRootProtocol } = await import('../engine/fileProtocol.js');
+const { checkTodoItem, uncheckTodoItem, reconcileTaskCache, readDurum, isTaskCheckpointValid, setupRootProtocol } = await import('../engine/fileProtocol.js');
 const { saveCheckpoint } = await import('../engine/checkpointRepository.js');
 const { computeTaskSpecHash, computeInputHash, computeOutputHash } = await import('../engine/checkpointHelper.js');
 
@@ -156,6 +156,46 @@ try {
         db.prepare("UPDATE task_checkpoints SET invalidation_reason = 'manual rejection' WHERE project_id = 'proj-acceptance-retry'").run();
         assert.strictEqual(await isTaskCheckpointValid(workspace, 'proj-acceptance-retry', task, { planHash: 'hash-retry', allowAcceptanceRetry: true }), false);
         db.prepare("DELETE FROM projects WHERE id = 'proj-acceptance-retry'").run();
+    });
+
+    await runAsyncTest('5. parallel task completions preserve all TODO checkboxes', async () => {
+        const workspace = await createTempWorkspace();
+        const todoPath = path.join(workspace, 'TODO.md');
+        const taskIds = Array.from({ length: 12 }, (_, index) => `task-${String(index).padStart(3, '0')}`);
+        await fs.writeFile(todoPath, taskIds.map(id => `- [ ] ${id}`).join('\n'));
+        await Promise.all(taskIds.map(id => checkTodoItem(todoPath, id)));
+        const completed = await fs.readFile(todoPath, 'utf8');
+        for (const id of taskIds) assert.ok(completed.includes(`- [x] ${id}`), `Lost completion for ${id}`);
+        await Promise.all(taskIds.map(id => uncheckTodoItem(todoPath, id)));
+        const reset = await fs.readFile(todoPath, 'utf8');
+        for (const id of taskIds) assert.ok(reset.includes(`- [ ] ${id}`), `Lost reset for ${id}`);
+    });
+
+    await runAsyncTest('6. queued check and uncheck keep invocation order and recover after a read failure', async () => {
+        const workspace = await createTempWorkspace();
+        const todoPath = path.join(workspace, 'TODO.md');
+        await fs.writeFile(todoPath, '- [ ] alpha\n- [ ] beta\n');
+        const originalReadFile = fs.readFile;
+        let failNextRead = true;
+        fs.readFile = async (file, ...args) => {
+            if (path.resolve(String(file)) === todoPath && failNextRead) {
+                failNextRead = false;
+                throw Object.assign(new Error('Injected TODO read failure'), { code: 'EIO' });
+            }
+            return originalReadFile(file, ...args);
+        };
+        try {
+            // The protocol logs this best-effort failure; it must not poison later writes.
+            await Promise.all([
+                checkTodoItem(todoPath, 'alpha'),
+                checkTodoItem(todoPath, 'alpha'),
+                uncheckTodoItem(todoPath, 'alpha'),
+                checkTodoItem(todoPath, 'beta')
+            ]);
+        } finally { fs.readFile = originalReadFile; }
+        assert.strictEqual(await fs.readFile(todoPath, 'utf8'), '- [ ] alpha\n- [x] beta\n');
+        await checkTodoItem(todoPath, 'alpha');
+        assert.strictEqual(await fs.readFile(todoPath, 'utf8'), '- [x] alpha\n- [x] beta\n');
     });
 
     finish();

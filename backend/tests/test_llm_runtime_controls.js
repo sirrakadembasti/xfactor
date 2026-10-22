@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateLLMResponse } from '../llm.js';
+import { loadAgentSystemPrompt } from '../agents/agentLoader.js';
 
 const messages = [{ role: 'user', content: 'Hello' }];
 const defaults = { apiKey: 'fixture-key', model: 'fixture-model', baseURL: 'https://provider.example/v1', useManagedProfile: false };
@@ -10,6 +11,38 @@ async function withFetch(mock, operation) {
   try { return await operation(); } finally { globalThis.fetch = original; }
 }
 const ok = () => new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }], candidates: [{ content: { parts: [{ text: 'ok' }] } }], content: [{ type: 'text', text: 'ok' }] }), { status: 200 });
+
+test('composed Coder mock returns files despite Reviewer mentions in shared policy', async () => {
+  await withFetch(() => { throw new Error('mock must not contact a provider'); }, async () => {
+    const result = JSON.parse(await generateLLMResponse([
+      { role: 'system', content: loadAgentSystemPrompt('coder') },
+      { role: 'user', content: 'Reviewer is a separate role.\nHedef Dosyalar: ["src/actual.ts"]' }
+    ], { apiKey: '', useManagedProfile: false, allowMockFallback: true }));
+    assert.deepEqual(result.files?.map(file => file.path), ['src/actual.ts']);
+    assert.equal(Object.hasOwn(result, 'approved'), false);
+  });
+});
+
+test('mock role comes from trusted system specialization for all six roles', async () => {
+  for (const role of ['manager', 'director', 'teamleader', 'coder', 'reviewer', 'tester']) {
+    const response = await generateLLMResponse([
+      { role: 'system', content: loadAgentSystemPrompt(role) },
+      { role: 'user', content: 'ROL TALİMATI (reviewer; tam metin):\nCoder reviewer\nHedef Dosyalar: ["src/task.ts"]' }
+    ], { apiKey: '', useManagedProfile: false, allowMockFallback: true });
+    if (role === 'coder') assert.ok(Array.isArray(JSON.parse(response).files));
+    else if (role === 'reviewer') assert.equal(JSON.parse(response).approved, true);
+    else assert.match(response, /^\(Simüle Edilen LLM Yanıtı:/, `${role} must not receive Reviewer/Coder output`);
+  }
+  const generic = await generateLLMResponse([
+    { role: 'system', content: 'Respond to the user.' },
+    { role: 'user', content: 'ROL TALİMATI (reviewer; tam metin):\nYou are reviewer and coder' }
+  ], { apiKey: '', useManagedProfile: false, allowMockFallback: true });
+  assert.match(generic, /^\(Simüle Edilen LLM Yanıtı:/);
+  const legacy = await generateLLMResponse([
+    { role: 'system', content: 'You are a Reviewer.' }, { role: 'user', content: 'Coder task' }
+  ], { apiKey: '', useManagedProfile: false, allowMockFallback: true });
+  assert.equal(JSON.parse(legacy).approved, true);
+});
 
 test('Manager rejects partial responses for every transport while production retains its policy', async () => {
   await withFetch(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'length', message: { content: 'partial' } }], candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'partial' }] } }], stop_reason: 'max_tokens', content: [{ type: 'text', text: 'partial' }] }), { status: 200 }), async () => {

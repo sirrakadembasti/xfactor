@@ -645,7 +645,7 @@ export function validateDirectorSpec(spec) {
 /**
  * Teamleader Görev Ayrıştırma (Task Decomposition) Şeması Doğrulaması ve Normalizasyon
  */
-export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
+export function normalizeTeamleaderTasks(taskList, approvedRequirements = [], { allowLegacyFallback = false } = {}) {
     const rawInput = Array.isArray(taskList) ? { tasks: taskList } : taskList;
     if (!rawInput || typeof rawInput !== 'object') {
         taskList = { tasks: [] };
@@ -656,18 +656,17 @@ export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
     const approvedList = (Array.isArray(approvedRequirements) ? approvedRequirements : [])
         .map(r => typeof r === 'string' ? r : r?.id)
         .filter(id => typeof id === 'string' && id.length > 0);
-    const approvedIds = new Set(approvedList);
-
+    const useLegacyDefaults = allowLegacyFallback && approvedList.length === 0;
     let rawTasks = taskList.tasks || taskList.taskList || taskList.subtasks || taskList.items || [];
     if (!Array.isArray(rawTasks) || rawTasks.length === 0) {
-        rawTasks = [{
+        rawTasks = useLegacyDefaults ? [{
             id: 'task-1-core-setup',
             title: 'Temel Modül ve Bileşen Kurulumu',
             description: 'Gereksinimlere uygun temel bileşenleri ve modelleri oluştur.',
             dependencies: [],
             targetFiles: ['src/App.jsx'],
             requirementIds: [approvedList[0] || 'REQ-1']
-        }];
+        }] : [];
     }
     taskList.tasks = rawTasks.map((t, idx) => {
         if (typeof t === 'string') {
@@ -678,7 +677,7 @@ export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
                 description: t,
                 dependencies: idx > 0 ? [normalizeGeneratedIdentifier(`task-${idx}`)] : [],
                 targetFiles: [],
-                requirementIds: [approvedList[idx % (approvedList.length || 1)] || `REQ-${idx + 1}`]
+                requirementIds: useLegacyDefaults ? [`REQ-${idx + 1}`] : []
             };
         }
         const id = normalizeGeneratedIdentifier(t.id || `task-${idx + 1}`);
@@ -690,15 +689,9 @@ export function normalizeTeamleaderTasks(taskList, approvedRequirements = []) {
             ? t.requirementIds
             : (Array.isArray(t.requirements) ? t.requirements : (t.requirementId ? [t.requirementId] : []));
 
-        // Eğer onaylı sözleşme gereksinimleri varsa, listede olmayan uydurulmuş ID'leri onaylı sözleşmeye güvenle bağla
-        if (approvedIds.size > 0) {
-            const validReqs = reqIds.filter(rid => approvedIds.has(rid));
-            if (validReqs.length > 0) {
-                reqIds = validReqs;
-            } else {
-                reqIds = [approvedList[idx % approvedList.length]];
-            }
-        } else if (reqIds.length === 0) {
+        // Preserve invalid/missing approved-scope assignments so the validators
+        // can reject them; normalization cannot authorize a requirement link.
+        if (useLegacyDefaults && reqIds.length === 0) {
             reqIds = [`REQ-${idx + 1}`];
         }
 
@@ -811,7 +804,7 @@ export const validateTesterReport = validateReviewResult;
 /**
  * Görev bağımlılıklarını (DAG) döngüsel bağımlılık, eksik referans ve self-loop'lara karşı doğrular.
  */
-export function validateTaskDependencies(tasks = []) {
+export function validateTaskDependencies(tasks = [], { platform = process.platform } = {}) {
     const errors = [];
     if (!Array.isArray(tasks) || tasks.length === 0) {
         return { valid: false, errors: ['Görev listesi boş olamaz.'] };
@@ -894,26 +887,37 @@ export function validateTaskDependencies(tasks = []) {
         errors.push('Döngüsel bağımlılık (Cycle) tespit edildi. Görevler tamamlanamaz.');
     }
 
-    // Paralel dalga dosya sahipliği ve çakışma (Collision) kontrolü
+    // Shared files are safe only when every owner pair is ordered by the DAG,
+    // including transitive dependencies. Compare filesystem identities rather
+    // than case-sensitive display paths on Windows.
+    const dependsOn = (taskId, otherId) => {
+        const pending = [...(dependencyIdsByTaskId.get(taskId) || [])];
+        const seen = new Set();
+        while (pending.length) {
+            const dependencyId = pending.pop();
+            if (dependencyId === otherId) return true;
+            if (seen.has(dependencyId)) continue;
+            seen.add(dependencyId);
+            pending.push(...(dependencyIdsByTaskId.get(dependencyId) || []));
+        }
+        return false;
+    };
     const fileOwnerMap = new Map();
     for (const t of tasks) {
         if (!t?.id) continue;
         const targets = Array.isArray(t.targetFiles) ? t.targetFiles : [];
         for (const file of targets) {
             if (typeof file !== 'string') continue;
-            const normFile = path.normalize(file).replace(/\\/g, '/');
-            if (fileOwnerMap.has(normFile)) {
-                const prevTask = fileOwnerMap.get(normFile);
-                // Eğer bu görevler birbirine bağımlı değilse (paralel çalışabilirlerse) çakışma hatası ver
-                const prevDeps = dependencyIdsByTaskId.get(t.id) || [];
-                const otherTask = tasks.find(ot => ot.id === prevTask);
-                const otherDeps = dependencyIdsByTaskId.get(prevTask) || [];
-                if (!prevDeps.includes(prevTask) && !otherDeps.includes(t.id)) {
+            const normFile = (platform === 'win32' ? path.win32 : path.posix).normalize(file).replace(/\\/g, '/');
+            const fileKey = platform === 'win32' ? normFile.toLowerCase() : normFile;
+            const owners = fileOwnerMap.get(fileKey) || [];
+            for (const prevTask of owners) {
+                if (prevTask !== t.id && !dependsOn(t.id, prevTask) && !dependsOn(prevTask, t.id)) {
                     errors.push(`Bağımsız görevler arasında dosya sahipliği çakışması: "${normFile}" dosyası hem "${prevTask}" hem de "${t.id}" tarafından hedefleniyor.`);
                 }
-            } else {
-                fileOwnerMap.set(normFile, t.id);
             }
+            if (!owners.includes(t.id)) owners.push(t.id);
+            fileOwnerMap.set(fileKey, owners);
         }
     }
 
