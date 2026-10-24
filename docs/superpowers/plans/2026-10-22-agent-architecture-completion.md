@@ -84,7 +84,7 @@ Files: workflow messages, frontend quality/chat views where relevant, `x-agents/
 - [x] Publish current architecture/diagram, full requirement closure matrix, proven bugs versus risks versus design choices, residual operating constraints and deployment checklist.
 - [x] Independent whole-branch review, fix material findings, final tests and diff checks.
 - [x] Full-suite integration follow-up: update the migration-version assertion for additive migration 17; remove redundant finalization of already-finalized BLOCKED static checks without weakening immutable evidence; diagnose the backend-suite and Chromium launch timeouts before accepting full verification.
-- [ ] Commit task-owned files on the approved branch; deliver commit/test evidence for user review. Do not merge/deploy.
+- [x] Commit task-owned files on the approved branch; deliver commit/test evidence for user review. Do not merge/deploy.
 
 ## Progress
 
@@ -93,8 +93,8 @@ Files: workflow messages, frontend quality/chat views where relevant, `x-agents/
 - Task 4: protocol I/O security and nested recovery verified; both independent review findings corrected with meaningful RED/GREEN, scoped re-review PASS. Final four-suite run includes 16 protocol checks and 15 symlink checks with zero skips.
 - Task 3: qualified identity/migration/impact/resume verified; nine-suite focused batch and three-suite exact-version rerun passed. Both subsequent review findings fixed; three covering suites passed (9.74s), independent scoped re-review PASS.
 - Task 5: 32 focused tests passed; independent reviewer reran 32/32 and proved two successive same-semantic/new-source repairs through canonical acceptance. Spec/quality PASS within the exact TypeScript product-repair scope; infrastructure/ambiguous failures stop for revision. One nonblocking infrastructure-vs-ambiguous label finding remains recorded.
-- Task 6 panel: commit `05580db`, independent review PASS; full frontend 120 tests/13 files and build passed on 23 October. Current inventory, role/state/trust coverage and source anchors are complete; final branch verdict remains pending.
-- Task 7 retry bound: commit `7c4f864`, two focused suites and independent review PASS. Full backend148/148, worker155/155, native3/3 and graph checks completed; final review/commit delivery remains pending.
+- Task 6 panel: commit `05580db`, independent review PASS; full frontend 120 tests/13 files and build passed on 23 October. Current inventory, role/state/trust coverage and source anchors are complete; final branch spec/quality PASS.
+- Task 7 retry bound: commit `7c4f864`, two focused suites and independent review PASS. Full backend148/148, worker155/155, native3/3 and graph checks completed; final review PASS and main completion commit `5c08264` recorded.
 - 24 October: worker unit 155/155, zero skips, passed. First full backend144/147 exposed the migration assertion, static check double-finalization and a non-reproduced timeout; the corrected final148/148 passed. Native readiness initially timed out; unchanged-limit serial integration3/3 passed. Final review found two additional reconciliation gaps; both fixes passed independent four-suite rereview.
 
-- Final verification: backend148/148 suites (595.20s), worker155/155 zero skips, frontend120/120+build unchanged, native3/3 zero skips (JS fixture explicitly skips TypeScript gate), Docker P8.3/P8.4 unavailable skips. Graph2978nodes/7687links + endpoint/curation/Chromium views verified. Independent final spec/quality PASS; scoped commits remain the delivery gate.
+- Final verification: backend148/148 suites (595.20s), worker155/155 zero skips, frontend120/120+build unchanged, native3/3 zero skips (JS fixture explicitly skips TypeScript gate), Docker P8.3/P8.4 unavailable skips. Graph2978nodes/7687links + endpoint/curation/Chromium views verified. Independent final spec/quality PASS; main completion commit `5c08264`. Branch retained for user review; no merge/push/deploy/restart. Only the user's unstaged report deletion remains outside delivery.
