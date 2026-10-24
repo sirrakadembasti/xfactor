@@ -62,6 +62,8 @@ flowchart TD
 
 Domainler ve takımlar sırayla yürütülür; yalnız aynı takımın bağımsız DAG görevleri en fazla ikili çalışır. Her LLM rolü tam ortak anayasa ve kendi rol talimatını alır. Dosyaları backend yazar; model onayı çalışma kanıtı değildir. Worker yerel profilde ayrı süreç ve iş dizini kullanır; OS izolasyonu Docker profilinden ayrıdır.
 
+24 Ekim 2026 güncellemesinin gerçek çağrı zinciri, belge okuyucuları, giderilen hataları ve test sınırları [mimari kapanış kaydında](docs/audits/x-agents-completion-2026-10-22.md) ve [güncel talimat bağlantı envanterinde](docs/audits/x-agents-current-inventory-2026-10-22.md) bulunur.
+
 ---
 
 ## 2. Sistem Gereksinimleri ve İlk Kurulum
@@ -264,7 +266,17 @@ Log ekranı ve DAG, veritabanındaki en yeni 500 olay ile canlı WebSocket olayl
 
 Yeni bir Reviewer onayından sonra aynı dosyalar tekrar üretilse bile checkpoint kaydı yenilenebilir. Kalıcı kayıt oluşmadan görev tamamlandı gösterilmez. Checkpoint okuma/yazma hatasında süreç durur; veritabanı veya disk sorunu giderildikten sonra **Devam Ettir** kullanılmalıdır. Depo erişim hatası otomatik olarak baştan üretime dönüşmez. Duraklatma anında devam eden ve checkpoint'i henüz kaydedilmemiş iş için tekrar çalışma gerekebilir; tüm token tüketiminin sıfırlanacağı garantisi verilmez.
 
-Tüm üretim görevleri tamamlandıktan sonra motor `generationCompletion` aşama kaydını oluşturur. **Devam Ettir**, kayıttaki sözleşme kimliği, sözleşme SHA-256 özeti ve plan SHA-256 özeti güncel onayla eşleşirse tamamlanan Coder/DAG üretimini atlar. Mevcut kaynak düzeltmeleri korunur; statik denetim, Tester incelemesi, bağımlılık hazırlığı ve gerçek worker kontrolleri yeniden yürütülerek yeni bir ZIP oluşturulur. Aşama kaydı çalışma zamanı doğrulaması yerine geçmez; eski kalite sonuçları başarı kanıtı olarak taşınmaz. Plan veya sözleşme değiştiğinde normal görev üretimine dönülür. Üretim tamamlanmadan önceki dosya değişiklikleri ise yukarıdaki checkpoint kurallarına tabidir.
+Tüm üretim görevleri tamamlandıktan sonra motor `generationCompletion` aşama kaydını oluşturur. **Devam Ettir**, kayıttaki sözleşme kimliği, sözleşme SHA-256 özeti ve plan SHA-256 özeti güncel onayla eşleşirse tamamlanan Coder/DAG üretimini atlar. Mevcut kaynak düzeltmeleri korunur; genel devam yolunda statik denetim, Tester incelemesi, bağımlılık hazırlığı ve gerçek worker kontrolleri yeni ZIP için yürütülür. Aşağıdaki worker onarım yolunda kaynağa bağlı, tamamlandığı kesin olarak kaydedilmiş inceleme/worker sonuçları tekrar çağrı yapılmadan kurtarılabilir. Aşama kaydı çalışma zamanı doğrulaması yerine geçmez; eski kalite sonuçları yeni kaynak için başarı kanıtı olarak taşınmaz. Plan veya sözleşme değiştiğinde normal görev üretimine dönülür. Üretim tamamlanmadan önceki dosya değişiklikleri ise yukarıdaki checkpoint kurallarına tabidir.
+
+#### Worker reddinden sonra onarım veya revizyon
+
+Kalite Paneli'nde başarısız koşunun nedenini ve kaydedilmiş kontrol logunu inceleyin. **Devam Ettir**, yalnız normal tamamlanmış derleyicinin tam TypeScript ürün bulgularını, reddedilen kaynakla eşleşen ve tek sahibi belli olan dosya için otomatik onarıma yönlendirir. Coder yalnız o dosyayı değiştirebilir; ardından taze kaynak denetimi, Reviewer ve Tester kabulü ile yeni bağımsız worker kanıtı gerekir. Patch'in yazılması veya modelin “başarılı” demesi indirme yetkisi vermez.
+
+Onarım çağrıları başlamadan kalıcı olarak rezerve edilir. Dosya sahibi/hedef başına en fazla iki değişen girdi denemesi vardır; aynı kaynakta tüketilmiş veya sonucu belirsiz çağrı yeniden ücretli denemeye çevrilmez. Kaynakla bağlı başarılı incelemeler ve tamamlanmış yeni worker kanıtı kaydedilmişse kurtarma bunları yeniden çağrı yapmadan kullanabilir.
+
+Altyapı/bağlantı hatası, zaman aşımı, eksik veya çakışan sahiplik, dışarıdan kaynak değişikliği ya da tükenmiş bütçe **Manager revizyonu gerektirir**. Hata sürerken tekrar tekrar Resume kullanmak yerine kaydedilmiş nedeni Manager'a iletip plan/sözleşme revizyonunu inceleyin ve onaylayın. Onarım geçmişini veya başarısız kanıtı silerek sınırı aşmaya çalışmayın.
+
+Kurtarılan görevler sözleşme/domain/takım/görev kimliğiyle ayrılır; iki takımın `task-1` kaydı aynı iş sayılmaz. Metadata okumaları symlink/junction, proje dışı yol ve dosya başına 2 MiB sınırıyla korunur. Eski ve yeni checkpoint anahtarının çakışması `CHECKPOINT_IDENTITY_CONFLICT` üretirse geçmiş kanıtı silmek yerine yeni onaylı sözleşme revizyonuyla ilerleyin.
 
 Yalnız tarayıcı kabul adımlarını değiştirmek istiyorsanız bunu Manager'a açıkça belirtin. Alanla sınırlı revizyon, onaylı sözleşmeye bağlı olarak yalnız `browser.roleJourneys` alanını günceller; diğer gereksinimler ve rol izinlerini değiştirmez. Eski sözleşmeye dayanan veya başka alanlar içeren güncelleme reddedilir. Yeni taslak tekrar onay bekler. Sohbet mesajları 4000 karakterle sınırlıdır; uzun planı yeniden yapıştırmak yerine değişecek adımları iletin. Geçersiz veya aşırı büyük mesajlar için gösterilen hata LLM bağlantı hatası değildir.
 
