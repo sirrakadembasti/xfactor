@@ -690,6 +690,15 @@ export const MIGRATIONS = [
             CREATE INDEX IF NOT EXISTS idx_artifact_maintenance_phase ON artifact_maintenance(phase);
         `)
     },
+    {
+        version: 17,
+        name: '017_checkpoint_identity_version',
+        up: database => {
+            if (!columnExists(database, 'task_checkpoints', 'task_identity_version')) {
+                database.exec('ALTER TABLE task_checkpoints ADD COLUMN task_identity_version INTEGER NOT NULL DEFAULT 0');
+            }
+        }
+    },
 ];
 export function runMigrations(targetDb = db) {
     targetDb.exec('PRAGMA busy_timeout = 5000;');

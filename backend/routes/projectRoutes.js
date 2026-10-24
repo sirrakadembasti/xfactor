@@ -25,6 +25,7 @@ import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
 import { buildCompletionReport } from '../verification/reportGenerator.js';
 import { listArtifacts } from '../repositories/artifactRepository.js';
+import { workflowCheckpointInventory, projectedCheckpointInventory, uniquelyOwnsLegacy } from '../engine/checkpointIdentity.js';
 
 
 import { authorizeArtifactDownload } from './artifactDownloadAuthorization.js';
@@ -955,24 +956,36 @@ export function createProjectRouter({
         const result = getFailureMetrics(req.params.id, db);
         res.json(result);
     }));
-    function checkpointTaskFilter(taskRows) {
-        const identities = new Map();
-        for (const row of taskRows) {
-            let spec;
-            try { spec = JSON.parse(row.task_spec_json); } catch {}
-            const taskId = typeof spec?.executionTaskId === 'string' && spec.executionTaskId
-                ? spec.executionTaskId : row.id;
-            const specHash = typeof spec?.executionTaskSpecHash === 'string' && /^[a-f0-9]{64}$/.test(spec.executionTaskSpecHash)
-                ? spec.executionTaskSpecHash : null;
-            if (!identities.has(taskId)) identities.set(taskId, new Set());
-            identities.get(taskId).add(specHash);
+    function checkpointTaskFilter(projectId, contractId, taskRows, allTasks) {
+        const inventory = projectedCheckpointInventory(allTasks);
+        // Old unqualified contract_tasks are a complete persisted inventory in
+        // their own right. Modern projections are incremental: only the entire
+        // approved domain/director/plan inventory can establish completeness.
+        const oldProjection = allTasks.every(row => {
+            const spec = JSON.parse(row.task_spec_json);
+            return !spec.executionTaskId && !spec.teamleaderId;
+        });
+        if (oldProjection) inventory.complete = true;
+        else {
+            const record = db.prepare(`SELECT p.workflow_state, pc.contract_json FROM projects p
+                JOIN project_contracts pc ON pc.project_id=p.id WHERE p.id=? AND pc.id=?`).get(projectId, contractId);
+            let workflow = {}, contract = {};
+            try { workflow = JSON.parse(record?.workflow_state || '{}'); contract = JSON.parse(record?.contract_json || '{}'); } catch {}
+            const expected = workflowCheckpointInventory({ contractId, domains: contract.domains,
+                directorSpecs: workflow.directorSpecs, teamleaderPlans: workflow.teamleaderPlans });
+            const projectedById = new Map(inventory.owners.map(owner => [owner.id, owner]));
+            inventory.complete = expected.complete && expected.owners.length === inventory.owners.length
+                && expected.owners.every(owner => projectedById.get(owner.id)?.specHash === owner.specHash);
         }
-        const params = [...identities.keys()];
+        const selected = new Set(taskRows.map(row => row.id));
+        const params = [...new Set(inventory.owners.filter(owner => selected.has(owner.id)).flatMap(owner => [owner.id, owner.localTaskId]))];
         // Keep one IN query even for large DAGs; a predicate per task would hit
         // SQLite's expression-depth limit before the graph's supported bound.
         return { clause: `task_id IN (${params.map(() => '?').join(',')})`, params,
-            matches: row => identities.get(row.task_id)?.has(null)
-                || identities.get(row.task_id)?.has(row.task_spec_hash) };
+            matches: row => row.task_identity_version === 1
+                ? selected.has(row.task_id)
+                : inventory.owners.some(owner => selected.has(owner.id) && owner.localTaskId === row.task_id
+                    && uniquelyOwnsLegacy(inventory, { ...owner, specHash: row.task_spec_hash })) };
     }
     router.get('/:id/requirements/:reqId/impact', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
         const projectId = req.params.id;
@@ -1012,11 +1025,13 @@ export function createProjectRouter({
         for (const fr of fileRows) fileSet.add(fr.path);
         const impactedFiles = Array.from(fileSet).sort().map(p=> ({ path: p }));
         // impacted checkpoints for directly linked tasks
-        const taskFilter = checkpointTaskFilter(taskRows.map(row => ({ id: row.taskId, task_spec_json: row.taskSpecJson })));
+        const allTasks = db.prepare('SELECT id, task_spec_json FROM contract_tasks WHERE contract_id=?').all(contractId);
+        const taskFilter = checkpointTaskFilter(projectId, contractId,
+            taskRows.map(row => ({ id: row.taskId, task_spec_json: row.taskSpecJson })), allTasks);
         let impactedCheckpoints = [];
         if (taskFilter.params.length>0) {
             const cpRows = db.prepare(`
-                SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
+                SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, task_identity_version
                 FROM task_checkpoints
                 WHERE project_id = ? AND contract_id = ? AND status = 'completed' AND (${taskFilter.clause})
             `).all(projectId, contractId, ...taskFilter.params);
@@ -1109,9 +1124,9 @@ export function createProjectRouter({
             invalidatedCheckpointIds = [];
             if (tasksToReRun.length>0) {
                 const impactedIds = new Set(tasksToReRun);
-                const taskFilter = checkpointTaskFilter(allTasks.filter(task => impactedIds.has(task.id)));
+                const taskFilter = checkpointTaskFilter(projectId, contractId, allTasks.filter(task => impactedIds.has(task.id)), allTasks);
                 const cpRows = db.prepare(`
-                    SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version
+                    SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, task_identity_version
                     FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND (${taskFilter.clause})
                 `).all(projectId, contractId, ...taskFilter.params);
                 const idSet = new Set();
@@ -1158,6 +1173,12 @@ export function createProjectRouter({
             lifecycle?.assertGenerationAllowed();
             const state = await readProjectState(id);
             if (!state) return res.status(404).json({ error: "Proje bulunamadı." });
+            const approvedResumeContract = db.prepare(`SELECT id, contract_hash, revision FROM project_contracts
+                WHERE project_id=? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1`).get(id);
+            if (!approvedResumeContract) return res.status(409).json({
+                code: 'WORKFLOW_APPROVAL_REQUIRED',
+                error: 'Devam etmeden önce mimari planı onaylayın. Kayıtlı onaylı sözleşme bulunamadı.'
+            });
             const canResume = state.status === PROJECT_STATUS.PAUSED
                 || state.status === PROJECT_STATUS.IMPLEMENTING
                 || state.status === PROJECT_STATUS.VERIFICATION_FAILED
@@ -1181,6 +1202,14 @@ export function createProjectRouter({
             try {
                 db.exec('BEGIN IMMEDIATE;');
                 transactionOpen = true;
+                const currentContract = db.prepare(`SELECT id, contract_hash, revision FROM project_contracts
+                    WHERE project_id=? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1`).get(id);
+                if (currentContract?.id !== approvedResumeContract.id
+                    || currentContract.contract_hash !== approvedResumeContract.contract_hash
+                    || currentContract.revision !== approvedResumeContract.revision) {
+                    throw Object.assign(new Error('Approved contract changed before resume; refresh and retry.'),
+                        { code: 'WORKFLOW_CONTRACT_CHANGED', status: 409 });
+                }
                 if (state.status === PROJECT_STATUS.VERIFICATION_FAILED
                     || (state.status === PROJECT_STATUS.ARTIFACT_VERIFIED && state.last_error)) {
                     state.status = PROJECT_STATUS.PAUSED;

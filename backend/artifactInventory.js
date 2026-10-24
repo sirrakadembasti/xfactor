@@ -1,10 +1,15 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { ARTIFACT_LIMITS } from './artifactLimits.js';
-const IGNORED_DIRS = new Set([
+export const ARTIFACT_IGNORED_DIRS = new Set([
     'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
     'manager', 'frontend.director', 'backend.director'
 ]);
+export function isExcludedArtifactEntry(name, relativePath) {
+    return /^\.xfactor-generated-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.tmp$/i.test(name)
+        || Boolean(relativePath && ((name.startsWith('.env') && name !== '.env.example')
+            || /\.(?:db|sqlite|sqlite3)(?:-(?:wal|shm|journal))?$/i.test(name)));
+}
 
 export async function collectArtifactFiles(root, options = {}) {
     const maxFiles = options.maxFiles ?? ARTIFACT_LIMITS.maxFiles;
@@ -18,15 +23,13 @@ export async function collectArtifactFiles(root, options = {}) {
     const rootPath = path.resolve(root);
     async function walk(currentPath, relativePath) {
         const entryName = path.basename(currentPath);
-        if (relativePath && ((entryName.startsWith('.env') && entryName !== '.env.example')
-            || /\.(?:db|sqlite|sqlite3)(?:-(?:wal|shm|journal))?$/i.test(entryName))) {
-            return;
-        }
+        // Uncommitted stages may survive process death; never publish their bytes.
+        if (isExcludedArtifactEntry(entryName, relativePath)) return;
         const stats = await fs.lstat(currentPath);
         if (stats.isSymbolicLink()) throw new Error(`Symlink not allowed: ${relativePath || root}`);
         if (stats.isDirectory()) {
             const dirName = path.basename(currentPath);
-            if (IGNORED_DIRS.has(dirName) || (relativePath && IGNORED_DIRS.has(relativePath.split('/')[0]))) {
+            if (ARTIFACT_IGNORED_DIRS.has(dirName) || (relativePath && ARTIFACT_IGNORED_DIRS.has(relativePath.split('/')[0]))) {
                 return;
             }
             const entries = (await fs.readdir(currentPath)).sort();

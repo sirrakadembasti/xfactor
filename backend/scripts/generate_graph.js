@@ -55,7 +55,7 @@ async function extractCodeGraph() {
         { id: 'x-agents/teamleader.md', label: 'x-agents/teamleader.md', desc: 'Teamleader Ajanı atomik görev ve DAG kuralları' },
         { id: 'x-agents/coder.md', label: 'x-agents/coder.md', desc: 'Coder Ajanı bileşen kompozisyonu ve kodlama kuralları' },
         { id: 'x-agents/reviewer.md', label: 'x-agents/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
-        { id: 'x-agents/tester.md', label: 'x-agents/tester.md', desc: 'Tester Ajanı deterministik sentaks ve auto-repair kuralları' },
+        { id: 'x-agents/tester.md', label: 'x-agents/tester.md', desc: 'Tester statik inceleme ve veto talimatları; bağımsız worker çalışma kanıtı üretir' },
         { id: 'docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md', label: '2026-09-16 Orkestrasyon Planı', desc: 'Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı' },
         { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
         { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
@@ -71,7 +71,7 @@ async function extractCodeGraph() {
 
     docs.forEach(d => {
         addNode(d.id, d.label, 'Document', 'docs', d.id, d.desc);
-        if (d.id !== 'x-agents/ORKESTRASYON-TALIMATNAMESI.md') {
+        if (/^x-agents\/(manager|director|teamleader|coder|reviewer|tester)\.md$/.test(d.id)) {
             addLink('x-agents/ORKESTRASYON-TALIMATNAMESI.md', d.id, 'defines');
         }
     });
@@ -92,7 +92,9 @@ async function extractCodeGraph() {
 
     agents.forEach(a => {
         addNode(a.id, a.label, 'AgentModule', 'agents', a.id, a.desc);
-        addLink('backend/agents/index.js', a.id, 'registers');
+        if (/^backend\/agents\/(manager|director|teamleader|coder|reviewer|tester)\.js$/.test(a.id)) {
+            addLink('backend/agents/index.js', a.id, 'registers');
+        }
     });
 
     addLink('backend/agents/agentLoader.js', 'x-agents/ORKESTRASYON-TALIMATNAMESI.md', 'reads');
@@ -116,7 +118,11 @@ async function extractCodeGraph() {
         { id: 'backend/engine/stateMachine.js', label: 'stateMachine.js (Lifecycle & Revisions)', desc: 'Proje durum makinesi, CAS geçişleri ve revizyon kilit yönetimi' },
         { id: 'backend/engine/fileProtocol.js', label: 'fileProtocol.js (Agent=Klasör)', desc: 'projects/<id> altında canlı protokol dosyalarını yöneten motor' },
         { id: 'backend/engine/codeGenerator.js', label: 'codeGenerator.js (Scaffold Guard)', desc: '.env ve framework şablon koruması' },
-        { id: 'backend/engine/selfCorrection.js', label: 'selfCorrection.js (Review Loop)', desc: 'Coder-Reviewer 2 turlu denetim ve veto döngüsü' }
+        { id: 'backend/engine/selfCorrection.js', label: 'selfCorrection.js (Review Loop)', desc: 'İlk Reviewer incelemesi ve en fazla iki Coder düzeltmesi; çalışma kanıtı değildir' },
+        { id: 'backend/engine/protocolIO.js', label: 'protocolIO.js (Protocol Boundary)', desc: 'İç içe protokol dosyaları için bounded okuma, link reddi ve korumalı yazım' },
+        { id: 'backend/engine/checkpointIdentity.js', label: 'checkpointIdentity.js (Scoped Ownership)', desc: 'Sözleşme/domain/takım/görev kimliği ve konservatif eski checkpoint aidiyeti' },
+        { id: 'backend/engine/checkpointRepository.js', label: 'checkpointRepository.js (Durable Evidence)', desc: 'Sürümlü görev aidiyeti, sözleşme ve lease kontrollü checkpoint kalıcılığı' },
+        { id: 'backend/engine/workerRepairs.js', label: 'workerRepairs.js (Bounded Owner Repair)', desc: 'Kalıcı çağrı bütçesi, tekil sahiplik ve kaynak CAS ile worker bulgusu onarımı; taze inceleme ve worker kanıtı gerekir' }
     ];
 
     engine.forEach(e => {
@@ -129,6 +135,10 @@ async function extractCodeGraph() {
     addLink('backend/engine/workflow.js', 'backend/engine/selfCorrection.js', 'runs_review_loop');
     addLink('backend/engine/workflow.js', 'backend/agents/index.js', 'dispatches_agents');
     addLink('backend/engine/workflow.js', 'backend/engine/stateMachine.js', 'guards_states');
+    addLink('backend/engine/fileProtocol.js', 'backend/engine/protocolIO.js', 'guards_protocol_io');
+    addLink('backend/engine/workflow.js', 'backend/engine/checkpointIdentity.js', 'qualifies_task_ownership');
+    addLink('backend/engine/workflow.js', 'backend/engine/checkpointRepository.js', 'persists_reviewed_checkpoints');
+    addLink('backend/engine/workflow.js', 'backend/engine/workerRepairs.js', 'routes_bounded_owner_repairs');
 
     // 4. Server & Backend Services (Group 4: Green)
     const backendServices = [
@@ -140,7 +150,7 @@ async function extractCodeGraph() {
         { id: 'execution/server.js', label: 'execution/server.js (Execution Worker)', desc: 'Ayrık mimari derleme/test çalıştırma worker servisi' },
         { id: 'backend/auth.js', label: 'auth.js (Scrypt & RBAC)', desc: 'Scrypt parola hashleme, timingSafeEqual ve rol erişim kontrolü' },
         { id: 'backend/security.js', label: 'security.js (Security Guard)', desc: 'Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama' },
-        { id: 'backend/llm.js', label: 'llm.js (Multi-Provider AI)', desc: 'Gemini 3.7 Flash, OpenAI ve SDK/REST fallback yönlendirici' },
+        { id: 'backend/llm.js', label: 'llm.js (Multi-Provider AI)', desc: 'Yapılandırılmış sağlayıcı/model adaptörleri ve sınırlı SDK/REST transport yönlendirmesi' },
         { id: 'backend/routes/projectRoutes.js', label: 'routes/projectRoutes.js', desc: 'Proje CRUD, Chat, Onay ve Revizyon uç noktaları' },
         { id: 'backend/routes/authRoutes.js', label: 'routes/authRoutes.js', desc: 'Login ve session yetkilendirme rotaları' },
         { id: 'backend/contracts/projectContract.js', label: 'contracts/projectContract.js', desc: 'Proje sözleşme doğrulama şemaları, gereksinimler ve tip denetimi' },
@@ -148,6 +158,8 @@ async function extractCodeGraph() {
         { id: 'backend/contracts/traceability.js', label: 'contracts/traceability.js', desc: 'Gereksinim, görev ve dosya izlenebilirlik matrisi motoru' },
         { id: 'backend/verification/qualityPolicy.js', label: 'verification/qualityPolicy.js (Quality Gates)', desc: '18 zorunlu kalite kapısı ve fail-closed bağımsız worker doğrulama politikası' },
         { id: 'backend/verification/artifactVerifier.js', label: 'verification/artifactVerifier.js', desc: 'Temiz oda ZIP arşivleme, SHA-256 sağlama ve artefakt doğrulayıcısı' },
+        { id: 'backend/verification/workerFailures.js', label: 'workerFailures.js (Rejection Provenance)', desc: 'Sınırlandırılmış, sırları temizlenmiş worker diagnostic ve kalıcı ret kaydı; belirsiz/altyapı bulguları otomatik onarımı durdurur' },
+        { id: 'backend/verification/verificationCli.js', label: 'verificationCli.js (Canonical Acceptance)', desc: 'Güncel sözleşme/lease altında kanonik worker kanıtı, onarım çözümü ve proje tamamlama geçişi' },
         { id: 'backend/verification/securityVerifier.js', label: 'verification/securityVerifier.js', desc: 'CORS, hardcoded secret, SQL enjeksiyonu ve güvenlik baseline denetleyicisi' },
         { id: 'backend/verification/sandboxRunner.js', label: 'verification/sandboxRunner.js', desc: 'İzole alt süreç yürütücüsü ve sandbox adaptör köprüsü' },
         { id: 'backend/verification/databaseVerifier.js', label: 'verification/databaseVerifier.js', desc: 'Prisma şema varlığı, db push ve veritabanı yazma/okuma kabiliyeti denetleyicisi' },
@@ -167,6 +179,10 @@ async function extractCodeGraph() {
     addLink('backend/routes/projectRoutes.js', 'backend/llm.js', 'calls_ai');
     addLink('backend/engine/workflow.js', 'backend/llm.js', 'calls_ai');
     addLink('backend/engine/workflow.js', 'backend/db.js', 'persists_state');
+    addLink('backend/verification/artifactVerifier.js', 'backend/verification/workerFailures.js', 'records_worker_rejections');
+    addLink('backend/engine/workflow.js', 'backend/verification/workerFailures.js', 'loads_current_rejections');
+    addLink('backend/verification/verificationCli.js', 'backend/engine/workerRepairs.js', 'resolves_with_fresh_evidence');
+    addLink('backend/services/reconciliationService.js', 'backend/engine/protocolIO.js', 'guards_recovery_metadata');
     addLink('backend/server.js', 'backend/auth.js', 'authenticates');
     addLink('backend/server.js', 'backend/security.js', 'secures');
     addLink('backend/routes/projectRoutes.js', 'backend/projectRepository.js', 'persists_projects');

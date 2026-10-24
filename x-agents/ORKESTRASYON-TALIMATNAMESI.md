@@ -22,7 +22,7 @@ Beş protokol şablonu insan için biçim referansıdır; backend bu şablonlar�
        ▼
 [Manager Rolü] ──────► manager/TALIMATNAME.md & manager/TODO.md (Domain Bölünmesi)
        │
-       ▼ Kullanıcı Onayı (pending_approval -> running)
+       ▼ Kullanıcı Onayı (pending_approval -> implementing)
 [Merkezi Orkestratör (workflow.js)]
        │
        ├─► [1. Director Katmanı] ──► <domain>.director/ALT-TALIMATNAME.md & GOREV.md

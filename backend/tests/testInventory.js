@@ -26,6 +26,7 @@ test_e2e_simulation.js
 test_execution_client_poll.js
 test_generation_isolation.js
 test_generation_resume.js
+test_worker_repairs.js
 test_verification_budget.js
 test_frontend_runtime_plan.js
 test_generated_docker_artifact.js
@@ -97,6 +98,7 @@ test_p7_delete_protection.js
 test_p7_files_api.js
 test_p7_readme_generator.js
 test_p7_reconciliation.js
+test_reconciliation_boundary.js
 test_p7_sqlite_durability.js
 test_p8_ci_contract.js
 test_p8_mfa_crypto.js

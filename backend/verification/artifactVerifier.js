@@ -6,8 +6,9 @@ import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { verificationJobDeadline } from './verificationBudget.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
-import { assertWorkflowLease } from '../workflowAttempts.js';
+import { assertVerificationContext, commitVerificationContext } from './verificationContext.js';
 import { db as globalDatabase } from '../db.js';
+import { normalizeWorkerCheckLog, redactObservedEvidence, summarizeWorkerRejection, recordWorkerRejection, recordVerificationBlocker } from './workerFailures.js';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
 import { verifyPlaceholders } from './placeholderVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
@@ -156,11 +157,12 @@ export async function verifyArtifact(
     const updateRunStatus = options.updateRunStatus || loaded.updateRunStatus;
     const createCheck = options.createCheck || loaded.createCheck;
     const linkRequirementToCheck = options.linkRequirementToCheck || loaded.linkRequirementToCheck;
-    const assertLease = () => {
-        if (options.attemptId !== undefined || options.leaseOwner !== undefined) {
-            assertWorkflowLease(options.attemptId, options.leaseOwner, { projectId, database });
-        }
-    };
+    const verificationContext = () => ({
+        projectId, contractId, contractHash: expected.contractHash, revision: expected.revision,
+        attemptId: options.attemptId, leaseOwner: options.leaseOwner,
+        signal: options.signal, deadline: expected.deadline
+    });
+    const assertLease = () => assertVerificationContext(verificationContext(), database);
     const artifact = getArtifact({ projectId, contractId, artifactId });
     if (!artifact) throw new Error(`Artifact ${artifactId} for project ${projectId} not found.`);
 
@@ -200,6 +202,7 @@ export async function verifyArtifact(
     if (!expected.jobId || !expected.nonce || !/^[a-f0-9]{64}$/i.test(expected.inputSha256 || '')) {
         throw new Error('Verification job identity is incomplete or malformed.');
     }
+    assertLease();
     const archiveBase64 = options.archiveBase64;
     if (typeof archiveBase64 !== 'string' || !archiveBase64 || !/^[A-Za-z0-9+/]*={0,2}$/.test(archiveBase64)) {
         throw new Error('Verification archive is not valid base64.');
@@ -361,7 +364,8 @@ export async function verifyArtifact(
                     exitCode: check.exitCode ?? null,
                     stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(check.stdout || JSON.stringify(check.evidence || {})).digest('hex'),
                     stderrDigest: check.stderrDigest || crypto.createHash('sha256').update('').digest('hex'),
-                    evidenceJson: check.evidence ?? check.evidenceJson ?? null,
+                    evidenceJson: { ...redactObservedEvidence(check.evidence ?? check.evidenceJson ?? {}),
+                        ...normalizeWorkerCheckLog(check) },
                     timedOut: Boolean(check.timedOut)
                 };
             if (workerCheckIds.has(checkId) && result.status === 'completed') record = bindWorkerCheck(record, expected);
@@ -391,6 +395,11 @@ export async function verifyArtifact(
             && !allChecks.some(check => check.timedOut) && hasMandatoryGateCoverage(allChecks)
             && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, isMandatoryArtifactCheck(c.gateName || c.name, parsedContract))));
         runLeaseTransaction(database, assertLease, () => {
+            if (!passed) recordWorkerRejection(verificationContext(), { identity: expected, terminalStatus: result.status,
+                artifact, summary: summarizeWorkerRejection({ identity: expected, terminalStatus: result.status,
+                    rawChecks: workerChecks, records, artifactManifest: persistedFiles,
+                    acceptanceBlockers: [managementError, !uniqueBaseGates && 'Mandatory base gate set is missing or duplicated.',
+                        unknownMandatory && 'Worker returned an unknown mandatory gate.'].filter(Boolean) }) }, database);
             updateArtifactStatus({
                 projectId, contractId, artifactId,
                 status: passed ? 'verified' : 'rejected',
@@ -407,6 +416,13 @@ export async function verifyArtifact(
         };
     } catch (error) {
         if (runCreated) {
+            try {
+                // Expiry forbids late worker evidence, but the still-current
+                // controller may durably record its own indeterminate failure.
+                const controllerContext = { ...verificationContext(), deadline: undefined };
+                commitVerificationContext(controllerContext, () => recordVerificationBlocker(controllerContext,
+                    { expectedIdentity: expected, reason: error.message }, database), database);
+            } catch {}
             try {
                 runLeaseTransaction(database, assertLease, () => {
                     updateRunStatus(runId, 'failed');

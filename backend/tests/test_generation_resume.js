@@ -19,6 +19,160 @@ const planHash = 'b'.repeat(64);
 const contract = { id: 'approved-contract', contract_hash: hash };
 const marker = { stage: 'generation_finished', contractId: contract.id, contractHash: hash, planHash };
 
+await runAsyncTest('execution without a durable attempt cannot displace a live controller or dispatch', async () => {
+    const { registerProjectAbortController, unregisterProjectAbortController, getProjectAbortSignal } = await import('../engine/cancellation.js');
+    const project = await createProject({ title: 'Missing execution attempt' });
+    const controller = new AbortController();
+    try {
+        db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
+        const plan = JSON.stringify({ summary: 'Approved React frontend', domains: [{ name: 'frontend', prefix: 'frontend' }] });
+        db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+            VALUES (?,?,1,'approved',?,?)`).run(`contract-${project.id}`, project.id, plan, crypto.createHash('sha256').update(plan).digest('hex'));
+        const lease = acquireWorkflowLease(project.id, 'authorized-owner');
+        registerProjectAbortController(project.id, controller, { attemptId: lease.attempt.id, leaseOwner: 'authorized-owner' });
+        const before = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);
+        const events = [];
+        await assert.rejects(executeProjectTasks(project.id, { publish(event) {
+            events.push(event);
+            if (event.action === 'start') throw new Error('Unscoped workflow reached provider dispatch');
+        } }), /attempt.*owner|durable.*attempt/i);
+        assert.equal(getProjectAbortSignal(project.id), controller.signal);
+        assert.equal(controller.signal.aborted, false);
+        assert.equal(events.length, 0);
+        assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(project.id), before);
+        await assert.rejects(fs.stat(path.join(getProjectDir(project.id), 'package.json')), { code: 'ENOENT' });
+    } finally { unregisterProjectAbortController(project.id, controller); await deleteProject(project.id); }
+});
+
+await runAsyncTest('a new durable resume ignores cancellation of its predecessor and reaches dispatch', async () => {
+    const project = await createProject({ title: 'Immediate resume cancellation provenance' });
+    const directory = getProjectDir(project.id);
+    try {
+        const plan = normalizeManagerPlan({ summary: 'Approved resume', talimatname: '# Approved resume',
+            domains: [{ name: 'frontend', prefix: 'frontend' }], management: { needed: false, reason: 'Static fixture' } });
+        const json = JSON.stringify(plan);
+        db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+            VALUES (?,?,1,'approved',?,?)`).run(`contract-${project.id}`, project.id, json, crypto.createHash('sha256').update(json).digest('hex'));
+        db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
+        const oldLease = acquireWorkflowLease(project.id, 'resume-predecessor');
+        abortProjectExecution(project.id, 'PAUSED'); // No local registration: cancellation came to another server process.
+        const lease = acquireWorkflowLease(project.id, 'resume-successor');
+        assert.notEqual(lease.attempt.id, oldLease.attempt.id);
+        const events = [];
+        await executeProjectTasks(project.id, { publish(event) {
+            events.push(event);
+            if (event.action === 'start' && /director/i.test(event.agent || '')) abortProjectExecution(project.id, 'PAUSED');
+        } }, lease.attempt.id, 'resume-successor');
+        assert.ok(events.some(event => event.action === 'start' && /director/i.test(event.agent || '')),
+            'explicit resume with a fresh approved attempt must reach generation dispatch');
+        assert.ok(await fs.stat(path.join(directory, 'package.json')));
+    } finally { await deleteProject(project.id); }
+});
+
+await runAsyncTest('old workflow cleanup cannot unregister its replacement controller', async () => {
+    const { registerProjectAbortController, unregisterProjectAbortController, getProjectAbortSignal } = await import('../engine/cancellation.js');
+    const { releaseWorkflowLease } = await import('../workflowAttempts.js');
+    const project = await createProject({ title: 'Controller ownership replacement' });
+    const first = new AbortController(), second = new AbortController();
+    try {
+        const a = acquireWorkflowLease(project.id, 'controller-a');
+        registerProjectAbortController(project.id, first, { attemptId: a.attempt.id, leaseOwner: 'controller-a' });
+        releaseWorkflowLease(a.attempt.id, 'paused', { leaseOwner: 'controller-a' });
+        const b = acquireWorkflowLease(project.id, 'controller-b');
+        registerProjectAbortController(project.id, second, { attemptId: b.attempt.id, leaseOwner: 'controller-b' });
+        unregisterProjectAbortController(project.id, first);
+        assert.equal(getProjectAbortSignal(project.id), second.signal);
+        abortProjectExecution(project.id, 'PAUSED');
+        assert.equal(second.signal.aborted, true);
+    } finally { unregisterProjectAbortController(project.id, second); await deleteProject(project.id); }
+});
+
+for (const status of ['planning', 'pending_approval']) {
+    await runAsyncTest(`execution rejects persisted ${status} state without changing it or dispatching`, async () => {
+        const project = await createProject({ title: `Ineligible execution ${status}` });
+        try {
+            const plan = normalizeManagerPlan({ summary: 'Approved fixture', domains: [{ name: 'frontend', prefix: 'frontend' }],
+                management: { needed: false, reason: 'Static fixture' } });
+            const json = JSON.stringify(plan);
+            db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+                VALUES (?,?,1,'approved',?,?)`).run(`contract-${project.id}`, project.id, json, crypto.createHash('sha256').update(json).digest('hex'));
+            db.prepare('UPDATE projects SET status=? WHERE id=?').run(status, project.id);
+            const before = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);
+            const lease = acquireWorkflowLease(project.id, 'ineligible-execution');
+            const events = [];
+            await assert.rejects(executeProjectTasks(project.id, { publish(event) {
+                events.push(event);
+                if (event.action === 'start') throw new Error('Ineligible execution reached dispatch');
+            } }, lease.attempt.id, 'ineligible-execution'), /execution.*status|execution.*state/i);
+            assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(project.id), before);
+            assert.equal(events.length, 0);
+            await assert.rejects(fs.stat(path.join(getProjectDir(project.id), 'package.json')), { code: 'ENOENT' });
+        } finally { await deleteProject(project.id); }
+    });
+}
+
+for (const contractStatus of ['missing', 'pending_approval', 'legacy plan only']) {
+    await runAsyncTest(`workflow with ${contractStatus} contract stops before provider dispatch or source generation`, async () => {
+        const project = await createProject({ title: `Unapproved execution denied ${contractStatus}` });
+        try {
+            if (contractStatus === 'pending_approval') db.prepare(`INSERT INTO project_contracts
+                (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,1,'pending_approval','{}','draft-hash')`)
+                .run(`draft-${project.id}`, project.id);
+            if (contractStatus === 'legacy plan only') db.prepare('UPDATE projects SET plan=? WHERE id=?')
+                .run(JSON.stringify({ summary: 'Unapproved legacy React plan', domains: [{ name: 'frontend', prefix: 'frontend' }] }), project.id);
+            db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
+            const lease = acquireWorkflowLease(project.id, 'unapproved-execution');
+            const before = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);
+            const events = [];
+            await assert.rejects(executeProjectTasks(project.id, { publish(event) {
+                events.push(event);
+                // Bound the old implementation before any paid provider can run.
+                if (event.action === 'start') throw new Error('Unapproved workflow reached provider dispatch');
+            } }, lease.attempt.id, 'unapproved-execution'), /approved contract|approval.*required/i);
+            assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(project.id), before);
+            assert.equal(db.prepare("SELECT COUNT(*) AS count FROM project_contracts WHERE project_id=? AND status='approved'").get(project.id).count, 0,
+                'failure handling must never import a legacy plan as approved');
+            assert.equal(events.some(event => event.action === 'start'), false);
+            await assert.rejects(fs.stat(path.join(getProjectDir(project.id), 'package.json')), { code: 'ENOENT' });
+            for (const table of ['task_checkpoints', 'artifacts', 'completion_receipts']) {
+                assert.equal(db.prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE project_id=?`).get(project.id).count, 0);
+            }
+        } finally { await deleteProject(project.id); }
+    });
+}
+
+for (const boundary of ['state commit', 'provider failure']) {
+    await runAsyncTest(`superseded execution cannot overwrite replacement workflow on ${boundary}`, async () => {
+        const project = await createProject({ title: `Superseded workflow ${boundary}` });
+        try {
+            const plan = normalizeManagerPlan({ summary: 'Approved React frontend', talimatname: '# Approved React frontend',
+                domains: [{ name: 'frontend', prefix: 'frontend' }], management: { needed: false, reason: 'Static fixture' } });
+            const contractId = `contract-${project.id}`;
+            const json = JSON.stringify(plan), contractHash = crypto.createHash('sha256').update(json).digest('hex');
+            db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+                VALUES (?,?,1,'approved',?,?)`).run(contractId, project.id, json, contractHash);
+            db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
+            const lease = acquireWorkflowLease(project.id, 'superseded-owner');
+            let replacementState, replacementChats;
+            await executeProjectTasks(project.id, { publish(event) {
+                const target = boundary === 'state commit' ? event.agent === 'Manager' : /director/i.test(event.agent || '');
+                if (event.action !== 'start' || !target) return;
+                db.prepare("UPDATE project_contracts SET status='superseded' WHERE id=?").run(contractId);
+                db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+                    VALUES (?,?,2,'approved',?,?)`).run(`new-${contractId}`, project.id, json, 'replacement-hash');
+                db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run('{"replacementCache":true}', project.id);
+                replacementState = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);
+                replacementChats = db.prepare('SELECT * FROM chat_history WHERE project_id=?').all(project.id);
+                if (boundary === 'provider failure') throw new Error('Old provider returned after replacement');
+            } }, lease.attempt.id, 'superseded-owner');
+            assert.ok(replacementState, 'fixture must reach the intended real workflow boundary');
+            assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(project.id), replacementState);
+            assert.deepEqual(db.prepare('SELECT * FROM chat_history WHERE project_id=?').all(project.id), replacementChats);
+            assert.equal(db.prepare('SELECT COUNT(*) AS count FROM completion_receipts WHERE project_id=?').get(project.id).count, 0);
+        } finally { await deleteProject(project.id); }
+    });
+}
+
 await runAsyncTest('generation resume requires an exact complete approved-contract marker', async () => {
     assert.equal(typeof resumeStage.resolveGenerationResume, 'function');
     assert.equal(resumeStage.resolveGenerationResume(marker, contract, planHash), true);

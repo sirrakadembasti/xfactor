@@ -365,6 +365,10 @@ async function main() {
         await testLinkedWriteDestination(kind);
     }
     await testRegularWriteReplacement();
+    await testProtocolSymlinkBoundary('read');
+    await testProtocolSymlinkBoundary('write');
+    await testProtocolMetadataOperations();
+    for (const position of ['root', 'ancestor']) await testProtocolLinkedHierarchy(position);
     await testGetFilesHttp();
     console.log('==================================================');
     console.log(`📊 Sonuç: ${passed} Başarılı, ${failed} Hatalı, ${skipped} Atlanan`);
@@ -373,6 +377,85 @@ async function main() {
         console.log('Başarısız testler:', failures.join(', '));
         process.exit(1);
     }
+}
+
+async function testProtocolSymlinkBoundary(operation) {
+    const name = `protocol metadata must not ${operation} a linked external file`;
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'protocol-link-'));
+    try {
+        const folder = path.join(workspace, 'project', 'manager');
+        const sentinel = path.join(workspace, 'external.txt');
+        await fs.mkdir(folder, { recursive: true });
+        await fs.writeFile(sentinel, 'EXTERNAL_SENTINEL');
+        const linked = await trySymlink(sentinel, path.join(folder, 'DURUM.md'), 'file');
+        if (linked !== true) { skip(name, linked.reason); return; }
+        const { writeDurum, readDurum } = await import('../engine/fileProtocol.js');
+        if (operation === 'read') assert.equal(await readDurum(folder), null, 'protocol reads must reject linked data outside the project');
+        else await assert.rejects(() => writeDurum(folder, 'TAMAMLANDI', 'untrusted metadata'), /link|destination|path|symbolic/i);
+        assert.equal(await fs.readFile(sentinel, 'utf8'), 'EXTERNAL_SENTINEL');
+        pass(name);
+    } catch (error) { fail(name, error); }
+    finally { await fs.rm(workspace, { recursive: true, force: true }); }
+}
+
+async function testProtocolMetadataOperations() {
+    const name = 'all protocol setup/read/mutation helpers reject linked metadata';
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'protocol-operations-'));
+    try {
+        const project = path.join(workspace, 'project');
+        const manager = path.join(project, 'manager');
+        const director = path.join(manager, 'backend.director');
+        const team = path.join(director, 'api');
+        const coder = path.join(team, 'task-1');
+        await fs.mkdir(coder, { recursive: true });
+        const sentinel = path.join(workspace, 'external.txt');
+        await fs.writeFile(sentinel, 'EXTERNAL_SENTINEL');
+        const p = await import('../engine/fileProtocol.js');
+        const cases = [
+            [path.join(manager, 'TALIMATNAME.md'), () => p.setupRootProtocol(project, '# plan')],
+            [path.join(director, 'ALT-TALIMATNAME.md'), () => p.readAltTalimatname(director)],
+            [path.join(team, 'TODO.md'), () => p.readTasksFromTodoFile(path.join(team, 'TODO.md'))],
+            [path.join(team, 'TODO.md'), () => p.checkTodoItem(path.join(team, 'TODO.md'), 'task-1')],
+            [path.join(team, 'GOREV.md'), () => p.setupTeamleaderProtocol(director, 'api', '# task')],
+            [path.join(director, 'GOREV.md'), () => p.setupDirectorProtocol(manager, 'backend', '# task', '# instructions')],
+            [path.join(coder, 'GOREV.md'), () => p.setupCoderProtocol(team, 'task-1', 'Task', '# task')],
+            [path.join(coder, 'RAPOR.md'), () => p.writeRapor(coder, '# report')]
+        ];
+        for (const [file, operation] of cases) {
+            await fs.rm(file, { force: true });
+            const linked = await trySymlink(sentinel, file, 'file');
+            if (linked !== true) { skip(name, linked.reason); return; }
+            await assert.rejects(operation, /link|path|destination/i);
+            assert.equal(await fs.readFile(sentinel, 'utf8'), 'EXTERNAL_SENTINEL');
+            await fs.unlink(file);
+        }
+        pass(name);
+    } catch (error) { fail(name, error); }
+    finally { await fs.rm(workspace, { recursive: true, force: true }); }
+}
+
+async function testProtocolLinkedHierarchy(position) {
+    const name = `protocol rejects ${position} junction for setup, read and mutation`;
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'protocol-hierarchy-'));
+    try {
+        const outside = path.join(workspace, 'outside');
+        await fs.mkdir(outside);
+        await fs.writeFile(path.join(outside, 'DURUM.md'), 'EXTERNAL_SENTINEL');
+        const project = path.join(workspace, 'project');
+        if (position === 'ancestor') await fs.mkdir(project);
+        const linkedDir = position === 'root' ? project : path.join(project, 'manager');
+        const linked = await trySymlink(outside, linkedDir, process.platform === 'win32' ? 'junction' : 'dir');
+        if (linked !== true) { skip(name, linked.reason); return; }
+        const p = await import('../engine/fileProtocol.js');
+        assert.equal(await p.readDurum(linkedDir), null);
+        await assert.rejects(() => p.writeDurum(linkedDir, 'TAMAMLANDI'), /link|path|destination/i);
+        await assert.rejects(() => p.setupRootProtocol(project, '# plan'), /link|path|destination/i);
+        await assert.rejects(() => p.setupCoderProtocol(linkedDir, 'task-1', 'Task', '# task'), /link|path|destination/i);
+        assert.equal(await fs.readFile(path.join(outside, 'DURUM.md'), 'utf8'), 'EXTERNAL_SENTINEL');
+        assert.deepEqual(await fs.readdir(outside), ['DURUM.md']);
+        pass(name);
+    } catch (error) { fail(name, error); }
+    finally { await fs.rm(workspace, { recursive: true, force: true }); }
 }
 
 main().catch((err) => {

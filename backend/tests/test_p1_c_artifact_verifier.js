@@ -27,9 +27,9 @@ const { verifyProjectSmoke } = await import('../verification/smokeVerifier.js');
 const { assertManagementCoverage } = await import('../verification/artifactEvidencePolicy.js');
 
 const { runAsyncTest, finish } = createTestHarness();
-const projectId = 'pipeline-proj-123';
-const contractId = 'pipeline-contract-456';
-const requirementId = 'req-pipeline-1';
+let projectId = 'pipeline-proj-123';
+let contractId = 'pipeline-contract-456';
+let requirementId = 'req-pipeline-1';
 const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-artifact-verifier-test-'));
 
 db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Pipeline', 'implementation_finished')").run(projectId);
@@ -139,6 +139,34 @@ assert.equal(hasMandatoryGateCoverage(allGates.filter(name => name !== 'framewor
     'a worker cannot verify an artifact while omitting a mandatory gate');
 
 try {
+    await runAsyncTest('worker rejection durably preserves redacted observed logs and actual source diagnostics', async () => {
+        const { verifyBuild } = await import('../verification/buildVerifier.js');
+        const stdout = "src/price.ts(3,7): error TS2322: Type 'string' is not assignable to type 'number'. password=private-sentinel-123";
+        const built = await verifyBuild('/unused', {}, { files: [{ path: 'package.json', content: '{"scripts":{"build":"vite build"}}' }, { path: 'tsconfig.json', content: '{}' }],
+            adapter: { id: 'fake-worker', isAvailable: () => true, execute: async ({args}) => args[0] === 'tsc'
+                ? { passed: false, exitCode: 2, stdout, stderr: '', signal: null, stdoutTruncated: false, stderrTruncated: false }
+                : { passed: true, exitCode: 0, stdout: '', stderr: '' } } });
+        const zipPath = await createTestZip('compiler-failure.zip', [{ path: 'package.json', content: '{}' }, { path: 'package-lock.json', content: '{}' }, { path: 'src/price.ts', content: 'export const price: number = "wrong";' }]);
+        const artifactId = 'artifact-compiler-failure', runId = 'run-compiler-failure';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+        const checks = [...new Set([...allGates, ...Object.values(RUNTIME_GATE_MEMBERS).flatMap(set => [...set])])]
+            .map(name => name === 'typecheck' ? built.checks.find(check => check.name === name) : passingCheck(name));
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, { runId, activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'), executionClient: { verifyArtifact: async () => workerResponse(identity, checks) } });
+        assert.equal(result.passed, false);
+        const check = db.prepare("SELECT * FROM verification_checks WHERE run_id=? AND gate_name='typecheck'").get(runId);
+        assert.match(check.evidence_json, /TS2322/);
+        assert.ok(!check.evidence_json.includes('private-sentinel-123'));
+        const rows = db.prepare('SELECT * FROM repair_issues WHERE run_id=?').all(runId);
+        assert.equal(rows.length, 1);
+        const detail = JSON.parse(rows[0].detail_json);
+        assert.equal(detail.kind, 'worker_product_failure');
+        assert.equal(detail.filePath, 'src/price.ts');
+        assert.equal(detail.authenticatedWorker, true);
+        assert.equal(detail.checkId, check.id);
+        assert.ok(!JSON.stringify(rows).includes('private-sentinel-123'));
+    });
     await runAsyncTest('1. verifyArtifact fails closed and rejects artifact when package lockfile is missing', async () => {
         const zipPath = await createTestZip('broken-lock.zip', [
             { path: 'package.json', content: '{"name":"broken-app"}' },
@@ -251,6 +279,92 @@ try {
         assert.equal(getArtifact({ projectId, contractId, artifactId }).status, 'rejected');
     });
 
+    for (const scenario of ['contract replaced', 'contract hash changed', 'contract revision changed', 'contract changed before check commit', 'signal aborted', 'deadline expired', 'project paused', 'durable cancellation', 'lease replaced']) {
+        await runAsyncTest(`late valid worker result cannot persist after ${scenario}`, async () => {
+            const { acquireWorkflowLease, releaseWorkflowLease } = await import('../workflowAttempts.js');
+            const { abortProjectExecution } = await import('../engine/cancellation.js');
+            const artifactId = `artifact-late-${scenario.replaceAll(' ', '-')}`;
+            const runId = `run-${artifactId}`;
+            const zipPath = await createTestZip(`${artifactId}.zip`, [{ path: 'package.json', content: '{"name":"late-fixture"}' }]);
+            const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+            const identity = { ...artifactIdentity(artifactId, runId, archiveHash), deadline: Date.now() + (scenario === 'deadline expired' ? 1000 : 60000) };
+            const checks = [...allGates, ...new Set(Object.values(RUNTIME_GATE_MEMBERS).flatMap(members => [...members]))]
+                .map(name => ({ ...passingCheck(name), evidence: { observed: true } }));
+            const lease = acquireWorkflowLease(projectId, runId);
+            const controller = new AbortController();
+            const originalNow = Date.now;
+            let workerCalled = false;
+            const receiptsBefore = db.prepare('SELECT * FROM completion_receipts').all();
+            try {
+                await assert.rejects(verifyArtifact({ projectId, contractId, artifactId }, {
+                    runId, activeJob: identity, archiveBase64: archiveBytes.toString('base64'),
+                    attemptId: lease.attempt.id, leaseOwner: runId, signal: controller.signal,
+                    executionClient: { verifyArtifact: async () => {
+                        workerCalled = true;
+                        if (scenario === 'contract replaced') {
+                            db.prepare("UPDATE project_contracts SET status='superseded' WHERE id=?").run(contractId);
+                            db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+                                VALUES ('late-replacement',?,2,'approved','{}','new-hash')`).run(projectId);
+                        }
+                        if (scenario === 'contract hash changed') db.prepare("UPDATE project_contracts SET contract_hash='new-hash' WHERE id=?").run(contractId);
+                        if (scenario === 'contract revision changed') db.prepare('UPDATE project_contracts SET revision=2 WHERE id=?').run(contractId);
+                        if (scenario === 'contract changed before check commit') Object.defineProperty(checks[0], 'command', {
+                            enumerable: true, get() {
+                                // Object materialization happens after the response-boundary assertion.
+                                db.prepare("UPDATE project_contracts SET contract_hash='new-hash' WHERE id=?").run(contractId);
+                                return 'verify package_json';
+                            }
+                        });
+                        if (scenario === 'signal aborted') controller.abort('PAUSED');
+                        if (scenario === 'deadline expired') Date.now = () => identity.deadline + 1;
+                        if (scenario === 'project paused') db.prepare("UPDATE projects SET status='paused' WHERE id=?").run(projectId);
+                        if (scenario === 'durable cancellation') abortProjectExecution(projectId, 'PAUSED');
+                        if (scenario === 'lease replaced') {
+                            releaseWorkflowLease(lease.attempt.id, 'aborted', { leaseOwner: runId });
+                            acquireWorkflowLease(projectId, 'late-replacement-owner');
+                        }
+                        return workerResponse(identity, checks, 'completed');
+                    } }
+                }), /contract|cancel|abort|deadline|paused|lease|fenc/i);
+                assert.equal(workerCalled, true, 'the negative case must reach an otherwise valid worker response');
+                assert.equal(db.prepare('SELECT COUNT(*) AS count FROM verification_checks WHERE run_id=?').get(runId).count, 0);
+                assert.notEqual(getArtifact({ projectId, contractId, artifactId }).status, 'verified');
+                assert.notEqual(db.prepare('SELECT status FROM verification_runs WHERE id=?').get(runId).status, 'verified');
+                assert.notEqual(db.prepare('SELECT status FROM projects WHERE id=?').get(projectId).status, 'completed');
+                assert.deepEqual(db.prepare('SELECT * FROM completion_receipts').all(), receiptsBefore);
+            } finally {
+                Date.now = originalNow;
+                db.prepare("DELETE FROM project_contracts WHERE id='late-replacement'").run();
+                db.prepare("UPDATE project_contracts SET status='approved',contract_hash='hash',revision=1 WHERE id=?").run(contractId);
+                db.prepare("UPDATE projects SET status='implementation_finished' WHERE id=?").run(projectId);
+                db.prepare("UPDATE workflow_attempts SET status='aborted' WHERE project_id=? AND status='running'").run(projectId);
+            }
+        });
+    }
+
+    await runAsyncTest('contract changed during archive preparation cannot create the first verification run', async () => {
+        const artifactId = 'artifact-archive-contract-race', runId = 'run-archive-contract-race';
+        const zipPath = await createTestZip('archive-contract-race.zip', [{ path: 'package.json', content: '{}' }]);
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        const loadZip = JSZip.loadAsync;
+        JSZip.loadAsync = async (...args) => {
+            const zip = await loadZip(...args);
+            db.prepare("UPDATE project_contracts SET contract_hash='changed-during-archive' WHERE id=?").run(contractId);
+            return zip;
+        };
+        try {
+            await assert.rejects(verifyArtifact({ projectId, contractId, artifactId }, {
+                runId, activeJob: artifactIdentity(artifactId, runId, archiveHash), archiveBase64: archiveBytes.toString('base64'),
+                executionClient: { verifyArtifact: async () => { throw new Error('worker must not be dispatched'); } }
+            }), /contract.*changed/i);
+            assert.equal(db.prepare('SELECT COUNT(*) AS count FROM verification_runs WHERE id=?').get(runId).count, 0);
+            assert.equal(getArtifact({ projectId, contractId, artifactId }).status, 'draft');
+        } finally {
+            JSZip.loadAsync = loadZip;
+            db.prepare("UPDATE project_contracts SET contract_hash='hash' WHERE id=?").run(contractId);
+        }
+    });
+
     await runAsyncTest('3. verifyArtifact rejects malicious symlink before persistence', async () => {
         const zipPath = await createTestZip('symlink.zip', [
             { path: 'safe.txt', content: 'hello' },
@@ -294,6 +408,12 @@ try {
     // This is an isolated worker-response fixture, never a real app or final ZIP.
     let managementFixture;
     await runAsyncTest('5. identity-verified management worker evidence authorizes completion without downgrading details', async () => {
+        // Earlier rejection cases now intentionally retain open repair history.
+        // This independent passing fixture needs its own approved project scope.
+        projectId = 'pipeline-management-project'; contractId = 'pipeline-management-contract'; requirementId = 'pipeline-management-requirement';
+        db.prepare("INSERT INTO projects (id,title,status) VALUES (?,'Management fixture','implementation_finished')").run(projectId);
+        db.prepare("INSERT INTO project_contracts (id,project_id,revision,contract_hash,status,contract_json) VALUES (?,?,1,'hash','approved','{}')").run(contractId, projectId);
+        db.prepare("INSERT INTO requirements (id,contract_id,stable_key,statement,kind,priority,mandatory,status) VALUES (?,?,'REQ-MANAGEMENT','Management','functional','high',1,'approved')").run(requirementId, contractId);
         const management = {
             needed: true, authentication: { apiLogin: { path: '/api/auth/login' } },
             roles: [

@@ -76,9 +76,41 @@ try {
         assert.throws(() => saveCheckpoint(checkpoint), /UNIQUE constraint failed/);
         assert.throws(() => saveCheckpoint({ ...checkpoint, refreshReviewed: true, status: 'invalidated' }), /newly reviewed completed/);
     });
+    await runAsyncTest('legacy reuse needs complete unique ownership and never rewrites or revives old evidence', async () => {
+        const { workflowCheckpointInventory } = await import('../engine/checkpointIdentity.js');
+        saveCheckpoint({ ...checkpoint, refreshReviewed: true });
+        const before = db.prepare('SELECT * FROM task_checkpoints WHERE project_id=?').all('resume');
+        const inventoryInput = { contractId: 'contract', domains: [{ prefix: 'core' }],
+            directorSpecs: { core: { teamleaders: [{ prefix: 'a' }, { prefix: 'b' }] } },
+            teamleaderPlans: { 'core.a': { tasks: [task] }, 'core.b': { tasks: [{ ...task, description: 'Different task content' }] } } };
+        const scoped = { ...options, teamleaderId: 'core.a', ownershipInventory: workflowCheckpointInventory(inventoryInput) };
+        assert.equal(scoped.ownershipInventory.complete, true);
+        assert.equal(await isTaskCheckpointValid(workspace, 'resume', task, scoped), true, 'same ID with distinct specs is safely attributable');
+        const incomplete = structuredClone(inventoryInput);
+        delete incomplete.teamleaderPlans['core.b'];
+        assert.equal(await isTaskCheckpointValid(workspace, 'resume', task, { ...scoped,
+            ownershipInventory: workflowCheckpointInventory(incomplete) }), false, 'not-yet-planned team must prevent legacy reuse');
+        const ambiguous = structuredClone(inventoryInput);
+        ambiguous.teamleaderPlans['core.b'].tasks = [task];
+        assert.equal(await isTaskCheckpointValid(workspace, 'resume', task, { ...scoped,
+            ownershipInventory: workflowCheckpointInventory(ambiguous) }), false);
+        assert.deepEqual(db.prepare('SELECT * FROM task_checkpoints WHERE project_id=?').all('resume'), before);
+        const qualified = { ...checkpoint, teamleaderId: 'core.a', createdAt: '2999-01-01' };
+        saveCheckpoint(qualified);
+        invalidateCheckpoint(qualified, 'Rejected qualified execution');
+        assert.equal(await isTaskCheckpointValid(workspace, 'resume', task, scoped), false, 'qualified rejection cannot fall back to legacy success');
+        const { invalidateDownstreamCheckpoints } = await import('../engine/checkpointRepository.js');
+        const mutationBefore = db.prepare('SELECT * FROM task_checkpoints WHERE project_id=?').all('resume');
+        assert.throws(() => invalidateDownstreamCheckpoints('resume', [task.id], [task], 'Ambiguous',
+            { ...scoped, ownershipInventory: workflowCheckpointInventory(ambiguous) }), { code: 'CHECKPOINT_OWNERSHIP_AMBIGUOUS' });
+        assert.deepEqual(db.prepare('SELECT * FROM task_checkpoints WHERE project_id=?').all('resume'), mutationBefore);
+    });
     await runAsyncTest('checkpoint storage outage stops execution instead of treating every task as new', async () => {
+        // Production scope must preserve the same fail-closed boundary.
         closeDatabase();
         await assert.rejects(isTaskCheckpointValid(workspace, 'resume', task, options), error => error.code === 'CHECKPOINT_READ_FAILED');
+        await assert.rejects(isTaskCheckpointValid(workspace, 'resume', task, { ...options, teamleaderId: 'core.lead' }),
+            error => error.code === 'CHECKPOINT_READ_FAILED');
     });
     finish();
 } finally {

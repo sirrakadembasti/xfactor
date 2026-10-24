@@ -100,6 +100,53 @@ try {
         assert.ok(db.prepare('SELECT id FROM artifacts WHERE id = ?').get(legacyArtifactId));
     });
 
+    for (const scenario of ['contract replaced', 'contract hash changed', 'signal aborted', 'project paused']) {
+        await runAsyncTest(`late custom verification runner cannot publish receipt after ${scenario}`, async () => {
+            const controller = new AbortController();
+            const originalWorkflow = db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(projectId).workflow_state;
+            try {
+                await assert.rejects(verifyArtifactAndProject({ projectId, contractId, artifactId, complete: true,
+                    options: { signal: controller.signal },
+                    verificationRunner: async () => {
+                        if (scenario === 'contract replaced') {
+                            db.prepare("UPDATE project_contracts SET status='superseded' WHERE id=?").run(contractId);
+                            db.prepare(`INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash)
+                                VALUES ('custom-replacement',?,2,'approved','{}','new-hash')`).run(projectId);
+                        }
+                        if (scenario === 'contract hash changed') db.prepare("UPDATE project_contracts SET contract_hash='changed-hash' WHERE id=?").run(contractId);
+                        if (scenario === 'signal aborted') controller.abort('PAUSED');
+                        if (scenario === 'project paused') db.prepare("UPDATE projects SET status='paused' WHERE id=?").run(projectId);
+                        return { passed: true, status: 'verified', runId };
+                    }
+                }), /contract|cancel|abort|paused/i);
+                assert.equal(db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(projectId).workflow_state, originalWorkflow);
+                assert.equal(db.prepare('SELECT COUNT(*) AS count FROM completion_receipts WHERE project_id=?').get(projectId).count, 0);
+                assert.notEqual(db.prepare('SELECT status FROM projects WHERE id=?').get(projectId).status, 'artifact_verified');
+                assert.notEqual(db.prepare('SELECT status FROM projects WHERE id=?').get(projectId).status, 'completed');
+            } finally {
+                db.prepare("DELETE FROM project_contracts WHERE id='custom-replacement'").run();
+                db.prepare("UPDATE project_contracts SET status='approved',contract_hash='canonical-contract-hash' WHERE id=?").run(contractId);
+                db.prepare("UPDATE projects SET status='runtime_verified',revision=1,workflow_state=? WHERE id=?").run(originalWorkflow, projectId);
+            }
+        });
+    }
+    for (const evidence of [null, '{}']) {
+        await runAsyncTest(`empty mandatory evidence ${evidence} cannot complete or create a receipt`, async () => {
+            const checkId = `${runId}-clean_install`;
+            const original = db.prepare('SELECT evidence_json FROM verification_checks WHERE id=?').get(checkId).evidence_json;
+            try {
+                db.prepare('UPDATE verification_checks SET evidence_json=? WHERE id=?').run(evidence, checkId);
+                await assert.rejects(verifyArtifactAndProject({ projectId, contractId, artifactId, complete: true,
+                    verificationRunner: async () => ({ passed: true, status: 'verified', runId }) }), /evidence/i);
+                assert.equal(db.prepare('SELECT COUNT(*) AS count FROM completion_receipts WHERE project_id=?').get(projectId).count, 0);
+                assert.notEqual(db.prepare('SELECT status FROM projects WHERE id=?').get(projectId).status, 'completed');
+            } finally {
+                db.prepare('UPDATE verification_checks SET evidence_json=? WHERE id=?').run(original, checkId);
+                db.prepare("UPDATE projects SET status='runtime_verified',revision=1,workflow_state=NULL WHERE id=?").run(projectId);
+            }
+        });
+    }
+
     await runAsyncTest('canonical artifact identity authorizes completion with its verified run receipt', async () => {
         db.prepare('UPDATE projects SET workflow_state = ? WHERE id = ?')
             .run(JSON.stringify({ last_error: 'Earlier failed verification' }), projectId);
@@ -133,6 +180,31 @@ try {
             verificationRunId: runId
         });
         assert.strictEqual('path' in project.latestArtifact, false);
+    });
+    await runAsyncTest('cancellation and restart reconciliation preserve a completed historical receipt', async () => {
+        const { abortProjectExecution } = await import('../engine/cancellation.js');
+        const { reconcileStaleWorkflowAttempts } = await import('../workflowAttempts.js');
+        const before = db.prepare('SELECT * FROM completion_receipts WHERE project_id=?').all(projectId);
+        assert.equal(before.length, 1);
+        abortProjectExecution(projectId, 'PAUSED');
+        reconcileStaleWorkflowAttempts();
+        assert.deepEqual(db.prepare('SELECT * FROM completion_receipts WHERE project_id=?').all(projectId), before);
+        assert.equal(getProject(projectId).status, 'completed');
+    });
+    await runAsyncTest('execution entry refuses completed history without changing source state or receipt', async () => {
+        const { executeProjectTasks } = await import('../engine/workflow.js');
+        const { acquireWorkflowLease } = await import('../workflowAttempts.js');
+        const before = db.prepare('SELECT * FROM projects WHERE id=?').get(projectId);
+        const receipts = db.prepare('SELECT * FROM completion_receipts WHERE project_id=?').all(projectId);
+        const lease = acquireWorkflowLease(projectId, 'completed-execution');
+        const events = [];
+        await assert.rejects(executeProjectTasks(projectId, { publish(event) {
+            events.push(event);
+            if (event.action === 'start') throw new Error('Completed execution reached dispatch');
+        } }, lease.attempt.id, 'completed-execution'), /execution.*status|execution.*state/i);
+        assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(projectId), before);
+        assert.deepEqual(db.prepare('SELECT * FROM completion_receipts WHERE project_id=?').all(projectId), receipts);
+        assert.equal(events.length, 0);
     });
 } finally {
     await fs.rm(artifactPath, { force: true });

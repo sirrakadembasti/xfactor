@@ -4,6 +4,9 @@ import JSZip from 'jszip';
 import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
+import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { createTestHarness } from './testHarness.js';
 import { setupIsolatedTestDb } from './isolatedDb.js';
@@ -40,6 +43,7 @@ async function withProject(title, fn) {
 }
 
 async function makeVerificationFixture(project) {
+    db.prepare("UPDATE projects SET status='implementation_finished' WHERE id=?").run(project.id);
     const contractId = `contract-lease-${project.id}`;
     const contractJson = JSON.stringify({ summary: 'Lease fencing fixture' });
     const contractHash = createHash('sha256').update(contractJson).digest('hex');
@@ -313,6 +317,7 @@ await runAsyncTest('8. project transition rejects a replacement lease racing bet
 
 await runAsyncTest('9. verification persistence rejects after the worker lease is replaced', async () => {
     await withProject('Verification persistence fencing', async project => {
+        const fixture = await makeVerificationFixture(project);
         db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
         const oldLease = acquireWorkflowLease(project.id, 'verification-old-owner');
         const replacementConnection = new DatabaseSync(isolated.dbPath);
@@ -323,8 +328,8 @@ await runAsyncTest('9. verification persistence rejects after the worker lease i
             await assert.rejects(
                 () => verifyArtifactAndProject({
                     projectId: project.id,
-                    contractId: 'missing-contract',
-                    artifactId: 'missing-artifact',
+                    contractId: fixture.contractId,
+                    artifactId: fixture.artifactId,
                     expectedRevision: project.revision,
                     attemptId: oldLease.attempt.id,
                     leaseOwner: 'verification-old-owner',
@@ -376,30 +381,27 @@ await runAsyncTest('10. startup stale recovery increments project revision with 
 await runAsyncTest('11. verifier accepts a valid archive path without import/runtime errors', async () => {
     await withProject('Verifier archive path', async project => {
         const fixture = await makeVerificationFixture(project);
+        // Rejection provenance is durable now; this test exercises real stores
+        // instead of no-op repository callbacks that cannot retain a run.
+        const { createArtifact, addArtifactFile } = await import('../repositories/artifactRepository.js');
+        const bytes = Buffer.from(fixture.archiveBase64, 'base64');
+        const archivePath = path.join(path.dirname(isolated.dbPath), `${fixture.artifactId}.zip`);
+        await fs.writeFile(archivePath, bytes);
+        createArtifact({ ...fixture.artifact, kind: 'zip', path: archivePath, size: bytes.length });
+        for (const file of JSON.parse(fixture.artifact.manifestJson)) addArtifactFile({ ...file, contractId: fixture.contractId, artifactId: fixture.artifactId });
         const result = await verifyArtifact(
             { projectId: project.id, contractId: fixture.contractId, artifactId: fixture.artifactId },
             {
                 ...fixture,
                 runId: fixture.activeJob.runId,
                 db,
-                getArtifact: () => fixture.artifact,
-                getArtifactFiles: () => [{
-                    path: 'package.json',
-                    sha256: createHash('sha256').update('lease-fencing-fixture').digest('hex'),
-                    size: Buffer.byteLength('lease-fencing-fixture')
-                }],
                 executionClient: {
                     verifyArtifact: async workerJob => ({
                         ...workerJob,
                         status: 'failed',
                         result: { checks: [] }
                     })
-                },
-                createRun: () => {},
-                updateRunStatus: () => {},
-                updateArtifactStatus: () => {},
-                createCheck: () => {},
-                linkRequirementToCheck: () => {}
+                }
             }
         );
         assert.equal(result.status, 'failed');
@@ -512,6 +514,303 @@ await runAsyncTest('13. partial alternate-db verifier injection is rejected befo
             assert.equal(callbackCalls, 0, 'Alternate-db validation must precede all repository callbacks');
         } finally {
             alternateDatabase.close();
+        }
+    });
+});
+// Removing the commit-time lock or losing the fence options must allow these
+// staged old-owner bytes to overwrite the independently cancelled/replaced lease.
+async function stagedWriterRace(project, action, writer = 'normal') {
+    const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+    const target = writer === 'scaffold' ? 'package.json' : 'source.js';
+    const original = writer === 'scaffold' ? '{"name":"original"}' : 'original';
+    await fs.mkdir(projectDir, { recursive: true });
+    await fs.writeFile(path.join(projectDir, target), original);
+    const lease = acquireWorkflowLease(project.id, `source-${action}`);
+    const source = `
+        import fs from 'node:fs/promises';
+        import { once } from 'node:events';
+        const { initializeDatabase } = await import(${JSON.stringify(new URL('../db.js', import.meta.url).href)});
+        initializeDatabase({ path: process.env.DB_PATH });
+        const { assertWorkflowLease } = await import(${JSON.stringify(new URL('../workflowAttempts.js', import.meta.url).href)});
+        const { writeGeneratedFiles, ensureProjectScaffold } = await import(${JSON.stringify(new URL('../engine/codeGenerator.js', import.meta.url).href)});
+        const { writeGeneratedFiles: repair } = await import(${JSON.stringify(new URL('../engine/fileProtocol.js', import.meta.url).href)});
+        const fence = ${JSON.stringify({ projectId: project.id, attemptId: lease.attempt.id, leaseOwner: `source-${action}` })};
+        assertWorkflowLease(fence.attemptId, fence.leaseOwner, fence);
+        const open = fs.open.bind(fs);
+        fs.open = async (...args) => {
+            const handle = await open(...args);
+            if (String(args[0]).includes('.xfactor-generated-')) {
+                const close = handle.close.bind(handle);
+                handle.close = async () => {
+                    await close();
+                    process.send({ staged: true });
+                    await once(process, 'message');
+                };
+            }
+            return handle;
+        };
+        try {
+            const projectDir = ${JSON.stringify(projectDir)};
+            const files = [{ path: 'source.js', content: 'late old owner' }];
+            if (${JSON.stringify(writer)} === 'scaffold') await ensureProjectScaffold(projectDir, {}, {}, fence);
+            else if (${JSON.stringify(writer)} === 'repair') await repair({ projectDir, allowedFiles: ['source.js'], sourceFence: fence }, files);
+            else await writeGeneratedFiles(projectDir, null, files, null, fence);
+            process.send({ committed: true });
+        } catch (error) { process.send({ code: error.code, message: error.message }); }
+        process.disconnect();
+    `;
+    const child = spawn(process.execPath, ['--input-type=module', '--eval', source], {
+        env: { ...process.env, DB_PATH: isolated.dbPath }, stdio: ['ignore', 'pipe', 'pipe', 'ipc']
+    });
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    const exit = once(child, 'exit');
+    const timeout = setTimeout(() => child.kill(), 15000);
+    try {
+        const [ready] = await Promise.race([once(child, 'message'), exit.then(() => { throw new Error(stderr); })]);
+        assert.equal(ready.staged, true);
+        if (action === 'takeover') {
+            db.prepare('UPDATE workflow_attempts SET heartbeat_epoch = ?, heartbeat_at = ? WHERE id = ?')
+                .run(Date.now() - 60000, sqlUtcTimestamp(Date.now() - 60000), lease.attempt.id);
+            assert.equal((await runLeaseProcess(project.id, 'replacement-source-owner')).acquired, true);
+        } else {
+            // The main suite and writer child are independent processes and
+            // separate SQLite connections. Exercise real cancellation, no map edit.
+            const { abortProjectExecution } = await import('../engine/cancellation.js');
+            abortProjectExecution(project.id, 'PAUSED');
+        }
+        const result = once(child, 'message');
+        child.send('commit');
+        const [outcome] = await result;
+        await exit;
+        assert.equal(await fs.readFile(path.join(projectDir, target), 'utf8'), original, JSON.stringify(outcome));
+        assert.equal(outcome.code, 'WORKFLOW_LEASE_FENCED', JSON.stringify(outcome));
+        assert.deepEqual((await fs.readdir(projectDir)).filter(name => name.startsWith('.xfactor-generated-')), []);
+    } finally {
+        clearTimeout(timeout);
+        if (child.exitCode === null) child.kill();
+    }
+}
+
+await runAsyncTest('staged source from process A cannot commit after process B takes the lease', async () => {
+    await withProject('Staged source takeover', project => stagedWriterRace(project, 'takeover'));
+});
+await runAsyncTest('staged source from process A cannot commit after process B cancels', async () => {
+    await withProject('Staged source cancellation', project => stagedWriterRace(project, 'cancel'));
+});
+await runAsyncTest('scaffold source uses the same cross-process cancellation fence', async () => {
+    await withProject('Staged scaffold cancellation', project => stagedWriterRace(project, 'cancel', 'scaffold'));
+});
+await runAsyncTest('repair source forwards the cross-process takeover fence', async () => {
+    await withProject('Staged repair takeover', project => stagedWriterRace(project, 'takeover', 'repair'));
+});
+
+await runAsyncTest('current owner commits, aborted signals and paused state reject, and staging is cleaned', async () => {
+    const { writeGeneratedFiles, writeSourceFile } = await import('../engine/codeGenerator.js');
+    await withProject('Current source owner', async project => {
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        const lease = acquireWorkflowLease(project.id, 'current-source-owner');
+        const fence = { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'current-source-owner' };
+        await writeGeneratedFiles(projectDir, null, [{ path: 'source.js', content: 'current owner' }], null, fence);
+        assert.equal(await fs.readFile(path.join(projectDir, 'source.js'), 'utf8'), 'current owner');
+        const controller = new AbortController();
+        controller.abort('stop');
+        await assert.rejects(() => writeGeneratedFiles(projectDir, null,
+            [{ path: 'source.js', content: 'aborted' }], null, { ...fence, signal: controller.signal }),
+        { code: 'WORKFLOW_LEASE_FENCED' });
+        db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(project.id);
+        await assert.rejects(() => writeSourceFile(projectDir, path.join(projectDir, 'source.js'), 'paused', 'utf8', fence),
+            { code: 'WORKFLOW_LEASE_FENCED' });
+        assert.equal(await fs.readFile(path.join(projectDir, 'source.js'), 'utf8'), 'current owner');
+        assert.deepEqual((await fs.readdir(projectDir)).filter(name => name.startsWith('.xfactor-generated-')), []);
+    });
+});
+
+await runAsyncTest('revised approved contract fences source even while the lease remains current', async () => {
+    const { writeGeneratedFiles } = await import('../engine/codeGenerator.js');
+    await withProject('Contract source fence', async project => {
+        const fixture = await makeVerificationFixture(project);
+        const lease = acquireWorkflowLease(project.id, 'contract-source-owner');
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        await fs.mkdir(projectDir, { recursive: true });
+        await fs.writeFile(path.join(projectDir, 'source.js'), 'approved source');
+        const fence = { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'contract-source-owner',
+            contractId: fixture.contractId, contractHash: fixture.activeJob.contractHash };
+        db.prepare("UPDATE project_contracts SET status = 'superseded' WHERE id = ?").run(fixture.contractId);
+        await assert.rejects(() => writeGeneratedFiles(projectDir, null,
+            [{ path: 'source.js', content: 'unapproved source' }], null, fence), { code: 'WORKFLOW_LEASE_FENCED' });
+        assert.equal(await fs.readFile(path.join(projectDir, 'source.js'), 'utf8'), 'approved source');
+    });
+});
+
+await runAsyncTest('partial filesystem failure reports committed paths, removes stages and releases SQLite lock', async () => {
+    const { writeGeneratedFiles } = await import('../engine/codeGenerator.js');
+    await withProject('Partial source batch', async project => {
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        await fs.mkdir(projectDir, { recursive: true });
+        await fs.writeFile(path.join(projectDir, 'a.js'), 'original a');
+        await fs.writeFile(path.join(projectDir, 'b.js'), 'original b');
+        const lease = acquireWorkflowLease(project.id, 'partial-source-owner');
+        const rename = fsSync.renameSync;
+        let renames = 0;
+        fsSync.renameSync = (...args) => {
+            if (++renames === 2) throw new Error('simulated second rename I/O failure');
+            return rename(...args);
+        };
+        try {
+            await assert.rejects(() => writeGeneratedFiles(projectDir, null,
+                [{ path: 'a.js', content: 'new a' }, { path: 'b.js', content: 'new b' }], null,
+                { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'partial-source-owner' }), error => {
+                assert.equal(error.sourceCommitPartial, true);
+                assert.deepEqual(error.committedPaths, ['a.js']);
+                return true;
+            });
+        } finally { fsSync.renameSync = rename; }
+        assert.equal(await fs.readFile(path.join(projectDir, 'a.js'), 'utf8'), 'new a');
+        assert.equal(await fs.readFile(path.join(projectDir, 'b.js'), 'utf8'), 'original b');
+        assert.deepEqual((await fs.readdir(projectDir)).filter(name => name.startsWith('.xfactor-generated-')), []);
+        db.exec('BEGIN IMMEDIATE; ROLLBACK;');
+    });
+});
+for (const writer of ['batch', 'single']) {
+    await runAsyncTest(`${writer} source cleanup retains its primary fence or partial failure and visits every stage`, async () => {
+        const { writeGeneratedFiles, writeSourceFile } = await import('../engine/codeGenerator.js');
+        await withProject(`Cleanup primary ${writer}`, async project => {
+            const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+            const lease = acquireWorkflowLease(project.id, 'cleanup-owner');
+            const fence = { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'cleanup-owner' };
+            const rename = fsSync.renameSync, unlink = fs.unlink;
+            const primary = Object.assign(new Error('primary source write failure'), writer === 'single'
+                ? { code: 'WORKFLOW_LEASE_FENCED' } : {});
+            const cleanup = Object.assign(new Error('cleanup denied'), { code: 'EPERM' });
+            let renames = 0, unlinks = 0;
+            fsSync.renameSync = (...args) => {
+                if (++renames === (writer === 'batch' ? 2 : 1)) throw primary;
+                return rename(...args);
+            };
+            fs.unlink = async (...args) => {
+                if (++unlinks === 1) throw cleanup;
+                return unlink(...args);
+            };
+            try {
+                const operation = writer === 'batch'
+                    ? writeGeneratedFiles(projectDir, null, ['a.js', 'b.js', 'c.js'].map(file => ({ path: file, content: file })), null, fence)
+                    : writeSourceFile(projectDir, path.join(projectDir, 'single.js'), 'single', 'utf8', fence);
+                await assert.rejects(operation, error => {
+                    assert.equal(error, primary, 'cleanup must not replace the actionable primary failure');
+                    assert.deepEqual(error.cleanupFailures, [cleanup]);
+                    if (writer === 'batch') { assert.equal(error.sourceCommitPartial, true); assert.deepEqual(error.committedPaths, ['a.js']); }
+                    else assert.equal(error.code, 'WORKFLOW_LEASE_FENCED');
+                    return true;
+                });
+                assert.equal(unlinks, writer === 'batch' ? 3 : 1);
+                if (writer === 'batch') {
+                    assert.equal(await fs.readFile(path.join(projectDir, 'a.js'), 'utf8'), 'a.js');
+                    await assert.rejects(fs.stat(path.join(projectDir, 'b.js')), { code: 'ENOENT' });
+                }
+                db.exec('BEGIN IMMEDIATE; ROLLBACK;');
+            } finally { fsSync.renameSync = rename; fs.unlink = unlink; }
+        });
+    });
+}
+for (const failure of ['fence', 'partial']) {
+    await runAsyncTest(`Prisma scaffold bridge propagates ${failure} source failure`, async () => {
+        const { ensureProjectScaffold } = await import('../engine/codeGenerator.js');
+        await withProject(`Bridge ${failure}`, async project => {
+            const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+            await fs.writeFile(path.join(projectDir, 'package.json'), '{"name":"bridge-fixture","dependencies":{"@prisma/client":"^6.4.0"}}');
+            await fs.mkdir(path.join(projectDir, 'prisma'), { recursive: true });
+            await fs.writeFile(path.join(projectDir, 'prisma/schema.prisma'), 'model Room { id String @id }');
+            const lease = acquireWorkflowLease(project.id, 'bridge-owner');
+            const fence = { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'bridge-owner' };
+            const rename = fsSync.renameSync;
+            const primary = Object.assign(new Error('bridge source commit stopped'), failure === 'fence'
+                ? { code: 'WORKFLOW_LEASE_FENCED' } : { sourceCommitPartial: true, committedPaths: ['src/lib/db.ts'] });
+            let bridgeReached = false;
+            fsSync.renameSync = (...args) => {
+                if (String(args[1]).replaceAll('\\', '/').endsWith('/src/lib/db.ts')) {
+                    bridgeReached = true;
+                    throw primary;
+                }
+                return rename(...args);
+            };
+            try {
+                let caught;
+                try { await ensureProjectScaffold(projectDir, {}, { management: { needed: false, reason: 'Static fixture' } }, fence); }
+                catch (error) { caught = error; }
+                assert.equal(bridgeReached, true);
+                assert.equal(caught, primary, 'the actual bridge write failure must propagate');
+                await assert.rejects(fs.stat(path.join(projectDir, 'src/lib/db.ts')), { code: 'ENOENT' });
+            } finally { fsSync.renameSync = rename; }
+        });
+    });
+}
+await runAsyncTest('orphaned staging bytes stay out of artifacts and Coder source inventory', async () => {
+    const { collectArtifactFiles } = await import('../artifactInventory.js');
+    const { listProjectTree } = await import('../engine/codeGenerator.js');
+    await withProject('Orphan staging isolation', async project => {
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        await fs.mkdir(projectDir, { recursive: true });
+        await fs.writeFile(path.join(projectDir, 'source.js'), 'accepted');
+        await fs.writeFile(path.join(projectDir, '.xfactor-generated-12345678-1234-1234-1234-123456789abc.tmp'), 'uncommitted secret');
+        assert.deepEqual((await collectArtifactFiles(projectDir)).map(file => file.path), ['source.js']);
+        assert.deepEqual((await listProjectTree(projectDir)).map(file => file.path), ['source.js']);
+    });
+});
+
+await runAsyncTest('a competing SQLite process cannot take the lease during final synchronous rename', async () => {
+    const { writeGeneratedFiles } = await import('../engine/codeGenerator.js');
+    await withProject('Commit lock contention', async project => {
+        const projectDir = path.join(process.env.PROJECTS_ROOT, project.id);
+        const coordinationDir = path.join(path.dirname(isolated.dbPath), 'commit-contention');
+        await fs.mkdir(coordinationDir, { recursive: true });
+        const startPath = path.join(coordinationDir, 'go');
+        const resultPath = path.join(coordinationDir, 'result');
+        const lease = acquireWorkflowLease(project.id, 'commit-lock-owner');
+        const source = `
+            import fs from 'node:fs';
+            import { setTimeout } from 'node:timers/promises';
+            const { initializeDatabase } = await import(${JSON.stringify(new URL('../db.js', import.meta.url).href)});
+            const database = initializeDatabase({ path: process.env.DB_PATH });
+            database.exec('PRAGMA busy_timeout = 0;');
+            const { acquireWorkflowLease } = await import(${JSON.stringify(new URL('../workflowAttempts.js', import.meta.url).href)});
+            process.send('ready');
+            while (!fs.existsSync(${JSON.stringify(startPath)})) await setTimeout(5);
+            let result;
+            try { result = acquireWorkflowLease(${JSON.stringify(project.id)}, 'contender', { heartbeatTtlSeconds: -1 }); }
+            catch (error) { result = { error: error.message }; }
+            fs.writeFileSync(${JSON.stringify(resultPath)}, JSON.stringify(result));
+            process.disconnect();
+        `;
+        const child = spawn(process.execPath, ['--input-type=module', '--eval', source], {
+            env: { ...process.env, DB_PATH: isolated.dbPath }, stdio: ['ignore', 'ignore', 'pipe', 'ipc']
+        });
+        const exit = once(child, 'exit');
+        const timer = setTimeout(() => child.kill(), 15000);
+        const rename = fsSync.renameSync;
+        try {
+            await Promise.race([once(child, 'message'), exit.then(() => { throw new Error('contender exited before readiness'); })]);
+            fsSync.renameSync = (...args) => {
+                fsSync.writeFileSync(startPath, 'go');
+                const deadline = Date.now() + 5000;
+                while (!fsSync.existsSync(resultPath)) {
+                    if (Date.now() > deadline) throw new Error('contender never attempted SQLite write');
+                }
+                return rename(...args);
+            };
+            await writeGeneratedFiles(projectDir, null, [{ path: 'source.js', content: 'committed by current owner' }], null,
+                { projectId: project.id, attemptId: lease.attempt.id, leaseOwner: 'commit-lock-owner' });
+            await exit;
+            const contention = JSON.parse(await fs.readFile(resultPath, 'utf8'));
+            assert.match(contention.error, /busy|locked/i);
+            assert.equal(getActiveWorkflowAttempt(project.id)?.id, lease.attempt.id);
+            assert.equal(await fs.readFile(path.join(projectDir, 'source.js'), 'utf8'), 'committed by current owner');
+            db.prepare('UPDATE workflow_attempts SET heartbeat_epoch = ? WHERE id = ?').run(Date.now() - 60000, lease.attempt.id);
+            assert.equal((await runLeaseProcess(project.id, 'after-commit-owner')).acquired, true);
+        } finally {
+            fsSync.renameSync = rename;
+            clearTimeout(timer);
+            if (child.exitCode === null) child.kill();
         }
     });
 });

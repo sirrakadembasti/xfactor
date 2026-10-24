@@ -19,7 +19,7 @@ const {
 } = await import('../projectRepository.js');
 const { readProjectState, writeProjectState } = await import('../engine/index.js');
 const { createProjectRouter } = await import('../routes/projectRoutes.js');
-const { createContractRevision } = await import('../contracts/projectContract.js');
+const { createContractRevision, approveContractRevision } = await import('../contracts/projectContract.js');
 const { abortProjectExecution, registerProjectAbortController, getProjectAbortSignal, unregisterProjectAbortController } = await import('../engine/cancellation.js');
 const { acquireWorkflowLease, releaseWorkflowLease } = await import('../workflowAttempts.js');
 const { createArtifact } = await import('../repositories/artifactRepository.js');
@@ -32,6 +32,10 @@ const validPlan = {
     backend: { framework: 'express' },
     database: { engine: 'sqlite' }
 };
+
+function seedApprovedResumeContract(projectId) {
+    approveContractRevision(projectId, createContractRevision(projectId, validPlan, 'approved-resume-fixture'));
+}
 
 const actionMessages = {
     approve: {
@@ -256,6 +260,7 @@ await runAsyncTest('approve appends exact canonical action pair and returns cano
 
 await runAsyncTest('resume and pause append exact canonical action pairs', async () => {
     const resumeProject = await createProject({ title: 'Resume Action Route' });
+    seedApprovedResumeContract(resumeProject.id);
     const resumeState = await readProjectState(resumeProject.id);
     db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
     resumeState.status = 'paused';
@@ -702,6 +707,7 @@ await runAsyncTest('losing approve waits for winner publication before returning
 
 await runAsyncTest('stale approve after resume is rejected without approval audit rows', async () => {
     const project = await createProject({ title: 'Stale Approve Route' });
+    seedApprovedResumeContract(project.id);
     db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(project.id);
     const resumed = await postAction({
         projectId: project.id,
@@ -747,6 +753,7 @@ await runAsyncTest('workflow transitions and audit pairs roll back together on a
         assert.strictEqual(db.prepare("SELECT COUNT(*) AS count FROM workflow_attempts WHERE project_id = ? AND status = 'running'").get(approveProject.id).count, 0);
 
         const resumeProject = await createProject({ title: 'Atomic Resume Route' });
+        seedApprovedResumeContract(resumeProject.id);
         db.prepare("UPDATE projects SET status = 'paused' WHERE id = ?").run(resumeProject.id);
         const resume = await postAction({ projectId: resumeProject.id, kind: 'resume', actionId: 'atomic-resume-action' });
         assert.strictEqual(resume.status, 500, JSON.stringify(resume.body));
@@ -846,7 +853,8 @@ await runAsyncTest('action message append rolls back the user row when the model
     );
 });
 
-assert.strictEqual(getSchemaVersion(), 16);
+assert.strictEqual(getSchemaVersion(), 17);
+assert.ok(db.prepare('PRAGMA table_info(task_checkpoints)').all().some(column => column.name === 'task_identity_version' && column.notnull === 1 && column.dflt_value === '0'));
 assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='artifact_maintenance'").get());
 finish();
 await isolated.cleanup();

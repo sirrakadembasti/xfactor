@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { TaskDAG } from './dag.js';
+import { workflowCheckpointInventory } from './checkpointIdentity.js';
 import {
     ensureDir,
     setupRootProtocol,
@@ -36,7 +37,7 @@ import {
 } from '../agents/schemas.js';
 import { validatePlanTasks, validateManagementTaskCoverage, formatManagementTaskDescription, resolveFrontendRuntimePlan } from '../agents/director.js';
 import { db, dbEvents, saveProjectLog } from '../db.js';
-import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, detectProjectStack, isProtectedOrchestrationPath } from './codeGenerator.js';
+import { ensureProjectScaffold, listProjectTree, writeGeneratedFiles, writeSourceFile, detectProjectStack, isProtectedOrchestrationPath } from './codeGenerator.js';
 import { isSafeProjectPath, assertPathInsideRoot } from '../security.js';
 import { buildCoderProjectContext } from './coderContext.js';
 import { executeCorrectionLoop } from './selfCorrection.js';
@@ -54,10 +55,11 @@ import {
     getProjectDir,
     getProjectsRoot,
     getProject as readProjectState,
+    assertVerifiedArtifactEvidence,
     saveProjectState as writeProjectState,
     appendProjectActionMessages
 } from '../projectRepository.js';
-import { verifyArtifactAndProject } from '../verification/verificationCli.js';
+import { verifyArtifactAndProject, recoverVerifiedWorkerRepair } from '../verification/verificationCli.js';
 import { createProjectZip } from '../utils/archive.js';
 import { saveCheckpoint } from './checkpointRepository.js';
 import { computeTaskSpecHash, computeInputHash, computeOutputHash } from './checkpointHelper.js';
@@ -69,6 +71,9 @@ import { createExecutionClient } from '../executionClient.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { validateRuntimeConfig } from '../config.js';
 import { projectContractTasks } from '../contracts/taskProjection.js';
+import { loadOpenWorkerRepairBatch, recordVerificationBlocker } from '../verification/workerFailures.js';
+import { commitVerificationContext } from '../verification/verificationContext.js';
+import { executeWorkerRepairs, reserveWorkerValidation, snapshotHash } from './workerRepairs.js';
 export { getProjectDir, getProjectsRoot, readProjectState, writeProjectState };
 export const getStatePath = (projectId, env = process.env) => path.join(getProjectDir(projectId, env), 'state.json');
 export function extractPreparedLockfile(prepResult, prepError = null) {
@@ -127,6 +132,7 @@ export function normalizeWorkflowState(value) {
         planHash: workflow.planHash ?? null,
         directorSpecs,
         teamleaderPlans,
+        ...(workflow.workerRepairs ? { workerRepairs: workflow.workerRepairs } : {}),
         ...(Array.isArray(workflow.testerAdvisoryRepairs) ? { testerAdvisoryRepairs: workflow.testerAdvisoryRepairs } : {}),
         ...(workflow.dependencyPreparation ? { dependencyPreparation: workflow.dependencyPreparation } : {}),
         ...(workflow.generationCompletion !== undefined ? { generationCompletion: workflow.generationCompletion } : {})
@@ -448,11 +454,12 @@ export async function checkPause(projectId, signal = null) {
 /**
  * Güvenli LLM Ajan Çağrısı
  */
-async function callAgentLLM(agentRole, userPrompt, {
+export async function callAgentLLM(agentRole, userPrompt, {
     signal = null,
     taskId = null,
     onDiagnostic = null,
-    onUsage = null
+    onUsage = null,
+    maxAttempts
 } = {}) {
     const agent = getAgent(agentRole);
     return runLLMTaskWithRetry({
@@ -461,6 +468,7 @@ async function callAgentLLM(agentRole, userPrompt, {
         signal,
         onDiagnostic: onDiagnostic || undefined,
         onUsage,
+        maxAttempts,
         messages: [
             { role: 'system', content: agent.systemPrompt },
             { role: 'user', content: userPrompt }
@@ -488,7 +496,8 @@ export async function executeStaticRepairLoop({
     onUsage = null,
     signal = null,
     maxRounds = 5,
-    maxTotalAttempts = 15
+    maxTotalAttempts = 15,
+    sourceFence = null
 }) {
     const repairTargetSet = new Set(
         (repairTargetFiles || []).map(f => (typeof f === 'string' ? f.replace(/\\/g, '/') : ''))
@@ -585,7 +594,8 @@ export async function executeStaticRepairLoop({
                             {
                                 projectDir,
                                 allowedFiles: [targetPath],
-                                allowConfigMutation: true
+                                allowConfigMutation: true,
+                                sourceFence
                             },
                             [repairFile]
                         );
@@ -599,7 +609,7 @@ export async function executeStaticRepairLoop({
                     }
 
                     if (projectDir) {
-                        await ensureProjectScaffold(projectDir, state, plan);
+                        await ensureProjectScaffold(projectDir, state, plan, sourceFence);
                         generatedProjectFiles.splice(
                             0,
                             generatedProjectFiles.length,
@@ -630,6 +640,7 @@ export async function executeStaticRepairLoop({
                     }
                 }
             } catch (error) {
+                if (error.code === 'WORKFLOW_LEASE_FENCED' || error.sourceCommitPartial) throw error;
                 logWarning('workflow.auto_repair_failed', error, { projectId, attempt: totalAttempts, targetPath });
             }
         }
@@ -653,7 +664,7 @@ export async function executeStaticRepairLoop({
  */
 export async function executeTesterAdvisoryRepairs({ projectDir, contractId, contractHash, workflow,
     repairIssues = [], generatedProjectFiles = [], repairTargetFiles = [], persistWorkflow,
-    callAgent = callAgentLLM, signal = null, onUsage = null, onDiagnostic = null }) {
+    callAgent = callAgentLLM, signal = null, onUsage = null, onDiagnostic = null, sourceFence = null }) {
     const stop = reason => {
         const error = new Error(`Tester onarımı güvenle durduruldu: ${reason}. Manager ile somut dosya hedefini ve kabul koşulunu belirten revizyon yapın; aynı Resume isteği ücretli çağrıyı tekrar etmez.`);
         error.code = 'TESTER_REPAIR_REVISION_REQUIRED';
@@ -729,7 +740,7 @@ export async function executeTesterAdvisoryRepairs({ projectDir, contractId, con
         // bytes; a stale attempt must not write a late provider response.
         await persistWorkflow();
         if (signal?.aborted) throw new Error('Tester onarımı iptal edildi.');
-        await writeRepairFiles({ projectDir, allowedFiles: [repair.target], allowConfigMutation: true }, result.files);
+        await writeRepairFiles({ projectDir, allowedFiles: [repair.target], allowConfigMutation: true, sourceFence }, result.files);
         const index = generatedProjectFiles.findIndex(file => file.path === repair.target);
         generatedProjectFiles[index] = { path: repair.target, content: result.files[0].content };
     }
@@ -737,21 +748,55 @@ export async function executeTesterAdvisoryRepairs({ projectDir, contractId, con
     return { attempts, requiresFreshAcceptance: true };
 }
 
-export async function executeProjectTasks(projectId, wsHub = null, attemptId = null, leaseOwner = null) {
+export async function executeProjectTasks(projectId, wsHub = null, attemptId = null, leaseOwner = null, services = {}) {
+    const callAgent = services.callAgent ?? callAgentLLM;
+    const executionClientFactory = services.createExecutionClient ?? createExecutionClient;
+    const verifyProject = services.verifyArtifactAndProject ?? verifyArtifactAndProject;
+    if ([callAgent, executionClientFactory, verifyProject].some(service => typeof service !== 'function')) throw new TypeError('Workflow services must be callable.');
+    if (!attemptId || !leaseOwner) {
+        throw Object.assign(new Error('Workflow execution requires a durable attemptId and lease owner.'),
+            { code: 'WORKFLOW_LEASE_FENCED' });
+    }
+    try { assertWorkflowLease(attemptId, leaseOwner, { projectId }); }
+    catch (error) {
+        logWarning('workflow.execution_fenced', error, { projectId, attemptId });
+        return;
+    }
     const projectDir = getProjectDir(projectId);
     const state = await readProjectState(projectId);
 
     if (!state) return;
+    const executionStatus = db.prepare('SELECT status FROM projects WHERE id=?').get(projectId)?.status;
+    if (!['implementing', 'running'].includes(executionStatus)) {
+        const error = new Error(`Workflow execution is not authorized from project status ${executionStatus || 'missing'}.`);
+        error.code = 'WORKFLOW_EXECUTION_NOT_AUTHORIZED';
+        if (attemptId) releaseWorkflowLease(attemptId, 'failed', { error: error.message, leaseOwner });
+        throw error;
+    }
 
     state.workflow = normalizeWorkflowState(state.workflow);
 
     const abortController = new AbortController();
-    registerProjectAbortController(projectId, abortController);
+    registerProjectAbortController(projectId, abortController, { attemptId, leaseOwner });
     const effectiveLeaseOwner = leaseOwner;
     const leaseOptions = attemptId
         ? { attemptId, leaseOwner: effectiveLeaseOwner }
         : null;
-    const workflowWriteState = (id, nextState) => writeProjectState(id, nextState, leaseOptions);
+    const sourceFence = { projectId, attemptId, leaseOwner: effectiveLeaseOwner, signal: abortController.signal };
+    const protocolOptions = { projectDir, sourceFence, strict: true };
+    const assertWorkflowContract = () => {
+        if (!sourceFence.contractId) return;
+        const current = db.prepare(`SELECT id, contract_hash, revision FROM project_contracts
+            WHERE project_id=? AND status='approved' ORDER BY revision DESC, id ASC LIMIT 1`).get(projectId);
+        if (current?.id !== sourceFence.contractId || current.contract_hash !== sourceFence.contractHash
+            || current.revision !== sourceFence.contractRevision) {
+            const error = new Error('Workflow approved contract changed before state commit.');
+            error.code = 'WORKFLOW_LEASE_FENCED';
+            throw error;
+        }
+    };
+    const workflowWriteState = (id, nextState) => writeProjectState(id, nextState,
+        { ...leaseOptions, onTransaction: assertWorkflowContract });
     const workflowLogEvent = createWorkflowLogEvent(leaseOptions);
     const recordTokenUsage = usage => {
         try { recordProjectTokenUsage(projectId, getCurrentLLMProvider(), usage); }
@@ -774,6 +819,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
     let heartbeatTimer = null;
     let terminalStatus = 'completed';
     let executionError = null;
+    let controllerBoundary = null;
 
     if (attemptId) {
         heartbeatTimer = setInterval(() => {
@@ -787,16 +833,41 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
     try {
         if (attemptId) assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
         const approvedResumeContract = db.prepare(`
-            SELECT id, contract_hash FROM project_contracts
+            SELECT id, contract_hash, contract_json, revision FROM project_contracts
             WHERE project_id = ? AND status = 'approved'
             ORDER BY revision DESC LIMIT 1
         `).get(projectId);
+        if (abortController.signal.aborted) throw new Error('Workflow execution aborted before dispatch.');
+        if (!approvedResumeContract) throw Object.assign(
+            new Error('Workflow approval required: a persisted approved contract is missing.'),
+            { code: 'WORKFLOW_APPROVAL_REQUIRED' });
+        sourceFence.contractId = approvedResumeContract.id;
+        sourceFence.contractHash = approvedResumeContract.contract_hash;
+        sourceFence.contractRevision = approvedResumeContract.revision;
+        state.plan = normalizeManagerPlan(JSON.parse(approvedResumeContract.contract_json));
+        const recoveredWorker = await recoverVerifiedWorkerRepair({ projectId, contract: approvedResumeContract,
+            workflow: state.workflow, attemptId, leaseOwner: effectiveLeaseOwner, signal: abortController.signal });
+        if (recoveredWorker?.completed) {
+            await workflowLogEvent(wsHub, projectId, 'Manager', 'finish', '', 'Kaydedilmiş bağımsız worker kanıtıyla doğrulama tamamlandı.', 'manager');
+            return;
+        }
+        const workerBatch = loadOpenWorkerRepairBatch({ projectId, contractId: approvedResumeContract.id, contractHash: approvedResumeContract.contract_hash });
+        let workerSession = null;
+        if (workerBatch.issues.length) {
+            if (!resolveGenerationResume(state.workflow.generationCompletion, approvedResumeContract, computePlanHash(state.plan))) {
+                throw new Error('Worker repair requires Manager revision: approved generation marker missing.');
+            }
+            workerSession = await executeWorkerRepairs({ projectDir, contract: approvedResumeContract, batch: workerBatch,
+                workflow: state.workflow, sourceFence, persistWorkflow: () => workflowWriteState(projectId, state),
+                callAgent, signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic });
+            state.workflow.dependencyPreparation = null;
+        }
         let resumeFiles = null;
         const hasGenerationCompletion = state.workflow.generationCompletion !== undefined;
         if (!hasGenerationCompletion && state.workflow.dependencyPreparation && approvedResumeContract) {
             resumeFiles = await collectArtifactFiles(projectDir);
         }
-        const resumeAtDependencyPreparation = !hasGenerationCompletion && resolveDependencyResume(
+        const resumeAtDependencyPreparation = !workerSession && !hasGenerationCompletion && resolveDependencyResume(
             state.workflow.dependencyPreparation,
             approvedResumeContract,
             resumeFiles
@@ -807,24 +878,6 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
         // 1. AŞAMA: MANAGER & ROOT PROTOKOLÜ
         await checkPause(projectId, abortController.signal);
-        if (!plan || !Array.isArray(plan.domains) || plan.domains.length === 0) {
-            const approved = db.prepare(`SELECT contract_json FROM project_contracts
-                WHERE project_id = ? AND status = 'approved' ORDER BY revision DESC LIMIT 1`).get(projectId);
-            if (approved) plan = normalizeManagerPlan(JSON.parse(approved.contract_json));
-        }
-
-        if (!plan || !plan.domains || plan.domains.length === 0) {
-            const managerAgent = getAgent('manager');
-            const managerPrompt = managerAgent.buildPrompt(state.title, state.chatHistory ? state.chatHistory.map(m => ({ role: m.role, content: m.parts ? m.parts[0].text : '' })) : []);
-            plan = await callAgentLLM('manager', managerPrompt, {
-                signal: abortController.signal,
-                taskId: 'manager.plan',
-                onUsage: recordTokenUsage,
-                onDiagnostic: recordLLMDiagnostic
-            });
-            state.plan = plan;
-            await workflowWriteState(projectId, state);
-        }
         plan = normalizeManagerPlan(plan);
         validateManagerPlan(plan);
         const planHash = computePlanHash(plan);
@@ -841,11 +894,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             prefix: typeof d === 'string' ? d : (d.prefix || d.name),
             description: typeof d === 'string' ? `${d} domaini` : (d.description || `${d.name} domaini`)
         }));
-        await setupRootProtocol(projectDir, plan.talimatname, domainList);
+        if (!workerSession) await setupRootProtocol(projectDir, plan.talimatname, domainList, protocolOptions);
         await workflowLogEvent(wsHub, projectId, "Manager", "write", "TALIMATNAME.md", "Ana şartname ve kök TODO.md protokolü oluşturuldu.", "manager");
 
         // Architecture-First (Önce Mimari Sözleşme): Kodlama başlamadan önce onaylı paketler, .env.example ve köprüler kilitlenir!
-        await ensureProjectScaffold(projectDir, state, plan);
+        if (!workerSession) await ensureProjectScaffold(projectDir, state, plan, sourceFence);
         await workflowLogEvent(wsHub, projectId, "Manager", "write", "package.json, tsconfig.json, .env.example", "Mimari sözleşme ve onaylı teknoloji yığını diske kilitlendi; package-lock yalnızca izole worker tarafından hazırlanacaktır.", "manager");
         const stack = await detectProjectStack(projectDir, state, plan);
 
@@ -857,7 +910,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             'prisma/schema.prisma'
         ]);
         const managerDir = path.join(projectDir, 'manager');
-        await ensureDir(managerDir);
+        await ensureDir(managerDir, protocolOptions);
         // Reuse generated source, never its old quality evidence. Source repairs
         // invalidate task output hashes but are accepted only by the full gates below.
         if (!resumeAfterGeneration) {
@@ -867,7 +920,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
             const directorId = `${domain.prefix}.director`;
             let directorDir = path.join(managerDir, `${domain.prefix}.director`);
-            let altTalimatOnDisk = await readAltTalimatname(directorDir);
+            let altTalimatOnDisk = await readAltTalimatname(directorDir, protocolOptions);
             let directorSpec = state.workflow.directorSpecs[domain.prefix];
             const newlyPlannedDirector = !directorSpec || Array.isArray(directorSpec)
                 || (typeof directorSpec === 'object' && Object.keys(directorSpec).length === 0);
@@ -899,7 +952,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     domain.prefix,
                     `# Görev: ${domain.name}\n\n${domain.description}`,
                     directorSpec.altTalimatname,
-                    teamleaders
+                    teamleaders,
+                    protocolOptions
                 );
                 await workflowLogEvent(wsHub, projectId, "Director", "write", "ALT-TALIMATNAME.md", `${domain.name} için ALT-TALIMATNAME.md üretildi.`, directorId, "manager");
             }
@@ -912,7 +966,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 const tlTodoPath = path.join(tlDir, 'TODO.md');
 
                 let taskPlan = state.workflow.teamleaderPlans[tlId];
-                const tasksOnDisk = await readTasksFromTodoFile(tlTodoPath);
+                const tasksOnDisk = await readTasksFromTodoFile(tlTodoPath, protocolOptions);
                 const normalizeTaskPlan = candidate => normalizeTeamleaderPlanForStack(
                     normalizeTeamleaderTasks(candidate, plan.requirements || []), stack);
                 const resolution = await resolveFrontendRuntimePlan({
@@ -993,7 +1047,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         directorDir,
                         tl.prefix,
                         `# Görev: ${tl.name}\n\nMisyon: ${tl.mission}`,
-                        taskPlan.tasks
+                        taskPlan.tasks,
+                        protocolOptions
                     );
                 }
 
@@ -1033,11 +1088,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         }
                         const depTargetFiles = [...depTargetFileSet].sort();
 
-                        const latestContract = db.prepare(`
-                            SELECT id, contract_hash FROM project_contracts
-                            WHERE project_id = ? AND status = 'approved'
-                            ORDER BY revision DESC LIMIT 1
-                        `).get(projectId);
+                        // Cache retrieval and publication share the approved
+                        // contract captured before any asynchronous work.
+                        assertWorkflowContract();
+                        const latestContract = approvedResumeContract;
                         const currentPlanHash = latestContract?.contract_hash || null;
 
                         // CAS CHECKPOINT DOĞRULAMASI
@@ -1048,6 +1102,9 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             {
                                 planHash: currentPlanHash,
                                 contractId: latestContract?.id,
+                                teamleaderId: tlId,
+                                ownershipInventory: workflowCheckpointInventory({ contractId: latestContract.id, domains: domainList,
+                                    directorSpecs: state.workflow.directorSpecs, teamleaderPlans: state.workflow.teamleaderPlans }),
                                 dependencyTargetFiles: depTargetFiles,
                                 gateVersion: '1.0.0',
                                 allowAcceptanceRetry: Boolean(latestContract && db.prepare(`
@@ -1058,13 +1115,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             }
                         );
 
+                        assertWorkflowContract();
+
+                        await reconcileTaskCache({ projectDir, projectId, contractId: latestContract?.id,
+                            teamleaderId: tlId, localTaskId: taskId, task, coderDir, teamleaderDir: tlDir,
+                            directorDir, managerDir, domainPrefix: domain.prefix, domainName: domain.name,
+                            teamleaderPrefix: tl.prefix, teamleaderName: tl.name, checkpointValid, sourceFence });
                         if (checkpointValid) {
                             dag.setTaskStatus(taskId, 'completed');
                             return { success: true, taskId, skipped: true };
                         }
-
-                        // Checkpoint geçersizse dosya sistemi önbelleğini ve TODO durumunu sıfırla
-                        await reconcileTaskCache(projectDir, taskId, task);
 
                         await workflowLogEvent(wsHub, projectId, "Teamleader", "delegate", "", `Görev "${task.title}" Coder'a iletildi. Kod üretiliyor...`, coderNodeId, tlId);
 
@@ -1074,7 +1134,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             tlDir,
                             taskId,
                             task.title,
-                            `# Atomik Görev: ${task.title}\n\nAçıklama: ${taskDescription}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`
+                            `# Atomik Görev: ${task.title}\n\nAçıklama: ${taskDescription}\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`,
+                            protocolOptions
                         );
 
                         const projectContext = await buildCoderProjectContext({
@@ -1126,8 +1187,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         // VETO KONTROLÜ: Reviewer onay vermezse zarifçe fail durumuna al
                         if (!loopResult.approved) {
                             const failReason = loopResult.review?.feedback || loopResult.review?.summary || 'Reviewer kalite kapısını geçemedi.';
-                            await writeDurum(coderDir, 'BASARISIZ', `Görev Reviewer tarafından reddedildi: ${failReason}`);
-                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\nReviewer Reddi:\n${failReason}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: REDDEDILDI\n\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`);
+                            await writeDurum(coderDir, 'BASARISIZ', `Görev Reviewer tarafından reddedildi: ${failReason}`, protocolOptions);
+                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\nReviewer Reddi:\n${failReason}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: REDDEDILDI\n\nHedef Dosyalar: ${JSON.stringify(task.targetFiles)}`, protocolOptions);
                             dag.setTaskStatus(taskId, 'failed', { error: failReason });
                             await workflowLogEvent(wsHub,
                             projectId,
@@ -1147,15 +1208,15 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         )].sort();
                         if (expectedTargetFiles.length === 0) {
                             const writeError = 'Görev tamamlanamadı: kabul edilmiş hedef dosya yok.';
-                            await writeDurum(coderDir, 'BASARISIZ', writeError);
-                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
+                            await writeDurum(coderDir, 'BASARISIZ', writeError, protocolOptions);
+                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`, protocolOptions);
                             dag.setTaskStatus(taskId, 'failed', { error: writeError });
                             await workflowLogEvent(wsHub, projectId, "Coder", "failure", "", writeError, coderNodeId, tlId);
                             return { success: false, taskId, error: writeError };
                         }
 
                         // Nihai onaylı dosyaları güvenli path guard üzerinden yaz.
-                        const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files, task.targetFiles);
+                        const writtenMeta = await writeGeneratedFiles(projectDir, coderDir, coderOutput.files, task.targetFiles, sourceFence);
                         const writtenMetaByPath = new Map(
                             writtenMeta.map(file => [
                                 path.normalize(file.path).replace(/\\/g, '/'),
@@ -1177,8 +1238,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         }
                         if (incompleteTargetFiles.length > 0) {
                             const writeError = `Görev tamamlanamadı: kabul edilmiş hedef dosyalar boş veya yazılmadı (${incompleteTargetFiles.join(', ')}).`;
-                            await writeDurum(coderDir, 'BASARISIZ', writeError);
-                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`);
+                            await writeDurum(coderDir, 'BASARISIZ', writeError, protocolOptions);
+                            await writeRapor(coderDir, `# Hata Raporu: ${task.title}\n\n${writeError}`, protocolOptions);
                             dag.setTaskStatus(taskId, 'failed', { error: writeError });
                             await workflowLogEvent(wsHub, projectId, "Coder", "failure", incompleteTargetFiles.join(', '), writeError, coderNodeId, tlId);
                             return { success: false, taskId, error: writeError };
@@ -1188,11 +1249,9 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             .map(file => ({ path: file.path, content: file.content }));
 
                         try {
-                            const latestContract = db.prepare(`
-                                SELECT id, contract_hash FROM project_contracts
-                                WHERE project_id = ? AND status = 'approved'
-                                ORDER BY revision DESC LIMIT 1
-                            `).get(projectId);
+                            // These bytes were reviewed under the captured
+                            // contract. Never relabel them with a later approval.
+                            const latestContract = approvedResumeContract;
                             if (latestContract) {
                                 const specHash = computeTaskSpecHash(task);
                                 const inHash = await computeInputHash(projectDir, depTargetFiles);
@@ -1200,8 +1259,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                                 saveCheckpoint({
                                     projectId,
                                     taskId,
+                                    teamleaderId: tlId,
                                     contractId: latestContract.id,
                                     planHash: latestContract.contract_hash,
+                                    expectedContractHash: latestContract.contract_hash,
+                                    expectedContractRevision: latestContract.revision,
+                                    signal: abortController.signal,
                                     taskSpecHash: specHash,
                                     inputHash: inHash,
                                     outputHash: outHash,
@@ -1222,9 +1285,9 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         }
                         // Publish completion only after durable resume evidence exists.
                         const statusDetail = `Görev başarıyla tamamlandı ve Reviewer tarafından onaylandı: ${coderOutput.summary}`;
-                        await writeDurum(coderDir, 'TAMAMLANDI', statusDetail);
-                        await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ONAYLANDI\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`);
-                        await checkTodoItem(path.join(tlDir, 'TODO.md'), task.title);
+                        await writeDurum(coderDir, 'TAMAMLANDI', statusDetail, protocolOptions);
+                        await writeRapor(coderDir, `# Rapor: ${task.title}\n\n${statusDetail}\n\nİnceleme Turları: ${loopResult.iterations}\nOnay Durumu: ONAYLANDI\n\nÜretilen Dosyalar: ${JSON.stringify(task.targetFiles)}`, protocolOptions);
+                        await checkTodoItem(path.join(tlDir, 'TODO.md'), { kind: 'task', id: taskId }, protocolOptions);
                         dag.setTaskStatus(taskId, 'completed', coderOutput);
                         await workflowLogEvent(wsHub,
                         projectId,
@@ -1266,17 +1329,17 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     }
                 }
                 // Teamleader tamamlandı
-                await writeDurum(tlDir, 'TAMAMLANDI', 'Tüm coder görevleri başarıyla tamamlandı.');
-                await writeRapor(tlDir, `# Rapor: ${tl.name}\n\nDomain alt görevlerinin tamamı başarıyla üretildi.`);
-                await checkTodoItem(path.join(directorDir, 'TODO.md'), tl.name);
+                await writeDurum(tlDir, 'TAMAMLANDI', 'Tüm coder görevleri başarıyla tamamlandı.', protocolOptions);
+                await writeRapor(tlDir, `# Rapor: ${tl.name}\n\nDomain alt görevlerinin tamamı başarıyla üretildi.`, protocolOptions);
+                await checkTodoItem(path.join(directorDir, 'TODO.md'), { kind: 'folder', folder: tl.prefix, name: tl.name }, protocolOptions);
             }
 
             // Director tamamlandı
-            await writeDurum(directorDir, 'TAMAMLANDI', `${domain.name} domaini başarıyla tamamlandı.`);
-            await writeRapor(directorDir, `# Rapor: ${domain.name} Director\n\nTüm takım lideri görevleri tamamlandı.`);
-            await checkTodoItem(path.join(managerDir, 'TODO.md'), domain.name);
+            await writeDurum(directorDir, 'TAMAMLANDI', `${domain.name} domaini başarıyla tamamlandı.`, protocolOptions);
+            await writeRapor(directorDir, `# Rapor: ${domain.name} Director\n\nTüm takım lideri görevleri tamamlandı.`, protocolOptions);
+            await checkTodoItem(path.join(managerDir, 'TODO.md'), { kind: 'folder', folder: `${domain.prefix}.director` }, protocolOptions);
             if (fsSync.existsSync(path.join(projectDir, 'TODO.md'))) {
-                await checkTodoItem(path.join(projectDir, 'TODO.md'), domain.name);
+                await checkTodoItem(path.join(projectDir, 'TODO.md'), { kind: 'folder', folder: `${domain.prefix}.director` }, protocolOptions);
             }
         }
 
@@ -1291,7 +1354,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
         }
         // 6. AŞAMA: TESTER AJANI VE NİHAİ KONSOLİDE RAPOR
-        if (resumeAfterGeneration && approvedResumeContract && Object.keys(state.workflow.teamleaderPlans).length) {
+        if (!workerSession && resumeAfterGeneration && approvedResumeContract && Object.keys(state.workflow.teamleaderPlans).length) {
             projectContractTasks({ projectId, contractId: approvedResumeContract.id,
                 contractHash: approvedResumeContract.contract_hash, teamleaderPlans: state.workflow.teamleaderPlans,
                 attemptId, leaseOwner: effectiveLeaseOwner });
@@ -1316,14 +1379,14 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
             // Scaffold package.json ve yardımcı dosyaları değiştirebilir; denetim her
             // zaman diskten yeniden yüklenmiş en güncel içerikle yapılır.
-            await ensureProjectScaffold(projectDir, state, plan);
+            if (!workerSession) await ensureProjectScaffold(projectDir, state, plan, sourceFence);
             generatedProjectFiles.splice(
                 0,
                 generatedProjectFiles.length,
                 ...mergeGeneratedProjectFiles(generatedProjectFiles, await listProjectTree(projectDir))
             );
 
-            if (approvedResumeContract) {
+            if (approvedResumeContract && !workerSession) {
                 const pendingAdvisoryIssues = db.prepare(`SELECT id, detail_json FROM repair_issues
                     WHERE project_id = ? AND contract_id = ? AND status = 'open'
                       AND requirement_id IS NULL
@@ -1333,11 +1396,15 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     contractHash: approvedResumeContract.contract_hash, workflow: state.workflow,
                     repairIssues: pendingAdvisoryIssues, generatedProjectFiles, repairTargetFiles: [...repairTargetFiles],
                     persistWorkflow: () => workflowWriteState(projectId, state), callAgent: callAgentLLM,
-                    signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic });
+                    signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic, sourceFence });
                 generatedProjectFiles.splice(0, generatedProjectFiles.length,
                     ...mergeGeneratedProjectFiles(generatedProjectFiles, await listProjectTree(projectDir)));
             }
             let deterministicAudit = runDeterministicProjectAudit(generatedProjectFiles);
+
+            // Worker corrections have their own durable budget. Static failures
+            // cannot escape it by entering the generic static Coder loop.
+            if (workerSession && !deterministicAudit.passed) throw new Error(`Worker repair requires Manager revision: fresh deterministic audit failed: ${deterministicAudit.issues.join('; ')}`);
 
             if (!deterministicAudit.passed) {
                 const repairResult = await executeStaticRepairLoop({
@@ -1353,7 +1420,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     workflowLog: workflowLogEvent,
                     recordDiagnostic: recordLLMDiagnostic,
                     onUsage: recordTokenUsage,
-                    signal: abortController.signal
+                    signal: abortController.signal,
+                    sourceFence
                 });
                 deterministicAudit = repairResult.audit;
             }
@@ -1361,13 +1429,38 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             let allQualityIssues = !deterministicAudit.passed ? [...deterministicAudit.issues] : [];
             const isQualityPassed = deterministicAudit.passed;
 
+            if (workerSession) {
+                workerSession.assertCurrent();
+                const reviewReservation = await reserveWorkerValidation({ workflow: state.workflow, contract: approvedResumeContract,
+                    batchFingerprint: workerBatch.batchFingerprint, sourceSnapshotHash: snapshotHash(workerSession.expected),
+                    stage: 'reviewer_acceptance', persistWorkflow: () => workflowWriteState(projectId, state) });
+                if (reviewReservation.phase !== 'passed') {
+                    const reviewContext = await buildCoderProjectContext({ projectDir, files: generatedProjectFiles,
+                        dependencyTargetFiles: workerSession.targets.flatMap(target => target.dependencies),
+                        targetFiles: workerSession.targets.map(target => target.target) });
+                    if (reviewContext.includes('OMITTED CONTEXT')) throw new Error('Worker Reviewer context omitted files; Manager revision required.');
+                    workerSession.assertCurrent();
+                    const reviewer = getAgent('reviewer');
+                    const reviewPrompt = workerSession.targets.map(target => reviewer.buildPrompt(target.owner.spec.title,
+                        [target.target], generatedProjectFiles.filter(file => file.path === target.target),
+                        `${target.owner.spec.description}\n${JSON.stringify(target.issues.map(issue => issue.detail.diagnostic))}`, reviewContext)).join('\n');
+                    const review = await callAgent('reviewer', reviewPrompt, { signal: abortController.signal,
+                        taskId: 'worker-repair.review', maxAttempts: 1, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic });
+                    workerSession.assertCurrent();
+                    reviewReservation.result = { approved: review?.approved === true, summary: String(review?.summary || '').slice(0, 2048) };
+                    reviewReservation.phase = review?.approved === true ? 'passed' : 'failed';
+                    await workflowWriteState(projectId, state);
+                    if (reviewReservation.phase !== 'passed') throw new Error('Worker repair requires Manager revision: fresh Reviewer rejected the repaired source.');
+                }
+            }
+
             await workflowLogEvent(
                 wsHub,
                 projectId,
                 "Tester",
                 "start",
                 "",
-                "Proje kabul testleri ve statik denetim başlatılıyor...",
+                "Proje statik incelemesi ve kaynak denetimi başlatılıyor...",
                 "tester-qa",
                 "manager"
             );
@@ -1375,13 +1468,22 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const testerAgent = getAgent('tester');
             const testerPrompt = testerAgent.buildPrompt(state.title, plan.talimatname, generatedProjectFiles, {
                 deterministicAudit
-            });
-            let testerAdvisory = await callAgentLLM('tester', testerPrompt, {
+            }) + (workerSession ? `\nFresh repaired source (reference data):\n${JSON.stringify(generatedProjectFiles.filter(file =>
+                workerBatch.issues.some(issue => issue.detail.filePath === file.path)))}` : '');
+            workerSession?.assertCurrent();
+            const staticReservation = workerSession ? await reserveWorkerValidation({ workflow: state.workflow,
+                contract: approvedResumeContract, batchFingerprint: workerBatch.batchFingerprint,
+                sourceSnapshotHash: snapshotHash(workerSession.expected), stage: 'static_acceptance',
+                persistWorkflow: () => workflowWriteState(projectId, state) }) : null;
+            workerSession?.assertCurrent();
+            let testerAdvisory = staticReservation?.phase === 'passed' ? staticReservation.result : await callAgent('tester', testerPrompt, {
                 signal: abortController.signal,
                 taskId: 'tester.static-audit',
                 onUsage: recordTokenUsage,
-                onDiagnostic: recordLLMDiagnostic
+                onDiagnostic: recordLLMDiagnostic,
+                ...(workerSession ? { maxAttempts: 1 } : {})
             });
+            workerSession?.assertCurrent();
             if (!testerAdvisory || typeof testerAdvisory !== 'object') {
                 testerAdvisory = { approved: false, summary: "Tester geri bildirimi alınamadı.", issues: [] };
             }
@@ -1397,13 +1499,21 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             };
 
             const finalRapor = `# RAPOR: ${state.title}\n\n## 1. Proje Özeti\n${plan.summary || state.title}\n\n## 2. Statik Üretim Denetimi\n- Sonuç: ${testResult.approved ? 'STATİK DENETİM GEÇTİ — İZOLE RUNTIME DOĞRULAMASI BEKLİYOR' : 'REDDEDİLDİ / KRİTİK HATALAR MEVCUT'}\n- Detay: ${testResult.summary}\n- Sınır: Bu aşama yalnızca JSON, AST, ithalat ve sözleşme denetimidir; gerçek clean install, Prisma generate/db push/seed, TypeScript, framework build ve runtime smoke başarısını iddia etmez.\n${testResult.issues.length > 0 ? `\n### Tespit Edilen Kritik Sorunlar:\n${testResult.issues.map(i => `- ${i}`).join('\n')}\n` : ''}\n## 3. Üretilen Dosyalar\n${generatedProjectFiles.map(f => `- \`${f.path}\``).join('\n')}\n`;
-            await writeRapor(projectDir, finalRapor);
+            if (!workerSession) await writeRapor(projectDir, finalRapor, protocolOptions);
+            if (staticReservation) {
+                testResult.approved = testResult.approved && testerAdvisory.approved === true;
+                staticReservation.result = { approved: testResult.approved, summary: String(testResult.summary || '').slice(0, 2048), issues: [] };
+                staticReservation.phase = testResult.approved ? 'passed' : 'failed';
+                await workflowWriteState(projectId, state);
+                if (!testResult.approved) throw new Error(`Worker repair requires Manager revision: fresh static acceptance rejected: ${testResult.summary}`);
+            }
 
             if (!testResult.approved) {
                 await writeDurum(
                     projectDir,
                     'BASARISIZ',
-                    `Proje kabul testlerini geçemedi: ${testResult.summary}`
+                    `Proje statik denetimi geçemedi: ${testResult.summary}`,
+                    protocolOptions
                 );
                 await workflowLogEvent(
                     wsHub,
@@ -1411,7 +1521,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     "Tester",
                     "error",
                     "",
-                    `Proje kabul testlerini geçemedi: ${testResult.summary}`,
+                    `Proje statik denetimi geçemedi: ${testResult.summary}`,
                     "tester-qa",
                     "manager"
                 );
@@ -1419,6 +1529,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 db.exec('BEGIN IMMEDIATE;');
                 try {
                     assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+                    assertWorkflowContract();
                     const latestContract = db.prepare(`
                         SELECT id FROM project_contracts
                         WHERE project_id = ? AND status = 'approved'
@@ -1454,7 +1565,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     throw repairError;
                 }
                 terminalStatus = 'rejected';
-                executionError = `Proje kabul testlerini geçemedi: ${testResult.summary}`;
+                executionError = `Proje statik denetimi geçemedi: ${testResult.summary}`;
 
                 const failedState = await readProjectState(projectId);
                 if (failedState) {
@@ -1498,7 +1609,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     failedState.chatHistory.push({
                         role: 'model',
                         parts: [{
-                            text: `⚠️ **Tester Kalite Kapısı Uyarısı:**\n\nProje kabul testlerinde bazı sözdizimi veya kırık ithalat (import) hataları tespit edildi ve proje güvenli modda duraklatıldı:\n\n${testResult.issues.map(issue => `- ${issue}`).join('\n')}\n\nSüreci düzeltip devam ettirmek için üst menüdeki **'Projeyi Devam Ettir (Resume)'** butonuna basabilir veya bana revizyon bildirebilirsiniz.`
+                            text: `⚠️ **Tester Kalite Kapısı Uyarısı:**\n\nStatik inceleme veya kaynak denetimi başarısız oldu; proje verification_failed durumunda. Bağımsız worker kabul doğrulaması henüz tamamlanmadı:\n\n${testResult.issues.map(issue => `- ${issue}`).join('\n')}\n\nSüreci düzeltip devam ettirmek için üst menüdeki **'Projeyi Devam Ettir (Resume)'** butonuna basabilir veya bana revizyon bildirebilirsiniz.`
                         }],
                         timestamp: `${formattedDate} ${formattedTime}`,
                         created_at: now.toISOString()
@@ -1512,6 +1623,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             db.exec('BEGIN IMMEDIATE;');
             try {
                 assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+                assertWorkflowContract();
                 const approvedContract = db.prepare(`
                     SELECT id FROM project_contracts
                     WHERE project_id = ? AND status = 'approved'
@@ -1530,7 +1642,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 "Tester",
                 "finish",
                 "",
-                `Proje kabul testleri başarıyla tamamlandı: ${testResult.summary}`,
+                `Proje statik denetimi tamamlandı; bağımsız worker kabul doğrulaması bekliyor: ${testResult.summary}`,
                 "tester-qa",
                 "manager"
             );
@@ -1538,7 +1650,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             // Product completion is evidence-authorized exclusively by completeVerifiedProject.
             // Workflow output remains advisory until artifact verification supplies these IDs.
             // Otomatik Proje İskeleti ve Çalıştırılabilirlik Koruması (Scaffold Guard)
-            await ensureProjectScaffold(projectDir, state, plan);
+            if (!workerSession) await ensureProjectScaffold(projectDir, state, plan, sourceFence);
 
             // Otomatik Çalıştırma ve Kurulum Kılavuzu (Kapsamlı README.md)
             // P7 Task 5: stack-aware dynamic README — inspects package.json,
@@ -1563,7 +1675,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 lockfileExpected: true,
                 management: plan.management || null,
             });
-            await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent, 'utf8');
+            if (!workerSession) await writeSourceFile(projectDir, path.join(projectDir, 'README.md'), readmeContent, 'utf8', sourceFence);
 
             const approvedContract = db.prepare(`
                 SELECT id, contract_hash FROM project_contracts
@@ -1602,7 +1714,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const files = resumeAtDependencyPreparation ? resumeFiles : await collectArtifactFiles(projectDir, limits);
 
             const config = validateRuntimeConfig(process.env);
-            const executionClient = createExecutionClient(config);
+            const executionClient = executionClientFactory(config);
+            workerSession?.assertCurrent();
+            const workerReservation = workerSession ? await reserveWorkerValidation({ workflow: state.workflow,
+                contract: approvedResumeContract, batchFingerprint: workerBatch.batchFingerprint,
+                sourceSnapshotHash: snapshotHash(workerSession.expected), stage: 'worker_verification',
+                persistWorkflow: () => workflowWriteState(projectId, state) }) : null;
             const contractHash = latestContract.contract_hash;
             if (!/^[a-f0-9]{64}$/.test(contractHash)) throw new Error('Approved contract has invalid hash.');
             const contract = JSON.parse(latestContract.contract_json);
@@ -1636,16 +1753,20 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await workflowLogEvent(wsHub, projectId, 'System', 'start', 'package.json',
                 'İzole bağımlılık hazırlığı ve lockfile üretimi başladı.', 'dependency-preparation', 'manager');
             try {
+                controllerBoundary = { operation: 'prepare_dependencies', projectId, contractId: latestContract.id,
+                    contractHash, runId, jobId: prepJob.jobId, nonce: prepJob.nonce, inputSha256: prepJob.inputSha256 };
                 prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
             } catch (err) {
                 prepError = err;
             }
             const { packageLockBase64, packageLockSha256 } = extractPreparedLockfile(prepResult, prepError);
+            workerSession?.assertCurrent();
 
             const lockContent = Buffer.from(packageLockBase64, 'base64');
             if (packageLockSha256 && crypto.createHash('sha256').update(lockContent).digest('hex') !== packageLockSha256) {
                 throw new Error('Worker returned a package-lock digest mismatch.');
             }
+            controllerBoundary = null;
             state.workflow.dependencyPreparation = null;
             await workflowWriteState(projectId, state);
             const existingLockIndex = files.findIndex(f => f.path === 'package-lock.json');
@@ -1669,7 +1790,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 inputSha256: artifactSha256,
                 archiveBase64: archiveBytes.toString('base64')
             };
-            const completion = await verifyArtifactAndProject({
+            workerSession?.assertCurrent();
+            if (workerReservation) {
+                Object.assign(workerReservation, { artifactId: artifact.id, artifactSha256: artifact.sha256, runId,
+                    jobId: verifyIdentity.jobId, nonce: verifyIdentity.nonce });
+                await workflowWriteState(projectId, state);
+                workerSession.assertCurrent();
+            }
+            controllerBoundary = { operation: 'verify_artifact', projectId, contractId: latestContract.id,
+                contractHash, runId, artifactId: artifact.id, jobId: verifyIdentity.jobId, nonce: verifyIdentity.nonce, inputSha256: artifactSha256 };
+            const completion = await verifyProject({
                 projectId,
                 contractId: latestContract.id,
                 artifactId: artifact.id,
@@ -1682,12 +1812,19 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     activeJob: verifyIdentity,
                     archiveBase64: verifyIdentity.archiveBase64,
                     signal: abortController.signal,
+                    executionClient,
+                    ...(workerReservation ? { workerRepairValidationId: workerReservation.id } : {}),
                     files,
                     contract
                 }
             });
+            controllerBoundary = null;
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
+            }
+            if (workerSession) {
+                assertVerifiedArtifactEvidence({ projectId, contractId: latestContract.id, artifactId: artifact.id });
+                if ((await readProjectState(projectId))?.status !== 'completed') throw new Error('Worker repair lacks canonical project completion.');
             }
             await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje doğrulanmış ZIP olarak indirilebilir; kaynak kodları indirilen pakette inceleyebilirsiniz.", "manager");
             try {
@@ -1698,12 +1835,41 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 });
             } catch {}
     } catch (error) {
-        if (abortController.signal.aborted) {
+        if (error.code === 'WORKFLOW_APPROVAL_REQUIRED') {
+            terminalStatus = 'failed';
+            executionError = error.message;
+            // The generic state writer can import legacy plan snapshots. An
+            // authorization failure must leave an unapproved draft untouched.
+            throw error;
+        }
+        let contractChanged = false;
+        try { assertWorkflowContract(); } catch { contractChanged = true; }
+        if (contractChanged || error.code === 'WORKFLOW_LEASE_FENCED') {
+            terminalStatus = 'aborted';
+            executionError = error.message;
+            logWarning('workflow.execution_fenced', error, { projectId, attemptId });
+        } else if (abortController.signal.aborted) {
             terminalStatus = abortController.signal.reason === 'PAUSED' ? 'paused' : 'aborted';
             logWarning('workflow.execution_aborted', null, { projectId, attemptId, reason: abortController.signal.reason });
         } else {
             terminalStatus = 'failed';
             executionError = error.message;
+            if (controllerBoundary) {
+                // A controller observation has its own active workflow fence,
+                // not the expired job deadline. It does not ingest late checks
+                // or claim worker authentication/success.
+                const failureContext = { ...sourceFence, revision: sourceFence.contractRevision };
+                try {
+                    const known = loadOpenWorkerRepairBatch(failureContext).issues.some(issue =>
+                        issue.run_id === controllerBoundary.runId || issue.detail.expectedIdentity?.jobId === controllerBoundary.jobId);
+                    const recoverable = controllerBoundary.artifactId && db.prepare(`SELECT a.id FROM artifacts a JOIN verification_runs r
+                        ON r.id=a.verification_run_id AND r.contract_id=a.contract_id WHERE a.id=? AND a.project_id=?
+                        AND a.contract_id=? AND a.sha256=? AND a.status='verified' AND r.status='verified' AND r.id=?`)
+                        .get(controllerBoundary.artifactId, projectId, sourceFence.contractId, controllerBoundary.inputSha256, controllerBoundary.runId);
+                    if ((!known && !recoverable) || controllerBoundary.operation === 'prepare_dependencies') commitVerificationContext(failureContext,
+                        () => recordVerificationBlocker(failureContext, { expectedIdentity: controllerBoundary, reason: error.message }));
+                } catch (failureError) { logWarning('workflow.controller_blocker_fenced', failureError, { projectId, attemptId }); }
+            }
             const errorLog = logError('workflow.execution_failed', error, { projectId, attemptId });
             const errStr = `${error?.message || ''} ${error?.code || ''} ${error?.status || ''} ${error?.stack || ''}`;
             const isQuotaError = /429|RESOURCE_EXHAUSTED|quota|rate limit|rate_limit/i.test(errStr);
@@ -1743,7 +1909,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         }
     } finally {
         clearInterval(heartbeatTimer);
-        unregisterProjectAbortController(projectId);
+        unregisterProjectAbortController(projectId, abortController);
         if (abortController.signal.aborted && abortController.signal.reason === 'PAUSED') {
             terminalStatus = 'paused';
         }

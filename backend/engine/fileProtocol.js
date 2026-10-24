@@ -3,42 +3,42 @@
  * Referans: x-agents/ORKESTRASYON-TALIMATNAMESI.md
  */
 
-import fs from 'fs/promises';
 import path from 'path';
-import { logWarning } from '../observability.js';
+import fsSync from 'node:fs';
+import { assertProtocolPath, ensureProtocolDir, readProtocolFile, writeProtocolFile } from './protocolIO.js';
 import { canonicalizeTaskDependencies } from './dag.js';
 import { normalizeGeneratedIdentifier } from '../generatedIdentifiers.js';
-import { db } from '../db.js';
 import { getLatestCheckpoint } from './checkpointRepository.js';
-import { verifyTaskCheckpoint } from './checkpointHelper.js';
+import { verifyTaskCheckpoint, computeTaskSpecHash } from './checkpointHelper.js';
+import { qualifiedTaskId } from './checkpointIdentity.js';
 import { writeGeneratedFiles as writeProjectFiles } from './codeGenerator.js';
 /**
  * Belirtilen dizinin varlığını garanti eder
  */
-export async function ensureDir(dirPath) {
-    await fs.mkdir(dirPath, { recursive: true });
-    return dirPath;
+export async function ensureDir(dirPath, options = {}) {
+    return ensureProtocolDir(dirPath, options);
 }
 
 /**
  * Kök dizinde TALIMATNAME.md ve TODO.md oluşturur
  */
-export async function setupRootProtocol(projectDir, talimatnameContent, domains = []) {
-    await ensureDir(projectDir);
+export async function setupRootProtocol(projectDir, talimatnameContent, domains = [], options = {}) {
+    options = { ...options, projectDir };
+    await ensureDir(projectDir, options);
 
     // Manager Ajanına Özel Klasör (Agent = Klasör İlkesi - Hiyerarşinin Kökü)
     const managerDir = path.join(projectDir, 'manager');
-    await ensureDir(managerDir);
+    await ensureDir(managerDir, options);
 
     const talimatBody = talimatnameContent || '# Proje Talimatnamesi\n';
 
     // 1. TALIMATNAME.md
     const managerTalimatPath = path.join(managerDir, 'TALIMATNAME.md');
-    await fs.writeFile(managerTalimatPath, talimatBody, 'utf8');
+    await writeProtocolFile(managerTalimatPath, talimatBody, options);
 
     // 2. GOREV.md (Manager için)
     const gorevContent = `# Görev: Manager (Orkestratör)\n\nProje mimarisini tasarla, domainleri belirle ve direktör ajanlarını koordine et.\n`;
-    await fs.writeFile(path.join(managerDir, 'GOREV.md'), gorevContent, 'utf8');
+    await writeProtocolFile(path.join(managerDir, 'GOREV.md'), gorevContent, options);
 
     // 3. TODO.md (Manager Seviyesi)
     let todoContent = `# TODO — Manager (Proje Yönetimi)\n\n| # | Domain / Director | Klasör | Durum |\n|---|---|---|---|\n`;
@@ -52,17 +52,14 @@ export async function setupRootProtocol(projectDir, talimatnameContent, domains 
 
     const managerTodoPath = path.join(managerDir, 'TODO.md');
     try {
-        await fs.writeFile(managerTodoPath, todoContent, { encoding: 'utf8', flag: 'wx' });
+        await writeProtocolFile(managerTodoPath, todoContent, { ...options, exclusive: true });
     } catch (error) {
         if (error.code !== 'EEXIST') throw error;
     }
 
     // 4. DURUM.md
-    try {
-        await fs.access(path.join(managerDir, 'DURUM.md'));
-    } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
-        await writeDurum(managerDir, 'BASLADI', 'Manager mimari planı hazırladı, direktör katmanına devrediliyor.');
+    if (await readProtocolFile(path.join(managerDir, 'DURUM.md'), options) === null) {
+        await writeDurum(managerDir, 'BASLADI', 'Manager mimari planı hazırladı, direktör katmanına devrediliyor.', options);
     }
 
     return { talimatPath: managerTalimatPath, todoPath: managerTodoPath, managerDir };
@@ -71,36 +68,38 @@ export async function setupRootProtocol(projectDir, talimatnameContent, domains 
 /**
  * Director seviyesi klasör ve protokol dosyalarını oluşturur (Manager altında yuvalanır)
  */
-export async function setupDirectorProtocol(managerOrProjectDir, domainPrefix, gorevContent, altTalimatnameContent, teamleaders = []) {
+export async function setupDirectorProtocol(managerOrProjectDir, domainPrefix, gorevContent, altTalimatnameContent, teamleaders = [], options = {}) {
+    assertProtocolPath(managerOrProjectDir, options, true);
     let baseDir = managerOrProjectDir;
     if (!baseDir.endsWith('manager') && !baseDir.endsWith('manager/') && !baseDir.endsWith('manager\\')) {
         baseDir = path.join(baseDir, 'manager');
     }
-    await ensureDir(baseDir);
+    options = { ...options, projectDir: options.projectDir || (path.basename(baseDir) === 'manager' ? path.dirname(baseDir) : baseDir) };
+    await ensureDir(baseDir, options);
 
     const cleanPrefix = normalizeGeneratedIdentifier(domainPrefix);
     const directorDir = path.join(baseDir, `${cleanPrefix}.director`);
-    await ensureDir(directorDir);
+    await ensureDir(directorDir, options);
 
     // GOREV.md
-    await fs.writeFile(path.join(directorDir, 'GOREV.md'), gorevContent, 'utf8');
+    await writeProtocolFile(path.join(directorDir, 'GOREV.md'), gorevContent, options);
 
     // ALT-TALIMATNAME.md
-    await fs.writeFile(path.join(directorDir, 'ALT-TALIMATNAME.md'), altTalimatnameContent, 'utf8');
+    await writeProtocolFile(path.join(directorDir, 'ALT-TALIMATNAME.md'), altTalimatnameContent, options);
 
     // TODO.md (Director Seviyesi)
     let todoContent = `# TODO — ${domainPrefix}.director\n\n| # | Teamleader | Klasör | Durum |\n|---|---|---|---|\n`;
     teamleaders.forEach((tl, i) => {
-        todoContent += `| ${i + 1} | ${tl.name} | ${tl.name}/ | bekliyor |\n`;
+        todoContent += `| ${i + 1} | ${tl.name} | ${normalizeGeneratedIdentifier(tl.prefix || tl.name)}/ | bekliyor |\n`;
     });
     todoContent += `\n## Durum Çizelgesi\n`;
     teamleaders.forEach((tl, i) => {
-        todoContent += `- [ ] ${i + 1}. ${tl.name}\n`;
+        todoContent += `- [ ] ${i + 1}. ${tl.name} (${normalizeGeneratedIdentifier(tl.prefix || tl.name)}/)\n`;
     });
-    await fs.writeFile(path.join(directorDir, 'TODO.md'), todoContent, 'utf8');
+    await writeProtocolFile(path.join(directorDir, 'TODO.md'), todoContent, options);
 
     // DURUM.md
-    await writeDurum(directorDir, 'BASLADI', `${domainPrefix} director şartnameyi hazırladı.`);
+    await writeDurum(directorDir, 'BASLADI', `${domainPrefix} director şartnameyi hazırladı.`, options);
 
     return directorDir;
 }
@@ -108,12 +107,13 @@ export async function setupDirectorProtocol(managerOrProjectDir, domainPrefix, g
 /**
  * Teamleader seviyesi klasör ve protokol dosyalarını oluşturur
  */
-export async function setupTeamleaderProtocol(directorDir, tlName, gorevContent, tasks = []) {
+export async function setupTeamleaderProtocol(directorDir, tlName, gorevContent, tasks = [], options = {}) {
+    assertProtocolPath(directorDir, options, true);
     const cleanTlName = normalizeGeneratedIdentifier(tlName);
     const tlDir = path.join(directorDir, cleanTlName);
-    await ensureDir(tlDir);
+    await ensureDir(tlDir, options);
     // GOREV.md
-    await fs.writeFile(path.join(tlDir, 'GOREV.md'), gorevContent, 'utf8');
+    await writeProtocolFile(path.join(tlDir, 'GOREV.md'), gorevContent, options);
 
     // TODO.md (Teamleader Seviyesi)
     let todoContent = `# TODO — ${tlName}\n\n| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n`;
@@ -125,10 +125,10 @@ export async function setupTeamleaderProtocol(directorDir, tlName, gorevContent,
     tasks.forEach((t, i) => {
         todoContent += `- [ ] ${i + 1}. ${t.title} → \`${t.id}/\`\n`;
     });
-    await fs.writeFile(path.join(tlDir, 'TODO.md'), todoContent, 'utf8');
+    await writeProtocolFile(path.join(tlDir, 'TODO.md'), todoContent, options);
 
     // DURUM.md
-    await writeDurum(tlDir, 'BASLADI', `${tlName} görevleri atomik parçalara ayırdı.`);
+    await writeDurum(tlDir, 'BASLADI', `${tlName} görevleri atomik parçalara ayırdı.`, options);
 
     return tlDir;
 }
@@ -136,15 +136,16 @@ export async function setupTeamleaderProtocol(directorDir, tlName, gorevContent,
 /**
  * Coder seviyesi klasör ve protokol dosyalarını oluşturur
  */
-export async function setupCoderProtocol(tlDir, taskId, taskTitle, gorevContent) {
+export async function setupCoderProtocol(tlDir, taskId, taskTitle, gorevContent, options = {}) {
+    assertProtocolPath(tlDir, options, true);
     const cleanTaskId = normalizeGeneratedIdentifier(taskId);
     const coderDir = path.join(tlDir, cleanTaskId);
-    await ensureDir(coderDir);
+    await ensureDir(coderDir, options);
     // GOREV.md
-    await fs.writeFile(path.join(coderDir, 'GOREV.md'), gorevContent, 'utf8');
+    await writeProtocolFile(path.join(coderDir, 'GOREV.md'), gorevContent, options);
 
     // DURUM.md
-    await writeDurum(coderDir, 'CALISIYOR', `Coder "${taskTitle}" görevine başladı.`);
+    await writeDurum(coderDir, 'CALISIYOR', `Coder "${taskTitle}" görevine başladı.`, options);
 
     return coderDir;
 }
@@ -152,22 +153,20 @@ export async function setupCoderProtocol(tlDir, taskId, taskTitle, gorevContent)
 /**
  * DURUM.md dosyasını günceller
  */
-export async function writeDurum(folderPath, durum, detay = '') {
+export async function writeDurum(folderPath, durum, detay = '', options = {}) {
+    assertProtocolPath(folderPath, options, true);
     const durumFile = path.join(folderPath, 'DURUM.md');
     const content = `# DURUM\n\n- **Durum:** ${durum}\n- **Son Güncelleme:** ${new Date().toISOString()}\n- **Detay:** ${detay}\n`;
-    await fs.writeFile(durumFile, content, 'utf8');
+    await writeProtocolFile(durumFile, content, options);
 }
 
 /**
  * DURUM.md dosyasını okur
  */
-export async function readDurum(folderPath) {
-    try {
-        const durumFile = path.join(folderPath, 'DURUM.md');
-        return await fs.readFile(durumFile, 'utf8');
-    } catch {
-        return null;
-    }
+export async function readDurum(folderPath, options = {}) {
+    try { assertProtocolPath(folderPath, options, true); }
+    catch (error) { if (options.strict) throw error; return null; }
+    return readProtocolFile(path.join(folderPath, 'DURUM.md'), { strict: false, ...options });
 }
 
 /**
@@ -220,13 +219,8 @@ export function parseTasksFromTodoContent(content) {
     return tasks;
 }
 
-export async function readTasksFromTodoFile(todoFilePath) {
-    try {
-        const content = await fs.readFile(todoFilePath, 'utf8');
-        return parseTasksFromTodoContent(content);
-    } catch {
-        return [];
-    }
+export async function readTasksFromTodoFile(todoFilePath, options = {}) {
+    return parseTasksFromTodoContent(await readProtocolFile(todoFilePath, options));
 }
 
 export async function isTaskCompleted(
@@ -236,28 +230,18 @@ export async function isTaskCompleted(
     options = {}
 ) {
     try {
-        const { projectId, taskId } = options;
-        if (projectId && taskId) {
-            const checkpoint = db.prepare(`
-                SELECT invalidated_at FROM task_checkpoints
-                WHERE project_id = ? AND task_id = ?
-                ORDER BY created_at DESC
-                LIMIT 1
-            `).get(projectId, taskId);
-
-            if (checkpoint && checkpoint.invalidated_at !== null) {
-                return false;
-            }
+        if (options.projectId) {
+            // Filesystem summaries cannot substitute for missing DB authority.
+            if (!projectDir || !options.task) return false;
+            return await isTaskCheckpointValid(projectDir, options.projectId, options.task, options);
         }
 
-        const durum = await readDurum(coderDir);
-        if (durum && (durum.includes('BASARISIZ') || durum.includes('REDDEDILDI'))) {
+        const durum = await readDurum(coderDir, { ...options, projectDir: projectDir || options.projectDir, strict: true });
+        if (durum && (durum.includes('BASARISIZ') || durum.includes('REDDEDILDI') || durum.includes('YENIDEN_BASLATILDI'))) {
             return false;
         }
 
-        const raporExists = await fs.stat(path.join(coderDir, 'RAPOR.md'))
-            .then(() => true)
-            .catch(() => false);
+        const raporExists = await readProtocolFile(path.join(coderDir, 'RAPOR.md')) !== null;
         const durumCompleted = Boolean(durum && durum.includes('TAMAMLANDI'));
 
         if (!raporExists && !durumCompleted) {
@@ -267,10 +251,9 @@ export async function isTaskCompleted(
         if (projectDir && Array.isArray(targetFiles) && targetFiles.length > 0) {
             for (const relPath of targetFiles) {
                 if (typeof relPath === 'string' && relPath.trim()) {
-                    const fullPath = path.join(projectDir, relPath);
-                    const fileExists = await fs.stat(fullPath)
-                        .then(stat => stat.size > 0)
-                        .catch(() => false);
+                    if (path.isAbsolute(relPath) || relPath.split(/[\\/]/).includes('..')) return false;
+                    const fullPath = assertProtocolPath(path.join(projectDir, relPath), { projectDir });
+                    const fileExists = fsSync.statSync(fullPath).size > 0;
                     if (!fileExists) {
                         return false;
                     }
@@ -279,7 +262,8 @@ export async function isTaskCompleted(
         }
 
         return true;
-    } catch {
+    } catch (error) {
+        if (error.code === 'CHECKPOINT_READ_FAILED') throw error;
         return false;
     }
 }
@@ -293,21 +277,18 @@ export async function isFolderCompleted(folderPath) {
     }
 }
 
-export async function readAltTalimatname(directorDir) {
-    try {
-        const filePath = path.join(directorDir, 'ALT-TALIMATNAME.md');
-        return await fs.readFile(filePath, 'utf8');
-    } catch {
-        return null;
-    }
+export async function readAltTalimatname(directorDir, options = {}) {
+    assertProtocolPath(directorDir, options, true);
+    return readProtocolFile(path.join(directorDir, 'ALT-TALIMATNAME.md'), options);
 }
 
 /**
  * RAPOR.md dosyasını kaydeder
  */
-export async function writeRapor(folderPath, reportContent) {
+export async function writeRapor(folderPath, reportContent, options = {}) {
+    assertProtocolPath(folderPath, options, true);
     const raporFile = path.join(folderPath, 'RAPOR.md');
-    await fs.writeFile(raporFile, reportContent, 'utf8');
+    await writeProtocolFile(raporFile, reportContent, options);
 }
 
 /**
@@ -315,76 +296,156 @@ export async function writeRapor(folderPath, reportContent) {
  */
 const todoMutations = new Map();
 
-function updateTodoItem(todoFilePath, taskIdOrName, checked) {
-    const resolvedPath = path.resolve(todoFilePath);
+function updateTodoItem(todoFilePath, selector, checked, options = {}) {
+    const resolvedPath = assertProtocolPath(todoFilePath, options);
     const key = process.platform === 'win32' ? resolvedPath.toLowerCase() : resolvedPath;
     const previous = todoMutations.get(key) || Promise.resolve();
     const mutation = previous.catch(() => {}).then(async () => {
-        let content = await fs.readFile(resolvedPath, 'utf8');
-        const escaped = taskIdOrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = checked
-            ? new RegExp(`- \\[ \\] (.*${escaped}.*)`, 'g')
-            : new RegExp(`- \\[x\\] (.*${escaped}.*)`, 'gi');
-        content = content.replace(regex, checked ? '- [x] $1' : '- [ ] $1');
-        await fs.writeFile(resolvedPath, content, 'utf8');
+        let content = await readProtocolFile(resolvedPath, options);
+        if (content === null) {
+            if (!selector?.restore) return { matched: false, missing: true };
+            content = '# TODO\n\n| # | Görev ID | Başlık | Bağımlılıklar | Durum |\n|---|---|---|---|---|\n';
+        }
+        const result = editTodoContent(content, selector, checked);
+        if (result.changed) await writeProtocolFile(resolvedPath, result.content, options);
+        return { matched: result.matched, changed: result.changed };
     });
     todoMutations.set(key, mutation);
-    return mutation.catch(error => {
-        logWarning(checked ? 'protocol.todo_update_failed' : 'protocol.todo_uncheck_failed', error,
-            { file: path.basename(todoFilePath) });
-    }).finally(() => {
+    return mutation.finally(() => {
         if (todoMutations.get(key) === mutation) todoMutations.delete(key);
     });
 }
 
-export async function checkTodoItem(todoFilePath, taskIdOrName) {
-    await updateTodoItem(todoFilePath, taskIdOrName, true);
+export async function checkTodoItem(todoFilePath, taskIdOrName, options = {}) {
+    return updateTodoItem(todoFilePath, taskIdOrName, true, options);
 }
 
 /**
  * TODO.md içerisindeki tamamlanmış görevin işaretini kaldırır ([- [ ]])
  */
-export async function uncheckTodoItem(todoFilePath, taskIdOrName) {
-    await updateTodoItem(todoFilePath, taskIdOrName, false);
+export async function uncheckTodoItem(todoFilePath, taskIdOrName, options = {}) {
+    return updateTodoItem(todoFilePath, taskIdOrName, false, options);
 }
 
-/**
- * Bir görevin geçersiz kılınan dosya sistemi önbelleğini (DURUM.md ve TODO.md) senkronize eder.
- */
-export async function reconcileTaskCache(projectDir, taskId, task = {}) {
-    try {
-        const domain = task.domain || 'core';
-        const coderFolder = normalizeGeneratedIdentifier(taskId, 'coder_task');
-        const candidateDirs = [
-            path.join(projectDir, domain, coderFolder),
-            path.join(projectDir, coderFolder),
-            path.join(projectDir, domain, `coder_${taskId}`),
-            path.join(projectDir, `coder_${taskId}`)
-        ];
-
-        for (const dir of candidateDirs) {
-            try {
-                await fs.access(dir);
-                await writeDurum(dir, 'YENIDEN_BASLATILDI', 'Checkpoint gecersiz kilindi veya degistirildi; gorev yeniden calistirilacak.');
-            } catch {}
+// Table and checkbox are changed in one queued mutation. Explicit locators own
+// checkbox identity; stale numbering never selects a different task or folder.
+export function editTodoContent(content, selector, checked) {
+    const lines = content.split('\n');
+    const structured = selector && typeof selector === 'object';
+    const rows = lines.map((line, index) => ({ index, cells: line.trim().split('|').slice(1, -1).map(cell => cell.trim()) }))
+        .filter(row => /^\d+$/.test(row.cells[0] || ''));
+    const matches = rows.filter(({ cells }) => structured
+        ? selector.kind === 'task' ? cells[1] === selector.id
+            : cells[2] === `${selector.folder}/`
+                || (selector.name && cells[1] === selector.name && cells[2] === `${selector.name}/`)
+        : cells[1] === selector || cells[2] === `${selector}/` || (cells.length >= 5 && cells[2] === selector));
+    if (matches.length > 1) throw Object.assign(new Error('Ambiguous protocol TODO identity'), { code: 'PROTOCOL_IDENTITY_AMBIGUOUS' });
+    let row = matches[0];
+    const taskRow = structured ? selector.kind === 'task' : row?.cells.length >= 5;
+    const locator = structured ? (taskRow ? selector.id : selector.folder)
+        : row ? (taskRow ? row.cells[1] : row.cells[2].replace(/\/$/, '')) : selector;
+    const labelColumn = taskRow ? 2 : 1;
+    const rowLabel = row?.cells[labelColumn];
+    const checkboxItems = lines.map((line, index) => {
+        const match = line.match(/^- \[[ xX]\] (.*)$/);
+        if (!match) return null;
+        const body = match[1];
+        const ordinal = body.match(/^(\d+)\.\s*/)?.[1];
+        const label = body.replace(/^\d+\.\s*/, '').trim();
+        const explicitLocator = label.match(/→\s*`([^`]+)\/`\s*$/)?.[1]
+            || label.match(/\(([^()]+)\/\)\s*$/)?.[1];
+        return { index, body, ordinal, label, explicitLocator };
+    }).filter(Boolean);
+    const checkboxes = checkboxItems.filter(item => {
+        if (item.explicitLocator) return item.explicitLocator === locator;
+        // Old task-ID labels are exact identity too (task-1 never task-10).
+        if ((taskRow || (!structured && !row)) && (item.label.startsWith(`${locator}:`) || item.label === locator
+            || item.label.endsWith(`(${locator})`))) return true;
+        if (!row || item.label !== rowLabel) return false;
+        // Legacy folder/title-only checkboxes need a unique label in the table.
+        // An ordinal cannot disambiguate duplicate labels after partial recovery.
+        if (rows.filter(candidate => candidate.cells[labelColumn] === rowLabel).length !== 1) {
+            throw Object.assign(new Error('Ambiguous protocol TODO legacy label'), { code: 'PROTOCOL_IDENTITY_AMBIGUOUS' });
         }
+        return true;
+    });
+    if (checkboxes.length > 1) throw Object.assign(new Error('Ambiguous protocol TODO checkbox'), { code: 'PROTOCOL_IDENTITY_AMBIGUOUS' });
 
-        // Root TODO.md, domain TODO.md, manager TODO.md dosyalarını tara ve uncheck yap
-        const candidateTodos = [
-            path.join(projectDir, 'TODO.md'),
-            path.join(projectDir, domain, 'TODO.md'),
-            path.join(projectDir, 'manager', 'TODO.md')
-        ];
-
-        for (const todoPath of candidateTodos) {
-            try {
-                await fs.access(todoPath);
-                await uncheckTodoItem(todoPath, taskId);
-            } catch {}
+    let checkbox = checkboxes[0];
+    let restoredRow = null;
+    let restoredCheckbox = null;
+    if (structured && taskRow && selector.restore) {
+        const occupied = new Set([
+            ...rows.filter(candidate => candidate !== row).map(candidate => Number(candidate.cells[0])),
+            ...checkboxItems.filter(candidate => candidate !== checkbox).map(candidate => Number(candidate.ordinal))
+        ].filter(Number.isFinite));
+        const preferred = Number(row?.cells[0] || checkbox?.ordinal);
+        const ordinal = preferred > 0 && !occupied.has(preferred) ? preferred
+            : Math.max(0, ...occupied, ...rows.map(candidate => Number(candidate.cells[0])),
+                ...checkboxItems.map(candidate => Number(candidate.ordinal) || 0)) + 1;
+        const title = String(selector.title || row?.cells[2] || selector.id).replace(/[|\r\n]/g, ' ');
+        if (!row) {
+            restoredRow = { cells: [String(ordinal), selector.id, title, '—', 'bekliyor'] };
+            row = restoredRow;
+        } else row.cells[0] = String(ordinal);
+        if (!checkbox) {
+            restoredCheckbox = { body: `${ordinal}. ${title} → \`${selector.id}/\`` };
+            checkbox = restoredCheckbox;
+        } else if (checkbox.ordinal) {
+            checkbox.body = `${ordinal}. ${checkbox.label}`;
         }
-    } catch (error) {
-        logWarning('protocol.reconcile_cache_failed', error, { taskId });
     }
+    if (row) {
+        row.cells[row.cells.length - 1] = checked ? 'tamamlandi' : 'bekliyor';
+        if (!restoredRow) lines[row.index] = `| ${row.cells.join(' | ')} |`;
+    }
+    if (checkbox && !restoredCheckbox) lines[checkbox.index] = `- [${checked ? 'x' : ' '}] ${checkbox.body}`;
+    if (restoredRow) {
+        const tableEnd = rows.length ? rows[rows.length - 1].index
+            : lines.findIndex(line => /^\|[-|\s]+\|$/.test(line.trim()));
+        lines.splice(tableEnd < 0 ? lines.length : tableEnd + 1, 0, `| ${restoredRow.cells.join(' | ')} |`);
+    }
+    if (restoredCheckbox) lines.push(`- [${checked ? 'x' : ' '}] ${restoredCheckbox.body}`);
+    const updated = lines.join('\n');
+    return { content: updated, changed: updated !== content, matched: Boolean(row || checkbox) };
+}
+
+/** Explicit runtime ownership; never discover a task by scanning local IDs. */
+export async function reconcileTaskCache(context) {
+    const { projectDir, localTaskId, teamleaderId, domainPrefix, teamleaderPrefix, checkpointValid } = context || {};
+    for (const value of [localTaskId, domainPrefix, teamleaderPrefix]) {
+        if (typeof value !== 'string' || !value || normalizeGeneratedIdentifier(value) !== value) {
+            throw Object.assign(new Error('Invalid protocol task identity'), { code: 'PROTOCOL_IDENTITY_INVALID' });
+        }
+    }
+    if (teamleaderId !== `${domainPrefix}.${teamleaderPrefix}` || typeof checkpointValid !== 'boolean') {
+        throw Object.assign(new Error('Explicit protocol task ownership required'), { code: 'PROTOCOL_IDENTITY_INVALID' });
+    }
+    const options = { projectDir, sourceFence: context.sourceFence };
+    assertProtocolPath(projectDir, options, true);
+    const managerDir = path.join(projectDir, 'manager');
+    const directorDir = path.join(managerDir, `${domainPrefix}.director`);
+    const teamleaderDir = path.join(directorDir, teamleaderPrefix);
+    const coderDir = path.join(teamleaderDir, localTaskId);
+    for (const [key, expected] of Object.entries({ managerDir, directorDir, teamleaderDir, coderDir })) {
+        if (context[key] && path.resolve(context[key]) !== path.resolve(expected)) {
+            throw Object.assign(new Error('Protocol location disagrees with task ownership'), { code: 'PROTOCOL_IDENTITY_INVALID' });
+        }
+        assertProtocolPath(expected, options, true);
+    }
+    const reset = 'Checkpoint gecersiz veya eksik; gorev yeniden calistirilacak.';
+    await writeDurum(coderDir, checkpointValid ? 'TAMAMLANDI' : 'YENIDEN_BASLATILDI', checkpointValid ? 'Gecerli checkpoint dogrulandi.' : reset, options);
+    const results = [await updateTodoItem(path.join(teamleaderDir, 'TODO.md'), { kind: 'task', id: localTaskId,
+        title: context.task?.title, restore: checkpointValid }, checkpointValid, options)];
+    if (!checkpointValid) {
+        // No positive ancestor inference from old DURUM/TODO or reports. Runtime
+        // promotes these only after every owned child has valid reviewed evidence.
+        for (const dir of [teamleaderDir, directorDir, managerDir]) await writeDurum(dir, 'YENIDEN_BASLATILDI', reset, options);
+        results.push(await updateTodoItem(path.join(directorDir, 'TODO.md'), { kind: 'folder', folder: teamleaderPrefix, name: context.teamleaderName }, false, options));
+        results.push(await updateTodoItem(path.join(managerDir, 'TODO.md'), { kind: 'folder', folder: `${domainPrefix}.director` }, false, options));
+        results.push(await updateTodoItem(path.join(projectDir, 'TODO.md'), { kind: 'folder', folder: `${domainPrefix}.director` }, false, options));
+    }
+    return { checkpointValid, results };
 }
 
 /**
@@ -392,7 +453,7 @@ export async function reconcileTaskCache(projectDir, taskId, task = {}) {
  */
 export async function isTaskCheckpointValid(projectDir, projectId, task, options = {}) {
     try {
-        const checkpoint = getLatestCheckpoint(projectId, task.id);
+        const checkpoint = getLatestCheckpoint(projectId, task.id, { ...options, taskSpecHash: computeTaskSpecHash(task) });
         if (!checkpoint) return false;
         if (options.contractId && checkpoint.contract_id !== options.contractId) return false;
 
@@ -405,6 +466,9 @@ export async function isTaskCheckpointValid(projectDir, projectId, task, options
             projectDir,
             checkpoint: acceptanceRetry ? { ...checkpoint, invalidated_at: null } : checkpoint,
             task,
+            expectedIdentity: options.teamleaderId ? { projectId, contractId: options.contractId,
+                taskIds: [qualifiedTaskId({ contractId: options.contractId, teamleaderId: options.teamleaderId, localTaskId: task.id }),
+                    ...(checkpoint.task_identity_version === 0 ? [task.id] : [])] } : null,
             planHash: options.planHash,
             dependencyTargetFiles: options.dependencyTargetFiles || [],
             gateVersion: options.gateVersion || '1.0.0'
@@ -479,6 +543,7 @@ export async function writeGeneratedFiles(taskContext = {}, files = []) {
         taskContext.projectDir,
         taskContext.coderDir || null,
         files,
-        allowedFiles
+        allowedFiles,
+        taskContext.sourceFence || null
     );
 }

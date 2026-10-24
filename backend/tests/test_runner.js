@@ -87,6 +87,15 @@ export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000 } =
                 PROJECTS_ROOT: testProjectsRoot,
                 ARTIFACTS_ROOT: testArtifactsRoot,
                 TRASH_ROOT: testTrashRoot,
+                // Tests must never select or mutate the operator's active LLM
+                // profiles while exercising a real workflow with fake agents.
+                LLM_CONFIG_PATH: path.join(testTempDir, `llm-profiles-${i}.json`),
+                // dotenv must not reintroduce operator credentials into a
+                // workflow fixture. Tests needing transport use explicit fake
+                // options/profiles and intercepted requests.
+                GOOGLE_API_KEY: '', OPENAI_API_KEY: '', OPENROUTER_API_KEY: '',
+                DEEPSEEK_API_KEY: '', QWEN_API_KEY: '', MINIMAX_API_KEY: '',
+                KIMI_API_KEY: '', XIAOMI_MIMO_API_KEY: '', ANTHROPIC_API_KEY: '',
                 // Docker suites must fail explicitly when Docker is unavailable in CI.
                 ...(process.env.P8_REQUIRE_DOCKER_LIMITS !== undefined
                     ? { P8_REQUIRE_DOCKER_LIMITS: process.env.P8_REQUIRE_DOCKER_LIMITS }

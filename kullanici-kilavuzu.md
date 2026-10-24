@@ -40,59 +40,27 @@ Bu kılavuz, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun çalışma ma
 Geleneksel yapay zekâ kodlama araçları genellikle tek bir prompt ile tüm uygulamayı tek seferde yazmaya çalışır; bu durum halüsinasyonlara, eksik dosyalara ve kırık bağımlılıklara yol açar.
 
 **XFactor**, bu sorunu iki güçlü dünya standardını birleştirerek çözer:
-1. **`msitarzewski/agency-agents` (Uzmanlaşmış Rol Kütüphanesi & Living Docs):** Her ajan sadece kendi uzmanlık alanındaki işi yapar. Sistem kuralları `x-agents/*.md` dosyalarından dinamik yüklenir.
+1. **`msitarzewski/agency-agents` (Uzmanlaşmış Rol Kütüphanesi & Living Docs):** Her rol kendi uzmanlık alanındaki işi yapar. Altı rolün istemi, `x-agents/ORKESTRASYON-TALIMATNAMESI.md` tam metni ile ilgili rol Markdown'ından oluşur. Üretim rolleri modül yüklenirken önbelleğe alınır; politika değişiklikleri planlı backend yeniden başlatması gerektirir. Manager sohbeti istemi yeniden okur. Beş protokol şablonu insan rehberidir; gerçek kayıtları backend üretir.
 2. **`coleam00/Archon` (Deterministik DAG Dalga Motoru & Dark Factory):** Tüm görevler matematiksel bir **Yönlü Döngüsüz Çizge (DAG)** yapısında dalgalar (`Execution Waves`) halinde çözülür. Bağımsız görevler paralel çalışırken bağımlı görevler önkoşulları bekler.
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                      KULLANICI (BOSS)                           │
-└────────────────────────────────┬────────────────────────────────┘
-                                 │ Doğal Dilde İstekler & Revizyonlar
-                                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       MANAGER AGENT                             │
-│     - manager/TALIMATNAME.md, TODO.md, .env.example & Domain Dağılımı   │
-└──────────────┬───────────────────────────────────┬──────────────┘
-               │                                   │
-               ▼ Frontend Domain                   ▼ Backend Domain
-┌──────────────────────────────┐   ┌──────────────────────────────┐
-│       DIRECTOR AGENT         │   │       DIRECTOR AGENT         │
-│   - ALT-TALIMATNAME.md       │   │   - ALT-TALIMATNAME.md       │
-└──────────────┬───────────────┘   └──────────────┬───────────────┘
-               │                                   │
-               ▼                                   ▼
-┌──────────────────────────────┐   ┌──────────────────────────────┐
-│     TEAMLEADER AGENT         │   │     TEAMLEADER AGENT         │
-│   - Atomik Görev DAG'ı       │   │   - Atomik Görev DAG'ı       │
-│   - Tek Hedef Dosya Limiti   │   │   - Tek Hedef Dosya Limiti   │
-└──────────────┬───────────────┘   └──────────────┬───────────────┘
-               │                                   │
-               ▼                                   ▼
-┌──────────────────────────────┐   ┌──────────────────────────────┐
-│        CODER AGENT           │   │        CODER AGENT           │
-│   - Tek Hedef Dosya Üretimi  │   │   - Tek Hedef Dosya Üretimi  │
-│   - (Bileşen Kompozisyonu)   │   │   - (Bileşen Kompozisyonu)   │
-└──────────────┬───────────────┘   └──────────────┬───────────────┘
-               │                                   │
-               ▼                                   ▼
-┌──────────────────────────────┐   ┌──────────────────────────────┐
-│   REVIEWER & TESTER AGENTS   │   │   REVIEWER & TESTER AGENTS   │
-│ - 2 Turlu Quality Gate Veto  │   │ - 2 Turlu Quality Gate Veto  │
-│ - Deterministik Sentaks QA   │   │ - Deterministik Sentaks QA   │
-│ - Otomatik Onarım Döngüsü    │   │ - Otomatik Onarım Döngüsü    │
-│ - Final RAPOR.md & README.md │   │ - Final RAPOR.md & README.md │
-└──────────────┬───────────────┘   └──────────────┬───────────────┘
-               │                                   │
-               ▼                                   ▼
-┌─────────────────────────────────────────────────────────────────┐
-│      WEB ORCHESTRATOR & ISOLATED EXECUTION WORKER BOUNDARY      │
-│ - 18 Zorunlu Kalite Kapısı (Aktif Politika 2.0 Fail-Closed Veto)│
-│ - Yerel Node worker veya Docker sandbox yürütmesi             │
-│ - Sunucu Tarafı ZIP Artefaktı & SHA-256 Hash Bütünlüğü          │
-│ - Değişmez Tamamlama Makbuzu (completion_receipts, Migrasyon 10)│
-│ - HTTP Bearer Token Authenticated İletişim                      │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  U[Kullanıcı isteği ve revizyon] --> M[Manager: yapılandırılmış plan]
+  M --> A[Kullanıcı onayı: implementing]
+  A --> D[Director: domain şartnamesi]
+  D --> T[Teamleader: tek hedefli görev DAGı]
+  T --> C[Coder: kaynak içeriği]
+  C --> R[Backend AST ve Reviewer kaynak incelemesi]
+  R -->|En fazla iki Coder düzeltmesi| C
+  R --> W[Backend: korumalı kaynak yazımı ve checkpoint]
+  W --> S[Proje geneli deterministik statik denetim ve sınırlı onarım]
+  S --> Q[Tester: statik görüş veya veto]
+  Q --> E[Bağımsız worker: yeni ZIP üzerinde gerçek komut ve API/tarayıcı denetimi]
+  E --> K[Zorunlu kapılar, kimlik ve kanıt doğrulaması]
+  K --> F[Kanonik tamamlanma makbuzu]
 ```
+
+Domainler ve takımlar sırayla yürütülür; yalnız aynı takımın bağımsız DAG görevleri en fazla ikili çalışır. Her LLM rolü tam ortak anayasa ve kendi rol talimatını alır. Dosyaları backend yazar; model onayı çalışma kanıtı değildir. Worker yerel profilde ayrı süreç ve iş dizini kullanır; OS izolasyonu Docker profilinden ayrıdır.
 
 ---
 
@@ -210,8 +178,10 @@ npm run dev
 | **Director** | Domain Direktörü | Kendisine atanan domainin teknik mimarisini, kütüphane ve bileşen standartlarını belirler. | `x-agents/director.md` |
 | **Teamleader** | Takım Lideri | Direktörün şartnamesini atomik DAG görevlerine böler. **Katı Tek Dosya Atomik Limit (`targetFiles.length === 1`)** kuralını uygular. | `x-agents/teamleader.md` |
 | **Coder** | Yazılım Geliştirici | Kendisine verilen atomik görevi alır, hedef dosyaları eksiksiz kodlar. **Bileşen Kompozisyonu** (`@/components` import etme) kuralını uygular. | `x-agents/coder.md` |
-| **Reviewer** | Kod İnceleme & Kalite Kapısı | Üretilen kodları sözdizimi, eksik importlar ve güvenlik açısından inceler; 2 tur sonunda onay vermezse görevi fail-closed olarak **VETO** eder. | `x-agents/reviewer.md` |
-| **Tester** | Test & Kabul Uzmanı | Babel AST (`@babel/parser`) ile deterministik sentaks denetimi, secret fallback tespiti, `executeStaticRepairLoop` ile sıralı hedefli dosya onarımı yapar; `RAPOR.md` ve dinamik `README.md` üretir. | `x-agents/tester.md` |
+| **Reviewer** | Kaynak Kod İnceleme | Üretilen kaynak hakkında yapılandırılmış onay veya geri bildirim verir. Backend önce sözdizimini denetler; ilk çıktıdan sonra en fazla iki Coder düzeltmesine ve toplam üç incelemeye izin verir. Onay yoksa görev **VETO** edilir. | `x-agents/reviewer.md` |
+| **Tester** | Statik Kalite İncelemesi | Backend'in hazırladığı manifesto, kabul koşulları ve deterministik denetim özetinden JSON tavsiye/ret üretir. Dosya çalıştırmaz; build, runtime veya ZIP kabul kanıtı üretmez. Onarım döngülerini ve `RAPOR.md`/`README.md` yazımını backend yönetir. | `x-agents/tester.md` |
+
+Bu altı LLM rolünden sonra **bağımsız execution worker** gerçek komutları ve API/tarayıcı kontrollerini çalıştırır. Tamamlanma için zorunlu kapıların geçerli kanıtı ve kalıcı makbuz gerekir. Domainler ve Teamleader'lar sıralı dolaşılır; paralellik takımın DAG dalgası içindeki en fazla iki göreve uygulanır. Bu roller bağımsız kabuk yetkili süreçler değildir; dosya ve durum işlemlerini backend gerçekleştirir.
 
 ---
 
@@ -243,7 +213,7 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
 3. Manager projenin kapsamını, kullanılacak modelleri (Car, Reservation, User) ve mimariyi sizinle olgunlaştırır.
    - Uygulama kalıcı kayıtlar veya operasyonel işlemler içeriyorsa Manager, siz istemeseniz de yönetim ekranlarını, kaynak başına işlemleri, oturum açmayı ve rolleri önerir. Öneri sohbet ve onaylanacak planda görünür. Yönetim gerekmiyorsa gerekçesini belirtir.
    - Her rolün izinli ve yasak işlemleri ile geliştirme/test için ayrı demo hesabı planda yer alır. Herkese açık kayıt olup olmayacağını ayrıca kararlaştırın; kayıt yükseltilmiş yetki vermez.
-4. **Canlı Telemetri ve Hata Teşhis Yeteneği:** Süreç sırasında duraklatılan (`paused`) veya hata alan bir projede Manager'a *"Neden durdu? Hata ne anlama geliyor?"* diye sorduğunuzda; Manager veritabanındaki canlı `project_logs` ve alt ajan `RAPOR.md` dosyalarını okuyarak hatanın hangi dosyada, hangi fonksiyon/satırda ve ne sebeple (Reviewer vetosu, kesik kod, eksik import vb.) olduğunu somut kanıtlarla şeffafça açıklar ve çözüm önerir.
+4. **Hata teşhis bağlamı:** Duraklatılan veya hata alan projede Manager'a *"Neden durdu?"* diye sorabilirsiniz. Backend son hata, sınırlı loglar ve uygun `RAPOR.md` kayıtlarını temizlenmiş veri olarak Manager'a verir. Kayıtlarda dosya/satır veya kök neden yoksa bunun bilinmediği belirtilmelidir; Manager'ın çalışan dosyalara sınırsız erişimi yoktur. Model açıklaması bağımsız test kanıtı değildir.
 
 ### Adım 4: Mimari Planı Onaylama, Sürümlü Sözleşme ve Canlı Revizyon (`pending_approval`)
 1. Manager'ın yapılandırılmış planı doğrulandığında sistem `pending_approval` durumuna geçer. Sadece “plan hazır” metni veya etiket bu durumu oluşturmaz. Eksik sözleşme bir kez otomatik düzeltilmeye çalışılır; başarısızsa eksik alan açıklanır ve üretim başlamaz.
@@ -280,7 +250,7 @@ Log ekranı ve DAG, veritabanındaki en yeni 500 olay ile canlı WebSocket olayl
 
 1. Süreç devam ederken üst barda bulunan **"⏸️ Süreci Duraklat"** butonuna tıklayabilirsiniz.
 2. Proje `paused` durumundaysa üst bardaki, sohbet bildirim şeridindeki veya süreç logları ekranındaki yeşil **Devam Ettir (Resume)** butonuyla kaldığı yerden devam ettirebilirsiniz.
-3. Kalite kapısı hatasında proje `verification_failed` durumunda kalır ve başarısız veya engellenmiş kapı adları ile varsa nedenleri sohbet ve süreç loglarında görünür. `artifact_verified` durumuna ulaşmış bir projede son hata kaydı varsa da aynı üç yerde **Devam Ettir (Resume)** görünür. İş akışı hata bildirimi geldiğinde arayüz Sohbet sekmesini açar; nedeni okuyup Manager'a düzeltme talimatı verebilir veya **Devam Ettir** ile kayıtlı işten sürdürebilirsiniz.
+3. Statik denetim/Tester reddinde proje `verification_failed` olur. Worker reddi veya iş akışı istisnası, kalıcı başarısız doğrulama koşusu korunarak workflow hata yolunda `paused` durumuna alınabilir; proje durumu ile koşu sonucu farklı kayıtlardır. Kapı adları ve kaydedilmiş nedenler sohbet, süreç logları ve Kalite Paneli üzerinden incelenir. `artifact_verified` durumunda son hata kaydı varsa da **Devam Ettir (Resume)** görünür. İş akışı hata bildirimi arayüzü Sohbet sekmesine taşır; düzeltme veya revizyon için kayıtlı nedeni inceleyin.
 4. **Diskteki görevlerden kurtarma:** Manager `TODO.md` ve `DURUM.md` dosyaları korunur. Director'ın `ALT-TALIMATNAME.md` dosyası ve Teamleader planları varsa yeniden kullanılır; görevlerin `GOREV.md` dosyasındaki tek hedef dosya ve açıklama geri yüklenir. Disk senkronizasyonu mevcut canlı olayları silmeden, yalnızca tamamlandığına ilişkin kanıtı bulunan eksik görev loglarını DAG'a ekler.
 5. **Checkpoint koruması:** Motor aynı onaylı sözleşmeye ait görev checkpoint'lerini plan, bağımlılık ve fiziksel dosya kanıtıyla denetler. Açık kabul onarım kaydı varsa uygun tamamlanmış görevleri yeniden kullanabilir; reddedilmiş veya kanıtsız görevleri bitmiş saymaz. Yeni sözleşme revizyonu eski checkpoint'e dayanmaz.
 
@@ -304,7 +274,7 @@ Yalnız tarayıcı kabul adımlarını değiştirmek istiyorsanız bunu Manager'
    - Arşiv, worker'ın ayrı temiz iş dizininde açılarak 18 zorunlu kalite kapısından geçirilir. Docker profili container izolasyonu sağlar; `local-trusted` profili OS izolasyonu sağlamaz. Zorunlu kontrolün atlanması `BLOCKED` sayılır; yalnızca isteğe bağlı ve uygulanamayan kontrol `NOT_APPLICABLE` olabilir. Servis manifesti ve kaynak dosyalarından uygun API veya tarayıcı denemeleri belirlenir; Prisma şemasında `User` modeli varsa seed edilen kullanıcılar da denetlenir.
    - Yönetim uygulamalarında API denemeleri yetkili rolün kayıt oluşturma, okuma, güncelleme ve silme davranışını; oturumsuz ve yetkisiz rolün reddini; ilişkili kayıtların onaylı saklama kuralını sınar. Tarayıcı akışlarında tıklama, form, görünür sonuç, erişilebilir ad ve dar ekran kanıtı gerekir. Worker güvenilir etkileşim adaptörü sağlayamazsa bu kapı `BLOCKED` olur ve ZIP doğrulanmış olarak sunulmaz.
    - Tüm kontroller eksiksiz PASS olduğunda `completeVerifiedProject` fonksiyonu atomik bir CAS işlemiyle projeyi `COMPLETED` yapar ve `completion_receipts` tablosuna değişmez denetim makbuzu yazar.
-2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz. Örnek `kutuphane-takip-sistemi-2` projesinin üretim ve hata kaydı kökteki `surec-raporu.md` dosyasındadır; proje tamamlanmadan örnek ZIP'i kullanıma hazır kabul etmeyin.
+2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz. Örnek bir proje veya raporun varlığı, o projenin ZIP'inin teslim edilmeye hazır olduğunu göstermez; ilgili paketin güncel kanıtını kontrol edin.
 3. Worker hatası normal akışta yerel geliştirme doğrulamasına çevrilmez. Benzer biçimde `DURUM.md` veya `state.json` içindeki tarihsel “tamamlandı” bilgisi PASS kanıtı sayılmaz: disk kurtarma ZIP'i yeniden oluşturabilse bile artefakt `built` ve indirilemez kalır; geçerli Worker koşusu olmadan proje doğrulanmış sayılmaz.
 
 Manager'ın bitiş mesajındaki **Kaydedilen token kullanımı**, projeyle ilgili planlama, üretim, inceleme ve onarım çağrıları için yapay zekâ sağlayıcısının bildirdiği giriş ve çıkış tokenlarının toplamıdır. Sağlayıcı bazı çağrılarda kullanım verisi vermezse mesaj yalnız bilinen **en az** toplamı ve eksik çağrı sayısını söyler. Eski projelerin daha önce kaydedilmemiş kullanımı sonradan hesaplanamaz. Token sayısı ücret hesabı değildir.
@@ -328,7 +298,7 @@ Makbuzla korunmayan `rejected`/`superseded` paketler oluşturulmalarından 7 gü
 
 ## 6. Dosya-Bazlı Koordinasyon Protokolü ("Agent = Klasör")
 
-Her ajan kendi izole klasöründe çalışır:
+Backend her rol ve görev için aşağıdaki klasörlerde protokol kayıtları tutar. LLM rolleri bu klasörlerde bağımsız süreç veya dosya aracıyla çalışmaz; okuma, yazma ve durum geçişlerini merkezi backend gerçekleştirir. Klasör ayrımı OS izolasyonu sağlamaz:
 
 ```text
 projects/<proje_id>/
@@ -353,12 +323,12 @@ projects/<proje_id>/
 ├── .env.example                    # Güvenli örnek yapılandırma şablonu
 ├── Dockerfile                     # Üretilen Projeye Özel Çok Aşamalı Konteyner Dosyası
 ├── .dockerignore                  # Docker İmajına Girmeyecek Dosyalar Listesi
-├── package.json                    # Kilitli Kararlı Sürümler (Next 15+, React 18.3+, Prisma 6.4+, Zod 3.24+, Tailwind 3.4+)
+├── package.json                    # Yığına göre paket politikası; kesin sürümler worker'ın ürettiği package-lock.json içindedir
 ├── tsconfig.json                   # Path Alias (@/* -> ./src/*) Konfigürasyonu
 ├── tailwind.config.ts              # Stil Yapılandırması (darkMode: 'class')
 ├── service-manifest.json           # Otomatik Üretilen Servis & Port Sözleşmesi
 ├── README.md                       # Otomatik Üretilen Kurulum & Çalıştırma Rehberi
-└── RAPOR.md                        # Tester Nihai Kabul Raporu
+└── RAPOR.md                        # Backend'in yazdığı inceleme raporu; tek başına runtime kabul kanıtı değildir
 ---
 
 ## 7. Üretilen Projeyi Bilgisayarınızda Çalıştırma Kılavuzu
@@ -401,7 +371,7 @@ Başarılı başlatmadan sonra tarayıcınızda `http://localhost:3000` adresini
 
 ## 8. Test Süiti ve Otomasyonun Çalıştırılması (`npm test`)
 
-Tüm çekirdek motorları, güvenlik (CSP, HSTS, rate limiter), RFC 6238 TOTP/MFA, asenkron scrypt doğrulamasını, HTTP/WebSocket entegrasyonunu, DAG dalga motorunu, concurrency havuzunu, gerçek derleyici doğrulamasını (`tsc`, `prisma`), deterministik kalite kapısını, alt süreç sandbox'ını, veritabanı migration'larını (V1-V6), log saklama temizliğini ve liveness/readiness problarını test etmek için:
+Çekirdek motorlar, güvenlik (CSP, HSTS, rate limiter), RFC 6238 TOTP/MFA, asenkron scrypt doğrulaması, HTTP/WebSocket entegrasyonu, DAG dalgaları, concurrency havuzu, derleyici sınırları (`tsc`, `prisma`), deterministik kalite kapıları, alt süreç kontrolleri, mevcut veritabanı migration'ları, log saklama temizliği ve liveness/readiness probları için backend süitini çalıştırın. Bir testin mock kullanması veya ortam nedeniyle atlanması gerçek derleyici/worker çalıştırma kanıtı sayılmaz; yerel worker entegrasyonu ayrıca çalıştırılır:
 
 ```bash
 cd backend
@@ -431,7 +401,7 @@ Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artif
 **C:** Sağlayıcı adresini, model kimliğini ve API anahtarını kontrol edip **Bağlantıyı sına** düğmesini yeniden kullanın. MiMo Pro gibi düşünme kullanan modeller için test yeterli çıkış bütçesi ayırır; sağlayıcı metin üretmeden token sınırına ulaşırsa bunu ayrı bir hata olarak bildirir. Profil kartındaki sonuç yalnızca son test anını gösterir. Test başarılıysa ve profili üretimde kullanmak istiyorsanız pasif kartın **Etkinleştir** düğmesine basın.
 
 ### S: LLM çıktısı token sınırına takılırsa veya Reviewer veto ederse ne olur?
-**C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Eğer bir görev 2 tur sonunda tamamlanamazsa Reviewer güvenli modda **VETO** verir ve projeyi `PAUSED` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuna basarak orkestrasyonu güvenle sürdürebilirsiniz.
+**C:** XFactor'da `finishReason === 'MAX_TOKENS'` kontrolü ve Teamleader'ın "Sayfaları ve büyük UI bileşenlerini atomik alt parçalara bölme" kuralı bulunur. Backend ilk Coder çıktısından sonra en fazla iki düzeltmeye ve toplam üç Reviewer incelemesine izin verir. Onay alınamazsa görev reddedilir ve backend akışı `paused` durumuna alır. Bu durumda sohbetten Manager'a hatayı sorabilir veya üst bardaki **"Devam Et (Resume)"** butonuyla kurtarma kontrollerini başlatabilirsiniz; bu işlem başarı garantisi değildir.
 
 ### S: Tamamlanmış veya duraklatılmış bir projeyi sohbetten değiştirebilir miyim?
 **C:** Evet. Tamamlanmış, duraklatılmış (`PAUSED`) veya doğrulama hatası almış (`VERIFICATION_FAILED`) bir projede sohbet paneline girip revizyon istediğinizde (örn: *"1"*, *"baştan başla"*, *"şunu ekle"*); Manager yeni mimari şartnameyi hazırlar, yeni bir sözleşme revizyonu açar ve sohbetin altında yeşil **"Planı Onayla ve Başlat"** onay kartını sunar. Onayladığınızda otonom motor yeni plan doğrultusunda temiz üretime geçer.
@@ -443,7 +413,7 @@ Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artif
 **C:** XFactor, **ayrı worker mimarisi** ile çalışır. Yapay zekânın yazdığı kodların derlenmesi (`tsc`), paketlenmesi (`npm install`) ve çalıştırılması **Execution Worker (`8099`)** servisinde yürütülür. Docker profili container izolasyonu sağlar; `local-trusted` profili ayrı iş dizinleri ve süreç temizliği kullanır ancak kod mevcut kullanıcı yetkileriyle çalışır, OS izolasyonu sağlamaz.
 - Bu port Backend ile Worker arasındaki Bearer token ile kimlik doğrulanan API'dir. HTTP tek başına trafiği şifrelemez; farklı makineler arasında TLS kullanın. Üretimde operatöre özel worker token zorunludur.
 - Tarayıcınızla doğrudan bu porta istek attığınızda, sistem güvenlik amacıyla isteği reddeder ve `{"error":"Unauthorized"}` cevabı döner.
-- Kullanıcının bu portu doğrudan ziyaret etmesi gerekmez; Worker'ın yürüttüğü tüm işlemler (derleme logları, test sonuçları, 18 kalite kapısı kontrolleri) anlık olarak ana ön yüzdeki (`5173`) **Loglar**, **DAG Akış Şeması** ve **Kalite Paneli** ekranlarına canlı olarak yansıtılır.
+- Kullanıcının bu portu doğrudan ziyaret etmesi gerekmez. İş akışı olayları Loglar ve DAG ekranlarında izlenir; Kalite Paneli koşu/kanıt geçmişini 15 saniyede bir yeniler ve seçilen kontrolün temizlenmiş kayıtlarını açar. Ham worker terminal çıktısı, WebSocket iş akışı olaylarıyla aynı akış değildir.
 
 ---
 
@@ -454,9 +424,11 @@ XFactor kod tabanını genişletmek, yeni bir ajan eklemek veya mevcut mimari ba
 ### 1. Kod Tabanı Bağımlılık Haritası
 Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik olarak şu katmanlara ayrılmıştır:
 - **API & Sunucu Katmanı:** `server.js` ➔ `routes/projectRoutes.js` ➔ `sessionAuth.js` / `security.js`
-- **Orkestrasyon & DAG Motoru:** `engine/workflow.js` ➔ `engine/dag.js` ➔ `engine/fileProtocol.js`
-- **Kalite Kapıları & Denetim:** `agents/tester.js` ➔ `engine/buildValidator.js` ➔ `engine/selfCorrection.js`
-- **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js` ➔ `migrations/`
+- **Orkestrasyon & DAG Motoru:** `engine/workflow.js`, `engine/dag.js` ile dalgaları ve `engine/fileProtocol.js` ile kayıtları yönetir; bunlar birbirini izleyen bir import zinciri değildir.
+- **Kaynak İncelemesi:** `engine/workflow.js` ➔ `engine/selfCorrection.js` ➔ Reviewer ve gerektiğinde Coder düzeltmesi.
+- **Statik Kalite:** `engine/workflow.js` ➔ `agents/tester.js` içindeki deterministik denetim yardımcıları ve ayrı Tester LLM çağrısı.
+- **Çalıştırılmış Kabul Kanıtı:** `engine/workflow.js` ➔ `verification/verificationCli.js` ➔ `verification/artifactVerifier.js` ➔ `executionClient.js` ➔ bağımsız worker.
+- **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js`; migration tanımları ve uygulaması `db.js` içindedir.
 
 ### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
 XFactor, kaynak dosyalarını AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır. Dinamik query parçaları rota yolundan ayrılır; ham Node HTTP Worker rotaları ve `backend/executionClient.js` istekleri `requests_route` ilişkileriyle eşleştirilir. `npm run graph` haritayı her seferinde güncel kaynak koddan yeniden üretir.
@@ -501,7 +473,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 ### 4. Arka Yüz (Backend) Ana Dizin Dosya Mimarisi Tablosu
 
-`backend/` ana dizininde yer alan 22 adet JavaScript kaynak dosyası ve rolleri:
+`backend/` ana dizinindeki başlıca JavaScript kaynak dosyaları ve rolleri (tam dosya sayımı değildir):
 
 | Dosya Adı | Kategori / Katman | Detaylı İşlev ve Mimari Sorumluluğu |
 |---|:---:|---|
@@ -511,7 +483,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `productionStatic.js` | Statik Sunucu | Üretim ortamında Vite ile derlenmiş ön yüz dosyalarını sunar; SPA yönlendirmelerini (`isSpaNavigation`) yönetir. |
 | `websocketHub.js` | Gerçek Zamanlı İletişim | Proje bazlı WebSocket odaları yönetir; yapay zekâ kod yazarken logları ve DAG durumlarını ön yüze anında canlı akıtır. |
 | `networkResolver.js` | Ağ & DNS Kurtarma | Kurumsal veya kısıtlı ağlarda Node.js varsayılan IPv6 DNS çözümü tıkandığında doğrudan yerel IPv4 (`dns.resolve4`) çözümlemesine düşerek LLM bağlantısını korur. |
-| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; 15 şema göçünü (migrations) ve olay yayıncısını (`dbEvents`) barındırır. |
+| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; sıralı ve artımlı şema göçlerini (migrations) ve olay yayıncısını (`dbEvents`) barındırır. Güncel checkpoint aidiyeti migration 17 ile sürümlenir. |
 | `projectRepository.js` | Kanonik Depo | Projelerin oluşturulması, okunması, güncellenmesi ve güvenli silinmesi işlemlerinin tek otoritesidir; başlıktan temiz klasör adı ve kısa numara (`slug-no`) üretir. |
 | `workflowAttempts.js` | Kilit & Heartbeat | Bir projede birden fazla motorun aynı anda çalışmasını engellemek için `workflow_attempts` üzerinde kiralama (lease) alır ve kalp atışı gönderir; çöken süreçleri kurtarır. |
 | `backupRestore.js` | Yedekleme & Kurtarma | WAL verilerini içeren SQLite snapshot'ını, proje ve artefakt dosyalarını `manifest.json` ile SHA-256 doğrulanan bir dizine yedekler. CLI `--offline` kullanımı öncesinde yazan süreçler durdurulmalıdır; restore artefakt yollarını son hedefe taşır. LLM profil/anahtar dosyaları ayrıca güvenli yedeklenmelidir. |
@@ -537,12 +509,12 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 | Klasör Adı | Dosya Sayısı | Katman / Görev | Mimari Sorumluluğu |
 |---|:---:|:---:|---|
-| `backend/agents/` | 9 Dosya | Yapay Zekâ Rolleri | 6 seviyeli ajan personelleri (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), şema kurtarıcı (`schemas.js`) ve yaşayan anayasa köprüsü (`agentLoader.js`). |
-| `backend/engine/` | 13 Dosya | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), deterministik DAG (`dag.js`), durum makinesi (`stateMachine.js`), scaffold koruması (`codeGenerator.js`), veto döngüsü (`selfCorrection.js`) ve derleyici denetleyicisi (`buildValidator.js`). |
-| `backend/routes/` | 4 Dosya | REST API Rotaları | `projectRoutes.js` (CRUD, chat, onay, revizyon), `authRoutes.js` (login/session), `artifactDownloadAuthorization.js` (makbuz denetimi), `artifactDownload.js` (tamamlanan aktarım sonrası başarı kaydı). |
-| `backend/verification/` | Değişken | 18 Kalite Kapısı | Kodların temiz kurulumdan derlemeye, güvenlikten veritabanına kadar 18 aşamada bağımsız makinelerce doğrulanmasını sağlayan Fail-Closed Veto motoru. |
+| `backend/agents/` | Değişken | Yapay Zekâ Rolleri | Altı rol (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), registry, şema doğrulayıcı (`schemas.js`), anayasa köprüsü (`agentLoader.js`) ve güvenilir belge sınırı (`agentPaths.js`). |
+| `backend/engine/` | Değişken | Orkestrasyon Motoru | Master iş akışı, DAG, durum, scaffold, kaynak incelemesi, güvenli protokol I/O, nitelikli checkpoint kimliği ve kurtarma yardımcıları. |
+| `backend/routes/` | Değişken | REST API Rotaları | Proje CRUD/chat/onay/revizyon, auth/session, artefakt makbuzu ve indirme aksiyon denetimleri. |
+| `backend/verification/` | Değişken | 18 Kalite Kapısı | Temiz kurulum, derleme, güvenlik ve veritabanı kanıtlarını bağımsız worker'dan alıp zorunlu kapıları doğrulayan Fail-Closed Veto motoru; yerel profil ayrı makine veya OS sandbox gerektirmez. |
 | `backend/services/` | 2 Dosya | Senkronizasyon ve ZIP Yaşam Döngüsü | `reconciliationService.js`: kaynak klasörleri keşfeder ve tarihsel durumu doğrulama kanıtı üretmeden yeniden kurar. `artifactLifecycle.js`: ZIP bulunabilirliği, hash/sahiplik denetimi ve kalıcı günlükle kurtarılabilir karantinayı yönetir. Global HTTP senkronizasyonunu yalnız yönetici tetikleyebilir. |
-| `backend/contracts/` | 3 Dosya | Sözleşme & İzlenebilirlik | Sürümlü sözleşmeler (`projectContract.js`), kullanıcı isterlerinin kodla 1:1 eşleştirilmesi (`traceability.js`) ve şablon kirliliği denetimi (`domainPolicy.js`). |
+| `backend/contracts/` | Değişken | Sözleşme & İzlenebilirlik | Sürümlü sözleşme, requirement izlenebilirliği, domain politikası ve `taskProjection.js` ile kalıcı görev/sahiplik projeksiyonu. |
 | `backend/repositories/` | 2 Dosya | Veri Deposu | Kalite koşuları (`verificationRepository.js`) ve onaylı ZIP paketlerini (`artifactRepository.js`) veritabanına bağlayan veri erişim katmanı. |
 | `backend/crypto/` | 1 Dosya | Şifreleme | `mfaCrypto.js`: TOTP gizli anahtarlarını AES-256-GCM ile şifreleyen ve çözen kriptografik modül. |
 | `backend/utils/` | 1 Dosya | Arşiv Yöneticisi | `archive.js`: Projeleri güvenli biçimde ZIP paketine dönüştüren ve Zip-Slip saldırılarını engelleyen arşivleme aracı. |
@@ -589,7 +561,7 @@ XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamaml
 | 18 | `readme_check` | Projede üretilen README.md içindeki kurulum ve çalıştırma komutlarının projeyle birebir uyumu. |
 
 Her kapı, çalıştırılan komutun veya türetilmiş PASS kaynaklarının kanıtını; çıkış kodu, SHA-256 çıktı özetleri (`stdout_digest`, `stderr_digest`) ve ISO UTC zaman damgalarıyla `verification_checks` kayıtlarına yazar. Kanıtı eksik veya sahte olan hiçbir zorunlu kontrol tamamlanma makbuzunu geçemez.
-🎉 **XFactor ile otonom, güvenli ve hatasız yazılım geliştirmenin keyfini çıkarın!**
+Üretim ve doğrulama sonuçlarını kayıtlı kanıtlarıyla değerlendirin; geçen kapılar ölçtükleri kapsamı kanıtlar, bütün olası kusurların yokluğunu garanti etmez.
 ## Docker olmadan yerel kalite worker'ı
 
 Platform talimatlarıyla üretilen proje belgelerini karıştırmayın: `x-agents/GOREV.md`, `DURUM.md`, `TODO.md` ve `RAPOR.md` şablondur. Canlı üretim kayıtları `projects/<proje-id>/manager/` ve alt ajan klasörlerinde; uygulamanın README ve `docs/` belgeleri ilgili proje klasöründe bulunur. Backend farklı dizindeki aynı adlı belgeleri sistem talimatı olarak yüklemez. Eksik talimat, geçersiz rol, bağlantılı ajan dosyası veya `x-agents` ile çakışan proje yolu işlemi engeller. [Dosya ayrımı kılavuzu](x-agents/README.md).
