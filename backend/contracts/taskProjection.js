@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
 import { collectDownstreamTaskIds } from '../observability.js';
 import { computeTaskSpecHash } from '../engine/checkpointHelper.js';
+import { qualifiedTaskId } from '../engine/checkpointIdentity.js';
 
 const identifier = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,256}$/.test(value);
 const scopedId = (kind, ...parts) => `${kind}-${crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex')}`;
@@ -61,10 +62,10 @@ export function projectContractTasks({
                     || typeof task.targetFiles[0] !== 'string' || !task.targetFiles[0].trim()) {
                     throw new Error('Task projection requires exactly one target file.');
                 }
-                const id = scopedId('task', contractId, teamleaderId, task.id);
+                const id = qualifiedTaskId({ contractId, teamleaderId, localTaskId: task.id });
                 const stableKey = `${teamleaderId}/${task.id}`;
                 const spec = { ...task, id, executionTaskId: task.id, executionTaskSpecHash: computeTaskSpecHash(task), teamleaderId,
-                    dependencies: [...new Set(task.dependencies)].sort().map(dependency => scopedId('task', contractId, teamleaderId, dependency)),
+                    dependencies: [...new Set(task.dependencies)].sort().map(localTaskId => qualifiedTaskId({ contractId, teamleaderId, localTaskId })),
                     requirementIds: [...new Set(task.requirementIds)].sort() };
                 projected.push({ id, stableKey, teamleaderId, taskId: task.id, spec });
             }

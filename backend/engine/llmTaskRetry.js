@@ -88,7 +88,9 @@ export async function runLLMTaskWithRetry({
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
         let phase = 'provider';
         try {
-            const response = await generate(messages, { signal, onUsage });
+            // This boundary owns retries for agent tasks. An adapter must make
+            // a single transport attempt rather than multiplying this budget.
+            const response = await generate(messages, { signal, onUsage, maxTransportAttempts: 1 });
             phase = 'validation';
             const parsed = parseResponse(response);
             await onDiagnostic(diagnosticFor({

@@ -18,11 +18,14 @@ try {
     isolated.registerDatabase(db);
     const { createProject } = await import('../projectRepository.js');
     const { readProjectState, writeProjectState } = await import('../engine/index.js');
-    const { createContractRevision } = await import('../contracts/projectContract.js');
+    const { createContractRevision, approveContractRevision } = await import('../contracts/projectContract.js');
+    const { acquireWorkflowLease } = await import('../workflowAttempts.js');
     const { createProjectRouter } = await import('../routes/projectRoutes.js');
     const { abortProjectExecution } = await import('../engine/cancellation.js');
 
-    function buildApproveApp() {
+    function buildApproveApp(onEvent = event => {
+        if (event.action === 'start') throw new Error('HTTP fixture stops before provider dispatch');
+    }) {
         const requireAuth = (req, _res, next) => {
             req.user = { id: 'test-user-approve' };
             next();
@@ -33,7 +36,7 @@ try {
         app.use('/api/projects', createProjectRouter({
             requireAuth,
             projectAccess: () => passThrough,
-            wsHub: { broadcast() {}, publish() {} }
+            wsHub: { broadcast() {}, publish: onEvent }
         }));
         // eslint-disable-next-line no-unused-vars
         app.use((err, _req, res, _next) => {
@@ -42,13 +45,13 @@ try {
         return app;
     }
 
-    async function approveViaHttp(projectId) {
-        const app = buildApproveApp();
+    async function approveViaHttp(projectId, action = 'approve', onEvent) {
+        const app = buildApproveApp(onEvent);
         const server = http.createServer(app);
         await new Promise((r) => server.listen(0, '127.0.0.1', r));
         try {
             const { port } = server.address();
-            const response = await fetch(`http://127.0.0.1:${port}/api/projects/${projectId}/approve`, {
+            const response = await fetch(`http://127.0.0.1:${port}/api/projects/${projectId}/${action}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: '{}'
@@ -94,6 +97,48 @@ try {
         }
     });
 
+    await runAsyncTest('immediate HTTP resume after remote pause reaches fresh approved dispatch', async () => {
+        const project = await createProject({ title: 'Immediate approved HTTP resume' });
+        const plan = { summary: 'React frontend', talimatname: '# React frontend', domains: [{ name: 'frontend', prefix: 'frontend' }],
+            management: { needed: false, reason: 'Static HTTP fixture' } };
+        approveContractRevision(project.id, createContractRevision(project.id, plan, 'approved-http-resume'));
+        db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
+        const oldLease = acquireWorkflowLease(project.id, 'old-http-worker');
+        abortProjectExecution(project.id, 'PAUSED'); // Pause arrived where no local controller was registered.
+        db.prepare("UPDATE projects SET status='paused' WHERE id=?").run(project.id);
+        let dispatched;
+        const dispatch = new Promise(resolve => { dispatched = resolve; });
+        const timeout = setTimeout(() => dispatched(false), 5000);
+        try {
+            const response = await approveViaHttp(project.id, 'resume', event => {
+                if (event.action === 'start' && /director/i.test(event.agent || '')) {
+                    abortProjectExecution(project.id, 'PAUSED');
+                    dispatched(true); // Stop at the real dispatch boundary before any provider request.
+                }
+            });
+            assert.equal(response.status, 200, JSON.stringify(response.body));
+            assert.notEqual(response.body.attemptId, oldLease.attempt.id);
+            assert.equal(await dispatch, true, 'the fresh HTTP attempt must reach approved generation dispatch');
+        } finally { clearTimeout(timeout); abortProjectExecution(project.id, 'PAUSED'); }
+    });
+
+    for (const draft of ['legacy plan', 'pending contract', 'missing plan']) {
+        await runAsyncTest(`HTTP resume refuses ${draft} before lease acquisition or state publication`, async () => {
+            const project = await createProject({ title: `Unapproved HTTP resume ${draft}` });
+            const plan = { summary: 'Unapproved React frontend', domains: [{ name: 'frontend', prefix: 'frontend' }],
+                management: { needed: false, reason: 'Static HTTP fixture' } };
+            if (draft === 'pending contract') createContractRevision(project.id, plan, 'pending-http-draft');
+            db.prepare("UPDATE projects SET status='paused',plan=? WHERE id=?").run(
+                draft === 'legacy plan' ? JSON.stringify(plan) : null, project.id);
+            const before = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);
+            const response = await approveViaHttp(project.id, 'resume');
+            assert.equal(response.status, 409, JSON.stringify(response.body));
+            assert.equal(response.body.code, 'WORKFLOW_APPROVAL_REQUIRED');
+            assert.deepEqual(db.prepare('SELECT * FROM projects WHERE id=?').get(project.id), before);
+            assert.equal(db.prepare('SELECT COUNT(*) AS count FROM workflow_attempts WHERE project_id=?').get(project.id).count, 0);
+            assert.equal(db.prepare("SELECT COUNT(*) AS count FROM project_contracts WHERE project_id=? AND status='approved'").get(project.id).count, 0);
+        });
+    }
     finish();
 } finally {
     await isolated.cleanup();

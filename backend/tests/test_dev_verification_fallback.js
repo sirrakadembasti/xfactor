@@ -22,8 +22,8 @@ try {
 assert.ok(verifyArtifactDevFallback, 'verifyArtifactDevFallback must be exported from devVerificationRunner.js');
 
 // -------------------------------------------------------------
-// TEST CASE 1: SUCCESS PATH
-// All checks pass, artifact verified, project completed.
+// TEST CASE 1: STATIC-ONLY PATH
+// Runtime gates are durably BLOCKED; static inspection cannot complete a project.
 // -------------------------------------------------------------
 const project = await createProject({ title: "Dev Fallback Test App" });
 const contractId = `contract-${Date.now()}`;
@@ -65,16 +65,20 @@ const result = await verifyArtifactDevFallback({
 
 assert.strictEqual(result.passed, false, 'Static inspection cannot establish executable verification');
 assert.strictEqual(result.status, 'rejected');
-const fallbackChecks = db.prepare('SELECT gate_name,status,evidence_json FROM verification_checks WHERE run_id = ?').all(runId);
+const fallbackChecks = db.prepare('SELECT * FROM verification_checks WHERE run_id = ?').all(runId);
+const { endCheck } = await import('../repositories/verificationRepository.js');
 for (const name of ['clean_install', 'typecheck', 'framework_build', 'api_contract', 'browser_journey']) {
     const check = fallbackChecks.find(item => item.gate_name === name);
     assert.equal(check.status, 'BLOCKED', name);
     const evidence = JSON.parse(check.evidence_json);
     assert.equal(evidence.kind, 'not_executed');
     assert.equal(evidence.sourceCheckIds, undefined, 'No synthetic self-referencing provenance');
+    assert.ok(check.ended_at, 'Observed BLOCKED is terminal evidence, not an unfinished reservation');
+    assert.throws(() => endCheck({ id: check.id, contractId, runId, status: 'PASS' }), /finalized or immutable/);
+    assert.deepEqual(db.prepare('SELECT * FROM verification_checks WHERE id=?').get(check.id), check);
 }
 
-// Verify that assertVerifiedArtifactEvidence passes strictly
+// Static evidence must fail canonical executable acceptance.
 assert.throws(() => assertVerifiedArtifactEvidence({
     projectId: project.id,
     contractId,

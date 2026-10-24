@@ -301,12 +301,17 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
             });
         } else {
             try {
-                const tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
+                let tscRes;
+                try { tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
                     workspace: options.workspace || projectDir,
                     timeoutMs: options.timeoutMs || 120000,
                     adapter: options.adapter,
                     env: options.env,
-                });
+                    signal: options.signal,
+                }); } catch (error) {
+                    if (!error.result || options.signal?.aborted) throw error;
+                    tscRes = error.result;
+                }
 
                 checks.push({
                     name: 'typecheck',
@@ -315,6 +320,13 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     exitCode: tscRes.exitCode,
                     stdout: tscRes.stdout,
                     stderr: tscRes.stderr,
+                    stdoutTruncated: tscRes.stdoutTruncated,
+                    stderrTruncated: tscRes.stderrTruncated,
+                    timedOut: tscRes.timedOut === true,
+                    executionObservation: { normalExit: Number.isInteger(tscRes.exitCode) && tscRes.exitCode >= 0
+                        && tscRes.signal === null && tscRes.timedOut !== true && tscRes.executionFailed !== true
+                        && tscRes.cancelled !== true && !options.signal?.aborted,
+                        cancelled: tscRes.cancelled === true || options.signal?.aborted === true },
                     stdoutDigest: computeDigest(tscRes.stdout),
                     stderrDigest: computeDigest(tscRes.stderr),
                     reason: tscRes.passed ? 'TypeScript compilation check passed with 0 errors.' : `TypeScript compilation failed: ${tscRes.stderr || tscRes.stdout}`

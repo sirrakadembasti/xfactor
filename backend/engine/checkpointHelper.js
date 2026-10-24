@@ -108,11 +108,15 @@ export async function verifyTaskCheckpoint({
     task,
     planHash,
     dependencyTargetFiles = [],
+    expectedIdentity = null,
     gateVersion = '1.0.0'
 }) {
     if (!checkpoint || typeof checkpoint !== 'object') {
         return false;
     }
+    if (expectedIdentity && (checkpoint.project_id !== expectedIdentity.projectId
+        || checkpoint.contract_id !== expectedIdentity.contractId
+        || !expectedIdentity.taskIds.includes(checkpoint.task_id))) return false;
 
     if (checkpoint.status !== 'completed' || checkpoint.invalidated_at !== null) {
         return false;

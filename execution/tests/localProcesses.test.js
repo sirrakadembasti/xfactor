@@ -85,7 +85,12 @@ test('hard output ceiling kills and closes actual process', async t => {
 test('timeout rejects only after actual process termination', async t => {
   let pid;
   const { manager } = await setup(t, { onResource: resource => { pid = resource.pid; } });
-  await assert.rejects(manager.execute('node', ['-e', 'setInterval(()=>{},1000)'], { timeoutMs: 150 }), /timed out/);
+  await assert.rejects(manager.execute('node', ['-e', 'setInterval(()=>{},1000)'], { timeoutMs: 150 }), error => {
+    assert.match(error.message, /timed out/);
+    assert.equal(error.result.timedOut, true);
+    assert.equal(error.result.executionFailed, true);
+    return true;
+  });
   assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
 });
 

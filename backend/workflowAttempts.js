@@ -220,6 +220,57 @@ export function assertWorkflowLease(attemptId, leaseOwner, options = {}) {
     return true;
 }
 
+// Only synchronous filesystem commits belong here. Preparation/provider work
+// must finish before BEGIN so the shared connection never spans an await.
+export function commitWorkflowSource(fence, commit) {
+    if (!fence) return commit(); // Standalone, non-workflow generation utilities.
+    const database = databaseFor(fence);
+    database.exec('BEGIN IMMEDIATE;');
+    try {
+        assertWorkflowLease(fence.attemptId, fence.leaseOwner, { ...fence, database });
+        const project = database.prepare('SELECT status FROM projects WHERE id = ?').get(fence.projectId);
+        if (fence.signal?.aborted || !project || ['paused', 'deleting'].includes(project.status)) {
+            const error = new Error('Workflow source commit cancelled or fenced.');
+            error.code = 'WORKFLOW_LEASE_FENCED';
+            throw error;
+        }
+        if (fence.contractId) {
+            const contract = database.prepare(`SELECT id, contract_hash FROM project_contracts
+                WHERE project_id = ? AND status = 'approved' ORDER BY revision DESC LIMIT 1`).get(fence.projectId);
+            if (contract?.id !== fence.contractId || contract.contract_hash !== fence.contractHash) {
+                const error = new Error('Workflow source contract changed before commit.');
+                error.code = 'WORKFLOW_LEASE_FENCED';
+                throw error;
+            }
+        }
+        // Repair CAS must run after async staging while the same lease/contract
+        // transaction still excludes cancellation and cooperative source writers.
+        if (fence.assertBeforeCommit) {
+            const checked = fence.assertBeforeCommit();
+            if (checked && typeof checked.then === 'function') throw new Error('Source CAS callback must be synchronous.');
+        }
+        const result = commit();
+        database.exec('COMMIT;');
+        return result;
+    } catch (error) {
+        try { database.exec('ROLLBACK;'); } catch {}
+        throw error;
+    }
+}
+
+// A single SQLite write serializes cancellation with source commits and lease
+// acquisition, including cancellation requested in a different server process.
+export function revokeProjectWorkflowLeases(projectId, reason = 'ABORTED', { database = db } = {}) {
+    if (!database || !projectId) return 0;
+    const now = Date.now();
+    const result = database.prepare(`
+        UPDATE workflow_attempts SET status = ?, ended_at = ?, ended_epoch = ?, error = ?
+        WHERE project_id = ? AND status = 'running'
+    `).run(reason === 'PAUSED' ? 'paused' : 'aborted', new Date(now).toISOString(), now, String(reason), projectId);
+    activeLeases.delete(projectId);
+    return result.changes;
+}
+
 export function reconcileStaleWorkflowAttempts({
     staleThresholdSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS,
     database = db

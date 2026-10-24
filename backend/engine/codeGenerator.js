@@ -4,11 +4,13 @@
  */
 
 import fs from 'fs/promises';
+import fsSync from 'node:fs';
 import path from 'path';
 import { isBuiltin } from 'node:module';
 import { randomUUID } from 'node:crypto';
 import { isSafeProjectPath } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
+import { commitWorkflowSource } from '../workflowAttempts.js';
 
 // The worker resolves this dist-tag into the artifact lockfile. Keeping the
 // policy in one place avoids stale version claims in generated manifests.
@@ -296,7 +298,7 @@ async function assertGeneratedWriteDestination(target, projectDir) {
  * Coder tarafından üretilen dosyaları doğrular ve hem ajanın kendi klasörüne
  * hem de projenin kaynak dizinine güvenle yazar.
  */
-export async function writeGeneratedFiles(projectDir, coderDir, files = [], allowedTargetFiles = null) {
+export async function writeGeneratedFiles(projectDir, coderDir, files = [], allowedTargetFiles = null, sourceFence = null) {
     if (!Array.isArray(files) || files.length === 0) {
         throw new Error('Yazılacak geçerli dosya bulunamadı.');
     }
@@ -365,6 +367,7 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = [], allo
     for (const { targetPath } of destinations) await assertGeneratedWriteDestination(targetPath, projectDir);
 
     const staged = [];
+    let primaryError = null;
     try {
         for (const { targetPath, content } of destinations) {
             await assertGeneratedWriteDestination(targetPath, projectDir);
@@ -382,18 +385,93 @@ export async function writeGeneratedFiles(projectDir, coderDir, files = [], allo
             try { await handle.writeFile(content, 'utf8'); }
             finally { await handle.close(); }
         }
-        for (const { targetPath } of staged) await assertGeneratedWriteDestination(targetPath, projectDir);
-        for (const { targetPath, temporaryPath } of staged) {
-            await assertGeneratedWriteDestination(targetPath, projectDir);
-            // Rename replaces the directory entry rather than following a leaf link.
-            await fs.rename(temporaryPath, targetPath);
-        }
+        commitStagedSources(projectDir, staged, sourceFence);
+    } catch (error) {
+        primaryError = error;
+        throw error;
     } finally {
-        for (const { temporaryPath } of staged) {
-            await fs.unlink(temporaryPath).catch(error => { if (error.code !== 'ENOENT') throw error; });
-        }
+        await cleanupStagedSources(staged, primaryError);
     }
     return candidates.map(({ file }) => ({ path: file.path, size: Buffer.byteLength(file.content, 'utf8') }));
+}
+
+async function cleanupStagedSources(staged, primaryError) {
+    const failures = [];
+    for (const { temporaryPath } of staged) {
+        try { await fs.unlink(temporaryPath); }
+        catch (error) { if (error.code !== 'ENOENT') failures.push(error); }
+    }
+    if (!failures.length) return;
+    if (primaryError) primaryError.cleanupFailures = [...(primaryError.cleanupFailures || []), ...failures];
+    else throw failures[0];
+}
+
+function commitStagedSources(projectDir, staged, sourceFence) {
+    const committedPaths = [];
+    try {
+        commitWorkflowSource(sourceFence, () => {
+            // Recheck every ancestor without yielding while holding SQLite's
+            // writer lock. This protects cooperative workflow writers; an OS
+            // adversary swapping ancestors needs stronger OS handle APIs.
+            for (const { targetPath, exclusive } of staged) {
+                let current = path.resolve(targetPath);
+                for (;;) {
+                    try {
+                        const stat = fsSync.lstatSync(current);
+                        if (stat.isSymbolicLink() || (current === path.resolve(targetPath) ? !stat.isFile() : !stat.isDirectory())) {
+                            throw new Error(`Invalid generated write destination: ${current}`);
+                        }
+                        if (exclusive && current === path.resolve(targetPath)) {
+                            const error = new Error(`File already exists: ${targetPath}`);
+                            error.code = 'EEXIST';
+                            throw error;
+                        }
+                    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+                    const parent = path.dirname(current);
+                    if (parent === current) break;
+                    current = parent;
+                }
+            }
+            for (const { targetPath, temporaryPath } of staged) {
+                fsSync.renameSync(temporaryPath, targetPath);
+                committedPaths.push(path.relative(projectDir, targetPath));
+            }
+        });
+    } catch (error) {
+        // Filesystem batches cannot be rolled back by SQLite. Never retry a
+        // partial batch automatically or report it as a completed checkpoint.
+        if (committedPaths.length) {
+            error.sourceCommitPartial = true;
+            error.committedPaths = committedPaths;
+        }
+        throw error;
+    }
+}
+
+// Trusted scaffold/README writer. It uses the same staging and commit fence,
+// while retaining scaffold-only names such as .dockerignore and wx semantics.
+export async function writeSourceFile(projectDir, targetPath, content, options = 'utf8', sourceFence = null) {
+    await assertGeneratedWriteDestination(targetPath, projectDir);
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await assertGeneratedWriteDestination(targetPath, projectDir);
+    const temporaryPath = path.join(path.dirname(targetPath), `.xfactor-generated-${randomUUID()}.tmp`);
+    const mode = await fs.lstat(targetPath).then(stat => stat.mode & 0o777, error => {
+        if (error.code !== 'ENOENT') throw error;
+        return 0o666;
+    });
+    let primaryError = null;
+    try {
+        const handle = await fs.open(temporaryPath, 'wx', mode);
+        try {
+            await handle.writeFile(content, typeof options === 'string' ? options : options.encoding || 'utf8');
+        } finally { await handle.close(); }
+        commitStagedSources(projectDir, [{ targetPath, temporaryPath, exclusive: options?.flag === 'wx' }], sourceFence);
+    } catch (error) {
+        primaryError = error;
+        throw error;
+    } finally {
+        await cleanupStagedSources([{ temporaryPath }], primaryError);
+    }
 }
 
 export function isAuthRequested(state = {}, plan = {}) {
@@ -508,7 +586,8 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
     };
 }
 
-export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
+export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, sourceFence = null) {
+    const writeSource = (targetPath, content, options) => writeSourceFile(projectDir, targetPath, content, options, sourceFence);
     const title = state.title || 'xfactor-app';
     const safeName = title.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'app';
 
@@ -692,12 +771,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         finalPkg.devDependencies['@vitejs/plugin-vue'] = LATEST_STABLE_VERSION;
     }
 
-    await fs.writeFile(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
+    await writeSource(pkgPath, JSON.stringify(finalPkg, null, 2), 'utf8');
     if (isNext) {
         const lintConfigs = ['eslint.config.mjs', 'eslint.config.js', 'eslint.config.cjs', '.eslintrc.json', '.eslintrc.js'];
         const hasLintConfig = (await Promise.all(lintConfigs.map(name => fs.stat(path.join(projectDir, name)).then(() => true).catch(() => false)))).some(Boolean);
         if (!hasLintConfig) {
-            await fs.writeFile(path.join(projectDir, 'eslint.config.mjs'),
+            await writeSource(path.join(projectDir, 'eslint.config.mjs'),
                 "import { defineConfig } from 'eslint/config';\nimport nextVitals from 'eslint-config-next/core-web-vitals';\n\nexport default defineConfig([...nextVitals]);\n", 'utf8');
         }
     }
@@ -711,7 +790,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             : isExpressOnly
                 ? { type: 'express', command: 'npm', args: ['run', 'start'], port: 3000, healthEndpoint: '/health' }
                 : { type: 'vite', command: 'npm', args: ['run', 'preview', '--', '--host', '0.0.0.0', '--port', '4173'], port: 4173, healthEndpoint: '/' };
-        await fs.writeFile(
+        await writeSource(
             serviceManifestPath,
             JSON.stringify({ version: '1.0', services: {
                 web: service,
@@ -734,7 +813,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             const occupiedPorts = new Set(Object.values(manifest.services).map(service => Number(service?.port)));
             if (!occupiedPorts.has(3001)) {
                 manifest.services.api = { type: 'express', command: 'npm', args: ['run', 'start:api'], port: 3001, healthEndpoint: '/api/health' };
-                await fs.writeFile(serviceManifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+                await writeSource(serviceManifestPath, JSON.stringify(manifest, null, 2), 'utf8');
             }
         }
         const api = manifest?.services?.api || Object.values(manifest?.services || {}).find(service => service?.type === 'express');
@@ -751,7 +830,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 'src/server.ts': `import 'dotenv/config';\nimport app from './${apiModule}';\n\n// XFactor Vite + Express runtime contract: API ${apiPort}, UI 4173.\nconst port = Number(process.env.PORT || ${apiPort});\nconst server = app.listen(port, '127.0.0.1');\nfor (const signal of ['SIGTERM', 'SIGINT'] as const) {\n  process.once(signal, () => server.close(() => process.exit(0)));\n}\n`
             };
             for (const [relativePath, content] of Object.entries(runtimeFiles)) {
-                try { await fs.writeFile(path.join(projectDir, relativePath), content, { encoding: 'utf8', flag: 'wx' }); }
+                try { await writeSource(path.join(projectDir, relativePath), content, { encoding: 'utf8', flag: 'wx' }); }
                 catch (error) { if (error.code !== 'EEXIST') throw error; }
             }
         }
@@ -789,7 +868,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             include: isNext ? ['next-env.d.ts', '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '.next/types/**/*.ts'] : ['src'],
             exclude: ['node_modules', 'manager']
         };
-        await fs.writeFile(tsconfigPath, JSON.stringify(tsconfigContent, null, 2), 'utf8');
+        await writeSource(tsconfigPath, JSON.stringify(tsconfigContent, null, 2), 'utf8');
     }
 
     // NextAuth Session.user kimliği/rolü için canonical TypeScript module augmentation.
@@ -799,7 +878,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.stat(authTypesPath);
         } catch {
             await fs.mkdir(path.dirname(authTypesPath), { recursive: true });
-            await fs.writeFile(authTypesPath, `import "next-auth";\n\ndeclare module "next-auth" {\n  interface Session {\n    user: {\n      id: string;\n      role?: string;\n      name?: string | null;\n      email?: string | null;\n      image?: string | null;\n    };\n  }\n}\n`, 'utf8');
+            await writeSource(authTypesPath, `import "next-auth";\n\ndeclare module "next-auth" {\n  interface Session {\n    user: {\n      id: string;\n      role?: string;\n      name?: string | null;\n      email?: string | null;\n      image?: string | null;\n    };\n  }\n}\n`, 'utf8');
         }
     }
 
@@ -820,7 +899,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
                 }
             }
         };
-        await fs.writeFile(jsconfigPath, JSON.stringify(jsconfigContent, null, 2), 'utf8');
+        await writeSource(jsconfigPath, JSON.stringify(jsconfigContent, null, 2), 'utf8');
     }
 
     // 5. CSS Dosyaları (src/app/globals.css veya src/index.css)
@@ -833,7 +912,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.mkdir(appDir, { recursive: true });
             await fs.stat(globalsCssPath);
         } catch {
-            await fs.writeFile(globalsCssPath, tailwindBaseContent, 'utf8');
+            await writeSource(globalsCssPath, tailwindBaseContent, 'utf8');
         }
 
         const layoutPath = path.join(appDir, 'layout.tsx');
@@ -841,7 +920,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.stat(layoutPath);
         } catch {
             const layoutContent = `import './globals.css';\n\nexport const metadata = {\n  title: '${state.title || 'App'}',\n  description: 'Generated application',\n};\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang="tr">\n      <body>{children}</body>\n    </html>\n  );\n}\n`;
-            await fs.writeFile(layoutPath, layoutContent, 'utf8');
+            await writeSource(layoutPath, layoutContent, 'utf8');
         }
 
         const pagePath = path.join(appDir, 'page.tsx');
@@ -849,7 +928,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.stat(pagePath);
         } catch {
             const pageContent = `import Link from 'next/link';\n\nexport default function HomePage() {\n  return (\n    <main className="min-h-screen p-8 flex flex-col items-center justify-center text-center">\n      <h1 className="text-3xl font-bold mb-4">${state.title || 'Quiz Master'}</h1>\n      <p className="text-gray-600 mb-6">Uygulama başarıyla oluşturuldu ve çalışıyor.</p>\n      <div className="flex gap-4">\n        <Link href="/quizzes" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Quizler</Link>\n        <Link href="/admin/quizzes" className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Yönetim</Link>\n      </div>\n    </main>\n  );\n}\n`;
-            await fs.writeFile(pagePath, pageContent, 'utf8');
+            await writeSource(pagePath, pageContent, 'utf8');
         }
 
         const nextConfigPath = path.join(projectDir, 'next.config.js');
@@ -857,7 +936,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.stat(nextConfigPath);
         } catch {
             const nextConfigContent = `/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  reactStrictMode: true,\n};\nmodule.exports = nextConfig;\n`;
-            await fs.writeFile(nextConfigPath, nextConfigContent, 'utf8');
+            await writeSource(nextConfigPath, nextConfigContent, 'utf8');
         }
     } else {
         const srcIndexCssPath = path.join(projectDir, 'src', 'index.css');
@@ -865,7 +944,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             await fs.mkdir(path.join(projectDir, 'src'), { recursive: true });
             await fs.stat(srcIndexCssPath);
         } catch {
-            await fs.writeFile(srcIndexCssPath, tailwindBaseContent, 'utf8');
+            await writeSource(srcIndexCssPath, tailwindBaseContent, 'utf8');
         }
 
         const viteConfigPath = path.join(projectDir, 'vite.config.js');
@@ -881,7 +960,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         if (existingConfig === null || (isVue && existingConfig === reactConfigContent)
             || (hasExpressApi && [reactConfigContent, vueConfigContent].includes(existingConfig))) {
             const viteConfigContent = withApiProxy(isVue ? vueConfigContent : reactConfigContent);
-            await fs.writeFile(viteConfigPath, viteConfigContent, 'utf8');
+            await writeSource(viteConfigPath, viteConfigContent, 'utf8');
         }
     }
     // 6. Standart Tailwind & UI Yardımcısı (src/lib/utils.ts)
@@ -892,7 +971,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         const utilsDir = path.dirname(utilsPath);
         await fs.mkdir(utilsDir, { recursive: true });
         const utilsContent = `import { clsx, type ClassValue } from 'clsx';\nimport { twMerge } from 'tailwind-merge';\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n`;
-        await fs.writeFile(utilsPath, utilsContent, 'utf8');
+        await writeSource(utilsPath, utilsContent, 'utf8');
     }
 
     // 7. Standart Prisma Singleton (src/lib/prisma.ts)
@@ -904,7 +983,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             const prismaDir = path.dirname(prismaTsPath);
             await fs.mkdir(prismaDir, { recursive: true });
             const prismaContent = `import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined;\n};\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient();\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;\n`;
-            await fs.writeFile(prismaTsPath, prismaContent, 'utf8');
+            await writeSource(prismaTsPath, prismaContent, 'utf8');
         }
     }
 
@@ -914,7 +993,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         await fs.stat(tailwindConfigPath);
     } catch {
         const twConfigContent = `import type { Config } from 'tailwindcss';\n\nconst config: Config = {\n  darkMode: 'class',\n  content: [\n    './index.html',\n    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/components/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/app/**/*.{js,ts,jsx,tsx,mdx}',\n    './src/**/*.{js,ts,jsx,tsx}',\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n};\nexport default config;\n`;
-        await fs.writeFile(tailwindConfigPath, twConfigContent, 'utf8');
+        await writeSource(tailwindConfigPath, twConfigContent, 'utf8');
     }
 
     const postcssConfigPath = path.join(projectDir, 'postcss.config.js');
@@ -923,7 +1002,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     } catch {
         const postcssExport = finalPkg.type === 'module' ? 'export default' : 'module.exports =';
         const postcssContent = `${postcssExport} {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n`;
-        await fs.writeFile(postcssConfigPath, postcssContent, 'utf8');
+        await writeSource(postcssConfigPath, postcssContent, 'utf8');
     }
     // 7. .env.example (Prisma / Database URL Koruması)
     const envExampleContent = [
@@ -937,12 +1016,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
     try {
         await fs.stat(envExamplePath);
     } catch {
-        await fs.writeFile(envExamplePath, envExampleContent, 'utf8');
+        await writeSource(envExamplePath, envExampleContent, 'utf8');
     }
     if (hasExpressApi) {
         const example = await fs.readFile(envExamplePath, 'utf8');
         if (!/^\s*AUTH_SECRET\s*=/m.test(example)) {
-            await fs.writeFile(envExamplePath,
+            await writeSource(envExamplePath,
                 `${example}${example.endsWith('\n') ? '' : '\n'}# Express authentication: set a random secret of at least 32 characters.\nAUTH_SECRET=\n`,
                 'utf8');
         }
@@ -954,7 +1033,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             if (variable.endsWith('_') || new RegExp(`^${variable}=`, 'm').test(example)) continue;
             example += `${example.endsWith('\n') ? '' : '\n'}${variable}=\n`;
         }
-        await fs.writeFile(envExamplePath, example, 'utf8');
+        await writeSource(envExamplePath, example, 'utf8');
     }
     // 8. Dockerfile ve .dockerignore (Tak-Çalıştır Konteyner Desteği)
     const dockerfilePath = path.join(projectDir, 'Dockerfile');
@@ -1039,7 +1118,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             ];
         }
         const dockerfileContent = dockerfileLines.filter(Boolean).join('\n');
-        await fs.writeFile(dockerfilePath, dockerfileContent, 'utf8');
+        await writeSource(dockerfilePath, dockerfileContent, 'utf8');
     }
 
     try {
@@ -1056,7 +1135,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             'npm-debug.log*',
             ''
         ].join('\n');
-        await fs.writeFile(dockerignorePath, dockerignoreContent, 'utf8');
+        await writeSource(dockerignorePath, dockerignoreContent, 'utf8');
     }
     // 8. Prisma ve DB İstemcisi Çift Köprü Garantisi (src/lib/prisma.ts <-> src/lib/db.ts)
     if (hasPrisma) {
@@ -1064,23 +1143,21 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
         const prismaPath = path.join(libDir, 'prisma.ts');
         const dbPath = path.join(libDir, 'db.ts');
 
-        try {
-            await fs.mkdir(libDir, { recursive: true });
-            const prismaExists = await fs.stat(prismaPath).then(() => true).catch(() => false);
-            const dbExists = await fs.stat(dbPath).then(() => true).catch(() => false);
+        await fs.mkdir(libDir, { recursive: true });
+        const prismaExists = await fs.stat(prismaPath).then(() => true).catch(() => false);
+        const dbExists = await fs.stat(dbPath).then(() => true).catch(() => false);
 
-            if (!prismaExists && !dbExists) {
-                const defaultPrismaClient = `import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined;\n};\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient();\nexport const db = prisma;\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;\n\nexport default prisma;\n`;
-                await fs.writeFile(prismaPath, defaultPrismaClient, 'utf8');
-                await fs.writeFile(dbPath, `import { prisma, db } from './prisma';\nexport * from './prisma';\nexport { prisma, db };\nexport default prisma;\n`, 'utf8');
-            } else if (prismaExists && !dbExists) {
-                const dbBridgeContent = `import { prisma } from './prisma';\nexport * from './prisma';\nexport const db = prisma;\nexport default prisma;\n`;
-                await fs.writeFile(dbPath, dbBridgeContent, 'utf8');
-            } else if (dbExists && !prismaExists) {
-                const prismaBridgeContent = `import { db } from './db';\nexport * from './db';\nexport const prisma = db;\nexport default db;\n`;
-                await fs.writeFile(prismaPath, prismaBridgeContent, 'utf8');
-            }
-        } catch {}
+        if (!prismaExists && !dbExists) {
+            const defaultPrismaClient = `import { PrismaClient } from '@prisma/client';\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined;\n};\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient();\nexport const db = prisma;\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;\n\nexport default prisma;\n`;
+            await writeSource(prismaPath, defaultPrismaClient, 'utf8');
+            await writeSource(dbPath, `import { prisma, db } from './prisma';\nexport * from './prisma';\nexport { prisma, db };\nexport default prisma;\n`, 'utf8');
+        } else if (prismaExists && !dbExists) {
+            const dbBridgeContent = `import { prisma } from './prisma';\nexport * from './prisma';\nexport const db = prisma;\nexport default prisma;\n`;
+            await writeSource(dbPath, dbBridgeContent, 'utf8');
+        } else if (dbExists && !prismaExists) {
+            const prismaBridgeContent = `import { db } from './db';\nexport * from './db';\nexport const prisma = db;\nexport default db;\n`;
+            await writeSource(prismaPath, prismaBridgeContent, 'utf8');
+        }
     }
 
     // 9. Pragmatic Auth Standartları (schema.prisma User modeli, seed.ts admin, src/lib/auth.ts)
@@ -1096,12 +1173,12 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}) {
             actualSchemaPath = schemaPath1;
             await fs.mkdir(path.dirname(actualSchemaPath), { recursive: true });
             const defaultSchema = `generator client {\n  provider = "prisma-client-js"\n}\n\ndatasource db {\n  provider = "sqlite"\n  url      = env("DATABASE_URL")\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  username  String   @unique\n  password  String\n  role      String   @default("user")\n  createdAt DateTime @default(now())\n}\n`;
-            await fs.writeFile(actualSchemaPath, defaultSchema, 'utf8');
+            await writeSource(actualSchemaPath, defaultSchema, 'utf8');
         } else {
             const schemaText = await fs.readFile(actualSchemaPath, 'utf8');
             const updatedSchema = ensureUserModelInSchema(schemaText);
             if (updatedSchema !== schemaText) {
-                await fs.writeFile(actualSchemaPath, updatedSchema, 'utf8');
+                await writeSource(actualSchemaPath, updatedSchema, 'utf8');
             }
         }
 
@@ -1150,7 +1227,7 @@ main()
   .catch((error) => { console.error(error); process.exitCode = 1; })
   .finally(async () => { await prisma.$disconnect(); });
 `;
-            await fs.writeFile(seedTsPath, seedContent, 'utf8');
+            await writeSource(seedTsPath, seedContent, 'utf8');
         }
 
         // 9c. src/lib/auth.ts (veya src/lib/auth.js)
@@ -1163,7 +1240,7 @@ main()
             await fs.mkdir(path.join(projectDir, 'src', 'lib'), { recursive: true });
             const authContent = `import crypto from 'crypto';\n\nexport function hashPassword(password: string): string {\n  const salt = crypto.randomBytes(16).toString('hex');\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  return \`\${salt}:\${hash}\`;\n}\n\nexport function verifyPassword(password: string, combined: string): boolean {\n  if (!combined || !combined.includes(':')) return false;\n  const [salt, originalHash] = combined.split(':');\n  if (!salt || !originalHash) return false;\n  const hash = crypto.scryptSync(password, salt, 64).toString('hex');\n  try {\n    const a = Buffer.from(hash, 'hex');\n    const b = Buffer.from(originalHash, 'hex');\n    if (a.length !== b.length) return false;\n    return crypto.timingSafeEqual(a, b);\n  } catch {\n    return false;\n  }\n}\n\nexport function requireAuth(req: any, res: any, next?: any) {\n  const user = req?.user || req?.session?.user;\n  if (!user) {\n    if (res && typeof res.status === 'function') {\n      return res.status(401).json({ error: 'Unauthorized' });\n    }\n    throw new Error('Unauthorized');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n\nexport function requireAdmin(req: any, res: any, next?: any) {\n  const user = requireAuth(req, res);\n  if (!user || user.role !== 'admin') {\n    if (res && typeof res.status === 'function') {\n      return res.status(403).json({ error: 'Forbidden: Admin access required' });\n    }\n    throw new Error('Forbidden: Admin access required');\n  }\n  if (typeof next === 'function') {\n    return next();\n  }\n  return user;\n}\n`;
             const permissionHelpers = `\nexport function hasPermission(user: any, resource: string, operation: string, matrix: any) {\n  const grants = matrix?.[user?.role];\n  return Array.isArray(grants) && grants.some((grant: any) => grant.resource === resource && Array.isArray(grant.operations) && grant.operations.includes(operation));\n}\n\nexport function requirePermission(req: any, resource: string, operation: string, matrix: any, res?: any, next?: any) {\n  const user = req?.user || req?.session?.user;\n  if (!user) return requireAuth(req, res);\n  if (!hasPermission(user, resource, operation, matrix)) {\n    if (res && typeof res.status === 'function') return res.status(403).json({ error: 'Forbidden' });\n    throw new Error('Forbidden');\n  }\n  if (typeof next === 'function') return next();\n  return user;\n}\n`;
-            await fs.writeFile(authTsPath, authContent + permissionHelpers, 'utf8');
+            await writeSource(authTsPath, authContent + permissionHelpers, 'utf8');
         }
     }
 
@@ -1201,7 +1278,8 @@ export async function listProjectTree(projectDir, {
                     if (strict) throw incompleteTree(`Project tree evidence limit reached at ${relativeDir || '.'}`);
                     break;
                 }
-                if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)) continue;
+                if (IGNORED_DIRS.has(entry.name) || IGNORED_FILES.has(entry.name)
+                    || /^\.xfactor-generated-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.tmp$/i.test(entry.name)) continue;
                 if (entry.name.startsWith('.env') && entry.name !== '.env.example') continue;
                 if (/\.(?:db|sqlite|sqlite3)(?:-(?:wal|shm|journal))?$/i.test(entry.name)) continue;
                 if (entry.name === '.git' || entry.name === '.DS_Store') continue;

@@ -1,8 +1,9 @@
 # XFactor Operations Guide
 
 Single-node deployment boundary, production prerequisites, and the scaling
-contract. Everything below describes observed runtime behavior — see the
-referenced source files for the authoritative implementation.
+contract. Referenced source files define the implementation; dated test reports
+state what was actually executed. This guide is not production acceptance
+evidence for a particular deployment.
 
 ## Agent instruction and recovery boundaries (2026-10-22)
 
@@ -11,6 +12,22 @@ referenced source files for the authoritative implementation.
 this at module import; Manager chat rereads it. Policy edits therefore require
 a planned backend restart to refresh all production roles. Protocol templates
 are human references; `fileProtocol.js` serializes live records.
+
+Protocol records use `engine/protocolIO.js` with a 2 MiB per-file read/write
+limit, strict production paths and the current source fence. Linked paths and
+project escapes are rejected. TODO edits are serialized per file within one
+process; cross-process authority comes from the SQLite lease/source-commit
+boundary. Cooperating writers must share that database.
+
+Migration 17 adds checkpoint identity versioning without relabeling historical
+evidence. New workflow checkpoints use contract/domain/team/local-task identity;
+legacy reuse needs complete and unambiguous persisted ownership. SQLite writer
+serialization does not provide multi-file filesystem rollback or fsync guarantees.
+A partial source commit stops with an error and cannot publish a valid task
+checkpoint; hard-crash recovery still validates actual content on resume.
+An exact legacy/new identity-key collision raises `CHECKPOINT_IDENTITY_CONFLICT`
+instead of relabeling history. Review a new approved contract revision to obtain
+a fresh scope; do not delete or rewrite the historical evidence to force reuse.
 
 Manager project reports, titles, summaries, logs and errors are bounded,
 redacted user-message data, never system policy. Linked report paths are
@@ -26,6 +43,26 @@ silently repeating paid acceptance calls. A patch does not resolve an issue:
 fresh deterministic checks and Tester acceptance are still required, followed
 by the independent runtime/ZIP gates. Old-contract issues do not authorize new
 repairs.
+
+Authenticated worker rejections have a separate durable repair ledger. Automatic
+routing currently accepts only complete, non-truncated TypeScript diagnostics
+from a normally exited compiler, exact rejected-artifact source bytes and one
+current projected file owner. Infrastructure, timeout, mixed/unknown gate,
+ambiguous ownership and externally changed source failures require a Manager
+revision. Worker-origin malformed records also block Resume; they are not ignored.
+The complete batch is reserved before payment: at most eight targets and 64
+findings per batch, two changed-input Coder attempts per owner/target and 64
+Coder attempts per contract. Each reservation permits one provider invocation.
+
+Repaired source must pass a fresh deterministic audit, persisted source-bound
+Reviewer and Tester acceptance, and new independent worker evidence before its
+issues can resolve. Old PASS history cannot satisfy that requirement. Completed
+durable static results and full new worker evidence can recover without another
+dispatch; an indeterminate consumed reservation stops for revision. Do not clear
+the ledger or delete failure evidence to bypass an exhausted/unknown outcome.
+Dependency transport failure and expired verification produce an explicitly
+unauthenticated controller blocker, not fabricated worker evidence. Details and
+executed results are in the [current completion record](audits/x-agents-completion-2026-10-22.md).
 
 Validated Teamleader plans project task/requirement links transactionally into
 the current approved contract's impact index under its workflow lease. This

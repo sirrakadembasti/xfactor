@@ -1,4 +1,4 @@
-import fsSync from 'fs';
+import { createProtocolRecoveryReader } from '../engine/protocolIO.js';
 import path from 'path';
 import crypto from 'crypto';
 import { db, initializeDatabase } from '../db.js';
@@ -10,13 +10,14 @@ function resolveDb(database) {
     return database || db || initializeDatabase();
 }
 
-export function restoreTaskTargetsFromProtocol(teamleaderDir, tasks = []) {
+export function restoreTaskTargetsFromProtocol(teamleaderDir, tasks = [], { projectDir = teamleaderDir } = {}) {
+    const disk = createProtocolRecoveryReader(projectDir);
     return tasks.map(task => {
         if (Array.isArray(task.targetFiles) && task.targetFiles.length === 1 && task.description) return task;
         if (!/^[a-zA-Z0-9_-]+$/.test(task.id || '')) return task;
         const gorevPath = path.join(teamleaderDir, task.id, 'GOREV.md');
         try {
-            const content = fsSync.readFileSync(gorevPath, 'utf8');
+            const content = disk.readFileSync(gorevPath, 'utf8');
             const description = content.match(/^Açıklama:\s*(.+)$/m)?.[1]?.trim();
             const match = content.match(/^Hedef Dosyalar:\s*(\[[^\r\n]*\])/m);
             if (!match) return task;
@@ -64,10 +65,11 @@ function makeArtifactDeps(database) {
     };
 }
 function readProjectTitleFromDisk(dirPath, defaultTitle) {
+    const disk = createProtocolRecoveryReader(dirPath);
     try {
         const pkgPath = path.join(dirPath, 'package.json');
-        if (fsSync.existsSync(pkgPath)) {
-            const pkgData = JSON.parse(fsSync.readFileSync(pkgPath, 'utf8'));
+        if (disk.existsSync(pkgPath)) {
+            const pkgData = JSON.parse(disk.readFileSync(pkgPath, 'utf8'));
             if (pkgData && typeof pkgData === 'object') {
                 const title = pkgData.title || pkgData.name || pkgData.description;
                 if (title && typeof title === 'string' && title.trim().length > 0) {
@@ -80,9 +82,9 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
     try {
         const managerTalimat = path.join(dirPath, 'manager', 'TALIMATNAME.md');
         const rootTalimat = path.join(dirPath, 'TALIMATNAME.md');
-        const talimatPath = fsSync.existsSync(managerTalimat) ? managerTalimat : rootTalimat;
-        if (fsSync.existsSync(talimatPath)) {
-            const content = fsSync.readFileSync(talimatPath, 'utf8');
+        const talimatPath = disk.existsSync(managerTalimat) ? managerTalimat : rootTalimat;
+        if (disk.existsSync(talimatPath)) {
+            const content = disk.readFileSync(talimatPath, 'utf8');
             const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
             for (const line of lines) {
                 if (line.startsWith('#')) {
@@ -98,8 +100,8 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
 
     try {
         const statePath = path.join(dirPath, 'state.json');
-        if (fsSync.existsSync(statePath)) {
-            const stateData = JSON.parse(fsSync.readFileSync(statePath, 'utf8'));
+        if (disk.existsSync(statePath)) {
+            const stateData = JSON.parse(disk.readFileSync(statePath, 'utf8'));
             if (stateData && typeof stateData === 'object') {
                 const title = stateData.title || stateData.name;
                 if (title && typeof title === 'string' && title.trim().length > 0) {
@@ -112,18 +114,19 @@ function readProjectTitleFromDisk(dirPath, defaultTitle) {
     return defaultTitle;
 }
 function detectProjectStatusFromDisk(dirPath) {
+    const disk = createProtocolRecoveryReader(dirPath);
     try {
         const rootDurumPath = path.join(dirPath, 'DURUM.md');
-        if (fsSync.existsSync(rootDurumPath)) {
-            const rootDurum = fsSync.readFileSync(rootDurumPath, 'utf8');
+        if (disk.existsSync(rootDurumPath)) {
+            const rootDurum = disk.readFileSync(rootDurumPath, 'utf8');
             if (rootDurum && rootDurum.includes('TAMAMLANDI')) {
                 return 'completed';
             }
         }
 
         const statePath = path.join(dirPath, 'state.json');
-        if (fsSync.existsSync(statePath)) {
-            const state = JSON.parse(fsSync.readFileSync(statePath, 'utf8'));
+        if (disk.existsSync(statePath)) {
+            const state = JSON.parse(disk.readFileSync(statePath, 'utf8'));
             if (state && typeof state.status === 'string' && state.status.trim() === 'completed') {
                 return 'completed';
             }
@@ -134,14 +137,14 @@ function detectProjectStatusFromDisk(dirPath) {
         const managerTalimatPath = path.join(managerDir, 'TALIMATNAME.md');
 
         let managerBasladi = false;
-        if (fsSync.existsSync(managerDurumPath)) {
-            const mDurum = fsSync.readFileSync(managerDurumPath, 'utf8');
+        if (disk.existsSync(managerDurumPath)) {
+            const mDurum = disk.readFileSync(managerDurumPath, 'utf8');
             if (mDurum && mDurum.includes('BASLADI')) {
                 managerBasladi = true;
             }
         }
 
-        if (managerBasladi || fsSync.existsSync(managerTalimatPath)) {
+        if (managerBasladi || disk.existsSync(managerTalimatPath)) {
             return 'pending_approval';
         }
     } catch {}
@@ -152,7 +155,8 @@ function detectProjectStatusFromDisk(dirPath) {
  * Rehydrates full project plan, workflow_state, and status from disk protocol files.
  */
 export async function rehydrateProjectStateFromDisk(projectDir, { projectId = null, database = null } = {}) {
-    if (!projectDir || !fsSync.existsSync(projectDir)) {
+    const disk = createProtocolRecoveryReader(projectDir);
+    if (!projectDir || !disk.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
@@ -164,9 +168,9 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     const talimatPath = path.join(managerDir, 'TALIMATNAME.md');
     let talimatname = '';
     let summary = '';
-    if (fsSync.existsSync(talimatPath)) {
+    if (disk.existsSync(talimatPath)) {
         try {
-            talimatname = fsSync.readFileSync(talimatPath, 'utf8');
+            talimatname = disk.readFileSync(talimatPath, 'utf8');
             const lines = talimatname.split('\n').map(l => l.trim()).filter(Boolean);
             summary = lines.slice(0, 3).join(' ');
         } catch {}
@@ -177,9 +181,9 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     // 2. Domains from manager/TODO.md or manager subdirectories
     let domains = [];
     const managerTodoPath = path.join(managerDir, 'TODO.md');
-    if (fsSync.existsSync(managerTodoPath)) {
+    if (disk.existsSync(managerTodoPath)) {
         try {
-            const content = fsSync.readFileSync(managerTodoPath, 'utf8');
+            const content = disk.readFileSync(managerTodoPath, 'utf8');
             const lines = content.split('\n');
             for (const line of lines) {
                 const trimmed = line.trim();
@@ -207,9 +211,9 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         } catch {}
     }
 
-    if (domains.length === 0 && fsSync.existsSync(managerDir)) {
+    if (domains.length === 0 && disk.existsSync(managerDir)) {
         try {
-            const entries = fsSync.readdirSync(managerDir, { withFileTypes: true });
+            const entries = disk.readdirSync(managerDir, { withFileTypes: true });
             for (const entry of entries) {
                 if (entry.isDirectory() && entry.name.endsWith('.director')) {
                     const dName = entry.name.slice(0, -9);
@@ -228,9 +232,9 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     // 3. Scan sub TODO.md files under manager/
     function findAllTodoFiles(dir) {
         let results = [];
-        if (!fsSync.existsSync(dir)) return results;
+        if (!disk.existsSync(dir)) return results;
         try {
-            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            const entries = disk.readdirSync(dir, { withFileTypes: true });
             for (const entry of entries) {
                 const fullPath = path.join(dir, entry.name);
                 if (entry.isDirectory() && !entry.name.startsWith('.')) {
@@ -258,7 +262,7 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         const fileTasks = [];
         const fileTasksMap = new Map();
         try {
-            const content = fsSync.readFileSync(todoFile, 'utf8');
+            const content = disk.readFileSync(todoFile, 'utf8');
             const lines = content.split('\n');
 
             // Pass 1: table rows
@@ -270,6 +274,7 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
                         const idxNum = parseInt(parts[0], 10);
                         if (!isNaN(idxNum)) {
                             const taskId = parts[1];
+                            if (!/^[a-zA-Z0-9_-]+$/.test(taskId)) continue;
                             const taskTitle = parts[2] || taskId;
                             const depsRaw = parts[3] || '—';
                             const statusRaw = (parts[4] || '').toLowerCase();
@@ -327,7 +332,7 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
                         if (isChecked) existing.status = 'completed';
                     } else {
                         const newId = tId || tTitle;
-                        if (newId) {
+                        if (newId && /^[a-zA-Z0-9_-]+$/.test(newId)) {
                             const tObj = {
                                 id: newId,
                                 title: tTitle || newId,
@@ -345,13 +350,13 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
             for (const task of fileTasks) {
                 if (task.status !== 'completed') {
                     const coderDir = path.join(fileDir, task.id);
-                    if (fsSync.existsSync(coderDir)) {
-                        const raporExists = fsSync.existsSync(path.join(coderDir, 'RAPOR.md'));
+                    if (disk.existsSync(coderDir)) {
+                        const raporExists = disk.existsSync(path.join(coderDir, 'RAPOR.md'));
                         let durumCompleted = false;
                         const durumFile = path.join(coderDir, 'DURUM.md');
-                        if (fsSync.existsSync(durumFile)) {
+                        if (disk.existsSync(durumFile)) {
                             try {
-                                const durumContent = fsSync.readFileSync(durumFile, 'utf8');
+                                const durumContent = disk.readFileSync(durumFile, 'utf8');
                                 durumCompleted = durumContent.includes('TAMAMLANDI') || durumContent.includes('BASARILI');
                             } catch {}
                         }
@@ -363,10 +368,10 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
             }
         } catch {}
 
-        const recoveredTasks = restoreTaskTargetsFromProtocol(fileDir, fileTasks);
+        const recoveredTasks = restoreTaskTargetsFromProtocol(fileDir, fileTasks.filter(task => /^[a-zA-Z0-9_-]+$/.test(task.id || '')), { projectDir });
         teamleaderPlans[tlId] = { tasks: recoveredTasks };
         for (const t of recoveredTasks) {
-            allTasksMap.set(t.id, t);
+            allTasksMap.set(`${tlId}.${t.id}`, t);
         }
     }
 
@@ -549,7 +554,8 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
  * Rehydrates chat_history from disk protocol files (TALIMATNAME.md and RAPOR.md).
  */
 export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = null, database = null } = {}) {
-    if (!projectDir || !fsSync.existsSync(projectDir)) {
+    const disk = createProtocolRecoveryReader(projectDir);
+    if (!projectDir || !disk.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
@@ -606,9 +612,9 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
         // 2. TALIMATNAME.md
         const managerDir = path.join(projectDir, 'manager');
         const talimatPath = path.join(managerDir, 'TALIMATNAME.md');
-        if (fsSync.existsSync(talimatPath)) {
+        if (disk.existsSync(talimatPath)) {
             try {
-                const talimatContent = fsSync.readFileSync(talimatPath, 'utf8').trim();
+                const talimatContent = disk.readFileSync(talimatPath, 'utf8').trim();
                 if (talimatContent) {
                     const talimatMsg = `İşte hazırladığım mimari şartname ve plan:\n\n${talimatContent}`;
                     const alreadyHasTalimat = existingTexts.some(t => t.includes(talimatContent));
@@ -633,9 +639,9 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
 
         if (currentStatus === 'completed') {
             const raporPath = path.join(projectDir, 'RAPOR.md');
-            if (fsSync.existsSync(raporPath)) {
+            if (disk.existsSync(raporPath)) {
                 try {
-                    const raporContent = fsSync.readFileSync(raporPath, 'utf8').trim();
+                    const raporContent = disk.readFileSync(raporPath, 'utf8').trim();
                     if (raporContent && (raporContent.includes('BAŞARILI') || raporContent.includes('TAMAMLANDI') || raporContent.includes('GEÇTİ') || raporContent.includes('STATİK DENETİM'))) {
                         const raporMsg = `🎉 **Proje Üretimi ve Test Kabulü Tamamlandı!**\n\n${raporContent}`;
                         const alreadyHasRapor = existingTexts.some(t => t.includes(raporContent));
@@ -663,7 +669,8 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
  * Rehydrates project_logs from disk protocol files (manager/DURUM.md, director DURUM.md, task GOREV.md/TODO.md/RAPOR.md, root RAPOR.md).
  */
 export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = null, force = false } = {}) {
-    if (!projectDir || !fsSync.existsSync(projectDir)) {
+    const disk = createProtocolRecoveryReader(projectDir);
+    if (!projectDir || !disk.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
@@ -698,7 +705,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     const logsToInsert = [];
     // 1. Manager DURUM.md -> Manager start log
     const managerDir = path.join(projectDir, 'manager');
-    if (existingLogs.length === 0 && fsSync.existsSync(managerDir)) {
+    if (existingLogs.length === 0 && disk.existsSync(managerDir)) {
         logsToInsert.push({
             agent: 'Manager',
             action: 'start',
@@ -708,11 +715,11 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     // 2. Director DURUM.md / ALT-TALIMATNAME.md -> Director specs log
     const directorDirs = [];
-    if (fsSync.existsSync(managerDir)) {
+    if (disk.existsSync(managerDir)) {
         try {
-            const entries = fsSync.readdirSync(managerDir, { withFileTypes: true });
+            const entries = disk.readdirSync(managerDir, { withFileTypes: true });
             for (const entry of entries) {
-                if (entry.isDirectory() && (entry.name.endsWith('.director') || fsSync.existsSync(path.join(managerDir, entry.name, 'ALT-TALIMATNAME.md')) || fsSync.existsSync(path.join(managerDir, entry.name, 'DURUM.md')))) {
+                if (entry.isDirectory() && (entry.name.endsWith('.director') || disk.existsSync(path.join(managerDir, entry.name, 'ALT-TALIMATNAME.md')) || disk.existsSync(path.join(managerDir, entry.name, 'DURUM.md')))) {
                     directorDirs.push(path.join(managerDir, entry.name));
                 }
             }
@@ -730,7 +737,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                 message: `${dirName} director mimari şartname ve domain gereksinimlerini belirledi.`
             });
         }
-    } else if (fsSync.existsSync(managerDir)) {
+    } else if (disk.existsSync(managerDir)) {
         logsToInsert.push({
             agent: 'Director',
             action: 'specs',
@@ -742,8 +749,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     // 3. Helper functions for scanning tasks
     function extractTitleFromGorev(gorevPath) {
         try {
-            if (fsSync.existsSync(gorevPath)) {
-                const content = fsSync.readFileSync(gorevPath, 'utf8');
+            if (disk.existsSync(gorevPath)) {
+                const content = disk.readFileSync(gorevPath, 'utf8');
                 const lines = content.split('\n');
                 for (const line of lines) {
                     const trimmed = line.trim();
@@ -761,8 +768,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     function extractReviewResult(raporPath) {
         try {
-            if (fsSync.existsSync(raporPath)) {
-                const content = fsSync.readFileSync(raporPath, 'utf8').toUpperCase();
+            if (disk.existsSync(raporPath)) {
+                const content = disk.readFileSync(raporPath, 'utf8').toUpperCase();
                 if (content.includes('REDDEDILDI') || content.includes('BASARISIZ') || content.includes('HATA')) {
                     return 'rejected';
                 }
@@ -774,9 +781,9 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     function findAllTodoFiles(dir) {
         let results = [];
-        if (!fsSync.existsSync(dir)) return results;
+        if (!disk.existsSync(dir)) return results;
         try {
-            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            const entries = disk.readdirSync(dir, { withFileTypes: true });
             for (const entry of entries) {
                 const fullPath = path.join(dir, entry.name);
                 if (entry.isDirectory() && !entry.name.startsWith('.')) {
@@ -803,7 +810,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     for (const todoFile of todoFiles) {
         const fileDir = path.dirname(todoFile);
         try {
-            const content = fsSync.readFileSync(todoFile, 'utf8');
+            const content = disk.readFileSync(todoFile, 'utf8');
             const lines = content.split('\n');
 
             for (const line of lines) {
@@ -816,8 +823,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                             const taskId = parts[1];
                             const taskTitle = parts[2] || taskId;
 
-                            if (taskId && !knownTaskIds.has(taskId)) {
-                                knownTaskIds.add(taskId);
+                            if (/^[a-zA-Z0-9_-]+$/.test(taskId) && !knownTaskIds.has(taskNode(fileDir, taskId).node_id)) {
+                                knownTaskIds.add(taskNode(fileDir, taskId).node_id);
 
                                 const taskDir = path.join(fileDir, taskId);
                                 const gorevPath = path.join(taskDir, 'GOREV.md');
@@ -827,7 +834,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                                 const finalTitle = titleFromGorev || taskTitle;
                                 const reviewRes = extractReviewResult(raporPath);
                                 const durumPath = path.join(taskDir, 'DURUM.md');
-                                const completedOnDisk = reviewRes !== null || (fsSync.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(fsSync.readFileSync(durumPath, 'utf8')));
+                                const completedOnDisk = reviewRes !== null || (disk.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(disk.readFileSync(durumPath, 'utf8')));
                                 if (recoverableProgress && !completedOnDisk) continue;
 
                                 tasksFound.push({
@@ -845,16 +852,16 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
     }
 
     function scanForTaskDirs(dir) {
-        if (!fsSync.existsSync(dir)) return;
+        if (!disk.existsSync(dir)) return;
         try {
-            const entries = fsSync.readdirSync(dir, { withFileTypes: true });
+            const entries = disk.readdirSync(dir, { withFileTypes: true });
             for (const entry of entries) {
                 const fullPath = path.join(dir, entry.name);
                 if (entry.isDirectory() && !entry.name.startsWith('.')) {
                     if (entry.name.startsWith('task-') || entry.name.startsWith('task_') || entry.name.startsWith('gorev-') || entry.name.startsWith('gorev_')) {
                         const taskId = entry.name;
-                        if (!knownTaskIds.has(taskId)) {
-                            knownTaskIds.add(taskId);
+                        if (!knownTaskIds.has(taskNode(dir, taskId).node_id)) {
+                            knownTaskIds.add(taskNode(dir, taskId).node_id);
                             const gorevPath = path.join(fullPath, 'GOREV.md');
                             const raporPath = path.join(fullPath, 'RAPOR.md');
 
@@ -862,7 +869,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
                             const finalTitle = titleFromGorev || taskId;
                             const reviewRes = extractReviewResult(raporPath);
                             const durumPath = path.join(fullPath, 'DURUM.md');
-                            const completedOnDisk = reviewRes !== null || (fsSync.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(fsSync.readFileSync(durumPath, 'utf8')));
+                            const completedOnDisk = reviewRes !== null || (disk.existsSync(durumPath) && /TAMAMLANDI|BASARILI/.test(disk.readFileSync(durumPath, 'utf8')));
                             if (recoverableProgress && !completedOnDisk) continue;
 
                             tasksFound.push({
@@ -892,7 +899,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
             logsToInsert.push({ agent: 'Teamleader', action: 'start', message: `${task.parent_node_id} görev planı diskten geri yüklendi.`, node_id: task.parent_node_id, parent_node_id: directorId });
             knownNodes.add(task.parent_node_id);
         }
-        if (existingLogs.some(log => log.node_id === task.id || log.node_id === task.node_id)) continue;
+        if (existingLogs.some(log => log.node_id === task.node_id || (log.node_id === task.id && tasksFound.filter(candidate => candidate.id === task.id).length === 1))) continue;
         logsToInsert.push({
             agent: 'Teamleader',
             action: 'delegate',
@@ -930,7 +937,7 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     // 4. Root RAPOR.md -> Tester finish log
     const rootRaporPath = path.join(projectDir, 'RAPOR.md');
-    if (currentStatus === 'completed' && fsSync.existsSync(rootRaporPath)) {
+    if (currentStatus === 'completed' && disk.existsSync(rootRaporPath)) {
         logsToInsert.push({
             agent: 'Tester',
             action: 'finish',
@@ -991,8 +998,9 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 export async function autoRegisterDiscoveredProjects({ env = process.env, projectsRoot = null, database = null } = {}) {
     database = resolveDb(database);
     const root = projectsRoot || getProjectsRoot(env);
+    const disk = createProtocolRecoveryReader(root);
 
-    if (!fsSync.existsSync(root)) {
+    if (!disk.existsSync(root)) {
         return {
             success: false,
             error: `Projects root "${root}" does not exist`,
@@ -1002,7 +1010,7 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
 
     let entries;
     try {
-        entries = fsSync.readdirSync(root, { withFileTypes: true });
+        entries = disk.readdirSync(root, { withFileTypes: true });
     } catch (error) {
         return {
             success: false,
@@ -1085,8 +1093,9 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
 export async function reconcileProjectsWithDisk({ env = process.env, projectsRoot = null, database = null, autoRegister = false } = {}) {
     database = resolveDb(database);
     const root = projectsRoot || getProjectsRoot(env);
+    const disk = createProtocolRecoveryReader(root);
 
-    if (!fsSync.existsSync(root)) {
+    if (!disk.existsSync(root)) {
         return {
             success: false,
             error: `Projects root "${root}" does not exist`,
@@ -1102,7 +1111,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
 
     let entries;
     try {
-        entries = fsSync.readdirSync(root, { withFileTypes: true });
+        entries = disk.readdirSync(root, { withFileTypes: true });
     } catch (error) {
         return {
             success: false,
@@ -1160,7 +1169,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
     try {
         for (const proj of dbProjectsWithState) {
             const expectedDir = path.join(root, proj.id);
-            if (!fsSync.existsSync(expectedDir)) {
+            if (!disk.existsSync(expectedDir)) {
                 missingOnDisk.push(proj.id);
             } else {
                 if (!proj.workflow_state || proj.workflow_state === 'null'

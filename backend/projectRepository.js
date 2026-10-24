@@ -390,7 +390,7 @@ function assertMutationLease(projectId, options) {
  * Authorizes a verified artifact for completion/download. This is deliberately
  * shared by the projector and HTTP route so neither path can weaken the gate.
  */
-export function assertVerifiedArtifactEvidence({ projectId, contractId, artifactId, strict = true } = {}) {
+export function assertVerifiedArtifactRunEvidence({ projectId, contractId, artifactId, strict = true } = {}) {
     const latestContract = db.prepare(`
         SELECT id, revision, contract_hash, contract_json FROM project_contracts WHERE project_id = ? AND status = 'approved'
         ORDER BY revision DESC LIMIT 1
@@ -504,17 +504,20 @@ export function assertVerifiedArtifactEvidence({ projectId, contractId, artifact
         `).get(contractId, req.id, run.id);
         if (!linked) throw new Error(`Mandatory requirement traceability is incomplete for contract ${contractId}.`);
     }
-    const openRepairs = db.prepare(`
-        SELECT COUNT(*) AS count FROM repair_issues
-        WHERE project_id = ? AND contract_id = ? AND status = 'open'
-    `).get(projectId, contractId).count;
-    if (openRepairs > 0) throw new Error(`Project ${projectId} has open repair issues.`);
     let diskHash = null;
     try { diskHash = crypto.createHash('sha256').update(fsSync.readFileSync(artifact.path)).digest('hex'); } catch {
         throw new Error(`Artifact ${artifactId} file is unavailable.`);
     }
     if (diskHash !== artifact.sha256) throw new Error(`Artifact ${artifactId} file hash does not match persisted evidence.`);
     return { artifact, run };
+}
+
+export function assertVerifiedArtifactEvidence(options = {}) {
+    const evidence = assertVerifiedArtifactRunEvidence(options);
+    const openRepairs = db.prepare(`SELECT COUNT(*) AS count FROM repair_issues
+        WHERE project_id=? AND contract_id=? AND status='open'`).get(options.projectId, options.contractId).count;
+    if (openRepairs > 0) throw new Error(`Project ${options.projectId} has open repair issues.`);
+    return evidence;
 }
 export function completeVerifiedProject({
     projectId,

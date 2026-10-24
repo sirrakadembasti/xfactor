@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import ConnectionStatus from '../ConnectionStatus';
 import Header from '../Header';
 import App from '../../App';
@@ -145,6 +145,20 @@ test('polling reconciles a stale production header when the active project reach
   } finally {
     vi.useRealTimers();
   }
+});
+
+test('App passes the current failed status to quality history while retaining an older verified run', async () => {
+  setupStatusProject('verification_failed');
+  const historical = { id: 'historical-worker-run', contract_id: 'previous-contract', status: 'verified' };
+  vi.spyOn(api, 'getVerificationRuns').mockResolvedValue({ runs: [historical], nextCursor: null });
+  vi.spyOn(api, 'getVerificationRun').mockResolvedValue({ run: historical, checks: [] });
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  fireEvent.click(screen.getByRole('button', { name: 'Kalite Paneli' }));
+  expect(await screen.findByText('historical-worker-run')).toBeInTheDocument();
+  expect(screen.getByRole('status', { name: 'Güncel proje durumu' })).toHaveTextContent('Güncel doğrulama başarısız');
+  expect(within(screen.getByRole('row', { name: /historical-worker-run/ })).getByText('Doğrulandı')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /ZIP.*İndir/ })).not.toBeInTheDocument();
 });
 
 test('focuses a new UI error alert and keyboard-dismiss restores initiating control', async () => {

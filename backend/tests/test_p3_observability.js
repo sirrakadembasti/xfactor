@@ -1242,7 +1242,7 @@ async function projectionFixture() {
   const projectId = `projection-${suffix}`;
   const contractId = `projection-contract-${suffix}`;
   const oldContractId = `projection-old-${suffix}`;
-  const canonical = { requirements: [
+  const canonical = { domains: [{ prefix: 'frontend' }, { prefix: 'backend' }], requirements: [
     { id: 'REQ-1', statement: 'Create records', kind: 'functional', priority: 'high', mandatory: true },
     { id: 'REQ-2', statement: 'Show records', kind: 'functional', priority: 'normal', mandatory: false }
   ] };
@@ -1358,6 +1358,10 @@ await runAsyncTest('projected task impact and preview resolve raw checkpoint ide
   const { computeTaskSpecHash } = await import('../engine/checkpointHelper.js');
   const fixture = await projectionFixture();
   fixture.teamleaderPlans['backend.lead'].tasks[0].requirementIds = ['REQ-2'];
+  db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(JSON.stringify({
+    directorSpecs: { frontend: { teamleaders: [{ prefix: 'lead' }] }, backend: { teamleaders: [{ prefix: 'lead' }] } },
+    teamleaderPlans: fixture.teamleaderPlans
+  }), fixture.projectId);
   const projected = projectContractTasks(fixture);
   db.prepare("INSERT INTO project_owners (project_id,user_id,role) VALUES (?,?,'owner')").run(fixture.projectId, ownerUserId);
   const checkpoints = new Map();
@@ -1376,6 +1380,15 @@ await runAsyncTest('projected task impact and preview resolve raw checkpoint ide
   insertCheckpoint(fixture.projectId, fixture.oldContractId, 'frontend.lead', frontendBase);
   const other = await projectionFixture();
   insertCheckpoint(other.projectId, other.contractId, 'frontend.lead', frontendBase);
+  const completeWorkflow = db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(fixture.projectId).workflow_state;
+  const incompleteWorkflow = JSON.parse(completeWorkflow);
+  delete incompleteWorkflow.teamleaderPlans['backend.lead'];
+  db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(JSON.stringify(incompleteWorkflow), fixture.projectId);
+  const incompleteImpact = await requestWithBody(`/api/projects/${fixture.projectId}/requirements/${fixture.existingRequirementId}/impact`,
+    { authed: true, userId: ownerUserId });
+  assert.equal(incompleteImpact.status, 200);
+  assert.deepEqual(incompleteImpact.body.impactedCheckpoints, [], 'partial projection/plan ownership cannot authorize legacy attribution');
+  db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(completeWorkflow, fixture.projectId);
   const before = snapshotDbState();
   const impact = await requestWithBody(`/api/projects/${fixture.projectId}/requirements/${fixture.existingRequirementId}/impact`,
     { authed: true, userId: ownerUserId });
@@ -1390,6 +1403,47 @@ await runAsyncTest('projected task impact and preview resolve raw checkpoint ide
   assert.deepEqual(preview.body.tasksToReRun,
     projected.tasks.filter(task => task.teamleaderId === 'frontend.lead').map(task => task.id).sort());
   assert.equal(snapshotDbState(), before, 'impact and preview must preserve every checkpoint and projection row');
+});
+
+await runAsyncTest('identical team specs use qualified checkpoints and ambiguous legacy evidence is excluded from real impact and preview', async () => {
+  const { projectContractTasks } = await import('../contracts/taskProjection.js');
+  const { saveCheckpoint } = await import('../engine/checkpointRepository.js');
+  const { computeTaskSpecHash } = await import('../engine/checkpointHelper.js');
+  const fixture = await projectionFixture();
+  const task = fixture.teamleaderPlans['frontend.lead'].tasks[0];
+  fixture.teamleaderPlans['frontend.lead'].tasks = [task];
+  fixture.teamleaderPlans['backend.lead'].tasks = [structuredClone(task)];
+  const workflow = { directorSpecs: { frontend: { teamleaders: [{ prefix: 'lead' }] }, backend: { teamleaders: [{ prefix: 'lead' }] } },
+    teamleaderPlans: fixture.teamleaderPlans };
+  db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(JSON.stringify(workflow), fixture.projectId);
+  const projection = projectContractTasks(fixture);
+  const a = projection.tasks.find(owner => owner.teamleaderId === 'frontend.lead');
+  const b = projection.tasks.find(owner => owner.teamleaderId === 'backend.lead');
+  db.prepare('DELETE FROM requirement_task_links WHERE contract_id=? AND task_id=?').run(fixture.contractId, b.id);
+  db.prepare("INSERT INTO project_owners (project_id,user_id,role) VALUES (?,?,'owner')").run(fixture.projectId, ownerUserId);
+  const common = { projectId: fixture.projectId, contractId: fixture.contractId, taskId: task.id,
+    taskSpecHash: computeTaskSpecHash(task), planHash: 'projection-hash', inputHash: 'identical-input', outputHash: 'identical-output' };
+  const legacy = saveCheckpoint(common);
+  const inspect = async () => {
+    const impact = await requestWithBody(`/api/projects/${fixture.projectId}/requirements/${fixture.existingRequirementId}/impact`,
+      { authed: true, userId: ownerUserId });
+    const preview = await requestWithBody(`/api/projects/${fixture.projectId}/rebuild-preview`,
+      { authed: true, userId: ownerUserId, method: 'POST', body: { changedRequirementKeys: ['REQ-1'] } });
+    assert.equal(impact.status, 200); assert.equal(preview.status, 200);
+    assert.deepEqual(preview.body.tasksToReRun, [a.id]);
+    return { impact: impact.body.impactedCheckpoints, preview: preview.body.invalidatedCheckpointIds };
+  };
+  const legacyBefore = db.prepare('SELECT * FROM task_checkpoints WHERE project_id=?').all(fixture.projectId);
+  assert.deepEqual(await inspect(), { impact: [], preview: [] }, 'complete inventory includes non-impacted identical B owner');
+  const qa = saveCheckpoint({ ...common, teamleaderId: 'frontend.lead' });
+  const qb = saveCheckpoint({ ...common, teamleaderId: 'backend.lead' });
+  assert.notEqual(qa.task_id, qb.task_id);
+  const expected = deriveExpectedCheckpointId(qa);
+  const before = snapshotDbState();
+  assert.deepEqual(await inspect(), { impact: [{ checkpointId: expected }], preview: [expected] });
+  assert.equal(snapshotDbState(), before);
+  assert.deepEqual(db.prepare('SELECT * FROM task_checkpoints WHERE project_id=? AND task_identity_version=0').all(fixture.projectId), legacyBefore);
+  assert.equal(legacy.task_id, task.id);
 });
 
 await finish();

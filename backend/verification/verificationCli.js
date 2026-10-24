@@ -5,11 +5,42 @@ import { verificationJobDeadline } from './verificationBudget.js';
 import { getArtifact } from '../repositories/artifactRepository.js';
 import {
     completeVerifiedProject,
+    assertVerifiedArtifactRunEvidence,
     getProject,
+    getProjectDir,
     projectStateTransitionInTransaction
 } from '../projectRepository.js';
-import { assertWorkflowLease } from '../workflowAttempts.js';
+import { assertVerificationContext, commitVerificationContext, readApprovedVerificationContract } from './verificationContext.js';
 import { db, initializeDatabase, closeDatabase } from '../db.js';
+import { resolveWorkerRepairIssues, readWorkerSnapshotSync, snapshotHash } from '../engine/workerRepairs.js';
+
+export async function recoverVerifiedWorkerRepair({ projectId, contract, workflow, attemptId, leaseOwner, signal }) {
+    const ledger = workflow.workerRepairs;
+    if (!ledger || ledger.contractId !== contract.id || ledger.contractHash !== contract.contract_hash) return null;
+    const candidate = [...ledger.validations].reverse().find(item => item.stage === 'worker_verification'
+        && ['reserved', 'passed'].includes(item.phase) && item.artifactId && item.runId
+        && db.prepare("SELECT id FROM artifacts WHERE id=? AND project_id=? AND contract_id=? AND status='verified' AND verification_run_id=?")
+            .get(item.artifactId, projectId, contract.id, item.runId));
+    if (!candidate) return null;
+    const context = { projectId, contractId: contract.id, contractHash: contract.contract_hash, revision: contract.revision, attemptId, leaseOwner, signal };
+    assertVerificationContext(context);
+    assertVerifiedArtifactRunEvidence({ projectId, contractId: contract.id, artifactId: candidate.artifactId });
+    if (snapshotHash(readWorkerSnapshotSync(getProjectDir(projectId))) !== candidate.sourceSnapshotHash) throw new Error('Worker recovery requires Manager revision: verified source changed.');
+    const receipt = JSON.parse(db.prepare("SELECT evidence_json FROM verification_checks WHERE run_id=? AND gate_name='worker_verification_receipt' AND status='PASS'").get(candidate.runId)?.evidence_json || '{}');
+    if (receipt.jobId !== candidate.jobId || receipt.nonce !== candidate.nonce || receipt.inputSha256 !== candidate.artifactSha256) throw new Error('Worker recovery receipt mismatch.');
+    for (const stage of ['reviewer_acceptance', 'static_acceptance']) if (!ledger.validations.some(item => item.stage === stage
+        && item.phase === 'passed' && item.result?.approved === true && item.sourceSnapshotHash === candidate.sourceSnapshotHash
+        && item.batchFingerprint === candidate.batchFingerprint)) throw new Error('Worker recovery static acceptance missing.');
+    for (const attempt of ledger.attempts.filter(item => item.phase === 'patched')) {
+        const row = db.prepare('SELECT task_spec_json FROM contract_tasks WHERE id=? AND contract_id=?').get(attempt.ownerTaskId, contract.id);
+        if (!row || JSON.parse(row.task_spec_json).executionTaskSpecHash !== attempt.ownerSpecHash) throw new Error('Worker recovery owner changed.');
+    }
+    // Only this internal recovery path supplies a runner backed by immutable
+    // evidence already checked above. No worker or provider is dispatched.
+    return verifyArtifactAndProject({ projectId, contractId: contract.id, artifactId: candidate.artifactId, complete: true,
+        attemptId, leaseOwner, options: { signal, workerRepairValidationId: candidate.id },
+        verificationRunner: async () => ({ passed: true, status: 'verified', runId: candidate.runId }) });
+}
 
 export function formatVerificationFailure(checks = [], fallback = 'Canonical verification did not complete the project.') {
     const failed = checks.filter(check => check.status === 'FAIL');
@@ -47,14 +78,19 @@ export async function verifyArtifactAndProject({
     if (expectedRevision !== null && initialProject.revision !== expectedRevision) {
         throw new Error(`CAS Revision conflict on project ${projectId}`);
     }
+    const contract = readApprovedVerificationContract(projectId);
+    const context = { projectId, contractId, contractHash: contract?.contract_hash, revision: contract?.revision,
+        attemptId, leaseOwner, signal: options.signal, deadline: options.activeJob?.deadline };
+    assertVerificationContext(context);
     if (initialProject.status === 'implementing') {
-        projectStateTransitionInTransaction({
+        commitVerificationContext(context, () => projectStateTransitionInTransaction({
             projectId,
             expectedRevision: initialProject.revision,
             statuses: ['implementation_finished'],
             attemptId,
-            leaseOwner
-        });
+            leaseOwner,
+            transactionOpen: true
+        }));
     }
 
     const verificationOptions = {
@@ -68,21 +104,13 @@ export async function verifyArtifactAndProject({
 
     const artifact = getArtifact({ projectId, contractId, artifactId });
     const receipt = { runId: verification?.runId, contractId, artifactId };
-    db.exec('BEGIN IMMEDIATE');
-    try {
-        if (attemptId !== null || leaseOwner !== null) {
-            assertWorkflowLease(attemptId, leaseOwner, { projectId });
-        }
+    commitVerificationContext(context, () => {
         const current = db.prepare('SELECT workflow_state FROM projects WHERE id = ?').get(projectId);
         let workflow = {};
         try { workflow = current?.workflow_state ? JSON.parse(current.workflow_state) : {}; } catch {}
         workflow.verificationReceipt = receipt;
         db.prepare('UPDATE projects SET workflow_state = ? WHERE id = ?').run(JSON.stringify(workflow), projectId);
-        db.exec('COMMIT');
-    } catch (error) {
-        db.exec('ROLLBACK');
-        throw error;
-    }
+    });
 
     if (!verification.passed || verification.status !== 'verified' || !artifact || artifact.status !== 'verified') {
         const checks = verification.runId
@@ -93,6 +121,8 @@ export async function verifyArtifactAndProject({
     if (!verification.runId || artifact.verificationRunId !== verification.runId) {
         throw new Error('Verified artifact is missing authoritative verification run linkage.');
     }
+    if (options.workerRepairValidationId) commitVerificationContext(context, () => resolveWorkerRepairIssues(context,
+        { artifactId, runId: verification.runId, validationId: options.workerRepairValidationId }));
     if (!complete) return { ...receipt, passed: true, completed: false };
 
     let project = getProject(projectId);
@@ -111,13 +141,14 @@ export async function verifyArtifactAndProject({
                             : project.status === 'artifact_verified' ? [] : null;
     if (!statuses) throw new Error(`Project ${projectId} cannot complete from state ${project.status}.`);
     if (statuses.length > 0) {
-        projectStateTransitionInTransaction({
+        commitVerificationContext(context, () => projectStateTransitionInTransaction({
             projectId,
             expectedRevision: project.revision,
             statuses,
             attemptId,
-            leaseOwner
-        });
+            leaseOwner,
+            transactionOpen: true
+        }));
         project = getProject(projectId);
     }
     const completed = completeVerifiedProject({

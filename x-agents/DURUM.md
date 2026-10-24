@@ -1,7 +1,9 @@
 # DURUM — <bu klasörün adı>
 
 Son güncelleme: <tarih/saat>
-Durum: BEKLEMEDE | DEVAM_EDIYOR | BLOKE | TAMAMLANDI
+Durum örnekleri: BEKLEMEDE | BASLADI | CALISIYOR | DEVAM_EDIYOR | BLOKE | BASARISIZ | YENIDEN_BASLATILDI | TAMAMLANDI
+
+Bu insan için bir referans şablondur; çalışma zamanı enum doğrulayıcısı değildir. Gerçek kaydı `backend/engine/fileProtocol.js:writeDurum` yazar. Tamamlanma yalnız bu metinden çıkarılmaz; checkpoint ve bağımsız kabul kanıtı ayrıca doğrulanır.
 Genel ilerleme: %<sayı>
 
 ## Bloke Nedeni (yalnızca BLOKE ise doldur)

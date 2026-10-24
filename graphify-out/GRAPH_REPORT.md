@@ -1,49 +1,49 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-22T00:31:38.677Z
+Üretim tarihi: 2026-10-24T15:27:16.611Z
 
-- 462 kaynak ve belge dosyası
-- 2836 düğüm
-- 7208 ilişki
+- 472 kaynak ve belge dosyası
+- 2978 düğüm
+- 7687 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1364 |
-| Method | 777 |
-| SourceFile | 275 |
-| Document | 106 |
+| Function | 1444 |
+| Method | 829 |
+| SourceFile | 276 |
+| Document | 109 |
 | EnvVar | 82 |
 | Package | 52 |
 | HttpRoute | 48 |
 | HttpRequest | 36 |
 | TestSuite | 32 |
-| BackendService | 22 |
+| BackendService | 24 |
 | Class | 15 |
 | FrontendComponent | 11 |
 | AgentModule | 10 |
-| EngineCore | 6 |
+| EngineCore | 10 |
 
 ## İlişki türleri
 
 | Tür | Adet |
 |---|---:|
-| calls | 2360 |
-| contains | 2222 |
-| imports_package | 981 |
-| imports | 688 |
-| dynamic_imports | 291 |
-| reads_env | 163 |
-| runs | 146 |
-| writes_env | 126 |
+| calls | 2596 |
+| contains | 2354 |
+| imports_package | 995 |
+| imports | 723 |
+| dynamic_imports | 351 |
+| reads_env | 165 |
+| runs | 148 |
+| writes_env | 130 |
 | registers_route | 48 |
 | sends_request | 36 |
 | requests_route | 29 |
 | verifies | 20 |
-| defines | 17 |
 | renders | 10 |
-| registers | 9 |
+| defines | 6 |
+| registers | 6 |
 | composes_policy | 6 |
 | inherits_policy | 6 |
 | loads | 6 |
@@ -57,9 +57,17 @@
 | runs_review_loop | 1 |
 | dispatches_agents | 1 |
 | guards_states | 1 |
+| guards_protocol_io | 1 |
+| qualifies_task_ownership | 1 |
+| persists_reviewed_checkpoints | 1 |
+| routes_bounded_owner_repairs | 1 |
 | triggers_workflow | 1 |
 | reads_docs | 1 |
 | persists_state | 1 |
+| records_worker_rejections | 1 |
+| loads_current_rejections | 1 |
+| resolves_with_fresh_evidence | 1 |
+| guards_recovery_metadata | 1 |
 | authenticates | 1 |
 | secures | 1 |
 | persists_projects | 1 |

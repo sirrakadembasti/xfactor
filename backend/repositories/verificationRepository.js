@@ -49,7 +49,8 @@ export function updateRunStatus(runId, status, endedAt = new Date().toISOString(
 
 export function createCheck({ id, projectId: _projectId, status = 'BLOCKED', evidenceJson = null, ...options }) {
     const check = startCheck({ id, ...options });
-    if (status !== 'BLOCKED') {
+    const observedTerminal = status !== 'BLOCKED' || evidenceJson !== null || options.endedAt != null;
+    if (observedTerminal) {
         return endCheck({ id, ...options, status, evidenceJson: typeof evidenceJson === 'string' ? evidenceJson : JSON.stringify(evidenceJson ?? {}) });
     }
     return check;

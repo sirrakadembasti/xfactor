@@ -39,7 +39,6 @@ export async function verifyArtifactDevFallback({
     const createRunFn = options.createRun || (await import('../repositories/verificationRepository.js')).createRun;
     const updateRunStatusFn = options.updateRunStatus || (await import('../repositories/verificationRepository.js')).updateRunStatus;
     const createCheckFn = options.createCheck || (await import('../repositories/verificationRepository.js')).createCheck;
-    const endCheckFn = options.endCheck || (await import('../repositories/verificationRepository.js')).endCheck;
     const linkRequirementToCheckFn = options.linkRequirementToCheck || (await import('../contracts/traceability.js')).linkRequirementToCheck;
 
     const artifact = getArtifactFn({ projectId, contractId, artifactId });
@@ -200,7 +199,6 @@ export async function verifyArtifactDevFallback({
             stderrDigest: c.stderrDigest,
             evidenceJson: c.evidenceJson
         });
-        if (c.status === 'BLOCKED') endCheckFn({ ...c, evidenceJson: c.evidenceJson });
     }
 
     // 7. Mandatory Requirements Bağlantılarını Kur

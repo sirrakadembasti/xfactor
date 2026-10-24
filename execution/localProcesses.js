@@ -109,6 +109,9 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
         record.closedDone = true; tracked.delete(record); clearTimeout(timer);
         for (const item of signals) item.removeEventListener('abort', abort);
         const result = { exitCode, code: exitCode, signal: exitSignal, stdout: Buffer.concat(output.stdout).toString(), stderr: Buffer.concat(output.stderr).toString(), stdoutBytes: sizes.stdout, stderrBytes: sizes.stderr, stdoutTruncated: sizes.stdout > RETAIN_BYTES, stderrTruncated: sizes.stderr > RETAIN_BYTES, stdoutSha256: hashes.stdout.digest('hex'), stderrSha256: hashes.stderr.digest('hex') };
+        result.timedOut = record.timedOut;
+        result.cancelled = signals.some(item => item.aborted);
+        result.executionFailed = Boolean(record.failure);
         result.passed = exitCode === 0 && !record.failure && !result.stdoutTruncated && !result.stderrTruncated;
         progress({ state: 'finished', commandId: record.commandId, endedAt: Date.now(), exitCode,
           timedOut: record.timedOut, stdoutTruncated: result.stdoutTruncated, stderrTruncated: result.stderrTruncated,
