@@ -126,6 +126,29 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
         try { const result = await verifier(workspace, contract, options); checks.push(...(result.checks || [])); }
         catch (error) { checks.push({ name: 'verification_runtime', status: 'blocked', reason: error.message }); }
     }
+
+    const passingChecks = checks.filter(c => c.status === 'PASS' || c.status === 'passed');
+    const coveredIds = new Set(passingChecks.flatMap(c => c.requirementIds || []));
+    const allCovered = Array.isArray(requirementIds) && requirementIds.length > 0
+        ? requirementIds.every(id => coveredIds.has(id)) && passingChecks.length > 0
+        : true;
+    const traceTimestamp = new Date().toISOString();
+    checks.push({
+        name: 'requirement_traceability',
+        status: allCovered ? 'passed' : 'failed',
+        command: 'static:verify-requirement-traceability',
+        exitCode: allCovered ? 0 : 1,
+        startedAt: traceTimestamp,
+        endedAt: traceTimestamp,
+        stdoutDigest: crypto.createHash('sha256').update(JSON.stringify({ passed: allCovered, covered: Array.from(coveredIds) })).digest('hex'),
+        stderrDigest: crypto.createHash('sha256').update(allCovered ? '' : 'Uncovered requirements').digest('hex'),
+        policyVersion: ACTIVE_POLICY_VERSION,
+        reason: allCovered ? 'All requirements covered by passing machine checks' : 'Requirements lack passing machine evidence',
+        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, coveredIds: Array.from(coveredIds) }
+    });
+
     const finalChecks = checks.map(check => withEvidence(check, runId, requirementIds));
     return { runId, checks: finalChecks, passed: finalChecks.every(check => ['passed', 'skipped'].includes(check.status)) };
 }
+
+export const runWorkerChecks = runVerificationChecks;

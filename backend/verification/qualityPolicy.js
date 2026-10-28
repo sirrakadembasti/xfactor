@@ -509,7 +509,8 @@ export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = [
     const members = checks.filter(check => RUNTIME_GATE_MEMBERS[gateName].has(check.name));
     const presentNames = new Set(members.map(check => check.name));
     const missing = [...RUNTIME_GATE_MEMBERS[gateName]].filter(name => !presentNames.has(name));
-    const requirementIds = new Set(members.flatMap(check => (
+    const passingMembers = members.filter(check => normalizeGateStatus(check.status) === 'PASS');
+    const requirementIds = new Set(passingMembers.flatMap(check => (
         Array.isArray(check.requirementIds) ? check.requirementIds.map(String) : []
     )));
     let status = 'PASS';
