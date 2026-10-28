@@ -342,7 +342,7 @@ export async function runWithConcurrency(items, limit, workerFn, { signal = null
     if (firstError) {
         throw firstError;
     }
-    return results.filter(r => r !== undefined);
+    return results;
 }
 
 export async function logEvent(
@@ -817,7 +817,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
     };
 
     let heartbeatTimer = null;
-    let terminalStatus = 'completed';
+    let terminalStatus = 'aborted';
     let executionError = null;
     let controllerBoundary = null;
 
@@ -877,7 +877,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         await workflowLogEvent(wsHub, projectId, "Manager", "start", "", "Otonom DAG orkestrasyon süreci başlatıldı.", "manager");
 
         // 1. AŞAMA: MANAGER & ROOT PROTOKOLÜ
-        await checkPause(projectId, abortController.signal);
+        const rootPauseStatus = await checkPause(projectId, abortController.signal);
+        if (!isExecutionActive(rootPauseStatus)) {
+            terminalStatus = (rootPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+            return;
+        }
         plan = normalizeManagerPlan(plan);
         validateManagerPlan(plan);
         const planHash = computePlanHash(plan);
@@ -916,7 +920,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         if (!resumeAfterGeneration) {
         // 2. AŞAMA: DİREKTÖRLER (DIRECTORS - manager/ altında yuvalanır)
         for (const domain of domainList) {
-            if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+            const domainPauseStatus = await checkPause(projectId, abortController.signal);
+            if (!isExecutionActive(domainPauseStatus)) {
+                terminalStatus = (domainPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+                return;
+            }
 
             const directorId = `${domain.prefix}.director`;
             let directorDir = path.join(managerDir, `${domain.prefix}.director`);
@@ -959,7 +967,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
             // 3. AŞAMA: TAKIM LİDERLERİ (TEAMLEADERS)
             for (const tl of teamleaders) {
-                if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+                const tlPauseStatus = await checkPause(projectId, abortController.signal);
+                if (!isExecutionActive(tlPauseStatus)) {
+                    terminalStatus = (tlPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+                    return;
+                }
 
                 const tlId = `${domain.prefix}.${tl.prefix}`;
                 const tlDir = path.join(directorDir, tl.prefix);
@@ -1060,7 +1072,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 let waveHasFatalFailure = false;
 
                 for (const wave of executionWaves) {
-                    if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+                    const wavePauseStatus = await checkPause(projectId, abortController.signal);
+                    if (!isExecutionActive(wavePauseStatus)) {
+                        terminalStatus = (wavePauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+                        return;
+                    }
                     if (waveHasFatalFailure) break;
 
                     // Eşzamanlılık Sınırlandırıcı (Max 2 LLM görevi paralel çalışır, Rate-Limit koruması)
@@ -1347,7 +1363,11 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         }
         // Cancellation can arrive during the final wave; it must not publish a
         // completion marker for a partially dispatched generation.
-        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+        const waveEndPauseStatus = await checkPause(projectId, abortController.signal);
+        if (!isExecutionActive(waveEndPauseStatus)) {
+            terminalStatus = (waveEndPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+            return;
+        }
         // Preserve the same repair allowlist when generation is bypassed.
         for (const taskPlan of Object.values(state.workflow.teamleaderPlans)) {
             for (const task of taskPlan.tasks || []) {
@@ -1534,6 +1554,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     const latestContract = db.prepare(`
                         SELECT id FROM project_contracts
                         WHERE project_id = ? AND status = 'approved'
+                        ORDER BY revision DESC LIMIT 1
                     `).get(projectId);
                     if (latestContract) {
                         for (const issue of testResult.issues) {
@@ -1695,12 +1716,20 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
         }
         }
-        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+        const prePrepPauseStatus = await checkPause(projectId, abortController.signal);
+        if (!isExecutionActive(prePrepPauseStatus)) {
+            terminalStatus = (prePrepPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+            return;
+        }
         if (resumeAtDependencyPreparation) {
             await workflowLogEvent(wsHub, projectId, 'Manager', 'resume', 'package.json',
                 'Kaydedilmiş statik üretim sonucu doğrulandı; bağımlılık hazırlığından devam ediliyor.', 'manager');
         }
-        if (!isExecutionActive(await checkPause(projectId, abortController.signal))) return;
+        const postPrepPauseStatus = await checkPause(projectId, abortController.signal);
+        if (!isExecutionActive(postPrepPauseStatus)) {
+            terminalStatus = (postPrepPauseStatus === 'paused' || abortController.signal.reason === 'PAUSED') ? 'paused' : 'aborted';
+            return;
+        }
 
             const latestContract = db.prepare(`
                 SELECT id, revision, contract_json, contract_hash FROM project_contracts
@@ -1827,6 +1856,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 assertVerifiedArtifactEvidence({ projectId, contractId: latestContract.id, artifactId: artifact.id });
                 if ((await readProjectState(projectId))?.status !== 'completed') throw new Error('Worker repair lacks canonical project completion.');
             }
+            terminalStatus = 'completed';
             await workflowLogEvent(wsHub, projectId, "Manager", "finish", "RAPOR.md, README.md", "Tüm süreç ve testler başarıyla tamamlandı! Proje doğrulanmış ZIP olarak indirilebilir; kaynak kodları indirilen pakette inceleyebilirsiniz.", "manager");
             try {
                 appendProjectActionMessages(projectId, {

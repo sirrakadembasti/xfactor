@@ -155,4 +155,33 @@ await runAsyncTest('5. reconcileStaleWorkflowAttempts should transition dead run
     await deleteProject(project.id);
 });
 
+// =========================================================================
+// TEST 6: Early abort or shutdown records aborted, never completed
+// =========================================================================
+await runAsyncTest('6. Early abort or shutdown should record aborted status, never completed', async () => {
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { acquireWorkflowLease } = await import('../workflowAttempts.js');
+    const { registerProjectAbortController, abortProjectExecution } = await import('../engine/cancellation.js');
+    const { executeProjectTasks } = await import('../engine/workflow.js');
+    const { db } = await import('../db.js');
+
+    const project = await createProject({ title: 'Shutdown Lease Test' });
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
+
+    const lease = acquireWorkflowLease(project.id, 'test-shutdown-worker');
+    assert.strictEqual(lease.acquired, true);
+
+    const controller = new AbortController();
+    registerProjectAbortController(project.id, controller);
+
+    abortProjectExecution(project.id, 'SHUTDOWN');
+
+    await executeProjectTasks(project.id, null, lease.attempt.id, 'test-shutdown-worker');
+
+    const attemptRow = db.prepare('SELECT status FROM workflow_attempts WHERE id = ?').get(lease.attempt.id);
+    assert.strictEqual(attemptRow.status, 'aborted', 'SHUTDOWN sırasında attempt status asla completed olmamalı, aborted olmalı');
+
+    await deleteProject(project.id);
+});
+
 finish();

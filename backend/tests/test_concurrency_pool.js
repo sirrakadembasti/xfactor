@@ -168,6 +168,16 @@ await runTest("6. Concurrency = 3 & 10 Tasks: 10 görevlik dalgada limit 3 olara
     assert.strictEqual(activeTasks, 0);
 });
 
+// 7. Undefined dönen görevlerde indeks hizalama korunmalı
+await runTest("7. Preserves indices and undefined slots without stripping", async () => {
+    const items = [1, 2, 3];
+    const results = await runWithConcurrency(items, 2, async (x) => x === 2 ? undefined : x * 10);
+    assert.strictEqual(results.length, 3, 'Undefined dönen görev silinmemeli, length 3 olmalı');
+    assert.strictEqual(results[0], 10);
+    assert.strictEqual(results[1], undefined);
+    assert.strictEqual(results[2], 30);
+});
+
 console.log("==================================================");
 console.log(`🎉 Concurrency Pool Testleri: ${passedCount} Başarılı, ${failedCount} Hatalı`);
 console.log("==================================================");
