@@ -22,9 +22,13 @@ test('worker runtime finite protocol and security constraints', async (t) => {
   let lastExecArgs = [];
   let npmExecArgs = [];
   let written = [];
+  let disconnectArgs = [];
   const lock = Buffer.from(JSON.stringify({ lockfileVersion: 3, packages: {} }));
   const spawnMock = mock.method(cp, 'spawn', (cmd, args) => {
     const proc = fakeChild();
+    if (args[0] === 'network' && args[1] === 'disconnect') {
+      disconnectArgs.push([...args]);
+    }
     if (args[0] === 'exec') {
       lastExecArgs = [...args];
       if (args.includes('npm')) npmExecArgs = [...args];
@@ -88,6 +92,24 @@ test('worker runtime finite protocol and security constraints', async (t) => {
       const deadlineResult = await executeJob({ operation: 'verify_artifact', runId: 'run-deadline', jobId: 'deadline', archiveBase64: 'eA==', inputSha256: createHash('sha256').update('x').digest('hex'), deadline: Date.now() + 20 }, { signal: new AbortController().signal });
       readinessEnabled = true;
       assert.equal(deadlineResult.status, 'failed'); assert.match(deadlineResult.error, /deadline|timed out/i);
+    });
+
+    await t.test('disconnectInstallNetworkAfterInstall option executes docker network disconnect', async () => {
+      disconnectArgs = [];
+      const result = await executeJob({
+        operation: 'prepare_dependencies',
+        runId: 'run-disconnect',
+        jobId: 'job-disconnect',
+        packageJsonBytes: Buffer.from('{"name":"fixture","version":"1.0.0"}'),
+        disconnectInstallNetworkAfterInstall: true,
+        deadline: Date.now() + 10000
+      }, { signal: new AbortController().signal });
+      assert.equal(result.status, 'success', result.error || '');
+      assert.ok(disconnectArgs.length > 0, 'network disconnect must be called');
+      const call = disconnectArgs[0];
+      assert.equal(call[0], 'network');
+      assert.equal(call[1], 'disconnect');
+      assert.equal(call[2], '-f');
     });
   } finally { spawnMock.mock.restore(); }
 });

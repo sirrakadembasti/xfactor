@@ -373,9 +373,9 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 adapter: options.adapter,
                 env: {
                     DATABASE_URL: options.env?.DATABASE_URL || 'file:./dev.db',
-                    AUTH_SECRET: options.env?.AUTH_SECRET || 'verification-only-secret-minimum-32-characters',
-                    NEXTAUTH_SECRET: options.env?.NEXTAUTH_SECRET || 'verification-only-secret-minimum-32-characters',
-                    NEXTAUTH_URL: options.env?.NEXTAUTH_URL || 'http://127.0.0.1:3000',
+                    AUTH_SECRET: options.env?.AUTH_SECRET || 'verification-only-ephemeral-secret-not-for-production',
+                    NEXTAUTH_SECRET: options.env?.NEXTAUTH_SECRET || 'verification-only-ephemeral-secret-not-for-production',
+                    NEXTAUTH_URL: options.env?.NEXTAUTH_URL || 'http://localhost:3000',
                     ...(options.env || {})
                 },
             });

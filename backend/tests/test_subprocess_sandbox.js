@@ -171,6 +171,43 @@ async function runTests() {
             failed++;
         }
 
+        // Test 5: sandboxRunner scrubEnvironmentVariables preserves ephemeral verification allowlist and scrubs real secrets
+        try {
+            const { scrubEnvironmentVariables, EPHEMERAL_VERIFICATION_ENV_ALLOWLIST } = await import('../verification/sandboxRunner.js');
+            assert.ok(EPHEMERAL_VERIFICATION_ENV_ALLOWLIST, 'EPHEMERAL_VERIFICATION_ENV_ALLOWLIST must exist');
+
+            const mixedEnv = {
+                PATH: '/usr/bin:/bin',
+                AUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+                NEXTAUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+                NEXTAUTH_URL: 'http://localhost:3000',
+                REAL_AUTH_SECRET: 'my-super-secret-password-12345',
+                OPENAI_API_KEY: 'sk-proj-12345',
+                JWT_SECRET: 'leaked-jwt'
+            };
+
+            const scrubbed = scrubEnvironmentVariables(mixedEnv);
+            assert.strictEqual(scrubbed.AUTH_SECRET, 'verification-only-ephemeral-secret-not-for-production', 'Ephemeral AUTH_SECRET must be preserved');
+            assert.strictEqual(scrubbed.NEXTAUTH_SECRET, 'verification-only-ephemeral-secret-not-for-production', 'Ephemeral NEXTAUTH_SECRET must be preserved');
+            assert.strictEqual(scrubbed.NEXTAUTH_URL, 'http://localhost:3000', 'Ephemeral NEXTAUTH_URL must be preserved');
+            assert.strictEqual(scrubbed.REAL_AUTH_SECRET, undefined, 'Real AUTH_SECRET must be scrubbed');
+            assert.strictEqual(scrubbed.OPENAI_API_KEY, undefined, 'OPENAI_API_KEY must be scrubbed');
+            assert.strictEqual(scrubbed.JWT_SECRET, undefined, 'JWT_SECRET must be scrubbed');
+
+            // If a real secret is passed in AUTH_SECRET, it must be scrubbed
+            const hostileEnv = {
+                AUTH_SECRET: 'my-real-production-secret-value'
+            };
+            const hostileScrubbed = scrubEnvironmentVariables(hostileEnv);
+            assert.strictEqual(hostileScrubbed.AUTH_SECRET, undefined, 'Real secret in AUTH_SECRET must be scrubbed');
+
+            console.log('  [PASS] 5. sandboxRunner preserves ephemeral verification allowlist and scrubs real secrets');
+            passed++;
+        } catch (err) {
+            console.log('  [FAIL] 5. sandboxRunner ephemeral verification allowlist:', err.message);
+            failed++;
+        }
+
     } finally {
         await teardown();
         await isolated.cleanup();
