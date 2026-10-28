@@ -93,3 +93,12 @@ export function canTransitionProject(fromStatus, toStatus) {
 
     return allowed[fromStatus]?.includes(toStatus) === true;
 }
+
+export function isValidProjectStatus(status) {
+    return typeof status === 'string' && Object.values(PROJECT_STATUS).includes(status);
+}
+
+export function canTransitionProjectStatus(fromStatus, toStatus) {
+    return canTransitionProject(fromStatus, toStatus);
+}
+

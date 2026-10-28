@@ -130,7 +130,7 @@ try {
         const result = await rehydrateProjectStateFromDisk(projectDir, { projectId, database });
 
         assert.strictEqual(result.success, true, 'rehydrateProjectStateFromDisk must return success: true');
-        assert.strictEqual(result.status, 'completed', 'Project status must be completed');
+        assert.strictEqual(result.status, 'paused', 'Project status must be paused without verified completion receipt');
         assert.strictEqual(result.tasksCount, 3, 'Total tasks count must be 3');
         assert.ok(result.plan.title.includes('E-Commerce Engine'), 'Plan title should match TALIMATNAME heading');
         assert.deepStrictEqual(result.plan.domains, ['backend', 'frontend'], 'Plan domains should be parsed correctly');
@@ -139,13 +139,14 @@ try {
         // Verify DB projects table
         const dbProject = database.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
         assert.ok(dbProject, 'Project row must exist in SQLite projects table');
-        assert.strictEqual(dbProject.status, 'completed', 'SQLite projects.status must be completed');
+        assert.strictEqual(dbProject.status, 'paused', 'SQLite projects.status must be paused without verified completion receipt');
         assert.ok(dbProject.plan && dbProject.plan.length > 0, 'SQLite projects.plan must not be empty');
         assert.ok(dbProject.workflow_state && dbProject.workflow_state.length > 0, 'SQLite projects.workflow_state must not be empty');
 
         const parsedPlan = JSON.parse(dbProject.plan);
         assert.strictEqual(parsedPlan.title, result.plan.title);
         assert.deepStrictEqual(parsedPlan.domains, ['backend', 'frontend']);
+        assert.ok(Array.isArray(parsedPlan.requirements) && parsedPlan.requirements.length > 0, 'Plan requirements must be non-empty array');
 
         const parsedWorkflow = JSON.parse(dbProject.workflow_state);
         assert.ok(parsedWorkflow.teamleaderPlans['backend.domain'], 'backend.domain teamleaderPlan must exist');
@@ -348,7 +349,7 @@ try {
 
         const completedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
         assert.strictEqual(completedResult.success, true);
-        assert.strictEqual(completedResult.status, 'completed', 'Project status must be completed');
+        assert.strictEqual(completedResult.status, 'paused', 'Project status must heal to paused without verified receipt');
 
         const completedChats = database.prepare('SELECT role, text_content FROM chat_history WHERE project_id = ? ORDER BY id ASC').all(completedId);
         assert.strictEqual(completedChats.length, 3, 'Completed project must have 3 chat messages (welcome + plan presentation + RAPOR message)');
@@ -371,7 +372,7 @@ try {
 
         const completedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
         assert.strictEqual(completedResult.success, true);
-        assert.strictEqual(completedResult.status, 'completed');
+        assert.strictEqual(completedResult.status, 'paused', 'Unverified disk project must heal to paused');
         const repeatedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
         assert.strictEqual(repeatedResult.success, true);
 
@@ -521,6 +522,87 @@ try {
         const pendingDb = database.prepare('SELECT status, workflow_state FROM projects WHERE id = ?').get(pendingId);
         assert.strictEqual(pendingDb.status, 'pending_approval');
         assert.deepStrictEqual(JSON.parse(pendingDb.workflow_state), { planHash: 'pending-v3' });
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+
+    await runAsyncTest('9. DAT-1: enforces valid state machine, receipt-backed completion, and contract schema on rehydrate', async () => {
+        const { isValidProjectStatus } = await import('../engine/stateMachine.js');
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-dat1-test-'));
+
+        // Case A: Disk has tasks, project does not exist in DB (existingProj === null).
+        // Must NOT rehydrate as 'in_progress', must be 'paused' which is a canonical status.
+        const newProjId = `proj-dat1-new-${Date.now()}`;
+        const newProjDir = path.join(tmpDir, newProjId);
+        const newMgrDir = path.join(newProjDir, 'manager');
+        const newBackendDir = path.join(newMgrDir, 'backend.director', 'domain');
+        await fs.mkdir(newBackendDir, { recursive: true });
+        await fs.writeFile(path.join(newMgrDir, 'DURUM.md'), '# DURUM\n- Durum: BASLADI\n', 'utf8');
+        await fs.writeFile(path.join(newMgrDir, 'TALIMATNAME.md'), '# Architecture\nRequirements here', 'utf8');
+        await fs.writeFile(path.join(newBackendDir, 'TODO.md'), '# TODO\n| 1 | task-1 | Setup | — | pending |\n', 'utf8');
+
+        const newResult = await rehydrateProjectStateFromDisk(newProjDir, { projectId: newProjId, database });
+        assert.strictEqual(newResult.success, true);
+        assert.notStrictEqual(newResult.status, 'in_progress', 'Status must never be in_progress');
+        assert.strictEqual(newResult.status, 'paused', 'Unfinished project with tasks must be paused');
+        assert.strictEqual(isValidProjectStatus(newResult.status), true, 'Status must be a valid canonical project status');
+
+        const newDbRow = database.prepare('SELECT status, plan FROM projects WHERE id = ?').get(newProjId);
+        assert.strictEqual(newDbRow.status, 'paused', 'DB status must be paused');
+        assert.strictEqual(isValidProjectStatus(newDbRow.status), true, 'DB status must be valid');
+
+        const newContract = database.prepare('SELECT contract_json FROM project_contracts WHERE project_id = ?').get(newProjId);
+        assert.ok(newContract, 'project_contracts row must exist');
+        const parsedContract = JSON.parse(newContract.contract_json);
+        assert.ok(Array.isArray(parsedContract.requirements) && parsedContract.requirements.length > 0, 'contract.requirements must be a non-empty array');
+        assert.strictEqual(parsedContract.requirements[0].id, 'REQ-1');
+
+        // Case B: Disk says TAMAMLANDI but valid completion_receipts + verified artifact exists in DB.
+        // In this case, status must remain 'completed'.
+        const completedId = `proj-dat1-verified-${Date.now()}`;
+        const completedDir = path.join(tmpDir, completedId);
+        const compMgrDir = path.join(completedDir, 'manager');
+        await fs.mkdir(compMgrDir, { recursive: true });
+        await fs.writeFile(path.join(completedDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
+        await fs.writeFile(path.join(compMgrDir, 'TALIMATNAME.md'), '# Architecture\nDone', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'RAPOR.md'), '# RAPOR\nDurum: BAŞARILI\n', 'utf8');
+
+        const contractId = `contract-${completedId}`;
+        const runId = `run-${completedId}`;
+        const artId = `art-${completedId}`;
+        const rcptId = `rcpt-${completedId}`;
+        const nowIso = new Date().toISOString();
+
+        database.prepare(`
+            INSERT INTO projects (id, title, status, plan, revision, is_pinned, created_at)
+            VALUES (?, 'Verified Project', 'completed', '{}', 1, 0, ?)
+        `).run(completedId, nowIso);
+        database.prepare(`
+            INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at)
+            VALUES (?, ?, 1, 'approved', '{"requirements":[{"id":"REQ-1"}]}', 'hash123', ?, ?)
+        `).run(contractId, completedId, nowIso, nowIso);
+        database.prepare(`
+            INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at)
+            VALUES (?, ?, ?, 'verified', '1.0', ?, ?)
+        `).run(runId, completedId, contractId, nowIso, nowIso);
+        database.prepare(`
+            INSERT INTO artifacts (id, project_id, contract_id, kind, path, sha256, size, status, verification_run_id, created_at)
+            VALUES (?, ?, ?, 'zip', 'fake/path.zip', 'hash123', 1024, 'verified', ?, ?)
+        `).run(artId, completedId, contractId, runId, nowIso);
+        database.prepare(`
+            INSERT INTO completion_receipts (
+                id, project_id, contract_id, contract_hash, artifact_id, artifact_hash,
+                run_id, policy_version, mandatory_gate_digests,
+                previous_revision, next_revision, completed_at
+            ) VALUES (?, ?, ?, 'hash123', ?, 'hash123', ?, '1.0', '[]', 0, 1, ?)
+        `).run(rcptId, completedId, contractId, artId, runId, nowIso);
+
+        const verifiedResult = await rehydrateProjectStateFromDisk(completedDir, { projectId: completedId, database });
+        assert.strictEqual(verifiedResult.success, true);
+        assert.strictEqual(verifiedResult.status, 'completed', 'Project with verified receipt must remain completed');
+
+        const verifiedDb = database.prepare('SELECT status FROM projects WHERE id = ?').get(completedId);
+        assert.strictEqual(verifiedDb.status, 'completed');
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });

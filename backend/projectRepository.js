@@ -757,7 +757,21 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         // Contract revisions are owned by createContractRevision/approveContractRevision.
         // A workflow checkpoint may carry an older plan snapshot and must not rewrite them.
         if (state.plan && !db.prepare('SELECT id FROM project_contracts WHERE project_id = ? LIMIT 1').get(state.id)) {
-            const contractJson = JSON.stringify(state.plan);
+            const rawPlan = typeof state.plan === 'object' && state.plan !== null ? state.plan : {};
+            const planToCheck = {
+                ...rawPlan,
+                requirements: Array.isArray(rawPlan.requirements) && rawPlan.requirements.length > 0
+                    ? rawPlan.requirements
+                    : [{
+                        id: 'REQ-1',
+                        statement: (rawPlan.summary || rawPlan.title || state.title || 'Recovered project requirement').slice(0, 500),
+                        mandatory: true,
+                        kind: 'functional',
+                        priority: 'high',
+                        acceptance: ['Recovered disk project state is consistent']
+                    }]
+            };
+            const contractJson = JSON.stringify(planToCheck);
             const contractHash = crypto.createHash('sha256').update(contractJson).digest('hex');
             const contractId = `contract-${crypto.randomUUID()}`;
             db.prepare(`
