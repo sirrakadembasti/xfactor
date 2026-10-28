@@ -17,10 +17,12 @@ import {
     normalizeDirectorSpec,
     normalizeTeamleaderTasks,
     escapePromptDelimiters,
-    formatUntrustedPromptContext
+    formatUntrustedPromptContext,
+    extractAndParseJSON,
+    extractCoderFilesFromText
 } from '../agents/schemas.js';
 
-function runTests() {
+async function runTests() {
     console.log('==================================================');
     console.log('⚡ Sub-project 3.3 & P1-A: Agent Contracts & Schemas');
     console.log('==================================================');
@@ -313,6 +315,44 @@ function runTests() {
         passed++;
     } catch (err) {
         console.log('  [FAIL] 8. Teamleader parser requirement integrity:', err.message);
+        failed++;
+    }
+
+    try {
+        // 9. AGT-1: Valid double backslash escape preservation
+        const inputWithEscapes = '{"files":[{"path":"src/a.js","content":"const re = new RegExp(\\"\\\\d+\\");\\nconst x = \'\\q\';"}]}';
+        const parsed = extractAndParseJSON(inputWithEscapes);
+        assert.ok(parsed, 'JSON should parse successfully');
+        assert.ok(parsed.files[0].content.includes('\\d+'), 'Double backslash \\d+ must be preserved');
+        console.log('  [PASS] 9. Preserves valid double-backslash escapes and fixes invalid escapes [AGT-1]');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 9. Double-backslash preservation:', err.message);
+        failed++;
+    }
+
+    try {
+        // 10. AGT-1: Robust coder file extraction without false positive paths
+        const textWithCodeRoute = '```json\n{\n  "summary": "Sample",\n  "files": [\n    {\n      "path": "src/routes.js",\n      "content": "const route = { \\"path\\": \\"/api/rooms\\", \\"method\\": \\"GET\\" };"\n    }\n  ]\n}\n```';
+        const extracted = extractCoderFilesFromText(textWithCodeRoute);
+        assert.ok(extracted, 'Should extract files');
+        assert.strictEqual(extracted.files.length, 1, 'Should have exactly 1 file');
+        assert.strictEqual(extracted.files[0].path, 'src/routes.js', 'Should be src/routes.js not /api/rooms');
+        console.log('  [PASS] 10. Robust coder file extraction avoids false positive path keys [AGT-1]');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 10. File extraction robustness:', err.message);
+        failed++;
+    }
+
+    try {
+        // 11. AGT-3: Director response fail-closed on invalid JSON
+        const { parseDirectorResponse } = await import('../agents/director.js');
+        assert.throws(() => parseDirectorResponse('Plain text error without JSON'), /JSON|parse/i, 'Director must fail-closed on invalid JSON');
+        console.log('  [PASS] 11. Director parser fails closed on invalid JSON [AGT-3]');
+        passed++;
+    } catch (err) {
+        console.log('  [FAIL] 11. Director fail-closed:', err.message);
         failed++;
     }
 

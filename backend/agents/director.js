@@ -15,12 +15,7 @@ Lütfen ${domain} domaini için detaylı ALT-TALIMATNAME.md ve teamleader yapıl
 }
 
 export function parseDirectorResponse(rawText, domain = 'domain') {
-    let data;
-    try {
-        data = extractAndParseJSON(rawText);
-    } catch {
-        data = { altTalimatname: rawText };
-    }
+    const data = extractAndParseJSON(rawText);
     return normalizeDirectorSpec(data, domain);
 }
 
