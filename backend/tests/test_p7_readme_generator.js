@@ -157,7 +157,7 @@ await runAsyncTest('mixed Vite Express README starts both declared services and 
     assert.match(readme, /npm run dev -- --host 127\.0\.0\.1 --port 4173/);
     assert.match(readme, /PORT=3001/);
     assert.match(readme, /localhost:3001/); assert.match(readme, /localhost:4173/);
-    assert.match(readme, /\/api/); assert.ok(!readme.includes('docker run'));
+    assert.match(readme, /\/api/); assert.match(readme, /docker run/);
     const result = await verifyReadmeCommands({}, [{ path: 'README.md', content: readme }, { path: 'package.json', content: JSON.stringify(pkg) },
       { path: 'service-manifest.json', content: JSON.stringify(manifest) }, { path: 'src/server.ts', content: 'const port = process.env.PORT || 3001;' }]);
     assert.equal(result.passed, true, JSON.stringify(result.issues));
