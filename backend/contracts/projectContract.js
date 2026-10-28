@@ -114,12 +114,12 @@ export function createContractRevision(projectId, plan, sourceMessageId) {
     }
 }
 
-export function invalidateProjectCheckpoints(projectId) {
+export function invalidateProjectCheckpoints(projectId, reason = 'CONTRACT_SUPERSEDED') {
     db.prepare(`
         UPDATE task_checkpoints
-        SET invalidated_at = ?
+        SET status = 'invalidated', invalidation_reason = ?, invalidated_at = ?
         WHERE project_id = ? AND invalidated_at IS NULL
-    `).run(new Date().toISOString(), projectId);
+    `).run(reason, new Date().toISOString(), projectId);
 }
 
 export function approveContractRevision(projectId, revision, { inTransaction = false } = {}) {

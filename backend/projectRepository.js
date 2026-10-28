@@ -80,7 +80,13 @@ export function generateNextProjectId(title, { database = db, env = process.env 
     return `${slug}-${nextSeq}`;
 }
 
-export async function createProject({ title, ownerUserId = null, env = process.env, customId = null } = {}) {
+export function createProjectSync(input = {}, options = {}) {
+    const rawInput = typeof input === 'string' ? { title: input } : (input || {});
+    const title = rawInput.title || options.title;
+    const ownerUserId = (typeof input === 'object' && input?.ownerUserId) || options.ownerUserId || 'legacy-local-owner';
+    const env = rawInput.env || options.env || process.env;
+    const customId = rawInput.customId || rawInput.id || options.customId || options.id || null;
+
     if (!validateProjectTitle(title || '')) {
         throw new Error('Geçerli bir proje başlığı (title) gerekli.');
     }
@@ -91,10 +97,10 @@ export async function createProject({ title, ownerUserId = null, env = process.e
     const initialWelcomeMessage = `Merhaba Boss! "${cleanTitle}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
     const nowIso = new Date().toISOString();
 
-    // 1. Önce dizin oluşturulur (SQLite transaction içinde await fs tutulmaz)
-    await fs.mkdir(projectDir, { recursive: true });
+    // 1. Önce dizin oluşturulur
+    fsSync.mkdirSync(projectDir, { recursive: true });
 
-    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)');
+    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, owner_id, is_pinned, created_at) VALUES (?, ?, ?, NULL, ?, 0, ?)');
     const insertOwner = db.prepare('INSERT INTO project_owners (project_id, user_id, role, created_at) VALUES (?, ?, ?, ?)');
     const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
 
@@ -102,15 +108,18 @@ export async function createProject({ title, ownerUserId = null, env = process.e
     let chatInfo;
     db.exec('BEGIN IMMEDIATE;');
     try {
-        insertProject.run(id, cleanTitle, 'planning', nowIso);
+        insertProject.run(id, cleanTitle, 'planning', ownerUserId, nowIso);
         if (ownerUserId) {
-            insertOwner.run(id, ownerUserId, 'owner', nowIso);
+            const userRow = db.prepare('SELECT id FROM users WHERE id = ?').get(ownerUserId);
+            if (userRow) {
+                insertOwner.run(id, ownerUserId, 'owner', nowIso);
+            }
         }
         chatInfo = insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
         db.exec('COMMIT;');
     } catch (error) {
         db.exec('ROLLBACK;');
-        await fs.rm(projectDir, { recursive: true, force: true }).catch(() => {});
+        try { fsSync.rmSync(projectDir, { recursive: true, force: true }); } catch {}
         throw error;
     }
 
@@ -118,6 +127,7 @@ export async function createProject({ title, ownerUserId = null, env = process.e
         id,
         title: cleanTitle,
         status: 'planning',
+        ownerId: ownerUserId,
         isPinned: false,
         createdAt: nowIso,
         chatHistory: [
@@ -126,6 +136,12 @@ export async function createProject({ title, ownerUserId = null, env = process.e
         plan: null,
         workflow: null
     };
+}
+
+export function createProject(input = {}, options = {}) {
+    const result = createProjectSync(input, options);
+    const promise = Promise.resolve(result);
+    return Object.assign(promise, result);
 }
 
 export function getProject(projectId) {

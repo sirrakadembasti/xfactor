@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { db, dbEvents } from './db.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 import { decryptMfaSecret, encryptMfaSecret, getMfaEncryptionKeys } from './crypto/mfaCrypto.js';
+import { createProject } from './projectRepository.js';
 
 function normalizeUsername(username) {
     return String(username ?? '').trim();
@@ -400,26 +401,11 @@ export function canDeleteProject(userId, projectId) {
     return getProjectRole(userId, projectId) === 'owner';
 }
 
-export function createProjectForUser(userId, title) {
-    const safeTitle = String(title ?? '').trim() || 'İsimsiz Proje';
-    const id = `project-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-
-    db.prepare(`
-        INSERT INTO projects (id, title, status, plan, owner_id)
-        VALUES (?, ?, 'planning', NULL, ?)
-    `).run(id, safeTitle, userId);
-
-    db.prepare(`
-        INSERT INTO project_owners (project_id, user_id, role)
-        VALUES (?, ?, 'owner')
-    `).run(id, userId);
-
-    return {
-        id,
-        title: safeTitle,
-        ownerId: userId,
-        status: 'planning'
-    };
+export function createProjectForUser(userId, input) {
+    const rawInput = typeof input === 'string' ? { title: input } : (input || {});
+    const title = rawInput.title || rawInput.name || 'İsimsiz Proje';
+    const id = rawInput.id || rawInput.customId || null;
+    return createProject({ id, title, ownerUserId: userId });
 }
 
 export function getUserProjects(userId) {

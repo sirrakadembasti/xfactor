@@ -77,6 +77,28 @@ await runAsyncTest('3. syncProjectsWithDisk should not re-import .trash or delet
         await fs.rm(trashDir, { recursive: true, force: true }).catch(() => {});
     }
 });
+
+// =========================================================================
+// TEST 4: createProjectForUser parity with createProject (disk dir & initial chat)
+// =========================================================================
+await runAsyncTest('4. createProjectForUser should create disk directory and initial chat_history record', async () => {
+    const { createProjectForUser, createUser } = await import('../auth.js');
+    const { getProjectDir, deleteProject } = await import('../projectRepository.js');
+
+    const user = createUser(`testuser-${Date.now()}`, 'StrongPassword!2026');
+    const project = await createProjectForUser(user.id, { title: 'User Owned Project' });
+
+    assert.ok(project && project.id, 'Project must be created with an ID');
+    assert.strictEqual(project.ownerId, user.id, 'ownerId must match user');
+
+    const projectDir = getProjectDir(project.id);
+    assert.ok(fsSync.existsSync(projectDir), 'Project disk directory must exist');
+
+    const chatRow = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(project.id);
+    assert.strictEqual(chatRow.count, 1, 'Initial welcome chat message must be created in chat_history');
+
+    await deleteProject(project.id);
+});
 } finally {
     await isolated.cleanup();
 }

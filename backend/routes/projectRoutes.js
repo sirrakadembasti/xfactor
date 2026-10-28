@@ -1037,7 +1037,7 @@ export function createProjectRouter({
             const cpRows = db.prepare(`
                 SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, task_identity_version
                 FROM task_checkpoints
-                WHERE project_id = ? AND contract_id = ? AND status = 'completed' AND (${taskFilter.clause})
+                WHERE project_id = ? AND contract_id = ? AND status = 'completed' AND invalidated_at IS NULL AND (${taskFilter.clause})
             `).all(projectId, contractId, ...taskFilter.params);
             const cpSet = new Set();
             for (const r of cpRows) {
@@ -1131,7 +1131,7 @@ export function createProjectRouter({
                 const taskFilter = checkpointTaskFilter(projectId, contractId, allTasks.filter(task => impactedIds.has(task.id)), allTasks);
                 const cpRows = db.prepare(`
                     SELECT project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version, task_identity_version
-                    FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND (${taskFilter.clause})
+                    FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND status='completed' AND invalidated_at IS NULL AND (${taskFilter.clause})
                 `).all(projectId, contractId, ...taskFilter.params);
                 const idSet = new Set();
                 for (const r of cpRows) if (taskFilter.matches(r)) idSet.add(deriveCheckpointId(r));
