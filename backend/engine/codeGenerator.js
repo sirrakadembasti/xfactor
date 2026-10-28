@@ -594,7 +594,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
     // 1. Proje Türü / Framework Algılama
     const isAuthRequired = isAuthRequested(state, plan);
     const stack = await detectProjectStack(projectDir, state, plan);
-    let { isNext, hasPrisma, isExpressOnly, isVue, hasExpressApi } = stack;
+    let { isNext, hasPrisma, isExpressOnly, isVue, hasExpressApi, hasVite } = stack;
     if (isAuthRequired) {
         hasPrisma = true;
     }
@@ -1096,6 +1096,27 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
                 'COPY . .',
                 'EXPOSE 3000',
                 'CMD ["npm", "start"]',
+                ''
+            ];
+        } else if (hasVite && hasExpressApi) {
+            dockerfileLines = [
+                'FROM node:22-alpine AS builder',
+                'WORKDIR /app',
+                'COPY package*.json ./',
+                'RUN npm ci && mkdir -p node_modules',
+                'COPY . .',
+                hasPrisma ? 'RUN npx prisma generate' : '',
+                'RUN npm run build',
+                '',
+                'FROM node:22-alpine AS runner',
+                'WORKDIR /app',
+                'ENV NODE_ENV=production PORT=3000',
+                hasPrisma ? 'ENV DATABASE_URL=file:/data/app.db' : '',
+                'COPY --from=builder /app ./',
+                hasPrisma ? 'RUN mkdir -p /data' : '',
+                hasPrisma ? 'VOLUME ["/data"]' : '',
+                'EXPOSE 3000 4173',
+                hasPrisma ? 'CMD ["sh", "-c", "npx prisma db push && npm start"]' : 'CMD ["npm", "start"]',
                 ''
             ];
         } else {
