@@ -184,6 +184,10 @@ export async function verifyArtifactDevFallback({
         });
     }
 
+    // 8. Update run and artifact status depending on allPassed (Fail-Closed)
+    const finalRunStatus = allPassed ? 'verified' : 'failed';
+    const finalArtifactStatus = allPassed ? 'verified' : 'rejected';
+
     // 6. Veritabanına Çekleri ve Bağlantıları Tek Bir Transaction'da Yaz
     database.exec('BEGIN IMMEDIATE;');
     try {
@@ -219,10 +223,6 @@ export async function verifyArtifactDevFallback({
                 }
             }
         }
-
-        // 8. Update run and artifact status depending on allPassed (Fail-Closed)
-        const finalRunStatus = allPassed ? 'verified' : 'failed';
-        const finalArtifactStatus = allPassed ? 'verified' : 'rejected';
 
         updateRunStatusFn(effectiveRunId, finalRunStatus);
 

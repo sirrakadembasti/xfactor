@@ -364,7 +364,8 @@ export async function verifyArtifact(
             const isWorkerCheck = workerCheckIds.has(checkId);
             const isExecutable = Boolean(check.command) || (check.exitCode !== null && check.exitCode !== undefined);
             const isMandatoryCheck = applicability === 'MANDATORY';
-            const missingEvidence = isWorkerCheck && isExecutable && isMandatoryCheck && (
+            const isPassingClaim = ['passed', 'PASS', 'NOT_APPLICABLE'].includes(check.status) || check.exitCode === 0;
+            const missingEvidence = isWorkerCheck && isExecutable && isMandatoryCheck && isPassingClaim && (
                 !check.startedAt || !check.endedAt || !check.stdoutDigest || !check.stderrDigest
             );
 
@@ -388,10 +389,11 @@ export async function verifyArtifact(
             }
 
             const checkEvidence = check.evidence ?? check.evidenceJson ?? {};
+            const log = normalizeWorkerCheckLog(check);
             const evidenceJsonPayload = {
                 ...redactObservedEvidence(checkEvidence),
-                ...normalizeWorkerCheckLog(check),
-                ...(reason ? { reason } : {})
+                ...log,
+                ...(missingEvidence ? { reason } : {})
             };
             if (['domain_entity_check', 'placeholder_check', 'contamination_check', 'security_baseline'].includes(gateName)) {
                 evidenceJsonPayload.evidence = {
