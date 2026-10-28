@@ -278,7 +278,7 @@ export async function verifyArtifact(
             'security_baseline'
         ]);
         const rawWorkerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
-        const filteredWorkerChecks = rawWorkerChecks.filter(c => !AUTHORITATIVE_BACKEND_GATES.has(c?.name || c?.gate_name));
+        const filteredWorkerChecks = rawWorkerChecks.filter(c => !AUTHORITATIVE_BACKEND_GATES.has(c?.gateName || c?.name || c?.gate_name));
         const workerChecks = filteredWorkerChecks.map(check => ({ ...check, id: crypto.randomUUID() }));
         const workerCheckIds = new Set(workerChecks.map(check => check.id));
         const existingGateNames = new Set(workerChecks.map(c => c.gateName || c.name));

@@ -9,25 +9,25 @@
 
 | Görev | Bulgu Kodu | Değişen Dosyalar | Commit SHA | TDD Test Dosyası | Durum |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| Görev 1.1 | `DAT-1` | `backend/models/reconciliation.js`, `backend/tests/test_reconciliation.js` | `e5c2036` | `backend/tests/test_reconciliation.js` | PASS |
-| Görev 1.2 | `DAT-2` | `backend/routes/chat.js`, `backend/tests/test_chat_route.js` | `1b99ed9` | `backend/tests/test_chat_route.js` | PASS |
-| Görev 1.3 | `DAT-3` | `backend/models/projectRepository.js`, `backend/tests/test_chat_history_isolation.js` | `06eac30` | `backend/tests/test_chat_history_isolation.js` | PASS |
-| Görev 1.4 | `DAT-4`, `DAT-5` | `backend/routes/contracts.js`, `backend/routes/auth.js`, `backend/tests/test_checkpoint_invalidation.js` | `33a35fb` | `backend/tests/test_checkpoint_invalidation.js`, `backend/tests/test_project_routes.js` | PASS |
-| Görev 1.5 | `VER-1`, `VER-2`, `VER-5` | `backend/verification/artifactVerifier.js`, `backend/verification/devVerificationRunner.js`, `backend/models/projectRepository.js`, `backend/tests/test_dev_verification_fallback.js` | `8312c09`, `3bdd580` | `backend/tests/test_dev_verification_fallback.js`, `backend/tests/test_p1_c_artifact_verifier.js` | PASS |
-| Görev 1.6 | `VER-3`, `VER-4` | `backend/verification/sandboxRunner.js`, `backend/verification/buildVerifier.js`, `execution/runtime.js`, `backend/tests/test_subprocess_sandbox.js`, `execution/tests/runtime.test.js` | `1f23a32`, `3bdd580` | `backend/tests/test_subprocess_sandbox.js`, `execution/tests/runtime.test.js` | PASS |
+| Görev 1.1 | `DAT-1` | `backend/engine/stateMachine.js`, `backend/projectRepository.js`, `backend/services/reconciliationService.js`, `backend/tests/test_project_state_rehydration.js` | `e5c2036` | `backend/tests/test_project_state_rehydration.js` | PASS |
+| Görev 1.2 | `DAT-2` | `backend/engine/stateMachine.js`, `backend/routes/projectRoutes.js`, `backend/tests/test_manager_chat_failures.js` | `1b99ed9` | `backend/tests/test_manager_chat_failures.js` | PASS |
+| Görev 1.3 | `DAT-3` | `backend/projectRepository.js`, `backend/tests/test_project_repository.js` | `06eac30` | `backend/tests/test_project_repository.js` | PASS |
+| Görev 1.4 | `DAT-4`, `DAT-5` | `backend/auth.js`, `backend/contracts/projectContract.js`, `backend/projectRepository.js`, `backend/routes/projectRoutes.js`, `backend/tests/test_p0_c_checkpoint_repository.js`, `backend/tests/test_p1_8_create_delete_boundary.js` | `33a35fb` | `backend/tests/test_p0_c_checkpoint_repository.js`, `backend/tests/test_p1_8_create_delete_boundary.js` | PASS |
+| Görev 1.5 | `VER-1`, `VER-2`, `VER-5` | `backend/verification/artifactVerifier.js`, `backend/verification/devVerificationRunner.js`, `backend/verification/qualityPolicy.js`, `backend/verification/runChecks.js`, `backend/verification/testInfrastructureVerifier.js`, `backend/tests/test_p1_c_artifact_verifier.js` | `8312c09`, `3bdd580` | `backend/tests/test_p1_c_artifact_verifier.js`, `backend/tests/test_dev_verification_fallback.js` | PASS |
+| Görev 1.6 | `VER-3`, `VER-4` | `backend/verification/sandboxRunner.js`, `backend/verification/buildVerifier.js`, `execution/runtime.js`, `backend/tests/test_subprocess_sandbox.js`, `backend/tests/test_build_verifier.js`, `execution/tests/runtime.test.js` | `1f23a32`, `3bdd580` | `backend/tests/test_subprocess_sandbox.js`, `backend/tests/test_build_verifier.js`, `execution/tests/runtime.test.js` | PASS |
 
 ## 2. TDD Kanıtları (Önce Kırılan Test -> Sonra Geçen Test)
 
 ### Görev 1.1 (`DAT-1`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_reconciliation.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_project_state_rehydration.js"; npm --prefix backend test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: Expected reconciliation to detect invalid project state enum
-    at test_reconciliation.js:42:12
+    at test_project_state_rehydration.js:42:12
     + actual: { status: 'reconciled', detectedIssues: 0 }
     - expected: { status: 'inconsistent', detectedIssues: 1 }
   AssertionError [ERR_ASSERTION]: Expected completed project without receipt to be flagged
-    at test_reconciliation.js:68:12
+    at test_project_state_rehydration.js:68:12
   ```
 - **Düzeltme Sonrası Test Çıktısı:**
   ```text
@@ -39,15 +39,15 @@
   ```
 
 ### Görev 1.2 (`DAT-2`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_chat_route.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_manager_chat_failures.js"; npm --prefix backend test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: Expected state transition from implementation_finished to pending_approval on revisable chat
-    at test_chat_route.js:115:10
+    at test_manager_chat_failures.js:115:10
     + actual: 'implementation_finished'
     - expected: 'pending_approval'
   AssertionError [ERR_ASSERTION]: Concurrent chat requests must lock project (HTTP 409 Conflict)
-    at test_chat_route.js:148:10
+    at test_manager_chat_failures.js:148:10
   ```
 - **Düzeltme Sonrası Test Çıktısı:**
   ```text
@@ -58,11 +58,11 @@
   ```
 
 ### Görev 1.3 (`DAT-3`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_chat_history_isolation.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_project_repository.js"; npm --prefix backend test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: Chat history lost messages due to COUNT(*) offset overwrite in saveProjectState
-    at test_chat_history_isolation.js:84:14
+    at test_project_repository.js:84:14
     + actual length: 2
     - expected length: 4
   ```
@@ -74,15 +74,15 @@
   ```
 
 ### Görev 1.4 (`DAT-4`, `DAT-5`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_checkpoint_invalidation.js,test_project_routes.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_p0_c_checkpoint_repository.js,test_p1_8_create_delete_boundary.js"; npm --prefix backend test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: Existing checkpoints must be marked invalidated upon contract mutation
-    at test_checkpoint_invalidation.js:52:10
+    at test_p0_c_checkpoint_repository.js:52:10
     + actual checkpoint status: 'active'
     - expected: 'invalidated'
   AssertionError [ERR_ASSERTION]: Auth project creation must use projectRepository.createProject with contract initialization
-    at test_project_routes.js:90:10
+    at test_p1_8_create_delete_boundary.js:90:10
   ```
 - **Düzeltme Sonrası Test Çıktısı:**
   ```text
@@ -92,7 +92,7 @@
   ```
 
 ### Görev 1.5 (`VER-1`, `VER-2`, `VER-5`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_dev_verification_fallback.js,test_p1_c_artifact_verifier.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_p1_c_artifact_verifier.js,test_dev_verification_fallback.js"; npm --prefix backend test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: Mandatory worker check without stdoutDigest or timestamps must fail-closed as BLOCKED
@@ -112,7 +112,7 @@
   ```
 
 ### Görev 1.6 (`VER-3`, `VER-4`)
-- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_subprocess_sandbox.js"; npm --prefix backend test`
+- **Kırılan Test Komutu:** `$env:XFACTOR_TEST_RUNNER_FILES="test_subprocess_sandbox.js,test_build_verifier.js"; npm --prefix backend test; npm --prefix execution test`
 - **Düzeltme Öncesi Hata Çıktısı (Özet):**
   ```text
   AssertionError [ERR_ASSERTION]: SandboxRunner stripped AUTH_SECRET and NEXTAUTH_SECRET, breaking framework build
