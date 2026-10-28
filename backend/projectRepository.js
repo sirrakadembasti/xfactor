@@ -99,13 +99,14 @@ export async function createProject({ title, ownerUserId = null, env = process.e
     const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
 
     // 2. Senkron SQLite transaction
+    let chatInfo;
     db.exec('BEGIN IMMEDIATE;');
     try {
         insertProject.run(id, cleanTitle, 'planning', nowIso);
         if (ownerUserId) {
             insertOwner.run(id, ownerUserId, 'owner', nowIso);
         }
-        insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
+        chatInfo = insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
         db.exec('COMMIT;');
     } catch (error) {
         db.exec('ROLLBACK;');
@@ -120,7 +121,7 @@ export async function createProject({ title, ownerUserId = null, env = process.e
         isPinned: false,
         createdAt: nowIso,
         chatHistory: [
-            { role: 'model', parts: [{ text: initialWelcomeMessage }], created_at: nowIso }
+            { id: Number(chatInfo.lastInsertRowid), role: 'model', parts: [{ text: initialWelcomeMessage }], created_at: nowIso }
         ],
         plan: null,
         workflow: null
@@ -171,6 +172,7 @@ export function getProject(projectId) {
             : `Merhaba Boss! "${project.title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
         chatHistory = [{
             id: 0,
+            synthetic: true,
             role: 'model',
             parts: [{ text: welcomeText }],
             timestamp: formatDBDate(project.created_at),
@@ -780,15 +782,13 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
             `).run(contractId, state.id, nextRevision, contractJson, contractHash);
         }
 
-        const existingCount = db.prepare(
-            'SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?'
-        ).get(state.id).count;
-        const chatsToSave = state.chatHistory || [];
-        for (let i = existingCount; i < chatsToSave.length; i++) {
-            const chat = chatsToSave[i];
+        const chatsToSave = Array.isArray(state.chatHistory) ? state.chatHistory : [];
+        for (const chat of chatsToSave) {
+            if (!chat || chat.synthetic || (chat.id !== undefined && chat.id !== null)) continue;
             const text = chat?.parts?.[0]?.text || '';
             const createdAt = chat.created_at || new Date().toISOString();
-            insertChat.run(state.id, chat.role, text, createdAt);
+            const info = insertChat.run(state.id, chat.role || 'user', text, createdAt);
+            chat.id = Number(info.lastInsertRowid);
         }
         onTransaction?.();
         if (transactionOpen) {
