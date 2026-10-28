@@ -928,7 +928,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 await workflowLogEvent(wsHub, projectId, "Director", "start", "", `${domain.name} Director görevi devraldı. Şartname hazırlanıyor...`, directorId, "manager");
                 const directorAgent = getAgent('director');
                 const directorPrompt = directorAgent.buildPrompt(domain.name, domain.description, plan.talimatname);
-                const rawSpec = await callAgentLLM('director', directorPrompt, {
+                const rawSpec = await callAgent('director', directorPrompt, {
                     signal: abortController.signal,
                     taskId: `${directorId}.spec`,
                     onUsage: recordTokenUsage,
@@ -1010,7 +1010,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             dependencies: task.dependencies, requirementIds: task.requirementIds, managementCoverage: task.managementCoverage })),
                         missingRuntimePaths: missingPaths, missingCoverage, validationErrors };
                     const tlPrompt = tlAgent.buildPrompt(tl.name, tl.mission, directorSpec.altTalimatname, plan.requirements || [], planningContext);
-                    return await callAgentLLM('teamleader', tlPrompt, {
+                    return await callAgent('teamleader', tlPrompt, {
                         signal: abortController.signal,
                         taskId: `${tlId}.plan${attempt > 1 ? '.correction' : ''}`,
                         onUsage: recordTokenUsage,
@@ -1148,7 +1148,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                         // Coder LLM çağrısı
                         const coderAgent = getAgent('coder');
                         const coderPrompt = coderAgent.buildPrompt(taskId, task.title, taskDescription, task.targetFiles, projectContext);
-                        let coderOutput = await callAgentLLM('coder', coderPrompt, {
+                        let coderOutput = await callAgent('coder', coderPrompt, {
                             signal: abortController.signal,
                             taskId,
                             onUsage: recordTokenUsage,
@@ -1167,6 +1167,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                             coderPrompt,
                             projectContext,
                             maxRetries: 2,
+                            callAgent,
                             signal: abortController.signal,
                             onLLMDiagnostic: recordLLMDiagnostic,
                             onUsage: recordTokenUsage,
@@ -1395,7 +1396,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 await executeTesterAdvisoryRepairs({ projectDir, contractId: approvedResumeContract.id,
                     contractHash: approvedResumeContract.contract_hash, workflow: state.workflow,
                     repairIssues: pendingAdvisoryIssues, generatedProjectFiles, repairTargetFiles: [...repairTargetFiles],
-                    persistWorkflow: () => workflowWriteState(projectId, state), callAgent: callAgentLLM,
+                    persistWorkflow: () => workflowWriteState(projectId, state), callAgent,
                     signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic, sourceFence });
                 generatedProjectFiles.splice(0, generatedProjectFiles.length,
                     ...mergeGeneratedProjectFiles(generatedProjectFiles, await listProjectTree(projectDir)));
@@ -1415,7 +1416,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                     repairTargetFiles: [...repairTargetFiles],
                     plan,
                     state,
-                    callAgent: callAgentLLM,
+                    callAgent,
                     wsHub,
                     workflowLog: workflowLogEvent,
                     recordDiagnostic: recordLLMDiagnostic,
