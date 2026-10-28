@@ -21,7 +21,7 @@ import {
     getUserProjects,
     canViewProject
 } from '../auth.js';
-import { PROJECT_STATUS } from '../engine/stateMachine.js';
+import { PROJECT_STATUS, isRevisableProjectStatus } from '../engine/stateMachine.js';
 import { runProjectVerification } from '../verification/qualityPolicy.js';
 import { buildCompletionReport } from '../verification/reportGenerator.js';
 import { listArtifacts } from '../repositories/artifactRepository.js';
@@ -369,6 +369,7 @@ export function createProjectRouter({
         }
     });
     // 7. Manager Sohbeti
+    const activeChatRequests = new Set();
     router.post('/:id/chat', requireAuth, projectAccess('editor'), asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         const { message } = req.body;
@@ -376,6 +377,15 @@ export function createProjectRouter({
         if (!validateChatPayload({ message })) {
             return res.status(400).json({ error: 'Geçersiz mesaj içeriği.' });
         }
+
+        if (activeChatRequests.has(id)) {
+            return res.status(409).json({
+                error: 'Bu proje için devam eden bir Manager sohbet isteği var.',
+                code: 'CHAT_ALREADY_IN_PROGRESS'
+            });
+        }
+        activeChatRequests.add(id);
+        try {
 
         const state = await readProjectState(id);
         if (!state) return res.status(404).json({ error: "Project not found" });
@@ -482,15 +492,6 @@ export function createProjectRouter({
 
             const userTrimmed = (message || '').toLowerCase().trim();
             const isUserStarting = ['başla', 'basla', 'başlayalım', 'baslayalim', 'onay', 'onayla', 'onaylıyorum', 'onayliyorum', 'tamam', 'tamamdır', 'tamamdir', 'olur', 'inşa et', 'insa et', 'üret', 'uret', 'başlat', 'baslat', 'projeyi başlat', 'projeyi baslat', 'üretime geç', 'uretime gec', 'yap', 'yapalım', 'hadi'].some(kw => userTrimmed === kw || userTrimmed.startsWith(kw + ' ') || userTrimmed.endsWith(' ' + kw));
-            const revisableStatuses = new Set([
-                PROJECT_STATUS.PLANNING,
-                PROJECT_STATUS.PENDING_APPROVAL,
-                PROJECT_STATUS.IMPLEMENTATION_FINISHED,
-                PROJECT_STATUS.CAPABILITY_BLOCKED,
-                PROJECT_STATUS.PAUSED,
-                PROJECT_STATUS.VERIFICATION_FAILED,
-                PROJECT_STATUS.FAILED
-            ]);
             const remediationKeywords = [
                 'talimat ver', 'talimat', 'düzelt', 'duzelt', 'onar', 'hatayı çöz', 'hatayi coz',
                 'devam et', 'resume', 'tamir et', 'remediation', 'çöz', 'coz', 'düzeltme'
@@ -500,12 +501,12 @@ export function createProjectRouter({
             const isPlanReady = Boolean(parsedPlan);
             let publishedPlan = false;
 
-            if (planResult.isPatch && !revisableStatuses.has(freshState.status)) {
+            if (planResult.isPatch && !isRevisableProjectStatus(freshState.status)) {
                 return res.status(409).json({ code: 'MANAGER_PLAN_PATCH_INVALID', error: 'Project is not accepting a revised plan.' });
             }
 
 
-            if (isPlanReady && revisableStatuses.has(freshState.status)) {
+            if (isPlanReady && isRevisableProjectStatus(freshState.status) && canTransitionProjectStatus(freshState.status, PROJECT_STATUS.PENDING_APPROVAL)) {
                 const draftPlan = parsedPlan;
                 const { createContractRevision } = await import('../contracts/projectContract.js');
                 // Synchronous recheck/publication: a changed approved base cannot be overwritten by an in-flight patch.
@@ -544,6 +545,9 @@ export function createProjectRouter({
         const finalResponseState = await readProjectState(id);
         if (!planResult.isPatch && explicitApproval && publishedPlan && finalResponseState?.status === PROJECT_STATUS.PENDING_APPROVAL) return approveFromChat();
         res.json(finalResponseState);
+        } finally {
+            activeChatRequests.delete(id);
+        }
     }));
 
     // 8. Planı Onayla ve Başlat

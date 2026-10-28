@@ -102,3 +102,18 @@ export function canTransitionProjectStatus(fromStatus, toStatus) {
     return canTransitionProject(fromStatus, toStatus);
 }
 
+export const REVISABLE_PROJECT_STATUSES = Object.freeze(new Set([
+    PROJECT_STATUS.PLANNING,
+    PROJECT_STATUS.PENDING_APPROVAL,
+    PROJECT_STATUS.PAUSED,
+    PROJECT_STATUS.FAILED,
+    PROJECT_STATUS.VERIFICATION_FAILED,
+    PROJECT_STATUS.IMPLEMENTATION_FINISHED,
+    PROJECT_STATUS.COMPLETED,
+]));
+
+export function isRevisableProjectStatus(status) {
+    return REVISABLE_PROJECT_STATUSES.has(status);
+}
+
+
