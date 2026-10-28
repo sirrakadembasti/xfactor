@@ -827,7 +827,7 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
                 const prismaCalls = Array.from(file.content.matchAll(/prisma\.([a-zA-Z0-9_]+)\.(findMany|findUnique|findFirst|create|update|delete|upsert|count)/g));
                 for (const call of prismaCalls) {
                     const usedModel = call[1].toLowerCase();
-                    if (!definedModels.has(usedModel) && usedModel !== '$queryraw' && usedModel !== '$executeRaw') {
+                    if (!definedModels.has(usedModel) && usedModel !== '$queryraw' && usedModel !== '$executeraw' && usedModel !== '$transaction' && usedModel !== '$connect' && usedModel !== '$disconnect') {
                         recordIssue(
                             issues,
                             issueDetails,
@@ -915,13 +915,42 @@ export function runDeterministicProjectAudit(generatedFiles = []) {
         'next/router', 'next/link', 'next/image', 'next/head', 'react', 'react-dom'
     ]);
 
+function extractModuleSpecifiers(file, scriptParseCache) {
+    const record = getScriptParseRecord(file, scriptParseCache);
+    if (record?.ast) {
+        const specifiers = [];
+        const visit = (node) => {
+            if (!node || typeof node !== 'object') return;
+            if (node.type === 'ImportDeclaration' && node.source?.value) {
+                specifiers.push(node.source.value);
+            } else if ((node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.source?.value) {
+                specifiers.push(node.source.value);
+            } else if (node.type === 'CallExpression' && node.callee?.name === 'require' && node.arguments?.[0]?.value) {
+                specifiers.push(node.arguments[0].value);
+            }
+            for (const key of Object.keys(node)) {
+                if (key === 'loc' || key === 'comments' || key === 'extra') continue;
+                const child = node[key];
+                if (Array.isArray(child)) {
+                    for (const c of child) visit(c);
+                } else if (child && typeof child === 'object') {
+                    visit(child);
+                }
+            }
+        };
+        visit(record.ast);
+        return specifiers;
+    }
+    const matches = Array.from(file.content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g));
+    return matches.map(m => m[1]).filter(Boolean);
+}
+
     for (const file of generatedFiles) {
         if (file.path && (file.path.endsWith('.js') || file.path.endsWith('.jsx') || file.path.endsWith('.ts') || file.path.endsWith('.tsx')) && typeof file.content === 'string') {
-            const importMatches = Array.from(file.content.matchAll(/(?:import\s+(?:[\s\S]*?from\s+)?|require\s*\(\s*)['"]([^'"]+)['"]/g));
+            const specifiers = extractModuleSpecifiers(file, scriptParseCache);
             const currentFileDir = path.dirname(file.path).replace(/\\/g, '/');
 
-            for (const match of importMatches) {
-                const specifier = match[1];
+            for (const specifier of specifiers) {
                 if (!specifier) continue;
                 if (file.path === 'next-env.d.ts' && specifier.startsWith('./.next/types/')) continue;
                 if (specifier.startsWith('node:') || isBuiltin(specifier)) continue;

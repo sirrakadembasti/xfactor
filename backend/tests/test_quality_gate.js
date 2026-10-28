@@ -97,6 +97,32 @@ test("1.2 Geçerli Prisma ve API route uyumu başarılı geçmeli", () => {
     assert.strictEqual(audit.passed, true, "Geçerli modellerde audit başarılı olmalı");
 });
 
+test("1.2a AGT-4: prisma.$executeRaw ve yorum satırındaki importlar audit'i bozmamalı", () => {
+    const files = [
+        {
+            path: 'prisma/schema.prisma',
+            content: 'datasource db { provider = "sqlite" url = env("DATABASE_URL") }\nmodel User { id String @id }'
+        },
+        {
+            path: 'package.json',
+            content: '{"name": "app", "version": "1.0.0", "dependencies": { "express": "^4.19.0" }}'
+        },
+        {
+            path: 'src/api/users.ts',
+            content: `// Note: do not import something from 'missing-pkg-12345';
+import express from 'express';
+export async function runQuery(prisma: any) {
+    await prisma.$executeRaw.findMany();
+    await prisma.$executeRaw("DELETE FROM User");
+}`
+        }
+    ];
+
+    const audit = runDeterministicProjectAudit(files);
+    assert.strictEqual(audit.passed, true, `Audit geçmeli ama şu hatalar çıktı: ${audit.issues.join('; ')}`);
+    assert.strictEqual(audit.issues.length, 0);
+});
+
 test("1.3 Bozuk JSON dosyaları deterministik olarak yakalanmalı", () => {
     const invalidJsonFiles = [
         { path: 'package.json', content: '{"name": "broken", incomplete' }
