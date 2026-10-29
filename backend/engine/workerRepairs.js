@@ -189,6 +189,7 @@ export async function executeWorkerRepairs({ projectDir, contract, batch, workfl
             dependencyTargetFiles: group.dependencies, targetFiles: [group.target] });
         if (currentContext.includes('OMITTED CONTEXT') || group.dependencies.some(file => !currentContext.includes(`File: ${file} (`))) stop('Coder context omission.');
         group.reservation.contextHash = digest(currentContext);
+        group.reservation.inputSignature = digest([contract.id, contract.contract_hash, group.owner.spec, group.target, group.currentHash, group.fingerprints, digest(currentContext)]);
         group.reservation.baselineSnapshotHash = snapshotHash(expected);
         await persistWorkflow();
         assertCurrent();
