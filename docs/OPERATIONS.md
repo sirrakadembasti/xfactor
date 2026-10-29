@@ -64,13 +64,13 @@ dispatch; an indeterminate consumed reservation stops for revision. Do not clear
 the ledger or delete failure evidence to bypass an exhausted/unknown outcome.
 Dependency transport failure and expired verification produce an explicitly
 unauthenticated controller blocker, not fabricated worker evidence. Details and
-executed results are in the [current completion record](audits/x-agents-completion-2026-10-22.md).
+executed results are in the [Phase 2 completion report](roadmap-reports/faz-2-rapor.md).
 
 Validated Teamleader plans project task/requirement links transactionally into
 the current approved contract's impact index under its workflow lease. This
 projection is not runtime evidence, does not rewrite checkpoints or historical
 contracts, and is refreshed during normal planning/resume rather than through
-a production-wide backfill. See the [architecture audit](audits/x-agents-architecture-2026-10-22.md)
+a production-wide backfill. See the [architectural roadmap](roadmap-reports/mimari-yol-haritasi.md)
 for the baseline evidence and verification results.
 
 ## 1. Deployment boundary: Split architecture (Web & Execution Worker)
@@ -295,7 +295,7 @@ contract test `backend/tests/test_p8_ci_contract.js`:
   CPU, memory and PID limits.
 - `production-image` job: declares `needs: test`, contains no
   `continue-on-error`, and proves the production HTTPS container surface.
-- `local-worker` job: Windows, Linux ve macOS matrisi üzerinde sabit sürümlü araçları kurar, yerel entegrasyonu çalıştırır, platform paketini üretir ve gerçek paket/kapanış kabulünü doğrular. Docker gerektirmez. Matrisin tanımlanması bu platformlarda CI'nın geçtiği anlamına gelmez; ilk paket kabulü [1 Ekim raporunda](LOCAL-WORKER-VALIDATION-2026-10-01.md), son Windows uygulama üretim kanıtı [21 Ekim raporundadır](LOCAL-WORKER-VALIDATION-2026-10-21.md).
+- `local-worker` job: Windows, Linux ve macOS matrisi üzerinde sabit sürümlü araçları kurar, yerel entegrasyonu çalıştırır, platform paketini üretir ve gerçek paket/kapanış kabulünü doğrular. Docker gerektirmez. Matrisin tanımlanması bu platformlarda CI'nın geçtiği anlamına gelmez; paket ve entegrasyon doğrulama kapsamı [yerel worker paket kılavuzunda](LOCAL-WORKER-PACKAGE.md) ve [Faz 4 raporundadır](roadmap-reports/faz-4-rapor.md).
 
 ## 10. Yerel worker işletimi
 

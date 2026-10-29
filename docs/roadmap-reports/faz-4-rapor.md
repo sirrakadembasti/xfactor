@@ -30,7 +30,7 @@ Faz 4 kapsamında mimarideki 4 devasa "Tanrı Modül" (God Module) parçalanarak
 | `backend/engine/workflow.js` | 1.954 | 1.678 | **-276 satır** | `stages/repairStage.js`<br>`stages/verificationStage.js` | Statik onarım döngüsü, advisory onarımlar ve lockfile hazırlığı |
 | `backend/engine/codeGenerator.js` | 1.344 | 1.119 | **-225 satır** | `templates/dockerTemplates.js`<br>`templates/prismaTemplates.js` | Dockerfile/.dockerignore şablonları, Prisma/DB köprüleri, User modeli |
 | `backend/routes/projectRoutes.js` | 1.377 | 957 | **-420 satır** | `routes/projectObservabilityRoutes.js`<br>`routes/projectTraceabilityRoutes.js` | Gözlemlenebilirlik (runs, logs, repair-issues, metrics), izlenebilirlik (impact, preview, download) |
-| `backend/db.js` | 880 | 250 | **-630 satır** | `db/migrations.js` | 23 aşamalı DB migrasyon şeması, columnExists yardımcısı, assertWorkflowLease tekilleştirmesi |
+| `backend/db.js` | 880 | 250 | **-630 satır** | `db/migrations.js` | 17 aşamalı DB migrasyon şeması, columnExists yardımcısı, assertWorkflowLease tekilleştirmesi |
 | **TOPLAM** | **5.555** | **4.004** | **-1.551 satır** | **7 yeni alt modül** | **Tamamen modüler, test edilebilir ve izole mimari** |
 
 ---
@@ -89,7 +89,7 @@ Faz 4 kapsamında mimarideki 4 devasa "Tanrı Modül" (God Module) parçalanarak
    - `jobBoundary.test.js` içinde `t.after()` bloğuna bekleyen `executeWaitResolvers` sözlerini (Promise) serbest bırakacak temizlik eklendi; alt test 12'deki `delayedServer` ve `delayedStore` `try / finally` bloğuna alındı.
    - `scripts/test-worker.mjs` koşucusuna birim testlerde `--test-timeout=60000` (60 sn), entegrasyon testlerinde (`--local-integration` / `--docker-integration`) `--test-timeout=600000` (10 dk) üst zaman aşımı eklendi.
 3. **Backend Test Koşucusu Şablon DB Klonlama ve İşçi Havuzu (`backend/tests/test_runner.js` & `backend/tests/isolatedDb.js`):**
-   - Her alt süreçte 23 SQLite migrasyonunu sıfırdan çalıştırmak yerine `template.db` bir kez hazırlanıp `fs.copyFile` / `fs.copyFileSync` (`XFACTOR_TEMPLATE_DB_PATH`) ile klonlanacak şekilde optimize edildi ve `XFACTOR_TEST_CONCURRENCY` (varsayılan 2 paralel işçi) desteği eklendi.
+   - Her alt süreçte 17 SQLite migrasyonunu sıfırdan çalıştırmak yerine `template.db` bir kez hazırlanıp `fs.copyFile` / `fs.copyFileSync` (`XFACTOR_TEMPLATE_DB_PATH`) ile klonlanacak şekilde optimize edildi ve `XFACTOR_TEST_CONCURRENCY` (varsayılan 2 paralel işçi) desteği eklendi.
    - `backend/tests/test_p7_approve_state.js` içindeki sıkı `5000ms` onay/dispatch zamanlayıcısı paralel G/Ç yükü altında yanlış-pozitif zaman aşımı üretmemesi için `15000ms` seviyesine çıkarıldı.
 4. **Vitest Önbellek İzolasyonu ve Satır Sonu Standardizasyonu (`frontend/vitest.config.js` & `.gitattributes`):**
    - `frontend/vitest.config.js` içine `cacheDir: path.join(os.tmpdir(), 'xfactor-vitest-cache')` eklendi.

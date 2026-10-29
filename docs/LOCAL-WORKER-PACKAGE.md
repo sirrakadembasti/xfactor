@@ -48,9 +48,9 @@ Each job owns its HOME, npmrc files, npm logs, temporary directories and applica
 
 ## Diagnose
 
-Recorded Windows acceptance: 129 source worker tests passed, and the real standalone package completed its 33-check workflow, four Chromium role journeys, active-job shutdown and post-job manifest verification. See [the dated validation report](LOCAL-WORKER-VALIDATION-2026-10-01.md) for evidence and limits. This does not certify Linux/macOS runs; each target platform must pass its own CI and package acceptance.
+Recorded Windows acceptance: 129 source worker tests passed, and the real standalone package completed its 33-check workflow, four Chromium role journeys, active-job shutdown and post-job manifest verification. See the [Phase 4 completion report](roadmap-reports/faz-4-rapor.md) for current verification metrics and limits. This does not certify Linux/macOS runs; each target platform must pass its own CI and package acceptance.
 
-The later [21 October production validation](LOCAL-WORKER-VALIDATION-2026-10-21.md) records a complete hotel application generated and verified through the Docker-free Windows worker. It supplements the earlier package acceptance; it does not replace platform-specific package tests or certify Linux/macOS. Its delivered ZIP was not extracted or executed after delivery.
+The 21 October production validation recorded a complete hotel application generated and verified through the Docker-free Windows worker. It supplements the earlier package acceptance; it does not replace platform-specific package tests or certify Linux/macOS. Its delivered ZIP was not extracted or executed after delivery.
 
 Worker job diagnostics retain at most the latest 64 commands with phase, executable name, timing, exit code and timeout status. Raw arguments, environment variables and command output are omitted. These lease-scoped records help locate a stalled phase; only validated check evidence and a completion receipt can authorize a verified artifact.
 

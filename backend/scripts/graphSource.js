@@ -186,7 +186,7 @@ export function assertCuratedNodesExist(curatedNodes, sourceNodes) {
 export async function buildSourceGraph(root) {
   const files = new Set();
   for (const dir of SOURCE_DIRS) await collectFiles(root, dir, files);
-  for (const file of ['README.md', 'kullanici-kilavuzu.md', 'playwright.config.js']) {
+  for (const file of ['README.md', 'CLAUDE.md', 'playwright.config.js']) {
     try { await fs.access(path.join(root, file)); files.add(file); } catch {}
   }
   const sorted = [...files].sort();

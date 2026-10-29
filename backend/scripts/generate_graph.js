@@ -56,21 +56,17 @@ async function extractCodeGraph() {
         { id: 'x-agents/coder.md', label: 'x-agents/coder.md', desc: 'Coder Ajanı bileşen kompozisyonu ve kodlama kuralları' },
         { id: 'x-agents/reviewer.md', label: 'x-agents/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
         { id: 'x-agents/tester.md', label: 'x-agents/tester.md', desc: 'Tester statik inceleme ve veto talimatları; bağımsız worker çalışma kanıtı üretir' },
-        { id: 'docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md', label: '2026-09-16 Orkestrasyon Planı', desc: 'Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı' },
-        { id: 'docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md', label: '2026-09-17 İyileştirme Rafine Planı', desc: 'Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği' },
-        { id: 'docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md', label: '2026-09-17 Pragmatik Auth Standart Planı', desc: 'Sade auth, seed ve login esneklik planı' },
-        { id: 'docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md', label: '2026-09-18 Proje Durumu Canlandırma Planı', desc: 'Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı' },
-        { id: 'docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md', label: '2026-09-19 Doğru Durum ve Artefakt Planı', desc: 'Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı' },
-        { id: 'docs/superpowers/specs/2026-09-19-chat-action-audit-design.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Tasarımı', desc: 'Başarılı iş akışı ve yardımcı buton aksiyonlarının kalıcı sohbet denetim izi tasarımı' },
-        { id: 'docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı', desc: 'İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı' },
-        { id: 'docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md', label: '2026-09-19 Kalite Paneli Tasarımı', desc: 'Kalite paneli mimari Graphify entegrasyonu ve kanıt zinciri tasarımı' },
-        { id: 'docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md', label: '2026-09-19 Kalite Paneli Uygulama Planı', desc: 'Kalite paneli Graphify düğüm, bağlantı ve ağaç uygulama planı' },
+        { id: 'README.md', label: 'README.md', desc: 'XFactor platform mimarisi, kurulum ve doğrulama ana kılavuzu' },
+        { id: 'CLAUDE.md', label: 'CLAUDE.md', desc: 'XFactor proje anayasası, mimari kurallar, P1-P5 değişmezleri ve oturum güncellik rehberi' },
+        { id: 'docs/kullanici-kilavuzu.md', label: 'docs/kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' },
+        { id: 'docs/OPERATIONS.md', label: 'docs/OPERATIONS.md', desc: 'Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu' },
+        { id: 'docs/ARTIFACT-LIFECYCLE.md', label: 'docs/ARTIFACT-LIFECYCLE.md', desc: 'Proje ve doğrulanmış ZIP artefakt yaşam döngüsü, envanter ve karantina kılavuzu' },
+        { id: 'docs/LOCAL-WORKER-PACKAGE.md', label: 'docs/LOCAL-WORKER-PACKAGE.md', desc: 'Docker olmadan bağımsız yerel execution worker kurulum ve paketleme kılavuzu' },
+        { id: 'docs/roadmap-reports/mimari-yol-haritasi.md', label: 'Mimari İyileştirme Yol Haritası (Faz 1–4)', desc: '28 mimari bulgu, TDD kuralları ve 4 fazlık dönüşüm ana planı' },
         { id: 'docs/roadmap-reports/faz-1-rapor.md', label: 'Faz 1 Tamamlanma Raporu (VER-1..5, DAT-1..5)', desc: 'Sözleşme/durum bütünlüğü, fail-closed worker doğrulaması ve kanıt zinciri kapanış raporu' },
         { id: 'docs/roadmap-reports/faz-2-rapor.md', label: 'Faz 2 Tamamlanma Raporu (ENG-1..7, AGT-1..5)', desc: 'Orkestrasyon motoru, lease güvenliği, 7-tuple worker onarımı ve ajan/LLM katmanı kapanış raporu' },
         { id: 'docs/roadmap-reports/faz-3-rapor.md', label: 'Faz 3 Tamamlanma Raporu (FE-1..4)', desc: 'Frontend durum yönetimi, kronolojik DAG yerleşimi ve durum rozetleri kapanış raporu' },
-        { id: 'docs/roadmap-reports/faz-4-rapor.md', label: 'Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)', desc: 'Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu' },
-        { id: 'docs/OPERATIONS.md', label: 'OPERATIONS.md', desc: 'Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu' },
-        { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
+        { id: 'docs/roadmap-reports/faz-4-rapor.md', label: 'Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)', desc: 'Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu' }
       ];
 
     docs.forEach(d => {

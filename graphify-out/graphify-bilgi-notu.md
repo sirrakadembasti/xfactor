@@ -25,7 +25,7 @@ Harita `backend`, `frontend`, `execution`, `e2e`, `scripts`, `docs`, `x-agents` 
 - `execution/`: bağımsız worker, yerel çalışma profili, gerçek Chromium/API testleri ve sınırlı komut teşhisleri.
 - `frontend/src/components/`: proje oluşturma diyaloğu, sohbet ve kalite geçmişi/ayrıntı ekranları.
 
-Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Gerçek otel üretiminin sonucunu [21 Ekim 2026 kabul raporunda](../docs/LOCAL-WORKER-VALIDATION-2026-10-21.md), kullanım adımlarını [kullanıcı kılavuzunda](../kullanici-kilavuzu.md) okuyun.
+Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Yerel worker doğrulama kapsamını [yerel worker paket kılavuzunda](../docs/LOCAL-WORKER-PACKAGE.md), kullanım adımlarını [kullanıcı kılavuzunda](../docs/kullanici-kilavuzu.md) okuyun.
 
 ## Ayrı Python Graphify aracı
 
@@ -56,6 +56,6 @@ XFactor platformunda mimari yol haritası (`mimari-yol-haritasi.md`) kapsamında
    - `workflow.js`: Onarım döngüleri `backend/engine/stages/repairStage.js` modülüne, paket kilidi hazırlığı `backend/engine/stages/verificationStage.js` modülüne taşındı. `buildValidator.js` regex yerine AST tabanlı tip denetimine dönüştürüldü (`.toLowerCase()` kontrolü yalnız sayısal literal ve `TSNumberKeyword` tanımlayıcılarla sınırlandırıldı).
    - `codeGenerator.js`: Çok aşamalı Dockerfile/`.dockerignore` şablonları `backend/engine/templates/dockerTemplates.js` modülüne, Prisma/DB çift köprü ve auth şablonları `backend/engine/templates/prismaTemplates.js` modülüne taşındı.
    - `projectRoutes.js`: Gözlemlenebilirlik uç noktaları `backend/routes/projectObservabilityRoutes.js` modülüne, izlenebilirlik ve artefakt indirme uç noktaları `backend/routes/projectTraceabilityRoutes.js` modülüne taşındı; `graphSource.js` rota miras mekanizmasıyla (`mountsByFile`) AST bağlantıları korundu.
-   - `db.js`: Mükerrer `assertWorkflowLease` silinerek `workflowAttempts.js` ile birleştirildi; 23 aşamalı `MIGRATIONS` dizisi `backend/db/migrations.js` modülüne taşındı.
+   - `db.js`: Mükerrer `assertWorkflowLease` silinerek `workflowAttempts.js` ile birleştirildi; 17 aşamalı `MIGRATIONS` dizisi `backend/db/migrations.js` modülüne taşındı.
    - Test/Doğrulama Altyapısı: `backend/tests/test_runner.js` ve `isolatedDb.js` şablon DB klonlama (`XFACTOR_TEMPLATE_DB_PATH`) ve paralel işçi havuzu (`XFACTOR_TEST_CONCURRENCY`) ile hızlandırıldı; `execution/tests/jobBoundary.test.js` ve `scripts/test-worker.mjs` kilitlenmeye dayanıklı zaman aşımı sınırlarıyla (`60s` birim / `600s` entegrasyon) güçlendirildi.
    - Tüm taşınan fonksiyonlar orijinal modüllerden sıfır kırılma (Zero-Breakage Re-Exports) garantisiyle dışa aktarılmaya devam etmektedir. Kapanış doğrulaması: **148/148 backend süiti**, **156/156 worker birim testi**, **159/159 yerel worker entegrasyon testi (`npm run test:local-worker`)** ve **130/130 frontend birim testi (14 dosya) + üretim build'i (1.702 modül)** sıfır hatayla geçti. Ayrıntılı kanıt raporları: [Faz 1](../docs/roadmap-reports/faz-1-rapor.md), [Faz 2](../docs/roadmap-reports/faz-2-rapor.md), [Faz 3](../docs/roadmap-reports/faz-3-rapor.md), [Faz 4](../docs/roadmap-reports/faz-4-rapor.md).

@@ -71,92 +71,72 @@
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md",
-      "label": "2026-09-16 Orkestrasyon Planı",
+      "id": "README.md",
+      "label": "README.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-16-orchestration-remediation-plan.md",
-      "description": "Disk-DB senkronizasyonu, şeffaf hata loglama ve canlı DAG planı",
+      "file": "README.md",
+      "description": "XFactor platform mimarisi, kurulum ve doğrulama ana kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md",
-      "label": "2026-09-17 İyileştirme Rafine Planı",
+      "id": "CLAUDE.md",
+      "label": "CLAUDE.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-17-remediation-refinement-plan.md",
-      "description": "Menü düzeni, revizyon kilidi, host fallback ve dummy düğüm temizliği",
+      "file": "CLAUDE.md",
+      "description": "XFactor proje anayasası, mimari kurallar, P1-P5 değişmezleri ve oturum güncellik rehberi",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
-      "label": "2026-09-17 Pragmatik Auth Standart Planı",
+      "id": "docs/kullanici-kilavuzu.md",
+      "label": "docs/kullanici-kilavuzu.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-17-pragmatic-auth-standard-plan.md",
-      "description": "Sade auth, seed ve login esneklik planı",
+      "file": "docs/kullanici-kilavuzu.md",
+      "description": "A'dan Z'ye operasyon ve kullanıcı kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
-      "label": "2026-09-18 Proje Durumu Canlandırma Planı",
+      "id": "docs/OPERATIONS.md",
+      "label": "docs/OPERATIONS.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-18-project-state-rehydration-plan.md",
-      "description": "Mevcut disk projelerini veritabanında canlandırma ve geçmiş log kurtarma planı",
+      "file": "docs/OPERATIONS.md",
+      "description": "Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
-      "label": "2026-09-19 Doğru Durum ve Artefakt Planı",
+      "id": "docs/ARTIFACT-LIFECYCLE.md",
+      "label": "docs/ARTIFACT-LIFECYCLE.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-19-accurate-project-state-and-artifact-plan.md",
-      "description": "Gerçek proje durumu tespiti ve doğrulanmış ZIP artefakt planı",
+      "file": "docs/ARTIFACT-LIFECYCLE.md",
+      "description": "Proje ve doğrulanmış ZIP artefakt yaşam döngüsü, envanter ve karantina kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
-      "label": "2026-09-19 Sohbet Aksiyon Denetim İzi Tasarımı",
+      "id": "docs/LOCAL-WORKER-PACKAGE.md",
+      "label": "docs/LOCAL-WORKER-PACKAGE.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-19-chat-action-audit-design.md",
-      "description": "Başarılı iş akışı ve yardımcı buton aksiyonlarının kalıcı sohbet denetim izi tasarımı",
+      "file": "docs/LOCAL-WORKER-PACKAGE.md",
+      "description": "Docker olmadan bağımsız yerel execution worker kurulum ve paketleme kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
-      "label": "2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı",
+      "id": "docs/roadmap-reports/mimari-yol-haritasi.md",
+      "label": "Mimari İyileştirme Yol Haritası (Faz 1–4)",
       "type": "Document",
       "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md",
-      "description": "İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
-      "label": "2026-09-19 Kalite Paneli Tasarımı",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md",
-      "description": "Kalite paneli mimari Graphify entegrasyonu ve kanıt zinciri tasarımı",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
-      "label": "2026-09-19 Kalite Paneli Uygulama Planı",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md",
-      "description": "Kalite paneli Graphify düğüm, bağlantı ve ağaç uygulama planı",
+      "file": "docs/roadmap-reports/mimari-yol-haritasi.md",
+      "description": "28 mimari bulgu, TDD kuralları ve 4 fazlık dönüşüm ana planı",
       "val": 1,
       "provenance": "curated"
     },
@@ -197,26 +177,6 @@
       "group": "docs",
       "file": "docs/roadmap-reports/faz-4-rapor.md",
       "description": "Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/OPERATIONS.md",
-      "label": "OPERATIONS.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/OPERATIONS.md",
-      "description": "Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "kullanici-kilavuzu.md",
-      "label": "kullanici-kilavuzu.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "kullanici-kilavuzu.md",
-      "description": "A'dan Z'ye operasyon ve kullanıcı kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
@@ -1159,16 +1119,6 @@
       "description": "Üretim HTTPS/WSS origin, CSP ve operasyonel kabul testi",
       "val": 5.5,
       "provenance": "curated"
-    },
-    {
-      "id": "README.md",
-      "label": "README.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "README.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
     },
     {
       "id": "backend/artifactInventory.js",
@@ -3111,226 +3061,6 @@
       "provenance": "ast"
     },
     {
-      "id": "docs/ARTIFACT-LIFECYCLE.md",
-      "label": "ARTIFACT-LIFECYCLE.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/ARTIFACT-LIFECYCLE.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/AUDIT-REMEDIATION-2026-09-30.md",
-      "label": "AUDIT-REMEDIATION-2026-09-30.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/AUDIT-REMEDIATION-2026-09-30.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/DOCKER-LOCAL-PROFILE.md",
-      "label": "DOCKER-LOCAL-PROFILE.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/DOCKER-LOCAL-PROFILE.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/DOCKER-VALIDATION-2026-10-21.md",
-      "label": "DOCKER-VALIDATION-2026-10-21.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/DOCKER-VALIDATION-2026-10-21.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/EMLAK-URETIM-OLAYI-2026-09-28.md",
-      "label": "EMLAK-URETIM-OLAYI-2026-09-28.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/EMLAK-URETIM-OLAYI-2026-09-28.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/LLM-RUNTIME-DIAGNOSTICS-2026-10-02.md",
-      "label": "LLM-RUNTIME-DIAGNOSTICS-2026-10-02.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/LLM-RUNTIME-DIAGNOSTICS-2026-10-02.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/LOCAL-WORKER-PACKAGE.md",
-      "label": "LOCAL-WORKER-PACKAGE.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/LOCAL-WORKER-PACKAGE.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/LOCAL-WORKER-VALIDATION-2026-10-01.md",
-      "label": "LOCAL-WORKER-VALIDATION-2026-10-01.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/LOCAL-WORKER-VALIDATION-2026-10-01.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/LOCAL-WORKER-VALIDATION-2026-10-21.md",
-      "label": "LOCAL-WORKER-VALIDATION-2026-10-21.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/LOCAL-WORKER-VALIDATION-2026-10-21.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/REPOSITORY-CLEANUP.md",
-      "label": "REPOSITORY-CLEANUP.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/REPOSITORY-CLEANUP.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/WORKER-PYTHON-NODE-BUN-RESEARCH.md",
-      "label": "WORKER-PYTHON-NODE-BUN-RESEARCH.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/WORKER-PYTHON-NODE-BUN-RESEARCH.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/kutuphane-takip-sistemi-2-audit.md",
-      "label": "kutuphane-takip-sistemi-2-audit.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/kutuphane-takip-sistemi-2-audit.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/library-execution-ledger.md",
-      "label": "library-execution-ledger.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/library-execution-ledger.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/library-product-static.md",
-      "label": "library-product-static.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/library-product-static.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/library-provenance.md",
-      "label": "library-provenance.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/library-provenance.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/library-xfactor-trace.md",
-      "label": "library-xfactor-trace.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/library-xfactor-trace.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-architecture-2026-10-22.md",
-      "label": "x-agents-architecture-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-architecture-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-completion-2026-10-22.md",
-      "label": "x-agents-completion-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-completion-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-current-inventory-2026-10-22.md",
-      "label": "x-agents-current-inventory-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-current-inventory-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-markdown-inventory-2026-10-22.md",
-      "label": "x-agents-markdown-inventory-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-markdown-inventory-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-trust-2026-10-22.md",
-      "label": "x-agents-trust-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-trust-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/audits/x-agents-workflow-2026-10-22.md",
-      "label": "x-agents-workflow-2026-10-22.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/audits/x-agents-workflow-2026-10-22.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
       "id": "docs/faz -arsiv/faz.md",
       "label": "faz.md",
       "type": "Document",
@@ -3646,286 +3376,6 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/faz -arsiv/implementation-plans/14-P9-audit-remediation.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-18-chat-input-and-history-fix-plan.md",
-      "label": "2026-09-18-chat-input-and-history-fix-plan.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-18-chat-input-and-history-fix-plan.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-18-ui-ux-enhancement-plan.md",
-      "label": "2026-09-18-ui-ux-enhancement-plan.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-18-ui-ux-enhancement-plan.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-20-docker-fallback-plan2.md",
-      "label": "2026-09-20-docker-fallback-plan2.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-20-docker-fallback-plan2.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-21-zip-only-completion.md",
-      "label": "2026-09-21-zip-only-completion.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-21-zip-only-completion.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-22-deep-graph-map-plan.md",
-      "label": "2026-09-22-deep-graph-map-plan.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-22-deep-graph-map-plan.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-22-resume-visibility.md",
-      "label": "2026-09-22-resume-visibility.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-22-resume-visibility.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-22-verification-and-operations-hardening-plan.md",
-      "label": "2026-09-22-verification-and-operations-hardening-plan.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-22-verification-and-operations-hardening-plan.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-27-library-delivery-audit.md",
-      "label": "2026-09-27-library-delivery-audit.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-27-library-delivery-audit.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-27-production-quality-gates.md",
-      "label": "2026-09-27-production-quality-gates.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-27-production-quality-gates.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-28-llm-management.md",
-      "label": "2026-09-28-llm-management.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-28-llm-management.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-30-audit-remediation.md",
-      "label": "2026-09-30-audit-remediation.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-30-audit-remediation.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-30-docker-socket-repair.md",
-      "label": "2026-09-30-docker-socket-repair.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-30-docker-socket-repair.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-09-30-local-worker.md",
-      "label": "2026-09-30-local-worker.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-09-30-local-worker.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-01-llm-management-plugin.md",
-      "label": "2026-10-01-llm-management-plugin.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-01-llm-management-plugin.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-01-repository-cleanup-refactor.md",
-      "label": "2026-10-01-repository-cleanup-refactor.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-01-repository-cleanup-refactor.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-01-x-agents-separation.md",
-      "label": "2026-10-01-x-agents-separation.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-01-x-agents-separation.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-02-manager-chat-approval.md",
-      "label": "2026-10-02-manager-chat-approval.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-02-manager-chat-approval.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-18-hotel-production-to-zip.md",
-      "label": "2026-10-18-hotel-production-to-zip.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-18-hotel-production-to-zip.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-21-artifact-lifecycle.md",
-      "label": "2026-10-21-artifact-lifecycle.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-21-artifact-lifecycle.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-22-agent-architecture-audit.md",
-      "label": "2026-10-22-agent-architecture-audit.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-22-agent-architecture-audit.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/plans/2026-10-22-agent-architecture-completion.md",
-      "label": "2026-10-22-agent-architecture-completion.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/plans/2026-10-22-agent-architecture-completion.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
-      "label": "2026-09-21-zip-only-completion-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-21-zip-only-completion-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-22-deep-graph-map-design.md",
-      "label": "2026-09-22-deep-graph-map-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-22-deep-graph-map-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-22-resume-visibility-design.md",
-      "label": "2026-09-22-resume-visibility-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-22-resume-visibility-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-22-verification-and-operations-hardening-design.md",
-      "label": "2026-09-22-verification-and-operations-hardening-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-22-verification-and-operations-hardening-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-27-management-discovery-quality-design.md",
-      "label": "2026-09-27-management-discovery-quality-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-27-management-discovery-quality-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-28-llm-management-design.md",
-      "label": "2026-09-28-llm-management-design.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-28-llm-management-design.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/superpowers/specs/2026-09-30-portable-worker-options.md",
-      "label": "2026-09-30-portable-worker-options.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/superpowers/specs/2026-09-30-portable-worker-options.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -85501,7 +84951,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 77
+        "line": 73
       }
     },
     {
@@ -85511,7 +84961,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 79
+        "line": 75
       }
     },
     {
@@ -85521,7 +84971,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 319
+        "line": 315
       }
     },
     {
@@ -85531,7 +84981,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 320
+        "line": 316
       }
     },
     {
@@ -85541,7 +84991,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 324
+        "line": 320
       }
     },
     {
@@ -85551,7 +85001,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 336
+        "line": 332
       }
     },
     {
@@ -85561,7 +85011,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 337
+        "line": 333
       }
     },
     {
@@ -85571,7 +85021,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 338
+        "line": 334
       }
     },
     {
@@ -85581,7 +85031,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 347
+        "line": 343
       }
     },
     {
