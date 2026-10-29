@@ -62,7 +62,7 @@ export async function packageLocalWorker({ destination, sourceRoot = repo, env =
   for (const name of ['local-worker-tools.mjs', 'start-local-worker.mjs']) await fs.copyFile(path.join(repo, 'scripts', name), path.join(target, 'scripts', name));
   await fs.mkdir(path.join(target, 'app/scripts'), { recursive: true });
   await fs.copyFile(path.join(repo, 'scripts/local-worker-tools.mjs'), path.join(target, 'app/scripts/local-worker-tools.mjs'));
-  await fs.copyFile(path.join(repo, 'docs/LOCAL-WORKER-PACKAGE.md'), path.join(target, 'README.md'));
+  await fs.copyFile(path.join(repo, 'kullanici-kilavuzu.md'), path.join(target, 'README.md'));
   await writeLaunchers(target);
   const toolPaths = {
     XFACTOR_LOCAL_NODE: nodeRelative,

@@ -57,16 +57,9 @@ async function extractCodeGraph() {
         { id: 'x-agents/reviewer.md', label: 'x-agents/reviewer.md', desc: 'Reviewer Ajanı kalite kapısı ve fail-closed veto kuralları' },
         { id: 'x-agents/tester.md', label: 'x-agents/tester.md', desc: 'Tester statik inceleme ve veto talimatları; bağımsız worker çalışma kanıtı üretir' },
         { id: 'README.md', label: 'README.md', desc: 'XFactor platform mimarisi, kurulum ve doğrulama ana kılavuzu' },
-        { id: 'CLAUDE.md', label: 'CLAUDE.md', desc: 'XFactor proje anayasası, mimari kurallar, P1-P5 değişmezleri ve oturum güncellik rehberi' },
-        { id: 'docs/kullanici-kilavuzu.md', label: 'docs/kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' },
-        { id: 'docs/OPERATIONS.md', label: 'docs/OPERATIONS.md', desc: 'Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu' },
-        { id: 'docs/ARTIFACT-LIFECYCLE.md', label: 'docs/ARTIFACT-LIFECYCLE.md', desc: 'Proje ve doğrulanmış ZIP artefakt yaşam döngüsü, envanter ve karantina kılavuzu' },
-        { id: 'docs/LOCAL-WORKER-PACKAGE.md', label: 'docs/LOCAL-WORKER-PACKAGE.md', desc: 'Docker olmadan bağımsız yerel execution worker kurulum ve paketleme kılavuzu' },
-        { id: 'docs/roadmap-reports/mimari-yol-haritasi.md', label: 'Mimari İyileştirme Yol Haritası (Faz 1–4)', desc: '28 mimari bulgu, TDD kuralları ve 4 fazlık dönüşüm ana planı' },
-        { id: 'docs/roadmap-reports/faz-1-rapor.md', label: 'Faz 1 Tamamlanma Raporu (VER-1..5, DAT-1..5)', desc: 'Sözleşme/durum bütünlüğü, fail-closed worker doğrulaması ve kanıt zinciri kapanış raporu' },
-        { id: 'docs/roadmap-reports/faz-2-rapor.md', label: 'Faz 2 Tamamlanma Raporu (ENG-1..7, AGT-1..5)', desc: 'Orkestrasyon motoru, lease güvenliği, 7-tuple worker onarımı ve ajan/LLM katmanı kapanış raporu' },
-        { id: 'docs/roadmap-reports/faz-3-rapor.md', label: 'Faz 3 Tamamlanma Raporu (FE-1..4)', desc: 'Frontend durum yönetimi, kronolojik DAG yerleşimi ve durum rozetleri kapanış raporu' },
-        { id: 'docs/roadmap-reports/faz-4-rapor.md', label: 'Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)', desc: 'Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu' }
+        { id: 'CLAUDE.md', label: 'CLAUDE.md', desc: 'Çalışma kuralları, güncel kaynakları okuma ve oturum güncellik rehberi' },
+        { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' },
+        { id: 'docs/faz-arsiv.md', label: 'Faz Arşivi (P0–P9, Faz 1–4)', desc: 'Kronolojik geliştirme zinciri, tarihsel doğrulamalar ve Git kaynakları' }
       ];
 
     docs.forEach(d => {

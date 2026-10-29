@@ -20,12 +20,15 @@ try {
   await fs.writeFile(path.join(root, 'frontend/vite.config.js'), 'export default {};\n');
   await fs.writeFile(path.join(root, 'playwright.config.js'), 'export default {};\n');
   await fs.writeFile(path.join(root, 'README.md'), '# Fixture\n');
+  await fs.writeFile(path.join(root, 'kullanici-kilavuzu.md'), '# User guide\n');
 
   const graph = await buildSourceGraph(root);
   const ids = new Set(graph.nodes.map(node => node.id));
   assert(ids.has('frontend/src/App.tsx'));
   assert(ids.has('frontend/src/components/Button.tsx'));
   assert(ids.has('README.md'));
+  assert(ids.has('kullanici-kilavuzu.md'));
+  assert(!ids.has('docs/kullanici-kilavuzu.md'));
   assert(ids.has('frontend/vite.config.js'));
   assert(ids.has('playwright.config.js'));
   assert(graph.links.some(link => link.source === 'frontend/src/App.tsx'

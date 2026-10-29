@@ -19,13 +19,17 @@ Harita `backend`, `frontend`, `execution`, `e2e`, `scripts`, `docs`, `x-agents` 
 
 ## Güncel iş akışını okuma
 
+Geliştirme geçmişinin P0–P9 ve Ekim Faz 1–4 halkaları [Faz Arşivinde](../docs/faz-arsiv.md) tek kronolojide birleştirilmiştir; eski yerel plan ve kanıtlar bu tarihsel özetin kaynaklarıdır.
+
+30 Ekim 2026 belge birleştirmesiyle üretim işletimi, yerel worker paketi ve ZIP yaşam döngüsü [kullanıcı kılavuzunun 12–14. bölümlerine](../kullanici-kilavuzu.md#uretim-operasyon) taşındı. Harita eski üç ayrı belgeyi içermez; worker paketi birleşik kılavuzu README olarak taşır.
+
 - `x-agents/`: güvenilen platform ajan talimatları; `docs/` işletim ve geliştirme belgeleridir. Projeye ait canlı protokol kayıtları `projects/<id>/` altında kalır.
 - `backend/engine/workflow.js`, `resumeStage.js` ve `checkpointHelper.js`: onaylı sözleşme/plan ile eşleşen kod üretimini koruma ve kalite aşamasını tekrar yürütme.
 - `backend/verification/`: süre bütçesi, 18 ana zorunlu kapı, yönetim/rol ayrıntıları ve kabul edilmiş artefaktın kanıt kontrolü.
 - `execution/`: bağımsız worker, yerel çalışma profili, gerçek Chromium/API testleri ve sınırlı komut teşhisleri.
 - `frontend/src/components/`: proje oluşturma diyaloğu, sohbet ve kalite geçmişi/ayrıntı ekranları.
 
-Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Yerel worker doğrulama kapsamını [yerel worker paket kılavuzunda](../docs/LOCAL-WORKER-PACKAGE.md), kullanım adımlarını [kullanıcı kılavuzunda](../docs/kullanici-kilavuzu.md) okuyun.
+Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Yerel worker doğrulama kapsamını [yerel worker paket kılavuzunda](../kullanici-kilavuzu.md#yerel-worker-paketi), kullanım adımlarını [kullanıcı kılavuzunda](../kullanici-kilavuzu.md) okuyun.
 
 ## Ayrı Python Graphify aracı
 
@@ -58,4 +62,4 @@ XFactor platformunda mimari yol haritası (`mimari-yol-haritasi.md`) kapsamında
    - `projectRoutes.js`: Gözlemlenebilirlik uç noktaları `backend/routes/projectObservabilityRoutes.js` modülüne, izlenebilirlik ve artefakt indirme uç noktaları `backend/routes/projectTraceabilityRoutes.js` modülüne taşındı; `graphSource.js` rota miras mekanizmasıyla (`mountsByFile`) AST bağlantıları korundu.
    - `db.js`: Mükerrer `assertWorkflowLease` silinerek `workflowAttempts.js` ile birleştirildi; 17 aşamalı `MIGRATIONS` dizisi `backend/db/migrations.js` modülüne taşındı.
    - Test/Doğrulama Altyapısı: `backend/tests/test_runner.js` ve `isolatedDb.js` şablon DB klonlama (`XFACTOR_TEMPLATE_DB_PATH`) ve paralel işçi havuzu (`XFACTOR_TEST_CONCURRENCY`) ile hızlandırıldı; `execution/tests/jobBoundary.test.js` ve `scripts/test-worker.mjs` kilitlenmeye dayanıklı zaman aşımı sınırlarıyla (`60s` birim / `600s` entegrasyon) güçlendirildi.
-   - Tüm taşınan fonksiyonlar orijinal modüllerden sıfır kırılma (Zero-Breakage Re-Exports) garantisiyle dışa aktarılmaya devam etmektedir. Kapanış doğrulaması: **148/148 backend süiti**, **156/156 worker birim testi**, **159/159 yerel worker entegrasyon testi (`npm run test:local-worker`)** ve **130/130 frontend birim testi (14 dosya) + üretim build'i (1.702 modül)** sıfır hatayla geçti. Ayrıntılı kanıt raporları: [Faz 1](../docs/roadmap-reports/faz-1-rapor.md), [Faz 2](../docs/roadmap-reports/faz-2-rapor.md), [Faz 3](../docs/roadmap-reports/faz-3-rapor.md), [Faz 4](../docs/roadmap-reports/faz-4-rapor.md).
+   - Tüm taşınan fonksiyonlar orijinal modüllerden sıfır kırılma (Zero-Breakage Re-Exports) garantisiyle dışa aktarılmaya devam etmektedir. Kapanış doğrulaması: **148/148 backend süiti**, **156/156 worker birim testi**, **159/159 yerel worker entegrasyon testi (`npm run test:local-worker`)** ve **130/130 frontend birim testi (14 dosya) + üretim build'i (1.702 modül)** sıfır hatayla geçti. Ayrıntılı kanıt raporları: [Faz 1](../docs/faz-arsiv.md#mimari-faz-1), [Faz 2](../docs/faz-arsiv.md#mimari-faz-2), [Faz 3](../docs/faz-arsiv.md#mimari-faz-3), [Faz 4](../docs/faz-arsiv.md#mimari-faz-4).

@@ -86,97 +86,27 @@
       "type": "Document",
       "group": "docs",
       "file": "CLAUDE.md",
-      "description": "XFactor proje anayasası, mimari kurallar, P1-P5 değişmezleri ve oturum güncellik rehberi",
+      "description": "Çalışma kuralları, güncel kaynakları okuma ve oturum güncellik rehberi",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/kullanici-kilavuzu.md",
-      "label": "docs/kullanici-kilavuzu.md",
+      "id": "kullanici-kilavuzu.md",
+      "label": "kullanici-kilavuzu.md",
       "type": "Document",
       "group": "docs",
-      "file": "docs/kullanici-kilavuzu.md",
+      "file": "kullanici-kilavuzu.md",
       "description": "A'dan Z'ye operasyon ve kullanıcı kılavuzu",
       "val": 1,
       "provenance": "curated"
     },
     {
-      "id": "docs/OPERATIONS.md",
-      "label": "docs/OPERATIONS.md",
+      "id": "docs/faz-arsiv.md",
+      "label": "Faz Arşivi (P0–P9, Faz 1–4)",
       "type": "Document",
       "group": "docs",
-      "file": "docs/OPERATIONS.md",
-      "description": "Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/ARTIFACT-LIFECYCLE.md",
-      "label": "docs/ARTIFACT-LIFECYCLE.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/ARTIFACT-LIFECYCLE.md",
-      "description": "Proje ve doğrulanmış ZIP artefakt yaşam döngüsü, envanter ve karantina kılavuzu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/LOCAL-WORKER-PACKAGE.md",
-      "label": "docs/LOCAL-WORKER-PACKAGE.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/LOCAL-WORKER-PACKAGE.md",
-      "description": "Docker olmadan bağımsız yerel execution worker kurulum ve paketleme kılavuzu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/roadmap-reports/mimari-yol-haritasi.md",
-      "label": "Mimari İyileştirme Yol Haritası (Faz 1–4)",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/mimari-yol-haritasi.md",
-      "description": "28 mimari bulgu, TDD kuralları ve 4 fazlık dönüşüm ana planı",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-1-rapor.md",
-      "label": "Faz 1 Tamamlanma Raporu (VER-1..5, DAT-1..5)",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-1-rapor.md",
-      "description": "Sözleşme/durum bütünlüğü, fail-closed worker doğrulaması ve kanıt zinciri kapanış raporu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-2-rapor.md",
-      "label": "Faz 2 Tamamlanma Raporu (ENG-1..7, AGT-1..5)",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-2-rapor.md",
-      "description": "Orkestrasyon motoru, lease güvenliği, 7-tuple worker onarımı ve ajan/LLM katmanı kapanış raporu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-3-rapor.md",
-      "label": "Faz 3 Tamamlanma Raporu (FE-1..4)",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-3-rapor.md",
-      "description": "Frontend durum yönetimi, kronolojik DAG yerleşimi ve durum rozetleri kapanış raporu",
-      "val": 1,
-      "provenance": "curated"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-4-rapor.md",
-      "label": "Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-4-rapor.md",
-      "description": "Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu",
+      "file": "docs/faz-arsiv.md",
+      "description": "Kronolojik geliştirme zinciri, tarihsel doğrulamalar ve Git kaynakları",
       "val": 1,
       "provenance": "curated"
     },
@@ -3058,326 +2988,6 @@
       "file": "backend/workflowAttempts.js",
       "description": "",
       "val": 23.5,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/faz.md",
-      "label": "faz.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/faz.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/INDEX.md",
-      "label": "INDEX.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/INDEX.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P0-A.md",
-      "label": "P0-A.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P0-A.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P0-B.md",
-      "label": "P0-B.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P0-B.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P0-C.md",
-      "label": "P0-C.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P0-C.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P1-A.md",
-      "label": "P1-A.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P1-A.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P1-B.md",
-      "label": "P1-B.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P1-B.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P1-C.md",
-      "label": "P1-C.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P1-C.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P2.md",
-      "label": "P2.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P2.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P3.md",
-      "label": "P3.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P3.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P4.md",
-      "label": "P4.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P4.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P5.md",
-      "label": "P5.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P5.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P6.md",
-      "label": "P6.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P6.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P7.md",
-      "label": "P7.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P7.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P8.md",
-      "label": "P8.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P8.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/P9.md",
-      "label": "P9.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/P9.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-evidence/QUIZ-MASTER.md",
-      "label": "QUIZ-MASTER.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-evidence/QUIZ-MASTER.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/00-MASTER-EXECUTION-PLAN.md",
-      "label": "00-MASTER-EXECUTION-PLAN.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/00-MASTER-EXECUTION-PLAN.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/01-P0-A-state-contract-safety.md",
-      "label": "01-P0-A-state-contract-safety.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/01-P0-A-state-contract-safety.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/02-P0-B-sandbox-verification.md",
-      "label": "02-P0-B-sandbox-verification.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/02-P0-B-sandbox-verification.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/03-P0-C-checkpoint-safety.md",
-      "label": "03-P0-C-checkpoint-safety.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/03-P0-C-checkpoint-safety.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/04-P1-A-contract-traceability.md",
-      "label": "04-P1-A-contract-traceability.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/04-P1-A-contract-traceability.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/05-P1-B-runtime-verifier.md",
-      "label": "05-P1-B-runtime-verifier.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/05-P1-B-runtime-verifier.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/06-P1-C-artifact-validation.md",
-      "label": "06-P1-C-artifact-validation.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/06-P1-C-artifact-validation.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/07-P2-quality-hardening.md",
-      "label": "07-P2-quality-hardening.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/07-P2-quality-hardening.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/08-P3-observability-metrics.md",
-      "label": "08-P3-observability-metrics.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/08-P3-observability-metrics.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/09-P4-production-safety.md",
-      "label": "09-P4-production-safety.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/09-P4-production-safety.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/10-P5-critical-trust-chain.md",
-      "label": "10-P5-critical-trust-chain.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/10-P5-critical-trust-chain.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/11-P6-production-operability.md",
-      "label": "11-P6-production-operability.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/11-P6-production-operability.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/12-P7-data-architecture.md",
-      "label": "12-P7-data-architecture.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/12-P7-data-architecture.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/13-P8-security-operations.md",
-      "label": "13-P8-security-operations.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/13-P8-security-operations.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/faz -arsiv/implementation-plans/14-P9-audit-remediation.md",
-      "label": "14-P9-audit-remediation.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/faz -arsiv/implementation-plans/14-P9-audit-remediation.md",
-      "description": "",
-      "val": 1,
       "provenance": "ast"
     },
     {
@@ -84951,7 +84561,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 73
+        "line": 66
       }
     },
     {
@@ -84961,7 +84571,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 75
+        "line": 68
       }
     },
     {
@@ -84971,7 +84581,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 315
+        "line": 308
       }
     },
     {
@@ -84981,7 +84591,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 316
+        "line": 309
       }
     },
     {
@@ -84991,7 +84601,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 320
+        "line": 313
       }
     },
     {
@@ -85001,7 +84611,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 332
+        "line": 325
       }
     },
     {
@@ -85011,7 +84621,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 333
+        "line": 326
       }
     },
     {
@@ -85021,7 +84631,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 334
+        "line": 327
       }
     },
     {
@@ -85031,7 +84641,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 343
+        "line": 336
       }
     },
     {
@@ -89021,7 +88631,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 24
+        "line": 25
       }
     },
     {
@@ -89031,7 +88641,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 35
+        "line": 38
       }
     },
     {
@@ -89041,7 +88651,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 120
+        "line": 123
       }
     },
     {
@@ -89051,7 +88661,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 123
+        "line": 126
       }
     },
     {
@@ -89061,7 +88671,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_graphify.js",
-        "line": 125
+        "line": 128
       }
     },
     {

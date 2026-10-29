@@ -1,6 +1,8 @@
 # 📖 XFactor — A'dan Z'ye Kapsamlı Kullanım ve Operasyon Kılavuzu
 
-Depo bakımı, modülerleştirme ve son kod sadeleştirmeleri için [Mimari Yol Haritası](roadmap-reports/mimari-yol-haritasi.md) ve [Faz 4 Tamamlanma Raporuna](roadmap-reports/faz-4-rapor.md) bakın. Kullanıcı verileri ve üretilen projeler bu temizlikte korunur.
+Geliştirmenin geçmişten bugüne sıralı özeti için [Faz Arşivi](docs/faz-arsiv.md) dosyasını okuyun; P0–P9 ile Ekim Faz 1–4 dizileri burada ayrı adlandırılarak tek zincirde gösterilir.
+
+Depo bakımı, modülerleştirme ve son kod sadeleştirmeleri için [Mimari Yol Haritası](docs/faz-arsiv.md#mimari-fazlar) ve [Faz 4 Tamamlanma Raporuna](docs/faz-arsiv.md#mimari-faz-4) bakın. Kullanıcı verileri ve üretilen projeler bu temizlikte korunur.
 
 Manager sohbetinde yanıt oluşturma, kısa LLM bağlantı testinden daha uzun sürebilir.
 Sohbet isteği genel API çağrılarının 15 saniyelik frontend sınırıyla kesilmez;
@@ -15,23 +17,26 @@ Bu kılavuz, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun çalışma ma
 ## 📑 İÇİNDEKİLER
 
 1. [Genel Bakış ve Mimari Felsefe](#1-genel-bakış-ve-mimari-felsefe)
-2. [Sistem Gereksinimleri ve İlk Kurulum](#2-sistem-gereksinimleri-ve-ilk-kurulum)
+2. [Sistem Gereksinimleri ve İlk Kurulum](#ilk-kurulum)
 3. [Ajan Rolleri ve Hiyerarşik Görev Dağılımı (6 Seviye)](#3-ajan-rolleri-ve-hiyerarşik-görev-dağılımı-6-seviye)
 4. [Uçtan Uca Kullanım Adımları (A'dan Z'ye)](#4-uçtan-uca-kullanım-adımları-adan-zye)
-   - [Adım 1: Güvenli Giriş Yapma (Authentication)](#adım-1-güvenli-giriş-yapma-authentication)
-   - [Adım 2: Yeni Proje Başlatma](#adım-2-yeni-proje-başlatma)
+   - [Adım 1: Güvenli Giriş Yapma (Authentication)](#guvenli-giris)
+   - [Adım 2: Yeni Proje Başlatma](#yeni-proje)
    - [Adım 3: Manager ile Beyin Fırtınası ve Planlama (Zaman Damgalı Sohbet)](#adım-3-manager-ile-beyin-fırtınası-ve-planlama-zaman-damgalı-sohbet)
-   - [Adım 4: Mimari Planı Onaylama ve Canlı Revizyon (`pending_approval`)](#adım-4-mimari-planı-onaylama-ve-canlı-revizyon-pending_approval)
-   - [Adım 5: Canlı ReactFlow DAG Akışını ve Log Tablosunu İzleme](#adım-5-canlı-reactflow-dag-akışını-ve-log-tablosunu-izleme)
+   - [Adım 4: Mimari Planı Onaylama ve Canlı Revizyon (`pending_approval`)](#plan-onayi)
+   - [Adım 5: Canlı ReactFlow DAG Akışını ve Log Tablosunu İzleme](#canli-izleme)
    - [Adım 6: Canlı Müdahale, Duraklatma ve Kaldığı Yerden Devam Etme (`Pause / Resume`)](#adım-6-canlı-müdahale-duraklatma-ve-kaldığı-yerden-devam-etme-pause--resume)
-   - [Adım 7: Doğrulanmış Projeyi ZIP Olarak İndirme](#adım-7-doğrulanmış-projeyi-zip-olarak-indirme)
-5. [Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)](#5-yan-menü-proje-yönetimi-ve-işlem-menüsü-)
+   - [Adım 7: Doğrulanmış Projeyi ZIP Olarak İndirme](#zip-indirme)
+5. [Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)](#proje-menusu)
 6. [Dosya-Bazlı Koordinasyon Protokolü ("Agent = Klasör")](#6-dosya-bazlı-koordinasyon-protokolü-agent--klasör)
 7. [Üretilen Projeyi Bilgisayarınızda Çalıştırma Kılavuzu](#7-üretilen-projeyi-bilgisayarınızda-çalıştırma-kılavuzu)
 8. [Test Süiti ve Otomasyonun Çalıştırılması (`npm test`)](#8-test-süiti-ve-otomasyonun-çalıştırılması-npm-test)
 9. [Sıkça Sorulan Sorular (SSS) ve Sorun Giderme](#9-sıkça-sorulan-sorular-sss-ve-sorun-giderme)
 10. [Geliştirici Rehberi: Kod Tabanı Analizi ve Bilgi Grafiği (Graphify)](#10-geliştirici-rehberi-kod-tabanı-analizi-ve-bilgi-grafiği-graphify)
 11. [18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)](#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20)
+12. [Üretim İşletimi, Güvenlik ve Yedekleme](#uretim-operasyon)
+13. [Bağımsız Yerel Worker Paketi](#yerel-worker-paketi)
+14. [ZIP Yaşam Döngüsü, Envanter ve Karantina](#zip-yasam-dongusu)
 
 ---
 
@@ -62,9 +67,11 @@ flowchart TD
 
 Domainler ve takımlar sırayla yürütülür; yalnız aynı takımın bağımsız DAG görevleri en fazla ikili çalışır. Her LLM rolü tam ortak anayasa ve kendi rol talimatını alır. Dosyaları backend yazar; model onayı çalışma kanıtı değildir. Worker yerel profilde ayrı süreç ve iş dizini kullanır; OS izolasyonu Docker profilinden ayrıdır.
 
-29 Ekim 2026 mimari yol haritası (`Faz 1–4`) kapsamındaki 28 bulgu giderimi, Tanrı Modüllerin 7 yeni alt modüle ayrıştırılması ve doğrulama kanıtları [Mimari Yol Haritası](roadmap-reports/mimari-yol-haritasi.md), [Faz 1](roadmap-reports/faz-1-rapor.md), [Faz 2](roadmap-reports/faz-2-rapor.md), [Faz 3](roadmap-reports/faz-3-rapor.md), [Faz 4](roadmap-reports/faz-4-rapor.md) raporlarında ve [Graphify bilgi notunda](../graphify-out/graphify-bilgi-notu.md) yer alır.
+29 Ekim 2026 mimari yol haritası (`Faz 1–4`) kapsamındaki 28 bulgu giderimi, Tanrı Modüllerin 7 yeni alt modüle ayrıştırılması ve doğrulama kanıtları [Mimari Yol Haritası](docs/faz-arsiv.md#mimari-fazlar), [Faz 1](docs/faz-arsiv.md#mimari-faz-1), [Faz 2](docs/faz-arsiv.md#mimari-faz-2), [Faz 3](docs/faz-arsiv.md#mimari-faz-3), [Faz 4](docs/faz-arsiv.md#mimari-faz-4) raporlarında ve [Graphify bilgi notunda](graphify-out/graphify-bilgi-notu.md) yer alır.
 
 ---
+
+<a id="ilk-kurulum"></a>
 
 ## 2. Sistem Gereksinimleri ve İlk Kurulum
 
@@ -165,7 +172,7 @@ npm run dev
   ```bash
   node execution/server.js
   ```
-  > Kökteki `npm run dev` varsayılan olarak Docker olmadan yerel profili seçer; `npm run dev:local` aynı akıştır. Docker için `npm run dev:docker` kullanın. Bu doğrudan worker komutu ayrı runtime yapılandırması gerektirir; [paketli yerel worker](LOCAL-WORKER-PACKAGE.md) alternatifini de kullanabilirsiniz. Ayrı başlatmada backend ve worker URL/token ayarlarını eşleştirin. Worker, `http://127.0.0.1:8099` adresinde yalnız yetkili backend isteklerini kabul eder.
+  > Kökteki `npm run dev` varsayılan olarak Docker olmadan yerel profili seçer; `npm run dev:local` aynı akıştır. Docker için `npm run dev:docker` kullanın. Bu doğrudan worker komutu ayrı runtime yapılandırması gerektirir; [paketli yerel worker](#yerel-worker-paketi) alternatifini de kullanabilirsiniz. Ayrı başlatmada backend ve worker URL/token ayarlarını eşleştirin. Worker, `http://127.0.0.1:8099` adresinde yalnız yetkili backend isteklerini kabul eder.
 
 > [!CAUTION]
 > **Production / VPS Uyarısı:** VPS veya sunucu ortamında backend'i (`8000`) doğrudan internete açmayınız. TLS sonlandırması ve `X-Forwarded-Proto: https` başlığı sağlayan bir Reverse Proxy (Caddy, Nginx vb.) kurunuz. Oturum çerezlerinin güvenliği için HTTPS zorunludur.
@@ -189,6 +196,8 @@ Bu altı LLM rolünden sonra **bağımsız execution worker** gerçek komutları
 
 ## 4. Uçtan Uca Kullanım Adımları (A'dan Z'ye)
 
+<a id="guvenli-giris"></a>
+
 ### Adım 1: Hızlı ve Güvenli Giriş Yapma (Authentication)
 1. Tarayıcınızda `http://127.0.0.1:5173` adresini açın.
 2. README'deki varsayılan bilgileri (**admin** / **xfactor**) boş giriş alanlarına yazın.
@@ -201,7 +210,9 @@ Bu altı LLM rolünden sonra **bağımsız execution worker** gerçek komutları
 3. **Bağlantıyı sına** gerçek model çağrısı yapar. Son testin başarılı/başarısız sonucu ve zamanı profil kartında saklanır. Bu, test anının kanıtıdır; sağlayıcının sürekli erişilebilir olduğunu garanti etmez. Profil düzenlenince sonuç temizlenir.
 4. Kullanmak istediğiniz pasif profilin **Etkinleştir** düğmesine basın. Aynı anda yalnızca bir profil etkindir; seçili profil üst özette görünür ve kartındaki düğme **Etkin** olarak kapalıdır. Manager sohbeti ve üretim ajanları yeni çağrılarda bu profili kullanır. Etkin profili silerseniz seçili profil kalmaz.
 
-Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taşıma için [LLM yönetimi kılavuzuna](../backend/llm-auth/LLM-YONETIMI.md) bakın.
+Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taşıma için [LLM yönetimi kılavuzuna](backend/llm-auth/LLM-YONETIMI.md) bakın.
+<a id="yeni-proje"></a>
+
 ### Adım 2: Yeni Proje Başlatma ve Disk Senkronizasyonu
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan uygulama içi formda **Proje başlığı** alanını doldurun ve **Proje Oluştur** düğmesine basın (Örn: `araba-kiralama-otomasyonu`). Tarayıcının yerel prompt penceresi kullanılmaz. Boş başlık ve çift gönderim engellenir; hata olursa başlık korunarak tekrar deneyebilirsiniz. Oturum kapandığında form kapanır.
@@ -217,12 +228,16 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
    - Her rolün izinli ve yasak işlemleri ile geliştirme/test için ayrı demo hesabı planda yer alır. Herkese açık kayıt olup olmayacağını ayrıca kararlaştırın; kayıt yükseltilmiş yetki vermez.
 4. **Hata teşhis bağlamı:** Duraklatılan veya hata alan projede Manager'a *"Neden durdu?"* diye sorabilirsiniz. Backend son hata, sınırlı loglar ve uygun `RAPOR.md` kayıtlarını temizlenmiş veri olarak Manager'a verir. Kayıtlarda dosya/satır veya kök neden yoksa bunun bilinmediği belirtilmelidir; Manager'ın çalışan dosyalara sınırsız erişimi yoktur. Model açıklaması bağımsız test kanıtı değildir.
 
+<a id="plan-onayi"></a>
+
 ### Adım 4: Mimari Planı Onaylama, Sürümlü Sözleşme ve Canlı Revizyon (`pending_approval`)
 1. Manager'ın yapılandırılmış planı doğrulandığında sistem `pending_approval` durumuna geçer. Sadece “plan hazır” metni veya etiket bu durumu oluşturmaz. Eksik sözleşme bir kez otomatik düzeltilmeye çalışılır; başarısızsa eksik alan açıklanır ve üretim başlamaz.
 2. **Sürümlü Yazılım Sözleşmesi (`PROJECT_CONTRACT`):** Sistem arka planda `project_contracts`, `requirements` ve `contract_elements` tablolarına değişmez bir sözleşme revizyonu ve SHA-256 sözleşme özeti (`contract_hash`) kaydeder.
 3. Sohbetin üstünde **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** kartı belirir. Tam şartname, gereksinimler, roller ve kayıt politikalarını **Planın kapsamını ve kabul kriterlerini incele** bölümünden açabilirsiniz; sohbet uzun JSON'u tekrar göstermez.
 4. **"Planı Onayla ve Başlat"** düğmesi veya **“varsayımlarla devam et” / “planı onaylıyorum”** mesajı aynı güvenli onay akışını çalıştırır. Sözleşme onaylanır (`status = approved`), proje `implementing` durumuna geçer ve DAG motoru başlar. Bekleyen geçerli plan tekrar üretilmez; tekrarlanan onay ikinci yürütme oluşturmaz. Yalnız proje sahibi veya yönetici üretimi başlatabilir. Olumsuz ifadeler, sorular ve kapsam değişikliği içeren mesajlar otomatik onay sayılmaz.
 5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Tamamlanmış (`completed`), duraklatılmış (`paused`), hata almış (`failed`, `verification_failed`, `capability_blocked`) veya doğrulama sonrası (`runtime_verified`, `acceptance_verified`, `artifact_verified`) durumundaki bir projede sohbete girip *"Next.js yerine Vite React ve Tailwind yap"* veya *"Şu modeli ekle"* dediğinizde; Manager yeni bir sözleşme taslağı oluşturur, eski çelişen gereksinimleri `superseded` ve eski checkpoint'leri `invalidated` olarak işaretler ve yeni bir sözleşme revizyonuyla onay butonunu tekrar açar. Aynı projede eşzamanlı sohbet istekleri çakışma kilidiyle (`409 CHAT_ALREADY_IN_PROGRESS`) korunur.
+<a id="canli-izleme"></a>
+
 ### Adım 5: Canlı ReactFlow DAG Akışını ve Süreç Loglarını İzleme (4 Ayrı Sekme)
 1. Proje başladığında üst menüdeki 4 bağımsız sekme arasında serbestçe gezinebilirsiniz:
    - **💬 Sohbet & Mimari (`chat`):** Manager ile konuşma, canlı düşünce animasyonu (`Sparkles & Bouncing Dots`) ve otomatik bitiş/müdahale bildirimleri.
@@ -280,6 +295,8 @@ Kurtarılan görevler sözleşme/domain/takım/görev kimliğiyle ayrılır; iki
 
 Yalnız tarayıcı kabul adımlarını değiştirmek istiyorsanız bunu Manager'a açıkça belirtin. Alanla sınırlı revizyon, onaylı sözleşmeye bağlı olarak yalnız `browser.roleJourneys` alanını günceller; diğer gereksinimler ve rol izinlerini değiştirmez. Eski sözleşmeye dayanan veya başka alanlar içeren güncelleme reddedilir. Yeni taslak tekrar onay bekler. Sohbet mesajları 4000 karakterle sınırlıdır; uzun planı yeniden yapıştırmak yerine değişecek adımları iletin. Geçersiz veya aşırı büyük mesajlar için gösterilen hata LLM bağlantı hatası değildir.
 
+<a id="zip-indirme"></a>
+
 ### Adım 7: Doğrulanmış Projeyi ZIP Olarak İndirme
 1. Tüm ajanlar görevlerini bitirdiğinde süreç hemen tamamlandı sayılmaz. Bağımsız temiz oda doğrulayıcısı (`artifactVerifier`) devreye girer:
    - Sunucu tarafında ZIP arşivi oluşturulur ve disk SHA-256 özeti hesaplanır (`artifacts`).
@@ -290,6 +307,8 @@ Yalnız tarayıcı kabul adımlarını değiştirmek istiyorsanız bunu Manager'
 3. Worker hatası normal akışta yerel geliştirme doğrulamasına çevrilmez. Benzer biçimde `DURUM.md` veya `state.json` içindeki tarihsel “tamamlandı” bilgisi PASS kanıtı sayılmaz: disk kurtarma ZIP'i yeniden oluşturabilse bile artefakt `built` ve indirilemez kalır; geçerli Worker koşusu olmadan proje doğrulanmış sayılmaz.
 
 Manager'ın bitiş mesajındaki **Kaydedilen token kullanımı**, projeyle ilgili planlama, üretim, inceleme ve onarım çağrıları için yapay zekâ sağlayıcısının bildirdiği giriş ve çıkış tokenlarının toplamıdır. Sağlayıcı bazı çağrılarda kullanım verisi vermezse mesaj yalnız bilinen **en az** toplamı ve eksik çağrı sayısını söyler. Eski projelerin daha önce kaydedilmemiş kullanımı sonradan hesaplanamaz. Token sayısı ücret hesabı değildir.
+
+<a id="proje-menusu"></a>
 
 ## 5. Yan Menü Proje Yönetimi ve İşlem Menüsü (`...`)
 
@@ -304,7 +323,7 @@ Sol kenar çubuğunda her proje kartının yanında üç nokta (`...`) işlem bu
 
 Depo kökünde `node backend/scripts/artifact-maintenance.js` yalnızca envanter okur; dosya taşımaz, DB şemasını değiştirmez. Bakım operatörü önce güncel backend'i bir kez açarak migration 16'yı uygulatmalı, sonra backend ve worker'ı durdurmalıdır. `node backend/scripts/artifact-maintenance.js --quarantine --offline` uygun adayları karantinaya alır. `--orphans-only` yalnız yeni aday seçimini kayıt dışı ZIP'lerle sınırlar; önceden günlüğe alınmış bekleyen işlemler de tekrar denenebilir. Çalışan workflow varsa CLI bakım yazımını reddeder; `--offline` servisleri kendisi durdurmaz.
 
-Makbuzla korunmayan `rejected`/`superseded` paketler oluşturulmalarından 7 gün sonra, kayıt dışı ZIP'ler son dosya değişikliğinden 24 saat sonra aday olabilir. Adaylık otomatik silme değildir. Ayrıntılar ve mevcut eksik dosyaların sınırları: [Proje ve ZIP yaşam döngüsü](ARTIFACT-LIFECYCLE.md).
+Makbuzla korunmayan `rejected`/`superseded` paketler oluşturulmalarından 7 gün sonra, kayıt dışı ZIP'ler son dosya değişikliğinden 24 saat sonra aday olabilir. Adaylık otomatik silme değildir. Ayrıntılar ve mevcut eksik dosyaların sınırları: [Proje ve ZIP yaşam döngüsü](#zip-yasam-dongusu).
 
 ---
 
@@ -341,6 +360,7 @@ projects/<proje_id>/
 ├── service-manifest.json           # Otomatik Üretilen Servis & Port Sözleşmesi
 ├── README.md                       # Otomatik Üretilen Kurulum & Çalıştırma Rehberi
 └── RAPOR.md                        # Backend'in yazdığı inceleme raporu; tek başına runtime kabul kanıtı değildir
+```
 ---
 
 ## 7. Üretilen Projeyi Bilgisayarınızda Çalıştırma Kılavuzu
@@ -419,7 +439,7 @@ Docker kurulu geliştirme ortamında `npm --prefix backend run test:docker:artif
 **C:** Evet. Tamamlanmış, duraklatılmış (`PAUSED`) veya doğrulama hatası almış (`VERIFICATION_FAILED`) bir projede sohbet paneline girip revizyon istediğinizde (örn: *"1"*, *"baştan başla"*, *"şunu ekle"*); Manager yeni mimari şartnameyi hazırlar, yeni bir sözleşme revizyonu açar ve sohbetin altında yeşil **"Planı Onayla ve Başlat"** onay kartını sunar. Onayladığınızda otonom motor yeni plan doğrultusunda temiz üretime geçer.
 
 ### S: Log ekranındaki hataları nasıl yorumlamalıyım?
-**C:** Log ekranında Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) gösterilir. Bağımlılık hazırlığı ve doğrulama worker'a devredilir. `dev:local` kullanıyorsanız eksik Node/npm/Chromium araçlarını, paket bütünlüğünü ve backend-worker token eşleşmesini [yerel paket kılavuzuyla](LOCAL-WORKER-PACKAGE.md) kontrol edin; hazır olma hataları üretimi engeller. Docker profilini seçtiyseniz Docker daemon ve `docker build -t xfactor-worker-runtime execution` ile hazırlanan imaj gerekir.
+**C:** Log ekranında Türkçe hata kategorileri (`[Hata] LLM Kota ve Bütçe Sınırı Aşıldı`, `[Hata] Bağımlılık Hazırlığı Başarısız`, `[Süreç Hatası]`) gösterilir. Bağımlılık hazırlığı ve doğrulama worker'a devredilir. `dev:local` kullanıyorsanız eksik Node/npm/Chromium araçlarını, paket bütünlüğünü ve backend-worker token eşleşmesini [yerel paket kılavuzuyla](#yerel-worker-paketi) kontrol edin; hazır olma hataları üretimi engeller. Docker profilini seçtiyseniz Docker daemon ve `docker build -t xfactor-worker-runtime execution` ile hazırlanan imaj gerekir.
 
 ### S: 8099 portu nedir? Tarayıcıdan açtığımda neden `{"error":"Unauthorized"}` hatası alıyorum?
 **C:** XFactor, **ayrı worker mimarisi** ile çalışır. Yapay zekânın yazdığı kodların derlenmesi (`tsc`), paketlenmesi (`npm install`) ve çalıştırılması **Execution Worker (`8099`)** servisinde yürütülür. Docker profili container izolasyonu sağlar; `local-trusted` profili ayrı iş dizinleri ve süreç temizliği kullanır ancak kod mevcut kullanıcı yetkileriyle çalışır, OS izolasyonu sağlamaz.
@@ -577,7 +597,7 @@ Her kapı, çalıştırılan komutun veya türetilmiş PASS kaynaklarının kan�
 Üretim ve doğrulama sonuçlarını kayıtlı kanıtlarıyla değerlendirin; geçen kapılar ölçtükleri kapsamı kanıtlar, bütün olası kusurların yokluğunu garanti etmez.
 ## Docker olmadan yerel kalite worker'ı
 
-Platform talimatlarıyla üretilen proje belgelerini karıştırmayın: `x-agents/GOREV.md`, `DURUM.md`, `TODO.md` ve `RAPOR.md` şablondur. Canlı üretim kayıtları `projects/<proje-id>/manager/` ve alt ajan klasörlerinde; uygulamanın README ve `docs/` belgeleri ilgili proje klasöründe bulunur. Backend farklı dizindeki aynı adlı belgeleri sistem talimatı olarak yüklemez. Eksik talimat, geçersiz rol, bağlantılı ajan dosyası veya `x-agents` ile çakışan proje yolu işlemi engeller. [Dosya ayrımı kılavuzu](../x-agents/README.md).
+Platform talimatlarıyla üretilen proje belgelerini karıştırmayın: `x-agents/GOREV.md`, `DURUM.md`, `TODO.md` ve `RAPOR.md` şablondur. Canlı üretim kayıtları `projects/<proje-id>/manager/` ve alt ajan klasörlerinde; uygulamanın README ve `docs/` belgeleri ilgili proje klasöründe bulunur. Backend farklı dizindeki aynı adlı belgeleri sistem talimatı olarak yüklemez. Eksik talimat, geçersiz rol, bağlantılı ajan dosyası veya `x-agents` ile çakışan proje yolu işlemi engeller. [Dosya ayrımı kılavuzu](x-agents/README.md).
 
 Kaynak kurulumu: Node 22.23.2 ve npm 10.9.8 ile `npm run worker:local:setup -- --install`, sonra `npm run dev:local`. İlk komut gözden geçirilmiş backend/execution lockfile'larını kurar ve Chromium indirir; internet bağlantısı gerekir. Linux'ta Chromium sistem kitaplıkları ayrıca sağlanır. Kalite kontrolleri uygulamanın gerçek kurulum, build, test, SQLite/API ve tarayıcı oturumlarını çalıştırır; geçmeyen zorunlu kontroller teslimi engeller.
 
@@ -585,7 +605,7 @@ Yerel geliştirme başlatıcısı, operatör `VERIFICATION_JOB_TIMEOUT_MS` verme
 
 Yerel worker genel npm registry indirme önbelleğini `os.tmpdir()/xfactor-local-cache/npm` altında işler arasında korur. Her işin kaynakları, veritabanı, HOME, npm ayarları ve günlükleri ayrı hazırlanıp temizlenir; ana bilgisayarın npm kimlik bilgileri aktarılmaz. Son 64 komuta ait aşama, çalıştırıcı adı, süre, çıkış kodu, zaman aşımı/kesilme işaretleri ve çıktı SHA-256 özetleri hata tanısı için saklanabilir; komut argümanları, çıktı metinleri ve ortam değerleri bu kayda alınmaz. Bu tanılama kayıtları kalite kapısı başarısı sayılmaz.
 
-Paketli kullanım: `npm run worker:local:package -- --output dist/local-worker` ile mevcut platformun paketini üretin. Hedefte `start-worker.cmd` (Windows) veya `./start-worker.sh` (Linux/macOS) çalıştırın. Paket kendi araçlarını içerir. Backend URL/token bağlantısı ve sorun giderme için [yerel worker paket kılavuzunu](LOCAL-WORKER-PACKAGE.md) izleyin. `npm run worker:local -- --bundle dist/local-worker` kaynak Node kuruluysa alternatif başlatma yoludur.
+Paketli kullanım: `npm run worker:local:package -- --output dist/local-worker` ile mevcut platformun paketini üretin. Hedefte `start-worker.cmd` (Windows) veya `./start-worker.sh` (Linux/macOS) çalıştırın. Paket kendi araçlarını içerir. Backend URL/token bağlantısı ve sorun giderme için [yerel worker paket kılavuzunu](#yerel-worker-paketi) izleyin. `npm run worker:local -- --bundle dist/local-worker` kaynak Node kuruluysa alternatif başlatma yoludur.
 
 Kalite paneli seçili yerel koşuda `local-trusted · OS izolasyonu yok` bilgisini gösterir. Bu profil güvenilen kod içindir; uygulama mevcut kullanıcının yetkileriyle çalışır. Kullanıcı/admin giriş bilgileri bu değişiklik kapsamında değiştirilmez. Docker imajını test etmek için Docker ayrıca gerekir.
 
@@ -597,12 +617,197 @@ kullanır; eksik hazırlık veya geçersiz ilişki kalite kontrolünü engeller.
 Test girişleri için geçici imza anahtarları yalnız koşu belleğinde oluşturulur;
 ZIP'e veya kullanıcı profil ayarlarına yazılmaz.
 
-21 Ekim 2026 Windows otel üretimi Docker olmadan tamamlandı: uygulamanın 22 testi ve 8 tarayıcı yolculuğu geçti; kanonik doğrulama 205 PASS kaydı içerdi. Bunların içinde 18 ana kapı dahil toplam 170 zorunlu kayıt bulunur; her ayrıntı satırı yeni bir kalite kapısı değildir. Koşu özeti ve doğrulamanın kapsamı [yerel worker paket kılavuzundadır](LOCAL-WORKER-PACKAGE.md). Teslim edilen son ZIP ayrıca açılıp çalıştırılmadı; Windows sonucu Linux/macOS kabulü yerine geçmez.
+21 Ekim 2026 Windows otel üretimi Docker olmadan tamamlandı: uygulamanın 22 testi ve 8 tarayıcı yolculuğu geçti; kanonik doğrulama 205 PASS kaydı içerdi. Bunların içinde 18 ana kapı dahil toplam 170 zorunlu kayıt bulunur; her ayrıntı satırı yeni bir kalite kapısı değildir. Koşu özeti ve doğrulamanın kapsamı [yerel worker paket kılavuzundadır](#yerel-worker-paketi). Teslim edilen son ZIP ayrıca açılıp çalıştırılmadı; Windows sonucu Linux/macOS kabulü yerine geçmez.
 
 ## Bağımsız LLM yönetimi eklentisi
 
-LLM sayfası ve API artık depodaki `llm-yonetimi/` paketinden sunulur. Başka uygulamalara taşınabilecek bağımsız kopya `F:/projeler/llm-yonetimi` dizinindedir; GitHub kurulumu için depodaki paket yeterlidir. Kurulum, Express entegrasyonu, runtime çağrıları ve güvenlik sorumlulukları [eklenti README dosyasında](../llm-yonetimi/README.md) açıklanır. Mevcut profil ve şifreleme anahtarı konumları korunur; paket başka uygulamaya taşınırken bu özel veriler kopyalanmaz.
+LLM sayfası ve API artık depodaki `llm-yonetimi/` paketinden sunulur. Başka uygulamalara taşınabilecek bağımsız kopya `F:/projeler/llm-yonetimi` dizinindedir; GitHub kurulumu için depodaki paket yeterlidir. Kurulum, Express entegrasyonu, runtime çağrıları ve güvenlik sorumlulukları [eklenti README dosyasında](llm-yonetimi/README.md) açıklanır. Mevcut profil ve şifreleme anahtarı konumları korunur; paket başka uygulamaya taşınırken bu özel veriler kopyalanmaz.
 
 Profilde yanıt süresi, çıktı token bütçesi ve düşünme ayarı düzenlenebilir. **Bağlantıyı sına** kısa erişim çağrısıdır; **Sohbeti sına** Manager benzeri bir istektir. Test türü, süre ve hata kodu ayrı kaydedilir. Profil değişirse sonuçlar geçersizleşir; eski ekran aynı profili kaydetmeye çalışırsa çakışma bildirilir.
 
 MiMo için otomatik düşünme ayarı Manager sohbetinde düşünmeyi kapatır; üretim ajanlarında sağlayıcının varsayılanını korur. Açıkça seçilen düşünme ayarı korunur. Süre aşımı, kota, sağlayıcı yetkisi, ağ ve kesilmiş yanıt hataları ayrı gösterilir. Token sınırında kesilmiş Manager yanıtı tamamlanmış plan sayılmaz. Model hızı, sağlayıcı yükü, kota, bölge ve ağ koşulları uygulama tarafından garanti edilemez. Uzun planlar daha fazla çıktı ve süre gerektirir.
+
+
+---
+
+<a id="uretim-operasyon"></a>
+
+## 12. Üretim İşletimi, Güvenlik ve Yedekleme
+
+Bu bölüm dağıtım operatörü içindir; belirli bir kurulumun üretim kabul kanıtı değildir. Platform tek-node tasarlanmıştır. Aynı SQLite/dosya yollarında iki web instance'ı çalıştırmayın. Çok node için ortak SQL, proje/ZIP depolaması, dağıtık oturum veya uygun sticky routing/ortak CSRF politikası ve WebSocket pub/sub gerekir.
+
+### Kalıcı veri ve üretim güvenliği
+
+| Ayar | Varsayılan / görev |
+| --- | --- |
+| `DB_PATH` | `backend/data/projects.db` |
+| `PROJECTS_ROOT` | Depo kökündeki `projects/` |
+| `ARTIFACTS_ROOT` | `backend/data/artifacts/` |
+| `EXECUTION_WORKER_URL`, `EXECUTION_WORKER_TOKEN` | Güvenilen worker bağlantısı |
+| `LLM_CONFIG_PATH`, `LLM_CONFIG_KEY_PATH` | Özel profil/anahtar yolları |
+
+Üretimde `TRUST_PROXY=loopback`, HTTPS `ALLOWED_ORIGINS`, açık `MFA_ENCRYPTION_KEY` ve geliştirme varsayılanından farklı worker token'ı gerekir. Reverse proxy TLS sonlandırır; güvensiz HTTP/WebSocket `426 HTTPS_REQUIRED` alır. Güvenli yanıtlarda kısıtlayıcı CSP ve bir yıllık `includeSubDomains` HSTS bulunur. Worker'ı özel ağda tutun; makineler arasında TLS kullanın, Bearer token HTTP'yi şifrelemez.
+
+LLM profil/anahtarını erişimi sınırlı kalıcı depoda saklayın. `LLM_CONFIG_ENCRYPTION_KEY`, mevcut ortam dosyasındaki anahtar veya profil yanındaki `llm-encryption.key` kullanılır; yeni kurulum anahtarı veri dizinine 0600 moduyla yazar. Anahtar kaybolursa profiller çözülemez. Etkin profil yokken eski ortam fallback'i bulunabilir; yeni kurulum profil seçmelidir. Sağlayıcı socket bağlantısında tüm DNS yanıtları denetlenir; özel IP/redirect reddedilir, yerel HTTP yalnız geliştirmede loopback içindir.
+
+Parolalar 64 baytlık `scrypt$salt$derived` hash'iyle, asenkron/zamanlama güvenli doğrulanır. MFA parola ardından 6 rakamlı RFC 6238 TOTP ister (30 saniye, ±1 pencere, HMAC-SHA1). Oturum token'ı DB'de SHA-256'dır; 24 saatlik çerez HttpOnly/SameSite=Lax, üretimde Secure'dür. Giriş hız sınırı ve mutasyonlarda Origin/CSRF kontrolü uygulanır.
+
+MFA sırları `v1:<iv-hex>:<tag-hex>:<ciphertext-hex>` AES-256-GCM zarfındadır. Anahtar yenilemede yeni 32 baytlık anahtar üretin, eskiyi `MFA_PREVIOUS_ENCRYPTION_KEYS`, yeniyi `MFA_ENCRYPTION_KEY` yapıp backend'i yeniden başlatın. Eskiyle çözülen sır doğrulama sırasında yeni anahtarla şifrelenir; şema migrasyonu gerekmez. `JWT_SECRET` üzerinden türetme yalnız geliştirme fallback'idir.
+
+### Yedekleme, geri yükleme ve bakım
+
+Backend/worker dahil yazıcıları durdurun. `--offline` servis durdurmaz, operatörün durdurduğunu bildirir. Aynı dağıtımın DB/proje/artefakt yollarını birlikte yedekleyin:
+
+```bash
+node backend/scripts/backup.js --offline --db ABSOLUTE_DB_PATH --projects ABSOLUTE_PROJECTS_ROOT --artifacts ABSOLUTE_ARTIFACTS_ROOT --output ABSOLUTE_EMPTY_DESTINATION
+node backend/scripts/restore.js --snapshot ABSOLUTE_SNAPSHOT --target ABSOLUTE_TARGET
+```
+
+Snapshot tar.gz değil; byte sayıları/SHA-256 içeren `manifest.json`, `db`, `projects`, `artifacts` dizinidir. `VACUUM INTO` commit edilmiş WAL sayfalarını içerir. Yeni hedefe restore artefakt DB yollarını son konuma yazar ve makbuz hash'lerini denetler. Gömülü kullanım yazıcıları duraklatan lifecycle koordinatörü sağlamalıdır. **LLM profil/anahtarı snapshot'a dahil değildir; ayrıca yedekleyin.** Kalıcı worker job-store JSON'u bozulursa açılış durur; işleri atmak yerine sağlam yedekten kurtarın.
+
+Backend SIGINT/SIGTERM'de WebSocket/HTTP/DB'yi kapatıp WAL checkpoint yapar; varsayılan `SHUTDOWN_TIMEOUT_MS=3000` ms. Saatlik bakım süresi dolmuş oturumları ve iptalinden yedi gün geçmiş kayıtları temizler.
+
+### Worker, sağlık ve CI
+
+Yerel profil OS sandbox değildir. Docker `--cpus 2.0`, `--memory 1g`, `--memory-swap 1g`, `--pids-limit 100`, `--security-opt no-new-privileges:true`, `--cap-drop ALL`, `--tmpfs /tmp:rw,noexec,nosuid,size=64m` ve loopback port yayını uygular. `docker build -t xfactor-worker-runtime execution` kendi Chromium/Playwright'ını içeren imajı hazırlar. Kapasite eksikliği PASS veya sessiz profil değişimi üretmez. Rol testleri geçici hesap/yeni browser context ile oturum, görünür sonuç, klavye erişimi ve mobil taşmayı ölçer.
+
+`/healthz` canlılığı; `/readyz` DB, depolama, üretim frontend'i ve worker'ın iki iş tipine kapasitesini denetler, eksiklikte 503 döner. Üretim Docker HEALTHCHECK'i 30 saniyede bir `/healthz` çağırır. Backend worker readiness bütçesi 2000 ms, yerel başlatıcıda boşsa 35000 ms'dir. Araç çözümlemesi 30 saniyelik Chromium renderer/DOM probundan önce gelir; toplam soğuk süre daha uzun olabilir. 401 hazır olma kanıtı değildir. Güvenli tanı yalnız izinli phase/name/code içerir; mesaj/stack/yol/token göstermez. Deadline alt süreçleri de iptal eder. Doğrulama bütçesi [paket bölümündedir](#yerel-worker-paketi).
+
+CI otoritesi `.github/workflows/ci.yml` ve `backend/tests/test_p8_ci_contract.js` sözleşmesidir. `test`: 60 saniyelik engelleyici backend/frontend `npm audit --audit-level=high`, `P8_REQUIRE_DOCKER_LIMITS=1` backend, frontend birim/build, Chromium E2E ve gerçek Docker worker doğrulaması. Browser container'ları init ile çocukları toplar; GPU/zygote kapalı, yolculuk başına yeni tek süreçli browser kullanılır. `production-image`, `test` işine bağlıdır ve continue-on-error olmadan HTTPS yüzeyini sınar. `local-worker` Windows/Linux/macOS kaynak entegrasyonu, paket ve aktif kapanışı sınar; matris tanımı başarılı platform kabulü değildir.
+
+### Ajan talimatları ve kurtarma işletimi
+
+Üretim rolleri tam anayasa/rol metnini modül yüklenirken önbellekler; Manager sohbeti yeniden okur. `x-agents/` değişince tüm rolleri yenilemek için planlı backend restart gerekir. Dockerfile dizini root sahipliğinde `/app/x-agents` altına kopyalar; veri volume'lerini buraya bağlamayın. Proje yolları doğrudan/link üzerinden bu dizinle çakışamaz. Rapor/başlık/loglar sınırlandırılmış, redakte kullanıcı verisidir, sistem politikası değildir; bu modelin etkilenmezliğini garanti etmez.
+
+Protokol I/O dosya başına 2 MiB, link/proje dışı yol reddi ve source fence uygular. TODO düzenlemesi süreç içinde dosya başına sıralanır; süreçler arası otorite ortak SQLite lease'idir. SQLite kilidi çok dosyalı filesystem rollback/fsync garantisi vermez. Kısmi kaynak yazımı hata verir, checkpoint yayımlanmaz; crash sonrası gerçek içerik denetlenir. Migration 17 aidiyeti sürümler, geçmiş kanıtı başka göreve etiketlemez. Teamleader görev/gereksinim izdüşümü güncel sözleşme/lease transaction'ında yenilenir; runtime kanıtı veya tarihsel toplu backfill değildir.
+
+[Devam etme kurallarına](#adım-6-canlı-müdahale-duraklatma-ve-kaldığı-yerden-devam-etme-pause--resume) ek olarak worker onarım bütçesi çağrıdan önce ayrılır: parti başına 8 hedef/64 bulgu, sahip/hedef başına 2 değişen girdili deneme, sözleşme başına 64 Coder denemesi. Rezervasyon `contract.id`, `contract.contract_hash`, `owner.spec`, `target`, `currentHash`, `fingerprints`, `digest(currentContext)` ile bağlı ve tek sağlayıcı çağrılıdır. Bozuk worker ret kaydı da devamı engeller; tüketilmiş belirsiz rezervasyon revizyon ister, ledger silinmez. Taşıma hatası/süresi dolan doğrulama controller blocker'dır, doğrulanmış worker kanıtı değildir. [Faz 2 raporu](docs/faz-arsiv.md#mimari-faz-2) tarihsel ayrıntıları içerir.
+
+---
+
+<a id="yerel-worker-paketi"></a>
+
+## 13. Bağımsız Yerel Worker Paketi
+
+Paket worker'ı aynı OS/mimarideki bilgisayara taşır; tam XFactor değildir. `local-trusted` üretilen kodu worker hesabının yetkileriyle çalıştırır, OS izolasyonu sağlamaz ve Docker'a kendiliğinden geçmez. Gerektiğinde ayrı hesap/makine kullanın.
+
+### Araçlar ve üretim
+
+Node 22.23.2, npm 10.9.8, Playwright Core 1.62.1 ve onun Chromium revision'ı gerekir; Python gerekmez. Mutlak araç yolları:
+
+| Değişken | Varsayılan |
+| --- | --- |
+| `XFACTOR_LOCAL_NODE` | Çalışan Node executable |
+| `XFACTOR_LOCAL_NPM_CLI` | Node yanındaki `node_modules/npm/bin/npm-cli.js` veya `../lib/node_modules/npm/bin/npm-cli.js` |
+| `XFACTOR_LOCAL_PLAYWRIGHT` | `execution/node_modules/playwright-core/index.mjs` |
+| `XFACTOR_LOCAL_CHROMIUM` | Eşleşen headless-shell, yoksa Playwright tam Chromium executable |
+| `PLAYWRIGHT_BROWSERS_PATH` | İsteğe bağlı browser cache yolu |
+
+```bash
+node scripts/setup-local-worker.mjs
+node scripts/setup-local-worker.mjs --install
+node scripts/package-local-worker.mjs --output dist/local-worker
+```
+
+İlk komut yalnız araçları denetler. İndirme seçeneği `--install`, gözden geçirilmiş backend/execution lockfile'larına `npm ci --ignore-scripts` ve Chromium kurulumu uygular; global paket, müşteri projesi veya admin/parola değiştirmez. Linux sistem kitaplıklarını operatör sağlar; ayrıcalıklı kurulum otomatik yapılmaz.
+
+Yeni hedef seçin; uygulama kaynakları (`docs`, `x-agents` dahil) altına paket yazılamaz. Paket Node, tam npm, Playwright/Chromium, gerekli execution/backend kaynak/bağımlılıkları ve dosya SHA-256/OS/mimari/sürüm manifesti içerir. `.env`, canlı veri, test, admin betiği, credential, workspace ve platform ajan Markdown'ları dışarıda kalır; tam backend dağıtımında `x-agents/` korunmalıdır. Bu birleşik kılavuz pakete README olarak kopyalanır; diğer bölümleri tam uygulamayı anlatır. Yarım paket geçersizdir; düzeltip yeni hedef seçin.
+
+### Başlatma ve bütünlük
+
+Tüm dizini aynı OS/mimariye kopyalayıp Windows'ta `start-worker.cmd`, Linux/macOS'ta `./start-worker.sh` çalıştırın. Boşluklu yollar ve Node kurulu olmayan hedef desteklenir. Başlatıcı hash/araç/sürüm denetler. Kaynak paketi worker hesabına salt okunur tutun. SHA-256 bozulmayı ölçer; manifest ile paketin birlikte kötü niyetle değiştirilmesini doğrulayamaz, güvenilir dağıtım kaynağı gerekir.
+
+Chromium doğrulanmış paketten state altında benzersiz `browser-runtime-*` kopyasına alınır, kopya hash'leri tekrar denetlenir. Windows çocukları executable yanında erken log oluşturabildiği için tüm prob/işler bu yazılabilir kopyayı kullanır; ek browser dizini kadar alan/kopyalama süresi gerekir. Normal kapanış/açılış hatası temizler; ani launcher çöküşü operatör temizliği gerektirebilir. Log/crash dosyaları kaynak pakete dahil edilmez; kabul testi işlerden sonra immutable manifest'i tekrar denetler.
+
+Windows Chromium sandbox'ı çalışma kopyasında `S-1-15-2-1`, `S-1-15-2-2` için read/execute ister. ACL yalnız doğrulanmış sahipli browser kopyasında hazırlanır; sahibi ACL değiştirebilmelidir, hata açılışı engeller. Operatör browser'ı, immutable paket ve uygulama verisinin izinleri değiştirilmez. Chromium sandbox açık kalır; Node kodunu host hesabından izole etmez.
+
+### State, backend bağlantısı ve süreler
+
+Worker `127.0.0.1:8099` dinler; `EXECUTION_WORKER_PORT` değiştirir. Başlatıcı `EXECUTION_WORKER_RUNTIME=local`, `EXECUTION_WORKER_TRUST_LOCAL_CODE=1` ayarlar. Kalıcı iş/rastgele token paket dışında `~/.xfactor/local-worker`, alternatif `XFACTOR_LOCAL_WORKER_DATA` altındadır. Windows ACL'sini worker hesabıyla sınırlayın; Unix owner-only mod kullanılır. Token yazdırılmaz. Ctrl+C IPC ile iptal/süreç temizliği bekler; 60 saniyelik fallback yanıt vermeyen worker'ı sonlandırır. HTTP iptal tek işi durdurur. Kapanışta yeni işler başlamaz, kesilen aktif iş failed_interrupted olur; Windows helper beklenmeyen worker kapanışında çocukları da sonlandırır.
+
+Kaynak kurulumunda `npm run worker:local:setup -- --install`, ardından `npm run dev`/`dev:local` yerel profil/token paylaşımı yapar; devralınan ortam Docker dese de yereli seçer. Docker için dev:docker kullanın. Doğrudan `node execution/server.js` runtime/token'ı ayrıca ister. Paketli backend'e `EXECUTION_WORKER_URL=http://127.0.0.1:8099` ve state'teki worker-token dosyasından güvenli okunan aynı token'ı `EXECUTION_WORKER_TOKEN` olarak verin. Alternatif: iki sürece aynı bağımsız üretilmiş en az 32 karakterlik sır. Git/loga yazmayın, backend'i yeniden başlatın. Paket frontend/backend dağıtımı veya admin bilgilerini değiştirmez; bundled Node mevcut backend'i de çalıştırabilir.
+
+`READINESS_WORKER_TIMEOUT_MS` varsayılan 2000 ms, kaynak yerel başlatıcıda boşsa 35000 ms. `VERIFICATION_JOB_TIMEOUT_MS` varsayılan 900000 ms (15 dakika), yerel başlatıcıda boşsa 1500000 ms (25 dakika); üst sınır 25 dakika, geçersiz değer reddedilir. Daha düşük açık ayar ve komut sınırları korunur. Yeni prepare/verify işleri içindir; restart gerekir, aktif deadline uzamaz. Kaynak başlatıcısı kullanılmayan backend'de değerleri açıkça yapılandırın.
+
+### Test, kaynak sınırları ve tanı
+
+```bash
+npm --prefix execution test
+npm run test:local-worker
+npm run test:local-worker-package -- --bundle dist/local-worker
+npm --prefix execution run test:docker
+```
+
+Bunlar birim, gerçek yerel HTTP/SQLite/API/browser ve olumsuz test-suite vakaları, gerçek paket kabulü, Docker entegrasyonudur. `node scripts/test-local-worker-package.mjs --bundle dist/local-worker` da geçerlidir: geçici state/rastgele port ve bundled araçlarla auth/manifest, dependency prepare, gerçek build/test, SQLite read/write, manager/viewer API, dört Chromium rol yolculuğu ve aktif kapanışı sınar; Docker çağırmaz. `--readiness-only` proje işleri olmadan açılış/auth/güven metadata'sını denetler. Tam koşu gizli bilgi içermeyen `.tmp/local-worker-package-result.json` yazar ve sahipli job/state dizinlerini temizler.
+
+HOME/npmrc/npm log/geçici kaynak/DB iş başına ayrılır/temizlenir; host npm kimlik bilgileri aktarılmaz. Registry `https://registry.npmjs.org` sabittir. Public paket cache'i `os.tmpdir()` veya `XFACTOR_LOCAL_WORKER_DATA` altında xfactor-local-cache/npm olarak kalır; kaynak/kalite sonucu cache'i değildir. Windows helper cache'i ayrıdır. Windows Job Objects basit projede 1 GiB/100 süreç, domain uygulamasında 4 GiB/250 süreç varsayar; `XFACTOR_LOCAL_JOB_MEMORY_BYTES`, `XFACTOR_LOCAL_JOB_PIDS` değiştirir, geçersiz değer engellenir. Windows 10+/Server 2016+, ilk helper derlemesinde PowerShell 5/.NET Framework gerekir. Atomik Job ataması iptal/başlangıç yarışında yetim askıda çocuk bırakmaz; helper derlemesi iptal/deadline'a tabidir. Unix owned process group temizliği kullanır; Windows bellek/PID sınırları Unix için iddia edilmez.
+
+Son 64 komut iş/lease sınırıyla aşama, executable adı, zaman, exit code, timeout/kesilme tanısı tutar; argüman/ortam/ham çıktı içermez, PASS kanıtı değildir. Eksik dosya, yanlış hash/sürüm, desteklenmeyen OS/mimari, eksik browser kitaplığı veya başarısız browser açılışı engelleyicidir; kontrolleri kaldırmadan güvenilir kaynaktan onarın/yeniden paketleyin.
+
+Tarihsel Windows kabulü 129 kaynak testi, 33 paket kontrolü, dört Chromium yolculuğu, aktif kapanış ve iş sonrası manifest denetimi kaydetmiştir; güncel sayılar [Faz 4 raporundadır](docs/faz-arsiv.md#mimari-faz-4). 21 Ekim otel üretimi yukarıdaki 205 PASS/170 zorunlu ayrıntı kaydıyla ayrı kabul örneğidir; teslim ZIP'i sonradan açılıp çalıştırılmadı. Windows sonucu Linux/macOS kabulü değildir; her OS/mimari kendi kaynak/paket/prepare/verify/browser kabulünü gerektirir. Docker build/run ayrı altyapı kontrolüdür.
+
+---
+
+<a id="zip-yasam-dongusu"></a>
+
+## 14. ZIP Yaşam Döngüsü, Envanter ve Karantina
+
+Bu bölüm `backend/services/artifactLifecycle.js`, silme/senkronizasyon ve `backend/scripts/artifact-maintenance.js` işletimini açıklar. Kaynak klasörü, DB ve fiziksel ZIP ayrıdır. Benzer adlar farklı denemelerden gelebilir; sahiplik/silinebilirlik kanıtı değildir.
+
+### Bulunabilirlik ve kalite
+
+| Bulunabilirlik | Anlamı |
+| --- | --- |
+| available | Normal dosya, kayıtlı boyut/hash ile eşleşir; kalite onayı değildir. |
+| missing | Dosya yok; tarihsel verified korunur. |
+| hash_mismatch | Boyut/içerik eşleşmiyor. |
+| quarantined | Kaynak boş; günlükteki karantina dosyası boyut/hash ile eşleşir; indirme onayı değildir. |
+| quarantine_missing | Tamamlanmış karantina dosyası eksik/okunamıyor/eşleşmiyor. |
+| unsafe_path | Yanlış tür veya sembolik bağlantı. |
+| unreadable | Erişim hatası. |
+
+Proje yanıtı doğrulanmış aday yoksa none, dosya mevcut fakat kanıt geçersizse invalid_evidence bildirebilir. İndirme güncel sözleşme, worker/kapı/makbuz ve eşleşen dosya ister. Eksik ZIP'i yeniden paketlemek eski kanıtı geri getirmez; yeniden doğrulama gerekir. Oturum/viewer korumalı `GET /api/projects/:id/contracts/:contractId/artifacts/:artifactId/download`, sunucu dosyasını gönderir; istemci listesinden ZIP üretmez. Başarı sohbet kaydı transfer callback'i başarılı olunca yazılır; eksik dosya/kopuk transfer başarı değildir.
+
+Kaynak klasörün taşınması/silinmesi DB/ZIP'i otomatik silmez. Kök disk erişilemiyorsa envanter hata verir; toplu temizlik yapmaz, önce disk/kökü kontrol edin. Makbuzlu proje normal silmeye kapalıdır. İzinli silmede kayıtlı ZIP yolları/hash'leri artifact_maintenance günlüğüne silme transaction'ında yazılır; journal INSERT hatası rollback eder, günlük proje silinince cascade ile kaybolmaz. Eksik/bozuk dosyanın kaydı korunur, işlem pending kalır; kök erişilemezse sahiplik kayıtları silinerek ilerlenmez.
+
+### Karantina ve kontrollü bakım
+
+| Dosya | Hedef |
+| --- | --- |
+| Merkezi ZIP | `ARTIFACTS_ROOT/.quarantine/<işlem-kimliği>.zip` |
+| `PROJECTS_ROOT/<proje-id>.zip` teslim kopyası | `PROJECTS_ROOT/.artifact-quarantine/<işlem-kimliği>.zip` |
+
+Teslim kopyası kayıtlı artifact hash'iyle eşleşmelidir. Taşıma kaynak filesystem'inde kalır; kökler ayrı disklerde olabilir. DB commit sonrası taşıma denenir; açılış/senkronizasyon pending işlemleri tekrarlar. Günlük kaynak/hedef/hash/hata ve pending/quarantined durumunu tutar. Taşıma sonrası DB güncellemesi yarım kalırsa hedef hash'iyle kurtarılır. Hash değişmesi veya koruma kazanılması taşımayı engeller. **Kalıcı purge/otomatik geri yükleme komutu yoktur; karantina ve DB günlüğünü birlikte koruyun.**
+
+Depo kökünde, backend ile aynı DB_PATH/PROJECTS_ROOT/ARTIFACTS_ROOT ortamını kullanın; CLI backend .env dosyasını kendiliğinden yüklemez:
+
+```bash
+# Salt okunur envanter
+node backend/scripts/artifact-maintenance.js
+# Uygun yeni adaylar ve bekleyen kurtarma
+node backend/scripts/artifact-maintenance.js --quarantine --offline
+# Yalnız yeni kayıt dışı adayları seç; eski pending işlemleri de kurtar
+node backend/scripts/artifact-maintenance.js --quarantine --offline --orphans-only
+```
+
+Salt okunur komut migration/klasör oluşturma/taşıma yapmaz; proje, bulunabilirlik, kayıt dışı ZIP, günlük ve adayları JSON raporlar. Yazımdan önce güncel backend'i bir kez açıp migration 16'yı uygulatın; backend/worker ve aynı depodaki yazıcıları durdurup envanteri inceleyin. --offline servis durdurmaz; running workflow varsa yazım reddedilir. --orphans-only eski diğer pending kurtarmalarını engellemez.
+
+- Kayıtlı rejected/superseded: DB oluşturulmasından 7 gün geçmiş, hash doğru, makbuz koruması yok, proje kayıtlı ve çalışmıyor/silinmiyor olmalı.
+- Kayıt dışı ZIP: dosya değişikliğinden 24 saat geçmiş ve hiçbir workflow çalışmıyor olmalı; .tmp, link/kök dışı kapsam dışıdır.
+- Pending/quarantined çoğaltılmaz. Taşıma DB yazma kilidinde referans/makbuz/durum/workflow/sahiplik/hash denetler; Windows yol harf farkı normalleştirilir.
+
+Eşikler otomatik temizlik takvimi değildir. Senkronizasyon yeni saklama adayı seçmez; günlüklenmiş bekleyenleri tekrarlar. Önceden kaybolmuş ZIP'leri kurtarmaz.
+
+### 21–22 Ekim 2026 tarihsel bakım kaydı
+
+21 Ekim'de 26 merkezi ZIP/33 DB artifact vardı. 13 kayıt dışı ZIP eski doğrudan test_project_state_rehydration.js koşularından kalmıştı; test yardımcısı artık DB/projects/artifacts/trash köklerini birlikte izole eder. Eksik 20 kayıtlı ZIP'in 5'i tarihsel verified idi. projects/backend/data/.tmp aramasında alternatif bulunmadı; silinme nedeni veya başka disk/yedeklerin durumu kanıtlanmadı.
+
+22 Ekim'de servisler durdurulup DB, 26 ZIP ve before/after envanteri Git dışındaki `backend/data/maintenance-backups/2026-10-22-artifact-lifecycle/` altına alındı (projects.db, artifacts/, inventory-before.json, inventory-after.json). Hassas kullanıcı/proje verisi içerir; erişimi sınırlayın, Git/herkese açık yere yüklemeyin. .tmp temizliğinden etkilenmez; tüm kaynaklar veya LLM profil/anahtarlarının tam yedeği değildir.
+
+13 test kalıntısı ve emlak-yonetim-1 için 5 eski rejected olmak üzere 18 ZIP karantinaya taşındı; merkezde otelin 8 ZIP'i kaldı. Kayıt dışı/pending/hata 0, karantinadaki kayıtlı artifact 5 idi. Eksik 20 ZIP/5 verified kurtarılmadı; karantinadaki 18 dosyadan ayrıdır. Kalıcı silme yapılmadı. Merkezi otel paketi ve teslim kopyası yalnız hash kontrolünden geçti; açılmadı/çıkarılmadı/çalıştırılmadı:
+
+```text
+b209f6f4cb4b0aae6e8274b03a853090fd635828d72bc035919b11611e83eb1a
+```
+
+O tarihte restart sonrası şema 16, backend/worker hazır, frontend HTTP 200; 146 backend süiti ve 118 frontend testi/build başarılı, Docker cgroup/timeout atlandı. Eski sohbet testi metin/şema beklentileri güncellendi; rollback, yarım taşıma, Windows harf farkı, aktif üretim, kök/link/sahiplik korumaları sınandı. Yedek karşılaştırmasında 5 proje, 16 sözleşme, 33 artifact, 4 makbuz korundu; 18 karantina hash'i eşleşti, kaynak kopyaları kalmadı. Bunlar canlı envanter/güncel şema veya yeni Docker kabulü değildir; güncel durumu CLI/günlükten, son testleri [Faz 4 raporundan](docs/faz-arsiv.md#mimari-faz-4) okuyun.
