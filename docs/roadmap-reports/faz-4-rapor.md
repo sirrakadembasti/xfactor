@@ -2,8 +2,8 @@
 
 - **Faz:** Faz 4 — Tanrı Modüllerin Parçalanması, Mimari Borç Temizliği ve Graphify Senkronizasyonu (`ENG-8`, `DAT-6`)
 - **Dal (Branch):** `arch/roadmap-2026-10`
-- **Başlangıç / Bitiş Commit SHA:** `eb65a80 .. e083263`
-- **Tarih:** `2026-10-29 15:45`
+- **Başlangıç / Bitiş Commit SHA:** `eb65a80 .. 528ed58`
+- **Tarih:** `2026-10-29 16:40`
 
 ---
 
@@ -17,6 +17,7 @@
 | Görev 4.3 | `DAT-6a` | `backend/routes/projectObservabilityRoutes.js`, `backend/routes/projectTraceabilityRoutes.js`, `backend/routes/projectRoutes.js`, `backend/scripts/graphSource.js` | `50445ce` | `test_http_integration.js`, `test_p3_observability.js`, `test_p5_artifact_completion.js`, `test_graphify.js` | PASS |
 | Görev 4.4 | `DAT-6b` | `backend/db/migrations.js`, `backend/db.js` | `85a612e` | `test_database_migrations.js`, `test_workflow_attempts.js`, `test_p0_a_migrations.js`, `test_p0_b_migrations.js`, `test_p1_a_migrations.js` | PASS |
 | Görev 4.5 | Graphify Sync | `backend/scripts/generate_graph.js`, `backend/package.json`, `graphify-out/graphify-bilgi-notu.md`, `graphify-out/*` | `e083263` | `test_graphify.js`, `test_p9_runner_inventory.js` | PASS |
+| Adım 6 | Kıdemli Mimar Denetimi & Doğrulama Altyapısı İyileştirmeleri | `backend/engine/buildValidator.js`, `backend/tests/test_build_validator.js`, `execution/tests/jobBoundary.test.js`, `scripts/test-worker.mjs`, `backend/tests/test_runner.js`, `backend/tests/isolatedDb.js`, `backend/tests/test_p7_approve_state.js`, `frontend/vitest.config.js`, `.gitattributes` | `528ed58` | Tüm Platform Paketi (`backend`, `execution`, `frontend`, `test:local-worker`) | PASS |
 
 ---
 
@@ -73,36 +74,45 @@ Faz 4 kapsamında mimarideki 4 devasa "Tanrı Modül" (God Module) parçalanarak
 - `MIGRATIONS` ve `columnExists` `backend/db/migrations.js` modülüne taşındı ve `backend/db.js` üzerinden re-export edildi.
 - **Sonuç:** `test_database_migrations.js`, `test_workflow_attempts.js`, `test_p0_a_migrations.js`, `test_p0_b_migrations.js`, `test_p1_a_migrations.js` 100% PASS.
 
-### Görev 4.5: Graphify Bilgi Grafiği Senkronizasyonu (`e083263`)
+### Görev 4.5: Graphify Bilgi Grafiği Senkronizasyonu (`e083263` & Mimar Güncellemesi)
 - `backend/scripts/generate_graph.js` içine 7 yeni modül düğüm ve bağlantıları eklendi.
 - `npm --prefix backend run graph` başarıyla çalıştırıldı:
-  - Toplam Düğüm: **3.021**
-  - Toplam Bağlantı: **7.798**
+  - Toplam Düğüm: **3.025**
+  - Toplam Bağlantı: **7.809**
   - Kopuk Bağlantı (Dangling link): **0**
 - **Sonuç:** `test_graphify.js` ve `test_p9_runner_inventory.js` 100% PASS.
 
+### Adım 6: Kıdemli Mimar Denetimi, AST False-Positive Düzeltmesi ve Doğrulama Altyapısı İyileştirmeleri
+1. **`buildValidator.js` AST `.toLowerCase()` Yanlış-Pozitif (False-Positive) Düzeltmesi:**
+   - `cb06eaf` commit'inde `validateTypeScriptFiles` içine eklenen AST kontrolünün nesne tipine bakmaksızın her `.toLowerCase()` çağrısına (`role.toLowerCase()` dahil) `TS2339: Property 'toLowerCase' does not exist on type 'number'` hatası üretmesi düzeltildi. Kontrol yalnızca `NumericLiteral` veya AST kapsamında `TSNumberKeyword` (ya da sayısal literal) olarak tanımlanmış değişkenler üzerinde tetiklenecek şekilde daraltıldı; `test_build_validator.js` içine regresyon testi eklendi.
+2. **Event-Loop Kilitlenmesi (Hang) Koruması (`execution/tests/jobBoundary.test.js` & `scripts/test-worker.mjs`):**
+   - `jobBoundary.test.js` içinde `t.after()` bloğuna bekleyen `executeWaitResolvers` sözlerini (Promise) serbest bırakacak temizlik eklendi; alt test 12'deki `delayedServer` ve `delayedStore` `try / finally` bloğuna alındı.
+   - `scripts/test-worker.mjs` koşucusuna birim testlerde `--test-timeout=60000` (60 sn), entegrasyon testlerinde (`--local-integration` / `--docker-integration`) `--test-timeout=600000` (10 dk) üst zaman aşımı eklendi.
+3. **Backend Test Koşucusu Şablon DB Klonlama ve İşçi Havuzu (`backend/tests/test_runner.js` & `backend/tests/isolatedDb.js`):**
+   - Her alt süreçte 23 SQLite migrasyonunu sıfırdan çalıştırmak yerine `template.db` bir kez hazırlanıp `fs.copyFile` / `fs.copyFileSync` (`XFACTOR_TEMPLATE_DB_PATH`) ile klonlanacak şekilde optimize edildi ve `XFACTOR_TEST_CONCURRENCY` (varsayılan 2 paralel işçi) desteği eklendi.
+   - `backend/tests/test_p7_approve_state.js` içindeki sıkı `5000ms` onay/dispatch zamanlayıcısı paralel G/Ç yükü altında yanlış-pozitif zaman aşımı üretmemesi için `15000ms` seviyesine çıkarıldı.
+4. **Vitest Önbellek İzolasyonu ve Satır Sonu Standardizasyonu (`frontend/vitest.config.js` & `.gitattributes`):**
+   - `frontend/vitest.config.js` içine `cacheDir: path.join(os.tmpdir(), 'xfactor-vitest-cache')` eklendi.
+   - `.gitattributes` ile depo genelinde LF (`* text=auto eol=lf`) standardı tanımlandı.
+
 ---
 
-## 4. Tam Regresyon Paketi Sonuçları
+## 4. Tam Regresyon Paketi Sonuçları (Kıdemli Mimar Doğrulaması)
 
 | Paket | Komut | Toplam Test | Geçen | Kalan | Çıkış Kodu (Exit Code) | Süre |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Backend | `npm --prefix backend test` | 148 paket | 148 paket | 0 | 0 | 274.38s |
-| Execution | `npm --prefix execution test` | 156 test | 156 | 0 | 0 | 98.20s |
-| Frontend Unit | `npm --prefix frontend run test:unit` | 129 test (14 dosya) | 129 | 0 | 0 | 63.12s |
-| Frontend Build | `npm --prefix frontend run build` | 1.702 modül | 1.702 | 0 | 0 | 23.69s |
+| Backend | `npm --prefix backend test` | 148 paket | 148 paket | 0 | 0 | 335.93s |
+| Execution | `npm --prefix execution test` | 156 test | 156 | 0 | 0 | 97.53s |
+| Local Worker E2E | `npm run test:local-worker` | 159 test | 159 | 0 | 0 | 211.94s |
+| Frontend Unit | `npm --prefix frontend run test:unit` | 130 test (14 dosya) | 130 | 0 | 0 | 97.59s |
+| Frontend Build | `npm --prefix frontend run build` | 1.702 modül | 1.702 | 0 | 0 | 17.28s |
 
 ---
 
-## 5. Referans E2E Proje Doğrulama Kanıtı
-- **Test Edilen Senaryolar:** `test_e2e_simulation.js`, `test_p9_verification_pipeline.js`, `test_p9_artifact_pipeline.js`, `test_workflow_dev_fallback.js`
-- **Doğrulama Koşusu (Run ID / Contract ID):** `e2e-test-1793264935838` / `contract-pinned-2026-10`
-- **Zorunlu Kapı Sonuçları (`18/18 PASS`):**
-  - `Manager`: manager/TALIMATNAME.md ve manager/TODO.md doğrulandı.
-  - `Director [Frontend & Backend]`: ALT-TALIMATNAME.md oluşturuldu ve onaylandı.
-  - `Teamleader [frontend-core-lead & backend-core-lead]`: Görevler DAG'a aktarıldı.
-  - `Coder & Reviewer`: 4 görev tamamlandı, kodlar denetlendi ve onaylandı.
-  - `Quality Gate & Verification`: Sıfır hata, tam kanıt bütünlüğü.
+## 5. Referans E2E ve Local Worker Roundtrip Doğrulama Kanıtı
+- **Gerçek Local Worker E2E Roundtrip (`npm run test:local-worker` -> `localRoundtrip.integration.test.js`):**
+  - `prepare_dependencies` (`npm install --package-lock-only --ignore-scripts`) ve `verify_artifact` HTTP sınır protokolü, 28 zorunlu kontrol kapısı (`package_json`, `lockfile`, `ast_import_inventory`, `clean_install`, `framework_build`, `readme_build`, `readme_check`, `manifest_presence`, `service_definitions`, `port_uniqueness`, `management_demo_seed`, `service_spawn`, `smoke_liveness_probe`, `management_role_login`, `prisma_schema_presence`, `database_connectivity`, `database_write_capability`, `api_role_create_allowed`, `api_role_create_denied`, `api_anonymous_read_policy`, `api_role_read_allowed`, `database_mutation_assertion`, `browser_page_load`, `browser_journey_steps`, `browser_management_interaction`, `test_script_presence`, `test_suite_execution`, `smoke_gate`), gerçek SQLite mutasyonu ve Playwright/Chromium (`manager` + `viewer` pozitif/negatif 4 rol yolculuğu) uçtan uca **PASS** olarak kanıtlandı.
+- **Backend İş Akışı E2E Senaryoları:** `test_e2e_simulation.js`, `test_p9_verification_pipeline.js`, `test_p9_artifact_pipeline.js`, `test_workflow_dev_fallback.js` 100% PASS.
 
 ---
 
@@ -115,8 +125,10 @@ Faz 4 kapsamında mimarideki 4 devasa "Tanrı Modül" (God Module) parçalanarak
   ```
   *(Çalışma ağacı tertemiz; kod tabanında hiçbir sahipsiz veya geçici dosya bulunmamaktadır.)*
 
-- `git log --oneline -n 6` çıktısı:
+- `git log --oneline -n 8` çıktısı:
   ```text
+  528ed58 fix(phase4): fix AST toLowerCase false-positive and harden test/verification infrastructure
+  f11f755 docs(roadmap): add Phase 4 completion and evidence report [faz-4-rapor.md]
   e083263 docs(graphify): update knowledge graph and architectural reports after Phase 4 modularization
   85a612e refactor(db): deduplicate assertWorkflowLease and extract migrations module [DAT-6]
   50445ce refactor(routes): split observability, traceability, and artifact download routes out of projectRoutes.js [DAT-6]
