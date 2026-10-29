@@ -122,7 +122,11 @@ async function extractCodeGraph() {
         { id: 'backend/engine/protocolIO.js', label: 'protocolIO.js (Protocol Boundary)', desc: 'İç içe protokol dosyaları için bounded okuma, link reddi ve korumalı yazım' },
         { id: 'backend/engine/checkpointIdentity.js', label: 'checkpointIdentity.js (Scoped Ownership)', desc: 'Sözleşme/domain/takım/görev kimliği ve konservatif eski checkpoint aidiyeti' },
         { id: 'backend/engine/checkpointRepository.js', label: 'checkpointRepository.js (Durable Evidence)', desc: 'Sürümlü görev aidiyeti, sözleşme ve lease kontrollü checkpoint kalıcılığı' },
-        { id: 'backend/engine/workerRepairs.js', label: 'workerRepairs.js (Bounded Owner Repair)', desc: 'Kalıcı çağrı bütçesi, tekil sahiplik ve kaynak CAS ile worker bulgusu onarımı; taze inceleme ve worker kanıtı gerekir' }
+        { id: 'backend/engine/workerRepairs.js', label: 'workerRepairs.js (Bounded Owner Repair)', desc: 'Kalıcı çağrı bütçesi, tekil sahiplik ve kaynak CAS ile worker bulgusu onarımı; taze inceleme ve worker kanıtı gerekir' },
+        { id: 'backend/engine/stages/repairStage.js', label: 'repairStage.js (Targeted Repair)', desc: 'Statik deterministik denetim ve tester veto hedefli onarım döngüleri' },
+        { id: 'backend/engine/stages/verificationStage.js', label: 'verificationStage.js (Verification Helpers)', desc: 'İzole bağımlılık hazırlığı ve paket kilidi doğrulama yardımcıları' },
+        { id: 'backend/engine/templates/dockerTemplates.js', label: 'dockerTemplates.js (Container Scaffold)', desc: 'Next.js, Vite ve Express için çok aşamalı Dockerfile ve .dockerignore şablonları' },
+        { id: 'backend/engine/templates/prismaTemplates.js', label: 'prismaTemplates.js (Prisma & Auth Scaffold)', desc: 'Prisma client/db çift köprü, User modeli, seed ve auth yardımcıları şablonları' }
     ];
 
     engine.forEach(e => {
@@ -139,6 +143,10 @@ async function extractCodeGraph() {
     addLink('backend/engine/workflow.js', 'backend/engine/checkpointIdentity.js', 'qualifies_task_ownership');
     addLink('backend/engine/workflow.js', 'backend/engine/checkpointRepository.js', 'persists_reviewed_checkpoints');
     addLink('backend/engine/workflow.js', 'backend/engine/workerRepairs.js', 'routes_bounded_owner_repairs');
+    addLink('backend/engine/workflow.js', 'backend/engine/stages/repairStage.js', 'delegates_repair');
+    addLink('backend/engine/workflow.js', 'backend/engine/stages/verificationStage.js', 'delegates_verification');
+    addLink('backend/engine/codeGenerator.js', 'backend/engine/templates/dockerTemplates.js', 'uses_templates');
+    addLink('backend/engine/codeGenerator.js', 'backend/engine/templates/prismaTemplates.js', 'uses_templates');
 
     // 4. Server & Backend Services (Group 4: Green)
     const backendServices = [
@@ -165,7 +173,10 @@ async function extractCodeGraph() {
         { id: 'backend/verification/databaseVerifier.js', label: 'verification/databaseVerifier.js', desc: 'Prisma şema varlığı, db push ve veritabanı yazma/okuma kabiliyeti denetleyicisi' },
         { id: 'backend/verification/apiVerifier.js', label: 'verification/apiVerifier.js', desc: 'REST HTTP yanıtları ve veritabanı durum mutasyonları sözleşme denetleyicisi' },
         { id: 'backend/websocketHub.js', label: 'websocketHub.js', desc: 'Canlı telemetri yayını, rate limiting ve yetkili kullanıcı soket yöneticisi' },
-        { id: 'scripts/dev.mjs', label: 'scripts/dev.mjs (Unified Dev Runner)', desc: 'Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu' }
+        { id: 'scripts/dev.mjs', label: 'scripts/dev.mjs (Unified Dev Runner)', desc: 'Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu' },
+        { id: 'backend/routes/projectObservabilityRoutes.js', label: 'routes/projectObservabilityRoutes.js (Observability)', desc: 'Sözleşmeler, doğrulama koşuları, kontrol logları ve metrik API uç noktaları' },
+        { id: 'backend/routes/projectTraceabilityRoutes.js', label: 'routes/projectTraceabilityRoutes.js (Traceability & Artifacts)', desc: 'Gereksinim etki analizi, rebuild preview ve doğrulanmış artefakt indirme uç noktaları' },
+        { id: 'backend/db/migrations.js', label: 'db/migrations.js (Schema Migrations)', desc: 'Versiyonlu SQLite şema migrasyonları ve sütun varlık yardımcıları' }
     ];
 
     backendServices.forEach(b => {
@@ -174,6 +185,9 @@ async function extractCodeGraph() {
 
     addLink('backend/server.js', 'backend/routes/projectRoutes.js', 'mounts');
     addLink('backend/server.js', 'backend/routes/authRoutes.js', 'mounts');
+    addLink('backend/routes/projectRoutes.js', 'backend/routes/projectObservabilityRoutes.js', 'delegates_routes');
+    addLink('backend/routes/projectRoutes.js', 'backend/routes/projectTraceabilityRoutes.js', 'delegates_routes');
+    addLink('backend/db.js', 'backend/db/migrations.js', 'executes_migrations');
     addLink('backend/routes/projectRoutes.js', 'backend/engine/workflow.js', 'triggers_workflow');
     addLink('backend/routes/projectRoutes.js', 'backend/agents/agentLoader.js', 'reads_docs');
     addLink('backend/routes/projectRoutes.js', 'backend/llm.js', 'calls_ai');

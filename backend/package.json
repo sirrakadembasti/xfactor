@@ -12,6 +12,7 @@
     "dev:bun": "bun --watch server.js",
     "create-admin:bun": "bun scripts/create_admin.js",
     "test": "node tests/test_runner.js",
+    "graph": "node scripts/generate_graph.js",
     "test:docker:artifact": "node tests/test_generated_docker_artifact.js",
     "postinstall": "npm --prefix ../llm-yonetimi ci --ignore-scripts"
   },
