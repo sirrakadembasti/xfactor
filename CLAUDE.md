@@ -22,6 +22,7 @@ Bu dosya çalışma kurallarını tanımlar. Uygulamanın mimarisi, özellikleri
 - Okumayı dosya adlarını listelemekle sınırlama; ana akışları, güvenlik/kanıt sınırlarını, hata sonrası davranışları ve değişikliğin etkileyeceği modülleri anlamadan uygulamaya geçme.
 - Belgeler veya grafik ile kod çelişirse ilgili kod yolunu incele; **kod otoritedir**. Çelişkiyi bildir ve ilgili dokümanı koda göre hizala. Grafiğin statik ilişkileri çalışma zamanı başarısını kanıtlamaz.
 - Tarihli test raporlarını yeni çalıştırılmış sonuç gibi sunma. Atlanan kontrolleri ve doğrulamanın kapsamını koru.
+- **Sayısal bilgi doğrulama:** Kapı, kontrol, test, modül, migrasyon, süre, sürüm veya limit sayısını yalnız dokümandan alıp güncel gerçek gibi sunma. Önce ilgili kod sabitlerini, koşullu üretim yollarını ve testleri incele; mümkünse sayıyı koddan hesapla ve ilgili testleri çalıştır. Sayının neyi saydığını açıkla: ana politika kapısı, koşullu zorunlu kontrol, benzersiz kontrol adı, koşu kanıt satırı, test dosyası/süiti veya test vakası birbirinin yerine kullanılamaz. Kaynak dosya/simgeyi, doğrulanan commit veya tarihi ve testin gerçek/mock/atlanmış kapsamını belirt. Canlı bir koşunun toplamı soruluyorsa o koşunun kayıtlarını incele; statik liste veya fixture beklentisinden canlı toplam çıkarma. Doğrulanamayan sayıyı belirsiz veya tarihsel olarak etiketle.
 - Mimari ve iş kurallarını bu dosyaya yeniden kopyalamak yerine ilgili güncel kaynakları kullan; mevcut güvenlik, kabul, kurtarma ve veri bütünlüğü garantilerini zayıflatma.
 
 ---

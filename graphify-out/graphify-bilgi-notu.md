@@ -19,6 +19,8 @@ Harita `backend`, `frontend`, `execution`, `e2e`, `scripts`, `docs`, `x-agents` 
 
 ## Güncel iş akışını okuma
 
+30 Ekim 2026 sayısal kapsam açıklaması: `qualityPolicy.js:MANDATORY_GATES` 18 ana kapı içerir; `artifactEvidencePolicy.js` sözleşmeye bağlı ek zorunlu yönetim kanıtları ister. Grafikteki açıklamalar veya düğüm sayıları bir koşunun toplam zorunlu kontrol sayısını vermez. Ana kapı, koşullu kontrol, benzersiz ad ve kanıt satırı ayrımı [kullanıcı kılavuzunda](../kullanici-kilavuzu.md#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20) açıklanır.
+
 Geliştirme geçmişinin P0–P9 ve Ekim Faz 1–4 halkaları [Faz Arşivinde](../docs/faz-arsiv.md) tek kronolojide birleştirilmiştir; eski yerel plan ve kanıtlar bu tarihsel özetin kaynaklarıdır.
 
 30 Ekim 2026 belge birleştirmesiyle üretim işletimi, yerel worker paketi ve ZIP yaşam döngüsü [kullanıcı kılavuzunun 12–14. bölümlerine](../kullanici-kilavuzu.md#uretim-operasyon) taşındı. Harita eski üç ayrı belgeyi içermez; worker paketi birleşik kılavuzu README olarak taşır.

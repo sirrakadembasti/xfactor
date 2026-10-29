@@ -496,7 +496,7 @@
       "type": "BackendService",
       "group": "backend",
       "file": "backend/verification/qualityPolicy.js",
-      "description": "18 zorunlu kalite kapısı ve fail-closed bağımsız worker doğrulama politikası",
+      "description": "18 ana politika kapısı; sözleşmeye bağlı ek zorunlu kontrollerle fail-closed doğrulama",
       "val": 24,
       "provenance": "curated"
     },
@@ -676,7 +676,7 @@
       "type": "FrontendComponent",
       "group": "frontend",
       "file": "frontend/src/components/DashboardView.jsx",
-      "description": "18 kalite kapısı, doğrulama koşuları ve sansürlenmiş konsol logları salt-okunur denetim paneli",
+      "description": "Ana kapılar, ek kontrol kanıtları, doğrulama koşuları ve temizlenmiş loglar için salt-okunur panel",
       "val": 9.5,
       "provenance": "curated"
     },

@@ -33,7 +33,7 @@ Bu kılavuz, **XFactor Otonom AI Ajan Orkestrasyon Platformu**'nun çalışma ma
 8. [Test Süiti ve Otomasyonun Çalıştırılması (`npm test`)](#8-test-süiti-ve-otomasyonun-çalıştırılması-npm-test)
 9. [Sıkça Sorulan Sorular (SSS) ve Sorun Giderme](#9-sıkça-sorulan-sorular-sss-ve-sorun-giderme)
 10. [Geliştirici Rehberi: Kod Tabanı Analizi ve Bilgi Grafiği (Graphify)](#10-geliştirici-rehberi-kod-tabanı-analizi-ve-bilgi-grafiği-graphify)
-11. [18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)](#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20)
+11. [Ana Kalite Kapıları ve Ek Zorunlu Kontroller (Politika 2.0)](#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20)
 12. [Üretim İşletimi, Güvenlik ve Yedekleme](#uretim-operasyon)
 13. [Bağımsız Yerel Worker Paketi](#yerel-worker-paketi)
 14. [ZIP Yaşam Döngüsü, Envanter ve Karantina](#zip-yasam-dongusu)
@@ -300,7 +300,7 @@ Yalnız tarayıcı kabul adımlarını değiştirmek istiyorsanız bunu Manager'
 ### Adım 7: Doğrulanmış Projeyi ZIP Olarak İndirme
 1. Tüm ajanlar görevlerini bitirdiğinde süreç hemen tamamlandı sayılmaz. Bağımsız temiz oda doğrulayıcısı (`artifactVerifier`) devreye girer:
    - Sunucu tarafında ZIP arşivi oluşturulur ve disk SHA-256 özeti hesaplanır (`artifacts`).
-   - Arşiv, worker'ın ayrı temiz iş dizininde açılarak 18 zorunlu kalite kapısından geçirilir. Docker profili container izolasyonu sağlar; `local-trusted` profili OS izolasyonu sağlamaz. Zorunlu kontrolün atlanması `BLOCKED` sayılır; yalnızca isteğe bağlı ve uygulanamayan kontrol `NOT_APPLICABLE` olabilir. Servis manifesti ve kaynak dosyalarından uygun API veya tarayıcı denemeleri belirlenir; Prisma şemasında `User` modeli varsa seed edilen kullanıcılar da denetlenir.
+   - Arşiv, worker'ın ayrı temiz iş dizininde açılarak ana kalite kapıları ve sözleşmeye bağlı ek zorunlu kontrollerle doğrulanır. Temel politika 18 ana kapı içerir; toplam zorunlu kanıt satırı sayısı bu sayıyla sınırlı değildir. Docker profili container izolasyonu sağlar; `local-trusted` profili OS izolasyonu sağlamaz. Zorunlu kontrolün atlanması `BLOCKED` sayılır; yalnızca isteğe bağlı ve uygulanamayan kontrol `NOT_APPLICABLE` olabilir. Servis manifesti ve kaynak dosyalarından uygun API veya tarayıcı denemeleri belirlenir; Prisma şemasında `User` modeli varsa seed edilen kullanıcılar da denetlenir.
    - Yönetim uygulamalarında API denemeleri yetkili rolün kayıt oluşturma, okuma, güncelleme ve silme davranışını; oturumsuz ve yetkisiz rolün reddini; ilişkili kayıtların onaylı saklama kuralını sınar. Tarayıcı akışlarında tıklama, form, görünür sonuç, erişilebilir ad ve dar ekran kanıtı gerekir. Worker güvenilir etkileşim adaptörü sağlayamazsa bu kapı `BLOCKED` olur ve ZIP doğrulanmış olarak sunulmaz.
    - Tüm kontroller eksiksiz PASS olduğunda `completeVerifiedProject` fonksiyonu atomik bir CAS işlemiyle projeyi `COMPLETED` yapar ve `completion_receipts` tablosuna değişmez denetim makbuzu yazar.
 2. Doğrulama tamamlandığında üst bardaki **📥 Projeyi (ZIP) İndir** butonuyla sunucuda doğrulanmış ve hash'i eşleşen temiz ZIP paketini bilgisayarınıza indirin. Doğrulanmamış veya diskteki hash'i uyuşmayan hiçbir dosya indirilemez (409 Fail-Closed). Kaynak kodları indirdiğiniz ZIP içinde inceleyebilirsiniz; sohbet ekranında ayrı bir kod editörü açılmaz. Örnek bir proje veya raporun varlığı, o projenin ZIP'inin teslim edilmeye hazır olduğunu göstermez; ilgili paketin güncel kanıtını kontrol edin.
@@ -568,9 +568,15 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `x-agents/` | Platform Ajan Talimatları & Şablonlar | Orkestrasyon anayasası, altı rol talimatı ve görev/durum/rapor şablonları. Backend sistem istemlerini yalnız sabit ve izinli bu kaynaktan yükler. |
 | `docs/` | Geliştirme & İşletim Belgeleri | Operasyon kılavuzları, tasarım/uygulama planları ve inceleme raporları; ajan sistem istemi kaynağı değildir. |
 
-## 11. 18 Zorunlu Kalite Kapısı ve Temiz Oda Doğrulama Sistemi (Politika 2.0)
+<a id="11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20"></a>
 
-XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamamlamaya yetmez. Yalnızca makine tarafından yürütülen ve değişmez kanıt üreten **18 Kalite Kapısı** projeyi onaylayabilir:
+## 11. Ana Kalite Kapıları ve Ek Zorunlu Kontroller (Politika 2.0)
+
+XFactor'de yapay zekâ ajanının *"Kusursuz tamamlandı"* demesi projeyi tamamlamaya yetmez. Aşağıdaki liste **18 ana politika kapısını** gösterir; bütün zorunlu kontrollerin veya kanıt satırlarının toplamı değildir.
+
+30 Ekim 2026 kaynak denetiminde `backend/verification/qualityPolicy.js:MANDATORY_GATES` ile `backend/projectRepository.js:P4_MANDATORY_GATES` kümelerinin aynı 18 adı içerdiği koddan hesaplanmıştır. Yönetim gereken sözleşmelerde `artifactVerifier.js:isMandatoryArtifactCheck`, ana listede olmayan rol/CRUD/kalıcılık/tarayıcı kontrollerini de `MANDATORY` yapar. `artifactEvidencePolicy.js:assertManagementCoverage` bunları rol, kaynak, işlem ve silme politikasına göre ayrıca zorunlu tutar. Eksik, başarısız, kanıtsız veya OPTIONAL'a düşürülmüş yönetim kaydı tamamlamayı/indirmeyi engeller. Aynı kontrol adı farklı roller ve kaynaklar için birden çok satır üretebilir; toplam sayı yalnız ilgili koşunun `verification_checks` kayıtlarından belirlenir.
+
+Örneğin `execution/tests/localRoundtrip.integration.test.js`, örnek sözleşmesi için 28 ayrı kontrol adının başarıyla üretilmesini bekler; bu sayı tüm projeler için sabit toplam veya 28 ana kapı demek değildir. Test dosyasındaki beklentiyi okumak, gerçek worker entegrasyonunun o anda çalıştırılıp geçtiğini de kanıtlamaz.
 
 | # | Kalite Kapısı | Doğrulama Mekanizması ve Kuralı |
 |---|---|---|

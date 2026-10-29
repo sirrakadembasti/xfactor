@@ -276,6 +276,8 @@ Faz 1/2 E2E anlatımları, simülasyon ve gerçek worker kanıtı ayrılmadan ye
 
 ### Halka 25 — 29–30 Ekim: belge birleştirmesi ve kök kılavuza geçiş
 
+30 Ekim sayısal kapsam denetimiyle ana politika kapıları ve sözleşmeye bağlı ek zorunlu kanıtlar arasındaki fark README/kılavuzda netleştirildi. CLAUDE.md'ye sayısal iddiaları kod, koşullu üretim yolları ve ilgili testlerle doğrulama; tarihsel sonuçları ve canlı koşu sayılarını ayırma kuralı eklendi. Bu açıklama tarihsel test sonuçlarını değiştirmez.
+
 CLAUDE.md uygulama ayrıntılarını tekrarlamak yerine güncel kaynakları okuma ve çalışma kurallarına odaklandı. Operasyon, yerel worker paketi ve ZIP yaşam döngüsü kullanıcı kılavuzunun 12–14. bölümlerine birleştirildi; bağlantılar, paket README kaynağı ve Graphify düzeltildi. Bu faz arşivi iki tarihsel belge dizisini kronolojik olarak bir araya getirir. Kullanıcı kılavuzu depo köküne taşındı; ayrı roadmap raporları kaldırıldı, güncel gezinme bağlantıları faz arşivine yönlendirildi. Worker paketinin README kaynağı ve Graphify taraması yeni konuma uyarlandı.
 
 **Kayıt kapsamı:** Bu belge düzenlemesi önceki son commit `b3d7403` sonrasındadır; kaynak kodda yeni bir ürün fazının kabulü değildir. Tarihsel platform testleri belge taşıma işleminin yeni test sonucu sayılmaz. İlgili belge/Graphify/paketleme kontrolleri yayın commit'inin doğrulamasında ayrıca değerlendirilir.
