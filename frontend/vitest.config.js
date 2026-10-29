@@ -10,7 +10,8 @@ export default mergeConfig(
       setupFiles: ['./src/setupTests.js'],
       include: [
         'src/components/__tests__/**/*.test.{js,jsx}',
-        'src/services/*.test.js'
+        'src/services/*.test.js',
+        'src/utils/__tests__/**/*.test.js'
       ],
       restoreMocks: true
     }

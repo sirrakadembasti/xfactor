@@ -263,14 +263,6 @@ export default function App() {
       const data = await api.getProject(id, { signal });
       if (!isCurrentRequest(identity)) return null;
       setProjectState(data);
-      if (data?.plan) {
-        setLogs(currentLogs => {
-          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(currentLogs, data.plan);
-          setNodes(computedNodes);
-          setEdges(computedEdges);
-          return currentLogs;
-        });
-      }
       return data;
     } catch (e) {
       if (e.name === 'AbortError' || !isCurrentRequest(identity)) return null;
@@ -278,6 +270,13 @@ export default function App() {
       return null;
     }
   }, [beginRequest, becomeAnonymous, isCurrentRequest]);
+
+  // FE-4: Saf DAG düğüm/kenar türetimi (setLogs içindeki yan etkilerden arındırıldı)
+  useEffect(() => {
+    const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(logs, projectState?.plan);
+    setNodes(computedNodes);
+    setEdges(computedEdges);
+  }, [logs, projectState?.plan]);
 
   // Recover a missed state-change notification using the polled active status.
   useEffect(() => {
@@ -328,13 +327,7 @@ export default function App() {
       .then(data => {
         if (!Array.isArray(data) || !isCurrentRequest(logIdentity)) return;
         const sortedLogs = data.slice(-MAX_LOGS).reverse();
-        setLogs(currentLogs => {
-          const mergedLogs = mergeProjectLogs(sortedLogs, currentLogs);
-          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(mergedLogs, projectStateRef.current?.plan);
-          setNodes(computedNodes);
-          setEdges(computedEdges);
-          return mergedLogs;
-        });
+        setLogs(currentLogs => mergeProjectLogs(sortedLogs, currentLogs));
       })
       .catch(e => {
         if (e.name !== 'AbortError' && isCurrentRequest(logIdentity)) console.error('Logs error:', e);
@@ -397,11 +390,7 @@ export default function App() {
             || batch.projectEpoch !== projectEpochRef.current
             || batch.projectId !== activeProjectRef.current
           ) return prev;
-          const newLogs = mergeProjectLogs([...batch.items].reverse(), prev);
-          const { nodes: computedNodes, edges: computedEdges } = computeHierarchicalDAG(newLogs, projectStateRef.current?.plan);
-          setNodes(computedNodes);
-          setEdges(computedEdges);
-          return newLogs;
+          return mergeProjectLogs([...batch.items].reverse(), prev);
         });
       };
 

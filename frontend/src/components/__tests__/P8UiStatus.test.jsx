@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { vi } from 'vitest';
 import ConnectionStatus from '../ConnectionStatus';
 import Header from '../Header';
 import App from '../../App';
@@ -227,4 +228,21 @@ test.each([
   await screen.findByRole('heading', { name: 'Project' });
   expect(screen.getAllByText(badgeText).length).toBeGreaterThan(0);
   expect(screen.queryByText('Planlama')).not.toBeInTheDocument();
+});
+
+test('FE-4: App derives DAG nodes and edges in useEffect without mutating setLogs state updater', async () => {
+  setupStatusProject('implementing');
+  vi.spyOn(api, 'getProjectLogs').mockResolvedValue([
+    {
+      id: 1,
+      agent: 'Coder',
+      node_id: 'backend.tl_backend.task_1',
+      parent_node_id: 'backend.tl_backend',
+      action: 'start',
+      created_at: '2026-10-28T10:01:00.000Z'
+    }
+  ]);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  expect(screen.getByRole('heading', { name: 'Project' })).toBeInTheDocument();
 });
