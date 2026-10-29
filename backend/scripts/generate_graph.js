@@ -65,6 +65,10 @@ async function extractCodeGraph() {
         { id: 'docs/superpowers/plans/2026-09-19-chat-action-audit-implementation-plan.md', label: '2026-09-19 Sohbet Aksiyon Denetim İzi Uygulama Planı', desc: 'İdempotent sohbet aksiyon mesajları, rota entegrasyonu ve doğrulama uygulama planı' },
         { id: 'docs/superpowers/specs/2026-09-19-quality-dashboard-graphify-design.md', label: '2026-09-19 Kalite Paneli Tasarımı', desc: 'Kalite paneli mimari Graphify entegrasyonu ve kanıt zinciri tasarımı' },
         { id: 'docs/superpowers/plans/2026-09-19-quality-dashboard-graphify-plan.md', label: '2026-09-19 Kalite Paneli Uygulama Planı', desc: 'Kalite paneli Graphify düğüm, bağlantı ve ağaç uygulama planı' },
+        { id: 'docs/roadmap-reports/faz-1-rapor.md', label: 'Faz 1 Tamamlanma Raporu (VER-1..5, DAT-1..5)', desc: 'Sözleşme/durum bütünlüğü, fail-closed worker doğrulaması ve kanıt zinciri kapanış raporu' },
+        { id: 'docs/roadmap-reports/faz-2-rapor.md', label: 'Faz 2 Tamamlanma Raporu (ENG-1..7, AGT-1..5)', desc: 'Orkestrasyon motoru, lease güvenliği, 7-tuple worker onarımı ve ajan/LLM katmanı kapanış raporu' },
+        { id: 'docs/roadmap-reports/faz-3-rapor.md', label: 'Faz 3 Tamamlanma Raporu (FE-1..4)', desc: 'Frontend durum yönetimi, kronolojik DAG yerleşimi ve durum rozetleri kapanış raporu' },
+        { id: 'docs/roadmap-reports/faz-4-rapor.md', label: 'Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)', desc: 'Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu' },
         { id: 'docs/OPERATIONS.md', label: 'OPERATIONS.md', desc: 'Tek-node üretim sınırı, MFA/secret envelope, sandbox limitleri ve operasyon kılavuzu' },
         { id: 'kullanici-kilavuzu.md', label: 'kullanici-kilavuzu.md', desc: 'A\'dan Z\'ye operasyon ve kullanıcı kılavuzu' }
       ];

@@ -161,6 +161,46 @@
       "provenance": "curated"
     },
     {
+      "id": "docs/roadmap-reports/faz-1-rapor.md",
+      "label": "Faz 1 Tamamlanma Raporu (VER-1..5, DAT-1..5)",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/roadmap-reports/faz-1-rapor.md",
+      "description": "Sözleşme/durum bütünlüğü, fail-closed worker doğrulaması ve kanıt zinciri kapanış raporu",
+      "val": 1,
+      "provenance": "curated"
+    },
+    {
+      "id": "docs/roadmap-reports/faz-2-rapor.md",
+      "label": "Faz 2 Tamamlanma Raporu (ENG-1..7, AGT-1..5)",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/roadmap-reports/faz-2-rapor.md",
+      "description": "Orkestrasyon motoru, lease güvenliği, 7-tuple worker onarımı ve ajan/LLM katmanı kapanış raporu",
+      "val": 1,
+      "provenance": "curated"
+    },
+    {
+      "id": "docs/roadmap-reports/faz-3-rapor.md",
+      "label": "Faz 3 Tamamlanma Raporu (FE-1..4)",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/roadmap-reports/faz-3-rapor.md",
+      "description": "Frontend durum yönetimi, kronolojik DAG yerleşimi ve durum rozetleri kapanış raporu",
+      "val": 1,
+      "provenance": "curated"
+    },
+    {
+      "id": "docs/roadmap-reports/faz-4-rapor.md",
+      "label": "Faz 4 Tamamlanma Raporu (ENG-8, DAT-6)",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/roadmap-reports/faz-4-rapor.md",
+      "description": "Tanrı modüllerin parçalanması, test/doğrulama altyapısı iyileştirmeleri ve Graphify senkronizasyon raporu",
+      "val": 1,
+      "provenance": "curated"
+    },
+    {
       "id": "docs/OPERATIONS.md",
       "label": "OPERATIONS.md",
       "type": "Document",
@@ -3606,46 +3646,6 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/faz -arsiv/implementation-plans/14-P9-audit-remediation.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-1-rapor.md",
-      "label": "faz-1-rapor.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-1-rapor.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-2-rapor.md",
-      "label": "faz-2-rapor.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-2-rapor.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-3-rapor.md",
-      "label": "faz-3-rapor.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-3-rapor.md",
-      "description": "",
-      "val": 1,
-      "provenance": "ast"
-    },
-    {
-      "id": "docs/roadmap-reports/faz-4-rapor.md",
-      "label": "faz-4-rapor.md",
-      "type": "Document",
-      "group": "docs",
-      "file": "docs/roadmap-reports/faz-4-rapor.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -85501,7 +85501,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 73
+        "line": 77
       }
     },
     {
@@ -85511,7 +85511,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 75
+        "line": 79
       }
     },
     {
@@ -85521,7 +85521,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 315
+        "line": 319
       }
     },
     {
@@ -85531,7 +85531,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 316
+        "line": 320
       }
     },
     {
@@ -85541,7 +85541,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 320
+        "line": 324
       }
     },
     {
@@ -85551,7 +85551,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 332
+        "line": 336
       }
     },
     {
@@ -85561,7 +85561,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 333
+        "line": 337
       }
     },
     {
@@ -85571,7 +85571,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 334
+        "line": 338
       }
     },
     {
@@ -85581,7 +85581,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 343
+        "line": 347
       }
     },
     {
