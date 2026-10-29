@@ -351,5 +351,58 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
         assert.strictEqual(result.passed, true);
         assert.strictEqual(result.issues.length, 0);
     });
+
+    await runAsyncTest('ENG-5: scaffold and readme generate fullstack Dockerfile and README Docker section for Vite+Express+Prisma', async () => {
+        const fs = await import('node:fs/promises');
+        const path = await import('node:path');
+        const os = await import('node:os');
+        const { ensureProjectScaffold } = await import('../engine/codeGenerator.js');
+        const { generateProjectReadme } = await import('../engine/readmeGenerator.js');
+
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-eng5-'));
+        try {
+            const state = { title: 'Vite Express Prisma App' };
+            const plan = {
+                summary: 'Fullstack app with Vite frontend, Express API and Prisma SQLite',
+                domains: [{ name: 'frontend' }, { name: 'backend' }, { name: 'database' }]
+            };
+
+            const pkg = {
+                name: 'vite-express-prisma-app',
+                dependencies: {
+                    'express': '^4.19.0',
+                    '@prisma/client': '^5.0.0',
+                    'react': '^18.0.0'
+                },
+                devDependencies: {
+                    'vite': '^5.0.0',
+                    'prisma': '^5.0.0'
+                },
+                scripts: {
+                    'build': 'vite build',
+                    'start': 'node dist-server/index.js'
+                }
+            };
+            await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg, null, 2));
+            await fs.mkdir(path.join(tempDir, 'prisma'), { recursive: true });
+            await fs.writeFile(path.join(tempDir, 'prisma', 'schema.prisma'), 'datasource db { provider = "sqlite" url = env("DATABASE_URL") }');
+
+            await ensureProjectScaffold(tempDir, state, plan);
+
+            const dockerfile = await fs.readFile(path.join(tempDir, 'Dockerfile'), 'utf8');
+            assert.ok(dockerfile.includes('FROM node:22-alpine AS builder'), 'Multi-stage Dockerfile builder stage required');
+            assert.ok(dockerfile.includes('FROM node:22-alpine AS runner'), 'Multi-stage Dockerfile runner stage required');
+            assert.ok(dockerfile.includes('RUN npx prisma generate'), 'Prisma generate step required');
+            assert.ok(dockerfile.includes('VOLUME ["/data"]'), 'SQLite /data volume required');
+            assert.ok(dockerfile.includes('npx prisma db push && npm start'), 'Prisma db push on container start required');
+
+            const readme = await generateProjectReadme({ projectDir: tempDir, projectTitle: state.title, summary: plan.summary });
+            assert.ok(readme.includes('### Docker ile Çalıştırma'), 'README must contain Docker section');
+            assert.ok(readme.includes('docker build -t vite-express-prisma-app .'), 'README must contain docker build command');
+            assert.ok(readme.includes('/data'), 'README must describe /data volume');
+        } finally {
+            await fs.rm(tempDir, { recursive: true, force: true });
+        }
+    });
 }
 finish();

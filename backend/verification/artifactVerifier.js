@@ -271,8 +271,15 @@ export async function verifyArtifact(
             throw new Error(`Worker returned illegal terminal status: ${result.status}`);
         }
         const workerResult = result.result && typeof result.result === 'object' ? result.result : result;
-        const workerChecks = (Array.isArray(workerResult.checks) ? workerResult.checks : [])
-            .map(check => ({ ...check, id: crypto.randomUUID() }));
+        const AUTHORITATIVE_BACKEND_GATES = new Set([
+            'domain_entity_check',
+            'placeholder_check',
+            'contamination_check',
+            'security_baseline'
+        ]);
+        const rawWorkerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
+        const filteredWorkerChecks = rawWorkerChecks.filter(c => !AUTHORITATIVE_BACKEND_GATES.has(c?.gateName || c?.name || c?.gate_name));
+        const workerChecks = filteredWorkerChecks.map(check => ({ ...check, id: crypto.randomUUID() }));
         const workerCheckIds = new Set(workerChecks.map(check => check.id));
         const existingGateNames = new Set(workerChecks.map(c => c.gateName || c.name));
         const additionalChecks = [];
@@ -294,28 +301,30 @@ export async function verifyArtifact(
             if (RUNTIME_GATE_MEMBERS[name]) { check.name = `detail:${name}`; check.gateName = `detail:${name}`; check.applicability = 'OPTIONAL'; }
         }
 
-            let parsedContract = {};
-            try { parsedContract = JSON.parse(contract.contract_json); } catch {}
-            const textEntries = entries.map(item => ({
-                path: item.path,
-                content: Buffer.isBuffer(item.content) ? item.content.toString('utf8') : String(item.content || '')
-            }));
-            const hardeningDefinitions = [
-                ['domain_entity_check', () => verifyDomainCompliance(parsedContract, textEntries)],
-                ['placeholder_check', () => verifyPlaceholders(textEntries)],
-                ['contamination_check', () => verifyContamination(parsedContract, textEntries)],
-                ['security_baseline', () => verifySecurityBaseline(parsedContract, textEntries, null)]
-            ];
+        let parsedContract = {};
+        try { parsedContract = JSON.parse(contract.contract_json); } catch {}
+        const textEntries = entries.map(item => ({
+            path: item.path,
+            content: Buffer.isBuffer(item.content) ? item.content.toString('utf8') : String(item.content || '')
+        }));
+        const hardeningDefinitions = [
+            ['domain_entity_check', () => verifyDomainCompliance(parsedContract, textEntries)],
+            ['placeholder_check', () => verifyPlaceholders(textEntries)],
+            ['contamination_check', () => verifyContamination(parsedContract, textEntries)],
+            ['security_baseline', () => verifySecurityBaseline(parsedContract, textEntries, null)]
+        ];
         for (const [name, fn] of hardeningDefinitions) {
-            if (!existingGateNames.has(name)) {
-                additionalChecks.push(await captureHardeningGate(name, fn));
-            }
+            additionalChecks.push(await captureHardeningGate(name, fn));
         }
 
         if (!existingGateNames.has('requirement_traceability')) {
             const allSoFar = [...workerChecks, ...additionalChecks];
             for (const check of allSoFar) check.id ||= crypto.randomUUID();
-            const allPassed = allSoFar.every(c => c.status === 'passed' || c.status === 'PASS' || c.status === 'skipped');
+            const passingChecks = allSoFar.filter(c => c.status === 'passed' || c.status === 'PASS');
+            const coveredReqIds = new Set(passingChecks.flatMap(c => c.requirementIds || []));
+            const missingMandatoryIds = mandatoryRequirementIds.filter(id => !coveredReqIds.has(id));
+            const allMandatoryCovered = missingMandatoryIds.length === 0 && (mandatoryRequirementIds.length === 0 || passingChecks.length > 0);
+            const allPassed = allMandatoryCovered && allSoFar.every(c => c.status === 'passed' || c.status === 'PASS' || (c.status === 'skipped' && !isMandatoryArtifactCheck(c.gateName || c.name, parsedContract)));
             const timestamp = new Date().toISOString();
             additionalChecks.push({
                 gateName: 'requirement_traceability',
@@ -327,12 +336,14 @@ export async function verifyArtifact(
                 stdoutDigest: crypto.createHash('sha256').update('traceability').digest('hex'),
                 stderrDigest: crypto.createHash('sha256').update('').digest('hex'),
                 policyVersion: ACTIVE_POLICY_VERSION,
-                reason: `${mandatoryRequirementIds.length} mandatory requirement(s) evaluated.`,
+                reason: allPassed
+                    ? `${mandatoryRequirementIds.length} mandatory requirement(s) evaluated and passed.`
+                    : `${missingMandatoryIds.length} mandatory requirement(s) lack passing machine evidence.`,
                 evidence: {
                     kind: 'derived_gate',
                     producer: 'quality-policy',
                     sourceGateNames: passingVerificationSourceNames(allSoFar),
-                    sourceCheckIds: allSoFar.filter(check => check.status === 'passed' || check.status === 'PASS').map(check => check.id),
+                    sourceCheckIds: passingChecks.map(check => check.id),
                     computedAt: timestamp,
                     policyVersion: ACTIVE_POLICY_VERSION
                 }
@@ -349,42 +360,73 @@ export async function verifyArtifact(
             const gateName = check.gateName || check.name;
             const isMandatory = isMandatoryArtifactCheck(gateName, parsedContract);
             const applicability = isMandatory ? 'MANDATORY' : (check.applicability || 'OPTIONAL');
-            const status = normalizeWorkerCheckStatus(check.status, isMandatory);
-            let record = {
-                    id: checkId,
-                    contractId,
-                    runId,
-                    gateName,
-                    applicability,
-                    status,
-                    command: check.command || null,
-                    cwd: check.cwd || null,
-                    startedAt: check.startedAt || new Date().toISOString(),
-                    endedAt: check.endedAt || new Date().toISOString(),
-                    exitCode: check.exitCode ?? null,
-                    stdoutDigest: check.stdoutDigest || crypto.createHash('sha256').update(check.stdout || JSON.stringify(check.evidence || {})).digest('hex'),
-                    stderrDigest: check.stderrDigest || crypto.createHash('sha256').update('').digest('hex'),
-                    evidenceJson: { ...redactObservedEvidence(check.evidence ?? check.evidenceJson ?? {}),
-                        ...normalizeWorkerCheckLog(check) },
-                    timedOut: Boolean(check.timedOut)
-                };
-            if (workerCheckIds.has(checkId) && result.status === 'completed') record = bindWorkerCheck(record, expected);
-            records.push(record);
-            runLeaseTransaction(database, assertLease, () => {
-                createCheck(record);
-            });
-            for (const requirementId of check.requirementIds || []) {
-                runLeaseTransaction(database, assertLease, () => {
-                    linkRequirementToCheck({ contractId, requirementId, verificationCheckId: checkId });
-                });
-            }
-        }
 
-        if (result.status === 'completed') {
-            const receipt = createWorkerReceipt(expected, records.filter(record => workerCheckIds.has(record.id)));
-            runLeaseTransaction(database, assertLease, () => createCheck({ id: crypto.randomUUID(), contractId, runId,
-                gateName: WORKER_RECEIPT_GATE, applicability: 'OPTIONAL', status: 'PASS',
-                evidenceJson: receipt, startedAt: new Date().toISOString(), endedAt: new Date().toISOString() }));
+            const isWorkerCheck = workerCheckIds.has(checkId);
+            const isExecutable = Boolean(check.command) || (check.exitCode !== null && check.exitCode !== undefined);
+            const isMandatoryCheck = applicability === 'MANDATORY';
+            const isPassingClaim = ['passed', 'PASS', 'NOT_APPLICABLE'].includes(check.status) || check.exitCode === 0;
+            const missingEvidence = isWorkerCheck && isExecutable && isMandatoryCheck && isPassingClaim && (
+                !check.startedAt || !check.endedAt || !check.stdoutDigest || !check.stderrDigest
+            );
+
+            let status = normalizeWorkerCheckStatus(check.status, isMandatory);
+            let exitCode = check.exitCode ?? null;
+            let reason = check.reason || null;
+            let startedAt = check.startedAt || new Date().toISOString();
+            let endedAt = check.endedAt || new Date().toISOString();
+            let stdoutDigest = check.stdoutDigest || null;
+            let stderrDigest = check.stderrDigest || null;
+
+            if (missingEvidence) {
+                status = 'BLOCKED';
+                exitCode = -1;
+                reason = 'Missing mandatory execution evidence digest or timestamps';
+                stdoutDigest = check.stdoutDigest || crypto.createHash('sha256').update(reason).digest('hex');
+                stderrDigest = check.stderrDigest || crypto.createHash('sha256').update('').digest('hex');
+            } else {
+                stdoutDigest = stdoutDigest || crypto.createHash('sha256').update(check.stdout || JSON.stringify(check.evidence || {})).digest('hex');
+                stderrDigest = stderrDigest || crypto.createHash('sha256').update('').digest('hex');
+            }
+
+            const checkEvidence = check.evidence ?? check.evidenceJson ?? {};
+            const log = normalizeWorkerCheckLog(check);
+            const evidenceJsonPayload = {
+                ...redactObservedEvidence(checkEvidence),
+                ...log,
+                ...(missingEvidence ? { reason } : {})
+            };
+            if (['domain_entity_check', 'placeholder_check', 'contamination_check', 'security_baseline'].includes(gateName)) {
+                evidenceJsonPayload.evidence = {
+                    kind: 'derived_gate',
+                    producer: 'quality-policy',
+                    sourceGateNames: [gateName],
+                    policyVersion: ACTIVE_POLICY_VERSION,
+                    computedAt: startedAt,
+                    ...(checkEvidence.issues ? { issues: checkEvidence.issues } : {})
+                };
+            }
+
+            let record = {
+                id: checkId,
+                contractId,
+                runId,
+                gateName,
+                applicability,
+                status,
+                command: check.command || null,
+                cwd: check.cwd || null,
+                startedAt,
+                endedAt,
+                exitCode,
+                stdoutDigest,
+                stderrDigest,
+                stdout_digest: stdoutDigest,
+                stderr_digest: stderrDigest,
+                evidenceJson: evidenceJsonPayload,
+                timedOut: Boolean(check.timedOut)
+            };
+            if (isWorkerCheck && result.status === 'completed') record = bindWorkerCheck(record, expected);
+            records.push(record);
         }
 
         let managementError = null;
@@ -393,20 +435,52 @@ export async function verifyArtifact(
         const unknownMandatory = allChecks.some(check => check.applicability === 'MANDATORY' && !isMandatoryArtifactCheck(check.gateName || check.name, parsedContract));
         const passed = result.status === 'completed' && !managementError && uniqueBaseGates && !unknownMandatory
             && !allChecks.some(check => check.timedOut) && hasMandatoryGateCoverage(allChecks)
-            && allChecks.every(c => ['PASS', 'NOT_APPLICABLE'].includes(normalizeWorkerCheckStatus(c.status, isMandatoryArtifactCheck(c.gateName || c.name, parsedContract))));
-        runLeaseTransaction(database, assertLease, () => {
-            if (!passed) recordWorkerRejection(verificationContext(), { identity: expected, terminalStatus: result.status,
-                artifact, summary: summarizeWorkerRejection({ identity: expected, terminalStatus: result.status,
-                    rawChecks: workerChecks, records, artifactManifest: persistedFiles,
-                    acceptanceBlockers: [managementError, !uniqueBaseGates && 'Mandatory base gate set is missing or duplicated.',
-                        unknownMandatory && 'Worker returned an unknown mandatory gate.'].filter(Boolean) }) }, database);
+            && records.every(r => ['PASS', 'NOT_APPLICABLE'].includes(r.status));
+
+        commitVerificationContext(verificationContext(), () => {
+            for (const record of records) {
+                createCheck(record);
+            }
+            for (const check of allChecks) {
+                const rec = records.find(r => r.id === check.id);
+                if (rec && rec.status === 'PASS') {
+                    for (const requirementId of check.requirementIds || []) {
+                        linkRequirementToCheck({ contractId, requirementId, verificationCheckId: check.id });
+                    }
+                }
+            }
+            if (result.status === 'completed' && passed) {
+                const receipt = createWorkerReceipt(expected, records.filter(record => workerCheckIds.has(record.id)));
+                createCheck({
+                    id: crypto.randomUUID(), contractId, runId,
+                    gateName: WORKER_RECEIPT_GATE, applicability: 'OPTIONAL', status: 'PASS',
+                    evidenceJson: receipt, startedAt: new Date().toISOString(), endedAt: new Date().toISOString()
+                });
+            }
+            if (!passed) {
+                recordWorkerRejection(verificationContext(), {
+                    identity: expected, terminalStatus: result.status,
+                    artifact, summary: summarizeWorkerRejection({
+                        identity: expected, terminalStatus: result.status,
+                        rawChecks: workerChecks, records, artifactManifest: persistedFiles,
+                        acceptanceBlockers: [managementError, !uniqueBaseGates && 'Mandatory base gate set is missing or duplicated.',
+                            unknownMandatory && 'Worker returned an unknown mandatory gate.'].filter(Boolean)
+                    })
+                }, database);
+                database.prepare(`
+                    UPDATE task_checkpoints
+                    SET status = 'invalidated', invalidation_reason = 'VERIFICATION_FAILED', invalidated_at = ?
+                    WHERE project_id = ? AND contract_id = ? AND invalidated_at IS NULL
+                `).run(new Date().toISOString(), projectId, contractId);
+            }
             updateArtifactStatus({
                 projectId, contractId, artifactId,
                 status: passed ? 'verified' : 'rejected',
                 verificationRunId: runId
             });
             updateRunStatus(runId, passed ? 'verified' : 'failed');
-        });
+        }, database);
+
         return {
             status: passed ? 'verified' : 'failed',
             passed,
@@ -424,17 +498,18 @@ export async function verifyArtifact(
                     { expectedIdentity: expected, reason: error.message }, database), database);
             } catch {}
             try {
-                runLeaseTransaction(database, assertLease, () => {
+                commitVerificationContext({ ...verificationContext(), deadline: undefined }, () => {
                     updateRunStatus(runId, 'failed');
-                });
-            } catch {}
-            try {
-                runLeaseTransaction(database, assertLease, () => {
                     updateArtifactStatus({
                         projectId, contractId, artifactId,
                         status: 'rejected', verificationRunId: runId
                     });
-                });
+                    database.prepare(`
+                        UPDATE task_checkpoints
+                        SET status = 'invalidated', invalidation_reason = 'VERIFICATION_FAILED', invalidated_at = ?
+                        WHERE project_id = ? AND contract_id = ? AND invalidated_at IS NULL
+                    `).run(new Date().toISOString(), projectId, contractId);
+                }, database);
             } catch {}
         }
         throw error;

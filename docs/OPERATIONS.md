@@ -52,7 +52,9 @@ ambiguous ownership and externally changed source failures require a Manager
 revision. Worker-origin malformed records also block Resume; they are not ignored.
 The complete batch is reserved before payment: at most eight targets and 64
 findings per batch, two changed-input Coder attempts per owner/target and 64
-Coder attempts per contract. Each reservation permits one provider invocation.
+Coder attempts per contract. Each reservation binds a 7-tuple `inputSignature`
+(`contract.id`, `contract.contract_hash`, `owner.spec`, `target`, `currentHash`,
+`fingerprints`, `digest(currentContext)`) and permits one provider invocation.
 
 Repaired source must pass a fresh deterministic audit, persisted source-bound
 Reviewer and Tester acceptance, and new independent worker evidence before its
@@ -215,7 +217,7 @@ and operational limits; these controls do not recover already missing ZIPs.
   `GET /api/projects/:id/contracts/:contractId/artifacts/:artifactId/download`
   (`requireAuth` + `projectAccess('viewer')`), served with `res.download`
   from the server-side artifact path — never reconstructed from a client
-  file list (`backend/routes/projectRoutes.js`).
+  file list (`backend/routes/projectRoutes.js` and `backend/routes/projectTraceabilityRoutes.js`).
 - Successful download action messages are appended after the transfer callback
   succeeds. A missing file or disconnected transfer does not record success.
 - Release gating requires the execution worker to complete all mandatory gates (e.g., `clean_install`, `typecheck`), and provide durable completion receipts with strictly validated `evidence_json` and `stdout/stderr` digests before an artifact becomes downloadable. Unverified requests strictly return `409 Conflict`.

@@ -125,4 +125,50 @@ describe('computeHierarchicalDAG and 6-agent role visual sync', () => {
     const plannedTheme = getAgentVisualTheme('Coder', 'planned');
     expect(plannedTheme.border).toContain('dashed');
   });
+
+  test('FE-1: preserves chronological order when live WebSocket logs lack db id', () => {
+    // mergeProjectLogs returns reverse-chronological order (newest first).
+    // The finish log arrived live via WebSocket (no db id, but newer created_at).
+    // The start and structure logs came from DB (have ids, but older created_at).
+    const logs = [
+      {
+        agent: 'Coder',
+        node_id: 'backend.tl_backend.task_1',
+        parent_node_id: 'backend.tl_backend',
+        action: 'finish',
+        created_at: '2026-10-28T10:02:00.000Z'
+      },
+      {
+        id: 10,
+        agent: 'Coder',
+        node_id: 'backend.tl_backend.task_1',
+        parent_node_id: 'backend.tl_backend',
+        action: 'start',
+        created_at: '2026-10-28T10:01:00.000Z'
+      },
+      {
+        id: 3,
+        agent: 'Teamleader',
+        action: 'delegate',
+        node_id: 'backend.tl_backend',
+        parent_node_id: 'backend.director',
+        created_at: '2026-10-28T10:00:30.000Z'
+      },
+      {
+        id: 2,
+        agent: 'Director',
+        action: 'start',
+        node_id: 'backend.director',
+        parent_node_id: 'manager',
+        created_at: '2026-10-28T10:00:00.000Z'
+      }
+    ];
+
+    const result = computeHierarchicalDAG(logs);
+    const node = result.nodes.find(n => n.id === 'backend.tl_backend.task_1');
+    expect(node).toBeDefined();
+    // If chronological order is preserved, finish log is processed LAST, so node icon is '✅' (completed)
+    // If broken (not reversed because logs[0].id is undefined), start log is processed last, so node icon is '⚙️' (running)
+    expect(node.data.label).toContain('✅');
+  });
 });

@@ -367,6 +367,14 @@ export async function buildSourceGraph(root) {
       mountsByFile.get(binding.file).add(node.arguments[0].value);
     });
   }
+  for (const [mountedFile, prefixes] of [...mountsByFile.entries()]) {
+    for (const binding of (importsByFile.get(mountedFile) || new Map()).values()) {
+      if (binding.file?.startsWith('backend/routes/')) {
+        if (!mountsByFile.has(binding.file)) mountsByFile.set(binding.file, new Set());
+        for (const prefix of prefixes) mountsByFile.get(binding.file).add(prefix);
+      }
+    }
+  }
   const normalizePath = value => (value.replace(/\/+/g, '/').replace(/\/$/, '') || '/');
   const routeShape = value => normalizePath(value).replace(/:[^/]+/g, ':param');
   const serviceHint = file => path.posix.basename(file, path.posix.extname(file))

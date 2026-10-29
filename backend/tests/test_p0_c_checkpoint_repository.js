@@ -330,5 +330,40 @@ await runAsyncTest('actual workflow skips only its qualified owner and independe
     }
 });
 
+await runAsyncTest('invalidateProjectCheckpoints should set status to invalidated and set invalidation_reason', async () => {
+    const { invalidateProjectCheckpoints } = await import('../contracts/projectContract.js');
+    const { saveCheckpoint } = await import('../engine/checkpointRepository.js');
+
+    const projectId = 'invalidation-test-proj';
+    const contractId = 'invalidation-test-contract';
+    db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Invalidation Proj', 'planning')").run(projectId);
+    db.prepare(`
+        INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash)
+        VALUES (?, ?, 1, 'approved', '{}', 'inv-hash-1')
+    `).run(contractId, projectId);
+
+    saveCheckpoint({
+        projectId,
+        taskId: 'inv-task-1',
+        contractId,
+        planHash: 'inv-plan',
+        taskSpecHash: 'inv-spec',
+        inputHash: 'inv-in',
+        outputHash: 'inv-out',
+        gateVersion: '1.0.0',
+        status: 'completed',
+        requirementIds: ['REQ-1'],
+        revision: 1
+    });
+
+    invalidateProjectCheckpoints(projectId, 'CONTRACT_SUPERSEDED');
+
+    const row = db.prepare('SELECT status, invalidation_reason, invalidated_at FROM task_checkpoints WHERE project_id = ? AND task_id = ?').get(projectId, 'inv-task-1');
+    assert.ok(row, 'Checkpoint row must exist');
+    assert.strictEqual(row.status, 'invalidated', 'Checkpoint status must be invalidated');
+    assert.strictEqual(row.invalidation_reason, 'CONTRACT_SUPERSEDED', 'Invalidation reason must match');
+    assert.ok(row.invalidated_at, 'invalidated_at must be populated');
+});
+
 finish();
 await isolated.cleanup();

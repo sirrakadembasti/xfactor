@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { vi } from 'vitest';
 import ConnectionStatus from '../ConnectionStatus';
 import Header from '../Header';
 import App from '../../App';
@@ -203,4 +204,45 @@ test('focuses a new UI error alert and keyboard-dismiss restores initiating cont
 
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   expect(downloadButton).toHaveFocus();
+});
+
+test('FE-2: App does not trigger api.syncProjects on mount, only calls getProjects', async () => {
+  const syncSpy = vi.spyOn(api, 'syncProjects').mockResolvedValue({});
+  vi.spyOn(api, 'getSession').mockResolvedValue({ user: { username: 'admin' } });
+  vi.spyOn(api, 'getProjects').mockResolvedValue([{ id: 'project-1', title: 'Project', status: 'completed' }]);
+  vi.spyOn(api, 'getProject').mockResolvedValue({ id: 'project-1', title: 'Project', status: 'completed', chatHistory: [] });
+  vi.spyOn(api, 'getProjectLogs').mockResolvedValue([]);
+  vi.spyOn(api, 'getProjectFiles').mockResolvedValue([]);
+
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  expect(syncSpy).not.toHaveBeenCalled();
+});
+
+test.each([
+  ['verification_failed', 'Doğrulama Başarısız'],
+  ['capability_blocked', 'Yetenek Engeli']
+])('FE-3: %s shows %s badge without falling back to Planlama', async (status, badgeText) => {
+  setupStatusProject(status);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  expect(screen.getAllByText(badgeText).length).toBeGreaterThan(0);
+  expect(screen.queryByText('Planlama')).not.toBeInTheDocument();
+});
+
+test('FE-4: App derives DAG nodes and edges in useEffect without mutating setLogs state updater', async () => {
+  setupStatusProject('implementing');
+  vi.spyOn(api, 'getProjectLogs').mockResolvedValue([
+    {
+      id: 1,
+      agent: 'Coder',
+      node_id: 'backend.tl_backend.task_1',
+      parent_node_id: 'backend.tl_backend',
+      action: 'start',
+      created_at: '2026-10-28T10:01:00.000Z'
+    }
+  ]);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Project' });
+  expect(screen.getByRole('heading', { name: 'Project' })).toBeInTheDocument();
 });

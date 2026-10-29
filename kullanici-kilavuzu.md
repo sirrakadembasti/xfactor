@@ -62,7 +62,7 @@ flowchart TD
 
 Domainler ve takımlar sırayla yürütülür; yalnız aynı takımın bağımsız DAG görevleri en fazla ikili çalışır. Her LLM rolü tam ortak anayasa ve kendi rol talimatını alır. Dosyaları backend yazar; model onayı çalışma kanıtı değildir. Worker yerel profilde ayrı süreç ve iş dizini kullanır; OS izolasyonu Docker profilinden ayrıdır.
 
-24 Ekim 2026 güncellemesinin gerçek çağrı zinciri, belge okuyucuları, giderilen hataları ve test sınırları [mimari kapanış kaydında](docs/audits/x-agents-completion-2026-10-22.md) ve [güncel talimat bağlantı envanterinde](docs/audits/x-agents-current-inventory-2026-10-22.md) bulunur.
+24 Ekim 2026 güncellemesinin gerçek çağrı zinciri, belge okuyucuları, giderilen hataları ve test sınırları [mimari kapanış kaydında](docs/audits/x-agents-completion-2026-10-22.md) ve [güncel talimat bağlantı envanterinde](docs/audits/x-agents-current-inventory-2026-10-22.md) bulunur. 29 Ekim 2026 mimari yol haritası (`Faz 1–4`) kapsamındaki 28 bulgu giderimi, Tanrı Modüllerin 7 yeni alt modüle ayrıştırılması ve doğrulama kanıtları ise [Faz 1](docs/roadmap-reports/faz-1-rapor.md), [Faz 2](docs/roadmap-reports/faz-2-rapor.md), [Faz 3](docs/roadmap-reports/faz-3-rapor.md), [Faz 4](docs/roadmap-reports/faz-4-rapor.md) raporlarında ve [Graphify bilgi notunda](graphify-out/graphify-bilgi-notu.md) yer alır.
 
 ---
 
@@ -206,7 +206,7 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
 1. Sol panelin üst kısmında yer alan `+` (Yeni Proje) butonuna tıklayın.
 2. Açılan uygulama içi formda **Proje başlığı** alanını doldurun ve **Proje Oluştur** düğmesine basın (Örn: `araba-kiralama-otomasyonu`). Tarayıcının yerel prompt penceresi kullanılmaz. Boş başlık ve çift gönderim engellenir; hata olursa başlık korunarak tekrar deneyebilirsiniz. Oturum kapandığında form kapanır.
 3. Proje listesinde projeniz `PLANNING` durumunda belirecek ve ana dizindeki `projects/<proje_id>` klasörüne fiziksel olarak oluşturulacaktır.
-4. **Disk Senkronizasyonu:** Backend açılışta `projects/` dizinindeki geçerli, kayıt dışı klasörleri güvenli biçimde keşfeder. Arayüzdeki global **Senkronize Et** işlemini yalnız yönetici kullanıcılar çalıştırabilir; normal kullanıcı isteği veritabanına dokunmadan HTTP 403 alır. Diskte bulunmayan bir klasör veritabanı kaydının veya ZIP'in otomatik silinmesine yol açmaz. Senkronizasyon kaynak klasörleriyle ZIP envanterini birlikte raporlar ve önceden günlüğe alınmış bekleyen karantina işlemlerini tekrar dener; yeni saklama adaylarını kendiliğinden karantinaya almaz. Test runner ve ortak izole DB yardımcısı DB, kaynak, ZIP ve çöp köklerini geçici test dizinlerine ayırır. Önceki doğrudan test çalıştırmalarından kalan dosyalar yeni envanterde ayrıca görülebilir.
+4. **Disk Senkronizasyonu:** Backend açılışta `projects/` dizinindeki geçerli, kayıt dışı klasörleri güvenli biçimde keşfeder; web arayüzünün (`App.jsx`) açılışı ise kendiliğinden disk senkronizasyonu tetiklemez. Arayüzdeki global **Senkronize Et** işlemini yalnız yönetici kullanıcılar çalıştırabilir; normal kullanıcı isteği veritabanına dokunmadan HTTP 403 alır. Diskten canlandırma (`reconciliationService.js`) yalnızca kanonik durum makinesindeki (`PROJECT_STATUS`) geçerli durumları kabul eder, `completed` durumu için geçerli tamamlama makbuzu (`completion_receipts`) ile doğrulanmış (`verified`) ZIP artefaktını zorunlu tutar ve sözleşme şemasını (`requirements` dizisi dahil) denetler. Diskte bulunmayan bir klasör veritabanı kaydının veya ZIP'in otomatik silinmesine yol açmaz. Senkronizasyon kaynak klasörleriyle ZIP envanterini birlikte raporlar ve önceden günlüğe alınmış bekleyen karantina işlemlerini tekrar dener; yeni saklama adaylarını kendiliğinden karantinaya almaz. Test runner ve ortak izole DB yardımcısı DB, kaynak, ZIP ve çöp köklerini geçici test dizinlerine ayırır. Önceki doğrudan test çalıştırmalarından kalan dosyalar yeni envanterde ayrıca görülebilir.
 
 ### Adım 3: Manager ile Beyin Fırtınası ve Planlama (Zaman Damgalı Sohbet)
 1. Proje seçildiğinde doğrudan **Manager Sohbet Paneli (`ChatView`)** açılır.
@@ -222,7 +222,7 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
 2. **Sürümlü Yazılım Sözleşmesi (`PROJECT_CONTRACT`):** Sistem arka planda `project_contracts`, `requirements` ve `contract_elements` tablolarına değişmez bir sözleşme revizyonu ve SHA-256 sözleşme özeti (`contract_hash`) kaydeder.
 3. Sohbetin üstünde **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** kartı belirir. Tam şartname, gereksinimler, roller ve kayıt politikalarını **Planın kapsamını ve kabul kriterlerini incele** bölümünden açabilirsiniz; sohbet uzun JSON'u tekrar göstermez.
 4. **"Planı Onayla ve Başlat"** düğmesi veya **“varsayımlarla devam et” / “planı onaylıyorum”** mesajı aynı güvenli onay akışını çalıştırır. Sözleşme onaylanır (`status = approved`), proje `implementing` durumuna geçer ve DAG motoru başlar. Bekleyen geçerli plan tekrar üretilmez; tekrarlanan onay ikinci yürütme oluşturmaz. Yalnız proje sahibi veya yönetici üretimi başlatabilir. Olumsuz ifadeler, sorular ve kapsam değişikliği içeren mesajlar otomatik onay sayılmaz.
-5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Tamamlanmış veya durdurulmuş bir projede sohbete girip *"Next.js yerine Vite React ve Tailwind yap"* veya *"Şu modeli ekle"* dediğinizde; Manager yeni bir sözleşme taslağı oluşturur, eski çelişen gereksinimleri `superseded` olarak işaretler ve yeni bir sözleşme revizyonuyla onay butonunu tekrar açar.
+5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Tamamlanmış (`completed`), duraklatılmış (`paused`), hata almış (`failed`, `verification_failed`, `capability_blocked`) veya doğrulama sonrası (`runtime_verified`, `acceptance_verified`, `artifact_verified`) durumundaki bir projede sohbete girip *"Next.js yerine Vite React ve Tailwind yap"* veya *"Şu modeli ekle"* dediğinizde; Manager yeni bir sözleşme taslağı oluşturur, eski çelişen gereksinimleri `superseded` ve eski checkpoint'leri `invalidated` olarak işaretler ve yeni bir sözleşme revizyonuyla onay butonunu tekrar açar. Aynı projede eşzamanlı sohbet istekleri çakışma kilidiyle (`409 CHAT_IN_PROGRESS`) korunur.
 ### Adım 5: Canlı ReactFlow DAG Akışını ve Süreç Loglarını İzleme (4 Ayrı Sekme)
 1. Proje başladığında üst menüdeki 4 bağımsız sekme arasında serbestçe gezinebilirsiniz:
    - **💬 Sohbet & Mimari (`chat`):** Manager ile konuşma, canlı düşünce animasyonu (`Sparkles & Bouncing Dots`) ve otomatik bitiş/müdahale bildirimleri.
@@ -435,12 +435,12 @@ XFactor kod tabanını genişletmek, yeni bir ajan eklemek veya mevcut mimari ba
 
 ### 1. Kod Tabanı Bağımlılık Haritası
 Proje içindeki modüller arasındaki bağımlılık ilişkileri deterministik olarak şu katmanlara ayrılmıştır:
-- **API & Sunucu Katmanı:** `server.js` ➔ `routes/projectRoutes.js` ➔ `sessionAuth.js` / `security.js`
-- **Orkestrasyon & DAG Motoru:** `engine/workflow.js`, `engine/dag.js` ile dalgaları ve `engine/fileProtocol.js` ile kayıtları yönetir; bunlar birbirini izleyen bir import zinciri değildir.
-- **Kaynak İncelemesi:** `engine/workflow.js` ➔ `engine/selfCorrection.js` ➔ Reviewer ve gerektiğinde Coder düzeltmesi.
-- **Statik Kalite:** `engine/workflow.js` ➔ `agents/tester.js` içindeki deterministik denetim yardımcıları ve ayrı Tester LLM çağrısı.
+- **API & Sunucu Katmanı:** `server.js` ➔ `routes/projectRoutes.js` (ve alt yönlendiricileri `routes/projectObservabilityRoutes.js`, `routes/projectTraceabilityRoutes.js`) ➔ `sessionAuth.js` / `security.js`
+- **Orkestrasyon & DAG Motoru:** `engine/workflow.js`, aşama modülleri (`engine/stages/repairStage.js`, `engine/stages/verificationStage.js`), `engine/dag.js` ile dalgaları ve `engine/fileProtocol.js` ile kayıtları yönetir; şablon üretimi `engine/codeGenerator.js` üzerinden `engine/templates/dockerTemplates.js` ve `engine/templates/prismaTemplates.js` modüllerine ayrılmıştır.
+- **Kaynak İncelemesi:** `engine/workflow.js` ➔ `engine/selfCorrection.js` (ve `@babel/parser` AST tabanlı `engine/buildValidator.js`) ➔ Reviewer ve gerektiğinde Coder düzeltmesi.
+- **Statik Kalite:** `engine/workflow.js` ➔ `engine/stages/repairStage.js` ➔ `agents/tester.js` içindeki AST/deterministik denetim yardımcıları ve ayrı Tester LLM çağrısı.
 - **Çalıştırılmış Kabul Kanıtı:** `engine/workflow.js` ➔ `verification/verificationCli.js` ➔ `verification/artifactVerifier.js` ➔ `executionClient.js` ➔ bağımsız worker.
-- **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js`; migration tanımları ve uygulaması `db.js` içindedir.
+- **Veri Kalıcılığı & İzolasyon:** `projectRepository.js` ➔ `db.js`; 23 aşamalı şema göçü (migration) tanımları `db/migrations.js` modülündedir (`db.js` üzerinden de dışa aktarılır) ve tek-yazar kira doğrulaması `workflowAttempts.js` (`assertWorkflowLease`) ile birleştirilmiştir.
 
 ### 2. Bilgi Grafiği (Graphify) ile Mimari Görselleştirme ve Analiz
 XFactor, kaynak dosyalarını AST ile tarayan; elle tanımlı mimari ilişkileri de ekleyen yerel bir **Graphify Bilgi Grafiği Motoru** (`backend/scripts/generate_graph.js`) barındırır. Dinamik query parçaları rota yolundan ayrılır; ham Node HTTP Worker rotaları ve `backend/executionClient.js` istekleri `requests_route` ilişkileriyle eşleştirilir. `npm run graph` haritayı her seferinde güncel kaynak koddan yeniden üretir.
@@ -468,13 +468,13 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 | Dosya / Yol | Türü / Katman | İşlev ve Mimari Sorumluluğu |
 |---|:---:|---|
-| `frontend/src/App.jsx` | Ana Koordinatör | React uygulamasının kök bileşenidir. Kimlik durumu kontrolü, WebSocket canlı telemetri dinleyicisi, proje seçimi, hata banner'ı ve sekmelerin orkestrasyonunu yürütür. |
-| `frontend/src/components/Sidebar.jsx` | Gezinme Menüsü | Sol proje listesi; arama çubuğu, başa sabitleme (`Pin`), tamamlanan projeler için doğrulanmış ZIP indirme butonu, disk senkronizasyon butonu ve güvenli proje silme işlemlerini barındırır. |
+| `frontend/src/App.jsx` | Ana Koordinatör | React uygulamasının kök bileşenidir. Kimlik durumu kontrolü, WebSocket canlı telemetri dinleyicisi, reaktif `useEffect` DAG türetimi, proje seçimi, hata banner'ı ve sekmelerin orkestrasyonunu yürütür. |
+| `frontend/src/components/Sidebar.jsx` | Gezinme Menüsü | Sol proje listesi; arama çubuğu, durum rozetleri (`verification_failed`, `capability_blocked` dahil), başa sabitleme (`Pin`), tamamlanan projeler için doğrulanmış ZIP indirme butonu, yöneticiye özel disk senkronizasyon butonu ve güvenli proje silme işlemlerini barındırır. |
 | `frontend/src/components/CreateProjectDialog.jsx` | Proje Oluşturma | Tarayıcının `prompt()` penceresi yerine uygulama içi ad formu, klavye/fokus yönetimi ve doğrulama hataları sunar. |
-| `frontend/src/components/Header.jsx` | Üst Çubuk | Aktif projenin durumunu, sekme butonlarını (Sohbet, Akış Şeması, Loglar, Kalite Paneli), `paused` / `verification_failed` için devam ettirme eylemini, doğrulanmış ZIP indirme rozetini ve SHA-256 hash özetini sunar. |
+| `frontend/src/components/Header.jsx` | Üst Çubuk | Aktif projenin durumunu (`DOĞRULAMA HATASI` ve `YETENEK ENGELİ` rozetleri dahil), sekme butonlarını (Sohbet, Akış Şeması, Loglar, Kalite Paneli), `paused` / `verification_failed` için devam ettirme eylemini, doğrulanmış ZIP indirme rozetini ve SHA-256 hash özetini sunar. |
 | `frontend/src/components/ChatView.jsx` | Sohbet Paneli | Manager (Kıdemli Mimar) ile yapılan gerçek zamanlı sohbet ekranıdır. Beyin fırtınası, şartname oluşturma, plan onaylama (`Planı Onayla ve Başlat`) ve `paused` / `verification_failed` durumlarında devam ettirme veya revizyon taleplerini yönetir. |
 | `frontend/src/components/DAGFlowView.jsx` | Canlı Graf | ReactFlow tabanlı canlı DAG (Directed Acyclic Graph) görselleştiricisidir. Görevlerin hiyerarşik durumlarını (`bekliyor`, `çalışıyor`, `tamamlandı`, `veto`) renkli düğümler halinde çizer. |
-| `frontend/src/utils/dagLayout.js` | Layout Motoru | 6 gerçek ajan rolünün (`Manager`, `Director`, `Teamleader`, `Coder`, `Reviewer`, `Tester`) ve atomik görevlerin hiyerarşik x/y koordinatlarını hesaplar; dummy düğümleri filtreler. |
+| `frontend/src/utils/dagLayout.js` | Layout Motoru | 6 gerçek ajan rolünün (`Manager`, `Director`, `Teamleader`, `Coder`, `Reviewer`, `Tester`) ve atomik görevlerin hiyerarşik x/y koordinatlarını hesaplar; WebSocket loglarında `id` olmadığında `created_at` zaman damgasıyla kronolojik sırayı korur ve dummy düğümleri filtreler. |
 | `frontend/src/utils/canResumeProject.js` | Devam Ettirme Kuralı | Sohbet, üst çubuk ve log ekranında `paused`, `verification_failed` veya son hata kaydı olan `artifact_verified` durumları için devam ettirme eylemini sağlayan ortak kuraldır. |
 | `frontend/src/components/LogsView.jsx` | Canlı Loglar | Orkestrasyon sırasında ajanların ürettiği satır satır tüm terminal ve eylem loglarını gösterir; filtreleme ve devam ettirilebilir projelerde Resume eylemi sunar. |
 | `frontend/src/components/DashboardView.jsx` | Kalite Paneli | 18 kalite kapısını ve bağlı ayrıntı kanıtlarını listeler. Açık panelde geçmiş ve seçili koşu 15 saniyede bir yenilenir; seçilen eski koşu, log ve yüklenmiş sayfalar korunur, aynı yenileme çakıştırılmaz. |
@@ -495,7 +495,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `productionStatic.js` | Statik Sunucu | Üretim ortamında Vite ile derlenmiş ön yüz dosyalarını sunar; SPA yönlendirmelerini (`isSpaNavigation`) yönetir. |
 | `websocketHub.js` | Gerçek Zamanlı İletişim | Proje bazlı WebSocket odaları yönetir; yapay zekâ kod yazarken logları ve DAG durumlarını ön yüze anında canlı akıtır. |
 | `networkResolver.js` | Ağ & DNS Kurtarma | Kurumsal veya kısıtlı ağlarda Node.js varsayılan IPv6 DNS çözümü tıkandığında doğrudan yerel IPv4 (`dns.resolve4`) çözümlemesine düşerek LLM bağlantısını korur. |
-| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; sıralı ve artımlı şema göçlerini (migrations) ve olay yayıncısını (`dbEvents`) barındırır. Güncel checkpoint aidiyeti migration 17 ile sürümlenir. |
+| `db.js` | Veritabanı Çekirdeği | SQLite veritabanını WAL modunda açar; `backend/db/migrations.js` içindeki sıralı şema göçlerini (migrations) yürütür ve olay yayıncısını (`dbEvents`) barındırır. Güncel checkpoint aidiyeti migration 17 ile sürümlenir. |
 | `projectRepository.js` | Kanonik Depo | Projelerin oluşturulması, okunması, güncellenmesi ve güvenli silinmesi işlemlerinin tek otoritesidir; başlıktan temiz klasör adı ve kısa numara (`slug-no`) üretir. |
 | `workflowAttempts.js` | Kilit & Heartbeat | Bir projede birden fazla motorun aynı anda çalışmasını engellemek için `workflow_attempts` üzerinde kiralama (lease) alır ve kalp atışı gönderir; çöken süreçleri kurtarır. |
 | `backupRestore.js` | Yedekleme & Kurtarma | WAL verilerini içeren SQLite snapshot'ını, proje ve artefakt dosyalarını `manifest.json` ile SHA-256 doğrulanan bir dizine yedekler. CLI `--offline` kullanımı öncesinde yazan süreçler durdurulmalıdır; restore artefakt yollarını son hedefe taşır. LLM profil/anahtar dosyaları ayrıca güvenli yedeklenmelidir. |
@@ -517,13 +517,14 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 ### 5. Arka Yüz (Backend) Alt Klasör Mimarisi Tablosu
 
-`backend/` altında bulunan 12 işlevsel modül klasörü:
+`backend/` altında bulunan 13 işlevsel modül klasörü:
 
 | Klasör Adı | Dosya Sayısı | Katman / Görev | Mimari Sorumluluğu |
 |---|:---:|:---:|---|
 | `backend/agents/` | Değişken | Yapay Zekâ Rolleri | Altı rol (`manager`, `director`, `teamleader`, `coder`, `reviewer`, `tester`), registry, şema doğrulayıcı (`schemas.js`), anayasa köprüsü (`agentLoader.js`) ve güvenilir belge sınırı (`agentPaths.js`). |
-| `backend/engine/` | Değişken | Orkestrasyon Motoru | Master iş akışı, DAG, durum, scaffold, kaynak incelemesi, güvenli protokol I/O, nitelikli checkpoint kimliği ve kurtarma yardımcıları. |
-| `backend/routes/` | Değişken | REST API Rotaları | Proje CRUD/chat/onay/revizyon, auth/session, artefakt makbuzu ve indirme aksiyon denetimleri. |
+| `backend/db/` | 1 Dosya | Şema Migrasyonları | `migrations.js`: 23 aşamalı versiyonlu SQLite şema migrasyon tanımları ve `columnExists` yardımcısı (`backend/db.js` tarafından yürütülür ve yeniden dışa aktarılır). |
+| `backend/engine/` | Değişken | Orkestrasyon Motoru | Master iş akışı (`workflow.js`), aşama modülleri (`stages/repairStage.js`, `stages/verificationStage.js`), şablon üreticileri (`codeGenerator.js`, `templates/dockerTemplates.js`, `templates/prismaTemplates.js`), AST tabanlı `buildValidator.js`, DAG, durum makinesi, kaynak incelemesi, güvenli protokol I/O, nitelikli checkpoint kimliği ve kurtarma yardımcıları. |
+| `backend/routes/` | Değişken | REST API Rotaları | Proje CRUD/chat/onay/revizyon (`projectRoutes.js`), gözlemlenebilirlik (`projectObservabilityRoutes.js`), izlenebilirlik ve artefakt indirme (`projectTraceabilityRoutes.js`), auth/session (`authRoutes.js`) denetimleri. |
 | `backend/verification/` | Değişken | 18 Kalite Kapısı | Temiz kurulum, derleme, güvenlik ve veritabanı kanıtlarını bağımsız worker'dan alıp zorunlu kapıları doğrulayan Fail-Closed Veto motoru; yerel profil ayrı makine veya OS sandbox gerektirmez. |
 | `backend/services/` | 2 Dosya | Senkronizasyon ve ZIP Yaşam Döngüsü | `reconciliationService.js`: kaynak klasörleri keşfeder ve tarihsel durumu doğrulama kanıtı üretmeden yeniden kurar. `artifactLifecycle.js`: ZIP bulunabilirliği, hash/sahiplik denetimi ve kalıcı günlükle kurtarılabilir karantinayı yönetir. Global HTTP senkronizasyonunu yalnız yönetici tetikleyebilir. |
 | `backend/contracts/` | Değişken | Sözleşme & İzlenebilirlik | Sürümlü sözleşme, requirement izlenebilirliği, domain politikası ve `taskProjection.js` ile kalıcı görev/sahiplik projeksiyonu. |
@@ -532,7 +533,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `backend/utils/` | 1 Dosya | Arşiv Yöneticisi | `archive.js`: Projeleri güvenli biçimde ZIP paketine dönüştüren ve Zip-Slip saldırılarını engelleyen arşivleme aracı. |
 | `backend/scripts/` | Değişken | CLI Araçları | `generate_graph.js` ve `graphSource.js` (Graphify motoru), `create_admin.js` (yönetici parola aracı), `backup.js` & `restore.js` (yedekleme araçları). |
 | `backend/data/` | Değişken | Canlı Veri | SQLite veritabanı dosyaları ve Git dışında tutulan şifreli `llm-profiles.json` profil deposu. |
-| `backend/tests/` | Değişken | Test Ekosistemi | Gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde çalışan süitler; güncel çalıştırılabilir liste `testInventory.js` içinde, master koşucu `test_runner.js` içindedir. |
+| `backend/tests/` | Değişken | Test Ekosistemi | Gerçek SQLite, dosya sistemi, kriptografi ve AST üzerinde çalışan süitler; güncel çalıştırılabilir liste `testInventory.js` içinde, şablon DB klonlamalı (`XFACTOR_TEMPLATE_DB_PATH`) ve paralel işçi havuzlu (`XFACTOR_TEST_CONCURRENCY`) master koşucu `test_runner.js` içindedir. |
 
 ---
 

@@ -391,4 +391,31 @@ await runAsyncTest('fake verifier completion cannot publish successful completio
     assert.ok(!events.some(event => event.agent === 'Manager' && event.action === 'finish'));
     assert.equal(f.db.prepare('SELECT status FROM projects WHERE id=?').get(f.project.id).status, 'paused');
 });
+await runAsyncTest('worker repair preserves contract_hash in inputSignature and refreshes files context [ENG-4]', async () => {
+    const f = await fixture();
+    const { executeWorkerRepairs } = await import('../engine/workerRepairs.js');
+    const { createHash } = await import('node:crypto');
+    const digest = val => createHash('sha256').update(typeof val === 'string' ? val : JSON.stringify(val)).digest('hex');
+
+    const tasks = f.db.prepare('SELECT * FROM contract_tasks WHERE contract_id=?').all(f.contract.id);
+    let promptCaptured = null;
+    const repairResult = await executeWorkerRepairs({
+        projectDir: f.projectDir,
+        contract: f.contract,
+        batch: f.batch,
+        tasks,
+        workflow: f.workflow,
+        sourceFence: f.sourceFence,
+        baseline: f.artifact,
+        persistWorkflow: async () => {},
+        callAgent: async (role, prompt) => {
+            promptCaptured = prompt;
+            return { files: [{ path: 'src/price.ts', content: 'export const price: number = 42;' }] };
+        }
+    });
+
+    const attempt = f.workflow.workerRepairs.attempts[0];
+    assert.ok(attempt, 'Attempt reservation should exist');
+    assert.strictEqual(repairResult.files.find(file => file.path === 'src/price.ts')?.content, 'export const price: number = 42;', 'in-memory files güncellenmiş olmalı');
+});
 finish();

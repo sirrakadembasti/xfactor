@@ -44,11 +44,12 @@ test('mock role comes from trusted system specialization for all six roles', asy
   assert.equal(JSON.parse(legacy).approved, true);
 });
 
-test('Manager rejects partial responses for every transport while production retains its policy', async () => {
+test('Manager and agent roles reject partial responses unless explicitly allowed [AGT-2]', async () => {
   await withFetch(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'length', message: { content: 'partial' } }], candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'partial' }] } }], stop_reason: 'max_tokens', content: [{ type: 'text', text: 'partial' }] }), { status: 200 }), async () => {
     for (const provider of ['google', 'anthropic', 'openai', 'xiaomi_mimo']) {
       await assert.rejects(() => generateLLMResponse(messages, { ...defaults, provider, purpose: 'manager' }), error => error.code === 'LLM_TRUNCATED');
-      assert.equal(await generateLLMResponse(messages, { ...defaults, provider }), 'partial');
+      await assert.rejects(() => generateLLMResponse(messages, { ...defaults, provider }), error => error.code === 'LLM_TRUNCATED');
+      assert.equal(await generateLLMResponse(messages, { ...defaults, provider, allowTruncated: true }), 'partial');
     }
   });
 });

@@ -254,6 +254,50 @@ try {
         }
     });
 
+    await runAsyncTest('verifyBuild preserves synthetic ephemeral auth env vars in sandbox execution and strips real secrets', async () => {
+        let capturedEnv = null;
+        const workspace = await createTempWorkspace();
+        await fs.mkdir(path.join(workspace, 'node_modules'), { recursive: true });
+        await fs.writeFile(path.join(workspace, 'package.json'), JSON.stringify({
+            name: 'mock-auth-build',
+            scripts: { build: 'echo build' }
+        }));
+
+        const mockAdapter = {
+            id: 'mock-auth-adapter',
+            getCapabilities() { return { available: true, isolation: true }; },
+            isAvailable() { return true; },
+            async execute(req) {
+                capturedEnv = req.env;
+                return {
+                    status: 'PASS',
+                    passed: true,
+                    exitCode: 0,
+                    stdout: 'Build ok',
+                    stderr: ''
+                };
+            }
+        };
+
+        await verifyBuild(workspace, { frontend: { framework: 'next' } }, {
+            adapter: mockAdapter,
+            env: {
+                AUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+                NEXTAUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+                NEXTAUTH_URL: 'http://localhost:3000',
+                REAL_PROD_SECRET: 'do-not-leak-this-secret',
+                OPENAI_API_KEY: 'sk-should-be-scrubbed'
+            }
+        });
+
+        assert.ok(capturedEnv, 'Sandbox adapter execute must have been called with env');
+        assert.strictEqual(capturedEnv.AUTH_SECRET, 'verification-only-ephemeral-secret-not-for-production', 'Ephemeral AUTH_SECRET must be preserved');
+        assert.strictEqual(capturedEnv.NEXTAUTH_SECRET, 'verification-only-ephemeral-secret-not-for-production', 'Ephemeral NEXTAUTH_SECRET must be preserved');
+        assert.strictEqual(capturedEnv.NEXTAUTH_URL, 'http://localhost:3000', 'Ephemeral NEXTAUTH_URL must be preserved');
+        assert.strictEqual(capturedEnv.REAL_PROD_SECRET, undefined, 'Real production secret must be scrubbed');
+        assert.strictEqual(capturedEnv.OPENAI_API_KEY, undefined, 'OpenAI API key must be scrubbed');
+    });
+
     finish();
 } finally {
     for (const dir of tempDirs) {

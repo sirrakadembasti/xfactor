@@ -196,7 +196,7 @@ export async function generateProjectReadme({
     lines.push(`Uygulamanız varsayılan olarak \`http://localhost:${port}\` adresinde çalışacaktır.`);
     lines.push('');
   }
-  if (!mixedServices && projectDir && await fileExists(path.join(projectDir, 'Dockerfile'))) {
+  if (projectDir && await fileExists(path.join(projectDir, 'Dockerfile'))) {
     const imageName = String(pkg.name || 'xfactor-app').toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'xfactor-app';
     const dockerfile = await fs.readFile(path.join(projectDir, 'Dockerfile'), 'utf8');
     const containerPort = Number(dockerfile.match(/^EXPOSE\s+(\d+)/m)?.[1]) || port;

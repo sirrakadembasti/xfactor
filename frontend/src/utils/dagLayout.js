@@ -258,8 +258,17 @@ export function computeHierarchicalDAG(logs = [], plan = null) {
   // 2. Canlı Log Katmanlarını İşle
   const logList = Array.isArray(logs) ? logs : [];
   let chronological = [...logList];
-  if (logList.length > 1 && logList[0].id && logList[logList.length - 1].id && logList[0].id > logList[logList.length - 1].id) {
-    chronological = [...logList].reverse();
+  if (logList.length > 1) {
+    const firstTime = Date.parse(logList[0]?.created_at || '');
+    const lastTime = Date.parse(logList[logList.length - 1]?.created_at || '');
+    const isReverseChronological = (Number.isFinite(firstTime) && Number.isFinite(lastTime) && firstTime !== lastTime)
+      ? firstTime > lastTime
+      : (logList[0]?.id != null && logList[logList.length - 1]?.id != null
+          ? logList[0].id > logList[logList.length - 1].id
+          : logList[0]?.id == null && logList[logList.length - 1]?.id != null);
+    if (isReverseChronological) {
+      chronological = [...logList].reverse();
+    }
   }
 
   for (const log of chronological) {

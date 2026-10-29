@@ -12,9 +12,27 @@ export class SandboxInitializationError extends Error {
 
 const SENSITIVE_KEY_PATTERN = /(?:API_KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|PRIVATE|AUTH|LLM|GEMINI|OPENAI|ANTHROPIC|DEEPSEEK|MISTRAL|AZURE)/i;
 
+export const EPHEMERAL_VERIFICATION_ENV_ALLOWLIST = Object.freeze({
+    AUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+    NEXTAUTH_SECRET: 'verification-only-ephemeral-secret-not-for-production',
+    NEXTAUTH_URL: 'http://localhost:3000'
+});
+
+export function isAllowedEphemeralEnv(key, value) {
+    if (EPHEMERAL_VERIFICATION_ENV_ALLOWLIST[key] === value) return true;
+    if (key === 'AUTH_SECRET' && value === 'verification-only-secret-minimum-32-characters') return true;
+    if (key === 'NEXTAUTH_SECRET' && value === 'verification-only-secret-minimum-32-characters') return true;
+    if (key === 'NEXTAUTH_URL' && value === 'http://127.0.0.1:3000') return true;
+    return false;
+}
+
 export function scrubEnvironmentVariables(rawEnv = {}) {
     const clean = {};
     for (const [key, value] of Object.entries(rawEnv)) {
+        if (isAllowedEphemeralEnv(key, value)) {
+            clean[key] = value;
+            continue;
+        }
         if (!SENSITIVE_KEY_PATTERN.test(key)) {
             clean[key] = value;
         }

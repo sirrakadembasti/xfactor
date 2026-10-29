@@ -118,4 +118,39 @@ await runAsyncTest('5. deleteProject must refuse to delete projects root or esca
     await assert.rejects(() => deleteProject('..', { PROJECTS_ROOT: customRoot }), /invalid.*id/i);
 });
 
+await runAsyncTest('6. DAT-3: saveProjectState must not write synthetic welcome message or duplicate chats on concurrent append', async () => {
+    const { createProject, getProject, saveProjectState, appendProjectChatMessage } = await import('../projectRepository.js');
+    const { db } = await import('../db.js');
+    const project = await createProject({ title: 'Chat Offset Corruption Test' });
+
+    // Ensure chat_history is empty initially for this project in DB
+    db.prepare('DELETE FROM chat_history WHERE project_id = ?').run(project.id);
+    const countBefore = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(project.id).count;
+    assert.strictEqual(countBefore, 0, 'chat_history should be 0 before test');
+
+    // State with a synthetic welcome message (synthetic: true, id: 0)
+    const syntheticState = {
+        ...project,
+        chatHistory: [
+            { id: 0, synthetic: true, role: 'model', parts: [{ text: 'Synthetic welcome' }], created_at: new Date().toISOString() }
+        ]
+    };
+
+    // Call saveProjectState with this state. The synthetic message must NOT be written to DB!
+    await saveProjectState(syntheticState);
+    const countAfterSave = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(project.id).count;
+    assert.strictEqual(countAfterSave, 0, 'saveProjectState must not persist synthetic welcome message into DB');
+
+    // Now append a real chat message via appendProjectChatMessage
+    const realMsg = appendProjectChatMessage(project.id, 'user', 'Gerçek kullanıcı mesajı');
+    assert.ok(realMsg.id > 0);
+    const countAfterAppend = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(project.id).count;
+    assert.strictEqual(countAfterAppend, 1);
+
+    // Now call saveProjectState with the old syntheticState (which has no realMsg and only synthetic)
+    await saveProjectState(syntheticState);
+    const countAfterStaleSave = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?').get(project.id).count;
+    assert.strictEqual(countAfterStaleSave, 1, 'stale saveProjectState must not corrupt or duplicate chat rows');
+});
+
 finish();

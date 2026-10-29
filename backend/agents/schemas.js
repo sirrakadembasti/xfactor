@@ -13,7 +13,7 @@ import { hasRoleJourneyCoverage } from '../contracts/browserJourneyContract.js';
  */
 function sanitizeEscapeSequences(raw) {
     if (typeof raw !== 'string') return '';
-    return raw.replace(/\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, '\\\\');
+    return raw.replace(/\\\\|\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, (match) => match === '\\\\' ? '\\\\' : '\\\\');
 }
 
 function sliceJSONBoundaries(str) {
@@ -117,30 +117,29 @@ export function extractCoderFilesFromText(rawText) {
         if (altSum) summary = altSum[1].trim();
     }
 
-    // 2. Deneme: "path" ve "content" ikililerini sıra bağımsız yakala
-    // Standart format: "path" önce
-    const segments = rawText.split(/"path"\s*:\s*["'`]/);
-    for (let i = 1; i < segments.length; i++) {
-        const seg = segments[i];
-        const pathMatch = seg.match(/^([^"'`\n]+)["'`]/);
-        if (!pathMatch) continue;
+    // 2. Deneme: Yalnızca dosya nesnesi başlangıcı olan { "path": "...", "content": "..." } bloklarını yakala
+    const fileBlockRegex = /\{\s*"path"\s*:\s*["'`]([^"'`\r\n]+)["'`]\s*,\s*"content"\s*:\s*(["'`])/g;
+    let match;
+    const matchIndices = [];
+    while ((match = fileBlockRegex.exec(rawText)) !== null) {
+        matchIndices.push({
+            start: match.index,
+            filePath: match[1].trim(),
+            contentQuote: match[2],
+            contentStart: match.index + match[0].length
+        });
+    }
 
-        const filePath = pathMatch[1].trim();
-        const afterFilePath = seg.slice(pathMatch[0].length);
+    for (let i = 0; i < matchIndices.length; i++) {
+        const item = matchIndices[i];
+        const nextStart = i + 1 < matchIndices.length ? matchIndices[i + 1].start : rawText.length;
+        let content = rawText.slice(item.contentStart, nextStart);
 
-        const contentMatch = afterFilePath.match(/"content"\s*:\s*(["'`])/);
-        if (!contentMatch) continue;
-
-        const contentQuote = contentMatch[1];
-        const contentStartIdx = contentMatch.index + contentMatch[0].length;
-        let content = afterFilePath.slice(contentStartIdx);
-
-        // Strip trailing JSON delimiters accurately
-        const closingPattern = new RegExp(`(?:${contentQuote}|["'\`])?\\s*\\}\\s*(?:,\\s*\\{?|\\]\\s*\\}?)?\\s*(\`\`\`.*)?$`);
+        const closingPattern = new RegExp(`(?:${item.contentQuote}|["'\`])?\\s*\\}\\s*(?:,\\s*\\{?|\\]\\s*\\}?)?\\s*(\`\`\`.*)?$`);
         content = content.replace(closingPattern, '').trim();
 
-        if (content.endsWith(contentQuote)) {
-            content = content.slice(0, -contentQuote.length).trim();
+        if (content.endsWith(item.contentQuote)) {
+            content = content.slice(0, -item.contentQuote.length).trim();
         }
 
         if (content.includes('\\n') && !content.includes('\n')) {
@@ -152,12 +151,12 @@ export function extractCoderFilesFromText(rawText) {
                 .replace(/\\\\/g, '\\');
         }
 
-        if (filePath && content) {
-            files.push({ path: filePath, content });
+        if (item.filePath && content) {
+            files.push({ path: item.filePath, content });
         }
     }
 
-    // 3. Fallback: Eğer "content" önce geldiyse ters sıra ile dene
+    // 3. Fallback: Eğer "content" önce geldiyse ters sıra ile dene: { "content": "...", "path": "..." }
     if (files.length === 0) {
         const altSegments = rawText.split(/"content"\s*:\s*(["'`])/);
         for (let i = 1; i < altSegments.length; i += 2) {

@@ -221,6 +221,39 @@ try {
     assert.equal(canRepairManagerFixtures(inspectedPatch), false);
   }
   assert.equal(inspectManagerPlan(JSON.stringify(patch)).plan, null, 'patch requires a server-provided approved base');
+
+  // DAT-2 Test 1: Concurrent chat request guard
+  const concProj = await createProject({ title: 'Concurrent Chat Test' });
+  let resolveSlowChat;
+  const slowChatPromise = new Promise(resolve => { resolveSlowChat = resolve; });
+  responder = async () => {
+    await slowChatPromise;
+    return JSON.stringify(validPlan);
+  };
+  const firstReq = postChat(concProj.id, 'İlk mesaj');
+  // Allow event loop tick for firstReq to enter router
+  await new Promise(r => setTimeout(r, 20));
+  const secondRes = await postChat(concProj.id, 'İkinci eşzamanlı mesaj');
+  assert.equal(secondRes.status, 409, 'Concurrent chat request must return 409');
+  assert.equal(secondRes.state.code, 'CHAT_ALREADY_IN_PROGRESS');
+  resolveSlowChat();
+  const firstRes = await firstReq;
+  assert.equal(firstRes.status, 200);
+
+  // DAT-2 Test 2: implementation_finished transition to pending_approval via /chat
+  const impProj = await createProject({ title: 'Implementation Finished Revision Test' });
+  const { db: testDb } = await import('../db.js');
+  testDb.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(impProj.id);
+  const { canTransitionProjectStatus, isRevisableProjectStatus } = await import('../engine/stateMachine.js');
+  assert.equal(canTransitionProjectStatus('implementation_finished', 'pending_approval'), true);
+  assert.equal(isRevisableProjectStatus('implementation_finished'), true);
+  responder = async () => JSON.stringify(validPlan);
+  const impRes = await postChat(impProj.id, 'Tamamlanan projede yeni bir revizyon planı hazırla');
+  assert.equal(impRes.status, 200);
+  assert.equal(impRes.state.status, 'pending_approval');
+  const impDbRow = testDb.prepare("SELECT status FROM projects WHERE id = ?").get(impProj.id);
+  assert.equal(impDbRow.status, 'pending_approval');
+
   console.log('PASS: mixed JSON is summarized, explicit chat approval starts once, invalid plans are repaired or explained, owner authorization preserved');
   console.log('PASS: Manager deadlines/quota/auth produce safe correlated failures, persist diagnostics, preserve planning');
 } finally { await new Promise(resolve => server.close(resolve)); }

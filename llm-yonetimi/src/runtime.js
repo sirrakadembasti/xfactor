@@ -82,7 +82,7 @@ export async function generateProfileResponse(messages, profile, options = {}) {
     : profile.transport === 'anthropic' ? payload.content?.filter(p => p.type === 'text').map(p => p.text).join('\n')
       : payload.choices?.[0]?.message?.content;
   const finishReason = payload.choices?.[0]?.finish_reason || payload.candidates?.[0]?.finishReason || payload.stop_reason;
-  if (options.purpose === 'manager' && ['length', 'MAX_TOKENS', 'max_tokens'].includes(finishReason)) {
+  if (options.allowTruncated !== true && ['length', 'MAX_TOKENS', 'max_tokens'].includes(finishReason)) {
     throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
   }
   if (!content) {

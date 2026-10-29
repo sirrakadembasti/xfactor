@@ -80,7 +80,13 @@ export function generateNextProjectId(title, { database = db, env = process.env 
     return `${slug}-${nextSeq}`;
 }
 
-export async function createProject({ title, ownerUserId = null, env = process.env, customId = null } = {}) {
+export function createProjectSync(input = {}, options = {}) {
+    const rawInput = typeof input === 'string' ? { title: input } : (input || {});
+    const title = rawInput.title || options.title;
+    const ownerUserId = (typeof input === 'object' && input?.ownerUserId) || options.ownerUserId || 'legacy-local-owner';
+    const env = rawInput.env || options.env || process.env;
+    const customId = rawInput.customId || rawInput.id || options.customId || options.id || null;
+
     if (!validateProjectTitle(title || '')) {
         throw new Error('Geçerli bir proje başlığı (title) gerekli.');
     }
@@ -91,25 +97,29 @@ export async function createProject({ title, ownerUserId = null, env = process.e
     const initialWelcomeMessage = `Merhaba Boss! "${cleanTitle}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
     const nowIso = new Date().toISOString();
 
-    // 1. Önce dizin oluşturulur (SQLite transaction içinde await fs tutulmaz)
-    await fs.mkdir(projectDir, { recursive: true });
+    // 1. Önce dizin oluşturulur
+    fsSync.mkdirSync(projectDir, { recursive: true });
 
-    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)');
+    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, owner_id, is_pinned, created_at) VALUES (?, ?, ?, NULL, ?, 0, ?)');
     const insertOwner = db.prepare('INSERT INTO project_owners (project_id, user_id, role, created_at) VALUES (?, ?, ?, ?)');
     const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
 
     // 2. Senkron SQLite transaction
+    let chatInfo;
     db.exec('BEGIN IMMEDIATE;');
     try {
-        insertProject.run(id, cleanTitle, 'planning', nowIso);
+        insertProject.run(id, cleanTitle, 'planning', ownerUserId, nowIso);
         if (ownerUserId) {
-            insertOwner.run(id, ownerUserId, 'owner', nowIso);
+            const userRow = db.prepare('SELECT id FROM users WHERE id = ?').get(ownerUserId);
+            if (userRow) {
+                insertOwner.run(id, ownerUserId, 'owner', nowIso);
+            }
         }
-        insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
+        chatInfo = insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
         db.exec('COMMIT;');
     } catch (error) {
         db.exec('ROLLBACK;');
-        await fs.rm(projectDir, { recursive: true, force: true }).catch(() => {});
+        try { fsSync.rmSync(projectDir, { recursive: true, force: true }); } catch {}
         throw error;
     }
 
@@ -117,14 +127,21 @@ export async function createProject({ title, ownerUserId = null, env = process.e
         id,
         title: cleanTitle,
         status: 'planning',
+        ownerId: ownerUserId,
         isPinned: false,
         createdAt: nowIso,
         chatHistory: [
-            { role: 'model', parts: [{ text: initialWelcomeMessage }], created_at: nowIso }
+            { id: Number(chatInfo.lastInsertRowid), role: 'model', parts: [{ text: initialWelcomeMessage }], created_at: nowIso }
         ],
         plan: null,
         workflow: null
     };
+}
+
+export function createProject(input = {}, options = {}) {
+    const result = createProjectSync(input, options);
+    const promise = Promise.resolve(result);
+    return Object.assign(promise, result);
 }
 
 export function getProject(projectId) {
@@ -171,6 +188,7 @@ export function getProject(projectId) {
             : `Merhaba Boss! "${project.title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
         chatHistory = [{
             id: 0,
+            synthetic: true,
             role: 'model',
             parts: [{ text: welcomeText }],
             timestamp: formatDBDate(project.created_at),
@@ -757,7 +775,21 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         // Contract revisions are owned by createContractRevision/approveContractRevision.
         // A workflow checkpoint may carry an older plan snapshot and must not rewrite them.
         if (state.plan && !db.prepare('SELECT id FROM project_contracts WHERE project_id = ? LIMIT 1').get(state.id)) {
-            const contractJson = JSON.stringify(state.plan);
+            const rawPlan = typeof state.plan === 'object' && state.plan !== null ? state.plan : {};
+            const planToCheck = {
+                ...rawPlan,
+                requirements: Array.isArray(rawPlan.requirements) && rawPlan.requirements.length > 0
+                    ? rawPlan.requirements
+                    : [{
+                        id: 'REQ-1',
+                        statement: (rawPlan.summary || rawPlan.title || state.title || 'Recovered project requirement').slice(0, 500),
+                        mandatory: true,
+                        kind: 'functional',
+                        priority: 'high',
+                        acceptance: ['Recovered disk project state is consistent']
+                    }]
+            };
+            const contractJson = JSON.stringify(planToCheck);
             const contractHash = crypto.createHash('sha256').update(contractJson).digest('hex');
             const contractId = `contract-${crypto.randomUUID()}`;
             db.prepare(`
@@ -766,15 +798,13 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
             `).run(contractId, state.id, nextRevision, contractJson, contractHash);
         }
 
-        const existingCount = db.prepare(
-            'SELECT COUNT(*) as count FROM chat_history WHERE project_id = ?'
-        ).get(state.id).count;
-        const chatsToSave = state.chatHistory || [];
-        for (let i = existingCount; i < chatsToSave.length; i++) {
-            const chat = chatsToSave[i];
+        const chatsToSave = Array.isArray(state.chatHistory) ? state.chatHistory : [];
+        for (const chat of chatsToSave) {
+            if (!chat || chat.synthetic || (chat.id !== undefined && chat.id !== null)) continue;
             const text = chat?.parts?.[0]?.text || '';
             const createdAt = chat.created_at || new Date().toISOString();
-            insertChat.run(state.id, chat.role, text, createdAt);
+            const info = insertChat.run(state.id, chat.role || 'user', text, createdAt);
+            chat.id = Number(info.lastInsertRowid);
         }
         onTransaction?.();
         if (transactionOpen) {

@@ -78,6 +78,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
         const testOutput = `${testRes.stdout || ''}\n${testRes.stderr || ''}`;
         const emptySuite = /(?:^\s*0\s+(?:passing|passed|tests?)\b|^\s*#\s*(?:tests|pass)\s+0\b)/im.test(testOutput);
         const executedTests = hasExecutedTests(testOutput, { testScript, files: options.files || [] });
+        const startedAt = testRes.startedAt || new Date().toISOString();
+        const endedAt = testRes.endedAt || new Date().toISOString();
         if (testRes.passed && !emptySuite && executedTests) {
             checks.push({
                 name: 'test_suite_execution',
@@ -86,6 +88,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
                 exitCode: testRes.exitCode,
                 stdout: testRes.stdout,
                 stderr: testRes.stderr,
+                startedAt,
+                endedAt,
                 stdoutDigest: computeDigest(testRes.stdout),
                 stderrDigest: computeDigest(testRes.stderr),
                 reason: 'Test suite executed and passed with 0 errors.'
@@ -98,6 +102,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
                 exitCode: testRes.exitCode,
                 stdout: testRes.stdout,
                 stderr: testRes.stderr,
+                startedAt,
+                endedAt,
                 stdoutDigest: computeDigest(testRes.stdout),
                 stderrDigest: computeDigest(testRes.stderr),
                 reason: emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite execution failed: ${testRes.stderr || testRes.stdout}`

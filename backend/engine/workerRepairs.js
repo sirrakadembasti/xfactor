@@ -189,7 +189,7 @@ export async function executeWorkerRepairs({ projectDir, contract, batch, workfl
             dependencyTargetFiles: group.dependencies, targetFiles: [group.target] });
         if (currentContext.includes('OMITTED CONTEXT') || group.dependencies.some(file => !currentContext.includes(`File: ${file} (`))) stop('Coder context omission.');
         group.reservation.contextHash = digest(currentContext);
-        group.reservation.inputSignature = digest([contract.id, group.owner.spec, group.target, group.currentHash, group.fingerprints, digest(currentContext)]);
+        group.reservation.inputSignature = digest([contract.id, contract.contract_hash, group.owner.spec, group.target, group.currentHash, group.fingerprints, digest(currentContext)]);
         group.reservation.baselineSnapshotHash = snapshotHash(expected);
         await persistWorkflow();
         assertCurrent();
@@ -205,12 +205,19 @@ export async function executeWorkerRepairs({ projectDir, contract, batch, workfl
         group.reservation.phase = 'proposed'; group.reservation.proposedOutputSha256 = outputSha256;
         await persistWorkflow();
         await writeGeneratedFiles(projectDir, null, result.files, [group.target], { ...sourceFence, assertBeforeCommit: assertCurrent });
+        const nextContent = result.files[0].content;
+        const existingIdx = files.findIndex(f => f?.path === group.target);
+        if (existingIdx >= 0) {
+            files[existingIdx] = { ...files[existingIdx], path: group.target, content: nextContent };
+        } else {
+            files.push({ path: group.target, content: nextContent });
+        }
         expected.find(file => file.path === group.target).sha256 = outputSha256;
         group.reservation.phase = 'patched'; group.reservation.outputSha256 = outputSha256;
         await persistWorkflow();
     }
     assertCurrent();
-    return { batch, contract, expected, assertCurrent, ownershipHash, targets: plan.targets };
+    return { batch, contract, expected, assertCurrent, ownershipHash, targets: plan.targets, files };
 }
 
 // Synchronous, called inside the authoritative verification-context transaction.

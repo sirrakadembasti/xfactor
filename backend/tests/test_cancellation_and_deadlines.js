@@ -137,4 +137,53 @@ await runAsyncTest('5. computePlanHash should produce stable hash and detect pla
     ]) assert.notStrictEqual(computePlanHash(managed), computePlanHash({ ...managed, ...change }));
 });
 
+await runAsyncTest('6. LLM_TRUNCATED is thrown across all agent purposes including coder [AGT-2]', async () => {
+    const { generateLLMResponse } = await import('../llm.js');
+    const originalFetch = globalThis.fetch;
+    try {
+        globalThis.fetch = async () => new Response(JSON.stringify({
+            choices: [{
+                finish_reason: 'length',
+                message: { content: 'function unfinished(' }
+            }]
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+
+        await assert.rejects(
+            () => generateLLMResponse([{ role: 'user', content: 'code this' }], {
+                provider: 'openai',
+                apiKey: 'test-key',
+                baseURL: 'https://api.openai.com/v1',
+                purpose: 'coder',
+                allowMockFallback: false
+            }),
+            (err) => err.code === 'LLM_TRUNCATED'
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+await runAsyncTest('7. Google REST empty response throws LLM_EMPTY_RESPONSE without falling through [AGT-5]', async () => {
+    const { generateLLMResponse } = await import('../llm.js');
+    const originalFetch = globalThis.fetch;
+    try {
+        globalThis.fetch = async () => new Response(JSON.stringify({
+            candidates: [{
+                content: { parts: [] }
+            }]
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+
+        await assert.rejects(
+            () => generateLLMResponse([{ role: 'user', content: 'generate' }], {
+                provider: 'google',
+                apiKey: 'test-google-key',
+                allowMockFallback: false
+            }),
+            (err) => err.code === 'LLM_EMPTY_RESPONSE'
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 finish();

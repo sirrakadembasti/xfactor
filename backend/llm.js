@@ -118,8 +118,6 @@ function mockAgentRole(messages) {
 }
 
 export async function generateLLMResponse(messages, options = {}) {
-    dotenv.config(); // Her istekte güncel .env değişkenlerini yükle
-
     if (options.provider === undefined && options.apiKey === undefined && options.useManagedProfile !== false) {
         const activeProfile = createLLMProfileStore().getActive();
         if (activeProfile) options = { ...activeProfile, ...options };
@@ -262,7 +260,7 @@ export async function generateLLMResponse(messages, options = {}) {
             const candidate = result.response.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'sdk', tokenLimit: maxOutputTokens });
-                if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
+                if (options.allowTruncated !== true) throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
             }
             const responseText = result.response.text();
             if (responseText) {
@@ -314,13 +312,14 @@ export async function generateLLMResponse(messages, options = {}) {
             const candidate = data.candidates?.[0];
             if (candidate?.finishReason === 'MAX_TOKENS') {
                 writeStructuredLog('warn', 'llm.response_truncated', { provider: 'google', transport: 'rest' });
-                if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
+                if (options.allowTruncated !== true) throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
             }
             const textPart = candidate?.content?.parts?.[0]?.text;
             if (textPart) {
                 options.onUsage?.(data.usageMetadata ?? null);
                 return textPart;
             }
+            throw Object.assign(new Error('GOOGLE API boş içerik döndürdü.'), { code: 'LLM_EMPTY_RESPONSE' });
         } catch (restError) {
             if (mergedSignal?.aborted || restError.name === 'AbortError' || restError.name === 'TimeoutError') {
                 throw restError;
@@ -346,7 +345,7 @@ export async function generateLLMResponse(messages, options = {}) {
         }, { ...transportOptions, signal: mergedSignal });
         if (!response.ok) throw providerHttpError(provider, response.status);
         const body = await response.json();
-        if (body.stop_reason === 'max_tokens' && options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
+        if (body.stop_reason === 'max_tokens' && options.allowTruncated !== true) throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
         const content = body.content?.filter(item => item.type === 'text').map(item => item.text).join('\n');
         if (!content) throw new Error('ANTHROPIC API boş içerik döndürdü.');
         options.onUsage?.(body.usage ?? null);
@@ -408,7 +407,7 @@ export async function generateLLMResponse(messages, options = {}) {
     const choice = data.choices?.[0];
     if (choice?.finish_reason === 'length') {
         writeStructuredLog('warn', 'llm.response_truncated', { provider });
-        if (options.purpose === 'manager') throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
+        if (options.allowTruncated !== true) throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'), { code: 'LLM_TRUNCATED' });
     }
 
     const content = choice?.message?.content;

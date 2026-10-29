@@ -184,51 +184,60 @@ export async function verifyArtifactDevFallback({
         });
     }
 
-    // 6. Veritabanına Çekleri Yaz
-    for (const c of checkRecords) {
-        createCheckFn({
-            id: c.id,
-            contractId,
-            runId: c.runId,
-            gateName: c.gateName,
-            applicability: c.applicability,
-            status: c.status,
-            startedAt: c.startedAt,
-            endedAt: c.endedAt,
-            stdoutDigest: c.stdoutDigest,
-            stderrDigest: c.stderrDigest,
-            evidenceJson: c.evidenceJson
-        });
-    }
-
-    // 7. Mandatory Requirements Bağlantılarını Kur
-    const mandatoryRequirements = database.prepare(`
-        SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1
-    `).all(contractId);
-
-    for (const req of mandatoryRequirements) {
-        for (const c of checkRecords) {
-            linkRequirementToCheckFn({
-                contractId,
-                requirementId: req.id,
-                verificationCheckId: c.id
-            });
-        }
-    }
-
     // 8. Update run and artifact status depending on allPassed (Fail-Closed)
     const finalRunStatus = allPassed ? 'verified' : 'failed';
     const finalArtifactStatus = allPassed ? 'verified' : 'rejected';
 
-    updateRunStatusFn(effectiveRunId, finalRunStatus);
+    // 6. Veritabanına Çekleri ve Bağlantıları Tek Bir Transaction'da Yaz
+    database.exec('BEGIN IMMEDIATE;');
+    try {
+        for (const c of checkRecords) {
+            createCheckFn({
+                id: c.id,
+                contractId,
+                runId: c.runId,
+                gateName: c.gateName,
+                applicability: c.applicability,
+                status: c.status,
+                startedAt: c.startedAt,
+                endedAt: c.endedAt,
+                stdoutDigest: c.stdoutDigest,
+                stderrDigest: c.stderrDigest,
+                evidenceJson: c.evidenceJson
+            });
+        }
 
-    updateArtifactStatusFn({
-        projectId,
-        contractId,
-        artifactId,
-        status: finalArtifactStatus,
-        verificationRunId: effectiveRunId
-    });
+        // 7. Mandatory Requirements Bağlantılarını Kur (Yalnızca PASS kontroller)
+        const mandatoryRequirements = database.prepare(`
+            SELECT id FROM requirements WHERE contract_id = ? AND mandatory = 1
+        `).all(contractId);
+
+        for (const req of mandatoryRequirements) {
+            for (const c of checkRecords) {
+                if (c.status === 'PASS') {
+                    linkRequirementToCheckFn({
+                        contractId,
+                        requirementId: req.id,
+                        verificationCheckId: c.id
+                    });
+                }
+            }
+        }
+
+        updateRunStatusFn(effectiveRunId, finalRunStatus);
+
+        updateArtifactStatusFn({
+            projectId,
+            contractId,
+            artifactId,
+            status: finalArtifactStatus,
+            verificationRunId: effectiveRunId
+        });
+        database.exec('COMMIT;');
+    } catch (err) {
+        database.exec('ROLLBACK;');
+        throw err;
+    }
 
     return {
         passed: allPassed,

@@ -1,40 +1,40 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-24T15:27:16.611Z
+Üretim tarihi: 2026-10-29T13:59:54.719Z
 
-- 472 kaynak ve belge dosyası
-- 2978 düğüm
-- 7687 ilişki
+- 483 kaynak ve belge dosyası
+- 3025 düğüm
+- 7809 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1444 |
-| Method | 829 |
+| Function | 1465 |
+| Method | 842 |
 | SourceFile | 276 |
-| Document | 109 |
-| EnvVar | 82 |
+| Document | 113 |
+| EnvVar | 84 |
 | Package | 52 |
 | HttpRoute | 48 |
 | HttpRequest | 36 |
 | TestSuite | 32 |
-| BackendService | 24 |
+| BackendService | 27 |
 | Class | 15 |
+| EngineCore | 14 |
 | FrontendComponent | 11 |
 | AgentModule | 10 |
-| EngineCore | 10 |
 
 ## İlişki türleri
 
 | Tür | Adet |
 |---|---:|
-| calls | 2596 |
-| contains | 2354 |
-| imports_package | 995 |
-| imports | 723 |
-| dynamic_imports | 351 |
-| reads_env | 165 |
+| calls | 2624 |
+| contains | 2388 |
+| imports_package | 1005 |
+| imports | 753 |
+| dynamic_imports | 361 |
+| reads_env | 168 |
 | runs | 148 |
 | writes_env | 130 |
 | registers_route | 48 |
@@ -48,7 +48,10 @@
 | inherits_policy | 6 |
 | loads | 6 |
 | uses | 6 |
+| delegates_verification | 2 |
+| uses_templates | 2 |
 | mounts | 2 |
+| delegates_routes | 2 |
 | calls_ai | 2 |
 | reads | 1 |
 | executes_waves | 1 |
@@ -61,6 +64,8 @@
 | qualifies_task_ownership | 1 |
 | persists_reviewed_checkpoints | 1 |
 | routes_bounded_owner_repairs | 1 |
+| delegates_repair | 1 |
+| executes_migrations | 1 |
 | triggers_workflow | 1 |
 | reads_docs | 1 |
 | persists_state | 1 |
@@ -80,7 +85,6 @@
 | consumes_api | 1 |
 | validates_contracts | 1 |
 | enforces_quality | 1 |
-| delegates_verification | 1 |
 | runs_security_checks | 1 |
 | checks_database | 1 |
 | verifies_apis | 1 |

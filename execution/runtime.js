@@ -97,6 +97,10 @@ export async function cleanupContainer(containerName, options = {}) {
   await docker(['rm', '-f', containerName], options).catch(e => { if (!/No such container|not found/i.test(e.message)) throw e; });
 }
 
+export async function disconnectInstallNetwork(containerName, networkName, options = {}) {
+  return docker(['network', 'disconnect', '-f', networkName, containerName], options);
+}
+
 function dependencySpecAllowed(spec) {
   if (typeof spec !== 'string' || !spec.trim()) return false;
   const value = spec.trim().toLowerCase();
@@ -248,9 +252,16 @@ export async function executeJob(job, { signal, onResource } = {}) {
         await docker(['exec', names.container, 'node', '/opt/worker/entrypoint.js', 'check-path', `/workspace/${relative}`], opts());
       }
     };
+    const disconnectInstallNetworkHelper = async () => {
+      installPhase = false;
+      try {
+        await docker(['network', 'disconnect', '-f', names.install, names.container], opts());
+      } catch {}
+    };
     const ownedProcesses = new Map();
     const adapter = {
       id: 'docker-worker',
+      disconnectInstallNetwork: disconnectInstallNetworkHelper,
       interact: async request => {
         const result = await adapter.execute('node', ['/opt/worker/browserRunner.cjs'], {
           input: JSON.stringify({ ...request, signal: undefined }), timeoutMs: 120000
@@ -361,9 +372,15 @@ export async function executeJob(job, { signal, onResource } = {}) {
     };
     if (install) {
       const prepared = await prepareDependencies({ packageJsonBytes: job.packageJsonBytes, workspace: '/workspace', adapter, signal, env: job.env || {}, runId: job.runId });
+      if (job.disconnectInstallNetworkAfterInstall) {
+        await disconnectInstallNetworkHelper();
+      }
       return { status: 'success', result: prepared };
     }
     const verification = await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {} });
+    if (job.disconnectInstallNetworkAfterInstall) {
+      await disconnectInstallNetworkHelper();
+    }
     if (!verification.passed) return { status: 'failed', result: verification };
     return { status:'success', result: verification };
   } catch (e) {

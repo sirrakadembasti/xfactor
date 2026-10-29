@@ -605,6 +605,113 @@ try {
             assert.throws(() => assertVerifiedArtifactEvidence({ projectId, contractId, artifactId }), /management.*read|read.*missing|receipt check is missing/i);
         } finally { db.exec('ROLLBACK TO public_reader; RELEASE public_reader'); }
     });
+
+    await runAsyncTest('5. runWorkerChecks fails requirement_traceability when a check fails with requirementIds', async () => {
+        const { runVerificationChecks } = await import('../verification/runChecks.js');
+        const fakeAdapter = {
+            workspaceRoot: '/test-workspace',
+            execute: async () => ({ code: 0, stdout: '', stderr: '' })
+        };
+        const failedCheck = {
+            name: 'api_contract',
+            status: 'failed',
+            exitCode: 1,
+            requirementIds: ['REQ-1'],
+            startedAt: new Date().toISOString(),
+            endedAt: new Date().toISOString(),
+            stdoutDigest: 'abc',
+            stderrDigest: 'def'
+        };
+        const result = await runVerificationChecks({
+            workspace: '/test-workspace',
+            contract: { requirements: [{ id: 'REQ-1', mandatory: true }] },
+            requirementIds: ['REQ-1'],
+            adapter: fakeAdapter,
+            files: [],
+            verifiers: {
+                dependencies: async () => ({ checks: [] }),
+                build: async () => ({ checks: [] }),
+                readme: async () => ({ passed: true, checks: [] }),
+                smoke: async () => ({ checks: [failedCheck] })
+            }
+        });
+        const traceCheck = result.checks.find(c => (c.name || c.gateName) === 'requirement_traceability');
+        assert.ok(traceCheck, 'requirement_traceability check must be present');
+        assert.strictEqual(traceCheck.status, 'failed', 'traceability must fail when requirement-linked check fails');
+    });
+
+    await runAsyncTest('6. verifyArtifact overrides spoofed security_baseline and marks missing evidence as BLOCKED', async () => {
+        const zipPath = await createTestZip('spoof-test.zip', [
+            { path: 'package.json', content: '{"name":"spoof-app","dependencies":{}}' },
+            { path: 'package-lock.json', content: '{"lockfileVersion":3}' },
+            { path: '.env', content: 'SECRET=malicious-secret' },
+            { path: 'src/index.js', content: 'console.log("hello");' }
+        ]);
+        const artifactId = 'artifact-spoof-test';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        db.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(projectId);
+        const runId = 'run-spoof-test';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+
+        const spoofedWorkerChecks = [
+            { name: 'security_baseline', status: 'passed', exitCode: 0, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdoutDigest: 'fake', stderrDigest: 'fake' },
+            { name: 'clean_install', status: 'passed', exitCode: 0, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stderrDigest: 'has-stderr-only' }
+        ];
+
+        const result = await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId,
+            activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, spoofedWorkerChecks, 'completed') }
+        });
+
+        assert.strictEqual(result.passed, false, 'Spoofed artifact must not pass verification');
+
+        const secRow = db.prepare("SELECT * FROM verification_checks WHERE run_id = ? AND gate_name = 'security_baseline'").get(runId);
+        assert.ok(secRow, 'security_baseline must exist');
+        assert.strictEqual(secRow.status, 'FAIL', 'Backend authoritative security_baseline must fail eval');
+
+        const installRow = db.prepare("SELECT * FROM verification_checks WHERE run_id = ? AND gate_name = 'clean_install'").get(runId);
+        assert.ok(installRow, 'clean_install check must exist');
+        assert.strictEqual(installRow.status, 'BLOCKED', 'Check with missing digest must be BLOCKED');
+        assert.strictEqual(installRow.exit_code, -1);
+    });
+
+    await runAsyncTest('7. verifyArtifact failure invalidates task_checkpoints atomically', async () => {
+        db.prepare(`
+            INSERT OR REPLACE INTO task_checkpoints (
+                project_id, task_id, contract_id, plan_hash, task_spec_hash,
+                input_hash, output_hash, gate_version, status
+            ) VALUES (?, 'task-atomic-fail', ?, 'plan', 'spec', 'input', 'output', 'v1', 'completed')
+        `).run(projectId, contractId);
+
+        const zipPath = await createTestZip('fail-cp-invalidation.zip', [
+            { path: 'package.json', content: '{"name":"fail-cp","dependencies":{}}' },
+            { path: 'package-lock.json', content: '{"lockfileVersion":3}' },
+            { path: 'src/index.js', content: 'console.log("fail");' }
+        ]);
+        const artifactId = 'artifact-fail-cp';
+        const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+        db.prepare("UPDATE projects SET status = 'implementation_finished' WHERE id = ?").run(projectId);
+        const runId = 'run-fail-cp';
+        const identity = artifactIdentity(artifactId, runId, archiveHash);
+
+        const failingWorkerChecks = [
+            { name: 'clean_install', status: 'failed', exitCode: 1, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdoutDigest: 'abc', stderrDigest: 'def' }
+        ];
+
+        await verifyArtifact({ projectId, contractId, artifactId }, {
+            runId,
+            activeJob: identity,
+            archiveBase64: archiveBytes.toString('base64'),
+            executionClient: { verifyArtifact: async () => workerResponse(identity, failingWorkerChecks, 'failed', 'clean install failed') }
+        });
+
+        const cpRow = db.prepare("SELECT status, invalidation_reason FROM task_checkpoints WHERE project_id = ? AND contract_id = ? AND task_id = 'task-atomic-fail'").get(projectId, contractId);
+        assert.ok(cpRow, 'Checkpoint must exist');
+        assert.strictEqual(cpRow.status, 'invalidated', 'Verification failure must have invalidated task_checkpoints');
+        assert.strictEqual(cpRow.invalidation_reason, 'VERIFICATION_FAILED');
+    });
 } finally {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);

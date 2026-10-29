@@ -380,21 +380,53 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     // 4. Status determination
     const diskStatus = detectProjectStatusFromDisk(projectDir);
     let status = diskStatus;
-    if (diskStatus !== 'completed') {
-        if (tasks.length > 0) {
-            status = 'in_progress';
-        } else if (diskStatus === 'pending_approval') {
+    if (status === 'in_progress' || (status !== 'completed' && tasks.length > 0)) {
+        status = 'paused';
+    } else if (status !== 'completed') {
+        if (diskStatus === 'pending_approval') {
             status = 'pending_approval';
         } else {
             status = 'planning';
         }
     }
-    const plan = {
+    if (status === 'completed') {
+        const hasVerifiedReceipt = Boolean(database.prepare(`
+            SELECT cr.id
+            FROM completion_receipts cr
+            JOIN artifacts a ON a.id = cr.artifact_id
+            WHERE cr.project_id = ? AND a.project_id = ? AND a.status = 'verified'
+            LIMIT 1
+        `).get(pId, pId));
+        if (!hasVerifiedReceipt) {
+            status = 'paused';
+        }
+    }
+
+    const defaultRequirement = {
+        id: 'REQ-1',
+        statement: (summary || title || 'Recovered project requirement').slice(0, 500),
+        mandatory: true,
+        kind: 'functional',
+        priority: 'high',
+        acceptance: ['Recovered disk project state is consistent']
+    };
+    const basePlan = {
         title,
         talimatname,
         summary,
         domains,
         tasks
+    };
+    const plan = {
+        ...basePlan,
+        summary: basePlan.summary || summary || title,
+        talimatname: basePlan.talimatname || talimatname || '',
+        domains: Array.isArray(basePlan.domains) && basePlan.domains.length > 0
+            ? basePlan.domains
+            : Array.from(new Set(domains)),
+        requirements: Array.isArray(basePlan.requirements) && basePlan.requirements.length > 0
+            ? basePlan.requirements
+            : [defaultRequirement]
     };
 
     // 5. Update SQLite projects table
@@ -515,7 +547,7 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
     }
 
     // 7. Unverified ZIP artifact recovery for completed projects
-    if (finalStatus === 'completed') {
+    if (finalStatus === 'completed' || diskStatus === 'completed') {
         const existingArtifact = database.prepare(
             'SELECT id, sha256 FROM artifacts WHERE project_id = ? AND status IN (\'built\', \'verified\') LIMIT 1'
         ).get(pId);
@@ -637,7 +669,8 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
             currentStatus = detectProjectStatusFromDisk(projectDir);
         }
 
-        if (currentStatus === 'completed') {
+        const diskStatus = detectProjectStatusFromDisk(projectDir);
+        if (currentStatus === 'completed' || diskStatus === 'completed') {
             const raporPath = path.join(projectDir, 'RAPOR.md');
             if (disk.existsSync(raporPath)) {
                 try {
@@ -685,17 +718,18 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
             return { success: true, rehydrated: true, count: checkRow.cnt };
         }
     }
+    const diskStatus = detectProjectStatusFromDisk(projectDir);
     let currentStatus = null;
     try {
         currentStatus = database.prepare('SELECT status FROM projects WHERE id = ?').get(pId)?.status;
     } catch {}
     if (!currentStatus) {
-        currentStatus = detectProjectStatusFromDisk(projectDir);
+        currentStatus = diskStatus;
     }
 
     let existingLogs = [];
     try {
-        existingLogs = database.prepare('SELECT id, node_id, action FROM project_logs WHERE project_id = ?').all(pId);
+        existingLogs = database.prepare('SELECT id, agent, node_id, action FROM project_logs WHERE project_id = ?').all(pId);
     } catch {}
 
     const recoverableProgress = currentStatus === 'paused' || currentStatus === 'verification_failed';
@@ -937,7 +971,8 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
 
     // 4. Root RAPOR.md -> Tester finish log
     const rootRaporPath = path.join(projectDir, 'RAPOR.md');
-    if (currentStatus === 'completed' && disk.existsSync(rootRaporPath)) {
+    const alreadyHasTesterFinish = existingLogs.some(log => log.agent === 'Tester' && log.action === 'finish');
+    if (!alreadyHasTesterFinish && (currentStatus === 'completed' || diskStatus === 'completed') && disk.existsSync(rootRaporPath)) {
         logsToInsert.push({
             agent: 'Tester',
             action: 'finish',

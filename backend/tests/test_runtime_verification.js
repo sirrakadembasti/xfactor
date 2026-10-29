@@ -13,7 +13,9 @@ import { TaskDAG } from '../engine/dag.js';
 import { isTaskCompleted, writeDurum, writeRapor } from '../engine/fileProtocol.js';
 import { runDeterministicProjectAudit } from '../agents/tester.js';
 import { extractCoderFilesFromText, extractAndParseJSON } from '../agents/schemas.js';
+import { getAgent } from '../agents/index.js';
 import { ensureProjectScaffold } from '../engine/codeGenerator.js';
+import { executeCorrectionLoop } from '../engine/selfCorrection.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -176,6 +178,76 @@ await asyncTest("5.1 Saf Express API projesinde Next.js ve Tailwind enjekte edil
     assert.strictEqual(Boolean(pkg.dependencies['next']), false, "Express projesinde Next.js olmamalı");
 
     await fs.rm(expressTestDir, { recursive: true, force: true });
+});
+
+// ----------------------------------------------------
+// 6. ENG-1 & ENG-3: 1. İterasyon Scope Validasyonu ve callAgent Enjeksiyonu
+// ----------------------------------------------------
+console.log("\n--- 6. ENG-1 & ENG-3: Scope & callAgent ---");
+
+await asyncTest("6.1 executeCorrectionLoop 1. iterasyonda kapsam dışı dosyayı yakalamalı ve reddetmeli", async () => {
+    let coderCalled = 0;
+    const reviewerSysPrompt = getAgent('reviewer').systemPrompt;
+    const fakeGenerate = async (messages) => {
+        const msgList = Array.isArray(messages) ? messages : [];
+        const sys = msgList.find(m => m.role === 'system')?.content || '';
+        if (sys === reviewerSysPrompt) {
+            // Yanlışlıkla approved dönen bir reviewer taklidi
+            return '```json\n{"approved": true, "summary": "Looks good!", "feedback": ""}\n```';
+        }
+        coderCalled++;
+        return '```json\n{"summary": "Fixed", "files": [{"path": "src/Expected.jsx", "content": "export const ok = true;"}]}\n```';
+    };
+
+    const loopResult = await executeCorrectionLoop({
+        taskId: 'test-scope-task',
+        taskTitle: 'Scope Test',
+        taskDescription: 'Generate Expected.jsx',
+        targetFiles: ['src/Expected.jsx'],
+        initialCoderOutput: {
+            files: [{ path: 'src/Wrong.jsx', content: 'export const wrong = 1;' }]
+        },
+        coderPrompt: 'Produce code for src/Expected.jsx',
+        projectContext: '',
+        maxRetries: 2,
+        generate: fakeGenerate
+    });
+
+    assert.strictEqual(loopResult.approved, true, "Sonuçta coder düzeltmesiyle onaylanmalı");
+    assert.strictEqual(loopResult.finalOutput.files[0].path, 'src/Expected.jsx', "Nihai dosya targetFiles ile uyumlu olmalı");
+    assert.ok(loopResult.iterations >= 2, "1. iterasyondaki Wrong.jsx reddedilmeli ve 2. iterasyona geçilmeli");
+    assert.ok(coderCalled >= 1, "Coder düzeltme için çağrılmış olmalı");
+});
+
+await asyncTest("6.2 executeCorrectionLoop callAgent fonksiyonunu kullanmalı", async () => {
+    const rolesCalled = [];
+    const customCallAgent = async (role, prompt, options) => {
+        rolesCalled.push(role);
+        if (role === 'reviewer') {
+            return { approved: true, summary: 'All good', feedback: '' };
+        }
+        if (role === 'coder') {
+            return { summary: 'Code generated', files: [{ path: 'src/Expected.jsx', content: 'export const y = 2;' }] };
+        }
+        throw new Error(`Unexpected role: ${role}`);
+    };
+
+    const loopResult = await executeCorrectionLoop({
+        taskId: 'test-callagent-task',
+        taskTitle: 'CallAgent Test',
+        taskDescription: 'Generate Expected.jsx',
+        targetFiles: ['src/Expected.jsx'],
+        initialCoderOutput: {
+            files: [{ path: 'src/Expected.jsx', content: 'export const y = 2;' }]
+        },
+        coderPrompt: 'Produce code for src/Expected.jsx',
+        projectContext: '',
+        maxRetries: 2,
+        callAgent: customCallAgent
+    });
+
+    assert.strictEqual(loopResult.approved, true);
+    assert.ok(rolesCalled.includes('reviewer'), "callAgent üzerinden reviewer çağrılmış olmalı");
 });
 
 console.log("\n==================================================");

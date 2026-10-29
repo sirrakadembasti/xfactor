@@ -88,8 +88,9 @@ export interface User {
     age: number;
 }
 
-export function greet(user: User): string {
-    return \`Hello, \${user.name}! You are \${user.age} years old.\`;
+export function greet(user: User, role: string = 'ADMIN'): string {
+    const normalizedRole = role.toLowerCase();
+    return \`Hello, \${user.name} (\${normalizedRole})! You are \${user.age} years old.\`;
 }
 
 const alice: User = { id: 'u1', name: 'Alice', age: 25 };

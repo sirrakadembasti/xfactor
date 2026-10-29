@@ -83,6 +83,16 @@ async function verifyZipDockerRun(kind) {
     }
 }
 
-docker('info');
-await verifyZipDockerRun('express');
-await verifyZipDockerRun('next');
+let dockerAvailable = false;
+try {
+    docker('info');
+    dockerAvailable = true;
+} catch (err) {
+    if (process.env.P8_REQUIRE_DOCKER_LIMITS === '1') throw err;
+    console.log('Skipping Docker integration test (Docker daemon not running or unavailable):', err.message);
+}
+
+if (dockerAvailable) {
+    await verifyZipDockerRun('express');
+    await verifyZipDockerRun('next');
+}

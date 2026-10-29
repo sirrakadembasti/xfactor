@@ -89,9 +89,11 @@ async function runSandboxCheck(checks, {
             env,
             signal
         };
+        const startedAt = new Date().toISOString();
         const execution = name === 'prisma_validate'
             ? await executePrismaValidation(command, args, executionOptions)
             : { result: await executeInSandbox(command, args, executionOptions) };
+        const endedAt = new Date().toISOString();
         advisory = execution.advisory;
         if (execution.error) throw execution.error;
         const result = execution.result;
@@ -103,6 +105,8 @@ async function runSandboxCheck(checks, {
             exitCode: result.exitCode,
             stdout: result.stdout || '',
             stderr: result.stderr || '',
+            startedAt,
+            endedAt,
             stdoutDigest: computeDigest(result.stdout),
             stderrDigest: computeDigest(result.stderr),
             ...(advisory ? { advisory } : {}),
@@ -301,6 +305,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
             });
         } else {
             try {
+                const startedAt = new Date().toISOString();
                 let tscRes;
                 try { tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
                     workspace: options.workspace || projectDir,
@@ -312,6 +317,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     if (!error.result || options.signal?.aborted) throw error;
                     tscRes = error.result;
                 }
+                const endedAt = new Date().toISOString();
 
                 checks.push({
                     name: 'typecheck',
@@ -320,6 +326,8 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     exitCode: tscRes.exitCode,
                     stdout: tscRes.stdout,
                     stderr: tscRes.stderr,
+                    startedAt,
+                    endedAt,
                     stdoutTruncated: tscRes.stdoutTruncated,
                     stderrTruncated: tscRes.stderrTruncated,
                     timedOut: tscRes.timedOut === true,
@@ -332,9 +340,12 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     reason: tscRes.passed ? 'TypeScript compilation check passed with 0 errors.' : `TypeScript compilation failed: ${tscRes.stderr || tscRes.stdout}`
                 });
             } catch (err) {
+                const now = new Date().toISOString();
                 checks.push({
                     name: 'typecheck',
                     status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                    startedAt: now,
+                    endedAt: now,
                     reason: `TypeScript typecheck execution error: ${err.message}`
                 });
             }
@@ -367,18 +378,20 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
         });
     } else {
         try {
+            const buildStartedAt = new Date().toISOString();
             const buildRes = await executeInSandbox(npmCmd, ['run', 'build'], {
                 workspace: options.workspace || projectDir,
                 timeoutMs: options.timeoutMs || 300000,
                 adapter: options.adapter,
                 env: {
                     DATABASE_URL: options.env?.DATABASE_URL || 'file:./dev.db',
-                    AUTH_SECRET: options.env?.AUTH_SECRET || 'verification-only-secret-minimum-32-characters',
-                    NEXTAUTH_SECRET: options.env?.NEXTAUTH_SECRET || 'verification-only-secret-minimum-32-characters',
-                    NEXTAUTH_URL: options.env?.NEXTAUTH_URL || 'http://127.0.0.1:3000',
+                    AUTH_SECRET: options.env?.AUTH_SECRET || 'verification-only-ephemeral-secret-not-for-production',
+                    NEXTAUTH_SECRET: options.env?.NEXTAUTH_SECRET || 'verification-only-ephemeral-secret-not-for-production',
+                    NEXTAUTH_URL: options.env?.NEXTAUTH_URL || 'http://localhost:3000',
                     ...(options.env || {})
                 },
             });
+            const buildEndedAt = new Date().toISOString();
 
             checks.push({
                 name: 'framework_build',
@@ -387,14 +400,19 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 exitCode: buildRes.exitCode,
                 stdout: buildRes.stdout,
                 stderr: buildRes.stderr,
+                startedAt: buildStartedAt,
+                endedAt: buildEndedAt,
                 stdoutDigest: computeDigest(buildRes.stdout),
                 stderrDigest: computeDigest(buildRes.stderr),
                 reason: buildRes.passed ? 'Framework build completed successfully.' : `Framework build failed: ${buildRes.stderr || buildRes.stdout}`
             });
         } catch (err) {
+            const now = new Date().toISOString();
             checks.push({
                 name: 'framework_build',
                 status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                startedAt: now,
+                endedAt: now,
                 reason: err.code === 'SANDBOX_UNAVAILABLE'
                     ? `Sandboxed build runner unavailable: ${err.message}`
                     : `Build execution error: ${err.message}`
