@@ -108,7 +108,7 @@ try {
         db.prepare("UPDATE projects SET status='paused' WHERE id=?").run(project.id);
         let dispatched;
         const dispatch = new Promise(resolve => { dispatched = resolve; });
-        const timeout = setTimeout(() => dispatched(false), 5000);
+        const timeout = setTimeout(() => dispatched(false), 15000);
         try {
             const response = await approveViaHttp(project.id, 'resume', event => {
                 if (event.action === 'start' && /director/i.test(event.agent || '')) {

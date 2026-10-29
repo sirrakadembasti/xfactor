@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { db, initializeDatabase, checkpointWAL, closeDatabase } from '../db.js';
 import { assertCompleteTestInventory, getRunnableTestFiles } from './testInventory.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,7 +62,7 @@ export function runTestFile(file, env, timeoutMs = 120000) {
     });
 }
 
-export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000 } = {}) {
+export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000, concurrency } = {}) {
     const inventory = await assertCompleteTestInventory(testsDir);
     const files = selectedTestFiles();
     const listed = new Set(inventory.discovered);
@@ -71,38 +72,55 @@ export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000 } =
     }
 
     const testTempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-test-runner-'));
-    const results = [];
+    const templateDbPath = path.join(testTempDir, 'template.db');
+    const results = new Array(files.length);
     const startTime = Date.now();
+    const configuredConcurrency = Number.parseInt(concurrency ?? process.env.XFACTOR_TEST_CONCURRENCY ?? '', 10);
+    const defaultConcurrency = Math.min(2, Math.max(1, os.availableParallelism ? os.availableParallelism() : os.cpus().length));
+    const workerCount = Math.max(1, Math.min(files.length || 1, Number.isFinite(configuredConcurrency) && configuredConcurrency > 0 ? configuredConcurrency : defaultConcurrency));
     try {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const testDbPath = path.join(testTempDir, `test-${i}.db`);
-            const testProjectsRoot = path.join(testTempDir, `projects-${i}`);
-            const testArtifactsRoot = path.join(testTempDir, `artifacts-${i}`);
-            const testTrashRoot = path.join(testTempDir, `trash-${i}`);
-            await fs.mkdir(testProjectsRoot, { recursive: true });
-            const result = await runTestFile(file, {
-                NODE_ENV: 'test',
-                DB_PATH: testDbPath,
-                PROJECTS_ROOT: testProjectsRoot,
-                ARTIFACTS_ROOT: testArtifactsRoot,
-                TRASH_ROOT: testTrashRoot,
-                // Tests must never select or mutate the operator's active LLM
-                // profiles while exercising a real workflow with fake agents.
-                LLM_CONFIG_PATH: path.join(testTempDir, `llm-profiles-${i}.json`),
-                // dotenv must not reintroduce operator credentials into a
-                // workflow fixture. Tests needing transport use explicit fake
-                // options/profiles and intercepted requests.
-                GOOGLE_API_KEY: '', OPENAI_API_KEY: '', OPENROUTER_API_KEY: '',
-                DEEPSEEK_API_KEY: '', QWEN_API_KEY: '', MINIMAX_API_KEY: '',
-                KIMI_API_KEY: '', XIAOMI_MIMO_API_KEY: '', ANTHROPIC_API_KEY: '',
-                // Docker suites must fail explicitly when Docker is unavailable in CI.
-                ...(process.env.P8_REQUIRE_DOCKER_LIMITS !== undefined
-                    ? { P8_REQUIRE_DOCKER_LIMITS: process.env.P8_REQUIRE_DOCKER_LIMITS }
-                    : (process.platform === 'linux' ? { P8_REQUIRE_DOCKER_LIMITS: '1' } : {}))
-            }, timeoutMs);
-            results.push(result);
+        if (!db) {
+            initializeDatabase({ path: templateDbPath });
+            checkpointWAL();
+            db.exec('PRAGMA journal_mode = DELETE;');
+            closeDatabase();
         }
+        let nextIndex = 0;
+        const runWorker = async () => {
+            while (true) {
+                const i = nextIndex++;
+                if (i >= files.length) break;
+                const file = files[i];
+                const testDbPath = path.join(testTempDir, `test-${i}.db`);
+                const testProjectsRoot = path.join(testTempDir, `projects-${i}`);
+                const testArtifactsRoot = path.join(testTempDir, `artifacts-${i}`);
+                const testTrashRoot = path.join(testTempDir, `trash-${i}`);
+                await fs.mkdir(testProjectsRoot, { recursive: true });
+                await fs.copyFile(templateDbPath, testDbPath).catch(() => {});
+                results[i] = await runTestFile(file, {
+                    NODE_ENV: 'test',
+                    DB_PATH: testDbPath,
+                    XFACTOR_TEMPLATE_DB_PATH: templateDbPath,
+                    PROJECTS_ROOT: testProjectsRoot,
+                    ARTIFACTS_ROOT: testArtifactsRoot,
+                    TRASH_ROOT: testTrashRoot,
+                    // Tests must never select or mutate the operator's active LLM
+                    // profiles while exercising a real workflow with fake agents.
+                    LLM_CONFIG_PATH: path.join(testTempDir, `llm-profiles-${i}.json`),
+                    // dotenv must not reintroduce operator credentials into a
+                    // workflow fixture. Tests needing transport use explicit fake
+                    // options/profiles and intercepted requests.
+                    GOOGLE_API_KEY: '', OPENAI_API_KEY: '', OPENROUTER_API_KEY: '',
+                    DEEPSEEK_API_KEY: '', QWEN_API_KEY: '', MINIMAX_API_KEY: '',
+                    KIMI_API_KEY: '', XIAOMI_MIMO_API_KEY: '', ANTHROPIC_API_KEY: '',
+                    // Docker suites must fail explicitly when Docker is unavailable in CI.
+                    ...(process.env.P8_REQUIRE_DOCKER_LIMITS !== undefined
+                        ? { P8_REQUIRE_DOCKER_LIMITS: process.env.P8_REQUIRE_DOCKER_LIMITS }
+                        : (process.platform === 'linux' ? { P8_REQUIRE_DOCKER_LIMITS: '1' } : {}))
+                }, timeoutMs);
+            }
+        };
+        await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
     } finally {
         await fs.rm(testTempDir, { recursive: true, force: true }).catch(() => {});
     }

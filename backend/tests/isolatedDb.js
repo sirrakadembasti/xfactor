@@ -28,6 +28,9 @@ export async function setupIsolatedTestDb(testName) {
         Object.assign(process.env, roots);
         await Promise.all(Object.values(roots).filter(value => value !== dbPath)
             .map(root => fs.mkdir(root, { recursive: true })));
+        if (process.env.XFACTOR_TEMPLATE_DB_PATH) {
+            await fs.copyFile(process.env.XFACTOR_TEMPLATE_DB_PATH, dbPath).catch(() => {});
+        }
         dbModule = await import('../db.js');
         dbModule.closeDatabase();
         dbModule.initializeDatabase({ path: dbPath });

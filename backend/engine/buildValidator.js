@@ -362,8 +362,22 @@ export async function validateTypeScriptFiles(projectDir, tsconfigPath) {
                         continue;
                     }
 
+                    const numericVariables = new Set();
                     const checkNode = (node) => {
                         if (!node || typeof node !== 'object') return;
+                        if (Array.isArray(node.params)) {
+                            for (const param of node.params) {
+                                if (param?.type === 'Identifier' && param.typeAnnotation?.typeAnnotation?.type === 'TSNumberKeyword') {
+                                    numericVariables.add(param.name);
+                                }
+                            }
+                        }
+                        if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier') {
+                            const declaredType = node.id.typeAnnotation?.typeAnnotation?.type;
+                            if (declaredType === 'TSNumberKeyword' || (!declaredType && node.init?.type === 'NumericLiteral')) {
+                                numericVariables.add(node.id.name);
+                            }
+                        }
                         if (node.type === 'VariableDeclarator' && node.id?.typeAnnotation?.typeAnnotation && node.init) {
                             const typeKind = node.id.typeAnnotation.typeAnnotation.type;
                             const varName = node.id.name || 'değişken';
@@ -378,7 +392,9 @@ export async function validateTypeScriptFiles(projectDir, tsconfigPath) {
                         if (node.type === 'CallExpression' && node.callee?.type === 'MemberExpression') {
                             const obj = node.callee.object;
                             const prop = node.callee.property;
-                            if (prop?.name === 'toLowerCase' && obj?.name) {
+                            const isNumericTarget = obj?.type === 'NumericLiteral'
+                                || (obj?.type === 'Identifier' && numericVariables.has(obj.name));
+                            if (prop?.name === 'toLowerCase' && isNumericTarget) {
                                 issues.push(`TypeScript Tip Hatası [TS2339]: "${relPath}" dosyasında 'number' tipinde 'toLowerCase' özelliği bulunmamaktadır.`);
                             }
                         }

@@ -437,7 +437,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı",
-      "val": 60,
+      "val": 60.5,
       "provenance": "curated"
     },
     {
@@ -807,7 +807,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 81,
+      "val": 82,
       "provenance": "curated"
     },
     {
@@ -3641,6 +3641,16 @@
       "provenance": "ast"
     },
     {
+      "id": "docs/roadmap-reports/faz-4-rapor.md",
+      "label": "faz-4-rapor.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/roadmap-reports/faz-4-rapor.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
       "id": "docs/superpowers/plans/2026-09-18-chat-input-and-history-fix-plan.md",
       "label": "2026-09-18-chat-input-and-history-fix-plan.md",
       "type": "Document",
@@ -4137,7 +4147,7 @@
       "group": "tests",
       "file": "execution/tests/jobBoundary.test.js",
       "description": "",
-      "val": 12,
+      "val": 12.5,
       "provenance": "ast"
     },
     {
@@ -4537,7 +4547,7 @@
       "group": "frontend",
       "file": "frontend/vitest.config.js",
       "description": "",
-      "val": 2,
+      "val": 3,
       "provenance": "ast"
     },
     {
@@ -4870,7 +4880,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 43.5,
+      "val": 44,
       "provenance": "ast"
     },
     {
@@ -7333,7 +7343,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "",
-      "val": 5.5,
+      "val": 6,
       "provenance": "ast",
       "line": 42
     },
@@ -7344,7 +7354,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast",
       "line": 63
     },
@@ -7388,7 +7398,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "",
-      "val": 2.5,
+      "val": 3,
       "provenance": "ast",
       "line": 121
     },
@@ -7722,7 +7732,7 @@
       "line": 342
     },
     {
-      "id": "backend/engine/buildValidator.js#Function:checkNode@365",
+      "id": "backend/engine/buildValidator.js#Function:checkNode@366",
       "label": "checkNode",
       "type": "Function",
       "group": "engine",
@@ -7730,10 +7740,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 365
+      "line": 366
     },
     {
-      "id": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "id": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "label": "validateProjectBuild",
       "type": "Function",
       "group": "engine",
@@ -7741,7 +7751,7 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 412
+      "line": 428
     },
     {
       "id": "backend/engine/cancellation.js#Function:registerProjectAbortController@5",
@@ -10344,7 +10354,7 @@
       "group": "packages",
       "file": null,
       "description": "node:os",
-      "val": 23.5,
+      "val": 24,
       "provenance": "ast"
     },
     {
@@ -13195,7 +13205,7 @@
       "group": "tests",
       "file": "backend/tests/isolatedDb.js",
       "description": "",
-      "val": 25.5,
+      "val": 26,
       "provenance": "ast",
       "line": 5
     },
@@ -13211,19 +13221,8 @@
       "line": 16
     },
     {
-      "id": "backend/tests/isolatedDb.js#Method:registerDatabase@43",
+      "id": "backend/tests/isolatedDb.js#Method:registerDatabase@46",
       "label": "registerDatabase",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/isolatedDb.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 43
-    },
-    {
-      "id": "backend/tests/isolatedDb.js#Method:initializeDatabase@46",
-      "label": "initializeDatabase",
       "type": "Method",
       "group": "tests",
       "file": "backend/tests/isolatedDb.js",
@@ -13233,7 +13232,18 @@
       "line": 46
     },
     {
-      "id": "backend/tests/isolatedDb.js#Method:cleanup@52",
+      "id": "backend/tests/isolatedDb.js#Method:initializeDatabase@49",
+      "label": "initializeDatabase",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/isolatedDb.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 49
+    },
+    {
+      "id": "backend/tests/isolatedDb.js#Method:cleanup@55",
       "label": "cleanup",
       "type": "Method",
       "group": "tests",
@@ -13241,7 +13251,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 52
+      "line": 55
     },
     {
       "id": "backend/tests/testHarness.js#Function:createTestHarness@1",
@@ -20726,7 +20736,7 @@
       "line": 89
     },
     {
-      "id": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
+      "id": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
       "label": "selectedTestFiles",
       "type": "Function",
       "group": "tests",
@@ -20734,10 +20744,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 16
+      "line": 17
     },
     {
-      "id": "backend/tests/test_runner.js#Function:runTestFile@22",
+      "id": "backend/tests/test_runner.js#Function:runTestFile@23",
       "label": "runTestFile",
       "type": "Function",
       "group": "tests",
@@ -20745,21 +20755,32 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 22
+      "line": 23
     },
     {
-      "id": "backend/tests/test_runner.js#Function:runAllTests@64",
+      "id": "backend/tests/test_runner.js#Function:runAllTests@65",
       "label": "runAllTests",
       "type": "Function",
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "",
-      "val": 4,
+      "val": 5.5,
       "provenance": "ast",
-      "line": 64
+      "line": 65
     },
     {
-      "id": "backend/tests/test_runner.js#Function:main@119",
+      "id": "backend/tests/test_runner.js#Function:runWorker@89",
+      "label": "runWorker",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_runner.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 89
+    },
+    {
+      "id": "backend/tests/test_runner.js#Function:main@137",
       "label": "main",
       "type": "Function",
       "group": "tests",
@@ -20767,7 +20788,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 119
+      "line": 137
     },
     {
       "id": "backend/tests/test_runtime_verification.js#Function:test@30",
@@ -26797,7 +26818,7 @@
       "group": "tests",
       "file": "execution/tests/jobBoundary.test.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 23
     },
@@ -26835,7 +26856,7 @@
       "line": 45
     },
     {
-      "id": "execution/tests/jobBoundary.test.js#Function:getValidJob@59",
+      "id": "execution/tests/jobBoundary.test.js#Function:getValidJob@60",
       "label": "getValidJob",
       "type": "Function",
       "group": "tests",
@@ -26843,10 +26864,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 59
+      "line": 60
     },
     {
-      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@184",
+      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@190",
       "label": "delayedServer.executeJob",
       "type": "Method",
       "group": "tests",
@@ -26854,7 +26875,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 184
+      "line": 190
     },
     {
       "id": "execution/tests/jobStatusProjection.test.js#Method:server.executeJob@28",
@@ -31599,6 +31620,16 @@
       "provenance": "ast"
     },
     {
+      "id": "env:XFACTOR_TEMPLATE_DB_PATH",
+      "label": "XFACTOR_TEMPLATE_DB_PATH",
+      "type": "EnvVar",
+      "group": "config",
+      "file": null,
+      "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
+      "val": 1.5,
+      "provenance": "ast"
+    },
+    {
       "id": "env:JWT_SECRET",
       "label": "JWT_SECRET",
       "type": "EnvVar",
@@ -31822,6 +31853,16 @@
     {
       "id": "env:XFACTOR_TEST_RUNNER_FILES",
       "label": "XFACTOR_TEST_RUNNER_FILES",
+      "type": "EnvVar",
+      "group": "config",
+      "file": null,
+      "description": "Ortam değişkeni adı; değer grafiğe alınmaz.",
+      "val": 1.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "env:XFACTOR_TEST_CONCURRENCY",
+      "label": "XFACTOR_TEST_CONCURRENCY",
       "type": "EnvVar",
       "group": "config",
       "file": null,
@@ -37495,22 +37536,22 @@
     },
     {
       "source": "backend/engine/buildValidator.js",
-      "target": "backend/engine/buildValidator.js#Function:checkNode@365",
+      "target": "backend/engine/buildValidator.js#Function:checkNode@366",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 365
+        "line": 366
       }
     },
     {
       "source": "backend/engine/buildValidator.js",
-      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 412
+        "line": 428
       }
     },
     {
@@ -45245,17 +45286,7 @@
     },
     {
       "source": "backend/tests/isolatedDb.js",
-      "target": "backend/tests/isolatedDb.js#Method:registerDatabase@43",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/isolatedDb.js",
-        "line": 43
-      }
-    },
-    {
-      "source": "backend/tests/isolatedDb.js",
-      "target": "backend/tests/isolatedDb.js#Method:initializeDatabase@46",
+      "target": "backend/tests/isolatedDb.js#Method:registerDatabase@46",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -45265,12 +45296,22 @@
     },
     {
       "source": "backend/tests/isolatedDb.js",
-      "target": "backend/tests/isolatedDb.js#Method:cleanup@52",
+      "target": "backend/tests/isolatedDb.js#Method:initializeDatabase@49",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/isolatedDb.js",
-        "line": 52
+        "line": 49
+      }
+    },
+    {
+      "source": "backend/tests/isolatedDb.js",
+      "target": "backend/tests/isolatedDb.js#Method:cleanup@55",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/isolatedDb.js",
+        "line": 55
       }
     },
     {
@@ -59725,7 +59766,7 @@
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/testInventory.js",
+      "target": "backend/db.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -59735,42 +59776,62 @@
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
-      "label": "contains",
+      "target": "backend/tests/testInventory.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 16
+        "line": 12
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:runTestFile@22",
+      "target": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 22
+        "line": 17
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:runAllTests@64",
+      "target": "backend/tests/test_runner.js#Function:runTestFile@23",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 64
+        "line": 23
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:main@119",
+      "target": "backend/tests/test_runner.js#Function:runAllTests@65",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 119
+        "line": 65
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runner.js#Function:runWorker@89",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 89
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runner.js#Function:main@137",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 137
       }
     },
     {
@@ -68615,22 +68676,22 @@
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
-      "target": "execution/tests/jobBoundary.test.js#Function:getValidJob@59",
+      "target": "execution/tests/jobBoundary.test.js#Function:getValidJob@60",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 59
+        "line": 60
       }
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
-      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@184",
+      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@190",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 184
+        "line": 190
       }
     },
     {
@@ -73405,7 +73466,7 @@
     },
     {
       "source": "frontend/vitest.config.js",
-      "target": "package:vitest",
+      "target": "package:node:os",
       "label": "imports_package",
       "provenance": "ast",
       "location": {
@@ -73415,12 +73476,32 @@
     },
     {
       "source": "frontend/vitest.config.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/vitest.config.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "frontend/vitest.config.js",
+      "target": "package:vitest",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/vitest.config.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "frontend/vitest.config.js",
       "target": "frontend/vite.config.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "frontend/vitest.config.js",
-        "line": 2
+        "line": 4
       }
     },
     {
@@ -78405,12 +78486,12 @@
     },
     {
       "source": "backend/engine/buildValidator.js#Function:scanAndValidate@342",
-      "target": "backend/engine/buildValidator.js#Function:checkNode@365",
+      "target": "backend/engine/buildValidator.js#Function:checkNode@366",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 395
+        "line": 411
       }
     },
     {
@@ -78420,57 +78501,57 @@
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 401
+        "line": 417
       }
     },
     {
-      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "target": "backend/engine/codeGenerator.js#Function:detectProjectStack@503",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 425
+        "line": 441
       }
     },
     {
-      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "target": "backend/verification/buildVerifier.js#Function:verifyBuild@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 430
+        "line": 446
       }
     },
     {
-      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "target": "backend/engine/buildValidator.js#Function:validatePrismaSchemaContent@255",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 505
+        "line": 521
       }
     },
     {
-      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "target": "backend/engine/buildValidator.js#Function:validateTypeScriptFiles@338",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 551
+        "line": 567
       }
     },
     {
-      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "source": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "target": "env:XFACTOR_BUILD_SANDBOX",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/buildValidator.js",
-        "line": 631
+        "line": 647
       }
     },
     {
@@ -87185,12 +87266,22 @@
     },
     {
       "source": "backend/tests/isolatedDb.js#Function:setupIsolatedTestDb@5",
+      "target": "env:XFACTOR_TEMPLATE_DB_PATH",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/isolatedDb.js",
+        "line": 31
+      }
+    },
+    {
+      "source": "backend/tests/isolatedDb.js#Function:setupIsolatedTestDb@5",
       "target": "backend/db.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/isolatedDb.js",
-        "line": 31
+        "line": 34
       }
     },
     {
@@ -87200,17 +87291,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/isolatedDb.js",
-        "line": 36
+        "line": 39
       }
     },
     {
-      "source": "backend/tests/isolatedDb.js#Method:cleanup@52",
+      "source": "backend/tests/isolatedDb.js#Method:cleanup@55",
       "target": "backend/tests/isolatedDb.js#Function:restoreEnv@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/isolatedDb.js",
-        "line": 66
+        "line": 69
       }
     },
     {
@@ -87865,7 +87956,7 @@
     },
     {
       "source": "backend/tests/test_build_sandbox_gate.js",
-      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -87905,12 +87996,12 @@
     },
     {
       "source": "backend/tests/test_build_validator.js",
-      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@412",
+      "target": "backend/engine/buildValidator.js#Function:validateProjectBuild@428",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_validator.js",
-        "line": 99
+        "line": 100
       }
     },
     {
@@ -87920,7 +88011,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_validator.js",
-        "line": 181
+        "line": 182
       }
     },
     {
@@ -87930,7 +88021,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_validator.js",
-        "line": 204
+        "line": 205
       }
     },
     {
@@ -96315,7 +96406,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/test_runner.js#Function:runTestFile@22",
+      "target": "backend/tests/test_runner.js#Function:runTestFile@23",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -97684,19 +97775,9 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
+      "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
       "target": "env:XFACTOR_TEST_RUNNER_FILES",
       "label": "reads_env",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_runner.js",
-        "line": 17
-      }
-    },
-    {
-      "source": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@186",
-      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
@@ -97704,18 +97785,18 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@195",
+      "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@186",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 65
+        "line": 19
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/test_runner.js#Function:selectedTestFiles@16",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@195",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -97724,8 +97805,38 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "backend/tests/test_runner.js#Function:runTestFile@22",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 67
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "env:XFACTOR_TEST_CONCURRENCY",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 78
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/db.js#Function:initializeDatabase@42",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 83
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/db.js#Function:checkpointWAL@121",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -97734,9 +97845,19 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@64",
-      "target": "env:P8_REQUIRE_DOCKER_LIMITS",
-      "label": "reads_env",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/db.js#Function:closeDatabase@63",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 86
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runWorker@89",
+      "target": "backend/tests/test_runner.js#Function:runTestFile@23",
+      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
@@ -97744,23 +97865,43 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:main@119",
-      "target": "backend/tests/test_runner.js#Function:runAllTests@64",
+      "source": "backend/tests/test_runner.js#Function:runWorker@89",
+      "target": "env:P8_REQUIRE_DOCKER_LIMITS",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 117
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/tests/test_runner.js#Function:runWorker@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 121
+        "line": 123
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:main@137",
+      "target": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 139
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:main@119",
+      "target": "backend/tests/test_runner.js#Function:main@137",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 130
+        "line": 148
       }
     },
     {
@@ -104895,22 +105036,32 @@
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
+      "target": "execution/tests/jobBoundary.test.js#Function:finish@23",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobBoundary.test.js",
+        "line": 51
+      }
+    },
+    {
+      "source": "execution/tests/jobBoundary.test.js",
       "target": "backend/executionClient.js#Function:createExecutionClient@4",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 57
+        "line": 58
       }
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
-      "target": "execution/tests/jobBoundary.test.js#Function:getValidJob@59",
+      "target": "execution/tests/jobBoundary.test.js#Function:getValidJob@60",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 100
+        "line": 101
       }
     },
     {
@@ -104920,7 +105071,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 132
+        "line": 134
       }
     },
     {
@@ -104930,7 +105081,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 162
+        "line": 167
       }
     },
     {

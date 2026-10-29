@@ -48,6 +48,7 @@ test('Job Boundary API', async (t) => {
   config.EXECUTION_WORKER_URL = `http://127.0.0.1:${port}`;
   
   t.after(async () => {
+    for (const finish of executeWaitResolvers.values()) finish();
     await new Promise(resolve => server.close(resolve));
     assert.equal(executeWaitResolvers.size, 0);
     store.close();
@@ -129,6 +130,7 @@ test('Job Boundary API', async (t) => {
   await t.test('polling awaits terminal outcome', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
+    p.catch(() => {});
     await releaseWhenReady(job.jobId);
     const finalState = await p;
     assert.equal(finalState.status, 'completed');
@@ -138,6 +140,7 @@ test('Job Boundary API', async (t) => {
   await t.test('duplicate jobId handling (exact retry vs collision)', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
+    p.catch(() => {});
     await releaseWhenReady(job.jobId);
     await p;
     const p2 = client.verifyArtifact(job);
@@ -149,6 +152,7 @@ test('Job Boundary API', async (t) => {
   await t.test('cross-principal polling rejected', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
+    p.catch(() => {});
     await releaseWhenReady(job.jobId);
     await p;
     const url = `${config.EXECUTION_WORKER_URL}/v1/jobs/${job.jobId}?projectId=wrong-proj`;
@@ -159,6 +163,7 @@ test('Job Boundary API', async (t) => {
   await t.test('cancellation aborts polling and cleans up', async () => {
     const job = getValidJob();
     const p = client.verifyArtifact(job);
+    p.catch(() => {});
     await waitForResolver(job.jobId);
     await client.cancelJob(job.jobId);
     const finalState = await p;
@@ -170,6 +175,7 @@ test('Job Boundary API', async (t) => {
     const job = getValidJob();
     const controller = new AbortController();
     const p = client.verifyArtifact(job, { signal: controller.signal });
+    p.catch(() => {});
     await waitForResolver(job.jobId);
     controller.abort();
     await assert.rejects(p, error => error?.name === 'AbortError' || /aborted/i.test(error?.message || ''));
@@ -184,19 +190,23 @@ test('Job Boundary API', async (t) => {
       executeJob: async () => { starts++; return { status: 'success', result: {} }; }
     });
     await new Promise(resolve => delayedServer.listen(0, '127.0.0.1', resolve));
-    const delayedClient = createExecutionClient({ EXECUTION_WORKER_TOKEN: token, EXECUTION_WORKER_URL: `http://127.0.0.1:${delayedServer.address().port}` });
-    const job = getValidJob();
-    const controller = new AbortController();
-    const pending = delayedClient.verifyArtifact(job, { signal: controller.signal });
-    const acceptedDeadline = Date.now() + 2000;
-    while (!delayedStore.hasJob(job.jobId) && Date.now() < acceptedDeadline) await new Promise(resolve => setImmediate(resolve));
-    assert.equal(delayedStore.hasJob(job.jobId), true, 'delayed POST was not accepted');
-    controller.abort();
-    await assert.rejects(pending, error => error?.name === 'AbortError');
-    assert.equal(delayedStore.getJob(job.jobId, job.projectId)?.status, 'cancelled');
-    assert.equal(starts, 0);
-    await new Promise(resolve => delayedServer.close(resolve));
-    delayedStore.close();
+    try {
+      const delayedClient = createExecutionClient({ EXECUTION_WORKER_TOKEN: token, EXECUTION_WORKER_URL: `http://127.0.0.1:${delayedServer.address().port}` });
+      const job = getValidJob();
+      const controller = new AbortController();
+      const pending = delayedClient.verifyArtifact(job, { signal: controller.signal });
+      pending.catch(() => {});
+      const acceptedDeadline = Date.now() + 2000;
+      while (!delayedStore.hasJob(job.jobId) && Date.now() < acceptedDeadline) await new Promise(resolve => setImmediate(resolve));
+      assert.equal(delayedStore.hasJob(job.jobId), true, 'delayed POST was not accepted');
+      controller.abort();
+      await assert.rejects(pending, error => error?.name === 'AbortError');
+      assert.equal(delayedStore.getJob(job.jobId, job.projectId)?.status, 'cancelled');
+      assert.equal(starts, 0);
+    } finally {
+      await new Promise(resolve => delayedServer.close(resolve));
+      delayedStore.close();
+    }
   });
   await t.test('queue capacity (max 8)', async () => {
     const pendingJobs = [];
