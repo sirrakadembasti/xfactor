@@ -6,9 +6,32 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { runDeterministicProjectAudit, groupAuditIssuesByFile } from '../../agents/index.js';
-import { callAgentLLM } from '../../llm.js';
+import { runDeterministicProjectAudit, groupAuditIssuesByFile, getAgent } from '../../agents/index.js';
+import { runLLMTaskWithRetry } from '../llmTaskRetry.js';
 import { logWarning } from '../../observability.js';
+
+export async function callAgentLLM(agentRole, userPrompt, {
+    signal = null,
+    taskId = null,
+    onDiagnostic = null,
+    onUsage = null,
+    maxAttempts
+} = {}) {
+    const agent = getAgent(agentRole);
+    return runLLMTaskWithRetry({
+        agentRole,
+        taskId,
+        signal,
+        onDiagnostic: onDiagnostic || undefined,
+        onUsage,
+        maxAttempts,
+        messages: [
+            { role: 'system', content: agent.systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        parseResponse: rawResponse => agent.parseResponse(rawResponse)
+    });
+}
 import { writeGeneratedFiles as writeRepairFiles } from '../fileProtocol.js';
 import { ensureProjectScaffold, listProjectTree, isProtectedOrchestrationPath } from '../codeGenerator.js';
 import { isSafeProjectPath, assertPathInsideRoot } from '../../security.js';
