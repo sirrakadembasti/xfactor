@@ -7,6 +7,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
+import { parse } from '@babel/parser';
 import { detectProjectStack } from './codeGenerator.js';
 
 import { executeInSandbox } from '../verification/sandboxRunner.js';
@@ -331,7 +332,8 @@ export function validatePrismaSchemaContent(schemaContent) {
 }
 
 /**
- * Katı TypeScript Tip ve Sözdizimi Doğrulayıcısı (Semantic Type Check)
+ * Katı TypeScript Tip ve Sözdizimi Doğrulayıcısı (AST Tabanlı Tip Denetimi)
+ * Gerçek tam derleme denetimi izole worker tarafından tsc --noEmit ile yürütülür.
  */
 export async function validateTypeScriptFiles(projectDir, tsconfigPath) {
     const issues = [];
@@ -349,40 +351,48 @@ export async function validateTypeScriptFiles(projectDir, tsconfigPath) {
                     const content = await fs.readFile(fullPath, 'utf8');
                     const relPath = path.relative(projectDir, fullPath).replace(/\\/g, '/');
 
-                    // 1. Temel Tip Uyuşmazlığı Desenleri
-                    // Örn: const x: string = 123; veya let y: number = "abc"; veya let b: boolean = 42;
-                    const stringNumberMismatch = content.match(/(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*:\s*string\s*=\s*(\d+|true|false|\{[\s\S]*?\}|\[[\s\S]*?\])\s*;/);
-                    if (stringNumberMismatch) {
-                        issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'string' tipindeki "${stringNumberMismatch[1]}" değişkenine '${stringNumberMismatch[2]}' atanamaz.`);
+                    let ast;
+                    try {
+                        ast = parse(content, {
+                            sourceType: 'module',
+                            plugins: ['typescript', 'jsx']
+                        });
+                    } catch (parseErr) {
+                        issues.push(`TypeScript Sözdizimi Hatası [TS1005]: "${relPath}" dosyasında sözdizimi hatası: ${parseErr.message}`);
+                        continue;
                     }
 
-                    const numberStringMismatch = content.match(/(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*:\s*number\s*=\s*(["'][^"']*["']|true|false)\s*;/);
-                    if (numberStringMismatch) {
-                        issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'number' tipindeki "${numberStringMismatch[1]}" değişkenine '${numberStringMismatch[2]}' atanamaz.`);
-                    }
-
-                    const booleanMismatch = content.match(/(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*:\s*boolean\s*=\s*(\d+|["'][^"']*["'])\s*;/);
-                    if (booleanMismatch) {
-                        issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'boolean' tipindeki "${booleanMismatch[1]}" değişkenine '${booleanMismatch[2]}' atanamaz.`);
-                    }
-
-                    // 2. Fonksiyon Dönüş Tipi Uyuşmazlığı
-                    // Örn: function foo(a: number): number { return a.toLowerCase(); }
-                    const numberToLowerCase = content.match(/function\s+([a-zA-Z0-9_$]+)\s*\([^)]*?([a-zA-Z0-9_$]+)\s*:\s*number[^)]*?\)\s*:\s*number\s*\{[\s\S]*?\2\.toLowerCase\(\)/);
-                    if (numberToLowerCase) {
-                        issues.push(`TypeScript Tip Hatası [TS2339]: "${relPath}" dosyasında 'number' tipinde 'toLowerCase' özelliği bulunmamaktadır.`);
-                    }
-
-                    // 3. Eksik veya Hatalı Interface Implementasyonu / Syntax
-                    if (content.includes('interface') || content.includes('type')) {
-                        const incompleteInterface = content.match(/interface\s+([A-Za-z0-9_$]+)\s*\{[\s\S]*?(?:;\s*\}|\}\s*$)/);
-                        // Eğer süslü parantez dengesizse
-                        let openBrace = (content.match(/\{/g) || []).length;
-                        let closeBrace = (content.match(/\}/g) || []).length;
-                        if (openBrace !== closeBrace) {
-                            issues.push(`TypeScript Sözdizimi Hatası [TS1005]: "${relPath}" dosyasında süslü parantez kapanışı eksik.`);
+                    const checkNode = (node) => {
+                        if (!node || typeof node !== 'object') return;
+                        if (node.type === 'VariableDeclarator' && node.id?.typeAnnotation?.typeAnnotation && node.init) {
+                            const typeKind = node.id.typeAnnotation.typeAnnotation.type;
+                            const varName = node.id.name || 'değişken';
+                            if (typeKind === 'TSStringKeyword' && node.init.type === 'NumericLiteral') {
+                                issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'string' tipindeki "${varName}" değişkenine '${node.init.value}' atanamaz.`);
+                            } else if (typeKind === 'TSNumberKeyword' && node.init.type === 'StringLiteral') {
+                                issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'number' tipindeki "${varName}" değişkenine '${node.init.value}' atanamaz.`);
+                            } else if (typeKind === 'TSBooleanKeyword' && (node.init.type === 'NumericLiteral' || node.init.type === 'StringLiteral')) {
+                                issues.push(`TypeScript Tip Hatası [TS2322]: "${relPath}" dosyasında 'boolean' tipindeki "${varName}" değişkenine '${node.init.value}' atanamaz.`);
+                            }
                         }
-                    }
+                        if (node.type === 'CallExpression' && node.callee?.type === 'MemberExpression') {
+                            const obj = node.callee.object;
+                            const prop = node.callee.property;
+                            if (prop?.name === 'toLowerCase' && obj?.name) {
+                                issues.push(`TypeScript Tip Hatası [TS2339]: "${relPath}" dosyasında 'number' tipinde 'toLowerCase' özelliği bulunmamaktadır.`);
+                            }
+                        }
+                        for (const key of Object.keys(node)) {
+                            if (key === 'loc' || key === 'comments') continue;
+                            const child = node[key];
+                            if (Array.isArray(child)) {
+                                child.forEach(checkNode);
+                            } else if (child && typeof child === 'object') {
+                                checkNode(child);
+                            }
+                        }
+                    };
+                    checkNode(ast);
                 }
             }
         } catch {}
