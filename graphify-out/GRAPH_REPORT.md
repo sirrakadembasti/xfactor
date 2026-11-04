@@ -1,25 +1,25 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-10-29T22:44:32.921Z
+Üretim tarihi: 2026-11-04T10:21:21.607Z
 
-- 389 kaynak ve belge dosyası
-- 2931 düğüm
-- 7809 ilişki
+- 452 kaynak ve belge dosyası
+- 3617 düğüm
+- 9563 ilişki
 
 ## Düğüm türleri
 
 | Tür | Adet |
 |---|---:|
-| Function | 1465 |
-| Method | 842 |
-| SourceFile | 276 |
+| Function | 1734 |
+| Method | 1183 |
+| SourceFile | 336 |
 | EnvVar | 84 |
-| Package | 52 |
-| HttpRoute | 48 |
-| HttpRequest | 36 |
+| Package | 55 |
+| HttpRoute | 53 |
+| HttpRequest | 41 |
 | TestSuite | 32 |
 | BackendService | 27 |
-| Document | 19 |
+| Document | 22 |
 | Class | 15 |
 | EngineCore | 14 |
 | FrontendComponent | 11 |
@@ -29,17 +29,17 @@
 
 | Tür | Adet |
 |---|---:|
-| calls | 2624 |
-| contains | 2388 |
-| imports_package | 1005 |
-| imports | 753 |
-| dynamic_imports | 361 |
-| reads_env | 168 |
-| runs | 148 |
+| calls | 3357 |
+| contains | 2999 |
+| imports_package | 1128 |
+| imports | 958 |
+| dynamic_imports | 388 |
+| reads_env | 180 |
+| runs | 176 |
 | writes_env | 130 |
-| registers_route | 48 |
-| sends_request | 36 |
-| requests_route | 29 |
+| registers_route | 53 |
+| sends_request | 41 |
+| requests_route | 34 |
 | verifies | 20 |
 | renders | 10 |
 | defines | 6 |

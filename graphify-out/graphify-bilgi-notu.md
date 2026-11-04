@@ -1,5 +1,19 @@
 # Graphify görsel haritası: üretim ve kapsam
 
+2 Kasım devamı: sınırlı kaynak onarımı ve ayrı inceleme akışı `controlledRepairs` / `controlledSemanticAuthority` / `controlledRepairAcceptance` üzerinden bağlanır. `controlledRepairLineage` yeni öneriye geçişte doğrulanmış kısmi kaynak/hata geçmişini korur. `requirementAssertionVerifier` gerçek baytları testten önce/sonra ölçer; `apiVerifier` nonce şablonunun render edilmiş tam değerini eşler. `processVerifier` sınırlı servis çıktısı ve cleanup öncesi erken çıkış gözlemi sağlar. Kurulum başarısızsa runChecks çalışma/semantik testlerini ve README build yürütmesini engeller; packageVerifier ve runtime zaman aşımında sınırlı çıktı ile tam akış hash/kesilme bilgisini korur. Docker entrypoint geçerli PORT/geçici JWT değerlerini iç süreç sınırında da korur. Tamamlanmış aşamaların bounded/redakte tanısı deadline durumunda özel diagnostics.phases içinde kalır; public komut görünümüne veya result.checks kabul kanıtına çevrilmez. Semantik gözlem, geçerli nihai kanıt ve tamamlama makbuzu ayrı yetkilerdir. Son harita 3.608 düğüm/9.547 ilişkiyle üretildi; uçlar/kimlikler ve JSON/HTML görünüm eşleşmesi doğrulandı. Canlı stokta yalnız üç kaynak hedefi uygulanmıştır; devam eden doğrulama veya grafikte bir bağlantının bulunması teslim kanıtı değildir. Ayrıntılar [Halka 31](../docs/faz-arsiv.md#halka-31--2-kasım-kısmi-onarımın-gerçek-yürütülmesi-ve-kanıt-zinciri) ve [devam planındadır](../docs/superpowers/plans/2026-11-01-controlled-repair.md).
+
+1 Kasım denetimi: `projectObservabilityRoutes` ve `projectTraceabilityRoutes` DB bağlantısını istek zamanında çözer; gerçek soğuk başlangıç entegrasyonu kalite geçmişi/ilerleme yollarını kapsar. `managerStatusAnswer.buildRecordedVerificationAnswer` son durum ve tarih sorularını aynı onaylı sözleşmenin kalıcı kayıtlarından sade olarak yanıtlar; bu yol yeni üretim veya model çağrısı değildir. Son kapanış adımları ve kalan ürün onarım sınırı [Halka 29](../docs/faz-arsiv.md#halka-29--1-kasım-kaldığı-yer-denetimi-ve-gerçek-başlangıç-hatası) içindedir.
+
+Kalite panelinin anlık veri yolu: `createWorkerServer` → `projectCommandProgress` → `createExecutionClient` callback'i → `recordExecutionProgress` → viewer kapsamlı `execution-progress` → `ExecutionProgress`. Bu yol kalıcı doğrulama kanıtı üretmez. `DashboardView` geçmiş/detay yükleme, hata, boş ve running/0-check durumlarını ayırır; gecikmiş proje yanıtlarını gizler.
+
+Kontrol ayrıntılarında kayıtlı `reason` metni sunucuda sansürlenip sınırlanarak gösterilir; komut başlayamadığında boş stdout/stderr hata nedenini gizlemez. `Sidebar` yeniden doğrulamayı üretim olarak etiketlemez. Kurtarma uyarısı plan revizyonu onayının kaynakları yeniden üretebileceğini ve yalnız yeniden doğrulamanın onarım yapmadığını açıklar. Sade “neden durdu / nasıl ilerleyebiliriz” durum soruları da `buildRecordedVerificationAnswer` yoluna girer; açık düzeltme talepleri Manager yolunda kalır.
+
+`localProcesses.annotateSpawnFailure` yerel süreç başlatma hatasında özgün kodu korur; çalıştırıcı/çalışma alanının varlığı, argüman/ortam boyutları ve süreç metaverisi gibi sınırlı tanı bilgisi ekler. Dosya yolu, argüman içeriği veya ortam değerleri eklemez. Bu tanı, başarısız kontrolü PASS yapmaz ve kaynak onarımı değildir.
+
+`ensureWindowsProcessHost` kaynak + PE özeti içeren hazırlık kaydıyla kayıtlı çalıştırıcının kayıp/değişmiş olmasını ayırır; bu durumda otomatik yeniden derleme durur. `allowBuild:false` mevcut cache'i yürütmeden doğrular. Süreçler arası kilit doğrulama/derleme/yayını kapsar; kayıt atomik yayımlanır, rakip kurulumun veya karantinaya alınmış çalıştırıcının üzerine yazılmaz. Kilit bekleme iptal/deadline sınırına uyar; eski kilit otomatik devralınmaz. Bu kayıt kriptografik imza veya zararsızlık onayı değildir. 1 Kasım teşhisinde native yardımcı adına ait Defender algılama/karantina olayları ile komut başlatma hataları eşleştirildi; ayrıntı ve açık inceleme sınırı Halka 29'dadır. Üretilen proje dosyaları değiştirilmedi.
+
+30 Ekim canlı stok-takip incelemesi: `detectProjectStack` Next.js + Express servis çiftini de tanır; `buildServiceLauncherContent` manifestteki süreçlerin ortak yaşam döngüsünü sağlar. `inferRuntimeChecks` Next.js tarayıcı servisini manifest türünden tanır. `reverify` rotası aynı onaylı sözleşme ve üretim kaydıyla yalnız yeni worker kanıtı alır; görev üretmez, kaynakları değiştirmez, onarım geçmişini veya teslim koşullarını atlamaz. Canlı sonuç, grafik bağlantılarından çıkarılamaz; çalışan sürüm ve doğrulama kayıtları ayrıca incelenir.
+
 XFactor'ın güncel kaynak haritasını depo kökünde şu komutla oluşturun:
 
 ```bash
@@ -17,7 +31,11 @@ Komut `backend/scripts/generate_graph.js` dosyasını çalıştırır. Kaynak ta
 
 Harita `backend`, `frontend`, `execution`, `e2e`, `scripts`, `docs`, `x-agents` ve `llm-yonetimi` kaynaklarını kapsar. `projects/` altındaki üretilen uygulamalar, canlı `backend/data/`, `node_modules`, derleme çıktıları ve `.tmp` kanıtları platform haritasına katılmaz. Güncel düğüm/bağlantı sayıları üretilmiş rapordan okunmalıdır.
 
+2 Kasım harita yenilemesi `generate_graph.js` ile yapıldı: JSON/HTML bağlantıları, benzersiz kimlikler ve dosya uçları denetlendi. Yeni kontrollü onarım, dependency-lock girdi kökeni, Türkçe politika/kanıt adayları ve checkpoint koruma testleri haritadadır. Bir modülün grafikte bulunması üretim kabulüne bağlandığı veya stok uygulamasının teslim edildiği anlamına gelmez. Açık entegrasyon sınırları [Halka 30](../docs/faz-arsiv.md#halka-30--2-kasım-docker-yeniden-doğrulaması-ve-sınırlı-onarım-hazırlığı) ve [devam planında](../docs/superpowers/plans/2026-11-01-controlled-repair.md) ayrılmıştır.
+
 ## Güncel iş akışını okuma
+
+4 Kasım 2026 devralma haritası çalışma ağacındaki kaynakları gösterir. Henüz commit edilmemiş platform modülleri de haritaya girebilir. Stok-takip için son koşunun sonucu ve sıradaki görevler [faz arşivinde](../docs/faz-arsiv.md#halka-32--4-kasım-stok-takip-devralma-kaydı) kayıtlıdır.
 
 30 Ekim 2026 sayısal kapsam açıklaması: `qualityPolicy.js:MANDATORY_GATES` 18 ana kapı içerir; `artifactEvidencePolicy.js` sözleşmeye bağlı ek zorunlu yönetim kanıtları ister. Grafikteki açıklamalar veya düğüm sayıları bir koşunun toplam zorunlu kontrol sayısını vermez. Ana kapı, koşullu kontrol, benzersiz ad ve kanıt satırı ayrımı [kullanıcı kılavuzunda](../kullanici-kilavuzu.md#11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20) açıklanır.
 
@@ -27,9 +45,11 @@ Geliştirme geçmişinin P0–P9 ve Ekim Faz 1–4 halkaları [Faz Arşivinde](.
 
 - `x-agents/`: güvenilen platform ajan talimatları; `docs/` işletim ve geliştirme belgeleridir. Projeye ait canlı protokol kayıtları `projects/<id>/` altında kalır.
 - `backend/engine/workflow.js`, `resumeStage.js` ve `checkpointHelper.js`: onaylı sözleşme/plan ile eşleşen kod üretimini koruma ve kalite aşamasını tekrar yürütme.
+- `backend/engine/recoveryAdvice.js` ve `backend/routes/projectRoutes.js`: Manager revizyon vetosunu Resume tekrarından ayırma, onaylı plan ve gerçek doğrulama hatalarını sınırlı sohbet bağlamına taşıma. `packageVerifier.js` gözlemlenen kontrollerin zaman ve akış hash kanıtlarını üretir. `test_manager_recovery_simulation.js` geçici DB ve model/executor mock'larıyla revizyon/onay yolunu sınar; canlı stok-takip teslim kanıtı değildir.
 - `backend/verification/`: süre bütçesi, 18 ana zorunlu kapı, yönetim/rol ayrıntıları ve kabul edilmiş artefaktın kanıt kontrolü.
 - `execution/`: bağımsız worker, yerel çalışma profili, gerçek Chromium/API testleri ve sınırlı komut teşhisleri.
 - `frontend/src/components/`: proje oluşturma diyaloğu, sohbet ve kalite geçmişi/ayrıntı ekranları.
+- `backend/routes/managerPlanScope.js`: hata kurtarma planlarında zorunlu iş ve yönetim kapsamını karşılaştırır. `projectRoutes.js` tek düzeltme turunu ve onay vetosunu uygular; `ChatView.jsx`/`Header.jsx` eksik taslakta onayı kapatır. Bu kontrol kelime/kimlik ve yapılandırılmış matris karşılaştırmasıdır; anlamsal LLM doğrulaması veya ürün teslim kanıtı değildir.
 
 Harita statik bağlantıları gösterir; bir koşunun geçtiğini veya bir ZIP'in kabul edildiğini kanıtlamaz. Yerel worker doğrulama kapsamını [yerel worker paket kılavuzunda](../kullanici-kilavuzu.md#yerel-worker-paketi), kullanım adımlarını [kullanıcı kılavuzunda](../kullanici-kilavuzu.md) okuyun.
 
