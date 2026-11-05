@@ -40,6 +40,12 @@ if (mode === 'serve') {
   const allowlist = ['NODE_ENV', 'PATH', 'CI', 'NODE_OPTIONS', 'NPM_CONFIG_REGISTRY', 'NPM_CONFIG_IGNORE_SCRIPTS', 'NPM_CONFIG_CACHE', 'PRISMA_ENGINES_MIRROR', 'DATABASE_URL', 'AUTH_SECRET', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL'];
   const safeEnv = {};
   for (const key of allowlist) if (process.env[key] !== undefined) safeEnv[key] = process.env[key];
+  // The outer runtime supplies only a per-run secret. Revalidate at this final
+  // boundary rather than dropping the service's port/auth configuration.
+  const port = process.env.PORT;
+  if (typeof port === 'string' && /^\d{4,5}$/.test(port) && String(Number(port)) === port && Number(port) >= 1024 && Number(port) <= 65535) safeEnv.PORT = port;
+  const jwtSecret = process.env.JWT_SECRET;
+  if (typeof jwtSecret === 'string' && jwtSecret.length === 64 && /^[a-f0-9]+$/.test(jwtSecret)) safeEnv.JWT_SECRET = jwtSecret;
   const args = process.argv.slice(3);
   const result = spawnSync(executable, args, { stdio: 'inherit', env: safeEnv });
   if (result.error) { console.error(`Execution error: ${result.error.message}`); process.exit(127); }

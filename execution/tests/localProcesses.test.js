@@ -1,4 +1,5 @@
 import test from 'node:test';
+import cp from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm, writeFile, readFile, symlink } from 'node:fs/promises';
 import path from 'node:path';
@@ -35,6 +36,23 @@ test('npm uses trusted CLI and rejects shell executables and escaped cwd', async
   assert.deepEqual(JSON.parse((await manager.execute('npx', ['--no-install', 'literal argument'])).stdout), ['--no-install', 'literal argument']);
   await assert.rejects(manager.execute('cmd.exe', ['/c', 'echo unsafe']), /Unsupported executable/);
   await assert.rejects(manager.execute('node', [], { cwd: '../' }), /workspace/);
+});
+
+test('native spawn failures preserve their code and report bounded context without arguments or environment values', async t => {
+  const { manager } = await setup(t);
+  const failure = Object.assign(new Error('spawn UNKNOWN'), { code: 'UNKNOWN', errno: -4094, syscall: 'spawn' });
+  t.mock.method(cp, 'spawn', () => { throw failure; });
+  await assert.rejects(manager.execute('npm', ['run', 'private-launch-argument'], { env: { AUTH_SECRET: 'private-launch-environment' } }), error => {
+    assert.equal(error, failure);
+    assert.equal(error.code, 'UNKNOWN');
+    assert.equal(error.launchContext.stage, 'spawn');
+    assert.equal(error.launchContext.cwdPresent, true);
+    assert.equal(error.launchContext.launcherPresent, true);
+    assert.equal(error.launchContext.errno, -4094);
+    assert.match(error.message, /spawn UNKNOWN.*launcherPresent/);
+    assert.doesNotMatch(error.message, /private-launch-argument|private-launch-environment/);
+    return true;
+  });
 });
 
 test('nested npm scripts resolve the pinned CLI without host npm shims', async t => {

@@ -5,6 +5,25 @@ import os from 'node:os';
 import path from 'node:path';
 import { JobStore } from '../jobStore.js';
 
+test('completed phase diagnostics survive deadlines as bounded advisory data without acceptance checks', () => {
+  const store = new JobStore();
+  store.insertJob({ jobId: 'phase', projectId: 'fixture', deadline: Date.now() + 10000 });
+  store.updateJobStatus('phase', 'pending', 'running'); store.beginDiagnostics('phase', 'lease');
+  const event = { phase: 'build', checks: [{ name: 'typecheck', status: 'failed', stdout: 'password=fixture-secret\n' + 'x'.repeat(20000),
+    stderr: 'compiler diagnostic', exitCode: 2, stdoutSha256: 'a'.repeat(64), arbitrary: 'private' }] };
+  assert.equal(store.recordPhaseDiagnostic('phase', 'wrong', event), false);
+  assert.equal(store.recordPhaseDiagnostic('phase', 'lease', event), true);
+  assert.equal(store.recordPhaseDiagnostic('phase', 'lease', event), false);
+  store.updateJobStatus('phase', 'running', 'failed_timeout', { error: 'deadline' });
+  const job = store.getJob('phase', 'fixture');
+  const row = job.result.diagnostics.phases[0].checks[0];
+  assert.equal(row.status, 'failed'); assert.equal(row.exitCode, 2);
+  assert.ok(!row.stdout.includes('fixture-secret')); assert.ok(Buffer.byteLength(row.stdout) <= 4096);
+  assert.equal(row.stdoutTruncated, true); assert.equal(row.stdoutDigest, 'a'.repeat(64));
+  assert.equal(row.arbitrary, undefined); assert.equal(job.result.checks, undefined);
+  assert.equal(store.recordPhaseDiagnostic('phase', 'lease', { ...event, phase: 'runtime' }), false);
+});
+
 test('corrupt persisted jobs stop startup without overwriting evidence', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-store-corrupt-'));
   try {

@@ -2,10 +2,24 @@ import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
 import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
+import { createCommandReporter } from './commandDiagnostics.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
-import { MAX_JOB_MS } from './limits.js';
+import { MAX_JOB_MS, DOCKER_READINESS_PROBE_MS } from './limits.js';
 const SAFE_ENV = /^(?:NPM_CONFIG_(?:REGISTRY|IGNORE_SCRIPTS|CACHE)|NODE_ENV|CI|NODE_OPTIONS|PRISMA_ENGINES_MIRROR|DATABASE_URL|AUTH_SECRET|NEXTAUTH_SECRET|NEXTAUTH_URL)$/;
+export function filterRuntimeEnvironment(raw = {}) {
+  const env = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const text = String(value);
+    if (key === 'PORT') {
+      if (/^\d{4,5}$/.test(text) && Number(text) >= 1024 && Number(text) <= 65535) env[key] = text;
+    } else if (key === 'JWT_SECRET') {
+      // spawnService supplies a fresh 256-bit test value, never a host secret.
+      if (/^[a-f0-9]{64}$/.test(text)) env[key] = text;
+    } else if (SAFE_ENV.test(key)) env[key] = text;
+  }
+  return env;
+}
 export function getIsolationArgs(job = {}) {
   const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
   if (isFullApp) {
@@ -58,17 +72,27 @@ function docker(args, { signal, deadline, timeout = 120000 } = {}) {
     let settled = false;
     const finish = (fn, value) => { if (settled) return; settled = true; clearTimeout(timer); signal?.removeEventListener('abort', abort); fn(value); };
     const abort = () => { const error = abortError(signal, deadline); finish(reject, error); try { proc.kill('SIGKILL'); } catch {} };
-    const timer = setTimeout(() => { const error = new Error(deadline && Date.now() >= deadline ? 'Job deadline exceeded' : 'Docker operation timed out'); finish(reject, error); try { proc.kill('SIGKILL'); } catch {} }, ms);
+    const timer = setTimeout(() => { const error = Object.assign(new Error(deadline && Date.now() >= deadline ? 'Job deadline exceeded' : 'Docker operation timed out'), { code: 'ETIMEDOUT' }); finish(reject, error); try { proc.kill('SIGKILL'); } catch {} }, ms);
     signal?.addEventListener('abort', abort, { once: true });
     proc.once('error', e => finish(reject, e));
     proc.once('close', (code, sig) => { const stdout = Buffer.concat(out).toString(); const stderr = Buffer.concat(err).toString(); if (code === 0) finish(resolve, { stdout, stderr }); else { const e = new Error(stderr || `docker exited ${code}${sig ? ` (${sig})` : ''}`); e.stdout = stdout; e.stderr = stderr; e.code = code; e.signal = sig; finish(reject, e); } });
   });
 }
 
-export async function probeRuntimeReadiness() {
-  const deadline = Date.now() + 4000;
-  await docker(['info', '--format', '{{.ServerVersion}}'], { deadline });
-  await docker(['image', 'inspect', IMAGE_NAME], { deadline });
+export async function probeRuntimeReadiness({ runDocker = docker, now = Date.now } = {}) {
+  const started = now(), deadline = started + DOCKER_READINESS_PROBE_MS;
+  for (const [phase, args] of [['docker_info', ['info', '--format', '{{.ServerVersion}}']], ['image_inspect', ['image', 'inspect', IMAGE_NAME]]]) {
+    try {
+      const remaining = deadline - now();
+      if (remaining <= 0) throw Object.assign(new Error('Readiness deadline exceeded'), { code: 'ETIMEDOUT' });
+      await runDocker(args, { deadline, timeout: remaining });
+    } catch (cause) {
+      throw Object.assign(new Error('Docker readiness check failed'), {
+        code: ['ENOENT', 'EACCES', 'EPERM', 'ECONNRESET', 'ETIMEDOUT'].includes(cause?.code) ? cause.code : 'RUNTIME_COMMAND_FAILED',
+        readinessPhase: phase, readinessElapsedMs: Math.max(0, now() - started), readinessBudgetMs: DOCKER_READINESS_PROBE_MS
+      });
+    }
+  }
 }
 
 export function commandTimeoutMs(requested, deadline, now = Date.now()) {
@@ -80,7 +104,7 @@ export function commandTimeoutMs(requested, deadline, now = Date.now()) {
 export function buildContainerExecArgs({ containerName, command, args = [], cwd = null, env = {} }) {
   const dockerArgs = ['exec', '-i'];
   if (cwd) dockerArgs.push('--workdir', cwd);
-  for (const [key, value] of Object.entries(env)) dockerArgs.push('--env', `${key}=${value}`);
+  for (const [key, value] of Object.entries(filterRuntimeEnvironment(env))) dockerArgs.push('--env', `${key}=${value}`);
   dockerArgs.push(containerName, 'node', '/opt/worker/entrypoint.js', command, ...args);
   return dockerArgs;
 }
@@ -179,11 +203,13 @@ export function captureChildOutput(proc, { maxBytes = OUTPUT_CEILING } = {}) {
     const kept = Math.max(0, maxBytes - err.reduce((n, item) => n + item.length, 0));
     if (kept) err.push(bytes.subarray(0, kept));
   });
-  return new Promise(resolve => proc.once('close', (code, signal) => resolve({
+  const snapshot=()=>({
     stdout: Buffer.concat(out).toString(), stderr: Buffer.concat(err).toString(),
     stdoutBytes: ob, stderrBytes: eb, stdoutTruncated: ob > maxBytes, stderrTruncated: eb > maxBytes,
-    stdoutSha256: oh.digest('hex'), stderrSha256: eh.digest('hex'), code, signal,
-  })));
+    stdoutSha256: oh.copy().digest('hex'), stderrSha256: eh.copy().digest('hex'),
+  });
+  const captured=new Promise(resolve=>proc.once('close',(code,signal)=>resolve({...snapshot(),code,signal})));
+  captured.snapshot=snapshot;return captured;
 }
 function sandboxCwd(value) {
   if (value === undefined || value === '/workspace') return '/workspace';
@@ -205,7 +231,7 @@ async function validateJobPaths(job) {
   }
   return paths;
 }
-export async function executeJob(job, { signal, onResource } = {}) {
+export async function executeJob(job, { signal, onResource, onProgress, onPhaseComplete } = {}) {
   if (!job || !['prepare_dependencies', 'verify_artifact'].includes(job.operation)) {
     return { status: 'failed', error: 'Unsupported worker operation' };
   }
@@ -237,12 +263,13 @@ export async function executeJob(job, { signal, onResource } = {}) {
   let declaredPaths;
   try { declaredPaths = await validateJobPaths(job); } catch (e) { return { status: 'failed', error: e.message }; }
   const opts = () => ({ signal, deadline });
+  const reportCommand = createCommandReporter(onProgress);
   try {
     let proxyAddress;
     await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.install], opts());
     proxy = names.proxy;
     const isolationArgs = getIsolationArgs(job);
-    await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128})})"], opts());
+    await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128,onObservation:event=>console.log(JSON.stringify({kind:'registry_request',...event}))})})"], opts());
     await docker(['network','connect','bridge',proxy], opts()); const inspected = await docker(['inspect','--format',`{{(index .NetworkSettings.Networks "${names.install}").IPAddress}}`,proxy], opts()); proxyAddress = inspected.stdout.trim(); if (!proxyAddress) throw new Error('Registry proxy did not receive an install-network address'); onResource?.({ type:'proxy', name:proxy, network:names.install });
     const net = names.install;
     const runArgs = ['run','-d','--rm','--name',names.container,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,'--network',net,IMAGE_NAME,'serve'];
@@ -282,8 +309,7 @@ export async function executeJob(job, { signal, onResource } = {}) {
         await checkPaths();
         return new Promise((resolve, reject) => {
           const cwd = sandboxCwd(options.cwd);
-          const env = {};
-          for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
+          const env = filterRuntimeEnvironment(options.env);
           const isNpmInstallCmd = command === 'npm' && (args.includes('install') || args.includes('ci'));
           if ((installPhase || isNpmInstallCmd) && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/workspace/.npm-cache' });
           const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
@@ -297,15 +323,19 @@ export async function executeJob(job, { signal, onResource } = {}) {
           }
           const ms = commandTimeoutMs(options.timeout || options.timeoutMs, deadline);
           if (signal?.aborted) throw new Error('Cancelled by user');
-          const p = cp.spawn('docker', da, { stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'], windowsHide: true });
-          if (options.input !== undefined) p.stdin.end(Buffer.from(options.input));
+          const report = reportCommand(command, args);
+          let p;
+          try { p = cp.spawn('docker', da, { stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'], windowsHide: true }); }
+          catch (error) { report.finish(); reject(error); return; }
           let done = false;
-          const finish = (fn, value) => { if (done) return; done = true; clearTimeout(timer); signal?.removeEventListener('abort', abort); fn(value); };
+          const finish = (fn, value, flags = {}) => { if (done) return; done = true; clearTimeout(timer); signal?.removeEventListener('abort', abort);
+            report.finish({ ...(value?.result || value || {}), ...flags }); fn(value); };
           const captured = captureChildOutput(p);
-          const timer = setTimeout(() => { finish(reject, new Error('Command timed out')); try { p.kill('SIGKILL'); } catch {} }, ms);
-          const abort = () => { finish(reject, new Error('Cancelled by user')); try { p.kill('SIGKILL'); } catch {} };
+          const timer = setTimeout(() => { finish(reject, Object.assign(new Error('Command timed out'),{result:{...captured.snapshot(),exitCode:null,passed:false,timedOut:true}}), { timedOut: true }); try { p.kill('SIGKILL'); } catch {} }, ms);
+            const abort = () => { const timedOut = Date.now() >= deadline || /deadline/i.test(String(signal?.reason || '')); finish(reject, Object.assign(new Error(timedOut ? 'Job deadline exceeded' : 'Cancelled by user'), { result: { ...captured.snapshot(), exitCode: null, passed: false, timedOut, cancelled: !timedOut } }), { timedOut }); try { p.kill('SIGKILL'); } catch {} };
           signal?.addEventListener('abort', abort, { once: true });
           p.once('error', error => finish(reject, error));
+          p.stdin?.once('error', error => { finish(reject, error); try { p.kill('SIGKILL'); } catch {} });
           captured.then(r => {
             const normalized = { ...r, exitCode: r.code ?? null, passed: r.code === 0 && !r.stdoutTruncated && !r.stderrTruncated };
             if (normalized.passed) finish(resolve, normalized);
@@ -317,6 +347,10 @@ export async function executeJob(job, { signal, onResource } = {}) {
               finish(reject, e);
             }
           });
+          if (options.input !== undefined) {
+            try { p.stdin.end(Buffer.from(options.input)); }
+            catch (error) { finish(reject, error); try { p.kill('SIGKILL'); } catch {} }
+          }
         });
       },
       writeFile: async (target, bytes, options = {}) => {
@@ -328,7 +362,12 @@ export async function executeJob(job, { signal, onResource } = {}) {
         const abort = () => { try { p.kill('SIGKILL'); } catch {} };
         signal?.addEventListener('abort', abort, { once:true });
         try {
-          await new Promise((resolve, reject) => { p.once('error', reject); p.once('close', code => code === 0 ? resolve() : reject(new Error(Buffer.concat(stderr).toString() || `Write failed with code ${code}`))); p.stdin.end(Buffer.from(bytes)); });
+          await new Promise((resolve, reject) => {
+            p.once('error', reject);
+            p.stdin.once('error', error => { reject(error); try { p.kill('SIGKILL'); } catch {} });
+            p.once('close', code => code === 0 ? resolve() : reject(new Error(Buffer.concat(stderr).toString() || `Write failed with code ${code}`)));
+            p.stdin.end(Buffer.from(bytes));
+          });
         } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
       },
       spawn: (command, args = [], options = {}) => {
@@ -338,23 +377,26 @@ export async function executeJob(job, { signal, onResource } = {}) {
           args = request.args || [];
           options = { ...request, ...options };
         }
-        const cwd = sandboxCwd(options.cwd); const env = {};
+        const cwd = sandboxCwd(options.cwd); const env = filterRuntimeEnvironment(options.env);
         if (!/^[a-zA-Z0-9_.-]+$/.test(command) || command.startsWith('.')) throw new Error('Unsafe executable path');
-        for (const [k, v] of Object.entries(options.env || {})) if (SAFE_ENV.test(k)) env[k] = String(v);
         const isNpmInstallCmd = command === 'npm' && (args.includes('install') || args.includes('ci'));
         const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
         if (command === 'npm' || command === 'npx') env.NODE_OPTIONS = isFullApp ? '--max-old-space-size=2048' : '--max-old-space-size=512';
         if ((installPhase || isNpmInstallCmd) && proxyAddress) Object.assign(env, { NPM_CONFIG_REGISTRY: `http://${proxyAddress}:3128`, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NPM_CONFIG_CACHE: '/workspace/.npm-cache' });
         const da = buildContainerExecArgs({ containerName: names.container, command, args, cwd, env });
-        const p = cp.spawn('docker', da, { stdio: options.stdio || ['ignore', 'pipe', 'pipe'], windowsHide: true });
+        const report = reportCommand(command, args);
+        let p;
+        try { p = cp.spawn('docker', da, { stdio: options.stdio || ['ignore', 'pipe', 'pipe'], windowsHide: true }); }
+        catch (error) { report.finish(); throw error; }
         ownedProcesses.set(p.pid, p);
         const timeoutMs = Math.max(1, Math.min(options.timeout || options.timeoutMs || 600000, deadline - Date.now()));
         let cleaned = false;
         const cleanup = () => { if (cleaned) return; cleaned = true; ownedProcesses.delete(p.pid); clearTimeout(timeout); signal?.removeEventListener('abort', abort); options.signal?.removeEventListener('abort', abort); };
-        const abort = () => { try { p.kill('SIGKILL'); } catch {} cleanup(); };
-        const timeout = setTimeout(abort, timeoutMs);
+        const abort = () => { report.finish({ timedOut: Date.now() >= deadline || /deadline/i.test(String(signal?.reason || '')) }); try { p.kill('SIGKILL'); } catch {} cleanup(); };
+        const timeout = setTimeout(() => { report.finish({ timedOut: true }); abort(); }, timeoutMs);
         signal?.addEventListener('abort', abort, { once: true }); options.signal?.addEventListener('abort', abort, { once: true });
-        p.once('close', cleanup);
+        p.once('error', () => { report.finish(); cleanup(); });
+        p.once('close', code => { report.finish({ code }); cleanup(); });
         return p;
       },
       kill: async (pid) => {
@@ -377,7 +419,7 @@ export async function executeJob(job, { signal, onResource } = {}) {
       }
       return { status: 'success', result: prepared };
     }
-    const verification = await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {} });
+    const verification = await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {}, onPhaseComplete });
     if (job.disconnectInstallNetworkAfterInstall) {
       await disconnectInstallNetworkHelper();
     }

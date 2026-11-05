@@ -114,7 +114,7 @@ export async function executeLocalJob(job, options = {}) {
       result = await prepareDependencies({ packageJsonBytes: bytes, adapter, signal, runId: job.runId });
     } else {
       // Inventory is independently read from extracted bytes; supplied inventories cannot override it.
-      result = await executeVerificationJob({ job: { ...job, files: null }, adapter, signal });
+      result = await executeVerificationJob({ job: { ...job, files: null }, adapter, signal, onPhaseComplete: options.onPhaseComplete });
     }
     result.runtime = { ...profile, versions: tools.versions };
     for (const check of result.checks || []) check.evidence = { ...check.evidence, ...profile };

@@ -50,7 +50,8 @@ test('native trusted worker authenticates HTTP prepare/verify and proves real SQ
   try {
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     const url = `http://127.0.0.1:${server.address().port}`;
-    const client = createExecutionClient({ EXECUTION_WORKER_TOKEN: token, EXECUTION_WORKER_URL: url });
+    const progress = [];
+    const client = createExecutionClient({ EXECUTION_WORKER_TOKEN: token, EXECUTION_WORKER_URL: url }, { onProgress: event => progress.push(event) });
     assert.equal((await fetch(`${url}/readyz`)).status, 401);
     const ready = await probeLocalReadiness({ trustLocalCode: true });
     assert.equal(ready.executionProfile, 'local-trusted'); assert.equal(ready.osIsolation, false);
@@ -75,11 +76,22 @@ test('native trusted worker authenticates HTTP prepare/verify and proves real SQ
     const detail = JSON.stringify(verified);
     assert.equal(verified.status, 'completed', detail); assertIdentity(verified, verifyJob);
     assert.equal(verified.result.passed, true, detail);
+    assert.ok(progress.some(event => event.jobId === verifyJob.jobId && event.status === 'running' && event.commands.length > 0),
+      'real worker command progress must reach the authenticated client before terminal checks');
+    assert.ok(progress.every(event => !Object.hasOwn(event, 'result') && !Object.hasOwn(event, 'archiveBase64')),
+      'advisory events must not carry artifact bytes or raw check output');
     assert.equal(verified.result.archiveSha256, digest(archive));
     assert.equal(verified.result.runtime.executionProfile, 'local-trusted'); assert.equal(verified.result.runtime.osIsolation, false);
     const checks = verified.result.checks;
     const required = ['package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'framework_build', 'readme_build', 'readme_check', 'manifest_presence', 'service_definitions', 'port_uniqueness', 'management_demo_seed', 'service_spawn', 'smoke_liveness_probe', 'management_role_login', 'prisma_schema_presence', 'database_connectivity', 'database_write_capability', 'api_role_create_allowed', 'api_role_create_denied', 'api_anonymous_read_policy', 'api_role_read_allowed', 'database_mutation_assertion', 'browser_page_load', 'browser_journey_steps', 'browser_management_interaction', 'test_script_presence', 'test_suite_execution', 'smoke_gate'];
     for (const name of required) assert.ok(checks.some(check => check.name === name && check.status === 'passed'), `Missing PASS ${name}: ${detail}`);
+    for (const name of ['package_json', 'lockfile', 'ast_import_inventory', 'clean_install']) {
+      const proof = checks.find(check => check.name === name);
+      assert.ok(Number.isFinite(Date.parse(proof.startedAt)), `${name}: observation start`);
+      assert.ok(Number.isFinite(Date.parse(proof.endedAt)), `${name}: observation end`);
+      assert.match(proof.stdoutDigest, /^[a-f0-9]{64}$/, `${name}: stdout digest`);
+      assert.match(proof.stderrDigest, /^[a-f0-9]{64}$/, `${name}: stderr digest`);
+    }
     for (const check of checks) {
       assert.equal(check.runId, verifyJob.runId);
       assert.ok(check.status === 'passed' || (check.name === 'typecheck' && check.status === 'skipped' && /no typescript|tsconfig|not.*typescript/i.test(check.reason)), `Unexpected check ${JSON.stringify(check)}`);

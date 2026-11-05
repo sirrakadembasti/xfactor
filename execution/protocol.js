@@ -13,7 +13,7 @@ function decodeBase64(value, maxBytes, field) {
 }
 export function validateJob(input, now = Date.now()) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { valid: false, reason: 'Invalid input format' };
-  const allowed = new Set(['version','jobId','operation','projectId','contractId','contractHash','revision','artifactId','packageJsonBase64','archiveBase64','archiveSha256','contract','deadline','nonce','inputSha256','runId']);
+  const allowed = new Set(['version','jobId','operation','projectId','contractId','contractHash','revision','artifactId','packageJsonBase64','archiveBase64','archiveSha256','contract','deadline','nonce','inputSha256','runId','verificationPlan']);
   for (const key of Object.keys(input)) if (!allowed.has(key)) return { valid: false, reason: `Unsupported field: ${key}` };
   const { version, jobId, operation, projectId, contractId, contractHash, revision, artifactId, packageJsonBase64, archiveBase64, archiveSha256, contract, deadline, nonce, inputSha256, runId } = input;
   if (version !== 1 || !validId(jobId, 100)) return { valid: false, reason: version !== 1 ? 'Invalid version' : 'Invalid jobId' };
@@ -29,6 +29,23 @@ export function validateJob(input, now = Date.now()) {
   const forbidden = ['hostPath','image','dockerParams','workspace','cwd','inputPaths','artifactPath'];
   if (forbidden.some(key => key in input) || forbidden.some(key => key in contract)) return { valid: false, reason: 'Forbidden host/Docker field' };
   const job = { version, jobId, operation, projectId, contractId, contractHash, revision, artifactId, contract, deadline, nonce, inputSha256, runId, ...(archiveSha256 === undefined ? {} : { archiveSha256 }) };
+  if (input.verificationPlan !== undefined) {
+    const plan = input.verificationPlan;
+    const fields = new Set(['version','contractId','runId','artifactHash','sourceHash','planHash','assertionReview','uiLanguageReview','uiLanguageObservation']);
+    if (operation !== 'verify_artifact' || !plan || typeof plan !== 'object' || Array.isArray(plan)
+        || Object.keys(plan).some(key => !fields.has(key)) || plan.version !== 1 || plan.contractId !== contractId || plan.runId !== runId
+        || plan.artifactHash !== inputSha256 || !HEX64.test(plan.sourceHash || '') || !HEX64.test(plan.planHash || '')) {
+      return { valid: false, reason: 'Invalid or foreign verification plan' };
+    }
+    try {
+      const serialized = JSON.stringify(plan, (_key, value) => {
+        if (typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint' || (typeof value === 'number' && !Number.isFinite(value))) throw Error('Non-JSON plan');
+        return value;
+      });
+      if (Buffer.byteLength(serialized) > 262144) return { valid: false, reason: 'Verification plan limit exceeded' };
+      job.verificationPlan = JSON.parse(serialized);
+    } catch { return { valid: false, reason: 'Invalid verification plan JSON' }; }
+  }
   if (operation === 'prepare_dependencies') {
     const decoded = decodeBase64(packageJsonBase64, MAX_PACKAGE_BYTES, 'packageJsonBase64');
     if (decoded.error) return { valid: false, reason: decoded.error };
