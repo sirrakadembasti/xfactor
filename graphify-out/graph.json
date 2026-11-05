@@ -3557,7 +3557,7 @@
       "group": "backend",
       "file": "execution/browserRunner.cjs",
       "description": "",
-      "val": 12,
+      "val": 11.5,
       "provenance": "ast"
     },
     {
@@ -3707,7 +3707,7 @@
       "group": "tests",
       "file": "execution/tests/browserRunner.test.js",
       "description": "",
-      "val": 47,
+      "val": 46.5,
       "provenance": "ast"
     },
     {
@@ -31318,7 +31318,7 @@
       "line": 203
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Function:mockUiElement@5",
+      "id": "execution/tests/browserRunner.test.js#Function:mockUiElement@8",
       "label": "mockUiElement",
       "type": "Function",
       "group": "tests",
@@ -31326,10 +31326,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 5
+      "line": 8
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:getAttribute@6",
+      "id": "execution/tests/browserRunner.test.js#Method:getAttribute@9",
       "label": "getAttribute",
       "type": "Method",
       "group": "tests",
@@ -31337,10 +31337,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 6
+      "line": 9
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:getClientRects@7",
+      "id": "execution/tests/browserRunner.test.js#Method:getClientRects@10",
       "label": "getClientRects",
       "type": "Method",
       "group": "tests",
@@ -31348,10 +31348,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 7
+      "line": 10
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:closest@7",
+      "id": "execution/tests/browserRunner.test.js#Method:closest@10",
       "label": "closest",
       "type": "Method",
       "group": "tests",
@@ -31359,10 +31359,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 7
+      "line": 10
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Function:withUiDocument@9",
+      "id": "execution/tests/browserRunner.test.js#Function:withUiDocument@12",
       "label": "withUiDocument",
       "type": "Function",
       "group": "tests",
@@ -31370,10 +31370,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 9
+      "line": 12
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:querySelectorAll@11",
+      "id": "execution/tests/browserRunner.test.js#Method:querySelectorAll@14",
       "label": "querySelectorAll",
       "type": "Method",
       "group": "tests",
@@ -31381,10 +31381,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 11
+      "line": 14
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:getElementById@11",
+      "id": "execution/tests/browserRunner.test.js#Method:getElementById@14",
       "label": "getElementById",
       "type": "Method",
       "group": "tests",
@@ -31392,10 +31392,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 11
+      "line": 14
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@19",
+      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@22",
       "label": "control.waitFor",
       "type": "Method",
       "group": "tests",
@@ -31403,10 +31403,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 19
+      "line": 22
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@19",
+      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@22",
       "label": "control.evaluate",
       "type": "Method",
       "group": "tests",
@@ -31414,10 +31414,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 19
+      "line": 22
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:control.press@19",
+      "id": "execution/tests/browserRunner.test.js#Method:control.press@22",
       "label": "control.press",
       "type": "Method",
       "group": "tests",
@@ -31425,99 +31425,11 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 19
+      "line": 22
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.goto@21",
+      "id": "execution/tests/browserRunner.test.js#Method:page.goto@24",
       "label": "page.goto",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 21
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.locator@21",
-      "label": "page.locator",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 21
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.press@21",
-      "label": "page.press",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 21
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@22",
-      "label": "page.getByText",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 22
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.last@22",
-      "label": "page.last",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 22
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@22",
-      "label": "page.waitFor",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 22
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@22",
-      "label": "page.innerText",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 22
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@23",
-      "label": "page.evaluate",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 23
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.url@24",
-      "label": "page.url",
       "type": "Method",
       "group": "tests",
       "file": "execution/tests/browserRunner.test.js",
@@ -31527,282 +31439,7 @@
       "line": 24
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@26",
-      "label": "chromium.launch",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@26",
-      "label": "chromium.close",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@26",
-      "label": "chromium.newContext",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@26",
-      "label": "chromium.setDefaultTimeout",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@26",
-      "label": "chromium.route",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@26",
-      "label": "chromium.newPage",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 26
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:elements.get@45",
-      "label": "elements.get",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 45
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:variants.getClientRects@57",
-      "label": "variants.getClientRects",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 57
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.goto@92",
-      "label": "page.goto",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 92
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.url@92",
-      "label": "page.url",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 92
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@93",
-      "label": "page.getByText",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 93
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.last@93",
-      "label": "page.last",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 93
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@93",
-      "label": "page.waitFor",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 93
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@93",
-      "label": "page.innerText",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 93
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@94",
-      "label": "page.evaluate",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 94
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@95",
-      "label": "chromium.launch",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@95",
-      "label": "chromium.close",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@95",
-      "label": "chromium.newContext",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@95",
-      "label": "chromium.setDefaultTimeout",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@95",
-      "label": "chromium.route",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@95",
-      "label": "chromium.newPage",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 95
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@108",
-      "label": "control.waitFor",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 108
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@108",
-      "label": "control.evaluate",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 108
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:control.press@108",
-      "label": "control.press",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 108
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.goto@109",
-      "label": "page.goto",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 109
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.locator@109",
+      "id": "execution/tests/browserRunner.test.js#Method:page.locator@24",
       "label": "page.locator",
       "type": "Method",
       "group": "tests",
@@ -31810,10 +31447,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 109
+      "line": 24
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.press@109",
+      "id": "execution/tests/browserRunner.test.js#Method:page.press@24",
       "label": "page.press",
       "type": "Method",
       "group": "tests",
@@ -31821,21 +31458,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 109
+      "line": 24
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.url@109",
-      "label": "page.url",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 109
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@110",
+      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@25",
       "label": "page.getByText",
       "type": "Method",
       "group": "tests",
@@ -31843,10 +31469,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 110
+      "line": 25
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.last@110",
+      "id": "execution/tests/browserRunner.test.js#Method:page.last@25",
       "label": "page.last",
       "type": "Method",
       "group": "tests",
@@ -31854,10 +31480,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 110
+      "line": 25
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@110",
+      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@25",
       "label": "page.waitFor",
       "type": "Method",
       "group": "tests",
@@ -31865,10 +31491,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 110
+      "line": 25
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@110",
+      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@25",
       "label": "page.innerText",
       "type": "Method",
       "group": "tests",
@@ -31876,11 +31502,264 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 110
+      "line": 25
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@111",
+      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@26",
       "label": "page.evaluate",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 26
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.url@27",
+      "label": "page.url",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 27
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@29",
+      "label": "chromium.launch",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@29",
+      "label": "chromium.close",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@29",
+      "label": "chromium.newContext",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@29",
+      "label": "chromium.setDefaultTimeout",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@29",
+      "label": "chromium.route",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@29",
+      "label": "chromium.newPage",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:elements.get@48",
+      "label": "elements.get",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 48
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:variants.getClientRects@60",
+      "label": "variants.getClientRects",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 60
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.goto@95",
+      "label": "page.goto",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 95
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.url@95",
+      "label": "page.url",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 95
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@96",
+      "label": "page.getByText",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.last@96",
+      "label": "page.last",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@96",
+      "label": "page.waitFor",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@96",
+      "label": "page.innerText",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 96
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@97",
+      "label": "page.evaluate",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 97
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@98",
+      "label": "chromium.launch",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@98",
+      "label": "chromium.close",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@98",
+      "label": "chromium.newContext",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@98",
+      "label": "chromium.setDefaultTimeout",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@98",
+      "label": "chromium.route",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@98",
+      "label": "chromium.newPage",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 98
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@111",
+      "label": "control.waitFor",
       "type": "Method",
       "group": "tests",
       "file": "execution/tests/browserRunner.test.js",
@@ -31890,84 +31769,7 @@
       "line": 111
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@112",
-      "label": "chromium.launch",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@112",
-      "label": "chromium.close",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@112",
-      "label": "chromium.newContext",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@112",
-      "label": "chromium.setDefaultTimeout",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@112",
-      "label": "chromium.route",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@112",
-      "label": "chromium.newPage",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 112
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@122",
-      "label": "control.waitFor",
-      "type": "Method",
-      "group": "tests",
-      "file": "execution/tests/browserRunner.test.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 122
-    },
-    {
-      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@122",
+      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@111",
       "label": "control.evaluate",
       "type": "Method",
       "group": "tests",
@@ -31975,10 +31777,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 122
+      "line": 111
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:control.press@122",
+      "id": "execution/tests/browserRunner.test.js#Method:control.press@111",
       "label": "control.press",
       "type": "Method",
       "group": "tests",
@@ -31986,10 +31788,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 122
+      "line": 111
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.goto@123",
+      "id": "execution/tests/browserRunner.test.js#Method:page.goto@112",
       "label": "page.goto",
       "type": "Method",
       "group": "tests",
@@ -31997,10 +31799,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 123
+      "line": 112
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.locator@123",
+      "id": "execution/tests/browserRunner.test.js#Method:page.locator@112",
       "label": "page.locator",
       "type": "Method",
       "group": "tests",
@@ -32008,10 +31810,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 123
+      "line": 112
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.press@123",
+      "id": "execution/tests/browserRunner.test.js#Method:page.press@112",
       "label": "page.press",
       "type": "Method",
       "group": "tests",
@@ -32019,10 +31821,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 123
+      "line": 112
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.url@123",
+      "id": "execution/tests/browserRunner.test.js#Method:page.url@112",
       "label": "page.url",
       "type": "Method",
       "group": "tests",
@@ -32030,10 +31832,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 123
+      "line": 112
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@124",
+      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@113",
       "label": "page.getByText",
       "type": "Method",
       "group": "tests",
@@ -32041,10 +31843,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 124
+      "line": 113
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.last@124",
+      "id": "execution/tests/browserRunner.test.js#Method:page.last@113",
       "label": "page.last",
       "type": "Method",
       "group": "tests",
@@ -32052,10 +31854,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 124
+      "line": 113
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@124",
+      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@113",
       "label": "page.waitFor",
       "type": "Method",
       "group": "tests",
@@ -32063,10 +31865,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 124
+      "line": 113
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@124",
+      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@113",
       "label": "page.innerText",
       "type": "Method",
       "group": "tests",
@@ -32074,11 +31876,88 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 124
+      "line": 113
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@125",
+      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@114",
       "label": "page.evaluate",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 114
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@115",
+      "label": "chromium.launch",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@115",
+      "label": "chromium.close",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@115",
+      "label": "chromium.newContext",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@115",
+      "label": "chromium.setDefaultTimeout",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@115",
+      "label": "chromium.route",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@115",
+      "label": "chromium.newPage",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 115
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:control.waitFor@125",
+      "label": "control.waitFor",
       "type": "Method",
       "group": "tests",
       "file": "execution/tests/browserRunner.test.js",
@@ -32088,7 +31967,128 @@
       "line": 125
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@126",
+      "id": "execution/tests/browserRunner.test.js#Method:control.evaluate@125",
+      "label": "control.evaluate",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 125
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:control.press@125",
+      "label": "control.press",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 125
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.goto@126",
+      "label": "page.goto",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 126
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.locator@126",
+      "label": "page.locator",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 126
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.press@126",
+      "label": "page.press",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 126
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.url@126",
+      "label": "page.url",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 126
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.getByText@127",
+      "label": "page.getByText",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 127
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.last@127",
+      "label": "page.last",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 127
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.waitFor@127",
+      "label": "page.waitFor",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 127
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.innerText@127",
+      "label": "page.innerText",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 127
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:page.evaluate@128",
+      "label": "page.evaluate",
+      "type": "Method",
+      "group": "tests",
+      "file": "execution/tests/browserRunner.test.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 128
+    },
+    {
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.launch@129",
       "label": "chromium.launch",
       "type": "Method",
       "group": "tests",
@@ -32096,10 +32096,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@126",
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.close@129",
       "label": "chromium.close",
       "type": "Method",
       "group": "tests",
@@ -32107,10 +32107,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@126",
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newContext@129",
       "label": "chromium.newContext",
       "type": "Method",
       "group": "tests",
@@ -32118,10 +32118,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@126",
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@129",
       "label": "chromium.setDefaultTimeout",
       "type": "Method",
       "group": "tests",
@@ -32129,10 +32129,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@126",
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.route@129",
       "label": "chromium.route",
       "type": "Method",
       "group": "tests",
@@ -32140,10 +32140,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@126",
+      "id": "execution/tests/browserRunner.test.js#Method:chromium.newPage@129",
       "label": "chromium.newPage",
       "type": "Method",
       "group": "tests",
@@ -32151,10 +32151,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 126
+      "line": 129
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Function:make@136",
+      "id": "execution/tests/browserRunner.test.js#Function:make@139",
       "label": "make",
       "type": "Function",
       "group": "tests",
@@ -32162,10 +32162,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 136
+      "line": 139
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:make.getAttribute@136",
+      "id": "execution/tests/browserRunner.test.js#Method:make.getAttribute@139",
       "label": "make.getAttribute",
       "type": "Method",
       "group": "tests",
@@ -32173,10 +32173,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 136
+      "line": 139
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:make.getClientRects@136",
+      "id": "execution/tests/browserRunner.test.js#Method:make.getClientRects@139",
       "label": "make.getClientRects",
       "type": "Method",
       "group": "tests",
@@ -32184,10 +32184,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 136
+      "line": 139
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:make.closest@136",
+      "id": "execution/tests/browserRunner.test.js#Method:make.closest@139",
       "label": "make.closest",
       "type": "Method",
       "group": "tests",
@@ -32195,10 +32195,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 136
+      "line": 139
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:get@138",
+      "id": "execution/tests/browserRunner.test.js#Method:get@141",
       "label": "get",
       "type": "Method",
       "group": "tests",
@@ -32206,10 +32206,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 138
+      "line": 141
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:querySelectorAll@140",
+      "id": "execution/tests/browserRunner.test.js#Method:querySelectorAll@143",
       "label": "querySelectorAll",
       "type": "Method",
       "group": "tests",
@@ -32217,10 +32217,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 140
+      "line": 143
     },
     {
-      "id": "execution/tests/browserRunner.test.js#Method:getElementById@140",
+      "id": "execution/tests/browserRunner.test.js#Method:getElementById@143",
       "label": "getElementById",
       "type": "Method",
       "group": "tests",
@@ -32228,7 +32228,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 140
+      "line": 143
     },
     {
       "id": "execution/tests/deadlineCancellation.test.js#Method:server.executeJob@24",
@@ -33242,7 +33242,7 @@
       "line": 38
     },
     {
-      "id": "execution/tests/runtime.integration.test.js#Function:rolePage@78",
+      "id": "execution/tests/runtime.integration.test.js#Function:rolePage@84",
       "label": "rolePage",
       "type": "Function",
       "group": "tests",
@@ -33250,10 +33250,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 78
+      "line": 84
     },
     {
-      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@150",
+      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@156",
       "label": "result.onResource",
       "type": "Method",
       "group": "tests",
@@ -33261,10 +33261,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 150
+      "line": 156
     },
     {
-      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@213",
+      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@219",
       "label": "result.onResource",
       "type": "Method",
       "group": "tests",
@@ -33272,10 +33272,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 213
+      "line": 219
     },
     {
-      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@233",
+      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@239",
       "label": "result.onResource",
       "type": "Method",
       "group": "tests",
@@ -33283,10 +33283,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 233
+      "line": 239
     },
     {
-      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@258",
+      "id": "execution/tests/runtime.integration.test.js#Method:result.onResource@264",
       "label": "result.onResource",
       "type": "Method",
       "group": "tests",
@@ -33294,7 +33294,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 258
+      "line": 264
     },
     {
       "id": "execution/tests/runtime.test.js#Function:fakeChild@11",
@@ -82345,47 +82345,17 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:mockUiElement@5",
+      "target": "execution/tests/browserRunner.test.js#Function:mockUiElement@8",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 5
+        "line": 8
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:getAttribute@6",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 6
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:getClientRects@7",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 7
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:closest@7",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 7
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:withUiDocument@9",
+      "target": "execution/tests/browserRunner.test.js#Method:getAttribute@9",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82395,87 +82365,57 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:querySelectorAll@11",
+      "target": "execution/tests/browserRunner.test.js#Method:getClientRects@10",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 11
+        "line": 10
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:getElementById@11",
+      "target": "execution/tests/browserRunner.test.js#Method:closest@10",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 11
+        "line": 10
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@19",
+      "target": "execution/tests/browserRunner.test.js#Function:withUiDocument@12",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 19
+        "line": 12
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@19",
+      "target": "execution/tests/browserRunner.test.js#Method:querySelectorAll@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 19
+        "line": 14
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.press@19",
+      "target": "execution/tests/browserRunner.test.js#Method:getElementById@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 19
+        "line": 14
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.goto@21",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 21
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.locator@21",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 21
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.press@21",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 21
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@22",
+      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@22",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82485,7 +82425,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.last@22",
+      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@22",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82495,7 +82435,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@22",
+      "target": "execution/tests/browserRunner.test.js#Method:control.press@22",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82505,27 +82445,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@22",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 22
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@23",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 23
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.url@24",
+      "target": "execution/tests/browserRunner.test.js#Method:page.goto@24",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82535,7 +82455,67 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@26",
+      "target": "execution/tests/browserRunner.test.js#Method:page.locator@24",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 24
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.press@24",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 24
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@25",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.last@25",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@25",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@25",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@26",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82545,147 +82525,97 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@26",
+      "target": "execution/tests/browserRunner.test.js#Method:page.url@27",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 26
+        "line": 27
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@26",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 26
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@26",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 26
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@26",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 26
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@26",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 26
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:elements.get@45",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 45
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:variants.getClientRects@57",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 57
+        "line": 29
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.goto@92",
+      "target": "execution/tests/browserRunner.test.js#Method:elements.get@48",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 92
+        "line": 48
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.url@92",
+      "target": "execution/tests/browserRunner.test.js#Method:variants.getClientRects@60",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 92
+        "line": 60
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 93
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.last@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 93
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 93
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 93
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@94",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 94
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.goto@95",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82695,7 +82625,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.url@95",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82705,157 +82635,117 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 95
+        "line": 96
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.last@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 95
+        "line": 96
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 95
+        "line": 96
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@95",
+      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 95
+        "line": 96
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@108",
+      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@97",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 108
+        "line": 97
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@108",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 108
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.press@108",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 108
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.goto@109",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 109
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.locator@109",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 109
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.press@109",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 109
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.url@109",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@98",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 109
+        "line": 98
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@110",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 110
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.last@110",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 110
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@110",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 110
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@110",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 110
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@111",
+      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@111",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82865,7 +82755,27 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@112",
+      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@111",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 111
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:control.press@111",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 111
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.goto@112",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82875,7 +82785,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@112",
+      "target": "execution/tests/browserRunner.test.js#Method:page.locator@112",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82885,7 +82795,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@112",
+      "target": "execution/tests/browserRunner.test.js#Method:page.press@112",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82895,7 +82805,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@112",
+      "target": "execution/tests/browserRunner.test.js#Method:page.url@112",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -82905,137 +82815,117 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@112",
+      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@113",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 112
+        "line": 113
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@112",
+      "target": "execution/tests/browserRunner.test.js#Method:page.last@113",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 112
+        "line": 113
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@122",
+      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@113",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 122
+        "line": 113
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@122",
+      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@113",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 122
+        "line": 113
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:control.press@122",
+      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@114",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 122
+        "line": 114
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.goto@123",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 123
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.locator@123",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 123
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.press@123",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 123
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.url@123",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 123
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@124",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 124
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.last@124",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@115",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 124
+        "line": 115
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@124",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 124
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@124",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 124
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@125",
+      "target": "execution/tests/browserRunner.test.js#Method:control.waitFor@125",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83045,7 +82935,27 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@126",
+      "target": "execution/tests/browserRunner.test.js#Method:control.evaluate@125",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 125
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:control.press@125",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 125
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:page.goto@126",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83055,7 +82965,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@126",
+      "target": "execution/tests/browserRunner.test.js#Method:page.locator@126",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83065,7 +82975,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@126",
+      "target": "execution/tests/browserRunner.test.js#Method:page.press@126",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83075,7 +82985,7 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@126",
+      "target": "execution/tests/browserRunner.test.js#Method:page.url@126",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83085,92 +82995,182 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@126",
+      "target": "execution/tests/browserRunner.test.js#Method:page.getByText@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 126
+        "line": 127
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@126",
+      "target": "execution/tests/browserRunner.test.js#Method:page.last@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 126
+        "line": 127
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:make@136",
+      "target": "execution/tests/browserRunner.test.js#Method:page.waitFor@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 136
+        "line": 127
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:make.getAttribute@136",
+      "target": "execution/tests/browserRunner.test.js#Method:page.innerText@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 136
+        "line": 127
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:make.getClientRects@136",
+      "target": "execution/tests/browserRunner.test.js#Method:page.evaluate@128",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 136
+        "line": 128
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:make.closest@136",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.launch@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 136
+        "line": 129
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:get@138",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.close@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 138
+        "line": 129
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:querySelectorAll@140",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newContext@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 140
+        "line": 129
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Method:getElementById@140",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.setDefaultTimeout@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 140
+        "line": 129
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.route@129",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 129
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:chromium.newPage@129",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 129
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Function:make@139",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:make.getAttribute@139",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:make.getClientRects@139",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:make.closest@139",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:get@141",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 141
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:querySelectorAll@143",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 143
+      }
+    },
+    {
+      "source": "execution/tests/browserRunner.test.js",
+      "target": "execution/tests/browserRunner.test.js#Method:getElementById@143",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/browserRunner.test.js",
+        "line": 143
       }
     },
     {
@@ -85405,52 +85405,52 @@
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Function:rolePage@78",
+      "target": "execution/tests/runtime.integration.test.js#Function:rolePage@84",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 78
+        "line": 84
       }
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@150",
+      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@156",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 150
+        "line": 156
       }
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@213",
+      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@219",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 213
+        "line": 219
       }
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@233",
+      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@239",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 233
+        "line": 239
       }
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@258",
+      "target": "execution/tests/runtime.integration.test.js#Method:result.onResource@264",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 258
+        "line": 264
       }
     },
     {
@@ -128225,47 +128225,37 @@
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/browserRunner.cjs",
-      "label": "dynamic_imports",
+      "target": "env:XFACTOR_BROWSER_RUNNER",
+      "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 17
+        "line": 6
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:mockUiElement@5",
+      "target": "execution/tests/browserRunner.test.js#Function:mockUiElement@8",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 40
+        "line": 43
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:withUiDocument@9",
+      "target": "execution/tests/browserRunner.test.js#Function:withUiDocument@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 47
+        "line": 50
       }
     },
     {
       "source": "execution/tests/browserRunner.test.js",
-      "target": "execution/tests/browserRunner.test.js#Function:make@136",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/browserRunner.test.js",
-        "line": 137
-      }
-    },
-    {
-      "source": "execution/tests/browserRunner.test.js#Method:querySelectorAll@140",
-      "target": "execution/tests/browserRunner.test.js#Function:make@136",
+      "target": "execution/tests/browserRunner.test.js#Function:make@139",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -128274,13 +128264,13 @@
       }
     },
     {
-      "source": "execution/tests/browserRunner.test.js",
-      "target": "env:XFACTOR_BROWSER_RUNNER",
-      "label": "reads_env",
+      "source": "execution/tests/browserRunner.test.js#Method:querySelectorAll@143",
+      "target": "execution/tests/browserRunner.test.js#Function:make@139",
+      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 151
+        "line": 143
       }
     },
     {
@@ -128290,7 +128280,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/browserRunner.test.js",
-        "line": 175
+        "line": 178
       }
     },
     {
@@ -129040,7 +129030,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 49
+        "line": 51
       }
     },
     {
@@ -129050,7 +129040,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 58
+        "line": 64
       }
     },
     {
@@ -129060,7 +129050,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 59
+        "line": 65
       }
     },
     {
@@ -129070,17 +129060,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 59
+        "line": 65
       }
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/tests/runtime.integration.test.js#Function:rolePage@78",
+      "target": "execution/tests/runtime.integration.test.js#Function:rolePage@84",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 90
+        "line": 96
       }
     },
     {
@@ -129090,7 +129080,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 114
+        "line": 120
       }
     },
     {
@@ -129100,7 +129090,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.integration.test.js",
-        "line": 122
+        "line": 128
       }
     },
     {
