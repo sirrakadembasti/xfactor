@@ -69,8 +69,28 @@ export function isSafeIP(input) {
   return true;
 }
 
-export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, connector = https.request } = {}) {
+export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, connector = https.request, onObservation } = {}) {
+  let sequence = 0;
+  const observe = event => { try { const result = onObservation?.(event); if (result && typeof result.then === 'function') result.catch(() => {}); } catch {} };
   const server = http.createServer(async (req, res) => {
+    const started = Date.now();
+    let upstream, timer, requestId, target, errorCode, phase = 'dns', responseBytes = 0, finished = false;
+    const complete = () => {
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      if (requestId <= 2048) observe({ requestId, state: 'finished', target, phase, statusCode: res.statusCode,
+        responseComplete: res.writableFinished,
+        elapsedMs: Date.now() - started, responseBytes: Math.min(responseBytes, 2147483647), ...(errorCode ? { errorCode } : {}) });
+    };
+    const fail = (status, code) => {
+      if (res.writableEnded || res.destroyed) return;
+      errorCode = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'CLIENT_ABORTED'].includes(code) ? code : 'UPSTREAM_ERROR';
+      if (res.headersSent) res.destroy();
+      else { res.writeHead(status); res.end('Registry request failed'); }
+      upstream?.destroy();
+    };
+    res.once('finish', complete);
+    res.once('close', () => { if (!res.writableFinished) { errorCode ||= 'CLIENT_ABORTED'; upstream?.destroy(); } complete(); });
     try {
       const rawTarget = String(req.url || '/');
       let targetUrl;
@@ -90,13 +110,24 @@ export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, conn
         targetUrl = new URL(rawTarget, 'https://registry.npmjs.org');
       }
       const targetHost = targetUrl.hostname.toLowerCase();
+      // Origin-form URLs may contain a network-path reference (//host/path).
+      // Validate the resolved destination for every form, before DNS/connect.
+      if (targetUrl.protocol !== 'https:' || !REGISTRY_HOSTS.has(targetHost) || (targetUrl.port && targetUrl.port !== '443')) {
+        res.writeHead(403); res.end('Host not allowlisted'); return;
+      }
+      target = targetHost === 'binaries.prisma.sh' ? 'prisma' : 'npm';
+      requestId = ++sequence;
+      if (requestId <= 2048) observe({ requestId, state: 'started', target });
+      timer = setTimeout(() => fail(504, 'ETIMEDOUT'), 30000);
       const addresses = await resolver.resolve(targetHost);
+      if (res.destroyed || res.writableEnded) return;
       const safeAddress = addresses.find(isSafeIP);
       if (!safeAddress) {
         res.writeHead(403);
         res.end('DNS resolved to unsafe IP');
         return;
       }
+      phase = 'connect';
       const proxyReq = connector({
         hostname: safeAddress,
         port: 443,
@@ -107,17 +138,19 @@ export function createProxy({ port = 0, host = '127.0.0.1', resolver = dns, conn
         checkServerIdentity: (_address, certificate) =>
           tls.checkServerIdentity(targetHost, certificate),
       }, (proxyRes) => {
+        if (res.destroyed || res.writableEnded) { proxyRes.destroy(); return; }
+        clearTimeout(timer); phase = 'response';
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.on('data', chunk => { responseBytes += chunk.length; });
+        proxyRes.once('error', error => fail(502, error?.code));
         proxyRes.pipe(res);
       });
-      proxyReq.on('error', () => {
-        if (!res.headersSent) res.writeHead(502);
-        res.end('Bad Gateway');
-      });
+      upstream = proxyReq;
+      proxyReq.setTimeout?.(30000, () => fail(504, 'ETIMEDOUT'));
+      proxyReq.on('error', error => fail(502, error?.code));
       req.pipe(proxyReq);
-    } catch {
-      if (!res.headersSent) res.writeHead(500);
-      res.end('Proxy Error');
+    } catch (error) {
+      fail(502, error?.code);
     }
   });
   return new Promise((resolve, reject) => {

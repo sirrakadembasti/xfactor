@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { sanitizeCommandEvent } from './commandDiagnostics.js';
+import { sanitizeCommandEvent, sanitizePhaseDiagnostic } from './commandDiagnostics.js';
 
 const identityOf = job => Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId']
   .map(key => [key, job[key]]));
 function failureDiagnostics(job, status, result) {
   if (!job.diagnostics || !['failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(status)) return result;
-  return { ...result, diagnostics: { commands: job.diagnostics.commands.slice(-64).map(command => ({ ...command,
+  return { ...result, diagnostics: { phases: structuredClone(job.diagnostics.phases || []), commands: job.diagnostics.commands.slice(-64).map(command => ({ ...command,
     ...(status === 'failed_timeout' && command.endedAt === undefined ? { timedOut: true } : {}) })) } };
 }
 
@@ -132,6 +132,19 @@ export class JobStore {
     }
     this._save();
     return true;
+  }
+
+  recordPhaseDiagnostic(jobId, lease, event) {
+    const job = this.jobs.get(jobId);
+    if (!job || job.status !== 'running' || job.diagnosticsLease !== lease) return false;
+    const safe = sanitizePhaseDiagnostic(event);
+    if (!safe) return false;
+    const phases = job.diagnostics.phases ||= [];
+    if (phases.some(row => row.phase === safe.phase)) return false;
+    while (safe.checks.length && Buffer.byteLength(JSON.stringify([...phases, safe])) > 512 * 1024) {
+      safe.checks.pop(); safe.truncated = true;
+    }
+    phases.push(safe); this._save(); return true;
   }
   
 

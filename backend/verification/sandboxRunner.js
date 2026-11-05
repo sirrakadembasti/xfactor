@@ -113,6 +113,7 @@ export async function executeInSandbox(command, args = [], options = {}) {
         workspace: options.workspace,
         timeoutMs: options.timeoutMs ?? 60000,
         env: scrubbedEnv,
+        ...(options.input !== undefined ? { input: options.input } : {}),
         signal: options.signal,
         capabilities
     });

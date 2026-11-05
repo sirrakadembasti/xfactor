@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { createTestHarness } from './testHarness.js';
 import { spawnService, killService } from '../verification/processVerifier.js';
+import EventEmitter from 'node:events';
 
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -60,4 +61,14 @@ await runAsyncTest('3. only a valid explicit test secret crosses the scrubbed se
     }
 });
 
+await runAsyncTest('service diagnostics retain a bounded tail and distinguish a real early exit from a live process',async()=>{
+ const child=new EventEmitter();child.pid=42;child.stdout=new EventEmitter();child.stderr=new EventEmitter();
+ const adapter={getCapabilities:()=>({available:true,isolation:true}),spawn:async()=>child,kill:async()=>{}};
+ const handle=await spawnService('api',{command:'node'}, {},{adapter});
+ assert.equal(handle.getObservation().exited,false);
+ child.stderr.emit('data',Buffer.from('x'.repeat(100000)+'\nactual crash'));
+ child.emit('close',1,null);
+ const observed=handle.getObservation();assert.equal(observed.exited,true);assert.equal(observed.exitCode,1);
+ assert.ok(Buffer.byteLength(observed.stderr)<=32768);assert.ok(observed.stderr.endsWith('actual crash'));assert.equal(observed.stderrTruncated,true);
+});
 finish();

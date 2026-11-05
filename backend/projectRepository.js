@@ -9,7 +9,7 @@ import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
 import { canTransitionProject, PROJECT_STATUS } from './engine/stateMachine.js';
 import { getArtifact, getLatestVerifiedArtifact } from './repositories/artifactRepository.js';
-import { isManagementArtifactDetail, evidencePayload, assertWorkerReceipt, assertWorkerCheck,
+import { isManagementArtifactDetail, isSemanticArtifactDetail, evidencePayload, assertWorkerReceipt, assertWorkerCheck,
     assertManagementCoverage, WORKER_RECEIPT_GATE } from './verification/artifactEvidencePolicy.js';
 
 
@@ -456,12 +456,12 @@ export function assertVerifiedArtifactRunEvidence({ projectId, contractId, artif
         }
     }
     for (const check of checks) {
-        const detail = isManagementArtifactDetail(check.gate_name, contract);
+        const detail = isManagementArtifactDetail(check.gate_name, contract) || isSemanticArtifactDetail(check.gate_name);
         if (check.applicability === 'MANDATORY' && !P4_MANDATORY_GATES.includes(check.gate_name) && !detail) {
             throw new Error(`Unknown mandatory artifact gate: ${check.gate_name}.`);
         }
         if (detail) {
-            if (check.status !== 'PASS' || check.applicability !== 'MANDATORY') throw new Error(`Mandatory management gate ${check.gate_name} failed or was downgraded.`);
+            if (check.status !== 'PASS' || check.applicability !== 'MANDATORY') throw new Error(`Mandatory runtime gate ${check.gate_name} failed or was downgraded.`);
             assertWorkerCheck(check, workerReceipt);
         } else if (evidencePayload(check.evidence_json).workerReceipt) {
             assertWorkerCheck(check, workerReceipt);
@@ -543,9 +543,13 @@ export function completeVerifiedProject({
     artifactId,
     expectedRevision,
     attemptId = null,
-    leaseOwner = null
+    leaseOwner = null,
+    beforeAccept = null
 }) {
     if (!isValidProjectId(projectId)) throw new Error(`Invalid project ID: "${projectId}"`);
+    if (beforeAccept !== null && (typeof beforeAccept !== 'function' || beforeAccept.constructor?.name === 'AsyncFunction')) {
+        throw new Error('Acceptance hook must be a synchronous internal function.');
+    }
     db.exec('BEGIN IMMEDIATE;');
     try {
         if (attemptId !== null || leaseOwner !== null) {
@@ -556,6 +560,10 @@ export function completeVerifiedProject({
         if (persisted.revision !== Number(expectedRevision || 1)) throw new Error(`CAS Revision conflict on project ${projectId}.`);
         if (persisted.status !== PROJECT_STATUS.ARTIFACT_VERIFIED) {
             throw new Error(`Project ${projectId} status must be artifact_verified (was ${persisted.status}).`);
+        }
+        if (beforeAccept) {
+            const result = beforeAccept({ projectId, contractId, artifactId });
+            if (result && typeof result.then === 'function') throw new Error('Acceptance hook must be synchronous.');
         }
         const { artifact, run } = assertVerifiedArtifactEvidence({
             projectId, contractId, artifactId, strict: true
@@ -573,7 +581,9 @@ export function completeVerifiedProject({
         const previousRevision = persisted.revision;
         const nextRevision = previousRevision + 1;
         const completedAt = new Date().toISOString();
-        let workflowState = persisted.workflow_state;
+        // The acceptance hook can durably close its own covered findings. Read
+        // its workflow changes inside this same transaction before receipt write.
+        let workflowState = db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(projectId).workflow_state;
         try {
             const parsed = JSON.parse(workflowState || '{}');
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {

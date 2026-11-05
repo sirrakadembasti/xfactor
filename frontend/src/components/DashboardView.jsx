@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FileText, History, Loader2, SearchCheck, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
+import ExecutionProgress from './ExecutionProgress';
 
 const statusClasses = {
   verified: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -101,6 +102,8 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
   const historySessionRef = useRef(null);
   const selectionRef = useRef({ projectId: null, runId: null });
   const [error, setError] = useState('');
+  const [runsError, setRunsError] = useState('');
+  const [detailError, setDetailError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -119,6 +122,8 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
     setSelectedCheckId(null);
     setLog(null);
     setError('');
+    setRunsError('');
+    setDetailError('');
     setLoadingRuns(true);
     setLoadingMore(false);
 
@@ -132,6 +137,7 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
         if (session.disposed || runsRequestRef.current !== requestId) return;
         const nextRuns = Array.isArray(data?.runs) ? data.runs : [];
         setRunsProjectId(projectId);
+        setRunsError('');
         const nextIds = new Set(nextRuns.map(run => run.id));
         setRuns(current => [...nextRuns, ...current.filter(run => !nextIds.has(run.id))]);
         if (!session.paginated) setNextCursor(data?.nextCursor || null);
@@ -145,7 +151,8 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
         latestRunId = nextRuns[0]?.id || null;
       } catch (requestError) {
         if (!session.disposed && runsRequestRef.current === requestId && requestError?.name !== 'AbortError') {
-          setError('Kalite geçmişi yüklenemedi.');
+          setRunsProjectId(projectId);
+          setRunsError('Kalite geçmişi yüklenemedi.');
         }
       } finally {
         session.pending = false;
@@ -172,6 +179,8 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
     if (!selectedRunId || selectedRunProjectId !== projectId) {
       detailRequestRef.current += 1;
       setRunDetail(null);
+      setLoadingDetail(false);
+      setDetailError('');
       return undefined;
     }
     const controller = new AbortController();
@@ -179,6 +188,7 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
     let pending = false;
     logRequestRef.current += 1;
     setLoadingDetail(true);
+    setDetailError('');
     setRunDetail(null);
     setSelectedCheckId(null);
     setLog(null);
@@ -188,10 +198,13 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
       const requestId = ++detailRequestRef.current;
       try {
         const detail = await apiClient.getVerificationRun(projectId, selectedRunId, { signal: controller.signal });
-        if (!disposed && detailRequestRef.current === requestId) setRunDetail(detail);
+        if (!disposed && detailRequestRef.current === requestId) {
+          setRunDetail(detail);
+          setDetailError('');
+        }
       } catch (requestError) {
         if (!disposed && requestError?.name !== 'AbortError' && detailRequestRef.current === requestId) {
-          setError('Doğrulama kanıtı yüklenemedi.');
+          setDetailError('Doğrulama kanıtı yüklenemedi.');
         }
       } finally {
         pending = false;
@@ -288,7 +301,7 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
           <p className="mt-2 text-sm leading-6 text-slate-600">Önce soldan bir doğrulama koşusu seçin. Sağdaki kontrollerde hangi adımın geçtiğini veya neden durduğunu görün. Kontrole tıklayınca zaman, çıkış kodu, çıktı özeti ve gizli bilgiler temizlenmiş kayıtlar açılır.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3"><span className="text-xs font-bold text-emerald-800">PASS</span><p className="mt-1 text-xs text-emerald-900">PASS: kontrol başarıyla tamamlandı ve kanıtı kaydedildi.</p></div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3"><span className="text-xs font-bold text-rose-800">FAIL</span><p className="mt-1 text-xs text-rose-900">FAIL: çalıştırılan kontrol hata buldu; teslim tamamlanmaz.</p></div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3"><span className="text-xs font-bold text-rose-800">FAIL</span><p className="mt-1 text-xs text-rose-900">FAIL: kontrol başarıyla tamamlanamadı; teslim tamamlanmaz. Kayıtlı sonuç açıklamasını inceleyin.</p></div>
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3"><span className="text-xs font-bold text-amber-800">BLOCKED</span><p className="mt-1 text-xs text-amber-900">BLOCKED: zorunlu kontrol için yeterli yürütme kanıtı yok.</p></div>
           </div>
           <p className="mt-3 text-xs text-slate-500">İsteğe bağlı bir kontrol uygulanmıyorsa “Uygulanmıyor” görünür. Zorunlu kontroller atlanarak proje doğrulanmış sayılamaz.</p>
@@ -324,16 +337,19 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
           </div>
         )}
 
+        <ExecutionProgress projectId={projectId} apiClient={apiClient} />
+
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="run-history-heading">
             <div className="border-b border-slate-200 px-4 py-3">
               <h2 id="run-history-heading" className="text-sm font-bold text-slate-900">1. Doğrulama Koşuları</h2>
               <p className="mt-1 text-xs text-slate-500">Her koşu, uygulama için yapılmış ayrı bir doğrulama denemesidir. En yenisi üsttedir.</p>
             </div>
+            {runsMatchProject && runsError && <p role="alert" className="p-4 text-sm text-rose-800">{runsError}</p>}
             {!runsMatchProject || loadingRuns ? (
               <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kanıtlar yükleniyor…</div>
             ) : visibleRuns.length === 0 ? (
-              <div className="p-10 text-center text-sm text-slate-500">Kayıtlı doğrulama kanıtı bulunamadı.</div>
+              !runsError && <div className="p-10 text-center text-sm text-slate-500">Kayıtlı doğrulama kanıtı bulunamadı.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
@@ -387,10 +403,17 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
               <h2 id="check-heading" className="text-sm font-bold text-slate-900">2. Yapılan Kontroller</h2>
               <p className="mt-1 text-xs text-slate-500">Bir satır seçerek neyin denetlendiğini ve kayıtlı kanıtı inceleyin.</p>
             </div>
-            {!detailMatchesProject || loadingDetail ? (
+            {selectedRunProjectId === projectId && detailError && <p role="alert" className="p-4 text-sm text-rose-800">{detailError}</p>}
+            {selectedRunProjectId === projectId && loadingDetail ? (
               <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={17} /> Kontroller yükleniyor…</div>
-            ) : checks.length === 0 ? (
+            ) : !selectedRunId || selectedRunProjectId !== projectId ? (
               <div className="p-10 text-center text-sm text-slate-500">Kontrol kanıtlarını incelemek için bir koşu seçin.</div>
+            ) : !detailMatchesProject ? (
+              !detailError && <p className="p-6 text-sm text-slate-500">Bu koşunun ayrıntıları henüz alınmadı.</p>
+            ) : checks.length === 0 ? (
+              <p className="p-6 text-sm text-slate-500">{runDetail.run.status === 'running'
+                ? 'Nihai kontrol kanıtları koşu tamamlandığında yayımlanır. Canlı komut ilerlemesini yukarıdan izleyebilirsiniz.'
+                : 'Bu koşu için kayıtlı kontrol kanıtı yok.'}</p>
             ) : (
               <div className="divide-y divide-slate-100">
                 {checks.map(check => (
@@ -416,6 +439,7 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
               <StatusBadge status={selectedCheck.status} />
             </div>
             <p className="mt-2 text-sm text-slate-600">{gateDetails(selectedCheck.gate_name)[1]}</p>
+            {selectedCheck.reason && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-slate-800"><strong>Kayıtlı sonuç: </strong>{selectedCheck.reason}</p>}
             <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
               <div><dt className="font-semibold text-slate-500">Zorunluluk</dt><dd className="mt-1 text-slate-800">{selectedCheck.applicability === 'MANDATORY' ? 'Zorunlu' : 'İsteğe bağlı'}</dd></div>
               <div><dt className="font-semibold text-slate-500">Çıkış kodu</dt><dd className="mt-1 text-slate-800">{selectedCheck.exit_code ?? 'Kaydedilmedi'}</dd></div>
@@ -424,7 +448,7 @@ export default function DashboardView({ projectId, projectTitle, projectStatus, 
               <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Standart çıktı SHA-256 özeti</dt><dd className="mt-1 break-all font-mono text-slate-700">{selectedCheck.stdout_digest || 'Kaydedilmedi'}</dd></div>
               <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Hata çıktısı SHA-256 özeti</dt><dd className="mt-1 break-all font-mono text-slate-700">{selectedCheck.stderr_digest || 'Kaydedilmedi'}</dd></div>
             </dl>
-            {selectedCheck.timed_out && <p className="mt-3 text-xs font-semibold text-amber-800">Bu kontrol zaman sınırına takıldı.</p>}
+            {Boolean(selectedCheck.timed_out) && <p className="mt-3 text-xs font-semibold text-amber-800">Bu kontrol zaman sınırına takıldı.</p>}
           </section>
         )}
 

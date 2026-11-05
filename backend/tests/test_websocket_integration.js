@@ -201,14 +201,30 @@ let runtime;
 let productionDb;
 
 async function request(baseUrl, pathname, options = {}) {
-    const response = await fetch(`${baseUrl}${pathname}`, {
-        ...options,
-        headers: {
-            'content-type': 'application/json',
-            ...(options.headers || {})
-        }
+    // Test OS-assigned loopback ports through HTTP directly. Fetch's browser
+    // unsafe-port policy can reject a randomly assigned port before any I/O.
+    return new Promise((resolve, reject) => {
+        const outgoing = http.request(new URL(`${baseUrl}${pathname}`), {
+            method: options.method || 'GET',
+            headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+        }, incoming => {
+            const chunks = [];
+            incoming.on('data', chunk => chunks.push(chunk));
+            incoming.once('error', reject);
+            incoming.once('end', () => {
+                try {
+                    const headers = new Headers();
+                    for (const [key, value] of Object.entries(incoming.headers)) {
+                        for (const entry of Array.isArray(value) ? value : [value]) if (entry !== undefined) headers.append(key, entry);
+                    }
+                    resolve({ response: { status: incoming.statusCode, headers }, body: JSON.parse(Buffer.concat(chunks).toString()) });
+                } catch (error) { reject(error); }
+            });
+        });
+        outgoing.setTimeout(10000, () => outgoing.destroy(new Error('HTTP fixture request timed out')));
+        outgoing.once('error', reject);
+        outgoing.end(options.body);
     });
-    return { response, body: await response.json() };
 }
 
 try {

@@ -7,6 +7,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 
+// OS temp dirs may be aliased (macOS /var, Windows 8.3 names); owned fixtures live under the canonical path.
+const CANONICAL_TMP = await fs.realpath(os.tmpdir());
+
 const toolsUrl = new URL('../../scripts/local-worker-tools.mjs', import.meta.url);
 test('worker packaging cannot write into platform agent instructions', async () => {
   const { packageLocalWorker } = await import('../../scripts/package-local-worker.mjs');
@@ -75,7 +78,7 @@ test('runtime browser copy rejects linked state and linked source directories', 
   assert.equal((await fs.readdir(state)).filter(name=>name.startsWith('browser-runtime-')).length,0);
 });
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor package test '));
+  const root = await fs.mkdtemp(path.join(CANONICAL_TMP, 'xfactor package test '));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, 'tools'), { recursive: true });
   await fs.writeFile(path.join(root, 'tools/node'), 'binary fixture');
@@ -143,7 +146,8 @@ test('platform launcher uses bundled Node from a directory with spaces without h
   await fs.writeFile(path.join(root, 'scripts/start-local-worker.mjs'), 'console.log(JSON.stringify({ executable: process.execPath, args: process.argv.slice(2) }));');
   await writeLaunchers(root);
   const shell = process.platform === 'win32' ? process.env.ComSpec : '/bin/sh';
-  const args = process.platform === 'win32' ? ['/d', '/c', 'start-worker.cmd'] : [path.join(root, 'start-worker.sh')];
+  // Explicit relative path: hardened Windows hosts set NoDefaultCurrentDirectoryInExePath.
+  const args = process.platform === 'win32' ? ['/d', '/c', '.\\start-worker.cmd'] : [path.join(root, 'start-worker.sh')];
   const result = spawnSync(shell, args, { cwd: root, env: { ...process.env, PATH: '' }, encoding: 'utf8', windowsHide: true });
   assert.equal(result.status, 0, result.stderr);
   const output = JSON.parse(result.stdout.trim());

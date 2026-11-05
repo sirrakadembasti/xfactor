@@ -38,7 +38,11 @@ export default function Header({
     <div className="h-14 bg-cream-50 border-b border-cream-300 px-6 flex items-center justify-between shadow-sm z-10">
       <div className="flex items-center gap-3 min-w-0">
         <h2 className="font-bold text-base text-gray-900 truncate">{projectState.title}</h2>
-        <div>{getStatusBadge(projectState.status)}</div>
+        <div>{projectState.executionMode === 'verification_only'
+          ? <span className="text-xs font-semibold text-sky-800 bg-sky-50 px-2 py-1 rounded border border-sky-200">Yalnız doğrulanıyor</span>
+          : projectState.executionMode === 'controlled_repair'
+            ? <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-1 rounded border border-amber-200">Sınırlı onarım</span>
+          : getStatusBadge(projectState.status)}</div>
         <ConnectionStatus state={wsState} />
         {['missing', 'hash_mismatch', 'unreadable', 'unsafe_path', 'invalid_evidence'].includes(projectState.artifactAvailability) && (
           <span role="status" className="text-xs text-red-700 bg-red-50 px-2 py-1 rounded border border-red-200">
@@ -97,6 +101,8 @@ export default function Header({
         {viewMode !== 'dashboard' && projectState.status === 'pending_approval' && (
           <button
             onClick={handleApprove}
+            disabled={projectState.planScopeReview?.valid === false}
+            title={projectState.planScopeReview?.valid === false ? 'Önce Manager ile onaylı kapsamı tamamlayın.' : undefined}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition"
           >
             <Play size={14} /> Planı Onayla ve Başlat
@@ -104,7 +110,8 @@ export default function Header({
         )}
 
         {/* Running Button */}
-        {viewMode !== 'dashboard' && ['running', 'implementing'].includes(projectState.status) && (
+        {viewMode !== 'dashboard' && (['running', 'implementing'].includes(projectState.status)
+          || (projectState.executionMode === 'verification_only' && projectState.status === 'implementation_finished')) && (
           <button
             onClick={handlePause}
             className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition"
@@ -114,7 +121,7 @@ export default function Header({
         )}
 
         {/* Stopped project: Active Resume Button */}
-        {viewMode !== 'dashboard' && canResumeProject(projectState.status, projectState.last_error) && (
+        {viewMode !== 'dashboard' && canResumeProject(projectState.status, projectState.last_error, projectState.resumeBlocked) && (
           <button
             onClick={handleResume}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold shadow-sm transition animate-pulse"

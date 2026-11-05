@@ -3,6 +3,16 @@ import { createTestHarness } from './testHarness.js';
 import { verifyReadmeCommands } from '../verification/readmeVerifier.js';
 
 const { runAsyncTest, finish } = createTestHarness();
+await runAsyncTest('failed installation keeps README static validation but blocks documented build execution', async () => {
+    let calls = 0;
+    const result = await verifyReadmeCommands({}, [
+        { path: 'README.md', content: '```sh\nnpm run build\nnpm run missing\n```' },
+        { path: 'package.json', content: '{"scripts":{"build":"next build"}}' }
+    ], { dependencyResult: { passed: false }, adapter: { execute: async () => { calls++; throw Error('must not execute'); } } });
+    assert.equal(calls, 0);
+    assert.equal(result.checks.find(c => c.name === 'readme_build')?.status, 'blocked');
+    assert.ok(result.issues.some(issue => issue.includes('missing')));
+});
 const filteredTest = process.argv.find(arg => arg.startsWith('--test='))?.split('=')[1];
 
 await runAsyncTest('canonical service manifest ports supplement source ports while undeclared docs ports remain rejected', async () => {
@@ -394,7 +404,7 @@ if (!filteredTest || filteredTest === 'readme-sandboxed-commands') {
             assert.ok(dockerfile.includes('FROM node:22-alpine AS runner'), 'Multi-stage Dockerfile runner stage required');
             assert.ok(dockerfile.includes('RUN npx prisma generate'), 'Prisma generate step required');
             assert.ok(dockerfile.includes('VOLUME ["/data"]'), 'SQLite /data volume required');
-            assert.ok(dockerfile.includes('npx prisma db push && npm start'), 'Prisma db push on container start required');
+            assert.ok(dockerfile.includes('npx prisma db push && npm run start:services'), 'Prisma db push and both services on container start required');
 
             const readme = await generateProjectReadme({ projectDir: tempDir, projectTitle: state.title, summary: plan.summary });
             assert.ok(readme.includes('### Docker ile Çalıştırma'), 'README must contain Docker section');

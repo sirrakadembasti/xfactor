@@ -23,9 +23,20 @@ test('worker runtime finite protocol and security constraints', async (t) => {
   let npmExecArgs = [];
   let written = [];
   let disconnectArgs = [];
+  let npmFault = null;
+  let inputFault = false;
   const lock = Buffer.from(JSON.stringify({ lockfileVersion: 3, packages: {} }));
   const spawnMock = mock.method(cp, 'spawn', (cmd, args) => {
     const proc = fakeChild();
+    if (inputFault && args.some(arg => String(arg).includes("process.stdin.on('data'"))) {
+      proc.stdin.end = () => queueMicrotask(() => proc.stdin.emit('error', new Error('Protocol input failed')));
+      return proc;
+    }
+    if (args[0] === 'exec' && args.includes('npm') && args.includes('install') && npmFault) {
+      if (npmFault === 'throw') throw Object.assign(new Error('Spawn failed'), { code: 'ENOENT' });
+      if (npmFault === 'error') setTimeout(() => { proc.emit('error', new Error('Spawn failed')); proc.emit('close', null); }, 2);
+      return proc;
+    }
     if (args[0] === 'network' && args[1] === 'disconnect') {
       disconnectArgs.push([...args]);
     }
@@ -59,12 +70,17 @@ test('worker runtime finite protocol and security constraints', async (t) => {
 
     await t.test('prepare_dependencies writes package bytes and runs npm lockfile-only protocol', async () => {
       written = [];
-      const result = await executeJob({ operation: 'prepare_dependencies', runId: 'run-prepare', jobId: 'job-prepare', packageJsonBytes: Buffer.from('{"name":"fixture","version":"1.0.0"}'), deadline: Date.now() + 10000 }, { signal: new AbortController().signal });
+      const progress = [];
+      const result = await executeJob({ operation: 'prepare_dependencies', runId: 'run-prepare', jobId: 'job-prepare', packageJsonBytes: Buffer.from('{"name":"fixture","version":"1.0.0"}'), deadline: Date.now() + 10000 }, { signal: new AbortController().signal, onProgress: event => progress.push(event) });
       assert.equal(result.status, 'success', result.error || '');
       assert.equal(result.result.runId, 'run-prepare');
       assert.ok(written.some(bytes => bytes?.toString() === '{"name":"fixture","version":"1.0.0"}'));
       assert.ok(npmExecArgs.includes('npm')); assert.ok(npmExecArgs.includes('install')); assert.ok(npmExecArgs.includes('--package-lock-only'));
       assert.ok(npmExecArgs.includes('--ignore-scripts'));
+      const install = progress.find(event => event.state === 'started' && event.phase === 'dependency_lockfile');
+      assert.ok(install, 'Docker commands must appear before final verification evidence');
+      assert.equal(progress.filter(event => event.state === 'finished' && event.commandId === install.commandId).length, 1);
+      assert.ok(!JSON.stringify(progress).includes('package-lock-only'), 'raw arguments are not telemetry');
     });
 
     await t.test('verify_artifact rejects oversized input before Docker work', async () => {
@@ -72,6 +88,32 @@ test('worker runtime finite protocol and security constraints', async (t) => {
       const archive = Buffer.alloc(25 * 1024 * 1024, 7);
       const result = await executeJob({ operation: 'verify_artifact', runId: 'run-overflow', jobId: 'job-overflow', archiveBase64: archive.toString('base64'), inputSha256: createHash('sha256').update(archive).digest('hex'), deadline: Date.now() + 10000 }, { signal: new AbortController().signal });
       assert.equal(result.status, 'failed'); assert.match(result.result?.reason || result.error, /limit|exceed/i); assert.equal(spawnMock.mock.calls.length, before);
+    });
+
+    await t.test('protocol input pipe errors fail the job without an uncaught controller exception', async () => {
+      inputFault = true;
+      try {
+        const result = await executeJob({ operation: 'prepare_dependencies', runId: 'input-failure', jobId: 'input-failure',
+          packageJsonBytes: Buffer.from('{"name":"fixture","version":"1.0.0"}'), deadline: Date.now() + 1000 });
+        assert.equal(result.status, 'failed');
+      } finally { inputFault = false; }
+    });
+
+    await t.test('Docker command errors, aborts and deadlines produce exactly one safe terminal event', async () => {
+      for (const fault of ['throw', 'error', 'abort', 'timeout']) {
+        npmFault = fault;
+        const controller = new AbortController(), progress = [];
+        try {
+          const result = await executeJob({ operation: 'prepare_dependencies', runId: `run-${fault}`, jobId: `job-${fault}`,
+            packageJsonBytes: Buffer.from('{"name":"fixture","version":"1.0.0"}'), deadline: Date.now() + (fault === 'timeout' ? 1000 : 10000) }, {
+            signal: controller.signal, onProgress: event => { progress.push(event); if (fault === 'abort' && event.state === 'started' && event.phase === 'dependency_lockfile') setTimeout(() => controller.abort('user cancellation'), 5); }
+          });
+          assert.equal(result.status, 'failed');
+          const start = progress.find(event => event.state === 'started' && event.phase === 'dependency_lockfile');assert.ok(start);
+          const endings = progress.filter(event => event.commandId === start.commandId && event.state === 'finished');assert.equal(endings.length, 1);
+          assert.equal(endings[0].timedOut, fault === 'timeout');assert.equal(endings[0].exitCode, null);
+        } finally { npmFault = null; }
+      }
     });
 
     await t.test('unsupported operation and pre-abort fail closed', async () => {
@@ -117,7 +159,10 @@ test('worker runtime finite protocol and security constraints', async (t) => {
 test('child output capture retains bounded bytes and full digests', async () => {
   const proc = fakeChild(); const captured = captureChildOutput(proc, { maxBytes: 4 });
   const stdout = Buffer.from('abcdefgh'); const stderr = Buffer.from('xyz');
-  proc.stdout.emit('data', stdout); proc.stderr.emit('data', stderr); proc.emit('close', 0);
+  proc.stdout.emit('data', stdout); proc.stderr.emit('data', stderr);
+  const snapshot=captured.snapshot();assert.equal(snapshot.stdout,'abcd');assert.equal(snapshot.stderr,'xyz');
+  assert.equal(snapshot.stdoutSha256,createHash('sha256').update(stdout).digest('hex'));
+  proc.emit('close', 0);
   const result = await captured;
   assert.equal(result.stdout, 'abcd'); assert.equal(result.stdoutBytes, 8); assert.equal(result.stdoutTruncated, true);
   assert.equal(result.stdoutSha256, createHash('sha256').update(stdout).digest('hex'));
@@ -188,6 +233,22 @@ test('container exec arguments preserve node eval source as one argument', () =>
     'node', '/opt/worker/entrypoint.js',
     'node', '-e', source
   ]);
+});
+
+test('container exec carries a validated service port and per-run JWT secret without host credentials', () => {
+  const secret = 'f'.repeat(64);
+  assert.equal(typeof runtime.filterRuntimeEnvironment, 'function');
+  const serviceEnv = runtime.filterRuntimeEnvironment({ PORT: '5000', JWT_SECRET: secret, EXECUTION_WORKER_TOKEN: 'host-secret' });
+  assert.deepStrictEqual(serviceEnv, { PORT: '5000', JWT_SECRET: secret });
+  const args = runtime.buildContainerExecArgs({ containerName: 'owned-container', command: 'node', env: {
+    PORT: '5000', JWT_SECRET: secret, NODE_ENV: 'test', PATH: '/host/evil', EXECUTION_WORKER_TOKEN: 'host-secret'
+  } });
+  assert.ok(args.includes('PORT=5000')); assert.ok(args.includes(`JWT_SECRET=${secret}`));
+  assert.ok(!args.some(arg => arg.includes('/host/evil') || arg.includes('host-secret')));
+  for (const port of ['0', '80', '65536', '3000;anything', '-1']) {
+    const invalid = runtime.buildContainerExecArgs({ containerName: 'owned-container', command: 'node', env: { PORT: port, JWT_SECRET: 'host-secret' } });
+    assert.ok(!invalid.some(arg => arg.startsWith('PORT=') || arg.startsWith('JWT_SECRET=')));
+  }
 });
 
 test('workspace paths reject host and traversal forms', () => {

@@ -13,6 +13,7 @@ import {
 import { assertVerificationContext, commitVerificationContext, readApprovedVerificationContract } from './verificationContext.js';
 import { db, initializeDatabase, closeDatabase } from '../db.js';
 import { resolveWorkerRepairIssues, readWorkerSnapshotSync, snapshotHash } from '../engine/workerRepairs.js';
+import { acceptControlledRepairInTransaction } from '../engine/controlledRepairAcceptance.js';
 
 export async function recoverVerifiedWorkerRepair({ projectId, contract, workflow, attemptId, leaseOwner, signal }) {
     const ledger = workflow.workerRepairs;
@@ -72,6 +73,9 @@ export async function verifyArtifactAndProject({
 } = {}) {
     if (!projectId || !contractId || !artifactId) {
         throw new Error('projectId, contractId, and artifactId are required.');
+    }
+    if (options.controlledRepairAcceptance && (!complete || options.workerRepairValidationId)) {
+        throw new Error('Controlled repair acceptance requires exclusive canonical completion.');
     }
     const initialProject = getProject(projectId);
     if (!initialProject) throw new Error(`Project ${projectId} does not exist.`);
@@ -157,7 +161,10 @@ export async function verifyArtifactAndProject({
         artifactId,
         expectedRevision: project.revision,
         attemptId,
-        leaseOwner
+        leaseOwner,
+        ...(options.controlledRepairAcceptance ? { beforeAccept: () => acceptControlledRepairInTransaction(context, {
+            ...options.controlledRepairAcceptance, artifactId, runId: verification.runId
+        }) } : {})
     });
     return { ...receipt, passed: true, completed: true, completionReceiptId: completed.completionReceiptId, project: completed };
 }

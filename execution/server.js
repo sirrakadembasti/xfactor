@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { validateJob } from './protocol.js';
 import { JobStore } from './jobStore.js';
 import { executeJob, probeRuntimeReadiness, selectedRuntime } from './runtimeSelector.js';
+import { projectCommandProgress } from '../backend/verification/commandProgressProtocol.js';
 export function createWorkerServer({ config, store, executeJob, responseDelayMs = 0, probeRuntime = probeRuntimeReadiness }) {
   const token = config?.EXECUTION_WORKER_TOKEN || config?.WORKER_TOKEN;
   if (!token || !store || !executeJob) {
@@ -61,7 +62,8 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
       const p = executeJob(executionJob, {
         signal: abortController.signal,
         onResource: () => {},
-        onProgress: event => !abortController.signal.aborted && store.recordCommandDiagnostic(job.jobId, diagnosticsLease, event)
+        onProgress: event => !abortController.signal.aborted && store.recordCommandDiagnostic(job.jobId, diagnosticsLease, event),
+        onPhaseComplete: event => !abortController.signal.aborted && store.recordPhaseDiagnostic(job.jobId, diagnosticsLease, event)
       }).then((result) => {
         if (abortController.signal.aborted) return;
         if (Date.now() >= job.deadline) {
@@ -110,10 +112,12 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
           return res.end(JSON.stringify({ ...runtime, supportedTypes: ['prepare_dependencies', 'verify_artifact'], executionCapacity: true }));
         } catch (error) {
           // Never include runtime messages, stacks, paths, or arbitrary error properties.
-          const phase = ['tool_resolution', 'browser_launch', 'renderer_context', 'renderer_page', 'renderer_content', 'renderer_evaluate', 'browser_close'].includes(error?.readinessPhase) ? error.readinessPhase : 'unknown';
+          const phase = ['docker_info', 'image_inspect', 'tool_resolution', 'browser_launch', 'renderer_context', 'renderer_page', 'renderer_content', 'renderer_evaluate', 'browser_close'].includes(error?.readinessPhase) ? error.readinessPhase : 'unknown';
           const name = ['Error', 'TimeoutError', 'TypeError'].includes(error?.name) ? error.name : 'unknown';
-          const code = ['ECONNRESET', 'ENOENT', 'EACCES', 'EPERM', 'ETIMEDOUT'].includes(error?.code) ? error.code : 'unknown';
-          console.warn('[execution-worker] readiness failed ' + JSON.stringify({ phase, name, code }));
+          const code = ['RUNTIME_COMMAND_FAILED', 'ECONNRESET', 'ENOENT', 'EACCES', 'EPERM', 'ETIMEDOUT'].includes(error?.code) ? error.code : 'unknown';
+          const timing = {};
+          for (const key of ['readinessElapsedMs', 'readinessBudgetMs']) if (Number.isFinite(error?.[key]) && error[key] >= 0 && error[key] <= 120000) timing[key] = Math.round(error[key]);
+          console.warn('[execution-worker] readiness failed ' + JSON.stringify({ phase, name, code, ...timing }));
           res.writeHead(503);
           return res.end(JSON.stringify({ supportedTypes: [], executionCapacity: false, error: 'Isolated runtime is unavailable' }));
         }
@@ -230,6 +234,7 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
           res.writeHead(200);
           return res.end(JSON.stringify(identityResponse(job, {
             status: job.status,
+            diagnostics: { commands: projectCommandProgress(job.diagnostics?.commands) },
             ...(job.result ? { result: job.result } : {}),
             ...(job.completedAt ? { completedAt: job.completedAt } : {})
           })));

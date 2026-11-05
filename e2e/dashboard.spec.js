@@ -110,8 +110,10 @@ test('authorized dashboard renders redacted evidence and no mutation controls', 
   await page.getByLabel('Şifre').fill(password);
   await page.getByRole('button', { name: 'Giriş Yap' }).click();
 
-  await expect(page.getByText(/Bağımsız Sandbox Kanıtı|Independent Sandbox Evidence/i)).toBeVisible();
-  await expect(page.getByText(runId)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bağımsız Worker Kanıtı' })).toBeVisible();
+  const runButton = page.getByRole('button', { name: `${runId} doğrulama koşusunu incele` });
+  await expect(runButton).toBeVisible();
+  await runButton.click();
   await page.getByRole('button', { name: new RegExp(`api_contract.*${checkId}`, 'i') }).click();
 
   await expect(page.getByText('database_url=[REDACTED]')).toBeVisible();

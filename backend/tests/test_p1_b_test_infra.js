@@ -117,6 +117,20 @@ try {
         assert.equal(result.passed, false);
     });
 
+    await runAsyncTest('Node tests with the tsx loader require real TAP test cases', async () => {
+        const files = [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --import tsx --test tests/*.test.js' } }) },
+            { path: 'tests/system.test.js', content: '' }];
+        for (const [name, expected] of [['tests/system.test.js', false], ['creates a real category', true]]) {
+            const adapter = {
+                id: 'tsx-suite', getCapabilities: () => ({ available: true, isolation: true }),
+                async execute() { return { passed: true, exitCode: 0, stdout: `TAP version 13\nok 1 - ${name}\n# tests 1\n# pass 1`, stderr: '' }; }
+            };
+            const result = await verifyTestInfrastructure('/workspace', {}, { adapter, files });
+            assert.equal(result.checks.find(check => check.name === 'test_script_presence')?.status, 'passed');
+            assert.equal(result.passed, expected);
+        }
+    });
+
     await runAsyncTest('7. a silent runner cannot prove any test executed', async () => {
         const adapter = {
             id: 'silent-suite', getCapabilities: () => ({ available: true, isolation: true }),

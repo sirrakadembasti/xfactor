@@ -119,7 +119,7 @@ async function fixture() {
     db.prepare("UPDATE projects SET status='implementing',workflow_state=? WHERE id=?").run(JSON.stringify(workflow), project.id);
     const owner = `owner-${project.id}`, lease = acquireWorkflowLease(project.id, owner);
     projectContractTasks({ projectId: project.id, contractId: contract.id, contractHash: contract.contract_hash, teamleaderPlans: workflow.teamleaderPlans, attemptId: lease.attempt.id, leaseOwner: owner });
-    const files = await collectArtifactFiles(projectDir); files.push({ path: 'package-lock.json', content: '{}' });
+    const files = await collectArtifactFiles(projectDir); files.push({ path: 'package-lock.json', content: '{"lockfileVersion":3,"packages":{}}' });
     const artifact = await createProjectZip(project.id, contract.id, files);
     const identity = { version: 1, operation: 'verify_artifact', projectId: project.id, contractId: contract.id, contractHash: contract.contract_hash,
         revision: 1, artifactId: artifact.id, inputSha256: artifact.sha256, runId: `reject-${project.id}`, jobId: `job-${project.id}`, nonce: `nonce-${project.id}` };
@@ -195,7 +195,7 @@ async function resumeFixture(f, services) {
     return executeProjectTasks(f.project.id, null, lease.attempt.id, f.sourceFence.leaseOwner, services);
 }
 const fixed = { files: [{ path: 'src/price.ts', content: 'export const price: number = 42;' }] };
-const fakeClient = f => ({ prepareDependencies: async () => ({ status: 'completed', result: { packageLockBase64: Buffer.from('{}').toString('base64') } }),
+const fakeClient = f => ({ prepareDependencies: async () => ({ status: 'completed', result: { packageLockBase64: Buffer.from('{"lockfileVersion":3,"packages":{}}').toString('base64') } }),
     verifyArtifact: async identity => ({ ...identity, status: 'completed', result: { ...identity, checks: f.passingChecks() } }) });
 
 for (const outcome of ['unchanged', 'malformed', 'provider failure']) await runAsyncTest(`consumed ${outcome} reservation survives reload and prevents duplicate Coder payment`, async () => {
@@ -308,7 +308,8 @@ await runAsyncTest('actual worker ingestion and real HTTP log route share the re
 });
 for (const failure of ['dependency transport', 'expired verification']) await runAsyncTest(`${failure} is a durable controller blocker across normal Resume`, async () => {
     const f = await fixture(); const calls = [];
-    const services = { callAgent: async role => { calls.push(role); return role === 'coder' ? fixed : { approved: true, summary: 'Passed', issues: [] }; },
+    const services = { loadRecordedDependencyLock: async () => null,
+        callAgent: async role => { calls.push(role); return role === 'coder' ? fixed : { approved: true, summary: 'Passed', issues: [] }; },
         createExecutionClient: () => ({ ...fakeClient(f), prepareDependencies: async () => {
             calls.push('prepare'); if (failure === 'dependency transport') throw new Error('ECONNRESET dependency worker transport');
             return fakeClient(f).prepareDependencies();
@@ -331,7 +332,7 @@ await runAsyncTest('two changed-input repairs exhaust the owner cap despite new 
     const { verifyArtifact } = await import('../verification/artifactVerifier.js');
     const { loadOpenWorkerRepairBatch } = await import('../verification/workerFailures.js');
     const rejectCurrent = async suffix => {
-        const files = await collectArtifactFiles(f.projectDir); files.push({ path: 'package-lock.json', content: '{}' });
+        const files = await collectArtifactFiles(f.projectDir); files.push({ path: 'package-lock.json', content: '{"lockfileVersion":3,"packages":{}}' });
         const artifact = await createProjectZip(f.project.id, f.contract.id, files);
         const identity = { ...f.identity, artifactId: artifact.id, inputSha256: artifact.sha256, runId: `new-${suffix}-${f.project.id}`,
             jobId: `new-job-${suffix}`, nonce: `new-nonce-${suffix}` };

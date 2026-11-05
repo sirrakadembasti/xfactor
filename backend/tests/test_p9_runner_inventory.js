@@ -3,13 +3,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertCompleteTestInventory, TEST_INVENTORY } from './testInventory.js';
+import { assertCompleteTestInventory, discoverTestFiles, TEST_INVENTORY } from './testInventory.js';
 import { runTestFile } from './test_runner.js';
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const inventory = await assertCompleteTestInventory(testsDir);
 assert.deepEqual(inventory.unclassifiedTestFiles, []);
 assert.deepEqual(inventory.staleInventoryEntries, []);
+// Default directory must resolve on every platform (Windows file URLs carry a drive letter).
+assert.deepEqual(await discoverTestFiles(), inventory.discovered);
 assert.ok(TEST_INVENTORY.every(entry => entry.classification && Array.isArray(entry.prerequisites)));
 assert.ok(TEST_INVENTORY.find(entry => entry.file === 'test_p8_sandbox_limits.js').prerequisites.includes('docker-daemon'));
 console.log(`Runner inventory complete: ${inventory.discovered.length} test files classified.`);

@@ -11,7 +11,7 @@
 
 ## 1. Uygulamayı Güncel Kaynaklardan Öğrenme (Zorunlu)
 
-Bu dosya çalışma kurallarını tanımlar. Uygulamanın mimarisi, özellikleri, iş kuralları, durumları, sınırları, sürümleri ve tarihli test sonuçları burada tekrar tutulmaz. Her oturumda, uygulama hakkında karar vermeden veya değişiklik yapmadan önce aşağıdaki kaynakları okuyarak güncel bağlamı edin:
+Bu dosya çalışma kurallarını ve kısa devralma kaydını tutar. Ayrıntılı mimari, kullanım ve tarihsel kayıtlar aşağıdaki kaynaklardadır. Uygulama hakkında karar vermeden önce göreve ilişkin kaynakları oku:
 
 1. **`README.md`:** Uygulamanın amacı, güncel yetenekleri, mimarisi, kurulum/çalıştırma akışı ve doğrulama kapsamı.
 2. **`kullanici-kilavuzu.md`:** Kullanıcı yolculukları, onay/revizyon, hata ve kurtarma davranışları, arayüz ve teslim kuralları.
@@ -100,5 +100,30 @@ foreach ($f in 'CLAUDE.md','README.md','kullanici-kilavuzu.md','docs/faz-arsiv.m
 ### İş Bitiminde Zorunlu Kapanış Adımları
 1. İlgili birim/entegrasyon testlerini çalıştır (`$env:XFACTOR_TEST_RUNNER_FILES="..."` veya tam süit).
 2. `npm run graph` komutunu çalıştırarak `graphify-out/` çıktılarını güncelle ve `test_graphify.js` + `test_p9_runner_inventory.js` testlerinin geçtiğini doğrula.
-3. Mimari, davranış veya akış değiştiyse `README.md`, `kullanici-kilavuzu.md` ve ilgili `docs/faz-arsiv.md` kayıtlarını güncelle. `CLAUDE.md` dosyasını yalnız çalışma kuralları veya kaynaklara erişim yönergeleri değiştiyse güncelle; uygulama bilgilerini burada çoğaltma.
-4. Değişen dosyaları ve doğrulama/test yöntemini kullanıcıya özetle.
+3. Mimari, davranış veya akış değiştiyse `README.md`, `kullanici-kilavuzu.md` ve ilgili `docs/faz-arsiv.md` kayıtlarını güncelle. Devralma gerekiyorsa `CLAUDE.md` içindeki kısa durum ve açık iş kaydını yenile.
+4. Değişen dosyaları ve doğrulama/test yöntemini kullanıcıya özetle. Kullanıcı testleri durdurduysa test başlatma ve doğrulamanın kapsamını açıkça belirt.
+
+## 5. Devralma — 5 Kasım 2026 röntgeni
+
+Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontgen-2026-11-05.md) dosyasındadır. Oturuma başlamadan önce şu dört noktayı bil:
+
+- **Commit durumu:** 29 Ekim'den bu yana commit edilmemiş çalışma, kullanıcı onayıyla `faz-0/zemin-sabitleme` dalında altı commit'e bölündü: worker, doğrulama, kontrollü onarım, frontend, test kararlılığı ve belgeler. Dal henüz `main`'e alınmadı ve push edilmedi. Ara commit'ler tek başına test geçmeyebilir; tam süit dalın ucunda geçer.
+- **Testler (5 Kasım, Faz 0 sonrası):** backend 176/176 süit, worker 202/202 test geçti. Üç bozuk test yeni API alanlarına ve `productionLanguagePolicy.js` dosyasına göre hizalandı. Sağlık testi ile worker dosya bütçeleri yüke dayanıklı hâle getirildi. Launcher testi açık göreli yolla çağrılıyor. Dal [PR #3](https://github.com/sirrakadembasti/xfactor/pull/3) olarak açıldı. İlk CI koşusunda, `main`'de 29 Ekim'den beri süren hatalar ortaya çıktı. Bunlar ve PR içindeki bir gerileme düzeltildi:
+  - Takma adlı geçici dizin (macOS `/private/var`, Windows 8.3) için kanonik workspace tabanı.
+  - Kapsamsız worker izlenebilirliği artık `skipped`; backend otoriter kalıyor.
+  - Ubuntu Chromium sandbox ayarı.
+  - `npm audit`: backend için patch yükseltmeleri, frontend'de vitest 4.1.12.
+
+  Kalan Faz 0 işi: CI'ın yeşil olması ve `main`'e alınması. Ayrıntılar röntgen raporunun Faz 0 bölümünde. Yerel worker entegrasyonu, E2E ve Docker süitleri çalıştırılmadı.
+- **Yol haritası sırası:** Faz 0 (zemin: commit ayrıştırma ve kırık testler) → Faz 1 (güvenlik: üretimde varsayılan admin, sabit dev token) → Faz 2 (şema: sahiplik tek kaynak, CHECK/FK, migrasyon 18+) → Faz 3 (API sözleşmesi) → Faz 4 (modül disiplini) → Faz 5 (stok-takip teslimi).
+- **stok-takip-1:** sözleşme 3 onaylı; sözleşme 4 (30 Ekim) hâlâ `pending_approval`. Bu taslak onaylanırsa tam DAG üretimi yeniden tetiklenebilir. Devam etmeden önce taslak için kullanıcı kararı al.
+
+## 5a. Devralma — 4 Kasım 2026
+
+XFactor, Manager sohbetinden onaylı sözleşmeye ve tek dosyalık üretim görevlerine ilerler. Backend görev, checkpoint, paket ve kabul kayıtlarını yönetir. `execution/` bağımsız Worker ile kurulumu, derlemeyi, API'yi ve Chromium akışlarını sınar. Frontend, Manager, Kalite Paneli, DAG ve log ekranlarını sunar. Kabul, güncel kaynaklara bağlı zorunlu kanıt ve kalıcı teslim makbuzu gerektirir. Başlangıç noktaları `backend/engine/workflow.js`, `backend/verification/artifactVerifier.js`, `execution/server.js` ve `frontend/src/App.jsx`.
+
+Son geliştirmeler aynı sözleşmede yeniden doğrulama, tek dosya hedefleriyle sınırlı onarım, bağımsız kanıt incelemesi ve canlı Worker ilerlemesi üzerinde yoğunlaştı. `backend/engine/controlledRepairs.js`, `controlledRepairLineage.js`, `controlledSemanticPlan.js` ve `backend/routes/projectRepairRoutes.js` onarım zincirini kurar. `frontend/src/components/DashboardView.jsx` ve `ExecutionProgress.jsx` geçmişi ve canlı komutları gösterir. `execution/browserRunner.cjs` rol girişinde geçici test parolası kullanır. `execution/registryProxy.js` eksik paket aktarımını kaydeder. Bu belge commit'i platform kaynak değişikliklerini kapsamıyor. Devralırken çalışma ağacını kontrol et.
+
+**Açık iş:** `stok-takip-1` duraklatıldı, sözleşme 3 onaylı ve son iki test dosyası XFactor tarafından yazıldı. `7893b21a` koşusunda API, dört rol senaryosu ve sistem testi komutu geçti. Daha yeni `3269a25b` koşusu 21 PASS, 7 FAIL, 7 BLOCKED ile kapandı. `tests/test-helper.ts` gerçek servis türlerine uymadığı için TypeScript ve derleme başarısız, dolayısıyla güncel paket için API ve tarayıcı kanıtı oluşmadı. Gereksinim bağları ve Türkçe arayüz incelemesi açık. Ayrıntı [faz arşivinde](docs/faz-arsiv.md#halka-32--4-kasım-stok-takip-devralma-kaydı).
+
+Kullanıcı yeniden yetki verdiğinde önce güncel koşu ve aktif Worker durumunu doğrula. Sözleşme 3 ve mevcut üretim kayıtlarını koruyarak yalnız XFactor'ın sınırlı onarım akışıyla test yardımcısının servis imzalarını düzelt. Üretilen proje dizinine elle girme veya kaynaklarını değiştirme. Ardından gerçek davranışa dayalı gereksinim bağlarını ve bağımsız Türkçe arayüz kanıtını tamamla. RootLayout için gerçek prerender, lint için gerçek React bileşenlerinde etkin ESLint kuralı gerekir. Güncel bağımsız koşu ve makbuz gelmeden teslim bildirimi yapma. Bu devirde hedef kullanıcı isteğiyle duraklatıldı ve yeni test çalıştırılmadı.

@@ -6,13 +6,16 @@ import path from 'node:path';
 import JSZip from '../../backend/node_modules/jszip/lib/index.js';
 import { extractLocalArchive } from '../localArchive.js';
 
+// OS temp dirs may be aliased (macOS /var, Windows 8.3 names); owned fixtures live under the canonical path.
+const CANONICAL_TMP = await fs.realpath(os.tmpdir());
+
 async function archive(files, options = {}) {
   const zip = new JSZip();
   for (const [name, content] of Object.entries(files)) zip.file(name, content, { createFolders: false });
   return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX', compression: 'STORE', ...options });
 }
 async function owned(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-archive-test-'));
+  const root = await fs.mkdtemp(path.join(CANONICAL_TMP, 'xfactor-archive-test-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   return root;
 }

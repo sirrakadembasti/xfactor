@@ -93,7 +93,10 @@ try {
 
         assert.ok(prompt.includes(testError), `Prompt should contain the exact error string '${testError}'`);
         assert.ok(buildManagerChatSystemPrompt().includes('HALÜSİNASYON YASAKTIR'), 'Prompt should contain anti-hallucination instruction');
-        assert.ok(buildManagerChatSystemPrompt().includes('SON GERÇEK MOTOR HATASI VE TEKNİK DETAY'), 'Prompt should contain error section header');
+        const systemPrompt = buildManagerChatSystemPrompt();
+        assert.match(systemPrompt, /Motor hatası error/);
+        assert.match(systemPrompt, /verificationFailures/);
+        assert.match(systemPrompt, /recoveryAction=manager_revision/);
     });
 
     await runAsyncTest('2. buildManagerChatSystemPrompt falls back to state.last_error if workflow attempt has no error', async () => {

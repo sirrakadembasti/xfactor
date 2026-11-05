@@ -114,6 +114,67 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+test.each(['response', 'error'])('repair review fences a late %s after a project switch', async outcome => {
+  const pending = deferred();
+  const patched = { ...projectA, status: 'paused',
+    repairSemanticReview: { available: true, planHash: 'repair-plan', remainingReviews: 1 },
+    workflow: { controlledRepair: { phase: 'patched', proposal: {
+      contractId: 'approved-contract', planHash: 'repair-plan', ready: true, targets: [], summary: 'Mevcut düzeltmeler'
+    } } } };
+  const spies = setupApi({ stateFor: id => id === projectA.id ? patched : projectB });
+  const review = vi.spyOn(api, 'reviewProjectRepair').mockReturnValue(pending.promise);
+  render(<App />);
+  await waitForHeading(projectA.title);
+  const button = screen.getByRole('button', { name: 'Mevcut düzeltmeleri incele ve yeniden kontrol et' });
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  expect(review).toHaveBeenCalledWith(projectA.id, 'approved-contract', 'repair-plan', expect.objectContaining({
+    headers: expect.objectContaining({ 'X-XFactor-Action-Id': expect.stringMatching(/^repair-review-/) })
+  }));
+  expect(spies.approveProject).not.toHaveBeenCalled();
+  expect(spies.resumeProject).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+  await waitForHeading(projectB.title);
+  await act(async () => {
+    if (outcome === 'response') pending.resolve({ ...patched, title: 'Stale repair review', chatHistory: [{ role: 'model', parts: [{ text: 'Stale repair review' }] }] });
+    else pending.reject(new Error('Stale repair review'));
+  });
+  expect(screen.getByText('B current state')).toBeInTheDocument();
+  expect(screen.queryByText(/Stale repair review/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Manager düşünüyor/)).not.toBeInTheDocument();
+});
+
+test('repair review applies canonical state and releases thinking after completion', async () => {
+  const pending = deferred();
+  const patched = { ...projectA, status: 'paused', repairSemanticReview: { available: true, planHash: 'repair-plan' },
+    workflow: { controlledRepair: { phase: 'patched', proposal: { contractId: 'approved-contract', targets: [], ready: true } } } };
+  setupApi({ stateFor: id => id === projectA.id ? patched : projectB });
+  vi.spyOn(api, 'reviewProjectRepair').mockReturnValue(pending.promise);
+  render(<App />);
+  await waitForHeading(projectA.title);
+  fireEvent.click(screen.getByRole('button', { name: 'Mevcut düzeltmeleri incele ve yeniden kontrol et' }));
+  await act(async () => pending.resolve({ ...projectA, chatHistory: [{ role: 'model', parts: [{ text: 'İnceleme tamamlandı.' }] }] }));
+  expect(screen.getByText('İnceleme tamamlandı.')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText(/Manager ile mimariyi/)).not.toBeDisabled();
+});
+
+test('returning to the original project does not revive its old review response', async () => {
+  const pending = deferred();
+  const patched = { ...projectA, status: 'paused', repairSemanticReview: { available: true, planHash: 'repair-plan' },
+    workflow: { controlledRepair: { phase: 'patched', proposal: { contractId: 'approved-contract', targets: [], ready: true } } } };
+  setupApi({ stateFor: id => id === projectA.id ? patched : projectB });
+  vi.spyOn(api, 'reviewProjectRepair').mockReturnValue(pending.promise);
+  render(<App />);
+  await waitForHeading(projectA.title);
+  fireEvent.click(screen.getByRole('button', { name: 'Mevcut düzeltmeleri incele ve yeniden kontrol et' }));
+  fireEvent.click(screen.getByText(projectB.title, { selector: 'span' }));
+  await waitForHeading(projectB.title);
+  fireEvent.click(screen.getByText(projectA.title, { selector: 'span' }));
+  await waitForHeading(projectA.title);
+  await act(async () => pending.resolve({ ...patched, chatHistory: [{ role: 'model', parts: [{ text: 'Stale returned review' }] }] }));
+  expect(screen.queryByText('Stale returned review')).not.toBeInTheDocument();
+});
+
 
   test('helper sync and pin actions refresh active project state with fenced action requests', async () => {
     const spies = setupApi();

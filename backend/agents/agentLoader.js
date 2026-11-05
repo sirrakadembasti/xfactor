@@ -1,4 +1,5 @@
 import { agentRoleFile, readAgentDocument } from './agentPaths.js';
+import { PRODUCTION_LANGUAGE_POLICY } from './productionLanguagePolicy.js';
 
 /**
  * Yalnız sabit x-agents kökündeki izinli rol dosyasını okur.
@@ -31,5 +32,7 @@ PLATFORM ORKESTRASYON ANAYASASI (tam metin):
 ${constitution}
 
 ROL TALİMATI (${agentName}; tam metin):
-${role}`;
+${role}
+
+${PRODUCTION_LANGUAGE_POLICY}`;
 }

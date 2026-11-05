@@ -1,4 +1,5 @@
 import cp from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { mkdir, realpath, writeFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
@@ -8,6 +9,21 @@ import { describeCommand } from './commandDiagnostics.js';
 const RETAIN_BYTES = 1024 * 1024;
 const HARD_BYTES = 8 * RETAIN_BYTES;
 const PROTECTED_ENV = /^(?:PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|HOME|USERPROFILE|HOMEDRIVE|HOMEPATH|TEMP|TMP|TMPDIR|APPDATA|LOCALAPPDATA|NODE_OPTIONS|NODE_PATH|NPM_CONFIG_CACHE|NPM_CONFIG_LOGS_DIR|NPM_CONFIG_USERCONFIG|NPM_CONFIG_GLOBALCONFIG|XFACTOR_NPM_CLI|XFACTOR_LOCAL_PARENT_PID|XFACTOR_LOCAL_JOB_.*)$/i;
+
+function annotateSpawnFailure(error, executable, args, cwd, env) {
+  if (!error || typeof error.message !== 'string' || error.launchContext) return error;
+  // Fixed labels, booleans and sizes only: never expose paths, arguments or env values.
+  const context = { stage: 'spawn',
+    code: /^[A-Z0-9_]{1,32}$/.test(error.code || '') ? error.code : 'UNKNOWN',
+    errno: Number.isInteger(error.errno) ? error.errno : null,
+    launcherPresent: existsSync(executable), cwdPresent: existsSync(cwd),
+    argumentCharacters: args.reduce((size, value) => size + value.length, 0),
+    environmentCharacters: Object.entries(env).reduce((size, [key, value]) => size + key.length + value.length + 2, 0),
+    ipcConnected: process.connected === true, rssMiB: Math.round(process.memoryUsage().rss / 1024 ** 2) };
+  error.launchContext = context;
+  error.message = `${error.message} [launch ${JSON.stringify(context)}]`;
+  return error;
+}
 
 export async function createLocalProcessManager({ tools, workspace, deadline = Date.now() + 900000, signal, onResource, onProgress, cacheRoot, npmCacheDirectory, resourceLimits = {} } = {}) {
   if (!path.isAbsolute(workspace || '') || !path.isAbsolute(cacheRoot || '') || !path.isAbsolute(tools?.node || '') || !path.isAbsolute(tools?.npm || '')) throw new Error('Local process manager requires absolute owned workspace, cacheRoot, and trusted tools');
@@ -85,7 +101,9 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
         && !(npmCacheDirectory && /^NPM_CONFIG_REGISTRY$/i.test(name)) && value !== undefined && value !== null) env[name] = String(value);
     }
     const actualArgs = host ? [tools.node, ...spec.args] : spec.args;
-    const child = cp.spawn(host || tools.node, actualArgs, { cwd, env, shell: false, windowsHide: true, detached: !isWindows, stdio: ['pipe', 'pipe', 'pipe'] });
+    let child;
+    try { child = cp.spawn(host || tools.node, actualArgs, { cwd, env, shell: false, windowsHide: true, detached: !isWindows, stdio: ['pipe', 'pipe', 'pipe'] }); }
+    catch (error) { throw annotateSpawnFailure(error, host || tools.node, actualArgs, cwd, env); }
     const record = { child, closedDone: false, failure: null, commandId: ++commandSequence, timedOut: false }; tracked.add(record);
     progress({ state: 'started', commandId: record.commandId, ...description, startedAt: Date.now() });
     const output = { stdout: [], stderr: [] }; const retained = { stdout: 0, stderr: 0 }; const sizes = { stdout: 0, stderr: 0 };
@@ -102,7 +120,7 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
     if (!Number.isFinite(timeout) || timeout <= 0) { record.failure = new Error('Invalid command timeout'); terminate(record); }
     const ms = Math.max(1, Math.min(Number.isFinite(timeout) && timeout > 0 ? timeout : 1, deadline - Date.now()));
     record.closed = new Promise(resolve => {
-      child.once('error', error => { record.failure ||= error; });
+      child.once('error', error => { record.failure ||= annotateSpawnFailure(error, host || tools.node, actualArgs, cwd, env); });
       // POSIX descendants can hold pipes open after root exit; kill the group before close.
       if (!isWindows) child.once('exit', () => terminate(record));
       child.once('close', (exitCode, exitSignal) => {

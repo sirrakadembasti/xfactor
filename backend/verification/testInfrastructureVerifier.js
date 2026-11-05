@@ -3,6 +3,8 @@ import path from 'path';
 import crypto from 'crypto';
 import { executeInSandbox } from './sandboxRunner.js';
 
+const nativeNodeTest = /^(?:(?:npx|pnpm exec)\s+)?node(?:\.exe)?\s+(?:--import\s+tsx\s+)?--test(?:\s|$)/i;
+
 function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
@@ -11,7 +13,7 @@ export function hasExecutedTests(output, { testScript = '', files = [] } = {}) {
     if (/(?:^\s*0\s+(?:passing|passed|tests?)\b|^\s*#\s*(?:tests|pass)\s+0\b)/im.test(output)) return false;
     const counted = /(?:#\s*(?:tests|pass)\s+[1-9]\d*\b|\b[1-9]\d*\s+(?:passing|passed|tests?|başarılı)\b)/i.test(output);
     if (!counted) return false;
-    if (/\bnode(?:\.exe)?\s+--test(?:\s|$)/i.test(testScript) && /TAP version 13/.test(output)) {
+    if (nativeNodeTest.test(testScript.trim()) && /TAP version 13/.test(output)) {
         const names = [...output.matchAll(/^\s*ok\s+\d+\s+-\s+(.+)$/gm)].filter(match => !/\s+#\s*(?:SKIP|TODO)\b/i.test(match[1])).map(match => match[1].trim().replace(/\\/g, '/'));
         const paths = files.map(file => String(file.path || '').replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase());
         // Node wraps an empty file in a successful file-level subtest. That wrapper
@@ -46,7 +48,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     const placeholder = typeof testScript === 'string'
         && (/(?:no\s+tests?\s+(?:specified|found)|echo\s+["']?test\s+not\s+implemented)/i.test(testScript)
             || shellComposition
-            || !/^(?:(?:npx|pnpm exec)\s+)?(?:node(?:\.exe)?\s+--test(?:\s|$)|(?:vitest|jest|mocha|ava|tap)\b|playwright\s+test\b|bun\s+test\b)/i.test(testScript.trim()));
+            || (!nativeNodeTest.test(testScript.trim())
+                && !/^(?:(?:npx|pnpm exec)\s+)?(?:(?:vitest|jest|mocha|ava|tap)\b|playwright\s+test\b|bun\s+test\b)/i.test(testScript.trim())));
     if (!testScript || typeof testScript !== 'string' || testScript.trim().length === 0 || placeholder) {
         checks.push({
             name: 'test_script_presence',

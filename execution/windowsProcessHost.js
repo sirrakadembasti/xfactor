@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { readFile, mkdir, stat, rename, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat, lstat, link, rename, rm, rmdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
@@ -8,7 +8,7 @@ export const isWindows = process.platform === 'win32';
 const nativeRoot = fileURLToPath(new URL('./native/', import.meta.url));
 const pending = new Map();
 
-export async function ensureWindowsProcessHost({ cacheRoot, signal, deadline } = {}) {
+export async function ensureWindowsProcessHost({ cacheRoot, signal, deadline, allowBuild = true } = {}) {
   if (!isWindows) return null;
   const check = () => {
     if (signal?.aborted) throw new Error('Cancelled by user');
@@ -22,6 +22,48 @@ export async function ensureWindowsProcessHost({ cacheRoot, signal, deadline } =
   check();
   const hash = createHash('sha256').update(source).update(script).digest('hex');
   const output = path.join(cacheRoot, `windows-process-host-${hash}.exe`);
+  const receiptPath = `${output}.receipt.json`;
+  const hostError = (code, message) => Object.assign(new Error(message), { code });
+  const integrityError = () => hostError('LOCAL_HOST_INTEGRITY', 'Windows process host integrity check failed. Review the local-worker installation; no replacement was built.');
+  const unavailableError = () => hostError('LOCAL_HOST_UNAVAILABLE', 'Previously prepared Windows process host is unavailable. Automatic rebuilding is blocked; review operating-system protection events and the local-worker installation.');
+  async function recordHost(sha256) {
+    const temporaryRecord = path.join(cacheRoot, `.windows-process-host-record-${randomUUID()}.json`);
+    try {
+      await writeFile(temporaryRecord, JSON.stringify({ version: 1, sourceHash: hash, sha256 }), { flag: 'wx', mode: 0o600 });
+      try { await link(temporaryRecord, receiptPath); return true; }
+      catch (error) { if (error.code === 'EEXIST') return false; throw error; }
+    } finally { await rm(temporaryRecord, { force: true }); }
+  }
+  async function cachedHost() {
+    let receipt, hasReceipt = false;
+    try {
+      const info = await lstat(receiptPath);
+      if (!info.isFile() || info.isSymbolicLink() || info.size > 1024) throw integrityError();
+      receipt = JSON.parse(await readFile(receiptPath, 'utf8')); hasReceipt = true;
+      if (receipt?.version !== 1 || receipt.sourceHash !== hash || !/^[a-f0-9]{64}$/.test(receipt.sha256 || '')) throw integrityError();
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw integrityError();
+    }
+    let info;
+    try { info = await lstat(output); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (!info) {
+      if (hasReceipt) throw unavailableError();
+      return null;
+    }
+    if (!info.isFile() || info.isSymbolicLink()) throw integrityError();
+    let bytes;
+    try { bytes = await readFile(output); }
+    catch (error) { if (error.code === 'ENOENT') throw unavailableError(); throw error; }
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    if (hasReceipt) {
+      if (receipt.sha256 !== sha256) throw integrityError();
+    } else {
+      // Record an existing cache without claiming its signature or malware status.
+      await recordHost(sha256);
+      return cachedHost();
+    }
+    return output;
+  }
   const ownsBuild = !pending.has(output);
   if (ownsBuild) pending.set(output, build().finally(() => pending.delete(output)));
   if (ownsBuild) {
@@ -44,7 +86,33 @@ export async function ensureWindowsProcessHost({ cacheRoot, signal, deadline } =
   async function build() {
     await mkdir(cacheRoot, { recursive: true });
     check();
-    try { if ((await stat(output)).isFile()) return output; } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    const lockPath = `${output}.lock`;
+    const waitUntil = Math.min(Date.now() + 120000, deadline ?? Infinity);
+    let ownsLock = false;
+    try {
+      while (!ownsLock) {
+        check();
+        try { await mkdir(lockPath); ownsLock = true; }
+        catch (error) {
+          if (error.code !== 'EEXIST') throw error;
+          if (Date.now() >= waitUntil) throw hostError('LOCAL_HOST_BUSY', 'Windows process host preparation is locked. Review any interrupted local-worker installation; no lock was taken over.');
+          await new Promise(resolve => setTimeout(resolve, 25));
+        }
+      }
+      check();
+      return await prepareHost();
+    } finally {
+      if (ownsLock) {
+        try { await rmdir(lockPath); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+      }
+    }
+  }
+
+  async function prepareHost() {
+    check();
+    const cached = await cachedHost();
+    if (cached) return cached;
+    if (!allowBuild) throw hostError('LOCAL_HOST_UNAVAILABLE', 'Windows process host is not prepared. Validation-only checking does not build an executable.');
     const temporary = path.join(cacheRoot, `.windows-process-host-${randomUUID()}.exe`);
     const powershell = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     try {
@@ -63,9 +131,15 @@ export async function ensureWindowsProcessHost({ cacheRoot, signal, deadline } =
       });
       check();
       if (!(await stat(temporary)).isFile()) throw new Error('Windows process host compiler produced no executable');
+      // A legacy or independent installer may have published while compilation ran.
+      const preparedByOther = await cachedHost();
+      if (preparedByOther) return preparedByOther;
+      // Retain the preparation record if protection subsequently removes the EXE.
+      const recorded = await recordHost(createHash('sha256').update(await readFile(temporary)).digest('hex'));
+      if (!recorded) return cachedHost();
       try { await rename(temporary, output); }
       catch (error) { if (error.code !== 'EEXIST' && error.code !== 'EPERM') throw error; if (!(await stat(output)).isFile()) throw error; }
-      return output;
+      return cachedHost();
     } finally {
       await rm(temporary, { force: true });
       await rm(temporary.replace(/\.exe$/, '.pdb'), { force: true });

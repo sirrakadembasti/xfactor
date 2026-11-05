@@ -9,6 +9,20 @@ const { runAsyncTest, finish } = createTestHarness();
 const tempDirs = [];
 async function createTempWorkspace(prefix = 'xfactor-smoke-test-') { const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix)); tempDirs.push(dir); return dir; }
 try {
+    await runAsyncTest('early service exit is retained as a failed runtime observation before cleanup',async()=>{
+        const workspace=await createTempWorkspace();
+        await fs.writeFile(path.join(workspace,'service-manifest.json'),JSON.stringify({version:'1.0',services:{web:{type:'nextjs',command:'node',args:['server.js'],port:3000,healthEndpoint:'/'}}}));
+        await fs.writeFile(path.join(workspace,'package.json'),JSON.stringify({scripts:{test:'node --test test.js'}}));
+        const child=new EventEmitter();child.pid=42;child.stdout=new EventEmitter();child.stderr=new EventEmitter();
+        const adapter={id:'early-exit-fixture',getCapabilities:()=>({available:true,isolation:true,serviceSpawn:true}),spawn:async()=>child,kill:async()=>{},
+            request:async()=>({statusCode:200,rawBody:'<html>ready</html>'}),execute:async()=>{
+                child.stderr.emit('data',Buffer.from('actual service crash'));child.emit('close',1,null);
+                return {passed:true,exitCode:0,stdout:'# tests 1\n# pass 1',stderr:''};}};
+        const result=await verifyProjectSmoke(workspace,{}, {adapter,startupTimeoutMs:100});
+        const observation=result.checks.find(check=>check.name==='service_spawn');
+        assert.equal(observation.status,'failed');assert.match(observation.stderr,/actual service crash/);assert.equal(observation.evidence.processObservation.exitCode,1);
+        assert.equal(result.passed,false);
+    });
     await runAsyncTest('1. verifyProjectSmoke executes adapter-only unified runtime validation', async () => {
         const workspace = await createTempWorkspace();
         await fs.writeFile(path.join(workspace, 'service-manifest.json'), JSON.stringify({ version: '1.0', services: { backend: { type: 'express', port: 3000, healthEndpoint: '/health' } } }));
@@ -114,7 +128,7 @@ try {
                 { path: 'service-manifest.json', content: JSON.stringify(manifest) },
                 { path: 'package.json', content: JSON.stringify({ scripts: { test: 'echo ok' } }) },
                 { path: 'src/app/api/tasks/route.ts', content: 'export async function GET() {}\nexport async function POST() {}' },
-                { path: 'src/app/page.tsx', content: 'export default function Page() { return <main>Tasks</main>; }' }
+                { path: 'src/app/page.tsx', content: 'export default function Page() { return <div>Tasks</div>; }' }
             ]
         });
         assert.ok(result.checks.some(check => check.name === 'api_status_check' && check.status === 'passed'));

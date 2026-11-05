@@ -1,15 +1,130 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import fsPromises from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execFile, spawn } from 'node:child_process';
-import { once } from 'node:events';
+import cp from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+import { createHash } from 'node:crypto';
+import { once, EventEmitter } from 'node:events';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { ensureWindowsProcessHost } from '../windowsProcessHost.js';
 
 const windows = process.platform === 'win32';
+async function hostGuardFixture(t) {
+  const cacheRoot = await mkdtemp(path.join(os.tmpdir(), 'xfactor-process-host-guard-'));
+  assert.equal(path.dirname(cacheRoot), os.tmpdir());
+  t.after(() => rm(cacheRoot, { recursive: true, force: true }));
+  const sourceHash = createHash('sha256')
+    .update(await readFile(new URL('../native/windowsProcessHost.cs', import.meta.url)))
+    .update(await readFile(new URL('../native/build-windows-process-host.ps1', import.meta.url))).digest('hex');
+  const output = path.join(cacheRoot, `windows-process-host-${sourceHash}.exe`);
+  return { cacheRoot, output, receipt: `${output}.receipt.json`, sourceHash };
+}
+
+test('recorded native host removal stops before any automatic compilation', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  await writeFile(fixture.receipt, JSON.stringify({ version: 1, sourceHash: fixture.sourceHash, sha256: 'a'.repeat(64) }));
+  let compilerCalls = 0;
+  t.mock.method(cp, 'execFile', () => { compilerCalls++; throw new Error('Unexpected compiler invocation'); });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  await assert.rejects(ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot }), { code: 'LOCAL_HOST_UNAVAILABLE' });
+  assert.equal(compilerCalls, 0, 'a removed or quarantined host must not be silently recreated');
+  await assert.rejects(readFile(fixture.output), { code: 'ENOENT' });
+});
+
+test('validation-only native host check never compiles an empty cache', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  let compilerCalls = 0;
+  t.mock.method(cp, 'execFile', () => { compilerCalls++; throw new Error('Unexpected compiler invocation'); });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  await assert.rejects(ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot, allowBuild: false }), { code: 'LOCAL_HOST_UNAVAILABLE' });
+  assert.equal(compilerCalls, 0);
+});
+
+test('recorded native host digest mismatch stops before execution or rebuilding', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  await writeFile(fixture.output, 'fixture bytes; never executable or executed');
+  await writeFile(fixture.receipt, JSON.stringify({ version: 1, sourceHash: fixture.sourceHash, sha256: 'a'.repeat(64) }));
+  await assert.rejects(ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot }), { code: 'LOCAL_HOST_INTEGRITY' });
+});
+
+test('recorded native host removal during hashing keeps the unavailable classification', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  const bytes = Buffer.from('fixture bytes; never executed');
+  await writeFile(fixture.output, bytes);
+  await writeFile(fixture.receipt, JSON.stringify({ version: 1, sourceHash: fixture.sourceHash,
+    sha256: createHash('sha256').update(bytes).digest('hex') }));
+  const originalReadFile = fsPromises.readFile;
+  t.mock.method(fsPromises, 'readFile', (file, ...args) => {
+    if (file === fixture.output) return Promise.reject(Object.assign(new Error('Removed between stat and read'), { code: 'ENOENT' }));
+    return originalReadFile(file, ...args);
+  });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  await assert.rejects(ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot }), { code: 'LOCAL_HOST_UNAVAILABLE' });
+});
+
+test('another native host installer lock is preserved when a waiting caller cancels', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  const bytes = Buffer.from('existing fixture cache; never executed');
+  await writeFile(fixture.output, bytes);
+  await writeFile(fixture.receipt, JSON.stringify({ version: 1, sourceHash: fixture.sourceHash,
+    sha256: createHash('sha256').update(bytes).digest('hex') }));
+  t.mock.method(cp, 'execFile', () => { throw new Error('Compiler must not run in this fixture'); });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  const lock = `${fixture.output}.lock`;
+  await fsPromises.mkdir(lock);
+  const controller = new AbortController();
+  const waiting = ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot, signal: controller.signal });
+  const rejected = assert.rejects(waiting, /Cancelled by user/);
+  rejected.catch(() => {}); // Observe the assertion below after cancellation too.
+  await new Promise(resolve => setTimeout(resolve, 30));
+  controller.abort(); await rejected;
+  assert.ok((await readdir(fixture.cacheRoot)).includes(path.basename(lock)), 'a waiter never removes another installer lock');
+});
+
+test('cached native host records a digest so later removal is not a fresh installation', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  const bytes = Buffer.from('fixture bytes; never executable or executed');
+  await writeFile(fixture.output, bytes);
+  assert.equal(await ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot }), fixture.output);
+  const receipt = JSON.parse(await readFile(fixture.receipt, 'utf8'));
+  assert.deepEqual(receipt, { version: 1, sourceHash: fixture.sourceHash, sha256: createHash('sha256').update(bytes).digest('hex') });
+  await assert.rejects(fsPromises.stat(`${fixture.output}.lock`), { code: 'ENOENT' });
+});
+
+test('concurrent native host preparation never overwrites the winning recorded executable', { skip: !windows }, async t => {
+  const fixture = await hostGuardFixture(t);
+  const winner = Buffer.from('winning fixture bytes; never executed');
+  const loser = Buffer.from('different competing fixture bytes; never executed');
+  t.mock.method(cp, 'execFile', (_command, args, _options, callback) => {
+    const compiler = new EventEmitter();
+    queueMicrotask(async () => {
+      try {
+        await writeFile(args[args.indexOf('-OutputPath') + 1], loser);
+        // Another process publishes its executable and record while this build runs.
+        await writeFile(fixture.output, winner);
+        await writeFile(fixture.receipt, JSON.stringify({ version: 1, sourceHash: fixture.sourceHash,
+          sha256: createHash('sha256').update(winner).digest('hex') }));
+        callback(null, '', ''); compiler.emit('close', 0);
+      } catch (error) { callback(error, '', ''); compiler.emit('close', 1); }
+    });
+    return compiler;
+  });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  assert.equal(await ensureWindowsProcessHost({ cacheRoot: fixture.cacheRoot }), fixture.output);
+  assert.deepEqual(await readFile(fixture.output), winner);
+  assert.ok((await readdir(fixture.cacheRoot)).every(name => !name.startsWith('.windows-process-host-')),
+    'the losing build removes only its own staging file');
+});
 let sharedCache;
 after(async () => { if (sharedCache) await rm(sharedCache, { recursive: true, force: true }); });
 async function fixture(t) {

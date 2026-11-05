@@ -291,7 +291,7 @@ await runAsyncTest('7. state projection failure rolls back run, checks, links, a
     );
 });
 
-await runAsyncTest('8. production runner links mandatory requirements to passing smoke evidence', async () => {
+await runAsyncTest('8. production runner links only explicitly owned passing API evidence', async () => {
     const seeded = seedVerificationCase('runner-links', 'implementation_finished');
     const result = await runProjectVerification({
         projectId: seeded.projectId,
@@ -318,7 +318,7 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
                         'api_query_check', 'database_mutation_assertion', 'browser_page_load',
                         'browser_journey_steps', 'service_spawn', 'smoke_liveness_probe',
                         'smoke_gate', 'test_script_presence', 'test_suite_execution'
-                    ].map(passingCheck)
+                    ].map(name => ({ ...passingCheck(name), requirementIds: name === 'api_query_check' ? [seeded.requirementId] : [] }))
                 }),
                 domain: async () => ({ passed: true, issues: [] }),
                 placeholders: async () => ({ passed: true, issues: [] }),
@@ -346,7 +346,8 @@ await runAsyncTest('8. production runner links mandatory requirements to passing
           AND requirement_check_links.requirement_id = ?
           AND verification_checks.run_id = ?
     `).all(seeded.contractId, seeded.requirementId, result.runId);
-    assert.ok(linkedGates.some(row => row.gate_name === 'smoke_gate'));
+    assert.ok(linkedGates.some(row => row.gate_name === 'api_contract'));
+    assert.ok(!linkedGates.some(row => row.gate_name === 'smoke_gate'));
 });
 
 await runAsyncTest('9. invalid requirement link rolls back every evidence write', async () => {

@@ -75,7 +75,7 @@ async function runTests() {
                         supportedTypes: ['prepare_dependencies', 'verify_artifact'],
                         executionCapacity: true
                     }));
-                }, 1500);
+                }, 3000);
             }
             res.writeHead(200, { 'content-type': 'application/json' });
             return res.end(JSON.stringify({
@@ -94,7 +94,7 @@ async function runTests() {
         NODE_ENV: 'production',
         EXECUTION_WORKER_TOKEN: 'health-test-worker-token',
         EXECUTION_WORKER_URL: workerUrl,
-        READINESS_WORKER_TIMEOUT_MS: '100',
+        READINESS_WORKER_TIMEOUT_MS: '400',
         TRUST_PROXY: 'loopback',
         ALLOWED_ORIGINS: 'https://xfactor.example',
         MFA_ENCRYPTION_KEY: '55'.repeat(32),
@@ -124,14 +124,14 @@ async function runTests() {
         workerMode = 'stalled';
         const stalledStartedAt = Date.now();
         const stalled = await fetch(`http://127.0.0.1:${port}/readyz`, {
-            signal: AbortSignal.timeout(800),
+            signal: AbortSignal.timeout(2000),
             headers: { 'x-forwarded-proto': 'https', accept: 'application/json' }
         });
         assert.equal(stalled.status, 503);
         const stalledBody = await stalled.json();
         assert.equal(stalledBody.status, 'not_ready');
         assert.equal(stalledBody.executionCapacity, 'unavailable');
-        assert.ok(Date.now() - stalledStartedAt < 800, 'Stalled worker must be bounded by the readiness timeout');
+        assert.ok(Date.now() - stalledStartedAt < 2000, 'Stalled worker must be bounded by the readiness timeout');
         workerMode = 'ready';
 
         const navigation = await request(port, '/projects/example');

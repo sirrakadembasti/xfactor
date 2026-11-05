@@ -8,18 +8,23 @@ import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 import { assertVerificationContext, commitVerificationContext } from './verificationContext.js';
 import { db as globalDatabase } from '../db.js';
-import { normalizeWorkerCheckLog, redactObservedEvidence, summarizeWorkerRejection, recordWorkerRejection, recordVerificationBlocker } from './workerFailures.js';
+import { normalizeWorkerCheckLog, redactObservedEvidence, retainSemanticEvidence, summarizeWorkerRejection, recordWorkerRejection, recordVerificationBlocker } from './workerFailures.js';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
 import { verifyPlaceholders } from './placeholderVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
 import { verifySecurityBaseline } from './securityVerifier.js';
+import { evaluateRequirementCoverage } from './requirementCoverage.js';
+import { compilePersistedControlledVerificationPlan, controlledAssertionExecutionWindow } from '../engine/controlledSemanticAuthority.js';
+import { authenticateControlledAssertionReservation } from '../engine/controlledSemanticPlan.js';
+import { evaluateRequirementAssertionExecution, normalizeAssertionInventoryFile } from '../contracts/requirementAssertionBindings.js';
+import { evaluateUiLanguageEvidence } from '../contracts/uiLanguageEvidence.js';
 import {
     combineRuntimeGate,
     captureHardeningGate,
     RUNTIME_GATE_MEMBERS,
     MANDATORY_GATES
 } from './qualityPolicy.js';
-import { isManagementArtifactDetail, bindWorkerCheck, createWorkerReceipt, WORKER_RECEIPT_GATE,
+import { isManagementArtifactDetail, isSemanticArtifactDetail, bindWorkerCheck, createWorkerReceipt, WORKER_RECEIPT_GATE,
     assertManagementCoverage } from './artifactEvidencePolicy.js';
 
 async function loadRepositoryDefaults() {
@@ -64,6 +69,7 @@ export function normalizeWorkerCheckStatus(value, mandatory = false) {
 }
 
 export function isMandatoryArtifactCheck(gateName, contract = {}) {
+    if (isSemanticArtifactDetail(gateName)) return true;
     if (MANDATORY_GATES.includes(gateName)) return true;
     return isManagementArtifactDetail(gateName, contract);
 }
@@ -240,6 +246,14 @@ export async function verifyArtifact(
     };
     compare(submitted, persistedManifest, 'manifest');
     compare(submitted, persistedFiles, 'file rows');
+    const semanticFiles = entries.map(item => normalizeAssertionInventoryFile({ path: item.path, content: item.content }));
+    const authenticatedPlan = () => {
+        if (!options.verificationPlan) return null;
+        const compiled = compilePersistedControlledVerificationPlan({ database, projectId, files: semanticFiles, identity: expected });
+        if (JSON.stringify(compiled.plan) !== JSON.stringify(options.verificationPlan)) throw Error('Controlled verification plan differs from persisted authority.');
+        return compiled;
+    };
+    let semanticAuthority = authenticatedPlan();
     let runCreated = false;
     try {
         runLeaseTransaction(database, assertLease, () => {
@@ -262,11 +276,13 @@ export async function verifyArtifact(
         const workerJob = {
             ...expected,
             contract: JSON.parse(contract.contract_json),
-            archiveBase64
+            archiveBase64,
+            ...(semanticAuthority ? { verificationPlan: semanticAuthority.plan } : {})
         };
         const result = await executionClient.verifyArtifact(workerJob, { signal: options.signal });
         assertLease();
         assertIdentity(result, expected);
+        semanticAuthority = authenticatedPlan();
         if (!TERMINAL_WORKER_STATES.has(result.status)) {
             throw new Error(`Worker returned illegal terminal status: ${result.status}`);
         }
@@ -275,13 +291,52 @@ export async function verifyArtifact(
             'domain_entity_check',
             'placeholder_check',
             'contamination_check',
-            'security_baseline'
+            'security_baseline',
+            'requirement_traceability'
         ]);
         const rawWorkerChecks = Array.isArray(workerResult.checks) ? workerResult.checks : [];
         const filteredWorkerChecks = rawWorkerChecks.filter(c => !AUTHORITATIVE_BACKEND_GATES.has(c?.gateName || c?.name || c?.gate_name));
-        const workerChecks = filteredWorkerChecks.map(check => ({ ...check, id: crypto.randomUUID() }));
+        const workerChecks = filteredWorkerChecks.map(check => ({ ...check, id: crypto.randomUUID(),
+            ...(isSemanticArtifactDetail(check.gateName || check.name) ? { evidence: { ...(check.evidence || {}), workerSourceCheckId: check.id,
+                controlledSemanticSourceHash: semanticAuthority?.plan.sourceHash || null,
+                controlledSemanticPlanHash: semanticAuthority?.plan.planHash || null } } : {}) }));
+        for (const name of ['requirement_assertions', 'ui_language_evidence']) {
+            const rows = workerChecks.filter(check => (check.gateName || check.name) === name);
+            if (semanticAuthority && rows.length === 0) {
+                workerChecks.push({ id: crypto.randomUUID(), name, applicability: 'MANDATORY', status: 'blocked',
+                    requirementIds: [], reason: 'Worker omitted required controlled semantic evidence.' });
+                continue;
+            }
+            for (const check of rows) {
+                let valid = false;
+                if (semanticAuthority && rows.length === 1 && result.status === 'completed' && ['PASS', 'passed'].includes(check.status)) {
+                    const { plan, ledger, requirements } = semanticAuthority;
+                    if (name === 'requirement_assertions' && plan.assertionReview) {
+                        const evaluation = evaluateRequirementAssertionExecution({ ...plan.assertionReview, files: semanticFiles,
+                            execution: check.evidence?.assertionExecution,
+                            expectedExecution: { jobId: expected.jobId, runId, artifactId, artifactHash: expected.inputSha256,
+                                contractId, checkId: check.evidence?.workerSourceCheckId, sourceHash: plan.sourceHash,
+                                ...(controlledAssertionExecutionWindow(ledger, expected) ? { authorizedWindow: controlledAssertionExecutionWindow(ledger, expected) } : {}) } }, {
+                            authenticateReservation: reservation => authenticateControlledAssertionReservation(ledger, requirements, reservation),
+                            authenticateReceipt: () => true }); // outer worker identity was authenticated above
+                        valid = evaluation.status === 'passed';
+                        if (valid) {
+                            const mandatoryIds = new Set(requirements.filter(row => row.mandatory === 1 || row.mandatory === true).map(row => row.id));
+                            check.requirementIds = [...new Set(evaluation.reviewedBindings.map(binding => binding.requirementId).filter(id => mandatoryIds.has(id)))];
+                        }
+                    } else if (name === 'ui_language_evidence' && plan.uiLanguageReview) {
+                        valid = Object.entries(plan.uiLanguageReview.binding).every(([key, value]) => check.evidence?.binding?.[key] === value)
+                            && check.evidence?.advisory !== true && check.evidence?.needsReview !== true
+                            && evaluateUiLanguageEvidence(plan.uiLanguageReview.catalogue, check.evidence?.inventory).status === 'passed';
+                    }
+                }
+                if (!valid) {
+                    check.status = 'blocked'; check.passed = false; check.requirementIds = [];
+                    check.reason = check.reason || 'Fresh independently reviewed source-bound semantic evidence is incomplete.';
+                }
+            }
+        }
         const workerCheckIds = new Set(workerChecks.map(check => check.id));
-        const existingGateNames = new Set(workerChecks.map(c => c.gateName || c.name));
         const additionalChecks = [];
 
         const mandatoryRequirementIds = database.prepare(`
@@ -317,13 +372,13 @@ export async function verifyArtifact(
             additionalChecks.push(await captureHardeningGate(name, fn));
         }
 
-        if (!existingGateNames.has('requirement_traceability')) {
+        {
             const allSoFar = [...workerChecks, ...additionalChecks];
             for (const check of allSoFar) check.id ||= crypto.randomUUID();
             const passingChecks = allSoFar.filter(c => c.status === 'passed' || c.status === 'PASS');
-            const coveredReqIds = new Set(passingChecks.flatMap(c => c.requirementIds || []));
-            const missingMandatoryIds = mandatoryRequirementIds.filter(id => !coveredReqIds.has(id));
-            const allMandatoryCovered = missingMandatoryIds.length === 0 && (mandatoryRequirementIds.length === 0 || passingChecks.length > 0);
+            const coverage = evaluateRequirementCoverage({ mandatoryRequirementIds, checks: allSoFar });
+            const missingMandatoryIds = coverage.missingRequirementIds;
+            const allMandatoryCovered = coverage.passed;
             const allPassed = allMandatoryCovered && allSoFar.every(c => c.status === 'passed' || c.status === 'PASS' || (c.status === 'skipped' && !isMandatoryArtifactCheck(c.gateName || c.name, parsedContract)));
             const timestamp = new Date().toISOString();
             additionalChecks.push({
@@ -344,6 +399,7 @@ export async function verifyArtifact(
                     producer: 'quality-policy',
                     sourceGateNames: passingVerificationSourceNames(allSoFar),
                     sourceCheckIds: passingChecks.map(check => check.id),
+                    coverage,
                     computedAt: timestamp,
                     policyVersion: ACTIVE_POLICY_VERSION
                 }
@@ -365,8 +421,15 @@ export async function verifyArtifact(
             const isExecutable = Boolean(check.command) || (check.exitCode !== null && check.exitCode !== undefined);
             const isMandatoryCheck = applicability === 'MANDATORY';
             const isPassingClaim = ['passed', 'PASS', 'NOT_APPLICABLE'].includes(check.status) || check.exitCode === 0;
-            const missingEvidence = isWorkerCheck && isExecutable && isMandatoryCheck && isPassingClaim && (
-                !check.startedAt || !check.endedAt || !check.stdoutDigest || !check.stderrDigest
+            const claimsRequirements = Array.isArray(check.requirementIds) && check.requirementIds.length > 0;
+            const completeOwnershipEvidence = typeof check.command === 'string' && Boolean(check.command.trim()) && check.exitCode === 0
+                && typeof check.startedAt === 'string' && typeof check.endedAt === 'string'
+                && Number.isFinite(Date.parse(check.startedAt)) && Number.isFinite(Date.parse(check.endedAt))
+                && Date.parse(check.endedAt) >= Date.parse(check.startedAt)
+                && /^[a-f0-9]{64}$/i.test(check.stdoutDigest || '') && /^[a-f0-9]{64}$/i.test(check.stderrDigest || '');
+            const missingEvidence = isWorkerCheck && isPassingClaim && (
+                (isExecutable && isMandatoryCheck && (!check.startedAt || !check.endedAt || !check.stdoutDigest || !check.stderrDigest))
+                || (claimsRequirements && !completeOwnershipEvidence)
             );
 
             let status = normalizeWorkerCheckStatus(check.status, isMandatory);
@@ -390,8 +453,16 @@ export async function verifyArtifact(
 
             const checkEvidence = check.evidence ?? check.evidenceJson ?? {};
             const log = normalizeWorkerCheckLog(check);
+            let retainedEvidence;
+            try { retainedEvidence = isSemanticArtifactDetail(gateName) ? retainSemanticEvidence(checkEvidence) : redactObservedEvidence(checkEvidence); }
+            catch {
+                status = 'BLOCKED'; check.requirementIds = [];
+                reason = 'Semantic evidence is unsafe or exceeds its complete-proof retention limit.';
+                log.reason = reason;
+                retainedEvidence = { semanticEvidenceRejected: true, reason };
+            }
             const evidenceJsonPayload = {
-                ...redactObservedEvidence(checkEvidence),
+                ...retainedEvidence,
                 ...log,
                 ...(missingEvidence ? { reason } : {})
             };
@@ -425,9 +496,30 @@ export async function verifyArtifact(
                 evidenceJson: evidenceJsonPayload,
                 timedOut: Boolean(check.timedOut)
             };
-            if (isWorkerCheck && result.status === 'completed') record = bindWorkerCheck(record, expected);
+            // A completed semantic action in a product-failed job can supply
+            // diagnostic observation, never aggregate acceptance. Interrupted,
+            // timed-out and synthetic omitted actions cannot gain this receipt.
+            if (isWorkerCheck && (result.status === 'completed'
+                || (result.status === 'failed' && isSemanticArtifactDetail(gateName)
+                    && typeof check.evidence?.workerSourceCheckId === 'string' && check.evidence.workerSourceCheckId.length > 0))) {
+                record = bindWorkerCheck(record, expected);
+            }
             records.push(record);
         }
+
+        // Recheck ownership against normalized machine verdicts. A raw PASS with
+        // missing execution evidence must never authorize a requirement link.
+        const normalizedCoverage = evaluateRequirementCoverage({ mandatoryRequirementIds,
+            checks: allChecks.filter(check => (check.gateName || check.name) !== 'requirement_traceability')
+                .map(check => ({ ...check, status: records.find(record => record.id === check.id)?.status || 'BLOCKED' })) });
+        if (!normalizedCoverage.passed) {
+            const trace = records.find(record => record.gateName === 'requirement_traceability');
+            trace.status = 'BLOCKED';
+            trace.evidenceJson = { ...trace.evidenceJson, coverage: normalizedCoverage,
+                reason: 'Mandatory requirements lack explicit passing machine evidence.' };
+        }
+        const knownRequirementIds = new Set(database.prepare('SELECT id FROM requirements WHERE contract_id=?').all(contractId).map(row => row.id));
+        const qualifiedCoverageCheckIds = new Set(normalizedCoverage.sources.flatMap(source => source.checkIds));
 
         let managementError = null;
         try { assertManagementCoverage(records, parsedContract); } catch (error) { managementError = error.message; }
@@ -443,8 +535,9 @@ export async function verifyArtifact(
             }
             for (const check of allChecks) {
                 const rec = records.find(r => r.id === check.id);
-                if (rec && rec.status === 'PASS') {
+                if (rec && rec.status === 'PASS' && qualifiedCoverageCheckIds.has(check.id)) {
                     for (const requirementId of check.requirementIds || []) {
+                        if (!knownRequirementIds.has(requirementId)) continue;
                         linkRequirementToCheck({ contractId, requirementId, verificationCheckId: check.id });
                     }
                 }
@@ -467,7 +560,7 @@ export async function verifyArtifact(
                             unknownMandatory && 'Worker returned an unknown mandatory gate.'].filter(Boolean)
                     })
                 }, database);
-                database.prepare(`
+                if (options.preserveGenerationRecords !== true) database.prepare(`
                     UPDATE task_checkpoints
                     SET status = 'invalidated', invalidation_reason = 'VERIFICATION_FAILED', invalidated_at = ?
                     WHERE project_id = ? AND contract_id = ? AND invalidated_at IS NULL
@@ -504,7 +597,7 @@ export async function verifyArtifact(
                         projectId, contractId, artifactId,
                         status: 'rejected', verificationRunId: runId
                     });
-                    database.prepare(`
+                    if (options.preserveGenerationRecords !== true) database.prepare(`
                         UPDATE task_checkpoints
                         SET status = 'invalidated', invalidation_reason = 'VERIFICATION_FAILED', invalidated_at = ?
                         WHERE project_id = ? AND contract_id = ? AND invalidated_at IS NULL

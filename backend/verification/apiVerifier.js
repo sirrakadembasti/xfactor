@@ -5,6 +5,12 @@ import { randomBytes } from 'node:crypto';
 
 // Correlation values must also fit bounded domain fields, including fixture suffixes.
 function probeNonce() { return randomBytes(9).toString('base64url'); }
+function expectedFixtureIdentity(body, nonce, identityField) {
+    if (!identityField) return nonce;
+    const identity=body?.[identityField];
+    if (typeof identity !== 'string' || !identity.includes(nonce)) throw new Error('Rendered fixture identity must contain the current correlation nonce.');
+    return identity;
+}
 
 function containsCreatedRecord(value, createdId, nonce, identityField = null) {
     if (Array.isArray(value)) return value.some(item => containsCreatedRecord(item, createdId, nonce, identityField));
@@ -265,7 +271,7 @@ async function verifyItemMutations({ apiBaseUrl, collectionUrl, resource, manage
             const record = findRecordById(after.data, recordId);
             const persisted = operation === 'update'
                 ? after.statusCode >= 200 && after.statusCode < 300
-                    && containsCreatedRecord(after.data, recordId, updatedNonce, identityField)
+                    && containsCreatedRecord(after.data, recordId, expectedFixtureIdentity(body, updatedNonce, identityField), identityField)
                 : after.statusCode >= 200 && after.statusCode < 300
                     && (fixture.deleteExpectation.kind === 'absent' ? !record
                         : existing?.[fixture.deleteExpectation.field] !== fixture.deleteExpectation.equals
@@ -495,13 +501,14 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
             for (const role of denied) {
                 try {
                     const deniedNonce = probeNonce();
-                    const response = await roleRequest({ url, method: 'POST', role: role.name,
-                        data: renderBody(resource.verification?.createBody, deniedNonce, { name: deniedNonce, title: deniedNonce }, null, fixtureContext.ids, fixtureContext.now) });
+                    const deniedBody=renderBody(resource.verification?.createBody, deniedNonce, { name: deniedNonce, title: deniedNonce }, null, fixtureContext.ids, fixtureContext.now);
+                    const deniedIdentity=expectedFixtureIdentity(deniedBody,deniedNonce,identityField);
+                    const response = await roleRequest({ url, method: 'POST', role: role.name, data: deniedBody });
                     const blocked = response.statusCode === 401 || response.statusCode === 403;
                     const check = { name: 'api_role_create_denied', status: blocked ? 'passed' : 'failed',
                         statusCode: response.statusCode, evidence: { adapterId, role: role.name, resource: resource.name } };
                     checks.push(check);
-                    deniedProbes.push({ check, nonce: deniedNonce, role: role.name });
+                    deniedProbes.push({ check, nonce: deniedNonce, identity:deniedIdentity, role: role.name });
                     if (!blocked) issues.push(`Forbidden role ${role.name} could create ${resource.name}.`);
                 } catch (error) {
                     checks.push({ name: 'api_role_create_denied', status: 'blocked', reason: error.message });
@@ -512,7 +519,7 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
                 const read = await roleRequest({ url, method: 'GET', role: readers[0].name });
                 const ok = read.statusCode >= 200 && read.statusCode < 300;
                 for (const probe of deniedProbes) {
-                    if (containsCreatedRecord(read.data, null, probe.nonce, identityField)) {
+                    if (containsCreatedRecord(read.data, null, probe.identity, identityField)) {
                         probe.check.status = 'failed';
                         probe.check.reason = 'Forbidden mutation persisted despite denial response.';
                         issues.push(`Forbidden role ${probe.role} persisted ${resource.name} despite denial.`);
@@ -520,10 +527,11 @@ export async function verifyAPIContract(apiBaseUrl, dbPath, contract = {}, optio
                 }
                 checks.push({ name: 'api_query_check', status: ok ? 'passed' : 'failed',
                     statusCode: read.statusCode, evidence: { adapterId, role: readers[0].name, url } });
-                const createdId = created?.data && typeof created.data === 'object' ? created.data.id : null;
-                recordId = createdId ?? findRecordByNonce(read.data, nonce, identityField)?.id ?? null;
+                const createdId = created?.data && typeof created.data === 'object' ? (created.data.id ?? created.data.data?.id ?? null) : null;
+                const expectedIdentity=expectedFixtureIdentity(fixtureContext.createBody,nonce,identityField);
+                recordId = createdId ?? findRecordByNonce(read.data, expectedIdentity, identityField)?.id ?? null;
                 const persisted = ok && created?.statusCode >= 200 && created.statusCode < 300
-                    && containsCreatedRecord(read.data, createdId, nonce, identityField);
+                    && containsCreatedRecord(read.data, createdId, expectedIdentity, identityField);
                 checks.push({ name: 'database_mutation_assertion', status: persisted ? 'passed' : 'failed',
                     reason: persisted ? 'Created record was found by an authorized API read.' : 'Authorized write was not corroborated by readback.',
                     evidence: { adapterId, resource: resource.name, createdId, nonce, readback: persisted } });

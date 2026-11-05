@@ -55,6 +55,34 @@ function createApi(overrides = {}) {
   };
 }
 
+test('shows a failed preparation with no new run while keeping old verification evidence explicitly historical', async () => {
+  render(<DashboardView projectId={projectId} apiClient={createApi({ getExecutionProgress: async () => ({
+    projectId, active: false, available: false, advisory: true, commands: [], lastAttempt: {
+      id: 'latest-preparation', status: 'failed', stage: 'prepare_dependencies', noVerificationRun: true,
+      startedAt: '2026-11-01T20:53:09Z', endedAt: '2026-11-01T21:08:11Z', error: 'Deadline exceeded during execution'
+    }
+  }) })} />);
+  expect(await screen.findByText(/Son bağımlılık hazırlığı başarısız/)).toBeInTheDocument();
+  expect(screen.getByText(/Bu denemede yeni doğrulama koşusu oluşmadı/)).toBeInTheDocument();
+  expect(screen.getByText(/Deadline exceeded during execution/)).toBeInTheDocument();
+  expect(await screen.findByText('run-evidence-001')).toBeInTheDocument();
+  expect(screen.queryByText('Kanıtlar yükleniyor…')).not.toBeInTheDocument();
+});
+
+test('shows a recorded execution failure even when there is no console output or exit code', async () => {
+  const failedCheck = { ...check, status: 'FAIL', exit_code: null, timed_out: 0,
+    reason: 'Build execution error: spawn UNKNOWN' };
+  render(<DashboardView projectId={projectId} apiClient={createApi({
+    getVerificationRun: async () => ({ run, checks: [failedCheck] }),
+    getVerificationCheckLog: async () => ({ id: check.id, stdout: '', stderr: '' })
+  })} />);
+  fireEvent.click(await screen.findByRole('button', { name: `${check.gate_name} kanıtı ${check.id}` }, { timeout: 5000 }));
+  const evidence = await screen.findByRole('region', { name: 'Seçili kontrolün makine kanıtı' });
+  expect(within(evidence).getByText('Build execution error: spawn UNKNOWN')).toBeInTheDocument();
+  expect(evidence).not.toHaveTextContent(/Bu kontrol zaman sınırına takıldı/);
+  expect(evidence.lastChild).not.toHaveTextContent(/^0$/);
+});
+
 test('renders authoritative run history and evidence identifiers without mutation controls', async () => {
   render(<DashboardView projectId={projectId} projectTitle="Dashboard Project" apiClient={createApi()} />);
 
@@ -78,7 +106,7 @@ test('a verified historical run never hides the current failed or paused project
   expect(current).toHaveTextContent(/geçmiş.*güncel teslim onayı değildir/i);
   // The immutable historical PASS remains visible; it cannot silently become
   // an assertion about this failed revision.
-  expect(screen.getByText('Doğrulandı')).toBeInTheDocument();
+  expect(within(screen.getByRole('row', { name: /run-evidence-001/ })).getByText('Doğrulandı')).toBeInTheDocument();
   rerender(<DashboardView projectId={projectId} projectStatus="paused" apiClient={apiClient} />);
   expect(current).toHaveTextContent('Güncel çalışma duraklatıldı');
   rerender(<DashboardView projectId={projectId} projectStatus="completed" apiClient={apiClient} />);
@@ -106,6 +134,7 @@ test('explains the panel purpose, status meanings, and selected run summary befo
 
   expect(screen.getByRole('heading', { name: /Bu panel neyi gösterir/i })).toBeInTheDocument();
   expect(screen.getByText(/PASS.*kontrol başarıyla tamamlandı/i)).toBeInTheDocument();
+  expect(screen.getByText(/FAIL.*kontrol başarıyla tamamlanamadı/i)).toBeInTheDocument();
   expect(await screen.findByText(/1 kontrol geçti/i)).toBeInTheDocument();
   expect(screen.getByText(/API uç noktaları/i)).toBeInTheDocument();
 });
@@ -228,6 +257,69 @@ test('shows a bounded error state when run history cannot be loaded', async () =
 
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Kalite geçmişi yüklenemedi|Quality history could not be loaded/i));
   expect(screen.queryByText('network secret')).not.toBeInTheDocument();
+  expect(screen.queryByText('Kanıtlar yükleniyor…')).not.toBeInTheDocument();
+  expect(screen.queryByText('Kontroller yükleniyor…')).not.toBeInTheDocument();
+});
+
+test('empty history and failed detail requests stop their spinners', async () => {
+  const view = render(<DashboardView projectId={projectId} apiClient={createApi({
+    getVerificationRuns: async () => ({ runs: [], nextCursor: null })
+  })} />);
+  expect(await screen.findByText('Kayıtlı doğrulama kanıtı bulunamadı.')).toBeVisible();
+  expect(screen.queryByText('Kontroller yükleniyor…')).not.toBeInTheDocument();
+  view.unmount();
+  render(<DashboardView projectId={projectId} apiClient={createApi({
+    getVerificationRun: async () => { throw new Error('secret detail error'); }
+  })} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Doğrulama kanıtı yüklenemedi.');
+  expect(screen.queryByText('Kontroller yükleniyor…')).not.toBeInTheDocument();
+  expect(screen.queryByText('secret detail error')).not.toBeInTheDocument();
+});
+
+test('polling recovers initial history and detail errors and clears obsolete alerts', async () => {
+  vi.useFakeTimers();
+  try {
+    const apiClient = createApi({
+      getVerificationRuns: vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue({ runs: [run] }),
+      getVerificationRun: vi.fn().mockRejectedValueOnce(new Error('offline detail')).mockResolvedValue({ run, checks: [check] })
+    });
+    await act(async () => render(<DashboardView projectId={projectId} apiClient={apiClient} />));
+    expect(screen.queryByText('Kanıtlar yükleniyor…')).not.toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.getByRole('alert')).toHaveTextContent('Doğrulama kanıtı yüklenemedi.');
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('api_contract')).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+test('running without final checks shows advisory command progress rather than completed gates', async () => {
+  const running = { ...run, status: 'running', ended_at: null };
+  render(<DashboardView projectId={projectId} apiClient={createApi({
+    getVerificationRuns: async () => ({ runs: [running] }),
+    getVerificationRun: async () => ({ run: running, checks: [] }),
+    getExecutionProgress: async () => ({ projectId, active: true, available: true, advisory: true, operation: 'verify_artifact',
+      status: 'running', observedAt: new Date().toISOString(), commands: [
+        { commandId: 1, phase: 'dependency_install', executable: 'npm', startedAt: Date.now(), endedAt: null, exitCode: null }
+      ] })
+  })} />);
+  expect(await screen.findByText(/Bağımlılık kurulumu/)).toBeVisible();
+  expect(screen.getByText(/Nihai kontrol kanıtları.*koşu tamamlandığında/i)).toBeVisible();
+  expect(screen.getByText(/Canlı ilerleme.*kabul kanıtı değildir/i)).toBeVisible();
+  expect(screen.queryByRole('button', { name: /kanıtı check-/ })).not.toBeInTheDocument();
+});
+
+test('progress from an old project is discarded when its delayed response arrives', async () => {
+  const oldProgress = deferred();
+  const apiClient = createApi({ getExecutionProgress: id => id === projectId ? oldProgress.promise
+    : Promise.resolve({ projectId: id, active: false, available: false }) });
+  const view = render(<DashboardView projectId={projectId} apiClient={apiClient} />);
+  await screen.findByText(run.id);
+  view.rerender(<DashboardView projectId="next-project" apiClient={apiClient} />);
+  await act(async () => oldProgress.resolve({ projectId, active: true, available: true, operation: 'verify_artifact',
+    observedAt: new Date().toISOString(), commands: [{ commandId: 1, phase: 'database_seed', executable: 'node', startedAt: Date.now() }] }));
+  expect(screen.queryByText(/Demo verisi hazırlığı/)).not.toBeInTheDocument();
+  expect(await screen.findByText(/Etkin worker işlemi yok/)).toBeVisible();
 });
 
 test('identifies native worker evidence without claiming OS isolation', async () => {

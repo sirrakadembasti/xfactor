@@ -11,7 +11,27 @@ export function buildDockerfileContent({
     hasPrisma = false
 } = {}) {
     let dockerfileLines = [];
-    if (isNext) {
+    if (hasExpressApi && (isNext || hasVite)) {
+        dockerfileLines = [
+            'FROM node:22-alpine AS builder',
+            'WORKDIR /app',
+            'COPY package*.json ./',
+            'RUN npm ci && mkdir -p node_modules',
+            'COPY . .',
+            hasPrisma ? 'RUN npx prisma generate' : '',
+            'RUN npm run build',
+            '',
+            'FROM node:22-alpine AS runner',
+            'WORKDIR /app',
+            'ENV NODE_ENV=production',
+            hasPrisma ? 'ENV DATABASE_URL=file:/data/app.db' : '',
+            'COPY --from=builder /app ./',
+            hasPrisma ? 'RUN mkdir -p /data' : '',
+            hasPrisma ? 'VOLUME ["/data"]' : '',
+            isNext ? 'EXPOSE 3000 3001' : 'EXPOSE 4173 3001',
+            hasPrisma ? 'CMD ["sh", "-c", "npx prisma db push && npm run start:services"]' : 'CMD ["npm", "run", "start:services"]'
+        ];
+    } else if (isNext) {
         dockerfileLines = [
             'FROM node:22-alpine AS builder',
             'WORKDIR /app',
@@ -66,27 +86,6 @@ export function buildDockerfileContent({
             'CMD ["npm", "start"]',
             ''
         ];
-    } else if (hasVite && hasExpressApi) {
-        dockerfileLines = [
-            'FROM node:22-alpine AS builder',
-            'WORKDIR /app',
-            'COPY package*.json ./',
-            'RUN npm ci && mkdir -p node_modules',
-            'COPY . .',
-            hasPrisma ? 'RUN npx prisma generate' : '',
-            'RUN npm run build',
-            '',
-            'FROM node:22-alpine AS runner',
-            'WORKDIR /app',
-            'ENV NODE_ENV=production PORT=3000',
-            hasPrisma ? 'ENV DATABASE_URL=file:/data/app.db' : '',
-            'COPY --from=builder /app ./',
-            hasPrisma ? 'RUN mkdir -p /data' : '',
-            hasPrisma ? 'VOLUME ["/data"]' : '',
-            'EXPOSE 3000 4173',
-            hasPrisma ? 'CMD ["sh", "-c", "npx prisma db push && npm start"]' : 'CMD ["npm", "start"]',
-            ''
-        ];
     } else {
         dockerfileLines = [
             'FROM node:22-alpine AS builder',
@@ -121,4 +120,54 @@ export function buildDockerignoreContent() {
         'npm-debug.log*',
         ''
     ].join('\n');
+}
+
+export function buildServiceLauncherContent() {
+    return `// Start every declared service; one service exit stops the whole application.
+const { spawn } = require('node:child_process');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const { services } = require(path.join(root, 'service-manifest.json'));
+const children = [];
+let stopping = false;
+function stop(code) {
+    if (stopping) return;
+    stopping = true;
+    for (const child of children) {
+        if (!child.pid || child.exitCode !== null) continue;
+        try {
+            if (process.platform === 'win32') spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore' });
+            else process.kill(-child.pid, 'SIGTERM');
+        } catch {}
+    }
+    const timer = setTimeout(() => {
+        for (const child of children) {
+            if (child.pid && child.exitCode === null && process.platform !== 'win32') {
+                try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+            }
+        }
+        process.exit(code);
+    }, 3000);
+    const done = () => {
+        if (children.every(child => child.exitCode !== null || child.signalCode !== null || !child.pid)) {
+            clearTimeout(timer);
+            process.exit(code);
+        }
+    };
+    for (const child of children) child.once('close', done);
+    done();
+}
+for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => stop(0));
+for (const service of Object.values(services || {})) {
+    const child = spawn(service.command || 'npm', service.args || ['run', 'start'], {
+        cwd: root, stdio: 'inherit', detached: process.platform !== 'win32',
+        shell: process.platform === 'win32' && /^(?:npm|npx)(?:\\.cmd)?$/.test(service.command || 'npm'),
+        env: { ...process.env, PORT: String(service.port) }
+    });
+    children.push(child);
+    child.once('error', error => { console.error(error.message); stop(1); });
+    child.once('exit', code => stop(code || 1));
+}
+if (!children.length) stop(1);
+`;
 }

@@ -108,7 +108,7 @@ for(const entry of entries){
 }
 cp.execFileSync('unzip',['-qq','-o',zip,'-d',out],{stdio:'pipe'});`;
 
-export async function verifyArtifact({ archiveBase64, archiveSha256, workspace = '/workspace', job, adapter, signal, env = {} } = {}) {
+export async function verifyArtifact({ archiveBase64, archiveSha256, workspace = '/workspace', job, adapter, signal, env = {}, onPhaseComplete } = {}) {
     if (!job?.runId) throw new Error('caller-supplied runId is required');
     if (workspace !== '/workspace' || !adapter) throw new Error('worker workspace is fixed /workspace and adapter is required');
     let archive; try { archive = Buffer.from(String(archiveBase64 || ''), 'base64'); } catch { archive = Buffer.alloc(0); }
@@ -135,11 +135,12 @@ export async function verifyArtifact({ archiveBase64, archiveSha256, workspace =
         const detail = reason;
         return { passed: false, status: 'blocked', reason: `Archive extraction rejected: ${detail}`, runId: job.runId, archiveSha256: actual, evidence: { runId: job.runId, archiveBytes: archive.length, command: 'bounded ZIP metadata validation and extraction', exitCode: error?.result?.code ?? 1, stderr: rawFull, stderrSha256: error?.result?.stderrSha256 || digest(Buffer.from(rawFull)) } };
     }
-    const checks = await runVerificationChecks({ workspace: adapter.workspaceRoot || '/workspace', contract: job.contract || {}, requirementIds: job.requirementIds || [], adapter, signal, env, runId: job.runId, files: job.files || null });
+    const checks = await runVerificationChecks({ workspace: adapter.workspaceRoot || '/workspace', contract: job.contract || {}, requirementIds: job.requirementIds || [], adapter, signal, env, runId: job.runId, files: job.files || null,
+        job, verificationPlan: job.verificationPlan || null, onPhaseComplete });
     return { ...checks, archiveSha256: actual, evidence: { runId: job.runId, archiveBytes: archive.length } };
 }
 
-export async function executeVerificationJob({ job, workspace = '/workspace', adapter, signal, env = {} } = {}) {
+export async function executeVerificationJob({ job, workspace = '/workspace', adapter, signal, env = {}, onPhaseComplete } = {}) {
     if (!job || !adapter || !job.runId) throw new Error('job, adapter, and caller-supplied runId are required');
-    return verifyArtifact({ archiveBase64: job.archiveBase64, archiveSha256: job.archiveSha256 || job.inputSha256, workspace, job, adapter, signal, env });
+    return verifyArtifact({ archiveBase64: job.archiveBase64, archiveSha256: job.archiveSha256 || job.inputSha256, workspace, job, adapter, signal, env, onPhaseComplete });
 }

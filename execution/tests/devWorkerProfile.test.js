@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { configureDevWorker } from '../../scripts/dev-worker-profile.mjs';
 import { verificationJobTimeoutMs } from '../../backend/verification/verificationBudget.js';
 
-test('local development budgets full verification at 25 minutes; Docker retains 15 minute default', () => {
+test('both development profiles budget full verification at 25 minutes while preserving explicit operator limits', () => {
   const local = {}; configureDevWorker(local, []);
   assert.equal(verificationJobTimeoutMs(local), 1500000);
   const docker = {}; configureDevWorker(docker, ['--docker-worker']);
-  assert.equal(verificationJobTimeoutMs(docker), 900000);
+  assert.equal(verificationJobTimeoutMs(docker), 1500000);
   for (const flags of [[], ['--docker-worker']]) {
     const env = { VERIFICATION_JOB_TIMEOUT_MS: '120000' };
     configureDevWorker(env, flags);

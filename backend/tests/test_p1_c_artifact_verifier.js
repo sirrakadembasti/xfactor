@@ -22,7 +22,7 @@ assert.equal(isMandatoryArtifactCheck('management_demo_seed', { management: { ne
 assert.equal(isMandatoryArtifactCheck('management_role_login', { management: { needed: true } }), true);
 assert.equal(isMandatoryArtifactCheck('api_role_create_allowed', { management: { needed: false } }), false);
 const { RUNTIME_GATE_MEMBERS } = await import('../verification/qualityPolicy.js');
-const { assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
+const { assertVerifiedArtifactEvidence, assertVerifiedArtifactRunEvidence } = await import('../projectRepository.js');
 const { verifyProjectSmoke } = await import('../verification/smokeVerifier.js');
 const { assertManagementCoverage } = await import('../verification/artifactEvidencePolicy.js');
 
@@ -95,8 +95,8 @@ function passingCheck(name) {
         exitCode: 0,
         startedAt: timestamp,
         endedAt: timestamp,
-        stdoutDigest: `stdout-${name}`,
-        stderrDigest: `stderr-${name}`,
+        stdoutDigest: crypto.createHash('sha256').update(`stdout-${name}`).digest('hex'),
+        stderrDigest: crypto.createHash('sha256').update(`stderr-${name}`).digest('hex'),
         policyVersion: '2.0'
     };
 }
@@ -139,6 +139,55 @@ assert.equal(hasMandatoryGateCoverage(allGates.filter(name => name !== 'framewor
     'a worker cannot verify an artifact while omitting a mandatory gate');
 
 try {
+    await runAsyncTest('controlled verification plan is recompiled from persisted authority and forwarded without changing contract', async () => {
+        const { buildControlledVerificationPlan } = await import('../engine/controlledSemanticPlan.js');
+        const { computeAssertionSourceHash } = await import('../contracts/requirementAssertionBindings.js');
+        const files = [{ path: 'package.json', content: '{}' }, { path: 'package-lock.json', content: '{}' }];
+        const zipPath = await createTestZip('controlled-semantic-forward.zip', files);
+        const { archiveBytes, archiveHash } = await registerArtifact('controlled-semantic-forward', zipPath);
+        const identity = artifactIdentity('controlled-semantic-forward', 'controlled-semantic-forward-run', archiveHash);
+        const previous = db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(projectId).workflow_state;
+        const ledger = {phase:'patched',proposal:{contractId,planHash:'d'.repeat(64)},reviewedArtifactSourceHash:computeAssertionSourceHash(files),validations:[]};
+        db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(JSON.stringify({controlledRepair:ledger}),projectId);
+        const requirements = db.prepare('SELECT id,stable_key,statement,mandatory FROM requirements WHERE contract_id=? ORDER BY stable_key').all(contractId);
+        const plan = buildControlledVerificationPlan({ledger,files,requirements,identity});let dispatched=0;
+        try {
+            await assert.rejects(verifyArtifact({projectId,contractId,artifactId:identity.artifactId},{runId:identity.runId,activeJob:identity,archiveBase64:archiveBytes.toString('base64'),
+                verificationPlan:{...plan,sourceHash:'f'.repeat(64)},executionClient:{verifyArtifact:async()=>{dispatched++;throw Error('must not dispatch');}}}),/persisted authority/);
+            assert.equal(dispatched,0);
+            await verifyArtifact({projectId,contractId,artifactId:identity.artifactId},{runId:identity.runId,activeJob:identity,archiveBase64:archiveBytes.toString('base64'),verificationPlan:plan,
+                executionClient:{verifyArtifact:async job=>{dispatched++;assert.deepEqual(job.verificationPlan,plan);assert.deepEqual(job.contract,{name:'test-contract'});return workerResponse(identity,[],'completed');}}});
+            assert.equal(dispatched,1);
+            const rows=db.prepare("SELECT gate_name,status FROM verification_checks WHERE run_id=? AND gate_name IN ('requirement_assertions','ui_language_evidence')").all(identity.runId);
+            assert.equal(rows.length,2);assert.ok(rows.every(row=>row.status==='BLOCKED'));
+        } finally { db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(previous,projectId); }
+    });
+    await runAsyncTest('worker traceability PASS cannot authorize absent or foreign requirement ownership', async () => {
+        for (const suffix of ['missing', 'foreign', 'unqualified', 'optional-unqualified', 'commandless']) {
+            const zipPath = await createTestZip(`trace-claim-${suffix}.zip`, [{ path: 'package.json', content: '{}' }, { path: 'package-lock.json', content: '{}' }]);
+            const artifactId = `artifact-trace-claim-${suffix}`, runId = `run-trace-claim-${suffix}`;
+            const { archiveBytes, archiveHash } = await registerArtifact(artifactId, zipPath);
+            const identity = artifactIdentity(artifactId, runId, archiveHash);
+            const checks = [...new Set([...allGates, ...Object.values(RUNTIME_GATE_MEMBERS).flatMap(set => [...set])])].map(passingCheck);
+            if (suffix === 'foreign') checks.find(c => c.name === 'typecheck').requirementIds = ['another-contract-requirement'];
+            if (suffix === 'unqualified') {
+                const claimed = checks.find(c => c.name === 'typecheck');
+                claimed.requirementIds = [requirementId];
+                delete claimed.startedAt; delete claimed.stdoutDigest;
+            }
+            if (suffix === 'optional-unqualified' || suffix === 'commandless') {
+                const own = { ...passingCheck('independent_requirement_probe'), requirementIds: [requirementId] };
+                if (suffix === 'optional-unqualified') { delete own.startedAt; delete own.stdoutDigest; }
+                else { delete own.command; delete own.exitCode; }
+                checks.push(own);
+            }
+            await verifyArtifact({ projectId, contractId, artifactId }, { runId, activeJob: identity,
+                archiveBase64: archiveBytes.toString('base64'), executionClient: { verifyArtifact: async () => workerResponse(identity, checks, 'completed') } });
+            const trace = db.prepare("SELECT status FROM verification_checks WHERE run_id=? AND gate_name='requirement_traceability'").get(runId);
+            assert.equal(trace.status, 'BLOCKED');
+            assert.equal(db.prepare('SELECT COUNT(*) n FROM requirement_check_links l JOIN verification_checks c ON c.id=l.verification_check_id WHERE c.run_id=?').get(runId).n, 0);
+        }
+    });
     await runAsyncTest('worker rejection durably preserves redacted observed logs and actual source diagnostics', async () => {
         const { verifyBuild } = await import('../verification/buildVerifier.js');
         const stdout = "src/price.ts(3,7): error TS2322: Type 'string' is not assignable to type 'number'. password=private-sentinel-123";
@@ -217,6 +266,9 @@ try {
                 : { evidence: { producer: 'quality-policy', policyVersion: '2.0' } }
         }));
         checks.push(...[...new Set(Object.values(RUNTIME_GATE_MEMBERS).flatMap(members => [...members]))].map(passingCheck));
+        Object.assign(checks.find(check => check.name === 'typecheck'), {
+            requirementIds: [requirementId], evidenceJson: { producer: 'typecheck-verifier', adapterId: 'fixture-worker' }
+        });
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {
             runId,
             activeJob: identity,
@@ -235,6 +287,7 @@ try {
 
         const latest = getLatestVerifiedArtifact({ projectId, contractId });
         assert.strictEqual(latest.id, artifactId);
+        assert.doesNotThrow(() => assertVerifiedArtifactRunEvidence({ projectId, contractId, artifactId }));
 
         const run = db.prepare('SELECT * FROM verification_runs WHERE id = ?').get(result.runId);
         assert.ok(run);
@@ -440,12 +493,12 @@ try {
         const identity = artifactIdentity(artifactId, runId, archiveHash);
         const runtimeNames = new Set(Object.keys(RUNTIME_GATE_MEMBERS));
         const baseChecks = allGates.filter(name => !runtimeNames.has(name)).map(name => ({ ...passingCheck(name),
-            requirementIds: [requirementId], evidence: { adapterId: 'local-worker', policyVersion: '2.0' } }));
+            requirementIds: [], evidence: { adapterId: 'local-worker', policyVersion: '2.0' } }));
         const members = [...new Set(Object.values(RUNTIME_GATE_MEMBERS).flatMap(set => [...set]))].map(name => ({
-            ...passingCheck(name), requirementIds: [requirementId], evidence: { adapterId: 'local-worker', policyVersion: '2.0',
+            ...passingCheck(name), requirementIds: name === 'api_query_check' ? [requirementId] : [], evidence: { adapterId: 'local-worker', policyVersion: '2.0',
                 ...(name === 'database_mutation_assertion' ? { resource: 'rooms', createdId: 'fixture-1', readback: true } : {}) }
         }));
-        const detail = (name, evidence) => ({ name, status: 'passed', requirementIds: [requirementId],
+        const detail = (name, evidence) => ({ name, status: 'passed', requirementIds: [],
             evidence: { adapterId: 'local-worker', runId, ...evidence } });
         const details = [
             detail('management_demo_seed', { roles: ['manager', 'visitor'] }),
@@ -595,7 +648,8 @@ try {
         const result = await verifyArtifact({ projectId, contractId, artifactId }, {
             runId, activeJob: identity, archiveBase64: archiveBytes.toString('base64'),
             executionClient: { verifyArtifact: async () => workerResponse(identity,
-                [...prerequisiteChecks, passingCheck('prisma_db_push'), ...smoke.checks].map(check => ({ ...check, requirementIds: [requirementId] })), 'completed') }
+                [...prerequisiteChecks, passingCheck('prisma_db_push'), ...smoke.checks].map(check => ({ ...check,
+                    requirementIds: check.name === 'typecheck' ? [requirementId] : [] })), 'completed') }
         });
         assert.equal(result.passed, true, JSON.stringify({ ...result, failed: db.prepare("SELECT gate_name,status,evidence_json FROM verification_checks WHERE run_id=? AND status!='PASS'").all(runId) }));
         assert.doesNotThrow(() => assertVerifiedArtifactEvidence({ projectId, contractId, artifactId }));
@@ -637,7 +691,7 @@ try {
         });
         const traceCheck = result.checks.find(c => (c.name || c.gateName) === 'requirement_traceability');
         assert.ok(traceCheck, 'requirement_traceability check must be present');
-        assert.strictEqual(traceCheck.status, 'failed', 'traceability must fail when requirement-linked check fails');
+        assert.strictEqual(traceCheck.status, 'blocked', 'failed requirement-linked checks cannot supply passing coverage');
     });
 
     await runAsyncTest('6. verifyArtifact overrides spoofed security_baseline and marks missing evidence as BLOCKED', async () => {
@@ -697,7 +751,8 @@ try {
         const identity = artifactIdentity(artifactId, runId, archiveHash);
 
         const failingWorkerChecks = [
-            { name: 'clean_install', status: 'failed', exitCode: 1, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdoutDigest: 'abc', stderrDigest: 'def' }
+            { name: 'clean_install', status: 'failed', exitCode: 1, startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdoutDigest: 'abc', stderrDigest: 'def' },
+            { id:'actual-locale-action', name:'ui_language_evidence',status:'blocked',evidence:{inventory:{version:1,snapshots:[]},advisory:true} }
         ];
 
         await verifyArtifact({ projectId, contractId, artifactId }, {
@@ -711,6 +766,11 @@ try {
         assert.ok(cpRow, 'Checkpoint must exist');
         assert.strictEqual(cpRow.status, 'invalidated', 'Verification failure must have invalidated task_checkpoints');
         assert.strictEqual(cpRow.invalidation_reason, 'VERIFICATION_FAILED');
+        const locale=db.prepare("SELECT * FROM verification_checks WHERE run_id=? AND gate_name='ui_language_evidence'").get(runId);
+        const receipt=JSON.parse(locale.evidence_json).workerReceipt;
+        assert.equal(receipt?.kind,'worker_action_receipt','Failed product diagnostic still authenticates the observed semantic action.');
+        assert.equal(locale.status,'BLOCKED');
+        assert.equal(db.prepare("SELECT count(*) n FROM verification_checks WHERE run_id=? AND gate_name='worker_verification_receipt' AND status='PASS'").get(runId).n,0,'No failed diagnostic can become aggregate acceptance.');
     });
 } finally {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});

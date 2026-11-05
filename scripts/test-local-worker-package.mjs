@@ -124,7 +124,11 @@ export async function testLocalWorkerPackage({ bundle, readinessOnly = false, sh
     for (const name of ['package_json', 'lockfile', 'ast_import_inventory', 'clean_install', 'framework_build', 'readme_build', 'readme_check', 'manifest_presence', 'service_definitions', 'port_uniqueness', 'management_demo_seed', 'service_spawn', 'smoke_liveness_probe', 'management_role_login', 'prisma_schema_presence', 'database_connectivity', 'database_write_capability', 'api_role_create_allowed', 'api_role_create_denied', 'api_anonymous_read_policy', 'api_role_read_allowed', 'database_mutation_assertion', 'browser_page_load', 'browser_journey_steps', 'browser_management_interaction', 'test_script_presence', 'test_suite_execution', 'smoke_gate']) assert.ok(checks.some(check => check.name === name && check.status === 'passed'), `Missing PASS ${name}: ${JSON.stringify(verified)}`);
     for (const check of checks) {
       assert.equal(check.runId, verifyJob.runId);
-      assert.ok(check.status === 'passed' || (check.name === 'typecheck' && check.status === 'skipped'), JSON.stringify(check));
+      // Worker protocol carries no requirement scope: traceability is delegated to the backend, never passed.
+      const delegatedTrace = check.name === 'requirement_traceability' && check.status === 'skipped'
+        && check.evidence?.scope === 'backend-authoritative' && check.evidence.coveredIds?.length === 0
+        && check.evidence.issues?.length === 1 && check.evidence.issues[0].code === 'missing-authoritative-scope';
+      assert.ok(check.status === 'passed' || delegatedTrace || (check.name === 'typecheck' && check.status === 'skipped'), JSON.stringify(check));
     }
     assert.equal(checks.filter(check => check.name === 'management_role_login').length, 2);
     const browser = checks.find(check => check.name === 'browser_management_interaction');

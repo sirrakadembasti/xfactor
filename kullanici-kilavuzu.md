@@ -154,7 +154,7 @@ npm run dev
 
 > Backend'in `GET /healthz` adresi yalnız süreç canlılığını gösterir. `GET /readyz`, Worker'ın `prepare_dependencies` ve `verify_artifact` kapasitesini de denetler. `READINESS_WORKER_TIMEOUT_MS` temel varsayılanı `2000` ms'dir; yerel geliştirme başlatıcısı ayar verilmemişse `35000` ms kullanır. Açıkça verilen değer korunur; örnekteki `2000` değerini ayarlarsanız daha uzun yerel varsayılan uygulanmaz. Worker gerçek Chromium başlatma ve sayfa çizimini de sınar; soğuk başlangıç bu süreyi aşabilir. Hazır olmayan worker için HTTP 503 döner. `8099` portunda 401 görmek yalnız yetki denetiminin yanıtıdır, hazır olma kanıtı değildir.
 
-> Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
+> Depoda ayrı bir `start-project.ps1` betiği yoktur; Windows'ta da kök dizindeki `npm run dev` komutunu veya aşağıdaki ayrı terminal adımlarını kullanın.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 * **1. Terminal (Backend):**
   ```bash
@@ -235,7 +235,9 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
 2. **Sürümlü Yazılım Sözleşmesi (`PROJECT_CONTRACT`):** Sistem arka planda `project_contracts`, `requirements` ve `contract_elements` tablolarına değişmez bir sözleşme revizyonu ve SHA-256 sözleşme özeti (`contract_hash`) kaydeder.
 3. Sohbetin üstünde **"Mimari Plan Hazırlandı — Onayınız Bekleniyor"** kartı belirir. Tam şartname, gereksinimler, roller ve kayıt politikalarını **Planın kapsamını ve kabul kriterlerini incele** bölümünden açabilirsiniz; sohbet uzun JSON'u tekrar göstermez.
 4. **"Planı Onayla ve Başlat"** düğmesi veya **“varsayımlarla devam et” / “planı onaylıyorum”** mesajı aynı güvenli onay akışını çalıştırır. Sözleşme onaylanır (`status = approved`), proje `implementing` durumuna geçer ve DAG motoru başlar. Bekleyen geçerli plan tekrar üretilmez; tekrarlanan onay ikinci yürütme oluşturmaz. Yalnız proje sahibi veya yönetici üretimi başlatabilir. Olumsuz ifadeler, sorular ve kapsam değişikliği içeren mesajlar otomatik onay sayılmaz.
-5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Tamamlanmış (`completed`), duraklatılmış (`paused`), hata almış (`failed`, `verification_failed`, `capability_blocked`) veya doğrulama sonrası (`runtime_verified`, `acceptance_verified`, `artifact_verified`) durumundaki bir projede sohbete girip *"Next.js yerine Vite React ve Tailwind yap"* veya *"Şu modeli ekle"* dediğinizde; Manager yeni bir sözleşme taslağı oluşturur, eski çelişen gereksinimleri `superseded` ve eski checkpoint'leri `invalidated` olarak işaretler ve yeni bir sözleşme revizyonuyla onay butonunu tekrar açar. Aynı projede eşzamanlı sohbet istekleri çakışma kilidiyle (`409 CHAT_ALREADY_IN_PROGRESS`) korunur.
+5. **Sohbetten Canlı Revizyon ve Hükümsüz Kılma (Supersession):** Duraklatılmış (`paused`), hata almış (`failed`, `verification_failed`, `capability_blocked`) veya doğrulama sonrası (`runtime_verified`, `acceptance_verified`, `artifact_verified`) durumundaki bir projede sohbete girip *"Şu modeli ekle"* dediğinizde Manager yeni bir sözleşme taslağı oluşturabilir; sözleşme yayını eski gereksinimleri `superseded`, eski checkpoint'leri `invalidated` olarak işaretler ve onay akışını açar. Durum geçişinin de izinli olması gerekir; `completed` güncel durum makinesinde terminaldir, sohbetten yeniden onaya geçiş desteklenmez. Aynı projede eşzamanlı sohbet istekleri çakışma kilidiyle (`409 CHAT_ALREADY_IN_PROGRESS`) korunur.
+
+   **Hata kurtarmada kapsam kaybı engeli:** “Yeni plan hazırla” eski zorunlu işlerin kaldırılması demek değildir. Onaylı zorunlu iş gereksinimlerinin kimlik ve ifadeleri korunur; AuthProvider, seed veya lint gibi onarımlar yeni gereksinimler olarak eklenir. Yönetim kaynaklarının işlemleri, okuma/saklama politikası ve mevcut rol izinleri de korunur; geçerli fixture ve tarayıcı seçicileri düzeltilebilir. Model kapsamı düşürürse sunucu tek düzeltme turu ister; sonuç hâlâ eksikse yeni plan yayımlanmaz. Eski eksik kurtarma taslağını onaylamak `409 MANAGER_PLAN_SCOPE_CHANGED` döndürür; yeni yürütme başlatılmaz. Sohbet ekranı onaylı/taslak ifadelerini karşılaştırır, onay düğmelerini kapatır; **Kapsamı tamamla** düğmesi eksikleri geri isteyen mesajı giriş kutusuna hazırlar. Mesajı inceleyip gönderin. Taslak hazırlamak mevcut proje raporunu silmez. Hata bulunmayan, elle duraklatılmış projede açıkça istenen özellik değişikliği normal revizyon akışında önerilebilir.
 <a id="canli-izleme"></a>
 
 ### Adım 5: Canlı ReactFlow DAG Akışını ve Süreç Loglarını İzleme (4 Ayrı Sekme)
@@ -245,7 +247,7 @@ Ayrıntılı kurulum, Xiaomi MiMo örneği ve başka Express uygulamasına taş�
    - **📊 Canlı DAG Grafiği (`flow`):** Ekranın tamamını kaplayan, çakışmasız ve kompakt 2 sütunlu hiyerarşik ağaç grafiği.
    - **📜 Canlı Süreç Logları (`logs`):** Arama kutusu, `ERROR` / `VETO` / `FEEDBACK` filtreleri ve anlık bağlantı durumu içeren tam sayfa log izleme ekranı.
 
-Yeni proje açıldığında ilk ekran Sohbet & Mimari olur. Kalite Paneli üstte amacını, kullanım sırasını ve `PASS`/`FAIL`/`BLOCKED` durumlarını açıklar. Solda en yeni doğrulama koşusundan başlayarak geçmişi seçin; sağda kontrollerin neyi sınadığını ve sonucunu görün. Bir kontrole tıklayınca zorunluluk, çıkış kodu, zaman, SHA-256 çıktı özetleri ve gizli bilgiler temizlenmiş `stdout`/`stderr` kayıtları açılır. Panel salt okunurdur; geçmişi değiştirmez.
+Yeni proje açıldığında ilk ekran Sohbet & Mimari olur. Kalite Paneli üstte amacını, kullanım sırasını ve `PASS`/`FAIL`/`BLOCKED` durumlarını açıklar. Solda en yeni doğrulama koşusundan başlayarak geçmişi seçin; sağda kontrollerin neyi sınadığını ve sonucunu görün. Bir kontrole tıklayınca kayıtlı sonuç açıklaması, zorunluluk, çıkış kodu, zaman, SHA-256 çıktı özetleri ve gizli bilgiler temizlenmiş `stdout`/`stderr` kayıtları açılır. Panel salt okunurdur; geçmişi değiştirmez.
 
 Panel açıkken geçmiş ve seçili koşunun kanıtları 15 saniyede bir yenilenir. En güncel koşuyu takip ediyorsanız yeni koşu otomatik seçilir; geçmişten özellikle seçtiğiniz koşu, açık log ve yüklenmiş eski sayfalar korunur. Bir geçmiş isteği sürerken eski sayfaları yükleme düğmesi kısa süreliğine bekler; proje değiştirdiğinizde önceki projenin geciken yanıtları ekrana taşınmaz.
 
@@ -266,8 +268,10 @@ Log ekranı ve DAG, veritabanındaki en yeni 500 olay ile canlı WebSocket olayl
 ### Adım 6: Canlı Müdahale, Duraklatma ve Kaldığı Yerden Devam Etme (`Pause / Resume`)
 
 1. Süreç devam ederken üst barda bulunan **"⏸️ Süreci Duraklat"** butonuna tıklayabilirsiniz.
-2. Proje `paused` durumundaysa üst bardaki, sohbet bildirim şeridindeki veya süreç logları ekranındaki yeşil **Devam Ettir (Resume)** butonuyla kaldığı yerden devam ettirebilirsiniz.
-3. Statik denetim/Tester reddinde proje `verification_failed` olur. Worker reddi veya iş akışı istisnası, kalıcı başarısız doğrulama koşusu korunarak workflow hata yolunda `paused` durumuna alınabilir; proje durumu ile koşu sonucu farklı kayıtlardır. Kapı adları ve kaydedilmiş nedenler sohbet, süreç logları ve Kalite Paneli üzerinden incelenir. `artifact_verified` durumunda son hata kaydı varsa da **Devam Ettir (Resume)** görünür. İş akışı hata bildirimi arayüzü Sohbet sekmesine taşır; düzeltme veya revizyon için kayıtlı nedeni inceleyin.
+2. Proje `paused` durumundaysa ve hata yeni Manager revizyonu gerektirmiyorsa üst bardaki, sohbet bildirim şeridindeki veya süreç logları ekranındaki yeşil **Devam Ettir (Resume)** butonuyla kaldığı yerden devam ettirebilirsiniz. `Worker repair requires Manager revision` hatasında Resume gizlenir; API de yeni bir başarısız girişim oluşturmadan `409 MANAGER_REVISION_REQUIRED` döndürür. Önce Manager ile kayıtlı hataları değerlendirin. **Yalnız Yeniden Doğrula** mevcut üretimi değiştirmeden yeni kontrol yapar; hataları onarmaz ve eski açık onarım kayıtlarını çözmez. Yeni bir plan revizyonunu onaylamak görevleri ve kaynakları yeniden üretebilir; mevcut çalışmayı korumak istiyorsanız bunu onarım yapılmış gibi onaylamayın. Salt “düzelteceğim” yanıtı plan veya uygulanmış onarım değildir.
+3. Statik denetim/Tester reddinde proje `verification_failed` olur. Worker reddi veya iş akışı istisnası, kalıcı başarısız doğrulama koşusu korunarak workflow hata yolunda `paused` durumuna alınabilir; proje durumu ile koşu sonucu farklı kayıtlardır. Kapı adları ve kaydedilmiş nedenler sohbet, süreç logları ve Kalite Paneli üzerinden incelenir. `artifact_verified` durumunda son hata kaydı varsa ve Manager revizyon engeli yoksa da **Devam Ettir (Resume)** görünür. İş akışı hata bildirimi arayüzü Sohbet sekmesine taşır; düzeltme veya revizyon için kayıtlı nedeni inceleyin. Manager son koşunun hata nedeni ve sınırlı stdout/stderr kesitlerini görür; yalnız durum özetiyle tahmin yürütmesi beklenmez. Çok büyük sözleşme veya kontrol listesi kısaltıldıysa bağlamda açıkça belirtilir.
+
+   Mimari değişikliği ile hata onarımını ayırın: mevcut Next.js çıktısı ile Vite isteği çelişirse motor kaynak dosyalara dokunmadan durur. Aynı projede onarım için mevcut yığını koruyan revizyon hazırlayın; farklı mimariyi ayrı projede üretin. Yeni React + Express kapsamlarında iskelet varsayımı Vite web ve ayrı API servisidir.
 4. **Diskteki görevlerden kurtarma:** Manager `TODO.md` ve `DURUM.md` dosyaları korunur. Director'ın `ALT-TALIMATNAME.md` dosyası ve Teamleader planları varsa yeniden kullanılır; görevlerin `GOREV.md` dosyasındaki tek hedef dosya ve açıklama geri yüklenir. Disk senkronizasyonu mevcut canlı olayları silmeden, yalnızca tamamlandığına ilişkin kanıtı bulunan eksik görev loglarını DAG'a ekler.
 5. **Checkpoint koruması:** Motor aynı onaylı sözleşmeye ait görev checkpoint'lerini plan, bağımlılık ve fiziksel dosya kanıtıyla denetler. Açık kabul onarım kaydı varsa uygun tamamlanmış görevleri yeniden kullanabilir; reddedilmiş veya kanıtsız görevleri bitmiş saymaz. Yeni sözleşme revizyonu eski checkpoint'e dayanmaz.
 
@@ -603,11 +607,13 @@ Her kapı, çalıştırılan komutun veya türetilmiş PASS kaynaklarının kan�
 Üretim ve doğrulama sonuçlarını kayıtlı kanıtlarıyla değerlendirin; geçen kapılar ölçtükleri kapsamı kanıtlar, bütün olası kusurların yokluğunu garanti etmez.
 ## Docker olmadan yerel kalite worker'ı
 
+**Windows çalıştırıcısı:** `spawn UNKNOWN` tek başına uygulama kodunda hata bulunduğunu kanıtlamaz. Önce worker kurulumunu ve işletim sistemi koruma kayıtlarını inceletin. Hazırlık kaydı bulunan yardımcı EXE kaybolmuşsa `LOCAL_HOST_UNAVAILABLE`, dosya özeti değişmişse `LOCAL_HOST_INTEGRITY` ile durulur; otomatik yeniden derleme yapılmaz. Eşzamanlı hazırlıklar kilitle sıralanır; `LOCAL_HOST_BUSY` durumunda yarıda kalmış kurulumu inceletin. Kilit otomatik devralınmaz. Cache, atomik kayıt için hardlink destekleyen bir dosya sisteminde tutulur. Hazırlık kaydı dosyanın imzasını veya zararsızlığını doğrulamaz. Plan onayı kaynakları yeniden üretebileceğinden, çalışma ortamı hatasını uygulama onarımıyla karıştırmayın. 1 Kasım incelemesinin algılama/karantina kanıtı ve kalan işler [faz arşivinde](docs/faz-arsiv.md#halka-29--1-kasım-kaldığı-yer-denetimi-ve-gerçek-başlangıç-hatası) kayıtlıdır.
+
 Platform talimatlarıyla üretilen proje belgelerini karıştırmayın: `x-agents/GOREV.md`, `DURUM.md`, `TODO.md` ve `RAPOR.md` şablondur. Canlı üretim kayıtları `projects/<proje-id>/manager/` ve alt ajan klasörlerinde; uygulamanın README ve `docs/` belgeleri ilgili proje klasöründe bulunur. Backend farklı dizindeki aynı adlı belgeleri sistem talimatı olarak yüklemez. Eksik talimat, geçersiz rol, bağlantılı ajan dosyası veya `x-agents` ile çakışan proje yolu işlemi engeller. [Dosya ayrımı kılavuzu](x-agents/README.md).
 
 Kaynak kurulumu: Node 22.23.2 ve npm 10.9.8 ile `npm run worker:local:setup -- --install`, sonra `npm run dev:local`. İlk komut gözden geçirilmiş backend/execution lockfile'larını kurar ve Chromium indirir; internet bağlantısı gerekir. Linux'ta Chromium sistem kitaplıkları ayrıca sağlanır. Kalite kontrolleri uygulamanın gerçek kurulum, build, test, SQLite/API ve tarayıcı oturumlarını çalıştırır; geçmeyen zorunlu kontroller teslimi engeller.
 
-Yerel geliştirme başlatıcısı, operatör `VERIFICATION_JOB_TIMEOUT_MS` vermemişse yeni doğrulama işleri için 25 dakika ayırır. Diğer başlatmalarda varsayılan 15 dakikadır; pozitif tam sayı ayar mevcut 25 dakika worker sınırını aşamaz. Daha düşük açık ayar korunur, çalışan işin süresi uzatılmaz. Başlatıcı ayarını değiştirdiğinizde servis grubunu yeniden başlatın.
+Kaynak geliştirme başlatıcısının Docker ve yerel profilleri, operatör `VERIFICATION_JOB_TIMEOUT_MS` vermemişse yeni doğrulama işleri için 25 dakika ayırır. Diğer başlatmalarda varsayılan 15 dakikadır; pozitif tam sayı ayar mevcut 25 dakika worker sınırını aşamaz. Daha düşük açık ayar korunur, çalışan işin süresi uzatılmaz. Temiz kurulumun kendi varsayılan sınırı toplam iş sınırı içinde 15 dakikadır; Prisma motorları ilk kez indirilirken doğrulama fazı en çok 5 dakika sürer. Kurulum başarısızsa servis ve davranış testleri başlatılmaz; engellenmiş sonuç başarı sayılmaz. Başlatıcı ayarını değiştirdiğinizde servis grubunu yeniden başlatın.
 
 Yerel worker genel npm registry indirme önbelleğini `os.tmpdir()/xfactor-local-cache/npm` altında işler arasında korur. Her işin kaynakları, veritabanı, HOME, npm ayarları ve günlükleri ayrı hazırlanıp temizlenir; ana bilgisayarın npm kimlik bilgileri aktarılmaz. Son 64 komuta ait aşama, çalıştırıcı adı, süre, çıkış kodu, zaman aşımı/kesilme işaretleri ve çıktı SHA-256 özetleri hata tanısı için saklanabilir; komut argümanları, çıktı metinleri ve ortam değerleri bu kayda alınmaz. Bu tanılama kayıtları kalite kapısı başarısı sayılmaz.
 
@@ -615,13 +621,52 @@ Paketli kullanım: `npm run worker:local:package -- --output dist/local-worker` 
 
 Kalite paneli seçili yerel koşuda `local-trusted · OS izolasyonu yok` bilgisini gösterir. Bu profil güvenilen kod içindir; uygulama mevcut kullanıcının yetkileriyle çalışır. Kullanıcı/admin giriş bilgileri bu değişiklik kapsamında değiştirilmez. Docker imajını test etmek için Docker ayrıca gerekir.
 
-React/Vite ve Express birlikte üretildiğinde worker web ve API servislerini ayrı
+Next.js veya React/Vite arayüzü Express ile birlikte üretildiğinde scaffold web ve API servislerini ayrı tanımlar. Worker bu servisleri ayrı
 portlarda başlatır; ikisinin hazır olduğunu doğruladıktan sonra testleri yürütür.
+Üretilen `npm run start:services` komutu manifestteki servisleri birlikte çalıştırır;
+servislerden biri durursa diğerleri de kapatılır. Karma servis Docker şablonu bu
+komutu kullanır. Varsayılan Express scaffold'u açıkça izin verilen arayüz kökenini
+kullanır; mevcut uygulama kodundaki CORS hatalarını gizlemez.
 Manager'ın yönetim planında her kaynağın gerçek oluşturma/güncelleme verileri
 bulunmalıdır. İlişkili kayıtlar için test hazırlığı gerçek API kimliklerini
 kullanır; eksik hazırlık veya geçersiz ilişki kalite kontrolünü engeller.
 Test girişleri için geçici imza anahtarları yalnız koşu belleğinde oluşturulur;
 ZIP'e veya kullanıcı profil ayarlarına yazılmaz.
+
+Worker veya onun içe aktardığı doğrulama dosyalarını değiştirdikten sonra geliştirme
+servis grubunu aktif iş yokken yeniden başlatın. Backend'in `--watch` ile yeniden
+yüklenmesi ayrı worker'ı yenilemez. `/readyz` yanıtında `executionCapacity: ready`
+olduğunu doğrulayın. Kalite panelindeki geçmiş hatalar eski koşuya aittir; yeni
+kodu kullanarak yapılan yeni doğrulama sonuçlarıyla karşılaştırın. Manager bir
+kontrolün kayıtlı nedenini başka bir kontrolün kök nedeni olarak sunmamalıdır;
+manifest veya çalışan sürüm kanıtı yoksa bu ayrım belirsizdir.
+
+**Yalnız Yeniden Doğrula:** Duraklatılmış veya yeni taslağı onay bekleyen bir projede,
+tamamlanmış üretim kaydı mevcut onaylı sözleşmeyle eşleşiyorsa sohbet ekranında bu
+eylem görünür. Aynı sözleşmenin mevcut kaynakları yeni bir worker koşusunda sınanır;
+Director/Coder çalışmaz, checkpoint'ler ve kaynaklar değişmez. Yeni lockfile yalnız
+doğrulama paketinde hazırlanır. Bekleyen taslak onaylanmaz ve eski onarım kayıtları
+silinmez. Sonuç kalite paneline yeni koşu olarak eklenir; bu tanılama işlemi tek
+başına teslimi açmaz. Yeni plan onayı ise görev önbelleğini yenileyip kaynakları
+yeniden üretebilir; mevcut üretimi koruma eylemiyle karıştırmayın.
+
+**Kalite panelinde bekleme ve canlı ilerleme:** Koşu geçmişi yüklenemediğinde hata,
+henüz koşu olmadığında boş geçmiş, seçilen koşu alınamadığında ayrıntı hatası görünür.
+Bu durumlar sonsuz yükleniyor göstergesine dönüşmez; başarılı yenilemede eski hata
+kalkar. Çalışan koşuda henüz kontrol satırı bulunmayabilir: nihai kanıtlar worker işi
+bitince yazılır. Ayrı Canlı Worker ilerlemesi alanı bağımlılık hazırlığı, kurulum,
+Prisma, derleme, test ve tarayıcı fazlarının gözlenen komut durumlarını gösterir.
+Bu bilgiler PASS veya teslim kabulü değildir. Argüman, ortam ve ham çıktı taşınmaz;
+güncel girişimle eşleşmeyen ilerleme gösterilmez. Anlık ilerleme sunucu belleğindedir;
+kalıcı geçmişin yerine geçmez. Bağlantı hatasında kayıtlı geçmişi inceleyebilir ve
+sonraki otomatik yenilemeyi bekleyebilirsiniz.
+
+1 Kasım başlangıç düzeltmesiyle kalite rotaları, veritabanı açılmadan yakalanan boş
+bağlantıyı kullanmaz; hazır bağlantıyı istek sırasında alır. "Son kontrol ne zaman,
+şu anda ne eksik?" gibi durum sorularında Manager kayıttaki gerçek tarihi ve kontrol
+sonuçlarını sade biçimde gösterir. Böyle bir soru yeni kontrol, yeni plan veya üretim
+başlatmaz. Teknik terim veya komut vermeniz gerekmez; tarihli eski test yeni yapılmış
+gibi sunulmaz. Onarım talepleri bu salt durum sorgusundan ayrıdır.
 
 21 Ekim 2026 Windows otel üretimi Docker olmadan tamamlandı: uygulamanın 22 testi ve 8 tarayıcı yolculuğu geçti; kanonik doğrulama 205 PASS kaydı içerdi. Bunların içinde 18 ana kapı dahil toplam 170 zorunlu kayıt bulunur; her ayrıntı satırı yeni bir kalite kapısı değildir. Koşu özeti ve doğrulamanın kapsamı [yerel worker paket kılavuzundadır](#yerel-worker-paketi). Teslim edilen son ZIP ayrıca açılıp çalıştırılmadı; Windows sonucu Linux/macOS kabulü yerine geçmez.
 
@@ -681,6 +726,18 @@ Yerel profil OS sandbox değildir. Docker `--cpus 2.0`, `--memory 1g`, `--memory
 
 CI otoritesi `.github/workflows/ci.yml` ve `backend/tests/test_p8_ci_contract.js` sözleşmesidir. `test`: 60 saniyelik engelleyici backend/frontend `npm audit --audit-level=high`, `P8_REQUIRE_DOCKER_LIMITS=1` backend, frontend birim/build, Chromium E2E ve gerçek Docker worker doğrulaması. Browser container'ları init ile çocukları toplar; GPU/zygote kapalı, yolculuk başına yeni tek süreçli browser kullanılır. `production-image`, `test` işine bağlıdır ve continue-on-error olmadan HTTPS yüzeyini sınar. `local-worker` Windows/Linux/macOS kaynak entegrasyonu, paket ve aktif kapanışı sınar; matris tanımı başarılı platform kabulü değildir.
 
+### Mevcut çalışmayı koruyarak sınırlı onarım
+
+Kalite Paneli canlı komut durumunu yaklaşık 5 saniyede bir, kalıcı koşu ve kontrol geçmişini 15 saniyede bir yeniler. Yükleme hatasında bağlantı uyarısını, koşu yoksa boş geçmişi, çalışan koşuda kanıt henüz yazılmadıysa bekleme açıklamasını gösterir. Canlı komutun çıkış kodu, tek başına teslim kanıtı değildir.
+
+Duraklatılmış projede “Mevcut çalışmayı koruyan onarım önerisi hazırla” seçeneği, son kayıtlı kontrol sonuçlarına göre değişecek dosyaları listeler. Hazırlamak dosyaları değiştirmez. Kapsam bağlantısı eksik öneri başlatılamaz. Manager'a teknik komut yazmanız gerekmez; “Çalışmamı kaybetmeden kalan eksikleri gider” gibi günlük bir açıklama yeterlidir.
+
+“Listelenen dosyaları onar ve yeniden kontrol et” yalnız listelenmiş hedefler üzerinde ayrı onarım başlatır; onaylı sözleşmeyi, tarihsel görevleri ve checkpoint'leri korur. Normal yeni plan onayından ayrıdır. Başarı önceden garanti edilmez. Birkaç dosya değiştikten sonra işlem durursa tamamlanan değişiklikler kayıtlı kalır; belirsiz veya kesilmiş model yanıtı dosyaya yazılmaz ve sessizce tekrar denenmez. Sonraki öneri güncel kaynak ve yeni kontrol sonucuna bağlanır; önceki onarımın geçmişi kaybolmaz.
+
+“Yalnız Yeniden Doğrula” mevcut dosyaları değiştirmeden yeni worker kontrolü yapar. Açık hataları onarmaz ve teslimi tek başına onaylamaz. Kaynaklar onarıldıktan sonra görünürse “Mevcut düzeltmeleri incele ve yeniden kontrol et” aynı kaynak için yeni bağımsız inceleme alır; yeni kod yazdırmaz. Ekranlardan toplanan dil gözlemleri, inceleme tamamlanmadan kabul kanıtı sayılmaz.
+
+Kalite panelindeki canlı faz/komut ilerlemesi ile kalıcı PASS/FAIL kayıtları ayrıdır. Çalışan koşuda henüz kontrol kaydı bulunmaması, geçmişin kaybolduğu anlamına gelmez. Geçmiş koşuyu seçerek ayrıntı ve hata nedenlerini okuyabilirsiniz. Test sırasında kapanan servis için, kontrollü kapatma başlamadan alınmış sınırlı kapanış çıktısı da sonuçlara eklenir. Tamamlanma ancak güncel kaynaklara ait bütün zorunlu kanıtlar ve kalıcı teslim makbuzuyla gerçekleşir.
+
 ### Ajan talimatları ve kurtarma işletimi
 
 Üretim rolleri tam anayasa/rol metnini modül yüklenirken önbellekler; Manager sohbeti yeniden okur. `x-agents/` değişince tüm rolleri yenilemek için planlı backend restart gerekir. Dockerfile dizini root sahipliğinde `/app/x-agents` altına kopyalar; veri volume'lerini buraya bağlamayın. Proje yolları doğrudan/link üzerinden bu dizinle çakışamaz. Rapor/başlık/loglar sınırlandırılmış, redakte kullanıcı verisidir, sistem politikası değildir; bu modelin etkilenmezliğini garanti etmez.
@@ -721,7 +778,7 @@ Yeni hedef seçin; uygulama kaynakları (`docs`, `x-agents` dahil) altına paket
 
 ### Başlatma ve bütünlük
 
-Tüm dizini aynı OS/mimariye kopyalayıp Windows'ta `start-worker.cmd`, Linux/macOS'ta `./start-worker.sh` çalıştırın. Boşluklu yollar ve Node kurulu olmayan hedef desteklenir. Başlatıcı hash/araç/sürüm denetler. Kaynak paketi worker hesabına salt okunur tutun. SHA-256 bozulmayı ölçer; manifest ile paketin birlikte kötü niyetle değiştirilmesini doğrulayamaz, güvenilir dağıtım kaynağı gerekir.
+Tüm dizini aynı OS/mimariye kopyalayıp Windows'ta `start-worker.cmd`, Linux/macOS'ta `./start-worker.sh` çalıştırın. Komut isteminden başlatırken `NoDefaultCurrentDirectoryInExePath` ile sertleştirilmiş Windows'ta dosya adını `.\start-worker.cmd` olarak yazın. Boşluklu yollar ve Node kurulu olmayan hedef desteklenir. Başlatıcı hash/araç/sürüm denetler. Kaynak paketi worker hesabına salt okunur tutun. SHA-256 bozulmayı ölçer; manifest ile paketin birlikte kötü niyetle değiştirilmesini doğrulayamaz, güvenilir dağıtım kaynağı gerekir.
 
 Chromium doğrulanmış paketten state altında benzersiz `browser-runtime-*` kopyasına alınır, kopya hash'leri tekrar denetlenir. Windows çocukları executable yanında erken log oluşturabildiği için tüm prob/işler bu yazılabilir kopyayı kullanır; ek browser dizini kadar alan/kopyalama süresi gerekir. Normal kapanış/açılış hatası temizler; ani launcher çöküşü operatör temizliği gerektirebilir. Log/crash dosyaları kaynak pakete dahil edilmez; kabul testi işlerden sonra immutable manifest'i tekrar denetler.
 
@@ -733,7 +790,7 @@ Worker `127.0.0.1:8099` dinler; `EXECUTION_WORKER_PORT` değiştirir. Başlatıc
 
 Kaynak kurulumunda `npm run worker:local:setup -- --install`, ardından `npm run dev`/`dev:local` yerel profil/token paylaşımı yapar; devralınan ortam Docker dese de yereli seçer. Docker için dev:docker kullanın. Doğrudan `node execution/server.js` runtime/token'ı ayrıca ister. Paketli backend'e `EXECUTION_WORKER_URL=http://127.0.0.1:8099` ve state'teki worker-token dosyasından güvenli okunan aynı token'ı `EXECUTION_WORKER_TOKEN` olarak verin. Alternatif: iki sürece aynı bağımsız üretilmiş en az 32 karakterlik sır. Git/loga yazmayın, backend'i yeniden başlatın. Paket frontend/backend dağıtımı veya admin bilgilerini değiştirmez; bundled Node mevcut backend'i de çalıştırabilir.
 
-`READINESS_WORKER_TIMEOUT_MS` varsayılan 2000 ms, kaynak yerel başlatıcıda boşsa 35000 ms. `VERIFICATION_JOB_TIMEOUT_MS` varsayılan 900000 ms (15 dakika), yerel başlatıcıda boşsa 1500000 ms (25 dakika); üst sınır 25 dakika, geçersiz değer reddedilir. Daha düşük açık ayar ve komut sınırları korunur. Yeni prepare/verify işleri içindir; restart gerekir, aktif deadline uzamaz. Kaynak başlatıcısı kullanılmayan backend'de değerleri açıkça yapılandırın.
+`READINESS_WORKER_TIMEOUT_MS` varsayılan 2000 ms, kaynak yerel başlatıcıda boşsa 35000 ms. `VERIFICATION_JOB_TIMEOUT_MS` varsayılan 900000 ms (15 dakika), kaynak başlatıcının Docker/yerel profilinde boşsa 1500000 ms (25 dakika); üst sınır 25 dakika, geçersiz değer reddedilir. Daha düşük açık ayar ve komut sınırları korunur. Yeni prepare/verify işleri içindir; restart gerekir, aktif deadline uzamaz. Kaynak başlatıcısı kullanılmayan backend'de değerleri açıkça yapılandırın.
 
 ### Test, kaynak sınırları ve tanı
 

@@ -23,6 +23,62 @@ describe('ChatView Component', () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
+  test('offers explicit review only for eligible patched repairs and disables it while busy', () => {
+    const review = vi.fn();
+    const state = { ...defaultProjectState, status: 'paused',
+      repairSemanticReview: { available: true, planHash: 'private-plan-hash', remainingReviews: 1 },
+      workflow: { controlledRepair: { phase: 'patched' } } };
+    const props = { projectState: state, handleReviewRepair: review, chatInput: '', setChatInput: mockSetChatInput };
+    const { rerender } = render(<ChatView {...props} />);
+    const name = 'Mevcut düzeltmeleri incele ve yeniden kontrol et';
+    fireEvent.click(screen.getByRole('button', { name }));
+    expect(review).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Mevcut dosyalar korunur/)).toBeInTheDocument();
+    expect(screen.queryByText(/private-plan-hash/)).not.toBeInTheDocument();
+    rerender(<ChatView {...props} isThinking />);
+    expect(screen.getByRole('button', { name })).toBeDisabled();
+    rerender(<ChatView {...props} projectState={{ ...state, repairSemanticReview: { available: false } }} />);
+    expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    rerender(<ChatView {...props} projectState={{ ...state, workflow: { controlledRepair: { phase: 'repairing' } } }} />);
+    expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+  });
+
+  test('offers source-preserving proposal preparation separately from plan approval and shows the bounded proposal', () => {
+    const prepare = vi.fn();
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'paused',
+      repairPreparation: { available: true, revision: 3 }, workflow: { controlledRepair: { phase: 'proposed', proposal: {
+        summary: 'Mevcut giriş işlevini koruyarak eksikleri gider.', ready: false, uncoveredRequirementIds: ['REQ-9'],
+        targets: [{ path: 'src/app.ts', instructions: 'Bağlantı izinlerini düzelt.' }]
+      } } } }} handlePrepareRepair={prepare} chatInput="" setChatInput={mockSetChatInput} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Mevcut çalışmayı koruyan onarım önerisi hazırla' }));
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Bağlantı izinlerini düzelt.')).toBeInTheDocument();
+    expect(screen.getByText(/REQ-9/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Planı Onayla ve Başlat/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Listelenen eksikleri onar/ })).not.toBeInTheDocument();
+  });
+
+  test('only a ready unapplied proposal offers its separate repair action, which disappears while running', () => {
+    const start = vi.fn();
+    const state = { ...defaultProjectState, status: 'paused', workflow: { controlledRepair: { phase: 'proposed', proposal: {
+      summary: 'Sınırlı onarım öneriliyor.', ready: true, planHash: 'hash', contractId: 'contract', targets: []
+    } } } };
+    const props = { projectState: state, handleStartRepair: start, chatInput: '', setChatInput: mockSetChatInput };
+    const { rerender } = render(<ChatView {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Listelenen dosyaları onar ve yeniden kontrol et' }));
+    expect(start).toHaveBeenCalledTimes(1);
+    rerender(<ChatView {...props} projectState={{ ...state, status: 'implementing', workflow: { controlledRepair: { ...state.workflow.controlledRepair, phase: 'repairing' } } }} />);
+    expect(screen.queryByRole('button', { name: 'Listelenen dosyaları onar ve yeniden kontrol et' })).not.toBeInTheDocument();
+  });
+
+  test('an old proposal explains its stale state after a newer control and cannot start', () => {
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'paused', workflow: { controlledRepair: {
+      phase: 'proposed', stale: true, proposal: { summary: 'Eski öneri', ready: true, targets: [] }
+    } } }} handleStartRepair={vi.fn()} chatInput="" setChatInput={mockSetChatInput} />);
+    expect(screen.getByText(/Bu öneri yeni kontrol sonrası güncelliğini yitirdi/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Listelenen dosyaları onar ve yeniden kontrol et' })).not.toBeInTheDocument();
+  });
+
   test('renders chat messages correctly with copy buttons', () => {
     render(
       <ChatView
@@ -136,6 +192,20 @@ describe('ChatView Component', () => {
     expect(mockHandleApprove).toHaveBeenCalledTimes(1);
   });
 
+  test('blocks a draft that replaced approved scope and prepares an explicit Manager correction', () => {
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'pending_approval',
+      planScopeReview: { valid: false, issues: [{ id: 'REQ-5', kind: 'changed',
+        before: 'Kritik stok uyarıları ve gösterge paneli', after: 'Global AuthProvider' }] } }}
+      chatInput="" setChatInput={mockSetChatInput} handleSendMessage={mockHandleSendMessage}
+      handleApprove={mockHandleApprove} handleResume={mockHandleResume} setViewMode={mockSetViewMode} />);
+    expect(screen.getByRole('button', { name: /Planı Onayla ve Başlat/ })).toBeDisabled();
+    expect(screen.getByText('Kritik stok uyarıları ve gösterge paneli')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Kapsamı tamamla/ }));
+    expect(mockSetChatInput).toHaveBeenCalledWith(expect.stringContaining('REQ-5: Kritik stok uyarıları ve gösterge paneli'));
+    expect(mockHandleSendMessage).not.toHaveBeenCalled();
+    expect(mockHandleApprove).not.toHaveBeenCalled();
+  });
+
   test('renders paused banner and triggers handleResume / setViewMode', () => {
     const pausedState = { ...defaultProjectState, status: 'paused' };
     render(
@@ -158,6 +228,38 @@ describe('ChatView Component', () => {
     const flowBtn = screen.getByRole('button', { name: /Grafiği Gör/ });
     fireEvent.click(flowBtn);
     expect(mockSetViewMode).toHaveBeenCalledWith('flow');
+  });
+
+  test('Manager revision veto explains source preservation and approval risk while hiding Resume', () => {
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'paused',
+      last_error: 'Worker repair requires Manager revision: No safely routable product findings.' }}
+      chatInput="" setChatInput={mockSetChatInput} handleSendMessage={mockHandleSendMessage}
+      handleApprove={mockHandleApprove} handleResume={mockHandleResume} setViewMode={mockSetViewMode} />);
+    expect(screen.queryByRole('button', { name: /Devam Et \(Resume\)/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/yeni.*revizyon.*onay/i)).toBeInTheDocument();
+    expect(screen.getByText(/yeniden üretilmesine yol açabilir/i)).toBeInTheDocument();
+    expect(screen.getByText(/Yalnız Yeniden Doğrula.*hataları onarmaz/i)).toBeInTheDocument();
+    expect(screen.queryByText(/revizyonu isteyin ve planı onaylayın/i)).not.toBeInTheDocument();
+  });
+
+  test('a persisted worker blocker keeps Resume hidden after diagnostic error text changes', () => {
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'paused', resumeBlocked: true,
+      last_error: 'Yeni doğrulama ürün hataları buldu.' }} chatInput="" setChatInput={mockSetChatInput}
+      handleSendMessage={mockHandleSendMessage} handleApprove={mockHandleApprove} handleResume={mockHandleResume} />);
+    expect(screen.queryByRole('button', { name: /Devam Et \(Resume\)/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/yeni.*revizyon.*onay/i)).toBeInTheDocument();
+  });
+
+  test('reverifies the approved implementation without approving a pending replacement plan', () => {
+    const reverify = vi.fn();
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'pending_approval',
+      reverification: { available: true, contractId: 'approved-original', revision: 3 } }}
+      handleReverify={reverify} chatInput="" setChatInput={mockSetChatInput}
+      handleSendMessage={mockHandleSendMessage} handleApprove={mockHandleApprove} />);
+    fireEvent.click(screen.getByRole('button', { name: /Yalnız Yeniden Doğrula/i }));
+    expect(reverify).toHaveBeenCalledTimes(1);
+    expect(mockHandleApprove).not.toHaveBeenCalled();
+    expect(screen.getByText(/kaynak.*değiştirmez/i)).toBeInTheDocument();
   });
 
   test('offers Resume when a quality gate leaves the project verification_failed', () => {

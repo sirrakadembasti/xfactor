@@ -74,7 +74,9 @@ export async function packageLocalWorker({ destination, sourceRoot = repo, env =
   const manifest = await validateManifest(target);
   const bundledEnv = { ...env };
   for (const [key, value] of Object.entries(toolPaths)) bundledEnv[key] = path.join(target, value);
-  const probeState = await fs.mkdtemp(path.join(os.tmpdir(),'xfactor-browser-probe-'));
+  // OS temp dirs may be aliased (macOS /var -> /private/var, Windows 8.3 names); the runtime
+  // browser rejects any linked or non-canonical state path, so probe below the canonical temp dir.
+  const probeState = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()),'xfactor-browser-probe-'));
   let runtimeBrowser;
   try {
     runtimeBrowser = await createRuntimeBrowser(target,probeState,{manifest});

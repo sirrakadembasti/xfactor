@@ -16,7 +16,7 @@ async function fixture(run) {
   try {
     fs.mkdirSync(path.join(root, 'backend/agents'), { recursive: true });
     fs.writeFileSync(path.join(root, 'backend/package.json'), '{"type":"module"}');
-    for (const file of ['agents/agentLoader.js', 'agents/agentPaths.js']) {
+    for (const file of ['agents/agentLoader.js', 'agents/agentPaths.js', 'agents/productionLanguagePolicy.js']) {
       const source = path.join(repo, 'backend', file);
       if (fs.existsSync(source)) fs.copyFileSync(source, path.join(root, 'backend', file));
     }

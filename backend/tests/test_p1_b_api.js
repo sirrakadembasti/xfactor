@@ -17,6 +17,24 @@ async function createTempWorkspace(prefix = 'xfactor-api-verif-test-') {
 }
 
 try {
+    await runAsyncTest('prefixed correlation matches the exact rendered identity and still detects forbidden persisted writes',async()=>{
+        for(const scenario of ['normal','lying-denial','wrong-identity']) {
+            const rows=[];
+            const adapter={id:'prefixed-fixture',request:async()=>({statusCode:403,data:{}}),requestAsRole:async({role,method,data})=>{
+                if(method==='GET')return {statusCode:200,data:{data:rows}};
+                const denied=role==='viewer';
+                const row={id:String(rows.length+1),label:scenario==='wrong-identity'?'X'+data.label:data.label};
+                if(!denied||scenario==='lying-denial')rows.push(row);
+                return {statusCode:denied?403:201,data:{data:row}};
+            }};
+            const result=await verifyAPIContract('http://service',null,{management:{needed:true,
+                resources:[{name:'Category',apiPath:'/api/categories',operations:['create','read'],verification:{identityField:'label',createBody:{label:'Kategori-{nonce}'}}}],
+                roles:[{name:'admin',permissions:[{resource:'Category',operations:['create','read']}]},{name:'viewer',permissions:[{resource:'Category',operations:['read']}]}]}},{adapter});
+            assert.equal(result.passed,scenario==='normal',scenario);
+            if(scenario==='lying-denial')assert.equal(result.checks.find(c=>c.name==='api_role_create_denied').status,'failed');
+            if(scenario==='wrong-identity')assert.equal(result.checks.find(c=>c.name==='database_mutation_assertion').status,'failed');
+        }
+    });
     await runAsyncTest('1. verifyAPIContract should verify HTTP responses and physical DB state mutations', async () => {
         const workspace = await createTempWorkspace();
         const dbPath = path.join(workspace, 'api_test.db');
@@ -288,7 +306,7 @@ try {
                 needed: true,
                 resources: [{ name: 'widgets', apiPath: '/api/widgets', operations: ['create', 'read', 'update'],
                     verification: { itemPath: '/api/widgets/{id}', updateMethod: 'PUT', identityField: 'label',
-                        createBody: { label: '{nonce}' }, updateBody: { label: '{nonce}' } } }],
+                        createBody: { label: 'Widget-{nonce}' }, updateBody: { label: 'Widget-Güncel-{nonce}' } } }],
                 roles: [
                     { name: 'editor', permissions: [{ resource: 'widgets', operations: ['create', 'read', 'update'] }] },
                     { name: 'reader', permissions: [{ resource: 'widgets', operations: ['read'] }] }

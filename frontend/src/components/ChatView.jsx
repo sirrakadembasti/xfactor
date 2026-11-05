@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Send, Clock, Sparkles, Loader2, User, Copy, Check, CornerDownLeft } from 'lucide-react';
-import { canResumeProject } from '../utils/canResumeProject';
+import { canResumeProject, requiresManagerRevision } from '../utils/canResumeProject';
 
 export default function ChatView({
   projectState,
@@ -9,6 +9,10 @@ export default function ChatView({
   handleSendMessage,
   handleApprove,
   handleResume,
+  handleReverify,
+  handlePrepareRepair,
+  handleStartRepair,
+  handleReviewRepair,
   setViewMode,
   isThinking = false
 }) {
@@ -20,6 +24,10 @@ export default function ChatView({
   const chatHistory = projectState?.chatHistory || [];
   const historyLength = chatHistory.length;
   const lastMessageText = chatHistory[historyLength - 1]?.parts?.[0]?.text;
+  const scopeIssues = projectState?.planScopeReview?.issues || [];
+  const scopeBlocked = projectState?.planScopeReview?.valid === false;
+  const repairProposal = projectState?.workflow?.controlledRepair?.proposal;
+  const repairStale = projectState?.workflow?.controlledRepair?.stale === true;
 
   // Sekme açıldığında anında (animasyonsuz) en altta başla, sadece yeni mesaj gelince smooth kaydır
   useEffect(() => {
@@ -57,6 +65,45 @@ export default function ChatView({
   return (
     <div className="flex-1 flex flex-col bg-cream-100/60 overflow-hidden h-full">
       {/* ÜST SABİT BİLDİRİM VE AKSİYON ŞERİDİ */}
+      {projectState?.repairPreparation?.available && handlePrepareRepair && (
+        <div className="mx-6 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl shrink-0 text-xs">
+          <p>Mevcut çalışmayı koruyarak eksikleri gidermek için önce değişecek dosyaları ve yapılacak işleri gösteren bir öneri hazırlayın. Bu adım kaynakları değiştirmez ve yeni taslağı onaylamaz.</p>
+          <button type="button" onClick={handlePrepareRepair} disabled={isThinking}
+            className="mt-2 px-3 py-2 rounded-lg bg-amber-800 text-white font-semibold disabled:opacity-50">Mevcut çalışmayı koruyan onarım önerisi hazırla</button>
+        </div>
+      )}
+      {repairProposal && (
+        <details open className="mx-6 mt-3 p-3 bg-white border border-amber-200 rounded-xl shrink-0 text-xs max-h-64 overflow-y-auto">
+          <summary className="font-semibold cursor-pointer">{projectState.workflow.controlledRepair.phase === 'proposed' ? 'Sınırlı onarım önerisi — henüz uygulanmadı'
+            : projectState.workflow.controlledRepair.phase === 'patched' ? 'Sınırlı kaynak onarımı — kontrol sonuçlarını inceleyin' : 'Sınırlı onarım süreci'}</summary>
+          <p className="mt-2">{repairProposal.summary}</p>
+          <ul className="mt-2 space-y-2">{repairProposal.targets.map(target => <li key={target.path}>
+            <strong>{target.path}</strong><p>{target.instructions}</p>
+          </li>)}</ul>
+          {!repairProposal.ready && <p role="alert" className="mt-2 text-amber-900">Kapsam bağlantısı eksik: {repairProposal.uncoveredRequirementIds.join(', ')}. Öneri başlatılamaz.</p>}
+          {repairStale && <p role="status" className="mt-2 text-amber-900">Bu öneri yeni kontrol sonrası güncelliğini yitirdi. Son sonuçlara göre yeni bir onarım önerisi hazırlayın; eski öneri başlatılamaz.</p>}
+          {!repairStale && repairProposal.ready && projectState.workflow.controlledRepair.phase === 'proposed' && handleStartRepair
+            && ['paused', 'verification_failed', 'pending_approval'].includes(projectState.status) && (
+              <button type="button" onClick={handleStartRepair} disabled={isThinking}
+                className="mt-3 px-3 py-2 rounded-lg bg-amber-800 text-white font-semibold disabled:opacity-50">Listelenen dosyaları onar ve yeniden kontrol et</button>
+            )}
+        </details>
+      )}
+      {projectState?.repairSemanticReview?.available
+        && projectState?.workflow?.controlledRepair?.phase === 'patched' && handleReviewRepair && (
+        <div className="mx-6 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl shrink-0 text-xs">
+          <p>Mevcut dosyalar korunur. Düzeltmeler incelenir ve yeni bağımsız kontroller çalışır. Teslim sonucu ayrıca belirlenir.</p>
+          <button type="button" onClick={handleReviewRepair} disabled={isThinking}
+            className="mt-2 px-3 py-2 rounded-lg bg-amber-800 text-white font-semibold disabled:opacity-50">Mevcut düzeltmeleri incele ve yeniden kontrol et</button>
+        </div>
+      )}
+      {projectState?.reverification?.available && handleReverify && (
+        <div className="mx-6 mt-3 p-3 bg-sky-50 border border-sky-200 rounded-xl shrink-0 text-xs">
+          <p>Onaylı sözleşme {projectState.reverification.revision} ile yeni worker doğrulaması çalışır. Kaynakları, görevleri ve checkpoint kayıtlarını değiştirmez; yeni taslağı onaylamaz. Teslim kabulü ayrı değerlendirilir.</p>
+          <button type="button" onClick={handleReverify} disabled={isThinking}
+            className="mt-2 px-3 py-2 rounded-lg bg-sky-700 text-white font-semibold disabled:opacity-50">Yalnız Yeniden Doğrula</button>
+        </div>
+      )}
       {projectState?.status === 'pending_approval' && (
         <div className="mx-6 mt-3 mb-1 p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between shadow-sm shrink-0">
           <div className="flex items-center gap-3">
@@ -65,19 +112,39 @@ export default function ChatView({
             </div>
             <div>
               <h4 className="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
-                Mimari Plan Hazırlandı — Onayınız Bekleniyor
+                {scopeBlocked ? 'Planın onaylı kapsamında eksik veya değişiklik var' : 'Mimari Plan Hazırlandı — Onayınız Bekleniyor'}
               </h4>
               <p className="text-emerald-700 text-[11px] mt-0.5">
-                Plan doğrulandı. Düğmeyle veya “varsayımlarla devam et” yazarak üretimi başlatabilirsiniz.
+                {scopeBlocked ? 'Önce Manager ile aşağıdaki zorunlu gereksinimleri tamamlayın. Üretim başlatılamaz.'
+                  : projectState?.reverification?.available ? 'Yeni plan onayı görev önbelleğini yeniler ve kaynakları yeniden üretebilir. Mevcut üretimi korumak için Yalnız Yeniden Doğrula seçeneğini kullanın.'
+                    : 'Plan doğrulandı. Düğmeyle veya “varsayımlarla devam et” yazarak üretimi başlatabilirsiniz.'}
               </p>
             </div>
           </div>
           <button
             onClick={handleApprove}
+            disabled={scopeBlocked}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm flex items-center gap-2 transition shrink-0 cursor-pointer"
           >
             <Play size={14} /> Planı Onayla ve Başlat
           </button>
+        </div>
+      )}
+
+      {projectState?.status === 'pending_approval' && scopeBlocked && (
+        <div role="alert" className="mx-6 my-2 p-3 rounded-xl border border-amber-300 bg-amber-50 text-sm text-amber-950 shrink-0 max-h-64 overflow-y-auto">
+          <p className="font-semibold">Onaylı gereksinimleri koruyun</p>
+          <ul className="my-2 space-y-2">
+            {scopeIssues.map(issue => <li key={issue.id}>
+              <strong>{issue.id} · Onaylı ifade:</strong><p>{issue.before}</p>
+              <span>Taslak: {issue.after || 'Gereksinim çıkarılmış'}</span>
+            </li>)}
+          </ul>
+          <button type="button" className="font-semibold underline" onClick={() => setChatInput(
+            'Yeni plan taslağında şu onaylı zorunlu gereksinimleri aynı kimlik ve ifadeyle geri ekle:\n'
+            + scopeIssues.map(issue => `${issue.id}: ${issue.before}`).join('\n')
+            + '\nDiğer onaylı kapsamı koru; hata düzeltmelerini yeni gereksinim kimlikleriyle ekle. Tam yapılandırılmış planı hazırla, henüz üretimi başlatma.'
+          )}>Kapsamı tamamla — Manager mesajını hazırla</button>
         </div>
       )}
 
@@ -110,7 +177,12 @@ export default function ChatView({
         </details>
       )}
 
-      {canResumeProject(projectState?.status, projectState?.last_error) && (
+      {(projectState?.resumeBlocked || requiresManagerRevision(projectState?.last_error)) && projectState?.status === 'paused' && (
+        <div className="mx-6 mt-3 p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-sm text-amber-950">
+          Aynı planı yeniden sürdürmek açık onarım engelini gidermez. Mevcut çalışmayı korumak için önce Manager ile kontrol sonuçlarını değerlendirin. Yalnız Yeniden Doğrula kaynakları değiştirmeden yeni kontrol yapar; hataları onarmaz. Yeni bir plan revizyonunu onaylamak kaynakların yeniden üretilmesine yol açabilir; onaydan önce yapılacak değişiklikleri değerlendirin.
+        </div>
+      )}
+      {canResumeProject(projectState?.status, projectState?.last_error, projectState?.resumeBlocked) && (
         <div className="mx-6 mt-3 mb-1 p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm">

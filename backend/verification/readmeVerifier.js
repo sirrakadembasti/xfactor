@@ -136,7 +136,9 @@ export async function verifyReadmeCommands(contract = {}, files = [], sandbox = 
     const sandboxWorkspace = sandbox?.workspace || process.cwd();
 
     const checks = [];
-    if (documentedScripts.includes('build') && !Object.prototype.hasOwnProperty.call(packageScripts, 'build')) {
+    if (documentedScripts.includes('build') && sandbox?.dependencyResult?.passed === false) {
+        checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Documented build execution blocked because dependency installation failed.' });
+    } else if (documentedScripts.includes('build') && !Object.prototype.hasOwnProperty.call(packageScripts, 'build')) {
         checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.' });
     } else if (documentedScripts.includes('build') && !sandboxAdapter) {
         checks.push({ name: 'readme_build', gateName: 'framework_build', applicability: 'MANDATORY', status: 'blocked', passed: false, reason: 'Missing build script or sandbox capability; mandatory framework build evidence was not produced.' });

@@ -265,8 +265,12 @@ await runAsyncTest('P3.1 verification run detail 401/403/200 exact keys and nest
   assertExactKeys(body.run, ['id','contract_id','status','policy_version','started_at','ended_at'], 'detail run');
   assert.ok(Array.isArray(body.checks));
   for (const ch of body.checks) {
-    assertExactKeys(ch, ['id','gate_name','applicability','status','exit_code','stdout_digest','stderr_digest','started_at','ended_at','timed_out'], 'check');
+    assertExactKeys(ch, ['id','gate_name','applicability','status','exit_code','reason','stdout_digest','stderr_digest','started_at','ended_at','timed_out'], 'check');
+    assert.strictEqual(typeof ch.reason, 'string');
+    assert.ok(ch.reason.length <= 4000);
   }
+  const reasons = Object.fromEntries(body.checks.map(ch => [ch.gate_name, ch.reason]));
+  assert.deepStrictEqual(reasons, { api_contract: 'ok', smoke_gate: 'fail' });
   const cross = await requestWithMocks(`/api/projects/${projId}/verification-runs/${runIdOther}`, { authed: true });
   assert.strictEqual(cross.status, 404);
   const notFound = await requestWithMocks(`/api/projects/${projId}/verification-runs/not-exist`, { authed: true });

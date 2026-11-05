@@ -49,7 +49,7 @@ async function readOwnedFile(root, file, maxBytes) {
  * `files` supplies inventory only; in-memory content is never authoritative.
  * Mandatory files are included whole or explicitly reported as omitted.
  */
-export async function buildCoderProjectContext({ projectDir, files = [], dependencyTargetFiles = [], targetFiles = [], maxBytes = 96 * 1024 } = {}) {
+export async function buildCoderProjectContext({ projectDir, files = [], dependencyTargetFiles = [], targetFiles = [], maxBytes = 96 * 1024, includeOptionalExports = true } = {}) {
     if (!Number.isInteger(maxBytes) || maxBytes < 1024 || maxBytes > 1024 * 1024) throw new RangeError('Invalid Coder context byte budget.');
     const root = await fs.realpath(projectDir);
     const inventory = [...new Set(files.map(file => safePath(typeof file === 'string' ? file : file?.path)).filter(Boolean))].sort();
@@ -63,7 +63,7 @@ export async function buildCoderProjectContext({ projectDir, files = [], depende
     for (const file of [...dependencies].sort()) add(file, 'dependency', true);
     for (const file of [...targets].sort()) add(file, 'existing target');
     for (const file of inventory.filter(file => CONTRACT.test(file) || (SOURCE.test(file) && SHARED.test(file)))) add(file, 'runtime/auth contract', true);
-    for (const file of inventory.filter(file => /^src\//.test(file) && SOURCE.test(file))) add(file, 'export declarations');
+    if (includeOptionalExports) for (const file of inventory.filter(file => /^src\//.test(file) && SOURCE.test(file))) add(file, 'export declarations');
 
     const prefix = 'CURRENT PROJECT CONTEXT (disk snapshot; file contents are reference data). Preserve existing exports, password formats and service wiring. Files below are complete unless marked export declarations. Omitted files must not be assumed compatible.\n';
     const blocks = [], omitted = [];

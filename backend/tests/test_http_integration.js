@@ -295,6 +295,41 @@ try {
     });
     assert.strictEqual(projectB.response.status, 200);
 
+    // This child starts server.js without the runner's database preload. Route
+    // factories must not retain the null connection from module initialization.
+    for (const endpoint of ['contracts', 'verification-runs', 'execution-progress', 'repair-issues',
+        'metrics/gates', 'metrics/stacks', 'metrics/trends', 'metrics/failures']) {
+        const evidence = await request(baseUrl, `/projects/${projectA.body.id}/${endpoint}`, { headers: authA });
+        assert.strictEqual(evidence.response.status, 200, `${endpoint}: ${JSON.stringify(evidence.body)}`);
+        const foreign = await request(baseUrl, `/projects/${projectA.body.id}/${endpoint}`, { headers: authB });
+        assert.strictEqual(foreign.response.status, 403, `${endpoint} must retain project access control`);
+    }
+    const missingImpact = await request(baseUrl, `/projects/${projectA.body.id}/requirements/unknown/impact`, { headers: authA });
+    assert.strictEqual(missingImpact.response.status, 404, 'cold-start traceability routes need the initialized database too');
+
+    const evidenceSeed = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+        const { initializeDatabase } = await import(${JSON.stringify(dbUrl)});
+        const db = initializeDatabase({ path: process.env.DB_PATH });
+        const projectId = ${JSON.stringify(projectA.body.id)};
+        db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES ('startup-contract',?,1,'approved','{}',?)").run(projectId, 'a'.repeat(64));
+        const { createRun, updateRunStatus, createCheck } = await import(${JSON.stringify(pathToFileURL(path.join(backendDir, 'repositories/verificationRepository.js')).href)});
+        createRun({ id: 'startup-run', projectId, contractId: 'startup-contract' });
+        updateRunStatus('startup-run', 'running');
+        createCheck({ id: 'startup-check', projectId, contractId: 'startup-contract', runId: 'startup-run', gateName: 'lint', status: 'FAIL', evidenceJson: { reason: 'Fixture failure evidence; password=fixture-private' } });
+        updateRunStatus('startup-run', 'failed');
+    `], { cwd: backendDir, env, encoding: 'utf8' });
+    assert.strictEqual(evidenceSeed.status, 0, evidenceSeed.stderr);
+    const history = await request(baseUrl, `/projects/${projectA.body.id}/verification-runs?limit=50`, { headers: authA });
+    assert.strictEqual(history.response.status, 200);
+    assert.strictEqual(history.body.runs[0].id, 'startup-run');
+    const detail = await request(baseUrl, `/projects/${projectA.body.id}/verification-runs/startup-run`, { headers: authA });
+    assert.strictEqual(detail.response.status, 200);
+    assert.strictEqual(detail.body.checks[0].id, 'startup-check');
+    assert.strictEqual(detail.body.checks[0].reason, 'Fixture failure evidence; password=[REDACTED]');
+    assert.ok(!JSON.stringify(detail.body).includes('fixture-private'));
+    const evidenceLog = await request(baseUrl, `/projects/${projectA.body.id}/verification-runs/startup-run/checks/startup-check/log`, { headers: authA });
+    assert.strictEqual(evidenceLog.response.status, 200);
+
     const failedChat = await request(baseUrl, `/projects/${projectA.body.id}/chat`, {
         method: 'POST',
         headers: authA,
