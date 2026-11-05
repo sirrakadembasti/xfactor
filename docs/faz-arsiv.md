@@ -405,7 +405,17 @@ Son kayıt `3269a25b` (4 Kasım 11:50 İstanbul, sözleşme 3), 21 PASS, 7 FAIL 
 
 ### Halka 33 — 5 Kasım: platform röntgeni ve yeni yol haritası
 
-Belgeler, Graphify ve git geçmişi kodla karşılaştırıldı. 18 ana kapı, 17 migrasyon, 180 dosyalık test envanteri ve `3269a25b` koşusunun 21/7/7 dağılımı koddan ve canlı DB'den doğrulandı. Yaklaşık 150 dosyalık çalışma commit edilmemiş durumda. Bu çalışma üç backend süitini kırdı. Güvenlik, şema ve API tarafında da açık bulgular var. Yeni yol haritası Faz 0–5 olarak tanımlandı. `stok-takip-1` için sözleşme 4 taslağı `pending_approval` hâlinde bekliyor. Kaynak değiştirilmedi; yalnız belgeler hizalandı. [Röntgen raporu](rontgen-2026-11-05.md).
+Belgeler, Graphify ve git geçmişi kodla karşılaştırıldı. 18 ana kapı, 17 migrasyon, 180 dosyalık test envanteri ve `3269a25b` koşusunun 21/7/7 dağılımı koddan ve canlı DB'den doğrulandı. Yaklaşık 150 dosyalık çalışma commit edilmemiş durumda. Bu çalışma üç backend süitini kırdı. Güvenlik, şema ve API tarafında da açık bulgular var. Yeni yol haritası Faz 0–5 olarak tanımlandı. `stok-takip-1` için sözleşme 4 taslağı `pending_approval` hâlinde bekliyor. Röntgen aşamasında kaynak değiştirilmedi; yalnız belgeler hizalandı. [Röntgen raporu](rontgen-2026-11-05.md).
+
+Aynı gün Faz 0 tamamlandı. Commit edilmemiş çalışma altı commit'e bölündü ve [PR #3](https://github.com/sirrakadembasti/xfactor/pull/3) ile `main`'e alındı (merge `17bac2e`). Dört CI koşusu boyunca şu hatalar düzeltildi:
+- `main`'de 29 Ekim'den beri süren CI kırmızısı.
+- Kapsamsız worker izlenebilirliği yüzünden normal doğrulamaların hiç kabul edilememesi (PR içi gerileme).
+- Takma adlı geçici dizin nedeniyle macOS ve Windows'ta yerel worker hatası.
+- Ubuntu Chromium sandbox'ı.
+- `npm audit` bildirimleri.
+- Eskimiş E2E ve Docker tarayıcı testleri.
+
+Son koşuda beş CI işinin hepsi yeşil; `production-image` işi ilk kez çalıştı ve geçti.
 
 ## 6. Kaynak kapsamı ve belirsizlikler
 
