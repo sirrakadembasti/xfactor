@@ -303,16 +303,36 @@ export function promoteUserToAdmin(username, password) {
     db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(user.id);
     return toPublicUser({ ...user, isAdmin: true });
 }
-export async function ensureDefaultAdminUser() {
-    if (!db) return null;
-    const existing = findUserByUsername('admin');
+export const DEFAULT_ADMIN_USERNAME = 'admin';
+const DEFAULT_ADMIN_PASSWORD = 'xfactor';
+
+/**
+ * Production never seeds the documented development account and refuses to start
+ * while any administrator still accepts the public default password.
+ */
+export async function assertProductionAdminCredentials(database = db) {
+    if (!database) throw new Error('Yönetici denetimi için veritabanı başlatılmamış.');
+    const admins = database.prepare('SELECT username, password_hash FROM users WHERE is_admin = 1').all();
+    if (admins.length === 0) {
+        throw new Error('Üretimde yönetici hesabı yok. Önce "npm run create-admin -- <kullanıcı>" ile güçlü parolalı bir yönetici oluşturun.');
+    }
+    for (const admin of admins) {
+        if (await verifyPasswordAsync(DEFAULT_ADMIN_PASSWORD, admin.password_hash)) {
+            throw new Error(`Üretimde "${admin.username}" yöneticisi herkesçe bilinen varsayılan parolayı kullanıyor. Açılmadan önce "npm run create-admin -- ${admin.username} --renew" ile parolayı değiştirin.`);
+        }
+    }
+}
+
+export async function ensureDefaultAdminUser({ production = false } = {}) {
+    if (!db || production) return null;
+    const existing = findUserByUsername(DEFAULT_ADMIN_USERNAME);
     if (existing) {
         return existing;
     }
     const id = crypto.randomUUID();
-    const passwordHash = await hashPasswordAsync('xfactor');
+    const passwordHash = await hashPasswordAsync(DEFAULT_ADMIN_PASSWORD);
     db.prepare('INSERT INTO users (id, username, password_hash, is_admin) VALUES (?, ?, ?, 1)')
-      .run(id, 'admin', passwordHash);
+      .run(id, DEFAULT_ADMIN_USERNAME, passwordHash);
     return {
         id,
         username: 'admin',

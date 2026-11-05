@@ -112,6 +112,30 @@ try {
         assert.strictEqual(response.status, 400);
         assert.strictEqual(activeSessionCount(mfaUser.id), 1);
     });
+
+    await runAsyncTest('production login never seeds the public default admin; development still does', async () => {
+        const adminCount = () => db.prepare("SELECT COUNT(*) AS count FROM users WHERE username = 'admin'").get().count;
+        assert.strictEqual(adminCount(), 0);
+        const productionApp = express();
+        productionApp.use(express.json());
+        productionApp.use(createAuthRouter({ requireAuth: (req, res) => res.status(401).end(), production: true }));
+        const productionServer = http.createServer(productionApp);
+        await new Promise(resolve => productionServer.listen(0, '127.0.0.1', resolve));
+        try {
+            const rejected = await fetch(`http://127.0.0.1:${productionServer.address().port}/login`, {
+                method: 'POST', headers: { 'content-type': 'application/json', connection: 'close' },
+                body: JSON.stringify({ username: 'admin', password: 'xfactor' })
+            });
+            assert.strictEqual(rejected.status, 401);
+            assert.strictEqual(adminCount(), 0);
+        } finally {
+            productionServer.closeAllConnections();
+            productionServer.close();
+        }
+        const development = await postLogin({ username: 'admin', password: 'xfactor' });
+        assert.strictEqual(development.status, 200);
+        assert.strictEqual(adminCount(), 1);
+    });
 } finally {
     server.closeAllConnections();
     server.close();
