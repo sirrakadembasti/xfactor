@@ -71,12 +71,15 @@ export async function executeLocalJob(job, options = {}) {
     const base = path.resolve(options.baseDirectory || path.join(process.env.XFACTOR_LOCAL_WORKER_DATA || os.tmpdir(), 'xfactor-local-workspaces'));
     await fs.mkdir(base, { recursive: true });
     if ((await fs.lstat(base)).isSymbolicLink()) throw new Error('Workspace base cannot be a symbolic link.');
-    workspace = await fs.mkdtemp(path.join(base, 'job-'));
+    // Operator/OS ancestors may be aliased (macOS /var -> /private/var, Windows 8.3 TEMP names);
+    // owned paths are created below the canonical base so later strict link checks compare like with like.
+    const canonicalBase = await fs.realpath(base);
+    workspace = await fs.mkdtemp(path.join(canonicalBase, 'job-'));
     onResource?.({ type: 'workspace', path: workspace, executionProfile: 'local-trusted' });
     const fullApp = Array.isArray(job.contract?.domains) && job.contract.domains.length > 0;
     processes = await createLocalProcessManager({ tools, workspace, deadline: job.deadline, signal, onResource, onProgress: options.onProgress,
-      cacheRoot: path.join(path.dirname(base), 'xfactor-local-process-host'),
-      npmCacheDirectory: path.join(path.dirname(base), 'xfactor-local-cache', 'npm'),
+      cacheRoot: path.join(path.dirname(canonicalBase), 'xfactor-local-process-host'),
+      npmCacheDirectory: path.join(path.dirname(canonicalBase), 'xfactor-local-cache', 'npm'),
       resourceLimits: { memoryBytes: (fullApp ? 4 : 1) * 1024 ** 3, pids: fullApp ? 250 : 100 } });
     function target(value) {
       const raw = String(value);

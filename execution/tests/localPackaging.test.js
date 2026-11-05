@@ -7,6 +7,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 
+// OS temp dirs may be aliased (macOS /var, Windows 8.3 names); owned fixtures live under the canonical path.
+const CANONICAL_TMP = await fs.realpath(os.tmpdir());
+
 const toolsUrl = new URL('../../scripts/local-worker-tools.mjs', import.meta.url);
 test('worker packaging cannot write into platform agent instructions', async () => {
   const { packageLocalWorker } = await import('../../scripts/package-local-worker.mjs');
@@ -75,7 +78,7 @@ test('runtime browser copy rejects linked state and linked source directories', 
   assert.equal((await fs.readdir(state)).filter(name=>name.startsWith('browser-runtime-')).length,0);
 });
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor package test '));
+  const root = await fs.mkdtemp(path.join(CANONICAL_TMP, 'xfactor package test '));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, 'tools'), { recursive: true });
   await fs.writeFile(path.join(root, 'tools/node'), 'binary fixture');

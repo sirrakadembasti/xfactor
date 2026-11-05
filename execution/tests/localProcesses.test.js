@@ -1,7 +1,7 @@
 import test from 'node:test';
 import cp from 'node:child_process';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile, readFile, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, readFile, symlink, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
@@ -9,9 +9,12 @@ import { createLocalProcessManager } from '../localProcesses.js';
 import { runVerificationChecks } from '../../backend/verification/runChecks.js';
 import { ARTIFACT_LIMITS } from '../../backend/artifactLimits.js';
 
+// OS temp dirs may be aliased (macOS /var, Windows 8.3 names); owned fixtures live under the canonical path.
+const CANONICAL_TMP = await realpath(os.tmpdir());
+
 async function setup(t, options = {}) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'xfactor-local-processes-'));
-  assert.equal(path.dirname(root), os.tmpdir());
+  const root = await mkdtemp(path.join(CANONICAL_TMP, 'xfactor-local-processes-'));
+  assert.equal(path.dirname(root), CANONICAL_TMP);
   const workspace = path.join(root, 'workspace'); await mkdir(workspace);
   const npm = path.join(root, 'npm-cli.js');
   await writeFile(npm, 'console.log(JSON.stringify({argv:process.argv.slice(2),cli:process.env.XFACTOR_NPM_CLI}));');
@@ -127,7 +130,7 @@ test('real command diagnostics emit only fixed metadata and timeout outcome', as
 });
 
 test('two owned jobs retain only operator package cache while homes and private config stay separate', async t => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'xfactor-public-npm-cache-'));
+  const root = await mkdtemp(path.join(CANONICAL_TMP, 'xfactor-public-npm-cache-'));
   const npmCacheDirectory = path.join(root, 'npm');
   t.after(() => rm(root, { recursive: true, force: true }));
   const oldSecret = process.env.XFACTOR_CACHE_HOST_SECRET;
