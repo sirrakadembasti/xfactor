@@ -688,6 +688,73 @@ export default function App() {
     }
   };
 
+  const handleReverify = async event => {
+    if (!activeProjectId || !projectState?.reverification?.available) return;
+    rememberUiErrorTrigger(event);
+    const identity = captureRequest('reverify', activeProjectId);
+    try {
+      const data = await api.reverifyProject(activeProjectId, projectState.reverification.contractId,
+        buildActionRequestOptions(createActionId('reverify')));
+      if (isCurrentRequest(identity)) {
+        setProjectState(data);
+        fetchProjects();
+      }
+    } catch (err) {
+      if (isCurrentRequest(identity)) setUiError('Yeniden doğrulama hatası: ' + err.message);
+    }
+  };
+
+  const handlePrepareRepair = async event => {
+    if (!activeProjectId || !projectState?.repairPreparation?.available || isThinking) return;
+    rememberUiErrorTrigger(event);
+    const identity = captureRequest('repair-proposal', activeProjectId);
+    setIsThinking(true);
+    try {
+      const data = await api.prepareProjectRepair(activeProjectId, projectState.repairPreparation.contractId,
+        buildActionRequestOptions(createActionId('repair-proposal')));
+      if (isCurrentRequest(identity)) { setProjectState(data); fetchProjects(); }
+    } catch (err) {
+      if (isCurrentRequest(identity)) setUiError('Onarım önerisi hazırlanamadı: ' + err.message);
+    } finally {
+      if (isCurrentRequest(identity)) setIsThinking(false);
+    }
+  };
+
+  const handleStartRepair = async event => {
+    const proposal = projectState?.workflow?.controlledRepair?.proposal;
+    if (!activeProjectId || !proposal?.ready || isThinking) return;
+    rememberUiErrorTrigger(event);
+    const identity = captureRequest('repair', activeProjectId);
+    try {
+      const data = await api.startProjectRepair(activeProjectId, proposal.contractId, proposal.planHash,
+        buildActionRequestOptions(createActionId('repair')));
+      if (isCurrentRequest(identity)) { setProjectState(data); fetchProjects(); }
+    } catch (err) {
+      if (isCurrentRequest(identity)) setUiError('Onarım başlatılamadı: ' + err.message);
+    }
+  };
+
+  const handleReviewRepair = async event => {
+    const review = projectState?.repairSemanticReview;
+    const repair = projectState?.workflow?.controlledRepair;
+    if (!activeProjectId || !review?.available || repair?.phase !== 'patched'
+      || !repair.proposal?.contractId || !review.planHash || isThinking) return;
+    rememberUiErrorTrigger(event);
+    const identity = captureRequest('repair-review', activeProjectId);
+    const projectEpoch = projectEpochRef.current;
+    const isCurrentReview = () => isCurrentRequest(identity) && projectEpoch === projectEpochRef.current;
+    setIsThinking(true);
+    try {
+      const data = await api.reviewProjectRepair(activeProjectId, repair.proposal.contractId, review.planHash,
+        buildActionRequestOptions(createActionId('repair-review')));
+      if (isCurrentReview()) { setProjectState(data); fetchProjects(); }
+    } catch (err) {
+      if (isCurrentReview()) setUiError('Düzeltmelerin incelemesi başlatılamadı. Lütfen yeniden deneyin.');
+    } finally {
+      if (isCurrentReview()) setIsThinking(false);
+    }
+  };
+
   const handleResume = async event => {
     if (!activeProjectId) return;
     rememberUiErrorTrigger(event);
@@ -923,6 +990,10 @@ export default function App() {
                   handleSendMessage={handleSendMessage}
                   handleApprove={handleApprove}
                   handleResume={handleResume}
+                  handleReverify={handleReverify}
+                  handlePrepareRepair={handlePrepareRepair}
+                  handleStartRepair={handleStartRepair}
+                  handleReviewRepair={handleReviewRepair}
                   setViewMode={setViewMode}
                   isThinking={isThinking}
                 />

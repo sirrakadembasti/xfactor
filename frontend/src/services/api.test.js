@@ -32,8 +32,22 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+test('reviews the bound repair through its encoded project route with action and cancellation options', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ attemptId: 'review-1' }) });
+  vi.stubGlobal('fetch', fetchMock);
+  const client = createApiClient('https://api.example.test/api');
+  const controller = new AbortController();
+  expect(await client.reviewProjectRepair('project/a b', 'approved-contract', 'repair-plan',
+    buildActionRequestOptions('review-action', { signal: controller.signal }))).toEqual({ attemptId: 'review-1' });
+  expect(fetchMock.mock.calls[0]).toEqual([
+    'https://api.example.test/api/projects/project%2Fa%20b/repair-review',
+    expect.objectContaining({ method: 'POST', body: JSON.stringify({ contractId: 'approved-contract', proposalHash: 'repair-plan' }),
+      headers: expect.objectContaining({ 'X-XFactor-Action-Id': 'review-action' }), signal: expect.any(AbortSignal) })
+  ]);
+});
+
 describe('API request cancellation and identity handling', () => {
-  test('waits for a slow Manager reply while ordinary requests retain their 15 second timeout', async () => {
+  test.each(['chat', 'repair'])('waits for a slow Manager %s reply while ordinary requests retain their 15 second timeout', async mode => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', vi.fn((_url, { signal }) => new Promise((resolve, reject) => {
       signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
@@ -41,7 +55,7 @@ describe('API request cancellation and identity handling', () => {
     })));
     const client = createApiClient('https://api.example.test/api');
     let chatSettled = false;
-    const chat = client.sendChatMessage('hotel', 'Otel projesini planla.').then(
+    const chat = (mode === 'chat' ? client.sendChatMessage('hotel', 'Otel projesini planla.') : client.prepareProjectRepair('hotel', 'contract')).then(
       value => { chatSettled = true; return { value }; },
       error => { chatSettled = true; return { error }; }
     );

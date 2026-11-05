@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { vi } from 'vitest';
 import ConnectionStatus from '../ConnectionStatus';
 import Header from '../Header';
+import Sidebar from '../Sidebar';
 import App from '../../App';
 import { api } from '../../services/api';
 
@@ -57,12 +58,31 @@ test('Header puts chat first and quality next in the project navigation', () => 
   ]);
 });
 
+test('Header cannot approve a pending draft with lost mandatory scope', () => {
+  const handleApprove = vi.fn();
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'pending_approval',
+    planScopeReview: { valid: false, issues: [{ id: 'REQ-5' }] } }} handleApprove={handleApprove} />);
+  const approval = screen.getByRole('button', { name: /Planı Onayla ve Başlat/ });
+  expect(approval).toBeDisabled();
+  fireEvent.click(approval);
+  expect(handleApprove).not.toHaveBeenCalled();
+});
+
 test('Header offers Resume for verification_failed projects', () => {
   const handleResume = vi.fn();
   render(<Header {...headerProps} projectState={{ title: 'Project', status: 'verification_failed' }} handleResume={handleResume} />);
 
   fireEvent.click(screen.getByRole('button', { name: /Projeyi Devam Ettir \(Resume\)/ }));
   expect(handleResume).toHaveBeenCalledTimes(1);
+});
+
+test('Header identifies verification-only work and allows pausing its worker stage', () => {
+  const handlePause = vi.fn();
+  render(<Header {...headerProps} projectState={{ title: 'Project', status: 'implementation_finished',
+    executionMode: 'verification_only' }} handlePause={handlePause} />);
+  expect(screen.getByText('Yalnız doğrulanıyor')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: /Süreci Duraklat/ }));
+  expect(handlePause).toHaveBeenCalledTimes(1);
 });
 
 test('Header offers Resume when finalization failed after artifact verification', () => {
@@ -129,6 +149,14 @@ test.each(['implementation_finished', 'verification_pending', 'verification_runn
     expect(screen.queryByRole('button', { name: /ZIP.*İndir/ })).not.toBeInTheDocument();
   }
 );
+
+test('verification-only work is not labelled as generation in the project list', () => {
+  render(<Sidebar projects={[{ id: 'project-1', title: 'Project', status: 'implementing', executionMode: 'verification_only' }]}
+    activeProjectId="project-1" searchQuery="" setSearchQuery={vi.fn()} setActiveProjectId={vi.fn()}
+    getStatusBadge={() => 'Üretiliyor'} readOnly user={{ username: 'admin' }} />);
+  expect(screen.getByText('Yalnız doğrulanıyor')).toBeVisible();
+  expect(screen.queryByText('Üretiliyor')).not.toBeInTheDocument();
+});
 
 test('polling reconciles a stale production header when the active project reaches quality control without a websocket event', async () => {
   vi.useFakeTimers();

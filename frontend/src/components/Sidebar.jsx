@@ -121,7 +121,9 @@ export default function Sidebar({
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <div>{getStatusBadge(p.status)}</div>
+                    <div>{p.executionMode === 'verification_only'
+                      ? <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">Yalnız doğrulanıyor</span>
+                      : getStatusBadge(p.status)}</div>
                     {p.missingOnDisk && (
                       <span className="text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 font-medium">
                         (Diskte Bulunamadı)

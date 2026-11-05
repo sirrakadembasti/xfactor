@@ -255,6 +255,7 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
     getProjectLogs: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/logs`, opts),
 
     // Read-only quality evidence
+    getExecutionProgress: (id, opts = {}) => request(`/projects/${encodePathSegment(id)}/execution-progress`, opts),
     getVerificationRuns: (id, opts = {}) => {
       const { cursor, limit, ...requestOpts } = opts;
       const params = new URLSearchParams();
@@ -314,6 +315,26 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
       request(`/projects/${encodePathSegment(id)}/pause`, {
         method: 'POST',
         ...opts
+      }),
+
+    reverifyProject: (id, contractId, opts = {}) =>
+      request(`/projects/${encodePathSegment(id)}/reverify`, {
+        method: 'POST', body: JSON.stringify({ contractId }), ...opts
+      }),
+
+    prepareProjectRepair: (id, contractId, opts = {}) =>
+      request(`/projects/${encodePathSegment(id)}/repair-proposal`, {
+        method: 'POST', body: JSON.stringify({ contractId }), timeoutMs: 0, ...opts
+      }),
+
+    startProjectRepair: (id, contractId, proposalHash, opts = {}) =>
+      request(`/projects/${encodePathSegment(id)}/repair`, {
+        method: 'POST', body: JSON.stringify({ contractId, proposalHash }), ...opts
+      }),
+
+    reviewProjectRepair: (id, contractId, proposalHash, opts = {}) =>
+      request(`/projects/${encodePathSegment(id)}/repair-review`, {
+        method: 'POST', body: JSON.stringify({ contractId, proposalHash }), ...opts
       }),
 
     resumeProject: (id, opts = {}) =>
