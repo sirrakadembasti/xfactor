@@ -91,7 +91,7 @@ npm run dev
 
 > Temiz oda doğrulama bütçesi operatörün `VERIFICATION_JOB_TIMEOUT_MS` ayarıyla belirlenir: varsayılan 15 dakika (`900000`), kaynak geliştirme başlatıcısının hem Docker hem yerel profilinde ayar verilmemişse 25 dakika (`1500000`). Başlatıcı dışındaki varsayılan 15 dakikadır. Pozitif tam sayı değerler mevcut 25 dakika worker sınırını aşamaz; açıkça verilen daha düşük bütçe korunur. Ayar yalnız yeni işlerin deadline'ını belirler; çalışan iş uzatılmaz, iptal ve kalite kapıları değişmez. Bu ayar proje sözleşmesi veya üretilen uygulamanın `.env` dosyasından okunmaz.
 
-> Kısıtlı Windows kurumsal ortamlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
+> Depoda ayrı bir `start-project.ps1` betiği yoktur; Windows'ta da kök dizindeki `npm run dev` komutunu veya Seçenek B'deki ayrı terminal adımlarını kullanın.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 Üç ayrı terminal penceresinde servisleri bağımsız olarak ayağa kaldırabilirsiniz:
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*

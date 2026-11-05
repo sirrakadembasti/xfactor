@@ -154,7 +154,7 @@ npm run dev
 
 > Backend'in `GET /healthz` adresi yalnız süreç canlılığını gösterir. `GET /readyz`, Worker'ın `prepare_dependencies` ve `verify_artifact` kapasitesini de denetler. `READINESS_WORKER_TIMEOUT_MS` temel varsayılanı `2000` ms'dir; yerel geliştirme başlatıcısı ayar verilmemişse `35000` ms kullanır. Açıkça verilen değer korunur; örnekteki `2000` değerini ayarlarsanız daha uzun yerel varsayılan uygulanmaz. Worker gerçek Chromium başlatma ve sayfa çizimini de sınar; soğuk başlangıç bu süreyi aşabilir. Hazır olmayan worker için HTTP 503 döner. `8099` portunda 401 görmek yalnız yetki denetiminin yanıtıdır, hazır olma kanıtı değildir.
 
-> Kısıtlı Windows kurumsal ağlarında `start-project.ps1` betiği üzerinden de doğrudan çalıştırılabilir.
+> Depoda ayrı bir `start-project.ps1` betiği yoktur; Windows'ta da kök dizindeki `npm run dev` komutunu veya aşağıdaki ayrı terminal adımlarını kullanın.
 #### Seçenek B: Ayrı Terminallerde Başlatma
 * **1. Terminal (Backend):**
   ```bash
@@ -778,7 +778,7 @@ Yeni hedef seçin; uygulama kaynakları (`docs`, `x-agents` dahil) altına paket
 
 ### Başlatma ve bütünlük
 
-Tüm dizini aynı OS/mimariye kopyalayıp Windows'ta `start-worker.cmd`, Linux/macOS'ta `./start-worker.sh` çalıştırın. Boşluklu yollar ve Node kurulu olmayan hedef desteklenir. Başlatıcı hash/araç/sürüm denetler. Kaynak paketi worker hesabına salt okunur tutun. SHA-256 bozulmayı ölçer; manifest ile paketin birlikte kötü niyetle değiştirilmesini doğrulayamaz, güvenilir dağıtım kaynağı gerekir.
+Tüm dizini aynı OS/mimariye kopyalayıp Windows'ta `start-worker.cmd`, Linux/macOS'ta `./start-worker.sh` çalıştırın. Komut isteminden başlatırken `NoDefaultCurrentDirectoryInExePath` ile sertleştirilmiş Windows'ta dosya adını `.\start-worker.cmd` olarak yazın. Boşluklu yollar ve Node kurulu olmayan hedef desteklenir. Başlatıcı hash/araç/sürüm denetler. Kaynak paketi worker hesabına salt okunur tutun. SHA-256 bozulmayı ölçer; manifest ile paketin birlikte kötü niyetle değiştirilmesini doğrulayamaz, güvenilir dağıtım kaynağı gerekir.
 
 Chromium doğrulanmış paketten state altında benzersiz `browser-runtime-*` kopyasına alınır, kopya hash'leri tekrar denetlenir. Windows çocukları executable yanında erken log oluşturabildiği için tüm prob/işler bu yazılabilir kopyayı kullanır; ek browser dizini kadar alan/kopyalama süresi gerekir. Normal kapanış/açılış hatası temizler; ani launcher çöküşü operatör temizliği gerektirebilir. Log/crash dosyaları kaynak pakete dahil edilmez; kabul testi işlerden sonra immutable manifest'i tekrar denetler.
 

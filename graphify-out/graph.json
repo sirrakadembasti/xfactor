@@ -1687,7 +1687,7 @@
       "group": "tests",
       "file": "backend/tests/testInventory.js",
       "description": "",
-      "val": 5,
+      "val": 5.5,
       "provenance": "ast"
     },
     {
@@ -2857,7 +2857,7 @@
       "group": "tests",
       "file": "backend/tests/test_p9_runner_inventory.js",
       "description": "",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast"
     },
     {
@@ -3498,6 +3498,16 @@
       "file": "backend/workflowAttempts.js",
       "description": "",
       "val": 25.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "docs/rontgen-2026-11-05.md",
+      "label": "rontgen-2026-11-05.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/rontgen-2026-11-05.md",
+      "description": "",
+      "val": 1,
       "provenance": "ast"
     },
     {
@@ -4580,7 +4590,7 @@
       "group": "packages",
       "file": null,
       "description": "node:url",
-      "val": 19,
+      "val": 19.5,
       "provenance": "ast"
     },
     {
@@ -14627,7 +14637,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@216",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@217",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -14635,21 +14645,21 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 216
+      "line": 217
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@220",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@221",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
       "file": "backend/tests/testInventory.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
-      "line": 220
+      "line": 221
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@225",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@226",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -14657,7 +14667,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 225
+      "line": 226
     },
     {
       "id": "package:assert",
@@ -21318,7 +21328,7 @@
       "line": 133
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@748",
+      "id": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@752",
       "label": "deriveExpectedCheckpointId",
       "type": "Function",
       "group": "tests",
@@ -21326,10 +21336,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 748
+      "line": 752
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "id": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "label": "requestWithBody",
       "type": "Function",
       "group": "tests",
@@ -21337,10 +21347,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 752
+      "line": 756
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:requireAuth@753",
+      "id": "backend/tests/test_p3_observability.js#Function:requireAuth@757",
       "label": "requireAuth",
       "type": "Function",
       "group": "tests",
@@ -21348,10 +21358,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 753
+      "line": 757
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Method:broadcast@761",
+      "id": "backend/tests/test_p3_observability.js#Method:broadcast@765",
       "label": "broadcast",
       "type": "Method",
       "group": "tests",
@@ -21359,10 +21369,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 761
+      "line": 765
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:snapshotDbState@773",
+      "id": "backend/tests/test_p3_observability.js#Function:snapshotDbState@777",
       "label": "snapshotDbState",
       "type": "Function",
       "group": "tests",
@@ -21370,10 +21380,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 773
+      "line": 777
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:projectionFixture@1240",
+      "id": "backend/tests/test_p3_observability.js#Function:projectionFixture@1244",
       "label": "projectionFixture",
       "type": "Function",
       "group": "tests",
@@ -21381,10 +21391,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 1240
+      "line": 1244
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:snapshot@1315",
+      "id": "backend/tests/test_p3_observability.js#Function:snapshot@1319",
       "label": "snapshot",
       "type": "Function",
       "group": "tests",
@@ -21392,10 +21402,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1315
+      "line": 1319
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1368",
+      "id": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1372",
       "label": "insertCheckpoint",
       "type": "Function",
       "group": "tests",
@@ -21403,10 +21413,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 1368
+      "line": 1372
     },
     {
-      "id": "backend/tests/test_p3_observability.js#Function:inspect@1427",
+      "id": "backend/tests/test_p3_observability.js#Function:inspect@1431",
       "label": "inspect",
       "type": "Function",
       "group": "tests",
@@ -21414,7 +21424,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 1427
+      "line": 1431
     },
     {
       "id": "backend/tests/test_p4_production_safety.js#Function:runAsyncTest@27",
@@ -54354,32 +54364,42 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@216",
-      "label": "contains",
+      "target": "package:node:url",
+      "label": "imports_package",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 216
+        "line": 3
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@220",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@217",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 220
+        "line": 217
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@225",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@221",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 225
+        "line": 221
+      }
+    },
+    {
+      "source": "backend/tests/testInventory.js",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@226",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/testInventory.js",
+        "line": 226
       }
     },
     {
@@ -66464,17 +66484,7 @@
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@748",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_p3_observability.js",
-        "line": 748
-      }
-    },
-    {
-      "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@752",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -66484,72 +66494,82 @@
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:requireAuth@753",
+      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 753
+        "line": 756
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Method:broadcast@761",
+      "target": "backend/tests/test_p3_observability.js#Function:requireAuth@757",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 761
+        "line": 757
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:snapshotDbState@773",
+      "target": "backend/tests/test_p3_observability.js#Method:broadcast@765",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 773
+        "line": 765
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:projectionFixture@1240",
+      "target": "backend/tests/test_p3_observability.js#Function:snapshotDbState@777",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1240
+        "line": 777
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:snapshot@1315",
+      "target": "backend/tests/test_p3_observability.js#Function:projectionFixture@1244",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1315
+        "line": 1244
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1368",
+      "target": "backend/tests/test_p3_observability.js#Function:snapshot@1319",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1368
+        "line": 1319
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:inspect@1427",
+      "target": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1372",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1427
+        "line": 1372
+      }
+    },
+    {
+      "source": "backend/tests/test_p3_observability.js",
+      "target": "backend/tests/test_p3_observability.js#Function:inspect@1431",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p3_observability.js",
+        "line": 1431
       }
     },
     {
@@ -105084,7 +105104,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@216",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@217",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106883,13 +106903,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@225",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@220",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@226",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@221",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 226
+        "line": 227
       }
     },
     {
@@ -115109,67 +115129,67 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 324
+        "line": 328
       }
     },
     {
-      "source": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "source": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "target": "backend/tests/test_p3_observability.js#Function:createRealProjectAccess@73",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 758
+        "line": 762
       }
     },
     {
-      "source": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "source": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "target": "backend/tests/test_p3_observability.js#Function:requestFromFixture@92",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 771
+        "line": 775
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 867
+        "line": 871
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@748",
+      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@752",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 889
+        "line": 893
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:snapshotDbState@773",
+      "target": "backend/tests/test_p3_observability.js#Function:snapshotDbState@777",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 923
+        "line": 927
       }
     },
     {
-      "source": "backend/tests/test_p3_observability.js#Function:projectionFixture@1240",
+      "source": "backend/tests/test_p3_observability.js#Function:projectionFixture@1244",
       "target": "backend/workflowAttempts.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1260
+        "line": 1264
       }
     },
     {
@@ -115179,27 +115199,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1278
+        "line": 1282
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:projectionFixture@1240",
+      "target": "backend/tests/test_p3_observability.js#Function:projectionFixture@1244",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1280
+        "line": 1284
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:snapshot@1315",
+      "target": "backend/tests/test_p3_observability.js#Function:snapshot@1319",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1320
+        "line": 1324
       }
     },
     {
@@ -115209,27 +115229,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1358
+        "line": 1362
       }
     },
     {
-      "source": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1368",
-      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@748",
+      "source": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1372",
+      "target": "backend/tests/test_p3_observability.js#Function:deriveExpectedCheckpointId@752",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1374
+        "line": 1378
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1368",
+      "target": "backend/tests/test_p3_observability.js#Function:insertCheckpoint@1372",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1377
+        "line": 1381
       }
     },
     {
@@ -115239,27 +115259,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1410
+        "line": 1414
       }
     },
     {
-      "source": "backend/tests/test_p3_observability.js#Function:inspect@1427",
-      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@752",
+      "source": "backend/tests/test_p3_observability.js#Function:inspect@1431",
+      "target": "backend/tests/test_p3_observability.js#Function:requestWithBody@756",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1428
+        "line": 1432
       }
     },
     {
       "source": "backend/tests/test_p3_observability.js",
-      "target": "backend/tests/test_p3_observability.js#Function:inspect@1427",
+      "target": "backend/tests/test_p3_observability.js#Function:inspect@1431",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p3_observability.js",
-        "line": 1437
+        "line": 1441
       }
     },
     {
@@ -117834,7 +117854,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@225",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@226",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -117844,12 +117864,22 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@221",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p9_runner_inventory.js",
+        "line": 14
+      }
+    },
+    {
+      "source": "backend/tests/test_p9_runner_inventory.js",
       "target": "backend/tests/test_runner.js#Function:runTestFile@23",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_p9_runner_inventory.js",
-        "line": 20
+        "line": 22
       }
     },
     {
@@ -118489,7 +118519,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 304
+        "line": 311
       }
     },
     {
@@ -118499,7 +118529,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 339
+        "line": 346
       }
     },
     {
@@ -118509,7 +118539,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 414
+        "line": 421
       }
     },
     {
@@ -119944,7 +119974,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@216",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@217",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -119954,7 +119984,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@65",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@225",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@226",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -128519,7 +128549,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 174
+        "line": 175
       }
     },
     {
@@ -128529,7 +128559,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 237
+        "line": 238
       }
     },
     {
@@ -128539,7 +128569,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 255
+        "line": 256
       }
     },
     {
@@ -128549,7 +128579,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localPackaging.test.js",
-        "line": 256
+        "line": 257
       }
     },
     {

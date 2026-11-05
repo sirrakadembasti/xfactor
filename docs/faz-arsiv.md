@@ -403,6 +403,10 @@ Seçili backend regresyonları ve dört frontend paketi (76 test), frontend buil
 
 Son kayıt `3269a25b` (4 Kasım 11:50 İstanbul, sözleşme 3), 21 PASS, 7 FAIL ve 7 BLOCKED kontrol satırı içeriyor. Test yardımcısının ürün ve stok hareketi çağrıları servis türleriyle eşleşmediğinden TypeScript ve derleme durdu. Web servisi hazır olmadı. Güncel sistem testi, API ve tarayıcı kanıtı ile gereksinim ve Türkçe arayüz kabulü açık. Proje duraklatılmış durumda. Kullanıcı isteğiyle yeni test veya koşu başlatılmadı. [Ayrıntılı devam kaydı](superpowers/plans/2026-11-01-controlled-repair.md).
 
+### Halka 33 — 5 Kasım: platform röntgeni ve yeni yol haritası
+
+Belgeler, Graphify ve git geçmişi kodla karşılaştırıldı. 18 ana kapı, 17 migrasyon, 180 dosyalık test envanteri ve `3269a25b` koşusunun 21/7/7 dağılımı koddan ve canlı DB'den doğrulandı. Yaklaşık 150 dosyalık çalışma commit edilmemiş durumda. Bu çalışma üç backend süitini kırdı. Güvenlik, şema ve API tarafında da açık bulgular var. Yeni yol haritası Faz 0–5 olarak tanımlandı. `stok-takip-1` için sözleşme 4 taslağı `pending_approval` hâlinde bekliyor. Kaynak değiştirilmedi; yalnız belgeler hizalandı. [Röntgen raporu](rontgen-2026-11-05.md).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
