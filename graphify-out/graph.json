@@ -132790,7 +132790,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/package-local-worker.mjs",
-        "line": 80
+        "line": 82
       }
     },
     {
@@ -132800,7 +132800,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/package-local-worker.mjs",
-        "line": 90
+        "line": 92
       }
     },
     {
@@ -133020,7 +133020,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/test-local-worker-package.mjs",
-        "line": 155
+        "line": 159
       }
     },
     {

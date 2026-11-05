@@ -1,6 +1,6 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-11-05T19:02:55.461Z
+Üretim tarihi: 2026-11-05T19:20:48.676Z
 
 - 453 kaynak ve belge dosyası
 - 3619 düğüm
