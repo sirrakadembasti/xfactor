@@ -143,7 +143,8 @@ test('platform launcher uses bundled Node from a directory with spaces without h
   await fs.writeFile(path.join(root, 'scripts/start-local-worker.mjs'), 'console.log(JSON.stringify({ executable: process.execPath, args: process.argv.slice(2) }));');
   await writeLaunchers(root);
   const shell = process.platform === 'win32' ? process.env.ComSpec : '/bin/sh';
-  const args = process.platform === 'win32' ? ['/d', '/c', 'start-worker.cmd'] : [path.join(root, 'start-worker.sh')];
+  // Explicit relative path: hardened Windows hosts set NoDefaultCurrentDirectoryInExePath.
+  const args = process.platform === 'win32' ? ['/d', '/c', '.\\start-worker.cmd'] : [path.join(root, 'start-worker.sh')];
   const result = spawnSync(shell, args, { cwd: root, env: { ...process.env, PATH: '' }, encoding: 'utf8', windowsHide: true });
   assert.equal(result.status, 0, result.stderr);
   const output = JSON.parse(result.stdout.trim());

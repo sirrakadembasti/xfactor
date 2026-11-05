@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 const names = `
 testInventory.js
 testHarness.js
@@ -217,7 +218,7 @@ export function getRunnableTestFiles() {
     return TEST_INVENTORY.filter(entry => entry.run);
 }
 
-export async function discoverTestFiles(testsDir = path.dirname(new URL(import.meta.url).pathname)) {
+export async function discoverTestFiles(testsDir = path.dirname(fileURLToPath(import.meta.url))) {
     const entries = await fs.readdir(testsDir, { withFileTypes: true });
     return entries.filter(entry => entry.isFile() && /^test.*\.js$/i.test(entry.name)).map(entry => entry.name).sort();
 }
