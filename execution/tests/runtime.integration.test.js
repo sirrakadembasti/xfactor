@@ -46,11 +46,17 @@ test('Isolated worker protocol integration (requires Docker daemon)', async (t) 
 
   await t.test('real Chromium proves role journeys within unchanged worker limits', () => {
     const fixture = path.join(dockerfileDir, 'tests', 'browserRunner.test.js');
-    const output = command('run', '--rm', '--network', 'none', ...getIsolationArgs(),
-      '--mount', `type=bind,source=${fixture},target=/opt/browser/tests/browserRunner.test.js,readonly`,
-      '--env', 'XFACTOR_BROWSER_RUNNER=/opt/worker/browserRunner.cjs',
-      '--env', 'XFACTOR_TEST_CHROMIUM=/usr/bin/chromium-browser',
-      '--entrypoint', 'node', 'xfactor-worker-runtime', '--test', '/opt/browser/tests/browserRunner.test.js');
+    let output;
+    try {
+      output = command('run', '--rm', '--network', 'none', ...getIsolationArgs(),
+        '--mount', `type=bind,source=${fixture},target=/opt/browser/tests/browserRunner.test.js,readonly`,
+        '--env', 'XFACTOR_BROWSER_RUNNER=/opt/worker/browserRunner.cjs',
+        '--env', 'XFACTOR_TEST_CHROMIUM=/usr/bin/chromium-browser',
+        '--entrypoint', 'node', 'xfactor-worker-runtime', '--test', '/opt/browser/tests/browserRunner.test.js');
+    } catch (error) {
+      // Surface the in-container TAP; execFileSync errors otherwise show only the command line.
+      assert.fail(`Containerized browser suite failed:\n${String(error.stdout || '').slice(-8000)}\n${String(error.stderr || '').slice(-4000)}`);
+    }
     assert.match(output, /# fail 0/);
   });
 

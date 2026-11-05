@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
+// The Docker integration mounts only this file; the runner lives at XFACTOR_BROWSER_RUNNER inside the image.
+const RUNNER_MODULE = process.env.XFACTOR_BROWSER_RUNNER || '../browserRunner.cjs';
+
 function mockUiElement(tagName, text, attrs = {}) {
   return { tagName, childNodes: text ? [{ nodeType: 3, textContent: text }] : [], getAttribute: key => attrs[key] || null,
     getClientRects: () => [1], closest: selector => Object.keys(attrs).some(key => selector.includes(`[${key}`)) ? {} : null };
@@ -14,7 +17,7 @@ function withUiDocument(elements, run, style = () => ({ visibility: 'visible', d
 }
 
 test('UI evidence captures opened menu and error states without changing action proof (mock)', async () => {
-  const { runBrowserJourney } = await import('../browserRunner.cjs');
+  const { runBrowserJourney } = await import(RUNNER_MODULE);
   let opened = false;
   const control = { waitFor: async () => {}, evaluate: async fn => String(fn).includes('activeElement') ? true : 'Menüyü aç', press: async () => { opened = true; } };
   const page = {
@@ -35,7 +38,7 @@ test('UI evidence captures opened menu and error states without changing action 
 });
 
 test('UI collector includes visible aria-hidden/inert English labels and button input values only', async () => {
-  const { collectVisibleUiText } = await import('../browserRunner.cjs');
+  const { collectVisibleUiText } = await import(RUNNER_MODULE);
   const option = { textContent: 'English option' };
   const elements = [mockUiElement('DIV', 'Login', { 'aria-hidden': 'true' }), mockUiElement('DIV', 'Settings', { inert: '' }),
     Object.assign(mockUiElement('SELECT'), { selectedOptions: [option], options: [option] }),
@@ -50,7 +53,7 @@ test('UI collector includes visible aria-hidden/inert English labels and button 
 });
 
 test('UI collector blocks unsupported CSS text, closed custom elements and display contents text', async () => {
-  const { collectVisibleUiText } = await import('../browserRunner.cjs');
+  const { collectVisibleUiText } = await import(RUNNER_MODULE);
   const variants = [
     [mockUiElement('DIV'), (_el, pseudo) => ({ visibility: 'visible', display: 'block', content: pseudo ? '"Login"' : 'none' })],
     [Object.assign(mockUiElement('X-MENU'), { shadowRoot: null }), () => ({ visibility: 'visible', display: 'block', content: 'none' })],
@@ -63,7 +66,7 @@ test('UI collector blocks unsupported CSS text, closed custom elements and displ
 });
 
 test('UI collector blocks native file labels and unobserved native select option surfaces', async () => {
-  const { collectVisibleUiText } = await import('../browserRunner.cjs');
+  const { collectVisibleUiText } = await import(RUNNER_MODULE);
   const selected = { textContent: 'Yönetici' };
   const cases = [
     Object.assign(mockUiElement('INPUT', null, { type: 'file' }), { type: 'file' }),
@@ -76,7 +79,7 @@ test('UI collector blocks native file labels and unobserved native select option
 });
 
 test('UI evidence route templates never serialize unmatched or encoded secret pathnames', async () => {
-  const { sanitizeEvidenceRoute } = await import('../browserRunner.cjs');
+  const { sanitizeEvidenceRoute } = await import(RUNNER_MODULE);
   assert.equal(sanitizeEvidenceRoute('http://localhost/users/42?token=secret', ['/users/:id'], ['secret']), '/users/:id');
   for (const [url, templates] of [
     ['http://localhost/reset/secret', ['/reset/:token']],
@@ -88,7 +91,7 @@ test('UI evidence route templates never serialize unmatched or encoded secret pa
 });
 
 test('UI evidence blocks unknown routes without exposing URL values or changing action proof', async () => {
-  const { runBrowserJourney } = await import('../browserRunner.cjs');
+  const { runBrowserJourney } = await import(RUNNER_MODULE);
   const page = { goto: async () => {}, url: () => 'http://localhost/reset/%73ecret?access_token=secret',
     getByText: () => ({ last: () => ({ waitFor: async () => {}, innerText: async () => 'Tamam' }) }),
     evaluate: async fn => fn.name === 'collectVisibleUiText' ? { entries: [], truncated: false, redacted: false } : { width: 375, horizontalOverflow: false } };
@@ -103,7 +106,7 @@ test('UI evidence blocks unknown routes without exposing URL values or changing 
 });
 
 test('UI evidence observes asynchronous opened menu only after its explicit readiness assertion', async () => {
-  const { runBrowserJourney } = await import('../browserRunner.cjs');
+  const { runBrowserJourney } = await import(RUNNER_MODULE);
   let ready = false;
   const control = { waitFor: async () => {}, evaluate: async fn => String(fn).includes('activeElement') ? true : 'Aç', press: async () => {} };
   const page = { goto: async () => {}, locator: () => control, keyboard: { press: async () => {} }, url: () => 'http://localhost/menu',
@@ -117,7 +120,7 @@ test('UI evidence observes asynchronous opened menu only after its explicit read
 });
 
 test('UI evidence total UTF-8 budget stays below 256 KiB and retains action proof', async () => {
-  const { runBrowserJourney } = await import('../browserRunner.cjs');
+  const { runBrowserJourney } = await import(RUNNER_MODULE);
   const entries = Array.from({ length: 1000 }, (_, index) => ({ kind: 'text', text: `${index}${'Ş'.repeat(1000)}` }));
   const control = { waitFor: async () => {}, evaluate: async fn => String(fn).includes('activeElement') ? true : 'Aç', press: async () => {} };
   const page = { goto: async () => {}, locator: () => control, keyboard: { press: async () => {} }, url: () => 'http://localhost/menu',
@@ -132,7 +135,7 @@ test('UI evidence total UTF-8 budget stays below 256 KiB and retains action proo
 });
 
 test('UI collector never reads form values and records truncation (mock DOM)', async () => {
-  const { collectVisibleUiText } = await import('../browserRunner.cjs');
+  const { collectVisibleUiText } = await import(RUNNER_MODULE);
   const make = (tagName, text, attrs = {}) => ({ tagName, childNodes: text ? [{ nodeType: 3, textContent: text }] : [], getAttribute: key => attrs[key] || null, getClientRects: () => [1], closest: () => null });
   const input = make('INPUT', null, { placeholder: 'Şifre' });
   Object.defineProperty(input, 'value', { get() { throw new Error('secret value accessed'); } });
@@ -148,7 +151,7 @@ test('UI collector never reads form values and records truncation (mock DOM)', a
 });
 
 test('isolated browser observes role, actions and mobile outcome', async () => {
-  const { runBrowserJourney } = await import(process.env.XFACTOR_BROWSER_RUNNER || '../browserRunner.cjs');
+  const { runBrowserJourney } = await import(RUNNER_MODULE);
   const { chromium } = await import('playwright-core');
   const server = http.createServer(async (req, res) => {
     if (req.url === '/login') {
