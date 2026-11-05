@@ -23,6 +23,11 @@ jobs:
       - run: npm --prefix llm-yonetimi ci --ignore-scripts
       - run: npm --prefix backend ci --ignore-scripts
       - run: npm --prefix execution ci --ignore-scripts
+      # Ubuntu 24.04 restricts unprivileged user namespaces via AppArmor, which Chromium's
+      # sandbox needs. Enable them on the runner; the product keeps chromiumSandbox: true.
+      - name: Allow Chromium sandbox user namespaces
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install native Chromium
         run: node execution/node_modules/playwright-core/cli.js install --with-deps chromium
       - name: Verify native process, archive and HTTP application gates
@@ -51,6 +56,9 @@ jobs:
 
       - name: Install reusable LLM plugin
         run: npm --prefix llm-yonetimi ci --ignore-scripts
+
+      - name: Allow Chromium sandbox user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Install backend dependencies
         run: |
@@ -114,6 +122,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.23.2
+
+      - name: Allow Chromium sandbox user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Verify production image contract
         run: node scripts/test-p6-image-contract.mjs
