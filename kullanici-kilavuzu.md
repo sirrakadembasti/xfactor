@@ -120,11 +120,11 @@ cd ..
 ```
 
 > 🔑 **Hazır Varsayılan Giriş Hesabı:**  
-> XFactor, kurulum sonrasında herhangi bir kullanıcı oluşturma komutuna ihtiyaç bırakmaksızın otomatik tanımlanan bir yönetici hesabı ile gelir:
+> Geliştirmede XFactor, kullanıcı oluşturma komutu gerektirmeden otomatik tanımlanan bir yönetici hesabıyla gelir:
 > - **Kullanıcı Adı:** `admin`
 > - **Şifre:** `xfactor`
 > 
-> Giriş alanları boş açılır; varsayılan bilgileri elle girin. İnternete açık kurulumdan önce varsayılan parolayı değiştirin.
+> Giriş alanları boş açılır; varsayılan bilgileri elle girin. Üretimde (`NODE_ENV=production`) bu hesap oluşturulmaz. Hiç yönetici yoksa ya da bir yönetici hâlâ `xfactor` parolasını kullanıyorsa backend açılmayı reddeder ve izlenecek `create-admin` komutunu hatada gösterir.
 
 #### (Opsiyonel) Yönetici Parolasını Değiştirme veya Sıfırlama
 Parolanızı dilediğiniz zaman terminalden güncelleyebilirsiniz (asgari 6 karakter):
@@ -513,7 +513,7 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 
 | Dosya Adı | Kategori / Katman | Detaylı İşlev ve Mimari Sorumluluğu |
 |---|:---:|---|
-| `server.js` | Sunucu / Giriş | REST API ve WebSocket sunucusunu ayağa kaldırır, veritabanını başlatır, `admin/xfactor` kullanıcısını garanti eder ve diskteki projeleri otomatik senkronize eder. |
+| `server.js` | Sunucu / Giriş | REST API ve WebSocket sunucusunu ayağa kaldırır, veritabanını başlatır, geliştirmede `admin/xfactor` kullanıcısını garanti eder, üretimde ise yönetici yokken veya varsayılan parola kullanılırken açılışı reddeder. Diskteki projeleri otomatik senkronize eder. |
 | `lifecycle.js` | Yaşam Döngüsü | `SIGINT`/`SIGTERM` anında WebSocket bağlantılarını, HTTP sunucusunu kapatan ve SQLite WAL checkpoint'ini diske yazan zarif kapanma (graceful shutdown) koordinatörüdür. |
 | `maintenance.js` | Bakım Zamanlayıcı | Varsayılan olarak saatte bir süresi dolmuş ve yeterince eski iptal edilmiş oturumları veritabanından temizler. |
 | `productionStatic.js` | Statik Sunucu | Üretim ortamında Vite ile derlenmiş ön yüz dosyalarını sunar; SPA yönlendirmelerini (`isSpaNavigation`) yönetir. |
@@ -697,7 +697,7 @@ Bu bölüm dağıtım operatörü içindir; belirli bir kurulumun üretim kabul 
 | `EXECUTION_WORKER_URL`, `EXECUTION_WORKER_TOKEN` | Güvenilen worker bağlantısı |
 | `LLM_CONFIG_PATH`, `LLM_CONFIG_KEY_PATH` | Özel profil/anahtar yolları |
 
-Üretimde `TRUST_PROXY=loopback`, HTTPS `ALLOWED_ORIGINS`, açık `MFA_ENCRYPTION_KEY` ve geliştirme varsayılanından farklı worker token'ı gerekir. Reverse proxy TLS sonlandırır; güvensiz HTTP/WebSocket `426 HTTPS_REQUIRED` alır. Güvenli yanıtlarda kısıtlayıcı CSP ve bir yıllık `includeSubDomains` HSTS bulunur. Worker'ı özel ağda tutun; makineler arasında TLS kullanın, Bearer token HTTP'yi şifrelemez.
+Üretimde `TRUST_PROXY=loopback`, HTTPS `ALLOWED_ORIGINS`, açık `MFA_ENCRYPTION_KEY` ve geliştirme varsayılanından farklı worker token'ı gerekir. Ayrıca en az bir yönetici gerekir ve hiçbir yönetici varsayılan `xfactor` parolasını kullanamaz. Bu koşullar sağlanmazsa backend açılmaz. Yöneticiyi açılıştan önce `npm run create-admin -- <kullanıcı>` ile oluşturun. Geliştirme başlatıcısı (`npm run dev`, `dev:local`, `dev:docker`) her açılışta backend ve worker arasında paylaşılan rastgele bir worker token'ı üretir. Servisler token verilmeden elle ayrı terminallerde başlatılırsa backend ile worker yalnız loopback üzerinde geliştirme yedeğine düşer; üretim bu yedeği reddeder. Worker, iş durumunu ve iptalini yalnız işin sahibi olan `projectId` ile kabul eder. Reverse proxy TLS sonlandırır; güvensiz HTTP/WebSocket `426 HTTPS_REQUIRED` alır. Güvenli yanıtlarda kısıtlayıcı CSP ve bir yıllık `includeSubDomains` HSTS bulunur. Worker'ı özel ağda tutun; makineler arasında TLS kullanın, Bearer token HTTP'yi şifrelemez.
 
 LLM profil/anahtarını erişimi sınırlı kalıcı depoda saklayın. `LLM_CONFIG_ENCRYPTION_KEY`, mevcut ortam dosyasındaki anahtar veya profil yanındaki `llm-encryption.key` kullanılır; yeni kurulum anahtarı veri dizinine 0600 moduyla yazar. Anahtar kaybolursa profiller çözülemez. Etkin profil yokken eski ortam fallback'i bulunabilir; yeni kurulum profil seçmelidir. Sağlayıcı socket bağlantısında tüm DNS yanıtları denetlenir; özel IP/redirect reddedilir, yerel HTTP yalnız geliştirmede loopback içindir.
 
