@@ -293,7 +293,11 @@ export async function generateLLMResponse(messages, options = {}) {
 
             const requestPayload = {
                 contents,
-                generationConfig: { maxOutputTokens }
+                generationConfig: {
+                    maxOutputTokens,
+                    ...(/^gemini-3(?:\.|-)/.test(aiModel) && options.googleThinkingLevel === 'low'
+                        ? { thinkingConfig: { thinkingLevel: 'low' } } : {})
+                }
             };
             if (systemMsg) {
                 requestPayload.systemInstruction = { parts: [{ text: systemMsg.content }] };

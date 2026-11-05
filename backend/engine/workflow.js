@@ -1,4 +1,11 @@
 import crypto from 'crypto';
+import { recordExecutionProgress } from '../verification/executionProgress.js';
+import { executeControlledRepairs, validateControlledRepairs } from './controlledRepairs.js';
+import { controlledRepairSourceHash } from './controlledRepairPlan.js';
+import { inspectControlledSemanticReviewEligibility, readControlledLocaleObservation, reserveControlledSemanticReviewCycle,
+    compilePersistedControlledVerificationPlan, assertPersistedControlledSemanticEvidence } from './controlledSemanticAuthority.js';
+import { loadRecordedDependencyLock } from '../verification/dependencyLockReuse.js';
+import { normalizeAssertionInventoryFile } from '../contracts/requirementAssertionBindings.js';
 /**
  * XFactor Otonom DAG İş Akışı Motoru (Workflow Engine)
  * Referans: Archon Deterministic Engine & Agency-Agents
@@ -45,6 +52,7 @@ import { runLLMTaskWithRetry } from './llmTaskRetry.js';
 import { getCurrentLLMProvider } from '../llm.js';
 import { formatProjectTokenUsage, getProjectTokenUsage, recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
+import { workflowRecoveryAdvice } from './recoveryAdvice.js';
 import {
     updateAttemptHeartbeat,
     releaseWorkflowLease,
@@ -73,7 +81,7 @@ import { validateRuntimeConfig } from '../config.js';
 import { projectContractTasks } from '../contracts/taskProjection.js';
 import { loadOpenWorkerRepairBatch, recordVerificationBlocker } from '../verification/workerFailures.js';
 import { commitVerificationContext } from '../verification/verificationContext.js';
-import { executeWorkerRepairs, reserveWorkerValidation, snapshotHash } from './workerRepairs.js';
+import { executeWorkerRepairs, reserveWorkerValidation, snapshotHash, readWorkerSnapshotSync } from './workerRepairs.js';
 import {
     executeStaticRepairLoop,
     executeTesterAdvisoryRepairs,
@@ -451,7 +459,10 @@ export async function callAgentLLM(agentRole, userPrompt, {
     taskId = null,
     onDiagnostic = null,
     onUsage = null,
-    maxAttempts
+    maxAttempts,
+    maxOutputTokens,
+    timeoutMs,
+    googleThinkingLevel
 } = {}) {
     const agent = getAgent(agentRole);
     return runLLMTaskWithRetry({
@@ -461,6 +472,9 @@ export async function callAgentLLM(agentRole, userPrompt, {
         onDiagnostic: onDiagnostic || undefined,
         onUsage,
         maxAttempts,
+        maxOutputTokens,
+        timeoutMs,
+        googleThinkingLevel,
         messages: [
             { role: 'system', content: agent.systemPrompt },
             { role: 'user', content: userPrompt }
@@ -473,6 +487,10 @@ export async function callAgentLLM(agentRole, userPrompt, {
  * Ana Otonom İş Akışı Yürütücüsü (Workflow Engine)
  */
 export async function executeProjectTasks(projectId, wsHub = null, attemptId = null, leaseOwner = null, services = {}) {
+    const controlledRepair = typeof services.controlledRepairHash === 'string';
+    const controlledSemanticReview = services.controlledRepairSemanticReview === true;
+    if (controlledSemanticReview && !controlledRepair) throw Error('Bağımsız inceleme aynı sınırlı onarım önerisiyle yetkilendirilmeli.');
+    const verificationOnly = services.verificationOnly === true || controlledRepair;
     const callAgent = services.callAgent ?? callAgentLLM;
     const executionClientFactory = services.createExecutionClient ?? createExecutionClient;
     const verifyProject = services.verifyArtifactAndProject ?? verifyArtifactAndProject;
@@ -498,7 +516,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         throw error;
     }
 
-    state.workflow = normalizeWorkflowState(state.workflow);
+    state.workflow = verificationOnly ? (state.workflow || {}) : normalizeWorkflowState(state.workflow);
 
     const abortController = new AbortController();
     registerProjectAbortController(projectId, abortController, { attemptId, leaseOwner });
@@ -544,6 +562,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
     let terminalStatus = 'aborted';
     let executionError = null;
     let controllerBoundary = null;
+    let priorWorkerBlockers = false;
 
     if (attemptId) {
         heartbeatTimer = setInterval(() => {
@@ -568,16 +587,25 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         sourceFence.contractId = approvedResumeContract.id;
         sourceFence.contractHash = approvedResumeContract.contract_hash;
         sourceFence.contractRevision = approvedResumeContract.revision;
+        if (controlledRepair && (state.workflow.controlledRepair?.proposal?.planHash !== services.controlledRepairHash
+            || state.workflow.controlledRepair?.authorizedAttemptId !== attemptId)) {
+            throw new Error('Sınırlı onarım önerisi bu yürütme için yetkilendirilmemiş veya değişmiş.');
+        }
         state.plan = normalizeManagerPlan(JSON.parse(approvedResumeContract.contract_json));
-        const recoveredWorker = await recoverVerifiedWorkerRepair({ projectId, contract: approvedResumeContract,
+        if (verificationOnly && !resolveGenerationResume(state.workflow.generationCompletion, approvedResumeContract, computePlanHash(state.plan))) {
+            throw new Error('Yalnız yeniden doğrulama için aynı onaylı sözleşmeye ait tamamlanmış üretim kaydı gereklidir.');
+        }
+        const recoveredWorker = verificationOnly ? null : await recoverVerifiedWorkerRepair({ projectId, contract: approvedResumeContract,
             workflow: state.workflow, attemptId, leaseOwner: effectiveLeaseOwner, signal: abortController.signal });
         if (recoveredWorker?.completed) {
             await workflowLogEvent(wsHub, projectId, 'Manager', 'finish', '', 'Kaydedilmiş bağımsız worker kanıtıyla doğrulama tamamlandı.', 'manager');
             return;
         }
         const workerBatch = loadOpenWorkerRepairBatch({ projectId, contractId: approvedResumeContract.id, contractHash: approvedResumeContract.contract_hash });
+        priorWorkerBlockers = workerBatch.issues.length > 0;
         let workerSession = null;
-        if (workerBatch.issues.length) {
+        let controlledSession = null;
+        if (!verificationOnly && workerBatch.issues.length) {
             if (!resolveGenerationResume(state.workflow.generationCompletion, approvedResumeContract, computePlanHash(state.plan))) {
                 throw new Error('Worker repair requires Manager revision: approved generation marker missing.');
             }
@@ -587,15 +615,54 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             state.workflow.dependencyPreparation = null;
         }
         let resumeFiles = null;
+        if (controlledRepair && !controlledSemanticReview) {
+            await workflowLogEvent(wsHub, projectId, 'Manager', 'start', '', 'Mevcut çalışmada yalnız onarım önerisinde listelenen dosyalar düzeltiliyor; normal üretim aşamaları çalışmayacak.', 'controlled-repair');
+            controlledSession = await executeControlledRepairs({ projectDir, contract: { ...approvedResumeContract, status: 'approved' },
+                workflow: state.workflow, sourceFence, persistWorkflow: () => workflowWriteState(projectId, state), callAgent,
+                signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic });
+            controlledSession.assertCurrent();
+        }
+        if (verificationOnly) {
+            resumeFiles = await collectArtifactFiles(projectDir);
+            controlledSession?.assertCurrent();
+            if (controlledSession && controlledRepairSourceHash(resumeFiles) !== controlledRepairSourceHash(controlledSession.expected)) {
+                throw new Error('Toplanan kaynak görüntüsü onaylanan onarımdan farklı.');
+            }
+            const ledger = state.workflow.controlledRepair;
+            if (!controlledSession && ledger?.phase === 'patched' && ledger.controlledAcceptancePolicy === 'controlled-acceptance-v1'
+                && ledger.proposal?.contractId === approvedResumeContract.id
+                && ledger.proposal?.contractHash === approvedResumeContract.contract_hash
+                && ledger.proposal?.contractRevision === approvedResumeContract.revision
+                && controlledRepairSourceHash(resumeFiles) === ledger.outputSourceHash) {
+                const expected = readWorkerSnapshotSync(projectDir, { includeLockfile: true });
+                const latestArtifact = db.prepare('SELECT * FROM artifacts WHERE project_id=? AND contract_id=? ORDER BY rowid DESC LIMIT 1').get(projectId, approvedResumeContract.id);
+                const latestRun = db.prepare('SELECT * FROM verification_runs WHERE project_id=? AND contract_id=? ORDER BY started_at DESC,rowid DESC LIMIT 1').get(projectId, approvedResumeContract.id);
+                if (controlledSemanticReview) {
+                    const eligibility = inspectControlledSemanticReviewEligibility({ workflow: state.workflow, latestArtifact, latestRun,
+                        currentSourceHash: controlledRepairSourceHash(expected), contractId: approvedResumeContract.id });
+                    if (!eligibility.eligible) throw Error(eligibility.reason);
+                }
+                controlledSession = { proposal: ledger.proposal, files: resumeFiles, expected,
+                    diagnosticOnly: !controlledSemanticReview, previousDiagnostic: { artifactId: latestArtifact?.id, runId: latestRun?.id },
+                    assertCurrent: () => {
+                        assertWorkflowContract(); assertWorkflowLease(attemptId, effectiveLeaseOwner, { projectId });
+                        if (abortController.signal.aborted || controlledRepairSourceHash(readWorkerSnapshotSync(projectDir, { includeLockfile: true })) !== ledger.outputSourceHash)
+                            throw Error('Bağımsız inceleme sırasında onarım kaynakları değişti.');
+                    } };
+                controlledSession.assertCurrent();
+            }
+            if (controlledSemanticReview && !controlledSession) throw Error('Aynı kaynaklara ait incelenebilir sınırlı onarım kaydı gerekli.');
+        }
+        const verificationSourceHash = verificationOnly ? fingerprintArtifactFiles(resumeFiles) : null;
         const hasGenerationCompletion = state.workflow.generationCompletion !== undefined;
         if (!hasGenerationCompletion && state.workflow.dependencyPreparation && approvedResumeContract) {
             resumeFiles = await collectArtifactFiles(projectDir);
         }
-        const resumeAtDependencyPreparation = !workerSession && !hasGenerationCompletion && resolveDependencyResume(
+        const resumeAtDependencyPreparation = verificationOnly || (!workerSession && !hasGenerationCompletion && resolveDependencyResume(
             state.workflow.dependencyPreparation,
             approvedResumeContract,
             resumeFiles
-        );
+        ));
         let plan = state.plan;
         if (!resumeAtDependencyPreparation) {
         await workflowLogEvent(wsHub, projectId, "Manager", "start", "", "Otonom DAG orkestrasyon süreci başlatıldı.", "manager");
@@ -1447,7 +1514,9 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         }
         if (resumeAtDependencyPreparation) {
             await workflowLogEvent(wsHub, projectId, 'Manager', 'resume', 'package.json',
-                'Kaydedilmiş statik üretim sonucu doğrulandı; bağımlılık hazırlığından devam ediliyor.', 'manager');
+                controlledRepair ? 'Listelenen kaynakların onarımı ve yeni kaynak incelemeleri bitti; şimdi bağımsız worker doğrulaması başlıyor.'
+                    : verificationOnly ? 'Aynı onaylı sözleşmede yalnız yeni worker doğrulaması başlıyor; kaynaklar ve görev kayıtları korunuyor.'
+                    : 'Kaydedilmiş statik üretim sonucu doğrulandı; bağımlılık hazırlığından devam ediliyor.', 'manager');
         }
         const postPrepPauseStatus = await checkPause(projectId, abortController.signal);
         if (!isExecutionActive(postPrepPauseStatus)) {
@@ -1468,8 +1537,10 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             const files = resumeAtDependencyPreparation ? resumeFiles : await collectArtifactFiles(projectDir, limits);
 
             const config = validateRuntimeConfig(process.env);
-            const executionClient = executionClientFactory(config);
+            const executionClient = executionClientFactory(config, { onProgress: observation => recordExecutionProgress(
+                { projectId, attemptId, leaseOwner: effectiveLeaseOwner }, observation) });
             workerSession?.assertCurrent();
+            controlledSession?.assertCurrent();
             const workerReservation = workerSession ? await reserveWorkerValidation({ workflow: state.workflow,
                 contract: approvedResumeContract, batchFingerprint: workerBatch.batchFingerprint,
                 sourceSnapshotHash: snapshotHash(workerSession.expected), stage: 'worker_verification',
@@ -1502,30 +1573,63 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 inputSha256: crypto.createHash('sha256').update(packageJsonBytes).digest('hex'),
                 packageJsonBytes
             };
-            let prepResult = null;
-            let prepError = null;
-            await workflowLogEvent(wsHub, projectId, 'System', 'start', 'package.json',
-                'İzole bağımlılık hazırlığı ve lockfile üretimi başladı.', 'dependency-preparation', 'manager');
-            try {
-                controllerBoundary = { operation: 'prepare_dependencies', projectId, contractId: latestContract.id,
-                    contractHash, runId, jobId: prepJob.jobId, nonce: prepJob.nonce, inputSha256: prepJob.inputSha256 };
-                prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
-            } catch (err) {
-                prepError = err;
+            const recordedLock = await (services.loadRecordedDependencyLock ?? loadRecordedDependencyLock)({ projectId, contractId: latestContract.id, packageJsonBytes });
+            let lockContent;
+            if (recordedLock) {
+                lockContent = recordedLock.bytes;
+                await workflowLogEvent(wsHub, projectId, 'System', 'input_reuse', 'package-lock.json',
+                    'Aynı onaylı sözleşme ve birebir paket tanımıyla eşleşen kayıtlı kilit dosyası girdi olarak korunuyor. Eski test sonuçları kullanılmıyor; temiz kurulum ve bütün kontroller yeni worker koşusunda çalışacak.', 'dependency-preparation', 'manager');
+            } else {
+                let prepResult = null, prepError = null;
+                await workflowLogEvent(wsHub, projectId, 'System', 'start', 'package.json',
+                    'İzole bağımlılık hazırlığı ve lockfile üretimi başladı.', 'dependency-preparation', 'manager');
+                try {
+                    controllerBoundary = { operation: 'prepare_dependencies', projectId, contractId: latestContract.id,
+                        contractHash, runId, jobId: prepJob.jobId, nonce: prepJob.nonce, inputSha256: prepJob.inputSha256 };
+                    prepResult = await executionClient.prepareDependencies(prepJob, { signal: abortController.signal });
+                } catch (err) { prepError = err; }
+                const { packageLockBase64, packageLockSha256 } = extractPreparedLockfile(prepResult, prepError);
+                lockContent = Buffer.from(packageLockBase64, 'base64');
+                if (packageLockSha256 && crypto.createHash('sha256').update(lockContent).digest('hex') !== packageLockSha256) {
+                    throw new Error('Worker returned a package-lock digest mismatch.');
+                }
             }
-            const { packageLockBase64, packageLockSha256 } = extractPreparedLockfile(prepResult, prepError);
             workerSession?.assertCurrent();
-
-            const lockContent = Buffer.from(packageLockBase64, 'base64');
-            if (packageLockSha256 && crypto.createHash('sha256').update(lockContent).digest('hex') !== packageLockSha256) {
-                throw new Error('Worker returned a package-lock digest mismatch.');
-            }
-            controllerBoundary = null;
-            state.workflow.dependencyPreparation = null;
+            controlledSession?.assertCurrent();
+            state.workflow.dependencyInputs = [...(Array.isArray(state.workflow.dependencyInputs) ? state.workflow.dependencyInputs : []), {
+                runId, attemptId, contractId: latestContract.id, packageJsonSha256: prepJob.inputSha256,
+                lockSha256: crypto.createHash('sha256').update(lockContent).digest('hex'),
+                mode: recordedLock ? 'recorded_input' : 'fresh_worker_preparation',
+                sourceArtifactId: recordedLock?.artifactId || null, sourceRunId: recordedLock?.runId || null,
+                preparationJobId: recordedLock ? null : prepJob.jobId, recordedAt: new Date().toISOString()
+            }].slice(-64);
             await workflowWriteState(projectId, state);
+            controllerBoundary = null;
+            if (!verificationOnly) {
+                state.workflow.dependencyPreparation = null;
+                await workflowWriteState(projectId, state);
+            }
             const existingLockIndex = files.findIndex(f => f.path === 'package-lock.json');
             if (existingLockIndex >= 0) files[existingLockIndex].content = lockContent;
             else files.push({ path: 'package-lock.json', content: lockContent });
+
+            // Review the exact final ZIP inventory, including the worker-prepared
+            // in-memory root lock. Disk remains fenced independently by session.
+            if (controlledSession && !controlledSession.diagnosticOnly) {
+                let localeObservation = null;
+                if (controlledSemanticReview) {
+                    localeObservation = readControlledLocaleObservation(db, { projectId, contractId: latestContract.id,
+                        sourceHash: controlledRepairSourceHash(files), ...controlledSession.previousDiagnostic });
+                    if (!localeObservation) throw Error('Aynı kaynaklara ait doğrulanmış tarayıcı metin gözlemi yok. Önce yalnız yeniden doğrulama gerekli.');
+                    reserveControlledSemanticReviewCycle({ ledger: state.workflow.controlledRepair, attemptId, observation: localeObservation,
+                        sourceHash: controlledRepairSourceHash(files) });
+                    await workflowWriteState(projectId, state);
+                }
+                await validateControlledRepairs({ session: controlledSession, verificationFiles: files, projectDir,
+                    contract: latestContract, workflow: state.workflow, persistWorkflow: () => workflowWriteState(projectId, state),
+                    callAgent, signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic, localeObservation });
+                controlledSession.assertCurrent();
+            }
 
             const artifact = await createProjectZip(
                 projectId,
@@ -1545,6 +1649,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 archiveBase64: archiveBytes.toString('base64')
             };
             workerSession?.assertCurrent();
+            controlledSession?.assertCurrent();
             if (workerReservation) {
                 Object.assign(workerReservation, { artifactId: artifact.id, artifactSha256: artifact.sha256, runId,
                     jobId: verifyIdentity.jobId, nonce: verifyIdentity.nonce });
@@ -1553,26 +1658,77 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
             controllerBoundary = { operation: 'verify_artifact', projectId, contractId: latestContract.id,
                 contractHash, runId, artifactId: artifact.id, jobId: verifyIdentity.jobId, nonce: verifyIdentity.nonce, inputSha256: artifactSha256 };
+            const semanticFiles = files.map(normalizeAssertionInventoryFile);
+            const controlledVerificationPlan = controlledSession ? compilePersistedControlledVerificationPlan({
+                database: db, projectId, files: semanticFiles, identity: verifyIdentity }).plan : null;
+            let controlledWorkerReservation = null;
+            if (controlledSession) {
+                state.workflow.controlledRepair.validations ||= [];
+                const priorWorkers = state.workflow.controlledRepair.validations.filter(row => row.stage === 'worker_verification');
+                state.workflow.controlledRepair.workerVerificationHistory = [...(state.workflow.controlledRepair.workerVerificationHistory || []), ...priorWorkers].slice(-64);
+                state.workflow.controlledRepair.validations = state.workflow.controlledRepair.validations.filter(row => row.stage !== 'worker_verification');
+                controlledWorkerReservation = { id: crypto.randomUUID(), stage: 'worker_verification', phase: 'reserved',
+                    planHash: controlledVerificationPlan.planHash, sourceHash: controlledVerificationPlan.sourceHash,
+                    artifactId: artifact.id, artifactSha256: artifact.sha256, runId, jobId: verifyIdentity.jobId, nonce: verifyIdentity.nonce,
+                    createdAt: new Date().toISOString(), deadline: verifyIdentity.deadline };
+                state.workflow.controlledRepair.validations.push(controlledWorkerReservation);
+                await workflowWriteState(projectId, state);
+                controlledSession.assertCurrent();
+            }
+            const controlledCanonical = controlledSession && !controlledSession.diagnosticOnly
+                && Boolean(controlledVerificationPlan?.assertionReview && controlledVerificationPlan?.uiLanguageReview);
             const completion = await verifyProject({
                 projectId,
                 contractId: latestContract.id,
                 artifactId: artifact.id,
                 expectedRevision: (await readProjectState(projectId))?.revision ?? null,
-                complete: true,
+                complete: !verificationOnly || Boolean(controlledCanonical),
                 attemptId,
                 leaseOwner: effectiveLeaseOwner,
                 options: {
                     runId,
+                    preserveGenerationRecords: verificationOnly,
                     activeJob: verifyIdentity,
                     archiveBase64: verifyIdentity.archiveBase64,
                     signal: abortController.signal,
                     executionClient,
+                    ...(controlledVerificationPlan ? { verificationPlan: controlledVerificationPlan } : {}),
+                    ...(controlledCanonical ? { controlledRepairAcceptance: {
+                        planHash: controlledVerificationPlan.planHash, validationId: controlledWorkerReservation.id,
+                        assertCurrent: controlledSession.assertCurrent,
+                        assertSemanticEvidence: args => assertPersistedControlledSemanticEvidence({ ...args, files: semanticFiles })
+                    } } : {}),
                     ...(workerReservation ? { workerRepairValidationId: workerReservation.id } : {}),
                     files,
                     contract
                 }
             });
             controllerBoundary = null;
+            controlledSession?.assertCurrent();
+            if (verificationOnly && !completion.completed) {
+                if (fingerprintArtifactFiles(await collectArtifactFiles(projectDir)) !== verificationSourceHash) {
+                    throw new Error('Yeniden doğrulama sırasında kaynak envanteri değişti; sonuç mevcut kaynakların kabulü sayılamaz.');
+                }
+                const diagnosticState = await readProjectState(projectId);
+                diagnosticState.status = 'paused';
+                diagnosticState.last_error = completion.passed ? null : completion.error || 'Yeniden doğrulama başarısız.';
+                if (priorWorkerBlockers) diagnosticState.last_error = `Worker repair requires Manager revision: ${completion.passed
+                    ? 'Yeni tanılama geçti; önceki açık onarım kayıtları çözülmedi. Teslim ve kaynak onarımı ayrıca değerlendirilmelidir.'
+                    : diagnosticState.last_error}`;
+                await workflowWriteState(projectId, diagnosticState);
+                terminalStatus = completion.passed ? 'completed' : 'failed';
+                executionError = diagnosticState.last_error;
+                appendProjectActionMessages(projectId, {
+                    actionId: `reverify-${runId}`, userText: 'Aynı onaylı sözleşmede kaynakları değiştirmeden yeniden doğrula.',
+                    modelText: completion.passed
+                        ? controlledRepair ? 'Listelenen dosyaların onarımından sonra yeni worker doğrulaması geçti. Teslim kabulü ve açık onarım kayıtları ayrıca değerlendirilmelidir.'
+                            : 'Yeni worker doğrulaması geçti. Kaynaklar ve görevler korunmuştur; açık onarım kayıtları ve teslim kabulü ayrıca değerlendirilmelidir.'
+                        : controlledRepair ? `Listelenen dosyalara onarım uygulandı ancak bağımsız doğrulama geçmedi; proje teslim edilmedi. ${redactSensitiveText(executionError)}`
+                            : `Yeniden doğrulama tamamlandı; proje teslim edilmedi. Kaynaklar ve görevler korunmuştur. ${redactSensitiveText(executionError)}`
+                });
+                wsHub?.publish({ type: 'project_state_updated', projectId });
+                return;
+            }
             if (!completion.completed) {
                 throw new Error(completion.error || 'Canonical verification did not complete the project.');
             }
@@ -1641,7 +1797,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             await workflowLogEvent(wsHub, projectId, "System", "error", "", logMsg, "system");
             const failedState = await readProjectState(projectId);
             if (failedState) {
-                failedState.last_error = error?.message || errorMessageText;
+                failedState.last_error = verificationOnly && priorWorkerBlockers
+                    ? `Worker repair requires Manager revision: ${error?.message || errorMessageText}` : error?.message || errorMessageText;
                 // fail-closed pause check
                 const immutableStatuses = new Set(['completed', 'acceptance_verified', 'runtime_verified']);
                 if (!immutableStatuses.has(failedState.status)) {
@@ -1654,7 +1811,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 if (!failedState.chatHistory) failedState.chatHistory = [];
                 failedState.chatHistory.push({
                     role: 'model',
-                    parts: [{ text: `⚠️ **Süreç Duraklatıldı:**\n\n${redactSensitiveText(errorMessageText)}\n\nManager bu hata kaydını görebilir. Düzeltme talimatı verebilir veya **Devam Et (Resume)** ile kayıtlı görevlerden sürdürebilirsiniz. Ayrıntılar **Canlı Süreç Logları** ve **Canlı DAG Grafiği** sekmelerinde.` }],
+                    parts: [{ text: `⚠️ **Süreç Duraklatıldı:**\n\n${redactSensitiveText(errorMessageText)}\n\n${workflowRecoveryAdvice(failedState.last_error)} Ayrıntılar **Canlı Süreç Logları** ve **Canlı DAG Grafiği** sekmelerinde.` }],
                     timestamp: `${errDate} ${errTime}`,
                     created_at: errNow.toISOString()
                 });

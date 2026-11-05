@@ -2,8 +2,10 @@ import assert from 'assert';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { createTestHarness } from './testHarness.js';
-import { ensureProjectScaffold } from '../engine/codeGenerator.js';
+import { ensureProjectScaffold, detectProjectStack } from '../engine/codeGenerator.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -15,6 +17,66 @@ async function createTempWorkspace(prefix = 'xfactor-auth-scaffold-test-') {
 }
 
 try {
+    await runAsyncTest('React frontend with Express REST API uses the split Vite runtime without requiring a Vite keyword', async () => {
+        const workspace = await createTempWorkspace();
+        const stack = await detectProjectStack(workspace, { title: 'Inventory' }, {
+            summary: 'Express.js REST API ve React/Tailwind ön yüz',
+            talimatname: 'Node Express TypeScript, Prisma SQLite; frontend React TypeScript.'
+        });
+        assert.equal(stack.framework, 'vite');
+        assert.equal(stack.hasExpressApi, true);
+        assert.equal(stack.isNext, false);
+        const explicitNext = await detectProjectStack(workspace, {}, { summary: 'Next.js frontend with Express API' });
+        assert.equal(explicitNext.framework, 'nextjs');
+    });
+    await runAsyncTest('Next.js plus Express preserves both runtime services and their container entrypoint', async () => {
+        const workspace = await createTempWorkspace();
+        const plan = { summary: 'Next.js frontend with Express API' };
+        assert.equal((await detectProjectStack(workspace, {}, plan)).hasExpressApi, true);
+        await ensureProjectScaffold(workspace, { title: 'Split Next Inventory' }, plan);
+        const manifest = JSON.parse(await fs.readFile(path.join(workspace, 'service-manifest.json'), 'utf8'));
+        assert.equal(manifest.services.web.type, 'nextjs');
+        assert.equal(manifest.services.api.type, 'express');
+        assert.notEqual(manifest.services.web.port, manifest.services.api.port);
+        const pkg = JSON.parse(await fs.readFile(path.join(workspace, 'package.json'), 'utf8'));
+        assert.equal(pkg.scripts['start:api'], 'tsx src/server.ts');
+        assert.equal(pkg.scripts['start:services'], 'node scripts/xfactor-start.cjs');
+        const docker = await fs.readFile(path.join(workspace, 'Dockerfile'), 'utf8');
+        assert.ok(docker.includes('COPY --from=builder /app ./'));
+        assert.ok(docker.includes('start:services'));
+        const app = await fs.readFile(path.join(workspace, 'src/httpApp.ts'), 'utf8');
+        assert.ok(!app.includes('cors()'), 'the default API must not enable wildcard CORS');
+    });
+    await runAsyncTest('split service launcher passes each port and stops the sibling when one runtime fails', async () => {
+        const workspace = await createTempWorkspace();
+        await ensureProjectScaffold(workspace, {}, { summary: 'Next.js frontend with Express API' });
+        const serviceSource = "const fs = require('node:fs'); fs.writeFileSync(process.argv[2], JSON.stringify({ port: process.env.PORT, pid: process.pid })); if (process.argv[3] === 'fail') setTimeout(() => process.exit(7), 500); else setInterval(() => {}, 1000);";
+        await fs.writeFile(path.join(workspace, 'service.cjs'), serviceSource);
+        await fs.writeFile(path.join(workspace, 'service-manifest.json'), JSON.stringify({ services: {
+            web: { command: process.execPath, args: ['service.cjs', 'web.json'], port: 3000 },
+            api: { command: process.execPath, args: ['service.cjs', 'api.json', 'fail'], port: 3001 }
+        } }));
+        const child = spawn(process.execPath, ['scripts/xfactor-start.cjs'], { cwd: workspace, stdio: 'ignore' });
+        const timer = setTimeout(() => child.kill(), 10000);
+        try {
+            const [code] = await once(child, 'exit');
+            assert.equal(code, 7);
+            const web = JSON.parse(await fs.readFile(path.join(workspace, 'web.json'), 'utf8'));
+            const api = JSON.parse(await fs.readFile(path.join(workspace, 'api.json'), 'utf8'));
+            assert.equal(web.port, '3000');
+            assert.equal(api.port, '3001');
+            assert.throws(() => process.kill(web.pid, 0), /ESRCH/);
+        } finally { clearTimeout(timer); }
+    });
+    await runAsyncTest('an explicit Vite revision cannot silently reuse a Next output tree', async () => {
+        const workspace = await createTempWorkspace();
+        await fs.mkdir(path.join(workspace, 'src', 'app'), { recursive: true });
+        await fs.writeFile(path.join(workspace, 'next.config.ts'), 'export default {};');
+        await assert.rejects(ensureProjectScaffold(workspace, {}, { summary: 'Vite React frontend ve Express API' }),
+            /Worker repair requires Manager revision:.*framework/i);
+        assert.equal(await fs.readFile(path.join(workspace, 'next.config.ts'), 'utf8'), 'export default {};');
+        await assert.rejects(fs.access(path.join(workspace, 'package.json')));
+    });
     await runAsyncTest('1. ensureProjectScaffold creates schema.prisma with User model when state.contract.authentication.required is true', async () => {
         const workspace = await createTempWorkspace();
         await ensureProjectScaffold(workspace, { contract: { authentication: { required: true } }, title: 'auth-app' }, {});

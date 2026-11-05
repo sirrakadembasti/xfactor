@@ -6,6 +6,12 @@ import { generateLLMResponse } from '../llm.js';
 const wrappedNetworkError = code => new Error('Fetch 3 denemeden sonra başarısız oldu.', {
     cause: new TypeError('fetch failed', { cause: Object.assign(new Error('connection failed'), { code }) })
 });
+test('explicit bounded large-file output budget reaches the provider without retrying truncated output',async()=>{
+ let calls=0;
+ await assert.rejects(runLLMTaskWithRetry({agentRole:'coder',messages:[],maxAttempts:1,maxOutputTokens:32768,
+  generate:async(_messages,options)=>{calls++;assert.equal(options.maxOutputTokens,32768);assert.equal(options.maxTransportAttempts,1);throw Object.assign(new Error('Model yanıtı token sınırında kesildi.'),{code:'LLM_TRUNCATED'});}}),error=>error.code==='LLM_TRUNCATED');
+ assert.equal(calls,1);
+});
 
 test('wrapped transport causes retry and remain capped at three provider attempts', async () => {
     const diagnostics = [];

@@ -5,6 +5,8 @@
 
 import { db as defaultDb } from '../db.js';
 import { asyncHandler } from '../security.js';
+import { readExecutionProgress } from '../verification/executionProgress.js';
+import { readLatestAttemptObservation } from '../verification/attemptObservation.js';
 import {
     redactSensitiveText,
     getGateMetrics,
@@ -29,10 +31,22 @@ function rejectRepeatedQuery(req) {
 }
 
 export function registerProjectObservabilityRoutes(router, deps = {}) {
-    const { requireAuth, projectAccess, db = defaultDb } = deps;
+    const { requireAuth, projectAccess } = deps;
+
+    router.get('/:id/execution-progress', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
+        const projectId = req.params.id;
+        const attempt = db.prepare("SELECT id,lease_owner FROM workflow_attempts WHERE project_id=? AND status='running' ORDER BY started_epoch DESC LIMIT 1").get(projectId);
+        const contract = db.prepare("SELECT id,contract_hash FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(projectId);
+        const lastAttempt = readLatestAttemptObservation(db, projectId, contract?.id);
+        const progress = attempt && contract ? readExecutionProgress({ projectId, attemptId: attempt.id,
+            leaseOwner: attempt.lease_owner, contractId: contract.id, contractHash: contract.contract_hash }) : null;
+        res.json({ ...(progress || { projectId, active: Boolean(attempt), available: false, advisory: true, commands: [] }), lastAttempt });
+    }));
 
     // P3.1 Observability read-only endpoints
     router.get('/:id/contracts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const rows = db.prepare(`
             SELECT id, revision, status, contract_hash, approved_at, created_at
             FROM project_contracts WHERE project_id = ? ORDER BY revision ASC
@@ -49,6 +63,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
     }));
 
     router.get('/:id/verification-runs', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         let rawLimit = req.query.limit;
         if (Array.isArray(rawLimit)) rawLimit = rawLimit[0];
         let limit = 20;
@@ -126,6 +141,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
     }));
 
     router.get('/:id/verification-runs/:runId', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const run = db.prepare(`
             SELECT id, contract_id, status, policy_version, started_at, ended_at
             FROM verification_runs WHERE id = ? AND project_id = ?
@@ -149,7 +165,9 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             ...(() => {
                 try {
                     const evidence = JSON.parse(c.evidence_json || '{}');
-                    return evidence.executionProfile === 'local-trusted' && evidence.osIsolation === false ? { executionProfile: 'local-trusted', osIsolation: false } : {};
+                    const reason = typeof evidence.reason === 'string' ? redactSensitiveText(evidence.reason).slice(0, 4000) : '';
+                    return { reason, ...(evidence.executionProfile === 'local-trusted' && evidence.osIsolation === false
+                        ? { executionProfile: 'local-trusted', osIsolation: false } : {}) };
                 } catch { return {}; }
             })()
         }));
@@ -157,6 +175,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
     }));
 
     router.get('/:id/verification-runs/:runId/checks/:checkId/log', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const run = db.prepare(`
             SELECT id, contract_id FROM verification_runs WHERE id = ? AND project_id = ?
         `).get(req.params.runId, req.params.id);
@@ -183,6 +202,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
     }));
 
     router.get('/:id/repair-issues', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const rows = db.prepare(`
             SELECT id, contract_id, requirement_id, severity, status, resolved_at
             FROM repair_issues WHERE project_id = ? ORDER BY created_at DESC
@@ -199,6 +219,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
     }));
 
     router.get('/:id/artifacts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const result = listArtifacts({ projectId: req.params.id }).map(artifact => ({
             id: artifact.id,
             kind: artifact.kind,
@@ -212,24 +233,28 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
 
     // P3.2 Metrics APIs - read-only, scoped, finite
     router.get('/:id/metrics/gates', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         if (rejectRepeatedQuery(req)) return res.status(400).json({ error: 'Repeated query parameters' });
         const result = getGateMetrics(req.params.id, db);
         res.json(result);
     }));
 
     router.get('/:id/metrics/stacks', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         if (rejectRepeatedQuery(req)) return res.status(400).json({ error: 'Repeated query parameters' });
         const result = getStackMetrics(req.params.id, db);
         res.json(result);
     }));
 
     router.get('/:id/metrics/trends', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         if (rejectRepeatedQuery(req)) return res.status(400).json({ error: 'Repeated query parameters' });
         const result = getTrendMetrics(req.params.id, db);
         res.json(result);
     }));
 
     router.get('/:id/metrics/failures', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         if (rejectRepeatedQuery(req)) return res.status(400).json({ error: 'Repeated query parameters' });
         const result = getFailureMetrics(req.params.id, db);
         res.json(result);

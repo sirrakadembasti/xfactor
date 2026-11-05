@@ -3,6 +3,34 @@ import path from 'node:path';
 const names = `
 testInventory.js
 testHarness.js
+test_manager_recovery_simulation.js
+test_reverification.js
+test_reverification_checkpoint_preservation.js
+test_requirement_coverage.js
+test_requirement_coverage_pipeline.js
+test_requirement_assertion_bindings.js
+test_requirement_assertion_verifier.js
+test_execution_progress.js
+test_controlled_repair_plan.js
+test_controlled_repair_routes.js
+test_controlled_review_action.js
+test_controlled_repair_context.js
+test_controlled_repairs.js
+test_controlled_repair_presentation.js
+test_controlled_repair_workflow.js
+test_controlled_repair_acceptance.js
+test_controlled_repair_lineage.js
+test_controlled_semantic_plan.js
+test_controlled_semantic_pipeline.js
+test_ui_language_binding.js
+test_completion_atomic_hook.js
+test_semantic_proof_retention.js
+test_management_seed_protocol.js
+test_attempt_observation.js
+test_production_language_policy.js
+test_ui_language_evidence.js
+test_ui_language_catalogue.js
+test_dependency_lock_reuse.js
 test_admin_cli.js
 test_agent_document_boundary.js
 test_agent_contract_schemas.js
@@ -160,6 +188,8 @@ const docker = new Set(['test_p8_sandbox_limits.js']);
 const optInDocker = new Set(['test_generated_docker_artifact.js']);
 const browser = new Set(['test_p1_b_browser.js']);
 const integration = new Set([
+    'test_reverification.js',
+    'test_execution_progress.js',
     'test_http_integration.js', 'test_websocket_integration.js',
     'test_health_and_lifecycle.js', 'test_p1_b_api.js', 'test_p1_b_process.js',
     'test_p1_b_smoke.js', 'test_p2_frontend.js'

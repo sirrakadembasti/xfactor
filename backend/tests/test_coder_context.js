@@ -5,6 +5,20 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { buildCoderProjectContext } from '../engine/coderContext.js';
 
+test('focused repair context keeps required source whole without letting unrelated export inventories exhaust its budget',async()=>{
+ const projectDir=await fs.mkdtemp(path.join(os.tmpdir(),'xfactor-focused-context-'));
+ try {
+  await fs.mkdir(path.join(projectDir,'src'),{recursive:true});
+  await fs.writeFile(path.join(projectDir,'src/subject.ts'),'export const subject = 42;');
+  await fs.writeFile(path.join(projectDir,'src/unrelated.ts'),'export const enormous = '+JSON.stringify('x'.repeat(6000))+';');
+  const input={projectDir,files:[{path:'src/subject.ts'},{path:'src/unrelated.ts'}],dependencyTargetFiles:['src/subject.ts'],maxBytes:2048};
+  assert.match(await buildCoderProjectContext(input),/OMITTED CONTEXT/);
+  const focused=await buildCoderProjectContext({...input,includeOptionalExports:false});
+  assert.match(focused,/export const subject = 42/);assert.doesNotMatch(focused,/OMITTED CONTEXT|enormous/);
+  assert.match(await buildCoderProjectContext({...input,includeOptionalExports:false,dependencyTargetFiles:['src/unrelated.ts']}),/OMITTED CONTEXT/);
+ }finally{await fs.rm(projectDir,{recursive:true,force:true});}
+});
+
 test('coder context rereads complete dependency, auth and runtime contracts from disk', async () => {
     const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-coder-context-'));
     try {

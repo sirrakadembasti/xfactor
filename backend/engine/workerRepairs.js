@@ -25,7 +25,7 @@ export function assertWorkerSourceSnapshot(files, expected) {
 // Synchronous twin of the artifact inventory boundary, used inside the source
 // commit transaction after asynchronous staging. It detects additions as well
 // as modified/deleted context files; temporary staged writes are not artifacts.
-export function readWorkerSnapshotSync(root) {
+export function readWorkerSnapshotSync(root, { includeLockfile = false } = {}) {
     const files = [], ignored = ARTIFACT_IGNORED_DIRS;
     let totalBytes = 0;
     function walk(relative) {
@@ -47,7 +47,7 @@ export function readWorkerSnapshotSync(root) {
         else stop('unsupported source entry.');
     }
     walk('');
-    return sourceSnapshot(files);
+    return includeLockfile ? files : sourceSnapshot(files);
 }
 
 export function planWorkerRepairs({ batch, tasks, contract }) {

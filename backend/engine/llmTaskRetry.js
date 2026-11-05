@@ -77,6 +77,9 @@ export async function runLLMTaskWithRetry({
     retryDelayMs = 250,
     generate = generateLLMResponse,
     onUsage = null,
+    maxOutputTokens,
+    timeoutMs,
+    googleThinkingLevel,
     onDiagnostic = async () => {}
 } = {}) {
     if (!agentRole) throw new Error('agentRole is required for an LLM task.');
@@ -90,7 +93,10 @@ export async function runLLMTaskWithRetry({
         try {
             // This boundary owns retries for agent tasks. An adapter must make
             // a single transport attempt rather than multiplying this budget.
-            const response = await generate(messages, { signal, onUsage, maxTransportAttempts: 1 });
+            const response = await generate(messages, { signal, onUsage, maxTransportAttempts: 1,
+                ...(timeoutMs === undefined ? {} : { timeoutMs }),
+                ...(googleThinkingLevel === undefined ? {} : { googleThinkingLevel }),
+                ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }) });
             phase = 'validation';
             const parsed = parseResponse(response);
             await onDiagnostic(diagnosticFor({

@@ -36,6 +36,7 @@ export function canTransitionProject(fromStatus, toStatus) {
         ],
         [PROJECT_STATUS.PENDING_APPROVAL]: [
             PROJECT_STATUS.CONTRACT_APPROVED,
+            PROJECT_STATUS.PAUSED,
             PROJECT_STATUS.CAPABILITY_BLOCKED,
             PROJECT_STATUS.PLANNING
         ],

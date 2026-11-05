@@ -60,11 +60,11 @@ export function registerProjectTraceabilityRoutes(router, deps = {}) {
     const {
         requireAuth,
         projectAccess,
-        db = defaultDb,
         getActionId = defaultGetActionId
     } = deps;
 
     router.get('/:id/requirements/:reqId/impact', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const projectId = req.params.id;
         const reqId = req.params.reqId;
         const row = db.prepare(`
@@ -121,6 +121,7 @@ export function registerProjectTraceabilityRoutes(router, deps = {}) {
     }));
 
     router.post('/:id/rebuild-preview', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
+        const db = deps.db ?? defaultDb;
         const projectId = req.params.id;
         const body = req.body;
         if (body === null || typeof body !== 'object' || Array.isArray(body)) {

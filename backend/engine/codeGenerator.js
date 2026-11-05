@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { isSafeProjectPath } from '../security.js';
 import { writeStructuredLog } from '../observability.js';
 import { commitWorkflowSource } from '../workflowAttempts.js';
-import { buildDockerfileContent, buildDockerignoreContent } from './templates/dockerTemplates.js';
+import { buildDockerfileContent, buildDockerignoreContent, buildServiceLauncherContent } from './templates/dockerTemplates.js';
 import { ensurePrismaAndAuthTemplates, ensureUserModelInSchema } from './templates/prismaTemplates.js';
 
 export { buildDockerfileContent, buildDockerignoreContent } from './templates/dockerTemplates.js';
@@ -534,7 +534,8 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
 
     if (specText.includes('next.js') || specText.includes('nextjs') || specText.includes('app router')) {
         hasNextApp = true;
-    } else if (specText.includes('vite') || specText.includes('react spa') || isVue) {
+    } else if (specText.includes('vite') || specText.includes('react spa') || isVue
+        || (hasReactKeyword && /\bexpress(?:\.js)?\b/.test(specText))) {
         hasVite = true;
     }
     if (specText.includes('prisma') || specText.includes('sqlite') || specText.includes('database')) {
@@ -545,9 +546,9 @@ export async function detectProjectStack(projectDir, state = {}, plan = {}) {
     }
 
     const isNext = hasNextApp || (!hasVite && !isExpressOnly);
-    // Supported split runtime: Vite owns the UI, src/server.ts starts the
+    // Split runtime: Next.js or Vite owns the UI, src/server.ts starts the
     // default-exported Express application in src/httpApp.ts (legacy app.ts is preserved).
-    const hasExpressApi = !isNext && hasVite && /\bexpress(?:\.js)?\b/.test(specText);
+    const hasExpressApi = (isNext || hasVite) && /\bexpress(?:\.js)?\b/.test(specText);
     const framework = isNext ? 'nextjs' : (hasVite ? 'vite' : (isExpressOnly ? 'express' : 'node'));
 
     return {
@@ -571,6 +572,9 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
     // 1. Proje Türü / Framework Algılama
     const isAuthRequired = isAuthRequested(state, plan);
     const stack = await detectProjectStack(projectDir, state, plan);
+    if (stack.hasNextApp && stack.hasVite) {
+        throw new Error('Worker repair requires Manager revision: framework conflict: existing Next output and requested/detected Vite runtime. Preserve the current framework in a repair revision, or generate the new architecture as a separate project; source files were not changed.');
+    }
     let { isNext, hasPrisma, isExpressOnly, isVue, hasExpressApi, hasVite } = stack;
     if (isAuthRequired) {
         hasPrisma = true;
@@ -676,6 +680,7 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
         Object.assign(baseDevDependencies, { '@types/express': '^4.17.21', '@types/cors': LATEST_STABLE_VERSION, tsx: LATEST_STABLE_VERSION });
         scripts['dev:api'] = 'tsx watch src/server.ts';
         scripts['start:api'] = 'tsx src/server.ts';
+        scripts['start:services'] = 'node scripts/xfactor-start.cjs';
     }
 
     // Otomatik İthalat Taraması: Dosyalarda kullanılan harici paketleri bul ve ekle
@@ -733,6 +738,10 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
 
     // Imported packages must not replace the compatible Express 4 runtime/types.
     if (hasExpressApi) {
+        await fs.mkdir(path.join(projectDir, 'scripts'), { recursive: true });
+        try {
+            await writeSource(path.join(projectDir, 'scripts/xfactor-start.cjs'), buildServiceLauncherContent(), { encoding: 'utf8', flag: 'wx' });
+        } catch (error) { if (error.code !== 'EEXIST') throw error; }
         finalPkg.dependencies.express = currentPkg.dependencies?.express || '^4.21.2';
         finalPkg.devDependencies['@types/express'] = currentPkg.devDependencies?.['@types/express'] || '^4.17.21';
     }
@@ -803,8 +812,8 @@ export async function ensureProjectScaffold(projectDir, state = {}, plan = {}, s
             const apiModule = existingRuntimeFiles.includes('httpApp.ts') ? 'httpApp'
                 : existingRuntimeFiles.includes('app.ts') ? 'app' : 'httpApp';
             const runtimeFiles = {
-                [`src/${apiModule}.ts`]: "import express from 'express';\nimport cors from 'cors';\n\nconst app = express();\napp.use(cors());\napp.use(express.json());\napp.get('/api/health', (_req, res) => res.json({ status: 'healthy' }));\n\n// Register application routers here; src/server.ts owns the listener.\nexport default app;\n",
-                'src/server.ts': `import 'dotenv/config';\nimport app from './${apiModule}';\n\n// XFactor Vite + Express runtime contract: API ${apiPort}, UI 4173.\nconst port = Number(process.env.PORT || ${apiPort});\nconst server = app.listen(port, '127.0.0.1');\nfor (const signal of ['SIGTERM', 'SIGINT'] as const) {\n  process.once(signal, () => server.close(() => process.exit(0)));\n}\n`
+                [`src/${apiModule}.ts`]: `import express from 'express';\nimport cors from 'cors';\n\nconst app = express();\napp.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://127.0.0.1:${isNext ? 3000 : 4173}', credentials: true }));\napp.use(express.json());\napp.get('/api/health', (_req, res) => res.json({ status: 'healthy' }));\n\n// Register application routers here; src/server.ts owns the listener.\nexport default app;\n`,
+                'src/server.ts': `import 'dotenv/config';\nimport app from './${apiModule}';\n\n// XFactor ${isNext ? 'Next.js' : 'Vite'} + Express runtime contract: API ${apiPort}.\nconst port = Number(process.env.PORT || ${apiPort});\nconst server = app.listen(port, process.env.HOST || '0.0.0.0');\nfor (const signal of ['SIGTERM', 'SIGINT'] as const) {\n  process.once(signal, () => server.close(() => process.exit(0)));\n}\n`
             };
             for (const [relativePath, content] of Object.entries(runtimeFiles)) {
                 try { await writeSource(path.join(projectDir, relativePath), content, { encoding: 'utf8', flag: 'wx' }); }
