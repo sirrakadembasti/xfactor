@@ -158,6 +158,31 @@ test('Job Boundary API', async (t) => {
     const url = `${config.EXECUTION_WORKER_URL}/v1/jobs/${job.jobId}?projectId=wrong-proj`;
     const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     assert.equal(res.status, 403);
+    assert.match(res.headers.get('content-type'), /^application\/json/);
+  });
+
+  await t.test('cross-principal cancellation rejected without touching the job', async () => {
+    const job = getValidJob();
+    const p = client.verifyArtifact(job);
+    p.catch(() => {});
+    await waitForResolver(job.jobId);
+    const cancelUrl = projectId => `${config.EXECUTION_WORKER_URL}/v1/jobs/${job.jobId}${projectId === undefined ? '' : `?projectId=${projectId}`}`;
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const unscoped = await fetch(cancelUrl(), { method: 'DELETE', headers });
+    assert.equal(unscoped.status, 400);
+    assert.match(unscoped.headers.get('content-type'), /^application\/json/);
+    const foreign = await fetch(cancelUrl('wrong-proj'), { method: 'DELETE', headers });
+    assert.equal(foreign.status, 403);
+    assert.notEqual(store.getJob(job.jobId, job.projectId).status, 'cancelled');
+    await releaseWhenReady(job.jobId);
+    assert.equal((await p).status, 'completed');
+  });
+
+  await t.test('unauthorized responses are JSON', async () => {
+    const res = await fetch(`${config.EXECUTION_WORKER_URL}/readyz`);
+    assert.equal(res.status, 401);
+    assert.match(res.headers.get('content-type'), /^application\/json/);
+    assert.deepEqual(await res.json(), { error: 'Unauthorized' });
   });
 
   await t.test('cancellation aborts polling and cleans up', async () => {
@@ -165,7 +190,7 @@ test('Job Boundary API', async (t) => {
     const p = client.verifyArtifact(job);
     p.catch(() => {});
     await waitForResolver(job.jobId);
-    await client.cancelJob(job.jobId);
+    await client.cancelJob(job.jobId, job.projectId);
     const finalState = await p;
     assert.equal(finalState.status, 'cancelled');
     assert.equal(store.getJob(job.jobId, job.projectId).status, 'cancelled');
@@ -218,7 +243,7 @@ test('Job Boundary API', async (t) => {
     }
     await new Promise(r => setTimeout(r, 100));
     await assert.rejects(client.verifyArtifact(getValidJob()), /Worker error \(429\)/);
-    await Promise.all(pendingJobs.map(j => client.cancelJob(j.jobId)));
+    await Promise.all(pendingJobs.map(j => client.cancelJob(j.jobId, j.projectId)));
     await Promise.all(pendingRequests);
     for (const j of pendingJobs) assert.equal(store.getJob(j.jobId, j.projectId)?.status, 'cancelled');
     assert.equal(executeWaitResolvers.size, 0);

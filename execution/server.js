@@ -95,6 +95,8 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
 
   const server = http.createServer(async (req, res) => {
     try {
+      // Every worker response body is JSON, including errors and 401/413 rejections.
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       const authHeaderStr = req.headers['authorization'] || '';
       const authHeader = Buffer.from(authHeaderStr);
       
@@ -241,9 +243,19 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
         }
 
         if (req.method === 'DELETE') {
+          // Cancellation is scoped like status reads: the caller must name the owning project.
+          const projectId = url.searchParams.get('projectId');
+          if (!projectId) {
+            res.writeHead(400);
+            return res.end(JSON.stringify({ error: 'projectId required' }));
+          }
           if (!store.hasJob(jobId)) {
             res.writeHead(404);
             return res.end(JSON.stringify({ error: 'Job not found' }));
+          }
+          if (!store.getJob(jobId, projectId)) {
+            res.writeHead(403);
+            return res.end(JSON.stringify({ error: 'Forbidden or Not Found' }));
           }
           const activeJob = activeJobs.get(jobId);
           if (activeJob) {

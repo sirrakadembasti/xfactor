@@ -35,7 +35,7 @@ export function createExecutionClient(config = {}, { onProgress } = {}) {
     if (operation === 'prepare_dependencies') { const bytes = input.packageJsonBytes ? Buffer.from(input.packageJsonBytes) : (input.packageJsonBase64 ? Buffer.from(input.packageJsonBase64, 'base64') : null); if (!input.packageJsonBase64 && bytes) payload.packageJsonBase64 = bytes.toString('base64'); delete payload.packageJsonBytes; if (!payload.inputSha256 && bytes) payload.inputSha256 = job.inputSha256 = digest(bytes); }
     else if (!payload.inputSha256 && input.archiveBase64) payload.inputSha256 = job.inputSha256 = digest(Buffer.from(input.archiveBase64, 'base64'));
     let cancellation;
-    const cancel = () => cancellation || (cancellation = (async () => { const until = Date.now() + 3000; while (Date.now() < until) { try { return await request(`/v1/jobs/${encodeURIComponent(job.jobId)}`, { method: 'DELETE' }); } catch (error) { if (!/Worker error \(404\)/.test(error.message)) throw error; await new Promise(resolve => setTimeout(resolve, 25)); } } return { status: 'not_found' }; })());
+    const cancel = () => cancellation || (cancellation = (async () => { const until = Date.now() + 3000; while (Date.now() < until) { try { return await request(`/v1/jobs/${encodeURIComponent(job.jobId)}?projectId=${encodeURIComponent(job.projectId)}`, { method: 'DELETE' }); } catch (error) { if (!/Worker error \(404\)/.test(error.message)) throw error; await new Promise(resolve => setTimeout(resolve, 25)); } } return { status: 'not_found' }; })());
     const abort = async () => { try { await cancel(); } catch (e) { throw new Error(`Abort cancellation failed: ${e.message}`, { cause: e }); } throw new DOMException('The operation was aborted', 'AbortError'); };
     if (signal?.aborted) return abort();
     try {
@@ -65,5 +65,5 @@ export function createExecutionClient(config = {}, { onProgress } = {}) {
       }
     } finally {}
   }
-  return { prepareDependencies: (job, { signal } = {}) => submitAndPoll(job, 'prepare_dependencies', signal), verifyArtifact: (job, { signal } = {}) => submitAndPoll(job, 'verify_artifact', signal), getCapabilities: ({ signal } = {}) => request('/readyz', { signal }), cancelJob: jobId => request(`/v1/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }) };
+  return { prepareDependencies: (job, { signal } = {}) => submitAndPoll(job, 'prepare_dependencies', signal), verifyArtifact: (job, { signal } = {}) => submitAndPoll(job, 'verify_artifact', signal), getCapabilities: ({ signal } = {}) => request('/readyz', { signal }), cancelJob: (jobId, projectId) => request(`/v1/jobs/${encodeURIComponent(jobId)}?projectId=${encodeURIComponent(projectId)}`, { method: 'DELETE' }) };
 }

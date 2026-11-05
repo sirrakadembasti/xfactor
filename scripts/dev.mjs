@@ -43,7 +43,7 @@ function startBackend() {
         env: {
             ...process.env,
             FORCE_COLOR: '1',
-            EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN || 'dev-worker-token-internal',
+            EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN,
             EXECUTION_WORKER_URL: process.env.EXECUTION_WORKER_URL || 'http://127.0.0.1:8099'
         },
         stdio: ['ignore', 'pipe', 'pipe']
@@ -95,7 +95,7 @@ function startWorker() {
         env: {
             ...process.env,
             FORCE_COLOR: '1',
-            EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN || 'dev-worker-token-internal',
+            EXECUTION_WORKER_TOKEN: process.env.EXECUTION_WORKER_TOKEN,
             PORT: process.env.PORT || '8099'
         },
         stdio: ['ignore', 'pipe', 'pipe', 'ipc']

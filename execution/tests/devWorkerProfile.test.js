@@ -41,6 +41,17 @@ test('local alias generates a shared token without replacing an operator token',
   assert.equal(configured.EXECUTION_WORKER_TOKEN, 'configured-secret');
 });
 
+test('Docker development profile also generates a fresh shared token, never the fixed fallback', () => {
+  const first = {}; configureDevWorker(first, ['--docker-worker']);
+  const second = {}; configureDevWorker(second, ['--docker-worker']);
+  assert.match(first.EXECUTION_WORKER_TOKEN, /^[a-f0-9]{64}$/);
+  assert.notEqual(first.EXECUTION_WORKER_TOKEN, second.EXECUTION_WORKER_TOKEN);
+  assert.notEqual(first.EXECUTION_WORKER_TOKEN, 'dev-worker-token-internal');
+  const configured = { WORKER_TOKEN: 'operator-docker-secret' };
+  configureDevWorker(configured, ['--docker-worker']);
+  assert.equal(configured.EXECUTION_WORKER_TOKEN, 'operator-docker-secret');
+});
+
 test('conflicting runtime flags fail before launch', () => {
   const env = {};
   assert.throws(() => configureDevWorker(env, ['--local-worker', '--docker-worker']), /Conflicting/);
