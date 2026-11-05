@@ -18,6 +18,24 @@ await runAsyncTest('empty worker scope cannot become passing requirement traceab
     const result = await evaluate([]);
     assert.notEqual(result.checks.find(c => c.name === 'requirement_traceability').status, 'passed');
 });
+await runAsyncTest('worker without scope or plan delegates traceability to the backend without passing it', async () => {
+    const result = await evaluate([], [{ id: 'gate', name: 'typecheck', status: 'passed', requirementIds: [] }]);
+    const trace = result.checks.find(c => c.name === 'requirement_traceability');
+    assert.equal(trace.status, 'skipped');
+    assert.equal(trace.exitCode, 1);
+    assert.equal(trace.evidence.scope, 'backend-authoritative');
+    assert.deepEqual(trace.evidence.coveredIds, []);
+    assert.deepEqual(trace.evidence.issues, [{ code: 'missing-authoritative-scope' }]);
+    // Other worker gates decide the job; the backend still recomputes coverage fail-closed.
+    assert.equal(result.passed, true);
+});
+await runAsyncTest('supplied but uncovered worker scope still blocks the job', async () => {
+    const result = await evaluate(['req-a'], [{ id: 'gate', name: 'typecheck', status: 'passed', requirementIds: [] }]);
+    const trace = result.checks.find(c => c.name === 'requirement_traceability');
+    assert.equal(trace.status, 'blocked');
+    assert.equal(trace.evidence.scope, undefined);
+    assert.equal(result.passed, false);
+});
 await runAsyncTest('caller scope is not copied onto unrelated machine checks', async () => {
     const result = await evaluate(['req-a', 'req-b'], [{ id: 'owned', name: 'typecheck', status: 'passed', requirementIds: ['req-a'] }]);
     assert.deepEqual(result.checks.find(c => c.id === 'owned').requirementIds, ['req-a']);

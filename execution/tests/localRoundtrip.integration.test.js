@@ -10,6 +10,9 @@ import { JobStore } from '../jobStore.js';
 import { createExecutionClient } from '../../backend/executionClient.js';
 import { localAppFixture } from './fixtures/localAppFixture.js';
 
+// OS temp dirs may be aliased (macOS /var, Windows 8.3 names); owned fixtures live under the canonical path.
+const CANONICAL_TMP = fs.realpathSync.native(os.tmpdir());
+
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const identityFields = ['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'];
 async function availablePort() {
@@ -33,7 +36,7 @@ test('native trusted worker authenticates HTTP prepare/verify and proves real SQ
 }, async t => {
   // Dynamic import lets ordinary test runs explicitly skip a missing native runtime.
   const { executeLocalJob, probeLocalReadiness } = await import('../localRuntime.js');
-  const owned = fs.mkdtempSync(path.join(os.tmpdir(), 'xfactor-native-roundtrip-'));
+  const owned = fs.mkdtempSync(path.join(CANONICAL_TMP, 'xfactor-native-roundtrip-'));
   const workspaces = path.join(owned, 'workspaces'); fs.mkdirSync(workspaces);
   const store = new JobStore(path.join(owned, 'jobs.json'));
   const resources = [];
@@ -92,9 +95,16 @@ test('native trusted worker authenticates HTTP prepare/verify and proves real SQ
       assert.match(proof.stdoutDigest, /^[a-f0-9]{64}$/, `${name}: stdout digest`);
       assert.match(proof.stderrDigest, /^[a-f0-9]{64}$/, `${name}: stderr digest`);
     }
+    // The worker protocol carries no requirement scope, so the worker delegates traceability to the
+    // backend (which discards this row and recomputes coverage from persisted requirements).
+    const delegatedTrace = check => check.name === 'requirement_traceability' && check.status === 'skipped'
+      && check.evidence?.scope === 'backend-authoritative' && check.evidence.coveredIds?.length === 0
+      && check.evidence.issues?.length === 1 && check.evidence.issues[0].code === 'missing-authoritative-scope';
+    assert.equal(checks.filter(delegatedTrace).length, 1, 'worker must record exactly one delegated traceability row');
     for (const check of checks) {
       assert.equal(check.runId, verifyJob.runId);
-      assert.ok(check.status === 'passed' || (check.name === 'typecheck' && check.status === 'skipped' && /no typescript|tsconfig|not.*typescript/i.test(check.reason)), `Unexpected check ${JSON.stringify(check)}`);
+      assert.ok(check.status === 'passed' || delegatedTrace(check)
+        || (check.name === 'typecheck' && check.status === 'skipped' && /no typescript|tsconfig|not.*typescript/i.test(check.reason)), `Unexpected check ${JSON.stringify(check)}`);
     }
     assert.equal(checks.filter(check => check.name === 'management_role_login').length, 2);
     const browser = checks.find(check => check.name === 'browser_management_interaction');

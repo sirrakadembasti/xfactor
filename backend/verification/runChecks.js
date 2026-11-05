@@ -182,11 +182,17 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
     const coverage = evaluateRequirementCoverage({ mandatoryRequirementIds: requirementIds, checks: identifiedChecks });
     const coveredIds = new Set(coverage.coveredRequirementIds);
     const allCovered = coverage.passed;
+    // The worker protocol carries no requirement scope; only a verification plan supplies one.
+    // Without it the backend alone owns traceability (it discards this row and recomputes from
+    // persisted requirements), so the worker records that it did not judge coverage instead of
+    // failing an otherwise complete job. This is never a pass.
+    const scopeDelegated = !verificationPlan && (!Array.isArray(requirementIds) || requirementIds.length === 0);
+    const traceStatus = allCovered ? 'passed' : scopeDelegated ? 'skipped' : 'blocked';
     const traceTimestamp = new Date().toISOString();
     identifiedChecks.push({
         id: crypto.randomUUID(),
         name: 'requirement_traceability',
-        status: allCovered ? 'passed' : 'blocked',
+        status: traceStatus,
         requirementIds: [],
         command: 'static:verify-requirement-traceability',
         exitCode: allCovered ? 0 : 1,
@@ -195,9 +201,12 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
         stdoutDigest: crypto.createHash('sha256').update(JSON.stringify({ passed: allCovered, covered: Array.from(coveredIds) })).digest('hex'),
         stderrDigest: crypto.createHash('sha256').update(allCovered ? '' : 'Uncovered requirements').digest('hex'),
         policyVersion: ACTIVE_POLICY_VERSION,
-        reason: allCovered ? 'All requirements covered by passing machine checks' : 'Requirements lack passing machine evidence',
+        reason: allCovered ? 'All requirements covered by passing machine checks'
+            : scopeDelegated ? 'Worker received no authoritative requirement scope; backend evaluates traceability from persisted requirements.'
+                : 'Requirements lack passing machine evidence',
         evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, coveredIds: Array.from(coveredIds),
-            missingRequirementIds: coverage.missingRequirementIds, unknownRequirementIds: coverage.unknownRequirementIds, issues: coverage.issues }
+            missingRequirementIds: coverage.missingRequirementIds, unknownRequirementIds: coverage.unknownRequirementIds, issues: coverage.issues,
+            ...(scopeDelegated ? { scope: 'backend-authoritative' } : {}) }
     });
 
     const finalChecks = identifiedChecks.map(check => withEvidence(check, runId));
