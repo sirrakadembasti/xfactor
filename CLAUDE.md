@@ -108,7 +108,13 @@ foreach ($f in 'CLAUDE.md','README.md','kullanici-kilavuzu.md','docs/faz-arsiv.m
 Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontgen-2026-11-05.md) dosyasındadır. Oturuma başlamadan önce şu dört noktayı bil:
 
 - **Commit durumu:** 29 Ekim'den bu yana commit edilmemiş çalışma, kullanıcı onayıyla `faz-0/zemin-sabitleme` dalında altı commit'e bölündü: worker, doğrulama, kontrollü onarım, frontend, test kararlılığı ve belgeler. Dal henüz `main`'e alınmadı ve push edilmedi. Ara commit'ler tek başına test geçmeyebilir; tam süit dalın ucunda geçer.
-- **Testler (5 Kasım, Faz 0 sonrası):** backend 176/176 süit, worker 202/202 test geçti. Üç bozuk test yeni API alanlarına ve `productionLanguagePolicy.js` dosyasına göre hizalandı. Sağlık testi ile worker dosya bütçeleri yüke dayanıklı hâle getirildi. Launcher testi açık göreli yolla çağrılıyor. Kalan Faz 0 işi: dalın push edilip CI'ın yeşil olması ve `main`'e alınması. Yerel worker entegrasyonu, E2E ve Docker süitleri çalıştırılmadı.
+- **Testler (5 Kasım, Faz 0 sonrası):** backend 176/176 süit, worker 202/202 test geçti. Üç bozuk test yeni API alanlarına ve `productionLanguagePolicy.js` dosyasına göre hizalandı. Sağlık testi ile worker dosya bütçeleri yüke dayanıklı hâle getirildi. Launcher testi açık göreli yolla çağrılıyor. Dal [PR #3](https://github.com/sirrakadembasti/xfactor/pull/3) olarak açıldı. İlk CI koşusunda, `main`'de 29 Ekim'den beri süren hatalar ortaya çıktı. Bunlar ve PR içindeki bir gerileme düzeltildi:
+  - Takma adlı geçici dizin (macOS `/private/var`, Windows 8.3) için kanonik workspace tabanı.
+  - Kapsamsız worker izlenebilirliği artık `skipped`; backend otoriter kalıyor.
+  - Ubuntu Chromium sandbox ayarı.
+  - `npm audit`: backend için patch yükseltmeleri, frontend'de vitest 4.1.12.
+
+  Kalan Faz 0 işi: CI'ın yeşil olması ve `main`'e alınması. Ayrıntılar röntgen raporunun Faz 0 bölümünde. Yerel worker entegrasyonu, E2E ve Docker süitleri çalıştırılmadı.
 - **Yol haritası sırası:** Faz 0 (zemin: commit ayrıştırma ve kırık testler) → Faz 1 (güvenlik: üretimde varsayılan admin, sabit dev token) → Faz 2 (şema: sahiplik tek kaynak, CHECK/FK, migrasyon 18+) → Faz 3 (API sözleşmesi) → Faz 4 (modül disiplini) → Faz 5 (stok-takip teslimi).
 - **stok-takip-1:** sözleşme 3 onaylı; sözleşme 4 (30 Ekim) hâlâ `pending_approval`. Bu taslak onaylanırsa tam DAG üretimi yeniden tetiklenebilir. Devam etmeden önce taslak için kullanıcı kararı al.
 
