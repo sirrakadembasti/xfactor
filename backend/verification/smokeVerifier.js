@@ -29,7 +29,8 @@ function inferRuntimeChecks(contract, service, files = [], services = []) {
     const inferredApi = apiBaseUrl && (services.length > 1 || contract.management?.needed === true)
         ? { ...(contract.api || {}), baseUrl: apiBaseUrl, ...(apiDomains ? { domains: apiDomains } : {}) }
         : baseUrl && routeName ? { ...(contract.api || {}), baseUrl, domains: [{ prefix: routeName }] } : null;
-    const hasBrowserService = service?.type === 'vite' || Boolean(page && /<main(?:\s|>)/.test(String(page.content || '')));
+    const hasMainElement = Boolean(page && /<main(?:\s|>)/.test(String(page.content || '')));
+    const hasBrowserService = ['vite', 'nextjs'].includes(service?.type) || hasMainElement;
     const schema = sourceFiles.find(file => /(?:^|\/)schema\.prisma$/.test(file.path)
         && /datasource\s+\w+\s*\{[^}]*\bprovider\s*=\s*["']sqlite["']/s.test(file.content));
     return {
@@ -37,7 +38,7 @@ function inferRuntimeChecks(contract, service, files = [], services = []) {
         missingApiContract: Boolean(inferredApi && !contract.api?.baseUrl
             && contract.management?.needed !== true && !apiDomains),
         browser: contract.browser?.url ? contract.browser : (baseUrl && hasBrowserService
-            ? { journey: { steps: page ? [{ action: 'assert_element', selector: 'main' }] : [] },
+            ? { journey: { steps: hasMainElement ? [{ action: 'assert_element', selector: 'main' }] : [] },
                 ...(contract.browser || {}), url: `${baseUrl}/` }
             : null),
         database: contract.database || schema ? { ...contract, ...(typeof contract.database === 'object' ? contract.database : {}),
@@ -174,6 +175,19 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
         });
         issues.push(error.message);
     } finally {
+        // Observe before operator cleanup so our own termination never becomes
+        // a product crash. Retain only bounded diagnostic tails.
+        for (const handle of handles) {
+            const observation=handle.getObservation?.();
+            const check=checks.find(row=>row.name==='service_spawn' && row.evidence?.serviceId===handle.serviceId);
+            if (!check || !observation) continue;
+            check.evidence.processObservation=observation;
+            if (observation.exited) {
+                check.status='failed';check.reason=`Service ${handle.serviceId} exited before runtime validation completed (exit ${observation.exitCode ?? 'unknown'}, signal ${observation.signal || 'none'}).`;
+                Object.assign(check,{stdout:observation.stdout,stderr:observation.stderr,stdoutTruncated:observation.stdoutTruncated,stderrTruncated:observation.stderrTruncated});
+                issues.push(check.reason);
+            }
+        }
         const cleanup = await Promise.allSettled([...handles].reverse().map(handle => killService(handle)));
         for (const result of cleanup) {
             if (result.status === 'rejected') {

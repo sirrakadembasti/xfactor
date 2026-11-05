@@ -29,6 +29,30 @@ export function redactObservedEvidence(value, depth = 0) {
         .map(([key, item]) => [key, redactObservedEvidence(item, depth + 1)]));
     return value;
 }
+
+// Authoritative semantic proof cannot be shortened or rewritten: its retained
+// bytes are subsequently checked against the authenticated execution digests.
+// Reject unsafe/oversized proof as a whole instead of manufacturing a new one.
+export function retainSemanticEvidence(value) {
+    let visited = 0;
+    const copy = (part, depth = 0) => {
+        if (++visited > 100000 || depth > 32) throw Error('Semantic evidence limit exceeded.');
+        if (typeof part === 'string') {
+            if (Buffer.byteLength(part) > 128 * 1024) throw Error('Semantic evidence string limit exceeded.');
+            if (redactSensitiveText(part) !== part) throw Error('Semantic evidence contains sensitive data.');
+            return part;
+        }
+        if (part === null || typeof part === 'boolean' || typeof part === 'number' && Number.isFinite(part)) return part;
+        if (Array.isArray(part)) return part.map(item => copy(item, depth + 1));
+        if (part && typeof part === 'object' && [Object.prototype, null].includes(Object.getPrototypeOf(part))) {
+            return Object.fromEntries(Object.entries(part).filter(([, item]) => item !== undefined).map(([key, item]) => [key, copy(item, depth + 1)]));
+        }
+        throw Error('Invalid semantic evidence shape.');
+    };
+    const result = copy(value);
+    if (Buffer.byteLength(JSON.stringify(result)) > 512 * 1024) throw Error('Semantic evidence byte limit exceeded.');
+    return result;
+}
 export function parseTypecheckDiagnostics({ check, log, artifactPaths }) {
     const stop = blockerReason => ({ classification: /network|download|tool|ECONN|EAI_|npm/i.test(blockerReason) ? 'infrastructure' : 'ambiguous', blockerReason, findings: [] });
     if ((check.gateName || check.name) !== 'typecheck' || !/^npx(?:\.cmd)? tsc --noEmit$/.test(check.command || '')

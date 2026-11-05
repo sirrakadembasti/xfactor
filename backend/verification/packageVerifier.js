@@ -5,8 +5,18 @@ import module from 'module';
 import crypto from 'crypto';
 import { parse } from '@babel/parser';
 import { executeInSandbox } from './sandboxRunner.js';
+import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
+}
+function streamEvidence(result = {}) {
+    return Object.fromEntries(['stdoutBytes', 'stderrBytes', 'stdoutTruncated', 'stderrTruncated'].filter(key => result[key] !== undefined).map(key => [key, result[key]]));
+}
+function observedCheck(startedAt, check) {
+    const stdout = check.stdout ?? check.reason ?? '';
+    const stderr = check.stderr ?? '';
+    return { ...check, stdout, stderr, startedAt, endedAt: new Date().toISOString(),
+        stdoutDigest: check.stdoutDigest ?? computeDigest(stdout), stderrDigest: check.stderrDigest ?? computeDigest(stderr), policyVersion: ACTIVE_POLICY_VERSION };
 }
 const NODE_BUILTINS = new Set(
     module.builtinModules || [
@@ -178,25 +188,29 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
     const packageFile = readSupplied('package.json');
     const packageJsonPath = path.join(projectDir, 'package.json');
     let packageJson = null;
+    const packageStartedAt = new Date().toISOString();
     try {
+        if (suppliedFiles && !packageFile) throw new Error('package.json is absent from worker inventory');
         const content = packageFile ? String(packageFile.content || '') : await fs.readFile(packageJsonPath, 'utf8');
         packageJson = JSON.parse(content);
-        checks.push({ name: 'package_json', status: 'passed', command: 'static:parse-package-json', exitCode: 0, reason: 'package.json exists and is valid JSON.' });
+        checks.push(observedCheck(packageStartedAt, { name: 'package_json', status: 'passed', command: 'static:parse-package-json', exitCode: 0, reason: 'package.json exists and is valid JSON.' }));
     } catch (err) {
         checks.push({ name: 'package_json', status: 'failed', reason: `package.json is missing or invalid: ${err.message}` });
         return { passed: false, checks };
     }
     const lockfiles = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'];
+    const lockStartedAt = new Date().toISOString();
     const lockfileFound = suppliedFiles
         ? lockfiles.some(name => Boolean(readSupplied(name)))
         : lockfiles.some(f => fsSync.existsSync(path.join(projectDir, f)));
-    checks.push({ name: 'lockfile', status: lockfileFound ? 'passed' : 'failed', command: 'static:check-lockfile-presence', exitCode: lockfileFound ? 0 : 1, reason: lockfileFound ? 'Deterministic lockfile is present.' : 'No deterministic lockfile found.' });
+    checks.push(observedCheck(lockStartedAt, { name: 'lockfile', status: lockfileFound ? 'passed' : 'failed', command: 'static:check-lockfile-presence', exitCode: lockfileFound ? 0 : 1, reason: lockfileFound ? 'Deterministic lockfile is present.' : 'No deterministic lockfile found.' }));
+    const inventoryStartedAt = new Date().toISOString();
     const declaredDeps = new Set([...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {}), ...Object.keys(packageJson.peerDependencies || {}), ...Object.keys(packageJson.optionalDependencies || {})]);
     const discoveredImports = suppliedFiles
         ? new Set(suppliedFiles.flatMap(file => CODE_EXTENSIONS.has(path.extname(String(file.path || '')).toLowerCase()) ? [...extractImportsFromCode(String(file.content || ''))] : []))
         : await scanProjectImports(projectDir);
     const undeclared = [...discoveredImports].filter(pkg => !declaredDeps.has(pkg));
-    checks.push({ name: 'ast_import_inventory', status: undeclared.length ? 'failed' : 'passed', command: 'static:compare-import-inventory', exitCode: undeclared.length ? 1 : 0, reason: undeclared.length ? `Source code imports undeclared packages: ${undeclared.join(', ')}` : `All ${discoveredImports.size} discovered imports are declared in package.json.`, undeclared, count: discoveredImports.size });
+    checks.push(observedCheck(inventoryStartedAt, { name: 'ast_import_inventory', status: undeclared.length ? 'failed' : 'passed', command: 'static:compare-import-inventory', exitCode: undeclared.length ? 1 : 0, reason: undeclared.length ? `Source code imports undeclared packages: ${undeclared.join(', ')}` : `All ${discoveredImports.size} discovered imports are declared in package.json.`, undeclared, count: discoveredImports.size }));
 
     // 4. Sandboxed clean install. A populated node_modules directory is not
     // evidence: always execute npm ci against the validated npm lockfile.
@@ -224,37 +238,42 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
     } else {
         const npmCmd = (options.adapter?.id === 'docker-worker' || options.adapter?.getCapabilities?.().adapterId === 'docker-worker') ? 'npm' : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
         const installArgs = ['ci', '--ignore-scripts', '--no-audit', '--no-fund'];
+        const installStartedAt = new Date().toISOString();
         try {
             const installRes = await executeInSandbox(npmCmd, installArgs, {
                 workspace: projectDir,
-                timeoutMs: options.timeoutMs || 600000,
+                timeoutMs: options.timeoutMs || 900000,
                 adapter: options.adapter,
                 signal: options.signal,
                 env: options.env
             });
-            checks.push({
+            checks.push(observedCheck(installStartedAt, {
                 name: 'clean_install',
                 status: installRes.passed ? 'passed' : 'failed',
+                ...streamEvidence(installRes),
                 command: `${npmCmd} ${installArgs.join(' ')}`,
                 exitCode: installRes.exitCode ?? (installRes.passed ? 0 : 1),
                 stdout: installRes.stdout || '',
                 stderr: installRes.stderr || '',
-                stdoutDigest: computeDigest(installRes.stdout),
-                stderrDigest: computeDigest(installRes.stderr),
+                stdoutDigest: installRes.stdoutDigest || installRes.stdoutSha256 || computeDigest(installRes.stdout),
+                stderrDigest: installRes.stderrDigest || installRes.stderrSha256 || computeDigest(installRes.stderr),
+                timedOut: installRes.timedOut === true,
                 reason: installRes.passed ? 'Clean npm ci install succeeded in sandbox.' : `Clean install failed in sandbox: ${installRes.stderr || installRes.stdout}`
-            });
+            }));
         } catch (err) {
-            checks.push({
+            checks.push(observedCheck(installStartedAt, {
                 name: 'clean_install',
                 status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                ...streamEvidence(err.result || err),
                 command: `${npmCmd} ${installArgs.join(' ')}`,
-                exitCode: err.exitCode ?? null,
-                stdout: err.stdout || '',
-                stderr: err.stderr || err.message || '',
-                stdoutDigest: computeDigest(err.stdout),
-                stderrDigest: computeDigest(err.stderr || err.message),
+                exitCode: err.exitCode ?? err.result?.exitCode ?? null,
+                stdout: err.stdout || err.result?.stdout || '',
+                stderr: err.stderr || err.result?.stderr || err.message || '',
+                stdoutDigest: err.result?.stdoutDigest || err.result?.stdoutSha256 || computeDigest(err.stdout || err.result?.stdout),
+                stderrDigest: err.result?.stderrDigest || err.result?.stderrSha256 || computeDigest(err.stderr || err.result?.stderr || err.message),
+                timedOut: err.result?.timedOut === true,
                 reason: `Clean install sandbox error: ${err.message}`
-            });
+            }));
         }
     }
 

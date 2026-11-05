@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
+import { projectCommandProgress } from './verification/commandProgressProtocol.js';
 const IDENTITY = ['version','jobId','operation','projectId','contractId','contractHash','revision','artifactId','nonce','inputSha256','runId'];
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
-export function createExecutionClient(config = {}) {
+export function createExecutionClient(config = {}, { onProgress } = {}) {
   const isProduction = config.production === true || process.env.NODE_ENV === 'production';
   let workerToken = config.EXECUTION_WORKER_TOKEN || config.WORKER_TOKEN;
   if (!workerToken) {
@@ -16,6 +17,13 @@ export function createExecutionClient(config = {}) {
   if (!['http:','https:'].includes(parsed.protocol)) throw new Error('URL must be http (loopback) or https');
   const identityOf = (job, operation) => ({ ...job, version: job.version ?? 1, operation });
   const assertIdentity = (value, expected) => { for (const key of IDENTITY) if (value?.[key] !== expected[key]) throw new Error(`Identity mismatch in ${key}`); };
+  const reportProgress = status => {
+    if (typeof onProgress !== 'function') return;
+    const observation = { ...Object.fromEntries(IDENTITY.map(key => [key, status[key]])), status: status.status,
+      commands: projectCommandProgress(status.diagnostics?.commands) };
+    // Advisory observation cannot interrupt job polling or authorize acceptance.
+    try { Promise.resolve(onProgress(observation)).catch(() => {}); } catch {}
+  };
   async function request(path, options = {}) {
     const res = await fetch(`${workerUrl}${path}`, { ...options, headers: { Authorization: `Bearer ${workerToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
     if (!res.ok) { let message = res.statusText; try { const body = await res.json(); if (body?.error) message = body.error; } catch {} throw new Error(`Worker error (${res.status}): ${message}`); }
@@ -33,6 +41,7 @@ export function createExecutionClient(config = {}) {
     try {
       let submitted; try { submitted = await request('/v1/jobs', { method: 'POST', body: JSON.stringify(payload), signal }); } catch (error) { if (signal?.aborted) await abort(); throw error; }
       assertIdentity(submitted, job);
+      reportProgress(submitted);
       let firstTransportFailureAt = null;
       while (true) {
         if (signal?.aborted) await abort();
@@ -50,6 +59,7 @@ export function createExecutionClient(config = {}) {
         }
         assertIdentity(status, job);
         if (status.result) assertIdentity(status.result, job);
+        reportProgress(status);
         if (['completed','failed','cancelled','failed_interrupted','failed_timeout'].includes(status.status)) return status;
         await new Promise((resolve, reject) => { let done = false; const onAbort = () => { if (done) return; done = true; clearTimeout(timer); abort().then(reject, reject); }; const timer = setTimeout(() => { done = true; signal?.removeEventListener('abort', onAbort); resolve(); }, 500); signal?.addEventListener('abort', onAbort, { once: true }); });
       }

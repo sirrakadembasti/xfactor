@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 
 export const WORKER_RECEIPT_GATE = 'worker_verification_receipt';
+export const isSemanticArtifactDetail = name => ['requirement_assertions', 'ui_language_evidence'].includes(name);
 const DETAIL = /^(?:api_role_(?:create|read|update|delete)_(?:allowed|denied)|api_anonymous_(?:mutation_denied|read_policy|update_denied|delete_denied)|api_(?:update|delete)_(?:persistence|denial_persistence)|api_delete_related_retention|api_unverified_mutation_operation|management_(?:runtime_contract|demo_seed|role_login)|browser_management_interaction|database_mutation_assertion)$/;
 const IDENTITY = ['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'];
 const stable = value => JSON.stringify(value, (_, part) => part && typeof part === 'object' && !Array.isArray(part)

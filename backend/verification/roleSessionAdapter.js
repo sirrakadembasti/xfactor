@@ -1,6 +1,18 @@
 import { randomBytes } from 'node:crypto';
 
 const LOCAL_PATH = /^\/(?!\/)/;
+const PRISMA_DEMO_SEED_SCRIPT = `const { spawnSync } = require('node:child_process');
+const path = require('node:path');
+const credentials = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+const env = { ...process.env, ...credentials, NODE_ENV: 'test', PATH: [path.resolve('node_modules/.bin'), process.env.PATH].filter(Boolean).join(path.delimiter) };
+const result = spawnSync(process.execPath, [path.resolve('node_modules/prisma/build/index.js'), 'db', 'seed'], {
+  cwd: process.cwd(), env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000, windowsHide: true
+});
+const redact = value => Object.values(credentials).reduce((text, password) => text.split(password).join('[REDACTED]'), String(value || ''));
+process.stdout.write(redact(result.stdout));
+process.stderr.write(redact(result.stderr));
+if (result.error) process.stderr.write('Isolated Prisma seed process failed.');
+process.exitCode = result.error ? 1 : (Number.isInteger(result.status) ? result.status : 1);`;
 const ROLE_SETUP_SCRIPT = `const { spawnSync } = require('node:child_process');
 const credentials = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
 const env = { ...process.env, ...credentials, NODE_ENV: 'test' };
@@ -43,8 +55,7 @@ function localUrl(baseUrl, path) {
     return new URL(path, baseUrl);
 }
 
-export async function prepareManagementDemoUsers(adapter, management, env = {}, { signal } = {}) {
-    if (typeof adapter?.execute !== 'function') throw new Error('Isolated executable adapter is required for demo setup.');
+function createDemoCredentials(management) {
     const roles = management?.roles;
     if (!Array.isArray(roles) || roles.length === 0) throw new Error('Management roles are required for demo setup.');
     const passwords = {};
@@ -59,6 +70,17 @@ export async function prepareManagementDemoUsers(adapter, management, env = {}, 
         passwords[role.name] = password;
         credentials[variable] = password;
     }
+    return { passwords, credentials };
+}
+
+export function buildManagementPrismaSeedRequest(management, env = {}) {
+    const { credentials } = createDemoCredentials(management);
+    return { command: 'node', args: ['-e', PRISMA_DEMO_SEED_SCRIPT], input: JSON.stringify(credentials), env: { ...env, NODE_ENV: 'test' } };
+}
+
+export async function prepareManagementDemoUsers(adapter, management, env = {}, { signal } = {}) {
+    if (typeof adapter?.execute !== 'function') throw new Error('Isolated executable adapter is required for demo setup.');
+    const { passwords, credentials } = createDemoCredentials(management);
     const result = await adapter.execute({ command: 'node', args: ['-e', ROLE_SETUP_SCRIPT],
         cwd: '/workspace', env: { ...env, NODE_ENV: 'test' }, input: JSON.stringify(credentials),
         timeoutMs: 120000, signal });

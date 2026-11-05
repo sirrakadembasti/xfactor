@@ -5,6 +5,10 @@ import { verifyReadmeCommands } from './readmeVerifier.js';
 import { verifyProjectSmoke } from './smokeVerifier.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { ARTIFACT_LIMITS } from '../artifactLimits.js';
+import { evaluateRequirementCoverage } from './requirementCoverage.js';
+import { normalizeAssertionInventoryFile } from '../contracts/requirementAssertionBindings.js';
+import { computeAssertionSourceHash } from '../contracts/requirementAssertionBindings.js';
+import { verifyReviewedRequirementAssertions } from './requirementAssertionVerifier.js';
 
 // Base64 expands content by 4/3; the remaining budget covers JSON/path metadata.
 // This is independent of retained diagnostic stdout and never raises that limit.
@@ -22,9 +26,7 @@ async function collectFiles(adapter, supplied = null, workspace = '/workspace') 
     if (Array.isArray(supplied)) {
         return supplied.map(file => {
             if (!file || typeof file !== 'object' || typeof file.path !== 'string') throw new Error('Invalid supplied inventory entry');
-            if (file.contentBase64 !== undefined) return { ...file, content: Buffer.from(String(file.contentBase64), 'base64').toString('utf8') };
-            if (Buffer.isBuffer(file.content)) return { ...file, content: file.content.toString('utf8') };
-            return { path: file.path, content: typeof file.content === 'string' ? file.content : '' };
+            return normalizeAssertionInventoryFile(file);
         });
     }
     if (typeof adapter?.execute !== 'function') throw new Error('sandbox adapter inventory is required');
@@ -90,25 +92,53 @@ try{const files=walk(root),bytes=Buffer.from(JSON.stringify(files));
         await adapter.execute({ command: 'node', args: ['-e', "require('fs').rmSync(process.argv[1],{force:true})", target], workspace }).catch(() => {});
     }
 }
-function withEvidence(check, runId, requirementIds) {
-    return { ...check, runId, requirementIds: [...new Set([...(check.requirementIds || []), ...requirementIds])], evidence: { ...(check.evidence || {}), runId, requirementIds: [...requirementIds] } };
+function withEvidence(check, runId) {
+    const requirementIds = Array.isArray(check.requirementIds) ? [...check.requirementIds] : [];
+    const supplied = Object.prototype.hasOwnProperty.call(check, 'evidence');
+    const validShape = !supplied || (check.evidence && typeof check.evidence === 'object' && !Array.isArray(check.evidence));
+    return { ...check, runId, requirementIds, evidence: validShape
+        ? { ...(check.evidence || {}), runId, requirementIds }
+        : { kind: 'invalid_evidence', invalidEvidenceShape: true, runId } };
 }
-export async function runVerificationChecks({ workspace = '/workspace', contract = {}, requirementIds = [], adapter, signal, env = {}, runId = null, files = null, verifiers = {} } = {}) {
+export async function runVerificationChecks({ workspace = '/workspace', contract = {}, requirementIds = [], adapter, signal, env = {}, runId = null, files = null, verifiers = {}, verificationPlan = null, job = null, onPhaseComplete } = {}) {
     const inventory = await collectFiles(adapter, files, workspace);
     const options = { adapter, signal, env, workspace, files: inventory };
     const checks = [];
+    let published = 0;
+    const reportPhase = phase => {
+        const completed = checks.slice(published); published = checks.length;
+        try { const pending = onPhaseComplete?.({ phase, checks: structuredClone(completed) }); pending?.catch?.(() => {}); } catch { /* advisory persistence cannot change acceptance */ }
+    };
+    if (verificationPlan) {
+        if (verificationPlan.version !== 1 || verificationPlan.sourceHash !== computeAssertionSourceHash(inventory)
+            || verificationPlan.contractId !== job?.contractId || verificationPlan.runId !== job?.runId || runId !== job?.runId
+            || verificationPlan.artifactHash !== job?.inputSha256) throw Error('Verification plan source or worker identity changed.');
+        const binding = { sourceHash: verificationPlan.sourceHash, artifactHash: job.inputSha256, contractId: job.contractId, runId };
+        Object.assign(options, { uiLanguageRequired: true,
+            uiLanguageReview: verificationPlan.uiLanguageReview,
+            uiLanguageBinding: verificationPlan.uiLanguageReview ? { ...binding, catalogueHash: verificationPlan.uiLanguageReview.binding?.catalogueHash } : undefined,
+            uiLanguageObservation: verificationPlan.uiLanguageObservation,
+            uiLanguageObservationBinding: binding });
+        // The authenticated controller compiled these reservations against its
+        // durable ledger. Worker compares the complete received records; backend
+        // independently recomputes them again before consuming returned evidence.
+        const review = verificationPlan.assertionReview;
+        requirementIds = review?.requirements?.filter(row => row.mandatory).map(row => row.id) || [];
+    }
     const dependency = await (verifiers.dependencies || verifyDependencies)(workspace, contract, options);
     checks.push(...(dependency.checks || []));
+    reportPhase('dependencies');
     const build = await (verifiers.build || verifyBuild)(workspace, contract, { ...options, dependencyResult: dependency });
     checks.push(...(build.checks || []));
+    reportPhase('build');
     const readmeStartedAt = new Date().toISOString();
-    const readme = await (verifiers.readme || verifyReadmeCommands)(contract, inventory, { ...options });
+    const readme = await (verifiers.readme || verifyReadmeCommands)(contract, inventory, { ...options, dependencyResult: dependency });
     const readmeEndedAt = new Date().toISOString();
     const readmeIssues = readme.issues || [];
     checks.push(...(readme.checks || []));
     checks.push({
         name: 'readme_check',
-        status: readme.passed === true ? 'passed' : 'failed',
+        status: readme.passed === true ? 'passed' : readmeIssues.length === 0 && readme.checks?.some(check => check.status === 'blocked') ? 'blocked' : 'failed',
         command: 'static:verify-readme-contract',
         exitCode: readme.passed === true ? 0 : 1,
         startedAt: readmeStartedAt,
@@ -119,23 +149,45 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
         reason: readmeIssues.join('; ') || 'README commands and runtime contract are consistent.',
         evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, issues: readmeIssues }
     });
+    reportPhase('readme');
+    if (verificationPlan && dependency.passed !== false) {
+        const review = verificationPlan.assertionReview;
+        // Explicit standalone subject tests run after clean dependency setup and
+        // before smoke service teardown. They never assume smoke's API is alive.
+        const result = await (verifiers.assertions || verifyReviewedRequirementAssertions)({ ...options, review, job,
+            authenticateReservation: (reservation, context) => Boolean(review && context.sourceHash === verificationPlan.sourceHash
+                && context.planHash === verificationPlan.planHash && review.reservations?.some(record => JSON.stringify(record) === JSON.stringify(reservation)
+                    && record.bindingHash === context.bindingHash)) });
+        checks.push(...(result.checks || []).map(check => ({ ...check,
+            requirementIds: (check.requirementIds || []).filter(id => requirementIds.includes(id)) })));
+    } else if (verificationPlan) {
+        checks.push({name:'requirement_assertions',applicability:'MANDATORY',status:'blocked',requirementIds:[],reason:'Dependency setup failed; reviewed assertions were not executed.'});
+    }
+    reportPhase('assertions');
     // Smoke is the single runtime orchestrator; it owns service lifecycle and all
     // applicable database/API/browser/process/health/test-infrastructure gates.
     const applicable = [[verifiers.smoke || verifyProjectSmoke, 'smoke_gate']];
-    for (const [verifier] of applicable) {
+    if (dependency.passed === false) checks.push({name:'smoke_gate',status:'blocked',requirementIds:[],reason:'Dependency setup failed; runtime services and journeys were not started.'});
+    else for (const [verifier] of applicable) {
         try { const result = await verifier(workspace, contract, options); checks.push(...(result.checks || [])); }
         catch (error) { checks.push({ name: 'verification_runtime', status: 'blocked', reason: error.message }); }
     }
+    reportPhase('runtime');
+    if (verificationPlan && !checks.some(check => (check.gateName || check.name) === 'ui_language_evidence')) {
+        checks.push({ name: 'ui_language_evidence', applicability: 'MANDATORY', status: 'blocked', requirementIds: [],
+            reason: 'Fresh browser UI language evidence was not collected.' });
+    }
 
-    const passingChecks = checks.filter(c => c.status === 'PASS' || c.status === 'passed');
-    const coveredIds = new Set(passingChecks.flatMap(c => c.requirementIds || []));
-    const allCovered = Array.isArray(requirementIds) && requirementIds.length > 0
-        ? requirementIds.every(id => coveredIds.has(id)) && passingChecks.length > 0
-        : true;
+    const identifiedChecks = checks.map(check => ({ ...check, id: check.id || crypto.randomUUID() }));
+    const coverage = evaluateRequirementCoverage({ mandatoryRequirementIds: requirementIds, checks: identifiedChecks });
+    const coveredIds = new Set(coverage.coveredRequirementIds);
+    const allCovered = coverage.passed;
     const traceTimestamp = new Date().toISOString();
-    checks.push({
+    identifiedChecks.push({
+        id: crypto.randomUUID(),
         name: 'requirement_traceability',
-        status: allCovered ? 'passed' : 'failed',
+        status: allCovered ? 'passed' : 'blocked',
+        requirementIds: [],
         command: 'static:verify-requirement-traceability',
         exitCode: allCovered ? 0 : 1,
         startedAt: traceTimestamp,
@@ -144,10 +196,11 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
         stderrDigest: crypto.createHash('sha256').update(allCovered ? '' : 'Uncovered requirements').digest('hex'),
         policyVersion: ACTIVE_POLICY_VERSION,
         reason: allCovered ? 'All requirements covered by passing machine checks' : 'Requirements lack passing machine evidence',
-        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, coveredIds: Array.from(coveredIds) }
+        evidence: { producer: 'aggregate-verification', policyVersion: ACTIVE_POLICY_VERSION, coveredIds: Array.from(coveredIds),
+            missingRequirementIds: coverage.missingRequirementIds, unknownRequirementIds: coverage.unknownRequirementIds, issues: coverage.issues }
     });
 
-    const finalChecks = checks.map(check => withEvidence(check, runId, requirementIds));
+    const finalChecks = identifiedChecks.map(check => withEvidence(check, runId));
     return { runId, checks: finalChecks, passed: finalChecks.every(check => ['passed', 'skipped'].includes(check.status)) };
 }
 

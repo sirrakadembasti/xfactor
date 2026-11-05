@@ -524,11 +524,6 @@ export function combineRuntimeGate(gateName, checks, mandatoryRequirementIds = [
     })) {
         status = 'BLOCKED';
     }
-    if (gateName === 'smoke_gate' && status === 'PASS') {
-        for (const requirementId of mandatoryRequirementIds) {
-            requirementIds.add(requirementId);
-        }
-    }
 
     return {
         gateName,

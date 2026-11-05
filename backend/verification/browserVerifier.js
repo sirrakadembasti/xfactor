@@ -1,3 +1,4 @@
+import { evaluateUiLanguageEvidence, hashUiLanguageCatalogue } from '../contracts/uiLanguageEvidence.js';
 import { hasRoleJourneyCoverage, interactiveJourneySteps } from '../contracts/browserJourneyContract.js';
 function matchElement(html, selector) { if (!html || !selector) return false; const s = selector.trim(); if (s.startsWith('#')) return new RegExp(`id=["']${s.slice(1)}["']`, 'i').test(html); if (s.startsWith('.')) return new RegExp(`class=["'][^"']*\\b${s.slice(1)}\\b`, 'i').test(html); return new RegExp(`<${s}\\b`, 'i').test(html); }
 function validInteractionEvidence(journey, result) {
@@ -38,6 +39,66 @@ export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, option
     const adapter = opts.adapter;
     const adapterId = adapter?.id || 'direct-fetch';
     const checks = [], issues = [];
+    const languageRequired = opts.uiLanguageRequired === true || opts.uiLanguageReview !== undefined || opts.uiLanguageObservation !== undefined;
+    const review = opts.uiLanguageReview;
+    const expectedBinding = opts.uiLanguageBinding;
+    const bindingFields = ['sourceHash', 'artifactHash', 'contractId', 'runId', 'catalogueHash'];
+    const boundReview = languageRequired && review?.catalogue?.reviewed === true
+        && bindingFields.every(field => typeof expectedBinding?.[field] === 'string' && expectedBinding[field].length > 0 && expectedBinding[field].length <= 200
+            && review?.binding?.[field] === expectedBinding[field])
+        && ['sourceHash', 'artifactHash', 'catalogueHash'].every(field => /^[a-f0-9]{64}$/.test(expectedBinding[field]))
+        && hashUiLanguageCatalogue(review.catalogue) === expectedBinding.catalogueHash;
+    const observation = opts.uiLanguageObservation;
+    const observationBinding = opts.uiLanguageObservationBinding;
+    const observationFields = ['sourceHash', 'artifactHash', 'contractId', 'runId'];
+    const templates = observation?.routeTemplates;
+    const validTemplates = Array.isArray(templates) && templates.length > 0 && templates.length <= 100
+        && new Set(templates).size === templates.length && templates.every(route => typeof route === 'string' && route.length <= 300
+            && route.startsWith('/') && !route.includes('//') && (route === '/' || route.slice(1).split('/').every(segment =>
+                /^:[A-Za-z][A-Za-z0-9_]*$/.test(segment) || (/^[A-Za-z0-9_~.-]+$/.test(segment) && !['.', '..'].includes(segment)))));
+    const boundObservation = !boundReview && validTemplates && observationFields.every(field =>
+        typeof observationBinding?.[field] === 'string' && observationBinding[field].length > 0 && observationBinding[field].length <= 200
+        && observation?.binding?.[field] === observationBinding[field])
+        && ['sourceHash', 'artifactHash'].every(field => /^[a-f0-9]{64}$/.test(observationBinding[field]));
+    const captureLanguage = boundReview || boundObservation;
+    const routeTemplates = boundReview ? [...new Set(Array.isArray(review.catalogue.surfaces) ? review.catalogue.surfaces.map(surface => surface?.route) : [])] : boundObservation ? [...templates] : [];
+    const languageInventory = { version: 1, truncated: false, snapshots: [] };
+    let languageBytes = 64;
+    const retainLanguage = (result, journey) => {
+        const inventory = result?.uiLanguageEvidence;
+        if (!inventory || inventory.version !== 1 || !Array.isArray(inventory.snapshots)) { languageInventory.truncated = true; return; }
+        if (inventory.truncated !== false || result.passed !== true || inventory.snapshots.length > 100) languageInventory.truncated = true;
+        const role = journey.authState === 'anonymous' ? 'anonymous' : journey.role;
+        for (const raw of inventory.snapshots.slice(0, 100)) {
+            if (languageInventory.snapshots.length >= 200) { languageInventory.truncated = true; break; }
+            // Operator worker fields only: never retain arbitrary metadata, DOM IDs,
+            // actual URL parameters, source text, or exception messages.
+            const snapshot = { route: '<unavailable>', role, state: 'unavailable', entries: [], truncated: true };
+            if (raw && routeTemplates.includes(raw.route) && raw.role === role && typeof raw.state === 'string'
+                && /^(?:initial|outcome|(?:before|after):[0-9]{1,4})$/.test(raw.state) && Array.isArray(raw.entries)) {
+                snapshot.route = raw.route; snapshot.state = raw.state;
+                snapshot.truncated = raw.truncated !== false || raw.entries.length > 400;
+                snapshot.redacted = raw.redacted === true;
+                if (raw.error) { snapshot.error = 'inventory_unavailable'; snapshot.truncated = true; }
+                for (const entry of raw.entries.slice(0, 400)) {
+                    if (!entry || typeof entry.text !== 'string' || !entry.text.trim() || entry.text.length > 500
+                        || !['text', 'aria-label', 'aria-labelledby', 'alt', 'title', 'placeholder', 'label', 'button-value'].includes(entry.kind)) { snapshot.truncated = true; continue; }
+                    if (/\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(entry.text)) { snapshot.redacted = true; continue; }
+                    const projected = { kind: entry.kind, text: entry.text };
+                    if (entry.anchor !== undefined) {
+                        if (typeof entry.anchor !== 'string' || entry.anchor.length > 2048 || !/^[a-z][a-z0-9-]*:nth-child\([1-9]\d*\)(?:>[a-z][a-z0-9-]*:nth-child\([1-9]\d*\))*$/.test(entry.anchor)) { snapshot.truncated = true; continue; }
+                        projected.anchor = entry.anchor;
+                    }
+                    snapshot.entries.push(projected);
+                }
+            } else snapshot.error = 'inventory_unavailable';
+            const size = Buffer.byteLength(JSON.stringify(snapshot), 'utf8') + 1;
+            if (languageBytes + size > 262144) { languageInventory.truncated = true; break; }
+            languageBytes += size;
+            if (snapshot.truncated || snapshot.redacted) languageInventory.truncated = true;
+            languageInventory.snapshots.push(snapshot);
+        }
+    };
     let html = '';
     const requestTimeoutMs = opts.timeoutMs || 60000;
 
@@ -108,24 +169,52 @@ export async function verifyBrowserJourney(frontendUrl, journeySpec = {}, option
             const journeyEvidence = [];
             for (const journey of roleJourneys) {
                 let observed = false;
+                let displayProfile;
                 try {
                     const result = await adapter.interact({ url: frontendUrl, role: journey.role, kind: journey.kind,
                         authState: journey.authState || 'authenticated', steps: journey.steps,
                         expectedOutcome: journey.expectedOutcome,
-                        viewportWidth: 375, signal: opts.signal });
+                        viewportWidth: 375, signal: opts.signal,
+                        ...(captureLanguage ? { uiLanguageEvidence: { enabled: true,
+                            routeTemplates,
+                            maxTotalBytes: 131072, maxSnapshots: 100, maxEntries: 400, maxTextLength: 500 } } : {}) });
                     observed = validInteractionEvidence(journey, result);
+                    if (observed && result.session?.displayProfile) {
+                        const fields = {};
+                        for (const field of ['displayName', 'roleDisplayName']) {
+                            const value = result.session.displayProfile[field];
+                            if (typeof value === 'string' && value.trim() && value.length <= 120
+                                && !/[\u0000-\u001f\u007f]|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(value)) fields[field] = value;
+                        }
+                        if (Object.keys(fields).length) displayProfile = fields;
+                    }
+                    if (captureLanguage) {
+                        if (!observed) languageInventory.truncated = true;
+                        retainLanguage(result, journey);
+                    }
                 } catch (error) {
+                    if (captureLanguage) languageInventory.truncated = true;
                     journeyEvidence.push({ role: journey.role, kind: journey.kind, passed: false, reason: error.message });
                 }
                 if (!observed) allPassed = false;
                 if (!journeyEvidence.some(item => item.role === journey.role && item.kind === journey.kind)) {
-                    journeyEvidence.push({ role: journey.role, kind: journey.kind, passed: observed });
+                    journeyEvidence.push({ role: journey.role, kind: journey.kind, passed: observed, ...(displayProfile ? { displayProfile } : {}) });
                 }
             }
             checks.push({ name: 'browser_management_interaction', status: allPassed ? 'passed' : 'failed',
                 evidence: { adapterId, roles, journeyCount: roleJourneys.length, journeys: journeyEvidence } });
             if (!allPassed) issues.push('At least one role browser journey failed or lacked visible/accessibility evidence.');
         }
+    }
+    if (languageRequired) {
+        const evaluation = boundReview ? evaluateUiLanguageEvidence(review.catalogue, languageInventory)
+            : { status: 'blocked', failures: [], blockers: ['Independent catalogue review bound to the current source, artifact, contract and run is required.'], scope: 'declared-surfaces' };
+        checks.push({ name: 'ui_language_evidence', status: evaluation.status,
+            evidence: { adapterId, ...evaluation, fullProductProof: false,
+                ...(boundReview ? { binding: { ...expectedBinding }, inventory: languageInventory }
+                    : boundObservation ? { advisory: true, needsReview: true,
+                        observationBinding: Object.fromEntries(observationFields.map(field => [field, observationBinding[field]])), inventory: languageInventory } : {}) } });
+        if (evaluation.status !== 'passed') issues.push('Turkish interface evidence is incomplete or failed for the declared surfaces.');
     }
     return { passed: checks.every(c => c.status === 'passed'), checks, issues };
 }

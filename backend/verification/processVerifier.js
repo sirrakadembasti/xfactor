@@ -12,6 +12,22 @@ function requireAdapter(adapter) {
     return null;
 }
 
+function observeService(child, serviceId, config, adapter) {
+    const streams={stdout:Buffer.alloc(0),stderr:Buffer.alloc(0)},truncated={stdout:false,stderr:false};
+    let exited=false,exitCode=null,signal=null;
+    for(const name of ['stdout','stderr'])child[name]?.on('data',chunk=>{
+        const combined=Buffer.concat([streams[name],Buffer.from(chunk)]);
+        truncated[name] ||= combined.length>32768;
+        streams[name]=combined.subarray(Math.max(0,combined.length-32768));
+    });
+    const getObservation=()=>({exited,exitCode,signal,stdout:streams.stdout.toString('utf8'),stderr:streams.stderr.toString('utf8'),stdoutTruncated:truncated.stdout,stderrTruncated:truncated.stderr});
+    const exitCodePromise=new Promise(resolve=>{
+        child.on?.('error',error=>{exited=true;exitCode=-1;streams.stderr=Buffer.from(String(error.message).slice(0,8192));resolve(getObservation());});
+        child.on?.('close',(code,exitSignal)=>{exited=true;exitCode=code;signal=exitSignal || null;resolve(getObservation());});
+    });
+    return {serviceId,pid:child.pid,port:config.port,child,adapter,processTreeHandle:{pid:child.pid,serviceId,adapter},exitCodePromise,getObservation};
+}
+
 export async function killService(handle) {
     if (!handle) return;
     const adapter = handle.adapter || handle.processTreeHandle?.adapter;
@@ -42,11 +58,7 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
     if (adapter) {
         const child = await adapter.spawn({ command: config.command, args: config.args || [], workspace: options.workspace || config.cwd || '/workspace', cwd: options.workspace || config.cwd, port: config.port, env: serviceEnv, signal: options.signal, networkMode: options.networkMode || 'service' });
         if (!child) throw new Error(`Failed to spawn service "${serviceId}".`);
-        let stdout = '', stderr = '';
-        child.stdout?.on('data', c => { stdout += c.toString(); });
-        child.stderr?.on('data', c => { stderr += c.toString(); });
-        const exitCodePromise = new Promise(resolve => { child.on?.('error', e => resolve({ exitCode: -1, stdout, stderr: stderr || e.message })); child.on?.('close', code => resolve({ exitCode: code ?? 0, stdout, stderr })); });
-        return { serviceId, pid: child.pid, port: config.port, child, adapter, processTreeHandle: { pid: child.pid, serviceId, adapter }, exitCodePromise };
+        return observeService(child,serviceId,config,adapter);
     }
 
     const scrubbed = { ...scrubEnvironmentVariables(process.env), ...serviceEnv };
@@ -55,20 +67,5 @@ export async function spawnService(serviceId, config = {}, env = {}, options = {
         env: scrubbed,
         stdio: ['ignore', 'pipe', 'pipe']
     });
-    let stdout = '', stderr = '';
-    child.stdout?.on('data', c => { stdout += c.toString(); });
-    child.stderr?.on('data', c => { stderr += c.toString(); });
-    const exitCodePromise = new Promise(resolve => {
-        child.on?.('error', e => resolve({ exitCode: -1, stdout, stderr: stderr || e.message }));
-        child.on?.('close', code => resolve({ exitCode: code ?? 0, stdout, stderr }));
-    });
-    return {
-        serviceId,
-        pid: child.pid,
-        port: config.port,
-        child,
-        adapter: null,
-        processTreeHandle: { pid: child.pid, serviceId, adapter: null },
-        exitCodePromise
-    };
+    return observeService(child,serviceId,config,null);
 }

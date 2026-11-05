@@ -76,7 +76,8 @@ try {
     await runAsyncTest('P9.3: missing lockfile is blocked, not repaired by final verification', async () => {
         const dir = await workspace();
         await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0', scripts: { build: 'echo build' } }));
-        const result = await runVerificationChecks({ workspace: dir, contract: {}, requirementIds: ['dependencies'], adapter: { isAvailable: () => true }, files: [] });
+        const result = await runVerificationChecks({ workspace: dir, contract: {}, requirementIds: ['dependencies'], adapter: { isAvailable: () => true },
+            files: [{ path: 'package.json', content: await fs.readFile(path.join(dir, 'package.json'), 'utf8') }] });
         assert.equal(result.passed, false);
         assert.ok(result.checks.some(c => c.name === 'lockfile' && ['blocked', 'failed'].includes(c.status)));
         assert.equal(await fs.stat(path.join(dir, 'package.json')).then(() => true), true);

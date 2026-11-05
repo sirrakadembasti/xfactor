@@ -3,14 +3,49 @@ import fsSync from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { executeInSandbox } from './sandboxRunner.js';
+import { buildManagementPrismaSeedRequest } from './roleSessionAdapter.js';
 
 function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
 
+function executionEvidence(result = {}, { startedAt, endedAt, error, signal } = {}) {
+    const stdout = result.stdout ?? error?.stdout ?? '';
+    const stderr = result.stderr ?? error?.stderr ?? error?.message ?? '';
+    const timedOut = result.timedOut === true || error?.timedOut === true;
+    const cancelled = result.cancelled === true || result.aborted === true || error?.cancelled === true || signal?.aborted === true;
+    const exitCode = result.exitCode ?? error?.exitCode ?? null;
+    return {
+        exitCode, stdout, stderr,
+        startedAt: result.startedAt ?? startedAt, endedAt: result.endedAt ?? endedAt,
+        stdoutDigest: result.stdoutDigest ?? result.stdoutSha256 ?? computeDigest(stdout),
+        stderrDigest: result.stderrDigest ?? result.stderrSha256 ?? computeDigest(stderr),
+        ...(result.stdoutBytes !== undefined ? { stdoutBytes: result.stdoutBytes } : {}),
+        ...(result.stderrBytes !== undefined ? { stderrBytes: result.stderrBytes } : {}),
+        ...(result.stdoutTruncated !== undefined ? { stdoutTruncated: result.stdoutTruncated } : {}),
+        ...(result.stderrTruncated !== undefined ? { stderrTruncated: result.stderrTruncated } : {}),
+        timedOut, cancelled, signal: result.signal ?? error?.signal ?? null,
+        executionObservation: {
+            normalExit: Number.isInteger(exitCode) && exitCode >= 0 && result.signal === null
+                && !timedOut && !cancelled && result.executionFailed !== true,
+            cancelled
+        }
+    };
+}
+
+function executionPassed(result, signal) {
+    return result?.passed === true && result.exitCode === 0 && result.timedOut !== true
+        && result.cancelled !== true && result.aborted !== true && !result.signal
+        && result.executionFailed !== true && result.stdoutTruncated !== true && result.stderrTruncated !== true
+        && !signal?.aborted;
+}
+
 function isPrismaValidationTransportReset(failure, signal) {
-    if (signal?.aborted || failure?.timedOut || failure?.name === 'AbortError') return false;
-    const text = [failure?.code, failure?.message, failure?.stderr, failure?.stdout].filter(Boolean).join('\n');
+    const result = failure?.result;
+    if (signal?.aborted || failure?.timedOut || result?.timedOut || failure?.cancelled || result?.cancelled
+        || failure?.aborted || result?.aborted || failure?.signal || result?.signal || failure?.name === 'AbortError') return false;
+    const text = [failure?.code, failure?.message, failure?.stderr, failure?.stdout,
+        result?.code, result?.stderr, result?.stdout].filter(Boolean).join('\n');
     if (/\b(?:[A-Z_]*CERT[A-Z_]*|UNABLE_TO_VERIFY_LEAF_SIGNATURE)\b/.test(text)) return false;
     if (/\b(?:PAUSED|LEASE_LOST|ABORT_ERR|ERR_CANCELED|cancel(?:led|ed)?|deadline|P10\d{2}|CERT_[A-Z_]+|ERR_TLS_CERT[A-Z_]*|ERR_SSL[A-Z_]*)\b|schema\s+validation|validation\s+error|certificate.*(?:verification|verify|expired|invalid)|(?:user|operator).*(?:abort|cancel)|checksum\s+(?:mismatch|verification\s+failed)|integrity\s+(?:mismatch|failed)|unauthori[sz]ed|forbidden|\b(?:401|403)\b/i.test(text)) return false;
     const engineUrl = /https?:\/\/[^\s"']+\/(?:[^\s"']*\/)?(?:schema-engine|query[_-]engine|libquery_engine)[^\s"']*/i.test(text);
@@ -22,7 +57,7 @@ function isPrismaValidationTransportReset(failure, signal) {
 }
 
 async function executePrismaValidation(command, args, options) {
-    const phaseDeadline = Date.now() + Math.min(options.timeoutMs, 120000);
+    const phaseDeadline = Date.now() + Math.min(options.timeoutMs, 300000);
     const priorTransientCodes = [];
     let last, attemptCount = 0;
     while (attemptCount < 2) {
@@ -76,20 +111,22 @@ async function runSandboxCheck(checks, {
     timeoutMs,
     adapter,
     env,
+    input,
     signal,
     successReason,
     failurePrefix
 }) {
     let advisory;
+    const startedAt = new Date().toISOString();
     try {
         const executionOptions = {
             workspace,
             timeoutMs,
             adapter,
             env,
+            ...(input !== undefined ? { input } : {}),
             signal
         };
-        const startedAt = new Date().toISOString();
         const execution = name === 'prisma_validate'
             ? await executePrismaValidation(command, args, executionOptions)
             : { result: await executeInSandbox(command, args, executionOptions) };
@@ -97,18 +134,12 @@ async function runSandboxCheck(checks, {
         advisory = execution.advisory;
         if (execution.error) throw execution.error;
         const result = execution.result;
-        const passed = Boolean(result.passed);
+        const passed = executionPassed(result, signal);
         checks.push({
             name,
             status: passed ? 'passed' : 'failed',
             command: `${command} ${args.join(' ')}`,
-            exitCode: result.exitCode,
-            stdout: result.stdout || '',
-            stderr: result.stderr || '',
-            startedAt,
-            endedAt,
-            stdoutDigest: computeDigest(result.stdout),
-            stderrDigest: computeDigest(result.stderr),
+            ...executionEvidence(result, { startedAt, endedAt, signal }),
             ...(advisory ? { advisory } : {}),
             reason: passed ? successReason : `${failurePrefix}: ${result.stderr || result.stdout}`
         });
@@ -118,11 +149,7 @@ async function runSandboxCheck(checks, {
             name,
             status: error.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
             command: `${command} ${args.join(' ')}`,
-            exitCode: error.exitCode ?? null,
-            stdout: error.stdout || '',
-            stderr: error.stderr || error.message || '',
-            stdoutDigest: computeDigest(error.stdout),
-            stderrDigest: computeDigest(error.stderr || error.message),
+            ...executionEvidence(error.result, { startedAt, endedAt: new Date().toISOString(), error, signal }),
             ...(advisory ? { advisory } : {}),
             reason: `${failurePrefix}: ${error.message}`
         });
@@ -187,7 +214,7 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 command: npxCmd,
                 args: ['prisma', 'validate'],
                 workspace,
-                timeoutMs: options.timeoutMs || 120000,
+                timeoutMs: options.timeoutMs ?? 300000,
                 adapter: options.adapter,
                 signal: options.signal,
                 env: prismaEnv,
@@ -242,14 +269,16 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                     reason: 'Seeded-account verification is blocked by a failed Prisma setup gate.'
                 });
             } else {
+                const seedRequest = contract.management?.needed === true
+                    ? buildManagementPrismaSeedRequest(contract.management, prismaEnv)
+                    : { command: npxCmd, args: ['prisma', 'db', 'seed'], env: { ...prismaEnv, NODE_ENV: 'test' } };
                 const seeded = await runSandboxCheck(checks, {
                     name: 'prisma_seed',
-                    command: npxCmd,
-                    args: ['prisma', 'db', 'seed'],
+                    ...seedRequest,
                     workspace,
+                    signal: options.signal,
                     timeoutMs: options.timeoutMs || 120000,
                     adapter: options.adapter,
-                    env: prismaEnv,
                     successReason: 'Prisma database seed executed successfully.',
                     failurePrefix: 'Prisma database seed failed'
                 });
@@ -304,8 +333,8 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
                 reason: 'node_modules directory is missing. Cannot run deterministic typecheck.'
             });
         } else {
+            const startedAt = new Date().toISOString();
             try {
-                const startedAt = new Date().toISOString();
                 let tscRes;
                 try { tscRes = await executeInSandbox(npxCmd, ['tsc', '--noEmit'], {
                     workspace: options.workspace || projectDir,
@@ -321,31 +350,17 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
 
                 checks.push({
                     name: 'typecheck',
-                    status: tscRes.passed ? 'passed' : 'failed',
+                    status: executionPassed(tscRes, options.signal) ? 'passed' : 'failed',
                     command: `${npxCmd} tsc --noEmit`,
-                    exitCode: tscRes.exitCode,
-                    stdout: tscRes.stdout,
-                    stderr: tscRes.stderr,
-                    startedAt,
-                    endedAt,
-                    stdoutTruncated: tscRes.stdoutTruncated,
-                    stderrTruncated: tscRes.stderrTruncated,
-                    timedOut: tscRes.timedOut === true,
-                    executionObservation: { normalExit: Number.isInteger(tscRes.exitCode) && tscRes.exitCode >= 0
-                        && tscRes.signal === null && tscRes.timedOut !== true && tscRes.executionFailed !== true
-                        && tscRes.cancelled !== true && !options.signal?.aborted,
-                        cancelled: tscRes.cancelled === true || options.signal?.aborted === true },
-                    stdoutDigest: computeDigest(tscRes.stdout),
-                    stderrDigest: computeDigest(tscRes.stderr),
-                    reason: tscRes.passed ? 'TypeScript compilation check passed with 0 errors.' : `TypeScript compilation failed: ${tscRes.stderr || tscRes.stdout}`
+                    ...executionEvidence(tscRes, { startedAt, endedAt, signal: options.signal }),
+                    reason: executionPassed(tscRes, options.signal) ? 'TypeScript compilation check passed with 0 errors.' : `TypeScript compilation failed: ${tscRes.stderr || tscRes.stdout}`
                 });
             } catch (err) {
-                const now = new Date().toISOString();
                 checks.push({
                     name: 'typecheck',
                     status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
-                    startedAt: now,
-                    endedAt: now,
+                    command: `${npxCmd} tsc --noEmit`,
+                    ...executionEvidence(err.result, { startedAt, endedAt: new Date().toISOString(), error: err, signal: options.signal }),
                     reason: `TypeScript typecheck execution error: ${err.message}`
                 });
             }
@@ -377,12 +392,13 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
             reason: 'node_modules directory is missing. Cannot execute framework build.'
         });
     } else {
+        const buildStartedAt = new Date().toISOString();
         try {
-            const buildStartedAt = new Date().toISOString();
             const buildRes = await executeInSandbox(npmCmd, ['run', 'build'], {
                 workspace: options.workspace || projectDir,
                 timeoutMs: options.timeoutMs || 300000,
                 adapter: options.adapter,
+                signal: options.signal,
                 env: {
                     DATABASE_URL: options.env?.DATABASE_URL || 'file:./dev.db',
                     AUTH_SECRET: options.env?.AUTH_SECRET || 'verification-only-ephemeral-secret-not-for-production',
@@ -395,24 +411,17 @@ export async function verifyBuild(projectDir, contract = {}, options = {}) {
 
             checks.push({
                 name: 'framework_build',
-                status: buildRes.passed ? 'passed' : 'failed',
+                status: executionPassed(buildRes, options.signal) ? 'passed' : 'failed',
                 command: `${npmCmd} run build`,
-                exitCode: buildRes.exitCode,
-                stdout: buildRes.stdout,
-                stderr: buildRes.stderr,
-                startedAt: buildStartedAt,
-                endedAt: buildEndedAt,
-                stdoutDigest: computeDigest(buildRes.stdout),
-                stderrDigest: computeDigest(buildRes.stderr),
-                reason: buildRes.passed ? 'Framework build completed successfully.' : `Framework build failed: ${buildRes.stderr || buildRes.stdout}`
+                ...executionEvidence(buildRes, { startedAt: buildStartedAt, endedAt: buildEndedAt, signal: options.signal }),
+                reason: executionPassed(buildRes, options.signal) ? 'Framework build completed successfully.' : `Framework build failed: ${buildRes.stderr || buildRes.stdout}`
             });
         } catch (err) {
-            const now = new Date().toISOString();
             checks.push({
                 name: 'framework_build',
                 status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
-                startedAt: now,
-                endedAt: now,
+                command: `${npmCmd} run build`,
+                ...executionEvidence(err.result, { startedAt: buildStartedAt, endedAt: new Date().toISOString(), error: err, signal: options.signal }),
                 reason: err.code === 'SANDBOX_UNAVAILABLE'
                     ? `Sandboxed build runner unavailable: ${err.message}`
                     : `Build execution error: ${err.message}`
