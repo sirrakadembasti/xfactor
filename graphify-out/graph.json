@@ -367,7 +367,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı",
-      "val": 66,
+      "val": 66.5,
       "provenance": "curated"
     },
     {
@@ -417,7 +417,7 @@
       "group": "backend",
       "file": "backend/auth.js",
       "description": "Scrypt parola hashleme, timingSafeEqual ve rol erişim kontrolü",
-      "val": 40.5,
+      "val": 41.5,
       "provenance": "curated"
     },
     {
@@ -2677,7 +2677,7 @@
       "group": "tests",
       "file": "backend/tests/test_p5_mfa_login.js",
       "description": "",
-      "val": 15.5,
+      "val": 17,
       "provenance": "ast"
     },
     {
@@ -3777,7 +3777,7 @@
       "group": "tests",
       "file": "execution/tests/jobBoundary.test.js",
       "description": "",
-      "val": 12.5,
+      "val": 13.5,
       "provenance": "ast"
     },
     {
@@ -4447,7 +4447,7 @@
       "group": "backend",
       "file": "scripts/test-p6-production-image.mjs",
       "description": "",
-      "val": 17,
+      "val": 18,
       "provenance": "ast"
     },
     {
@@ -5893,7 +5893,7 @@
       "group": "backend",
       "file": "backend/auth.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
       "line": 78
     },
@@ -6063,7 +6063,18 @@
       "line": 294
     },
     {
-      "id": "backend/auth.js#Function:ensureDefaultAdminUser@306",
+      "id": "backend/auth.js#Function:assertProductionAdminCredentials@313",
+      "label": "assertProductionAdminCredentials",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/auth.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 313
+    },
+    {
+      "id": "backend/auth.js#Function:ensureDefaultAdminUser@326",
       "label": "ensureDefaultAdminUser",
       "type": "Function",
       "group": "backend",
@@ -6071,10 +6082,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 306
+      "line": 326
     },
     {
-      "id": "backend/auth.js#Function:changeUserPassword@324",
+      "id": "backend/auth.js#Function:changeUserPassword@344",
       "label": "changeUserPassword",
       "type": "Function",
       "group": "backend",
@@ -6082,10 +6093,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 324
+      "line": 344
     },
     {
-      "id": "backend/auth.js#Function:resetUserPassword@343",
+      "id": "backend/auth.js#Function:resetUserPassword@363",
       "label": "resetUserPassword",
       "type": "Function",
       "group": "backend",
@@ -6093,10 +6104,10 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 343
+      "line": 363
     },
     {
-      "id": "backend/auth.js#Function:isValidProjectStatus@365",
+      "id": "backend/auth.js#Function:isValidProjectStatus@385",
       "label": "isValidProjectStatus",
       "type": "Function",
       "group": "backend",
@@ -6104,10 +6115,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 365
+      "line": 385
     },
     {
-      "id": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "id": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "canTransitionProjectStatus",
       "type": "Function",
       "group": "backend",
@@ -6115,10 +6126,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 369
+      "line": 389
     },
     {
-      "id": "backend/auth.js#Function:getProjectRole@373",
+      "id": "backend/auth.js#Function:getProjectRole@393",
       "label": "getProjectRole",
       "type": "Function",
       "group": "backend",
@@ -6126,10 +6137,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 373
+      "line": 393
     },
     {
-      "id": "backend/auth.js#Function:userCanAccessProject@387",
+      "id": "backend/auth.js#Function:userCanAccessProject@407",
       "label": "userCanAccessProject",
       "type": "Function",
       "group": "backend",
@@ -6137,10 +6148,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 387
+      "line": 407
     },
     {
-      "id": "backend/auth.js#Function:canViewProject@391",
+      "id": "backend/auth.js#Function:canViewProject@411",
       "label": "canViewProject",
       "type": "Function",
       "group": "backend",
@@ -6148,10 +6159,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 391
+      "line": 411
     },
     {
-      "id": "backend/auth.js#Function:canEditProject@395",
+      "id": "backend/auth.js#Function:canEditProject@415",
       "label": "canEditProject",
       "type": "Function",
       "group": "backend",
@@ -6159,10 +6170,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 395
+      "line": 415
     },
     {
-      "id": "backend/auth.js#Function:canDeleteProject@400",
+      "id": "backend/auth.js#Function:canDeleteProject@420",
       "label": "canDeleteProject",
       "type": "Function",
       "group": "backend",
@@ -6170,10 +6181,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 400
+      "line": 420
     },
     {
-      "id": "backend/auth.js#Function:createProjectForUser@404",
+      "id": "backend/auth.js#Function:createProjectForUser@424",
       "label": "createProjectForUser",
       "type": "Function",
       "group": "backend",
@@ -6181,10 +6192,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 404
+      "line": 424
     },
     {
-      "id": "backend/auth.js#Function:getUserProjects@411",
+      "id": "backend/auth.js#Function:getUserProjects@431",
       "label": "getUserProjects",
       "type": "Function",
       "group": "backend",
@@ -6192,10 +6203,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 411
+      "line": 431
     },
     {
-      "id": "backend/auth.js#Function:setProjectRole@423",
+      "id": "backend/auth.js#Function:setProjectRole@443",
       "label": "setProjectRole",
       "type": "Function",
       "group": "backend",
@@ -6203,10 +6214,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 423
+      "line": 443
     },
     {
-      "id": "backend/auth.js#Function:getProjectMembers@437",
+      "id": "backend/auth.js#Function:getProjectMembers@457",
       "label": "getProjectMembers",
       "type": "Function",
       "group": "backend",
@@ -6214,10 +6225,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 437
+      "line": 457
     },
     {
-      "id": "backend/auth.js#Function:hashSessionToken@455",
+      "id": "backend/auth.js#Function:hashSessionToken@475",
       "label": "hashSessionToken",
       "type": "Function",
       "group": "backend",
@@ -6225,10 +6236,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 455
+      "line": 475
     },
     {
-      "id": "backend/auth.js#Function:normalizeNow@459",
+      "id": "backend/auth.js#Function:normalizeNow@479",
       "label": "normalizeNow",
       "type": "Function",
       "group": "backend",
@@ -6236,10 +6247,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 459
+      "line": 479
     },
     {
-      "id": "backend/auth.js#Function:mapSessionRow@467",
+      "id": "backend/auth.js#Function:mapSessionRow@487",
       "label": "mapSessionRow",
       "type": "Function",
       "group": "backend",
@@ -6247,10 +6258,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 467
+      "line": 487
     },
     {
-      "id": "backend/auth.js#Function:readSession@483",
+      "id": "backend/auth.js#Function:readSession@503",
       "label": "readSession",
       "type": "Function",
       "group": "backend",
@@ -6258,10 +6269,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 483
+      "line": 503
     },
     {
-      "id": "backend/auth.js#Function:insertSession@500",
+      "id": "backend/auth.js#Function:insertSession@520",
       "label": "insertSession",
       "type": "Function",
       "group": "backend",
@@ -6269,10 +6280,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 500
+      "line": 520
     },
     {
-      "id": "backend/auth.js#Function:createSession@514",
+      "id": "backend/auth.js#Function:createSession@534",
       "label": "createSession",
       "type": "Function",
       "group": "backend",
@@ -6280,10 +6291,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 514
+      "line": 534
     },
     {
-      "id": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "id": "backend/auth.js#Function:createSessionAfterTotp@544",
       "label": "createSessionAfterTotp",
       "type": "Function",
       "group": "backend",
@@ -6291,10 +6302,10 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 524
+      "line": 544
     },
     {
-      "id": "backend/auth.js#Function:verifySessionToken@586",
+      "id": "backend/auth.js#Function:verifySessionToken@606",
       "label": "verifySessionToken",
       "type": "Function",
       "group": "backend",
@@ -6302,10 +6313,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 586
+      "line": 606
     },
     {
-      "id": "backend/auth.js#Function:verifySessionId@595",
+      "id": "backend/auth.js#Function:verifySessionId@615",
       "label": "verifySessionId",
       "type": "Function",
       "group": "backend",
@@ -6313,10 +6324,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 595
+      "line": 615
     },
     {
-      "id": "backend/auth.js#Function:revokeSession@604",
+      "id": "backend/auth.js#Function:revokeSession@624",
       "label": "revokeSession",
       "type": "Function",
       "group": "backend",
@@ -6324,10 +6335,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 604
+      "line": 624
     },
     {
-      "id": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@625",
+      "id": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@645",
       "label": "revokeAllSessionsForUserInTransaction",
       "type": "Function",
       "group": "backend",
@@ -6335,10 +6346,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 625
+      "line": 645
     },
     {
-      "id": "backend/auth.js#Function:revokeAllSessionsForUser@634",
+      "id": "backend/auth.js#Function:revokeAllSessionsForUser@654",
       "label": "revokeAllSessionsForUser",
       "type": "Function",
       "group": "backend",
@@ -6346,10 +6357,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 634
+      "line": 654
     },
     {
-      "id": "backend/auth.js#Function:cleanupExpiredSessions@643",
+      "id": "backend/auth.js#Function:cleanupExpiredSessions@663",
       "label": "cleanupExpiredSessions",
       "type": "Function",
       "group": "backend",
@@ -6357,10 +6368,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 643
+      "line": 663
     },
     {
-      "id": "backend/auth.js#Function:listActiveSessionsForUser@649",
+      "id": "backend/auth.js#Function:listActiveSessionsForUser@669",
       "label": "listActiveSessionsForUser",
       "type": "Function",
       "group": "backend",
@@ -6368,7 +6379,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 649
+      "line": 669
     },
     {
       "id": "package:node:crypto",
@@ -13999,7 +14010,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#Method:origin@164",
+      "id": "backend/server.js#Method:origin@165",
       "label": "origin",
       "type": "Method",
       "group": "backend",
@@ -14007,10 +14018,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 164
+      "line": 165
     },
     {
-      "id": "backend/server.js#Method:wss.verifyClient@217",
+      "id": "backend/server.js#Method:wss.verifyClient@218",
       "label": "wss.verifyClient",
       "type": "Method",
       "group": "backend",
@@ -14018,22 +14029,11 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 217
+      "line": 218
     },
     {
-      "id": "backend/server.js#Function:onSessionRevoked@246",
+      "id": "backend/server.js#Function:onSessionRevoked@247",
       "label": "onSessionRevoked",
-      "type": "Function",
-      "group": "backend",
-      "file": "backend/server.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 246
-    },
-    {
-      "id": "backend/server.js#Function:onUserSessionsRevoked@247",
-      "label": "onUserSessionsRevoked",
       "type": "Function",
       "group": "backend",
       "file": "backend/server.js",
@@ -14043,7 +14043,18 @@
       "line": 247
     },
     {
-      "id": "backend/server.js#Function:projectAccess@255",
+      "id": "backend/server.js#Function:onUserSessionsRevoked@248",
+      "label": "onUserSessionsRevoked",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/server.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 248
+    },
+    {
+      "id": "backend/server.js#Function:projectAccess@256",
       "label": "projectAccess",
       "type": "Function",
       "group": "backend",
@@ -14051,21 +14062,21 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 255
+      "line": 256
     },
     {
-      "id": "backend/server.js#Function:startServer@330",
+      "id": "backend/server.js#Function:startServer@331",
       "label": "startServer",
       "type": "Function",
       "group": "backend",
       "file": "backend/server.js",
       "description": "",
-      "val": 6.5,
+      "val": 7,
       "provenance": "ast",
-      "line": 330
+      "line": 331
     },
     {
-      "id": "backend/server.js#Function:runEvidenceCompaction@361",
+      "id": "backend/server.js#Function:runEvidenceCompaction@363",
       "label": "runEvidenceCompaction",
       "type": "Function",
       "group": "backend",
@@ -14073,10 +14084,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 361
+      "line": 363
     },
     {
-      "id": "backend/server.js#Function:closeWebSockets@376",
+      "id": "backend/server.js#Function:closeWebSockets@378",
       "label": "closeWebSockets",
       "type": "Function",
       "group": "backend",
@@ -14084,10 +14095,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 376
+      "line": 378
     },
     {
-      "id": "backend/server.js#Function:closeHttpServer@386",
+      "id": "backend/server.js#Function:closeHttpServer@388",
       "label": "closeHttpServer",
       "type": "Function",
       "group": "backend",
@@ -14095,10 +14106,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 386
+      "line": 388
     },
     {
-      "id": "backend/server.js#Function:handleGracefulShutdown@395",
+      "id": "backend/server.js#Function:handleGracefulShutdown@397",
       "label": "handleGracefulShutdown",
       "type": "Function",
       "group": "backend",
@@ -14106,10 +14117,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 395
+      "line": 397
     },
     {
-      "id": "backend/server.js#Method:result.checkpointDatabase@406",
+      "id": "backend/server.js#Method:result.checkpointDatabase@408",
       "label": "result.checkpointDatabase",
       "type": "Method",
       "group": "backend",
@@ -14117,7 +14128,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 406
+      "line": 408
     },
     {
       "id": "backend/services/artifactLifecycle.js#Function:digest@10",
@@ -17729,7 +17740,7 @@
       "group": "tests",
       "file": "backend/tests/test_health_and_lifecycle.js",
       "description": "",
-      "val": 4.5,
+      "val": 5.5,
       "provenance": "ast",
       "line": 56
     },
@@ -21733,6 +21744,28 @@
       "val": 2,
       "provenance": "ast",
       "line": 73
+    },
+    {
+      "id": "backend/tests/test_p5_mfa_login.js#Function:adminCount@117",
+      "label": "adminCount",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_p5_mfa_login.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 117
+    },
+    {
+      "id": "backend/tests/test_p5_mfa_login.js#Method:requireAuth@121",
+      "label": "requireAuth",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_p5_mfa_login.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 121
     },
     {
       "id": "backend/tests/test_p6_archive_ownership.js#Function:restoreEnv@20",
@@ -30625,7 +30658,7 @@
       "line": 66
     },
     {
-      "id": "execution/server.js#Function:cancelOnDisconnect@176",
+      "id": "execution/server.js#Function:cancelOnDisconnect@178",
       "label": "cancelOnDisconnect",
       "type": "Function",
       "group": "backend",
@@ -30633,10 +30666,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 176
+      "line": 178
     },
     {
-      "id": "execution/server.js#Function:shutdown@306",
+      "id": "execution/server.js#Function:shutdown@318",
       "label": "shutdown",
       "type": "Function",
       "group": "backend",
@@ -30644,7 +30677,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 306
+      "line": 318
     },
     {
       "id": "execution/tests/browserDiagnostics.test.js#Function:formFixture@7",
@@ -32506,7 +32539,18 @@
       "line": 60
     },
     {
-      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@190",
+      "id": "execution/tests/jobBoundary.test.js#Function:cancelUrl@169",
+      "label": "cancelUrl",
+      "type": "Function",
+      "group": "tests",
+      "file": "execution/tests/jobBoundary.test.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 169
+    },
+    {
+      "id": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@215",
       "label": "delayedServer.executeJob",
       "type": "Method",
       "group": "tests",
@@ -32514,7 +32558,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 190
+      "line": 215
     },
     {
       "id": "execution/tests/jobStatusProjection.test.js#Method:server.executeJob@28",
@@ -37185,7 +37229,7 @@
       "group": "backend",
       "file": "scripts/test-p6-production-image.mjs",
       "description": "",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast",
       "line": 25
     },
@@ -37196,7 +37240,7 @@
       "group": "backend",
       "file": "scripts/test-p6-production-image.mjs",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
       "line": 30
     },
@@ -37223,7 +37267,18 @@
       "line": 41
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:startApplication@51",
+      "id": "scripts/test-p6-production-image.mjs#Function:bootstrapAdmin@53",
+      "label": "bootstrapAdmin",
+      "type": "Function",
+      "group": "backend",
+      "file": "scripts/test-p6-production-image.mjs",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 53
+    },
+    {
+      "id": "scripts/test-p6-production-image.mjs#Function:startApplication@68",
       "label": "startApplication",
       "type": "Function",
       "group": "backend",
@@ -37231,10 +37286,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 51
+      "line": 68
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:startProxy@64",
+      "id": "scripts/test-p6-production-image.mjs#Function:startProxy@81",
       "label": "startProxy",
       "type": "Function",
       "group": "backend",
@@ -37242,10 +37297,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 64
+      "line": 81
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:waitForHealth@76",
+      "id": "scripts/test-p6-production-image.mjs#Function:waitForHealth@93",
       "label": "waitForHealth",
       "type": "Function",
       "group": "backend",
@@ -37253,10 +37308,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 76
+      "line": 93
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:seed@85",
+      "id": "scripts/test-p6-production-image.mjs#Function:seed@102",
       "label": "seed",
       "type": "Function",
       "group": "backend",
@@ -37264,10 +37319,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 85
+      "line": 102
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:waitForHttps@103",
+      "id": "scripts/test-p6-production-image.mjs#Function:waitForHttps@120",
       "label": "waitForHttps",
       "type": "Function",
       "group": "backend",
@@ -37275,10 +37330,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 103
+      "line": 120
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:runJourney@124",
+      "id": "scripts/test-p6-production-image.mjs#Function:runJourney@141",
       "label": "runJourney",
       "type": "Function",
       "group": "backend",
@@ -37286,10 +37341,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 124
+      "line": 141
     },
     {
-      "id": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@133",
+      "id": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@150",
       "label": "assertRuntimeBoundaries",
       "type": "Function",
       "group": "backend",
@@ -37297,7 +37352,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 133
+      "line": 150
     },
     {
       "id": "scripts/test-p9-production-pipeline.mjs#Function:reservePort@14",
@@ -38084,7 +38139,7 @@
       "provenance": "ast"
     },
     {
-      "id": "backend/server.js#route:GET /healthz@73",
+      "id": "backend/server.js#route:GET /healthz@74",
       "label": "GET /healthz",
       "type": "HttpRoute",
       "group": "backend",
@@ -38092,10 +38147,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 73
+      "line": 74
     },
     {
-      "id": "backend/server.js#route:GET /readyz@81",
+      "id": "backend/server.js#route:GET /readyz@82",
       "label": "GET /readyz",
       "type": "HttpRoute",
       "group": "backend",
@@ -38103,7 +38158,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 81
+      "line": 82
     },
     {
       "id": "env:PORT",
@@ -38577,7 +38632,7 @@
       "provenance": "ast"
     },
     {
-      "id": "execution/server.js#route:GET /readyz@108",
+      "id": "execution/server.js#route:GET /readyz@110",
       "label": "GET /readyz",
       "type": "HttpRoute",
       "group": "backend",
@@ -38585,10 +38640,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 108
+      "line": 110
     },
     {
-      "id": "execution/server.js#route:POST /v1/jobs@149",
+      "id": "execution/server.js#route:POST /v1/jobs@151",
       "label": "POST /v1/jobs",
       "type": "HttpRoute",
       "group": "backend",
@@ -38596,10 +38651,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 149
+      "line": 151
     },
     {
-      "id": "execution/server.js#route:GET /v1/jobs/:jobId@221",
+      "id": "execution/server.js#route:GET /v1/jobs/:jobId@223",
       "label": "GET /v1/jobs/:jobId",
       "type": "HttpRoute",
       "group": "backend",
@@ -38607,10 +38662,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 221
+      "line": 223
     },
     {
-      "id": "execution/server.js#route:DELETE /v1/jobs/:jobId@243",
+      "id": "execution/server.js#route:DELETE /v1/jobs/:jobId@245",
       "label": "DELETE /v1/jobs/:jobId",
       "type": "HttpRoute",
       "group": "backend",
@@ -38618,7 +38673,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 243
+      "line": 245
     },
     {
       "id": "env:EXECUTION_WORKER_TOKEN",
@@ -42725,117 +42780,87 @@
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@306",
+      "target": "backend/auth.js#Function:assertProductionAdminCredentials@313",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 306
+        "line": 313
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:changeUserPassword@324",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@326",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 324
+        "line": 326
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:resetUserPassword@343",
+      "target": "backend/auth.js#Function:changeUserPassword@344",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 343
+        "line": 344
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:isValidProjectStatus@365",
+      "target": "backend/auth.js#Function:resetUserPassword@363",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 365
+        "line": 363
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "target": "backend/auth.js#Function:isValidProjectStatus@385",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 369
+        "line": 385
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:getProjectRole@373",
+      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 373
+        "line": 389
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:userCanAccessProject@387",
+      "target": "backend/auth.js#Function:getProjectRole@393",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 387
+        "line": 393
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:canViewProject@391",
+      "target": "backend/auth.js#Function:userCanAccessProject@407",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 391
+        "line": 407
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:canEditProject@395",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 395
-      }
-    },
-    {
-      "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:canDeleteProject@400",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 400
-      }
-    },
-    {
-      "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:createProjectForUser@404",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 404
-      }
-    },
-    {
-      "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:getUserProjects@411",
+      "target": "backend/auth.js#Function:canViewProject@411",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -42845,162 +42870,202 @@
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:setProjectRole@423",
+      "target": "backend/auth.js#Function:canEditProject@415",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 423
+        "line": 415
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:getProjectMembers@437",
+      "target": "backend/auth.js#Function:canDeleteProject@420",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 437
+        "line": 420
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:hashSessionToken@455",
+      "target": "backend/auth.js#Function:createProjectForUser@424",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 455
+        "line": 424
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:normalizeNow@459",
+      "target": "backend/auth.js#Function:getUserProjects@431",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 459
+        "line": 431
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:mapSessionRow@467",
+      "target": "backend/auth.js#Function:setProjectRole@443",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 467
+        "line": 443
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:readSession@483",
+      "target": "backend/auth.js#Function:getProjectMembers@457",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 483
+        "line": 457
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:insertSession@500",
+      "target": "backend/auth.js#Function:hashSessionToken@475",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 500
+        "line": 475
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:createSession@514",
+      "target": "backend/auth.js#Function:normalizeNow@479",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 514
+        "line": 479
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "target": "backend/auth.js#Function:mapSessionRow@487",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 524
+        "line": 487
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:verifySessionToken@586",
+      "target": "backend/auth.js#Function:readSession@503",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 586
+        "line": 503
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:verifySessionId@595",
+      "target": "backend/auth.js#Function:insertSession@520",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 595
+        "line": 520
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:revokeSession@604",
+      "target": "backend/auth.js#Function:createSession@534",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 604
+        "line": 534
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@625",
+      "target": "backend/auth.js#Function:createSessionAfterTotp@544",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 625
+        "line": 544
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:revokeAllSessionsForUser@634",
+      "target": "backend/auth.js#Function:verifySessionToken@606",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 634
+        "line": 606
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:cleanupExpiredSessions@643",
+      "target": "backend/auth.js#Function:verifySessionId@615",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 643
+        "line": 615
       }
     },
     {
       "source": "backend/auth.js",
-      "target": "backend/auth.js#Function:listActiveSessionsForUser@649",
+      "target": "backend/auth.js#Function:revokeSession@624",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 649
+        "line": 624
+      }
+    },
+    {
+      "source": "backend/auth.js",
+      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@645",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 645
+      }
+    },
+    {
+      "source": "backend/auth.js",
+      "target": "backend/auth.js#Function:revokeAllSessionsForUser@654",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 654
+      }
+    },
+    {
+      "source": "backend/auth.js",
+      "target": "backend/auth.js#Function:cleanupExpiredSessions@663",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 663
+      }
+    },
+    {
+      "source": "backend/auth.js",
+      "target": "backend/auth.js#Function:listActiveSessionsForUser@669",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 669
       }
     },
     {
@@ -53450,7 +53515,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 21
+        "line": 22
       }
     },
     {
@@ -53460,7 +53525,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 22
+        "line": 23
       }
     },
     {
@@ -53470,7 +53535,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 23
+        "line": 24
       }
     },
     {
@@ -53480,7 +53545,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 24
+        "line": 25
       }
     },
     {
@@ -53490,7 +53555,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 25
+        "line": 26
       }
     },
     {
@@ -53500,7 +53565,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 30
+        "line": 31
       }
     },
     {
@@ -53510,7 +53575,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 31
+        "line": 32
       }
     },
     {
@@ -53520,7 +53585,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 32
+        "line": 33
       }
     },
     {
@@ -53530,7 +53595,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 33
+        "line": 34
       }
     },
     {
@@ -53540,7 +53605,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 34
+        "line": 35
       }
     },
     {
@@ -53550,7 +53615,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 39
+        "line": 40
       }
     },
     {
@@ -53560,7 +53625,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 40
+        "line": 41
       }
     },
     {
@@ -53570,7 +53635,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 41
+        "line": 42
       }
     },
     {
@@ -53580,7 +53645,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 42
+        "line": 43
       }
     },
     {
@@ -53590,42 +53655,32 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 43
+        "line": 44
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:origin@164",
+      "target": "backend/server.js#Method:origin@165",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 164
+        "line": 165
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:wss.verifyClient@217",
+      "target": "backend/server.js#Method:wss.verifyClient@218",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 217
+        "line": 218
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:onSessionRevoked@246",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 246
-      }
-    },
-    {
-      "source": "backend/server.js",
-      "target": "backend/server.js#Function:onUserSessionsRevoked@247",
+      "target": "backend/server.js#Function:onSessionRevoked@247",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -53635,72 +53690,82 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:projectAccess@255",
+      "target": "backend/server.js#Function:onUserSessionsRevoked@248",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 255
+        "line": 248
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@330",
+      "target": "backend/server.js#Function:projectAccess@256",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 330
+        "line": 256
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:runEvidenceCompaction@361",
+      "target": "backend/server.js#Function:startServer@331",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 361
+        "line": 331
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeWebSockets@376",
+      "target": "backend/server.js#Function:runEvidenceCompaction@363",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 376
+        "line": 363
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:closeHttpServer@386",
+      "target": "backend/server.js#Function:closeWebSockets@378",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 386
+        "line": 378
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@395",
+      "target": "backend/server.js#Function:closeHttpServer@388",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 395
+        "line": 388
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Method:result.checkpointDatabase@406",
+      "target": "backend/server.js#Function:handleGracefulShutdown@397",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 406
+        "line": 397
+      }
+    },
+    {
+      "source": "backend/server.js",
+      "target": "backend/server.js#Method:result.checkpointDatabase@408",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 408
       }
     },
     {
@@ -67111,6 +67176,26 @@
       "location": {
         "file": "backend/tests/test_p5_mfa_login.js",
         "line": 73
+      }
+    },
+    {
+      "source": "backend/tests/test_p5_mfa_login.js",
+      "target": "backend/tests/test_p5_mfa_login.js#Function:adminCount@117",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p5_mfa_login.js",
+        "line": 117
+      }
+    },
+    {
+      "source": "backend/tests/test_p5_mfa_login.js",
+      "target": "backend/tests/test_p5_mfa_login.js#Method:requireAuth@121",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p5_mfa_login.js",
+        "line": 121
       }
     },
     {
@@ -81655,22 +81740,22 @@
     },
     {
       "source": "execution/server.js",
-      "target": "execution/server.js#Function:cancelOnDisconnect@176",
+      "target": "execution/server.js#Function:cancelOnDisconnect@178",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 176
+        "line": 178
       }
     },
     {
       "source": "execution/server.js",
-      "target": "execution/server.js#Function:shutdown@306",
+      "target": "execution/server.js#Function:shutdown@318",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 306
+        "line": 318
       }
     },
     {
@@ -83755,12 +83840,22 @@
     },
     {
       "source": "execution/tests/jobBoundary.test.js",
-      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@190",
+      "target": "execution/tests/jobBoundary.test.js#Function:cancelUrl@169",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 190
+        "line": 169
+      }
+    },
+    {
+      "source": "execution/tests/jobBoundary.test.js",
+      "target": "execution/tests/jobBoundary.test.js#Method:delayedServer.executeJob@215",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobBoundary.test.js",
+        "line": 215
       }
     },
     {
@@ -91625,72 +91720,82 @@
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:startApplication@51",
+      "target": "scripts/test-p6-production-image.mjs#Function:bootstrapAdmin@53",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 51
+        "line": 53
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:startProxy@64",
+      "target": "scripts/test-p6-production-image.mjs#Function:startApplication@68",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 64
+        "line": 68
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:waitForHealth@76",
+      "target": "scripts/test-p6-production-image.mjs#Function:startProxy@81",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 76
+        "line": 81
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:seed@85",
+      "target": "scripts/test-p6-production-image.mjs#Function:waitForHealth@93",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 85
+        "line": 93
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:waitForHttps@103",
+      "target": "scripts/test-p6-production-image.mjs#Function:seed@102",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 103
+        "line": 102
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:runJourney@124",
+      "target": "scripts/test-p6-production-image.mjs#Function:waitForHttps@120",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 124
+        "line": 120
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@133",
+      "target": "scripts/test-p6-production-image.mjs#Function:runJourney@141",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 133
+        "line": 141
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs",
+      "target": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@150",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 150
       }
     },
     {
@@ -93434,57 +93539,17 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:ensureDefaultAdminUser@306",
-      "target": "backend/auth.js#Function:findUserByUsername@248",
+      "source": "backend/auth.js#Function:assertProductionAdminCredentials@313",
+      "target": "backend/auth.js#Function:verifyPasswordAsync@78",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 308
+        "line": 320
       }
     },
     {
-      "source": "backend/auth.js#Function:ensureDefaultAdminUser@306",
-      "target": "backend/auth.js#Function:hashPasswordAsync@58",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 313
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:assertPasswordLength@14",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 325
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:hashPassword@70",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 326
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:withImmediateTransaction@24",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 327
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
+      "source": "backend/auth.js#Function:ensureDefaultAdminUser@326",
       "target": "backend/auth.js#Function:findUserByUsername@248",
       "label": "calls",
       "provenance": "ast",
@@ -93494,58 +93559,18 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:verifyPassword@104",
+      "source": "backend/auth.js#Function:ensureDefaultAdminUser@326",
+      "target": "backend/auth.js#Function:hashPasswordAsync@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 329
+        "line": 333
       }
     },
     {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@625",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 334
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:toPublicUser@236",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 335
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:changeUserPassword@324",
-      "target": "backend/auth.js#Function:emitUserSessionsRevoked@44",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 338
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
       "target": "backend/auth.js#Function:assertPasswordLength@14",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 344
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
-      "target": "backend/auth.js#Function:hashPassword@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93554,8 +93579,8 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
-      "target": "backend/auth.js#Function:withImmediateTransaction@24",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:hashPassword@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93564,8 +93589,8 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
-      "target": "backend/auth.js#Function:findUserByUsername@248",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:withImmediateTransaction@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93574,18 +93599,28 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
-      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@625",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:findUserByUsername@248",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 353
+        "line": 348
       }
     },
     {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
-      "target": "backend/auth.js#Function:toPublicUser@236",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:verifyPassword@104",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 349
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@645",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93594,68 +93629,108 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:resetUserPassword@343",
+      "source": "backend/auth.js#Function:changeUserPassword@344",
+      "target": "backend/auth.js#Function:toPublicUser@236",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 355
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:changeUserPassword@344",
       "target": "backend/auth.js#Function:emitUserSessionsRevoked@44",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 357
+        "line": 358
       }
     },
     {
-      "source": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:assertPasswordLength@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 364
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:hashPassword@70",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 365
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:withImmediateTransaction@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 366
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:findUserByUsername@248",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 367
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@645",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 373
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:toPublicUser@236",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 374
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:resetUserPassword@363",
+      "target": "backend/auth.js#Function:emitUserSessionsRevoked@44",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 377
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "target": "backend/engine/stateMachine.js#Function:canTransitionProject@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 370
+        "line": 390
       }
     },
     {
-      "source": "backend/auth.js#Function:userCanAccessProject@387",
-      "target": "backend/auth.js#Function:getProjectRole@373",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 388
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:canViewProject@391",
-      "target": "backend/auth.js#Function:userCanAccessProject@387",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 392
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:canEditProject@395",
-      "target": "backend/auth.js#Function:getProjectRole@373",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 396
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:canDeleteProject@400",
-      "target": "backend/auth.js#Function:getProjectRole@373",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 401
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:createProjectForUser@404",
-      "target": "backend/projectRepository.js#Function:createProject@141",
+      "source": "backend/auth.js#Function:userCanAccessProject@407",
+      "target": "backend/auth.js#Function:getProjectRole@393",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93664,48 +93739,48 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:readSession@483",
-      "target": "backend/auth.js#Function:mapSessionRow@467",
+      "source": "backend/auth.js#Function:canViewProject@411",
+      "target": "backend/auth.js#Function:userCanAccessProject@407",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 497
+        "line": 412
       }
     },
     {
-      "source": "backend/auth.js#Function:insertSession@500",
-      "target": "backend/auth.js#Function:hashSessionToken@455",
+      "source": "backend/auth.js#Function:canEditProject@415",
+      "target": "backend/auth.js#Function:getProjectRole@393",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 509
+        "line": 416
       }
     },
     {
-      "source": "backend/auth.js#Function:createSession@514",
-      "target": "backend/auth.js#Function:normalizeNow@459",
+      "source": "backend/auth.js#Function:canDeleteProject@420",
+      "target": "backend/auth.js#Function:getProjectRole@393",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 515
+        "line": 421
       }
     },
     {
-      "source": "backend/auth.js#Function:createSession@514",
-      "target": "backend/auth.js#Function:withImmediateTransaction@24",
+      "source": "backend/auth.js#Function:createProjectForUser@424",
+      "target": "backend/projectRepository.js#Function:createProject@141",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 516
+        "line": 428
       }
     },
     {
-      "source": "backend/auth.js#Function:createSession@514",
-      "target": "backend/auth.js#Function:passwordHashMatches@50",
+      "source": "backend/auth.js#Function:readSession@503",
+      "target": "backend/auth.js#Function:mapSessionRow@487",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93714,148 +93789,158 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:createSession@514",
-      "target": "backend/auth.js#Function:insertSession@500",
+      "source": "backend/auth.js#Function:insertSession@520",
+      "target": "backend/auth.js#Function:hashSessionToken@475",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 520
+        "line": 529
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
-      "target": "backend/crypto/mfaCrypto.js#Function:getMfaEncryptionKeys@44",
+      "source": "backend/auth.js#Function:createSession@534",
+      "target": "backend/auth.js#Function:normalizeNow@479",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 527
+        "line": 535
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
-      "target": "backend/auth.js#Function:normalizeNow@459",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 532
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "source": "backend/auth.js#Function:createSession@534",
       "target": "backend/auth.js#Function:withImmediateTransaction@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 534
+        "line": 536
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "source": "backend/auth.js#Function:createSession@534",
+      "target": "backend/auth.js#Function:passwordHashMatches@50",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 537
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:createSession@534",
+      "target": "backend/auth.js#Function:insertSession@520",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 540
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
+      "target": "backend/crypto/mfaCrypto.js#Function:getMfaEncryptionKeys@44",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 547
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
+      "target": "backend/auth.js#Function:normalizeNow@479",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 552
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
+      "target": "backend/auth.js#Function:withImmediateTransaction@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 554
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
       "target": "backend/auth.js#Function:decodeTotpSecret@150",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 549
+        "line": 569
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
       "target": "backend/auth.js#Function:matchingTotpCounter@157",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 550
+        "line": 570
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
       "target": "backend/crypto/mfaCrypto.js#Function:encryptMfaSecret@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 566
+        "line": 586
       }
     },
     {
-      "source": "backend/auth.js#Function:createSessionAfterTotp@524",
-      "target": "backend/auth.js#Function:insertSession@500",
+      "source": "backend/auth.js#Function:createSessionAfterTotp@544",
+      "target": "backend/auth.js#Function:insertSession@520",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 579
+        "line": 599
       }
     },
     {
-      "source": "backend/auth.js#Function:verifySessionToken@586",
-      "target": "backend/auth.js#Function:normalizeNow@459",
+      "source": "backend/auth.js#Function:verifySessionToken@606",
+      "target": "backend/auth.js#Function:normalizeNow@479",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 591
+        "line": 611
       }
     },
     {
-      "source": "backend/auth.js#Function:verifySessionToken@586",
-      "target": "backend/auth.js#Function:readSession@483",
+      "source": "backend/auth.js#Function:verifySessionToken@606",
+      "target": "backend/auth.js#Function:readSession@503",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 592
+        "line": 612
       }
     },
     {
-      "source": "backend/auth.js#Function:verifySessionToken@586",
-      "target": "backend/auth.js#Function:hashSessionToken@455",
+      "source": "backend/auth.js#Function:verifySessionToken@606",
+      "target": "backend/auth.js#Function:hashSessionToken@475",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 592
+        "line": 612
       }
     },
     {
-      "source": "backend/auth.js#Function:verifySessionId@595",
-      "target": "backend/auth.js#Function:normalizeNow@459",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 600
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:verifySessionId@595",
-      "target": "backend/auth.js#Function:readSession@483",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 601
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:revokeSession@604",
-      "target": "backend/auth.js#Function:hashSessionToken@455",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/auth.js",
-        "line": 608
-      }
-    },
-    {
-      "source": "backend/auth.js#Function:revokeSession@604",
-      "target": "backend/auth.js#Function:emitSessionRevoked@38",
+      "source": "backend/auth.js#Function:verifySessionId@615",
+      "target": "backend/auth.js#Function:normalizeNow@479",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -93864,23 +93949,53 @@
       }
     },
     {
-      "source": "backend/auth.js#Function:revokeAllSessionsForUser@634",
-      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@625",
+      "source": "backend/auth.js#Function:verifySessionId@615",
+      "target": "backend/auth.js#Function:readSession@503",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 635
+        "line": 621
       }
     },
     {
-      "source": "backend/auth.js#Function:revokeAllSessionsForUser@634",
+      "source": "backend/auth.js#Function:revokeSession@624",
+      "target": "backend/auth.js#Function:hashSessionToken@475",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 628
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:revokeSession@624",
+      "target": "backend/auth.js#Function:emitSessionRevoked@38",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 640
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:revokeAllSessionsForUser@654",
+      "target": "backend/auth.js#Function:revokeAllSessionsForUserInTransaction@645",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/auth.js",
+        "line": 655
+      }
+    },
+    {
+      "source": "backend/auth.js#Function:revokeAllSessionsForUser@654",
       "target": "backend/auth.js#Function:emitUserSessionsRevoked@44",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/auth.js",
-        "line": 637
+        "line": 657
       }
     },
     {
@@ -101735,7 +101850,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:projectStateTransitionInTransaction@291",
-      "target": "backend/auth.js#Function:isValidProjectStatus@365",
+      "target": "backend/auth.js#Function:isValidProjectStatus@385",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101995,7 +102110,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:saveProjectState@703",
-      "target": "backend/auth.js#Function:isValidProjectStatus@365",
+      "target": "backend/auth.js#Function:isValidProjectStatus@385",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -102375,7 +102490,7 @@
     },
     {
       "source": "backend/routes/authRoutes.js#Function:createAuthRouter@17",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@306",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@326",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -102385,7 +102500,7 @@
     },
     {
       "source": "backend/routes/authRoutes.js#Function:createAuthRouter@17",
-      "target": "backend/auth.js#Function:createSessionAfterTotp@524",
+      "target": "backend/auth.js#Function:createSessionAfterTotp@544",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -102395,7 +102510,7 @@
     },
     {
       "source": "backend/routes/authRoutes.js#Function:createAuthRouter@17",
-      "target": "backend/auth.js#Function:createSession@514",
+      "target": "backend/auth.js#Function:createSession@534",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -102415,7 +102530,7 @@
     },
     {
       "source": "backend/routes/authRoutes.js#Function:createAuthRouter@17",
-      "target": "backend/auth.js#Function:revokeSession@604",
+      "target": "backend/auth.js#Function:revokeSession@624",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -103415,7 +103530,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/auth.js#Function:getUserProjects@411",
+      "target": "backend/auth.js#Function:getUserProjects@431",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -103485,7 +103600,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/auth.js#Function:canViewProject@391",
+      "target": "backend/auth.js#Function:canViewProject@411",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -104025,7 +104140,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -104095,7 +104210,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:approveProject@753",
-      "target": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105580,7 +105695,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 45
+        "line": 46
       }
     },
     {
@@ -105590,7 +105705,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 46
+        "line": 47
       }
     },
     {
@@ -105600,7 +105715,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 48
+        "line": 49
       }
     },
     {
@@ -105610,7 +105725,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 49
+        "line": 50
       }
     },
     {
@@ -105620,7 +105735,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 50
+        "line": 51
       }
     },
     {
@@ -105630,7 +105745,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 64
+        "line": 65
       }
     },
     {
@@ -105640,27 +105755,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 67
+        "line": 68
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#route:GET /healthz@73",
+      "target": "backend/server.js#route:GET /healthz@74",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 73
+        "line": 74
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#route:GET /readyz@81",
+      "target": "backend/server.js#route:GET /readyz@82",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 81
+        "line": 82
       }
     },
     {
@@ -105670,7 +105785,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 93
+        "line": 94
       }
     },
     {
@@ -105680,22 +105795,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 96
+        "line": 97
       }
     },
     {
       "source": "backend/server.js",
       "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 98
-      }
-    },
-    {
-      "source": "backend/server.js",
-      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105705,12 +105810,22 @@
     },
     {
       "source": "backend/server.js",
+      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 100
+      }
+    },
+    {
+      "source": "backend/server.js",
       "target": "backend/db.js#Function:getSchemaVersion@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 104
+        "line": 105
       }
     },
     {
@@ -105720,7 +105835,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 108
+        "line": 109
       }
     },
     {
@@ -105730,7 +105845,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 143
+        "line": 144
       }
     },
     {
@@ -105740,7 +105855,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 152
+        "line": 153
       }
     },
     {
@@ -105750,17 +105865,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 156
+        "line": 157
       }
     },
     {
-      "source": "backend/server.js#Method:origin@164",
+      "source": "backend/server.js#Method:origin@165",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 165
+        "line": 166
       }
     },
     {
@@ -105770,47 +105885,47 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 172
+        "line": 173
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@217",
+      "source": "backend/server.js#Method:wss.verifyClient@218",
       "target": "backend/security.js#Function:isSecureTransportRequest@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 218
+        "line": 219
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@217",
+      "source": "backend/server.js#Method:wss.verifyClient@218",
       "target": "backend/security.js#Function:isAllowedOrigin@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 222
+        "line": 223
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@217",
+      "source": "backend/server.js#Method:wss.verifyClient@218",
       "target": "backend/sessionAuth.js#Function:readSessionToken@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 231
+        "line": 232
       }
     },
     {
-      "source": "backend/server.js#Method:wss.verifyClient@217",
-      "target": "backend/auth.js#Function:verifySessionToken@586",
+      "source": "backend/server.js#Method:wss.verifyClient@218",
+      "target": "backend/auth.js#Function:verifySessionToken@606",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 232
+        "line": 233
       }
     },
     {
@@ -105820,7 +105935,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 242
+        "line": 243
       }
     },
     {
@@ -105830,17 +105945,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 253
+        "line": 254
       }
     },
     {
-      "source": "backend/server.js#Function:projectAccess@255",
-      "target": "backend/auth.js#Function:getProjectRole@373",
+      "source": "backend/server.js#Function:projectAccess@256",
+      "target": "backend/auth.js#Function:getProjectRole@393",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 263
+        "line": 264
       }
     },
     {
@@ -105850,7 +105965,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 290
+        "line": 291
       }
     },
     {
@@ -105860,7 +105975,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 294
+        "line": 295
       }
     },
     {
@@ -105870,7 +105985,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 295
+        "line": 296
       }
     },
     {
@@ -105880,7 +105995,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 305
+        "line": 306
       }
     },
     {
@@ -105890,7 +106005,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 327
+        "line": 328
       }
     },
     {
@@ -105900,22 +106015,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 328
+        "line": 329
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
+      "source": "backend/server.js#Function:startServer@331",
       "target": "backend/db.js#Function:initializeDatabase@42",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 332
-      }
-    },
-    {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/auth.js#Function:ensureDefaultAdminUser@306",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105924,8 +106029,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/maintenance.js#Function:recoverInterruptedWorkflows@25",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/auth.js#Function:assertProductionAdminCredentials@313",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105934,8 +106039,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@1037",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/auth.js#Function:ensureDefaultAdminUser@326",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105944,8 +106049,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@1078",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/maintenance.js#Function:recoverInterruptedWorkflows@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 336
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/projectRepository.js#Function:recoverPendingProjectDeletions@1037",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105954,18 +106069,18 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@1078",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 341
+        "line": 339
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/productionStatic.js#Function:assertProductionFrontendAvailable@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105974,8 +106089,8 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
-      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@29",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/productionStatic.js#Function:getFrontendDistRoot@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105984,38 +106099,38 @@
       }
     },
     {
-      "source": "backend/server.js#Function:startServer@330",
+      "source": "backend/server.js#Function:startServer@331",
+      "target": "backend/maintenance.js#Function:createMaintenanceScheduler@29",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 347
+      }
+    },
+    {
+      "source": "backend/server.js#Function:startServer@331",
       "target": "backend/db.js#Function:closeDatabase@63",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 351
+        "line": 353
       }
     },
     {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:startServer@330",
+      "target": "backend/server.js#Function:startServer@331",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 357
+        "line": 359
       }
     },
     {
-      "source": "backend/server.js#Function:runEvidenceCompaction@361",
+      "source": "backend/server.js#Function:runEvidenceCompaction@363",
       "target": "backend/observability.js#Function:compactStaleEvidencePayloads@242",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/server.js",
-        "line": 364
-      }
-    },
-    {
-      "source": "backend/server.js#Function:runEvidenceCompaction@361",
-      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106024,19 +106139,19 @@
       }
     },
     {
-      "source": "backend/server.js#Method:result.checkpointDatabase@406",
-      "target": "backend/db.js#Function:checkpointWAL@121",
+      "source": "backend/server.js#Function:runEvidenceCompaction@363",
+      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 406
+        "line": 368
       }
     },
     {
-      "source": "backend/server.js#Function:handleGracefulShutdown@395",
-      "target": "env:SHUTDOWN_TIMEOUT_MS",
-      "label": "reads_env",
+      "source": "backend/server.js#Method:result.checkpointDatabase@408",
+      "target": "backend/db.js#Function:checkpointWAL@121",
+      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
@@ -106044,13 +106159,23 @@
       }
     },
     {
+      "source": "backend/server.js#Function:handleGracefulShutdown@397",
+      "target": "env:SHUTDOWN_TIMEOUT_MS",
+      "label": "reads_env",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/server.js",
+        "line": 410
+      }
+    },
+    {
       "source": "backend/server.js",
-      "target": "backend/server.js#Function:handleGracefulShutdown@395",
+      "target": "backend/server.js#Function:handleGracefulShutdown@397",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/server.js",
-        "line": 418
+        "line": 420
       }
     },
     {
@@ -106825,7 +106950,7 @@
     },
     {
       "source": "backend/sessionAuth.js#Function:createRequireAuth@64",
-      "target": "backend/auth.js#Function:verifySessionToken@586",
+      "target": "backend/auth.js#Function:verifySessionToken@606",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110845,12 +110970,22 @@
     },
     {
       "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
-      "target": "backend/tests/test_health_and_lifecycle.js#Function:reservePort@12",
-      "label": "calls",
+      "target": "backend/db.js",
+      "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 109
+        "line": 111
+      }
+    },
+    {
+      "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
+      "target": "backend/auth.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_health_and_lifecycle.js",
+        "line": 112
       }
     },
     {
@@ -110860,22 +110995,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 110
+        "line": 113
       }
     },
     {
       "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
-      "target": "backend/tests/test_health_and_lifecycle.js#Function:waitForStart@24",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 111
-      }
-    },
-    {
-      "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
-      "target": "backend/tests/test_health_and_lifecycle.js#Function:request@50",
+      "target": "backend/tests/test_health_and_lifecycle.js#Function:reservePort@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110885,12 +111010,32 @@
     },
     {
       "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
+      "target": "backend/tests/test_health_and_lifecycle.js#Function:waitForStart@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_health_and_lifecycle.js",
+        "line": 114
+      }
+    },
+    {
+      "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
+      "target": "backend/tests/test_health_and_lifecycle.js#Function:request@50",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_health_and_lifecycle.js",
+        "line": 132
+      }
+    },
+    {
+      "source": "backend/tests/test_health_and_lifecycle.js#Function:runTests@56",
       "target": "backend/tests/test_health_and_lifecycle.js#Function:waitForExit@46",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 154
+        "line": 173
       }
     },
     {
@@ -110900,7 +111045,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
-        "line": 175
+        "line": 194
       }
     },
     {
@@ -114935,7 +115080,7 @@
     },
     {
       "source": "backend/tests/test_p2_security_auth.js",
-      "target": "backend/auth.js#Function:createSession@514",
+      "target": "backend/auth.js#Function:createSession@534",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -114945,7 +115090,7 @@
     },
     {
       "source": "backend/tests/test_p2_security_auth.js",
-      "target": "backend/auth.js#Function:listActiveSessionsForUser@649",
+      "target": "backend/auth.js#Function:listActiveSessionsForUser@669",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -114955,7 +115100,7 @@
     },
     {
       "source": "backend/tests/test_p2_security_auth.js",
-      "target": "backend/auth.js#Function:cleanupExpiredSessions@643",
+      "target": "backend/auth.js#Function:cleanupExpiredSessions@663",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -115801,6 +115946,16 @@
       "location": {
         "file": "backend/tests/test_p5_mfa_login.js",
         "line": 96
+      }
+    },
+    {
+      "source": "backend/tests/test_p5_mfa_login.js",
+      "target": "backend/tests/test_p5_mfa_login.js#Function:adminCount@117",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_p5_mfa_login.js",
+        "line": 118
       }
     },
     {
@@ -121215,7 +121370,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:createProjectForUser@404",
+      "target": "backend/auth.js#Function:createProjectForUser@424",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121225,7 +121380,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:setProjectRole@423",
+      "target": "backend/auth.js#Function:setProjectRole@443",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121235,7 +121390,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:canViewProject@391",
+      "target": "backend/auth.js#Function:canViewProject@411",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121245,7 +121400,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:canEditProject@395",
+      "target": "backend/auth.js#Function:canEditProject@415",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121255,7 +121410,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:canDeleteProject@400",
+      "target": "backend/auth.js#Function:canDeleteProject@420",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121265,7 +121420,7 @@
     },
     {
       "source": "backend/tests/test_tur2_edge_cases.js",
-      "target": "backend/auth.js#Function:canTransitionProjectStatus@369",
+      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -128015,22 +128170,22 @@
     },
     {
       "source": "execution/server.js#Function:createWorkerServer@10",
-      "target": "execution/server.js#route:GET /readyz@108",
+      "target": "execution/server.js#route:GET /readyz@110",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 108
+        "line": 110
       }
     },
     {
       "source": "execution/server.js#Function:createWorkerServer@10",
-      "target": "execution/server.js#route:POST /v1/jobs@149",
+      "target": "execution/server.js#route:POST /v1/jobs@151",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 149
+        "line": 151
       }
     },
     {
@@ -128040,7 +128195,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 166
+        "line": 168
       }
     },
     {
@@ -128050,7 +128205,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 197
+        "line": 199
       }
     },
     {
@@ -128060,17 +128215,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 213
+        "line": 215
       }
     },
     {
       "source": "execution/server.js#Function:createWorkerServer@10",
-      "target": "execution/server.js#route:GET /v1/jobs/:jobId@221",
+      "target": "execution/server.js#route:GET /v1/jobs/:jobId@223",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 221
+        "line": 223
       }
     },
     {
@@ -128080,17 +128235,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 237
+        "line": 239
       }
     },
     {
       "source": "execution/server.js#Function:createWorkerServer@10",
-      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@243",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@245",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 243
+        "line": 245
       }
     },
     {
@@ -128100,7 +128255,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 280
+        "line": 292
       }
     },
     {
@@ -128110,7 +128265,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 280
+        "line": 292
       }
     },
     {
@@ -128120,7 +128275,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 281
+        "line": 293
       }
     },
     {
@@ -128130,7 +128285,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 286
+        "line": 298
       }
     },
     {
@@ -128140,7 +128295,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 286
+        "line": 298
       }
     },
     {
@@ -128150,7 +128305,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 287
+        "line": 299
       }
     },
     {
@@ -128160,7 +128315,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 288
+        "line": 300
       }
     },
     {
@@ -128170,7 +128325,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 288
+        "line": 300
       }
     },
     {
@@ -128180,7 +128335,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 292
+        "line": 304
       }
     },
     {
@@ -128190,17 +128345,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 295
+        "line": 307
       }
     },
     {
       "source": "execution/server.js",
-      "target": "execution/server.js#Function:shutdown@306",
+      "target": "execution/server.js#Function:shutdown@318",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/server.js",
-        "line": 315
+        "line": 327
       }
     },
     {
@@ -128440,7 +128595,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/jobBoundary.test.js",
-        "line": 167
+        "line": 168
+      }
+    },
+    {
+      "source": "execution/tests/jobBoundary.test.js",
+      "target": "execution/tests/jobBoundary.test.js#Function:cancelUrl@169",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobBoundary.test.js",
+        "line": 171
       }
     },
     {
@@ -132320,7 +132485,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/dev-worker-profile.mjs",
-        "line": 25
+        "line": 27
       }
     },
     {
@@ -133104,113 +133269,133 @@
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:startApplication@51",
+      "source": "scripts/test-p6-production-image.mjs#Function:bootstrapAdmin@53",
       "target": "scripts/test-p6-production-image.mjs#Function:success@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 52
+        "line": 58
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:startApplication@51",
+      "source": "scripts/test-p6-production-image.mjs#Function:bootstrapAdmin@53",
       "target": "scripts/test-p6-production-image.mjs#Function:run@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 52
+        "line": 58
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:startProxy@64",
-      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/test-p6-production-image.mjs",
-        "line": 65
-      }
-    },
-    {
-      "source": "scripts/test-p6-production-image.mjs#Function:startProxy@64",
+      "source": "scripts/test-p6-production-image.mjs#Function:startApplication@68",
       "target": "scripts/test-p6-production-image.mjs#Function:success@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 70
+        "line": 69
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:waitForHealth@76",
+      "source": "scripts/test-p6-production-image.mjs#Function:startApplication@68",
       "target": "scripts/test-p6-production-image.mjs#Function:run@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 78
+        "line": 69
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:seed@85",
+      "source": "scripts/test-p6-production-image.mjs#Function:startProxy@81",
+      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 82
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs#Function:startProxy@81",
       "target": "scripts/test-p6-production-image.mjs#Function:success@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 86
+        "line": 87
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:seed@85",
+      "source": "scripts/test-p6-production-image.mjs#Function:waitForHealth@93",
       "target": "scripts/test-p6-production-image.mjs#Function:run@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 86
+        "line": 95
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:waitForHttps@103",
-      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/test-p6-production-image.mjs",
-        "line": 121
-      }
-    },
-    {
-      "source": "scripts/test-p6-production-image.mjs#Function:runJourney@124",
-      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "scripts/test-p6-production-image.mjs",
-        "line": 125
-      }
-    },
-    {
-      "source": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@133",
+      "source": "scripts/test-p6-production-image.mjs#Function:seed@102",
       "target": "scripts/test-p6-production-image.mjs#Function:success@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 134
+        "line": 103
       }
     },
     {
-      "source": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@133",
+      "source": "scripts/test-p6-production-image.mjs#Function:seed@102",
       "target": "scripts/test-p6-production-image.mjs#Function:run@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 134
+        "line": 103
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs#Function:waitForHttps@120",
+      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 138
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs#Function:runJourney@141",
+      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 142
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@150",
+      "target": "scripts/test-p6-production-image.mjs#Function:success@30",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 151
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@150",
+      "target": "scripts/test-p6-production-image.mjs#Function:run@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 151
       }
     },
     {
@@ -133220,7 +133405,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 143
+        "line": 160
       }
     },
     {
@@ -133230,7 +133415,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 152
+        "line": 169
       }
     },
     {
@@ -133240,77 +133425,87 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 152
+        "line": 169
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:startApplication@51",
+      "target": "scripts/test-p6-production-image.mjs#Function:bootstrapAdmin@53",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 154
+        "line": 171
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:startProxy@64",
+      "target": "scripts/test-p6-production-image.mjs#Function:startApplication@68",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 155
+        "line": 172
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:waitForHealth@76",
+      "target": "scripts/test-p6-production-image.mjs#Function:startProxy@81",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 156
+        "line": 173
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:waitForHttps@103",
+      "target": "scripts/test-p6-production-image.mjs#Function:waitForHealth@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 157
+        "line": 174
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:seed@85",
+      "target": "scripts/test-p6-production-image.mjs#Function:waitForHttps@120",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 158
+        "line": 175
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:runJourney@124",
+      "target": "scripts/test-p6-production-image.mjs#Function:seed@102",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 160
+        "line": 176
       }
     },
     {
       "source": "scripts/test-p6-production-image.mjs",
-      "target": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@133",
+      "target": "scripts/test-p6-production-image.mjs#Function:runJourney@141",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 162
+        "line": 178
+      }
+    },
+    {
+      "source": "scripts/test-p6-production-image.mjs",
+      "target": "scripts/test-p6-production-image.mjs#Function:assertRuntimeBoundaries@150",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "scripts/test-p6-production-image.mjs",
+        "line": 180
       }
     },
     {
@@ -133320,7 +133515,7 @@
       "provenance": "ast",
       "location": {
         "file": "scripts/test-p6-production-image.mjs",
-        "line": 172
+        "line": 190
       }
     },
     {
@@ -133365,31 +133560,31 @@
     },
     {
       "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@38",
-      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@243",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@245",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "backend/executionClient.js#request:POST /v1/jobs@42",
-      "target": "execution/server.js#route:POST /v1/jobs@149",
+      "target": "execution/server.js#route:POST /v1/jobs@151",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "backend/executionClient.js#request:GET /v1/jobs/:jobId@50",
-      "target": "execution/server.js#route:GET /v1/jobs/:jobId@221",
+      "target": "execution/server.js#route:GET /v1/jobs/:jobId@223",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "backend/executionClient.js#request:GET /readyz@68",
-      "target": "execution/server.js#route:GET /readyz@108",
+      "target": "execution/server.js#route:GET /readyz@110",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "backend/executionClient.js#request:DELETE /v1/jobs/:jobId@68",
-      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@243",
+      "target": "execution/server.js#route:DELETE /v1/jobs/:jobId@245",
       "label": "requests_route",
       "provenance": "inferred"
     },

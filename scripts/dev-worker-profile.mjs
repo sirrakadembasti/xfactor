@@ -10,6 +10,9 @@ export function configureDevWorker(env, args) {
   if (env.VERIFICATION_JOB_TIMEOUT_MS == null || String(env.VERIFICATION_JOB_TIMEOUT_MS).trim() === '') {
     env.VERIFICATION_JOB_TIMEOUT_MS = String(MAX_VERIFICATION_JOB_MS);
   }
+  // Every development run shares a fresh random token between backend and worker;
+  // a fixed, publicly known token would let any local process submit worker jobs.
+  env.EXECUTION_WORKER_TOKEN ||= env.WORKER_TOKEN || crypto.randomBytes(32).toString('hex');
   if (args.includes('--docker-worker')) {
     env.EXECUTION_WORKER_RUNTIME = 'docker';
     delete env.EXECUTION_WORKER_TRUST_LOCAL_CODE;
@@ -20,7 +23,6 @@ export function configureDevWorker(env, args) {
     // time to receive the result instead of aborting a healthy local worker.
     env.READINESS_WORKER_TIMEOUT_MS ||= '35000';
     env.HOST = '127.0.0.1';
-    env.EXECUTION_WORKER_TOKEN ||= env.WORKER_TOKEN || crypto.randomBytes(32).toString('hex');
   }
   verificationJobTimeoutMs(env);
 }

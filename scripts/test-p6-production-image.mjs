@@ -6,7 +6,7 @@ import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PROXY_IMAGE = 'caddy:2.8.4-alpine';
@@ -47,6 +47,23 @@ async function reservePort() {
   const { port } = server.address();
   await new Promise(resolveClose => server.close(resolveClose));
   return port;
+}
+// Production refuses to start without an administrator or with the public default password.
+// Mirror the operator's create-admin step non-interactively, with a random password never printed.
+function bootstrapAdmin() {
+  const script = "const { initializeDatabase } = await import('/app/backend/db.js');"
+    + "initializeDatabase({ path: process.env.DB_PATH });"
+    + "const { promoteUserToAdmin } = await import('/app/backend/auth.js');"
+    + "promoteUserToAdmin('p6_operator', process.env.P6_ADMIN_PASSWORD);";
+  success('production admin bootstrap', run('docker', [
+    'run', '--rm',
+    '--mount', `type=bind,source=${dataRoot},target=/app/backend/data`,
+    '--mount', `type=bind,source=${projectsRoot},target=/app/projects`,
+    '--env', 'NODE_ENV=production', '--env', 'DB_PATH=/app/backend/data/projects.db',
+    '--env', 'PROJECTS_ROOT=/app/projects', '--env', 'ARTIFACTS_ROOT=/app/backend/data/artifacts',
+    '--env', `P6_ADMIN_PASSWORD=P6Admin-${randomBytes(18).toString('base64url')}`,
+    '--entrypoint', 'node', imageTag, '--input-type=module', '-e', script
+  ]));
 }
 function startApplication() {
   success('application start', run('docker', [
@@ -151,6 +168,7 @@ try {
   writeFileSync(join(fixtureRoot, 'Caddyfile'), `{\n  skip_install_trust\n}\n\nhttps://localhost:${httpsPort} {\n  bind 0.0.0.0\n  tls internal\n  reverse_proxy 127.0.0.1:8000 {\n    header_up X-Forwarded-Proto https\n  }\n}\n`);
   success('production image build', run('docker', ['build', '--tag', imageTag, '.']));
   success('proxy image pull', run('docker', ['pull', PROXY_IMAGE]));
+  bootstrapAdmin();
   startApplication();
   startProxy();
   waitForHealth();

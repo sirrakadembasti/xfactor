@@ -24,8 +24,8 @@ export function createAuthRouter({ requireAuth, production }) {
         }
 
         let user = await authenticateUserAsync(username.trim(), password);
-        if (!user && username.trim().toLowerCase() === 'admin') {
-            await ensureDefaultAdminUser();
+        if (!user && !production && username.trim().toLowerCase() === 'admin') {
+            await ensureDefaultAdminUser({ production });
             user = await authenticateUserAsync(username.trim(), password);
         }
         if (!user) {

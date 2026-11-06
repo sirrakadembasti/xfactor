@@ -106,6 +106,25 @@ async function runTests() {
     };
     let child;
     try {
+        // Production never seeds admin/xfactor: no administrator, or one still using the
+        // public default password, must stop startup before the HTTP surface opens.
+        const { initializeDatabase, closeDatabase } = await import('../db.js');
+        const { promoteUserToAdmin, changeUserPassword } = await import('../auth.js');
+        child = startServer({ ...commonEnv, PORT: String(await reservePort()) });
+        await assert.rejects(waitForStart(child), /Üretimde yönetici hesabı yok/);
+        child = undefined;
+        // The runner preloads an isolated DB; this suite seeds the spawned server's own file instead.
+        closeDatabase();
+        initializeDatabase({ path: dbPath });
+        promoteUserToAdmin('admin', 'xfactor');
+        closeDatabase();
+        child = startServer({ ...commonEnv, PORT: String(await reservePort()) });
+        await assert.rejects(waitForStart(child), /"admin" yöneticisi herkesçe bilinen varsayılan parolayı kullanıyor/);
+        child = undefined;
+        initializeDatabase({ path: dbPath });
+        changeUserPassword('admin', 'xfactor', 'Health-Operator-Passphrase-2026');
+        closeDatabase();
+
         const port = await reservePort();
         child = startServer({ ...commonEnv, PORT: String(port) });
         await waitForStart(child);

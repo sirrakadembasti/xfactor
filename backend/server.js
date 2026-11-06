@@ -16,7 +16,8 @@ import {
     canDeleteProject,
     verifySessionId,
     verifySessionToken,
-    ensureDefaultAdminUser
+    ensureDefaultAdminUser,
+    assertProductionAdminCredentials
 } from './auth.js';
 import { generateRequestId, buildErrorResponse, compactStaleEvidencePayloads, logError } from './observability.js';
 import { createAuthRouter } from './routes/authRoutes.js';
@@ -330,7 +331,8 @@ let maintenance = null;
 async function startServer() {
     try {
         initializeDatabase(runtimeConfig.DB_PATH ? { path: runtimeConfig.DB_PATH } : {});
-        await ensureDefaultAdminUser();
+        if (runtimeConfig.production) await assertProductionAdminCredentials();
+        else await ensureDefaultAdminUser();
         recoverInterruptedWorkflows({ database: db });
         await recoverPendingProjectDeletions({ env: process.env });
         try {

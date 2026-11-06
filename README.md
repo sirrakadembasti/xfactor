@@ -59,7 +59,7 @@ cd ..
 > - **Kullanıcı Adı:** `admin`
 > - **Şifre:** `xfactor`
 > 
-> Giriş alanları güvenlik için boş açılır. Bu bilgileri elle girerek başlayabilirsiniz. İnternete açık kurulumdan önce varsayılan parolayı değiştirin.
+> Giriş alanları güvenlik için boş açılır. Bu bilgileri elle girerek başlayabilirsiniz. Bu hesap **yalnız geliştirmede** otomatik oluşturulur. Üretimde (`NODE_ENV=production`) backend varsayılan hesabı oluşturmaz. Hiç yönetici yoksa ya da bir yönetici hâlâ `xfactor` parolasını kullanıyorsa açılmayı reddeder. Üretime almadan önce `npm run create-admin -- <kullanıcı>` ile güçlü parolalı bir yönetici oluşturun ya da `--renew` ile mevcut parolayı değiştirin.
 
 #### (Opsiyonel) Parola Değiştirme veya Yeni Yönetici Ekleme
 Parolanızı değiştirmek veya sıfırlamak isterseniz (asgari 6 karakter):
