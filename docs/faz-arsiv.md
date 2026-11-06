@@ -417,6 +417,15 @@ Aynı gün Faz 0 tamamlandı. Commit edilmemiş çalışma altı commit'e bölü
 
 Son koşuda beş CI işinin hepsi yeşil; `production-image` işi ilk kez çalıştı ve geçti.
 
+### Halka 34 — 6 Kasım: Faz 1 güvenlik sertleştirmesi
+
+[PR #4](https://github.com/sirrakadembasti/xfactor/pull/4) ile `main`'e alındı (merge `70882b9`). Değişiklikler:
+- Üretim, varsayılan `admin/xfactor` hesabını artık oluşturmuyor. Hiç yönetici yoksa ya da varsayılan parola kullanılıyorsa açılış durduruluyor. Geliştirme davranışı aynı.
+- `dev:docker` profilindeki sabit worker token'ı kaldırıldı; iki geliştirme profili de her koşuda rastgele token üretiyor.
+- Worker iş iptali, iş durumu okuması gibi `projectId` ile sınırlandı ve bütün worker yanıtları JSON olarak işaretlendi.
+
+Yerelde backend 176/176 süit, worker 205/205 test ve yerel worker entegrasyonu 208/208 test geçti. Beş CI işinin hepsi yeşil. Docker gerektiren üretim imajı kabulü yalnız CI'da çalıştı. Kullanıcı kararıyla asgari parola uzunluğu 6'da kaldı.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
