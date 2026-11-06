@@ -41,8 +41,8 @@ const checkId1 = 'p3-check-1';
 const checkId2 = 'p3-check-2';
 const otherCheckId = 'p3-check-other';
 
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P3 Proj A', 'running')").run(projId);
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P3 Proj B', 'running')").run(otherProjId);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P3 Proj A', 'implementing')").run(projId);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P3 Proj B', 'implementing')").run(otherProjId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(projId, ownerUserId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(otherProjId, otherUserId);
 
@@ -64,8 +64,8 @@ const evidenceOther = JSON.stringify({ reason: 'other', requirementIds: [], evid
 db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'api_contract', 'MANDATORY', 'PASS', 'cmd1', 0, ?, ?, 0, 'dig1','dig2', ?)").run(checkId1, contractIdA1, runId1, now, now, evidence1);
 db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd2', 1, ?, ?, 1, 'd3','d4', ?)").run(checkId2, contractIdA1, runId1, now, now, evidence2);
 db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'api_contract', 'MANDATORY', 'PASS', 'cmd3', 0, ?, ?, 0, 'd5','d6', ?)").run(otherCheckId, otherContractId, runIdOther, now, now, evidenceOther);
-db.prepare("INSERT INTO repair_issues (id, project_id, contract_id, requirement_id, fingerprint, severity, status, resolved_at) VALUES (?, ?, ?, ?, 'fp1', 'critical','open', NULL)").run('p3-repair-1', projId, contractIdA1, 'p3-req-a1');
-db.prepare("INSERT INTO repair_issues (id, project_id, contract_id, requirement_id, fingerprint, severity, status, resolved_at) VALUES (?, ?, ?, ?, 'fp2', 'high','resolved', ?)").run('p3-repair-2', projId, contractIdA1, 'p3-req-a1', now);
+db.prepare("INSERT INTO repair_issues (id, project_id, contract_id, requirement_id, fingerprint, severity, status, resolved_at, origin) VALUES (?, ?, ?, ?, 'fp1', 'critical','open', NULL, 'verification_blocker')").run('p3-repair-1', projId, contractIdA1, 'p3-req-a1');
+db.prepare("INSERT INTO repair_issues (id, project_id, contract_id, requirement_id, fingerprint, severity, status, resolved_at, origin) VALUES (?, ?, ?, ?, 'fp2', 'high','resolved', ?, 'verification_blocker')").run('p3-repair-2', projId, contractIdA1, 'p3-req-a1', now);
 db.prepare("INSERT INTO artifacts (id, project_id, contract_id, kind, path, sha256, size, status, verification_run_id) VALUES (?, ?, ?, 'zip', 'artifacts/a.zip', ?, 123, 'verified', ?)").run('p3-art-1', projId, contractIdA1, 'a'.repeat(64), runId1);
 db.prepare("INSERT INTO artifacts (id, project_id, contract_id, kind, path, sha256, size, status, verification_run_id) VALUES (?, ?, ?, 'tar', 'artifacts/b.tar', ?, 456, 'draft', NULL)").run('p3-art-2', projId, contractIdA1, 'b'.repeat(64));
 
@@ -399,8 +399,8 @@ await runAsyncTest('P3.1 cross-project isolation for all scoped queries with sam
 // =========================================================================
 const metricsProj = 'p3-metrics-main';
 const emptyProj = 'p3-metrics-empty';
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Metrics Main', 'running')").run(metricsProj);
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Metrics Empty', 'running')").run(emptyProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Metrics Main', 'implementing')").run(metricsProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Metrics Empty', 'implementing')").run(emptyProj);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(metricsProj, ownerUserId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(emptyProj, ownerUserId);
 // contracts with stack JSONs
@@ -651,9 +651,9 @@ await runAsyncTest('PASS: P3.2 Metrics & Fingerprinting APIs', async () => {
 const stackNegProj = 'p3-metrics-stack-neg';
 const trendNegProj = 'p3-metrics-trend-neg';
 const failSecretProj = 'p3-metrics-fail-secret';
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Stack Neg', 'running')").run(stackNegProj);
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Trend Neg', 'running')").run(trendNegProj);
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Fail Secret', 'running')").run(failSecretProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Stack Neg', 'implementing')").run(stackNegProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Trend Neg', 'implementing')").run(trendNegProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Fail Secret', 'implementing')").run(failSecretProj);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(stackNegProj, ownerUserId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(trendNegProj, ownerUserId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(failSecretProj, ownerUserId);
@@ -676,7 +676,7 @@ db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name,
 db.prepare("INSERT INTO verification_checks (id, contract_id, run_id, gate_name, applicability, status, command, exit_code, started_at, ended_at, timed_out, stdout_digest, stderr_digest, evidence_json) VALUES (?, ?, ?, 'smoke_gate', 'MANDATORY', 'FAIL', 'cmd', 1, ?, ?, 0, 'd','d', ?)").run('p3-fail-sec-c2', failSecretContract, 'p3-fail-sec-r2', '2025-01-12T10:00:00.000Z','2025-01-12T10:00:02.000Z', JSON.stringify({reason:'connection failed: password is anotherSecret123', requirementIds:[], evidence:{stdout:'',stderr:''}}));
 // path normalization seeds - separate project
 const pathProj = 'p3-metrics-path';
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Path Proj', 'running')").run(pathProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Path Proj', 'implementing')").run(pathProj);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pathProj, ownerUserId);
 db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-path1', ?, ?)").run('p3-path-c1', pathProj, JSON.stringify({}), now, now);
 db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-path-r1', pathProj, 'p3-path-c1', '2025-01-13T10:00:00.000Z','2025-01-13T10:00:02.000Z');
@@ -731,7 +731,7 @@ await runAsyncTest('P3.2 fix: stack AVG discards negative per-row durations', as
 });
 await runAsyncTest('P3.2 fix: stack AVG only invalid => 0', async () => {
   const onlyNegProj = 'p3-metrics-stack-onlyneg';
-  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'OnlyNeg', 'running')").run(onlyNegProj);
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'OnlyNeg', 'implementing')").run(onlyNegProj);
   db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(onlyNegProj, ownerUserId);
   db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at, created_at) VALUES (?, ?, 1, 'approved', ?, 'hash-on1', ?, ?)").run('p3-onlyneg-c1', onlyNegProj, JSON.stringify({frontend:{framework:'react'},backend:{language:'node'},database:{engine:'postgres'}}), now, now);
   db.prepare("INSERT INTO verification_runs (id, project_id, contract_id, status, policy_version, started_at, ended_at) VALUES (?, ?, ?, 'failed', '1.0', ?, ?)").run('p3-onlyneg-r1', onlyNegProj, 'p3-onlyneg-c1', '2025-01-10T10:00:00.000Z', '2025-01-09T23:59:40.000Z');
@@ -784,8 +784,8 @@ function snapshotDbState() {
 }
 const impactProj = 'p3-impact-main';
 const impactOtherProj = 'p3-impact-other';
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Main', 'running')").run(impactProj);
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Other', 'running')").run(impactOtherProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Main', 'implementing')").run(impactProj);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'Impact Other', 'implementing')").run(impactOtherProj);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(impactProj, ownerUserId);
 db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(impactOtherProj, otherUserId);
 const impactContractOld = 'p3-impact-c-old';
@@ -840,7 +840,7 @@ const badDepTypeProj = 'p3-graph-baddeptype';
 const unknownDepProj = 'p3-graph-unknowndep';
 const cycleProj = 'p3-graph-cycle';
 for (const pid of [malformedProj, badDepTypeProj, unknownDepProj, cycleProj]) {
-  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'running')").run(pid, pid);
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'implementing')").run(pid, pid);
   db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pid, ownerUserId);
 }
 const malformedContract = 'p3-graph-mal-c';
@@ -1008,7 +1008,7 @@ await runAsyncTest('P3.3 derived checkpointId stable helper parity', async () =>
 const unlinkedInvalidProj = 'p3-graph-unlinked-invalid';
 const nullDepsProj = 'p3-graph-nulldeps';
 for (const pid of [unlinkedInvalidProj, nullDepsProj]) {
-  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'running')").run(pid, pid);
+  db.prepare("INSERT INTO projects (id, title, status) VALUES (?, ?, 'implementing')").run(pid, pid);
   db.prepare("INSERT INTO project_owners (project_id, user_id, role) VALUES (?, ?, 'owner')").run(pid, ownerUserId);
 }
 const unlinkedInvalidContract = 'p3-graph-unlinked-c';
@@ -1082,7 +1082,7 @@ await runAsyncTest('P3.3 fix: preview uses deferred BEGIN no writer lock (regres
   db.exec('BEGIN');
   let writerOk = false;
   try {
-    db2.prepare("INSERT INTO projects (id, title, status) VALUES ('p3-lock-probe-2','probe2','running')").run();
+    db2.prepare("INSERT INTO projects (id, title, status) VALUES ('p3-lock-probe-2','probe2','implementing')").run();
     writerOk = true;
     db2.prepare("DELETE FROM projects WHERE id='p3-lock-probe-2'").run();
   } catch { writerOk = false; }

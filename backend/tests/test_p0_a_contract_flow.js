@@ -8,7 +8,7 @@ const { runAsyncTest, finish } = createTestHarness();
 
 try {
     await runAsyncTest('3. Plan ready should save pending revision and approval should activate approved contract status', async () => {
-        const { createProject, deleteProject, getProject, saveProjectState } = await import('../projectRepository.js');
+        const { createProject, deleteProject, getProject, saveProjectState, appendProjectChatMessage } = await import('../projectRepository.js');
         const { db } = await import('../db.js');
         isolated.registerDatabase(db);
         const {
@@ -27,12 +27,16 @@ try {
                 database: { engine: 'sqlite' }
             };
 
-            const revision = createContractRevision(project.id, samplePlan, 100);
+            // Provenance points at the real Manager message that proposed the plan.
+            const sourceMessage = appendProjectChatMessage(project.id, 'model', 'Plan hazır.');
+            const revision = createContractRevision(project.id, samplePlan, sourceMessage.id);
             assert.strictEqual(revision, 1);
 
             const draft = getLatestRevision(project.id);
             assert.strictEqual(draft.status, 'pending_approval');
-            assert.strictEqual(draft.source_message_id, 100);
+            assert.strictEqual(draft.source_message_id, sourceMessage.id);
+            assert.throws(() => createContractRevision(project.id, { ...samplePlan, summary: 'Uydurma kaynak' }, 999999),
+                /FOREIGN KEY constraint failed/);
 
             approveContractRevision(project.id, 1);
 
@@ -54,10 +58,10 @@ try {
         try {
             const firstPlan = { summary: 'Book catalogue', domains: [{ name: 'frontend' }] };
             const secondPlan = { summary: 'Library loans and members', domains: [{ name: 'frontend' }] };
-            createContractRevision(project.id, firstPlan, 101);
+            createContractRevision(project.id, firstPlan, null);
             approveContractRevision(project.id, 1);
             const oldState = getProject(project.id);
-            createContractRevision(project.id, secondPlan, 102);
+            createContractRevision(project.id, secondPlan, null);
             approveContractRevision(project.id, 2);
 
             oldState.status = 'pending_approval';
@@ -80,9 +84,9 @@ try {
         try {
             const firstPlan = { summary: 'Old approved plan', domains: [{ name: 'frontend' }] };
             const secondPlan = { summary: 'New revision for approval', domains: [{ name: 'frontend' }] };
-            createContractRevision(project.id, firstPlan, 1);
+            createContractRevision(project.id, firstPlan, null);
             approveContractRevision(project.id, 1);
-            createContractRevision(project.id, secondPlan, 2);
+            createContractRevision(project.id, secondPlan, null);
             const state = getProject(project.id);
             state.status = 'pending_approval';
             await saveProjectState(state);

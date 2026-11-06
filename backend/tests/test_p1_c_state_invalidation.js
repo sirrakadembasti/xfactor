@@ -87,8 +87,8 @@ function seedFullVerificationFixture(label, overrides = {}) {
     if (withOpenRepair) {
         db.prepare(`
             INSERT INTO repair_issues (
-                id, project_id, contract_id, run_id, fingerprint, severity, status, detail_json
-            ) VALUES (?, ?, ?, ?, 'fp-1', 'critical', 'open', '{}')
+                id, project_id, contract_id, run_id, fingerprint, severity, status, detail_json, origin
+            ) VALUES (?, ?, ?, ?, 'fp-1', 'critical', 'open', '{}', 'worker_rejection')
         `).run(`repair-${label}`, projectId, contractId, runId);
     }
 

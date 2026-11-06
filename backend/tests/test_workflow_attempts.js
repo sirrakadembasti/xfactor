@@ -57,7 +57,7 @@ await runAsyncTest('2. reconcileStaleWorkflowAttempts should transition stale ru
     const project = await createProject({ title: 'Stale Recovery Test Project' });
     const lease = acquireWorkflowLease(project.id, 'worker-crashed');
 
-    db.prepare("UPDATE projects SET status = 'running' WHERE id = ?").run(project.id);
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
     db.prepare("UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = '2020-01-01 00:00:00' WHERE id = ?").run(lease.attempt.id);
 
     const recovery = reconcileStaleWorkflowAttempts({ staleThresholdSeconds: 1 });

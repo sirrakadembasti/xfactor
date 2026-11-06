@@ -17,15 +17,17 @@ await runAsyncTest('1. Schema migration 7 should create contracts, checkpoints, 
     const requiredTables = [
         'project_contracts',
         'requirements',
-        'contract_elements',
         'contract_tasks',
         'requirement_task_links',
-        'requirement_element_links',
         'repair_issues',
         'task_checkpoints'
     ];
     for (const table of requiredTables) {
         assert.ok(tables.includes(table), `Table ${table} should exist in database`);
+    }
+    // Migration 7 created these but nothing ever read or wrote them; migration 18 drops them.
+    for (const table of ['contract_elements', 'requirement_element_links']) {
+        assert.ok(!tables.includes(table), `Unused table ${table} must be removed by migration 18`);
     }
 
     const projectContractIndexes = db.prepare('PRAGMA index_list(project_contracts)').all();
@@ -42,8 +44,8 @@ await runAsyncTest('1. Schema migration 7 should create contracts, checkpoints, 
     `).run();
     assert.throws(() => db.prepare(`
         INSERT INTO repair_issues (
-            id, project_id, contract_id, fingerprint, severity, status
-        ) VALUES ('issue-cross-owner', 'owner-b', 'contract-a', 'fp', 'critical', 'open')
+            id, project_id, contract_id, fingerprint, severity, status, origin
+        ) VALUES ('issue-cross-owner', 'owner-b', 'contract-a', 'fp', 'critical', 'open', 'static_audit')
     `).run(), /FOREIGN KEY/);
     db.prepare("DELETE FROM projects WHERE id IN ('owner-a', 'owner-b')").run();
 });
