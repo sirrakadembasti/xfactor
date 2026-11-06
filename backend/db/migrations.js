@@ -606,4 +606,312 @@ export const MIGRATIONS = [
             }
         }
     },
+    {
+        version: 18,
+        name: '018_canonical_ownership_status_and_links',
+        // Rebuilds parent tables; the runner disables enforcement and re-checks every key before commit.
+        disableForeignKeys: true,
+        up: database => migrateCanonicalSchema(database)
+    },
 ];
+
+// Frozen value sets for migration 18. Migrations are history: they never read live code constants.
+// test_schema_canonical_constraints.js keeps these aligned with stateMachine/auth/repair writers.
+export const MIGRATION_18_VALUES = Object.freeze({
+    projectStatus: Object.freeze(['planning', 'pending_approval', 'contract_approved', 'implementing',
+        'implementation_finished', 'verification_pending', 'verification_running', 'verification_failed', 'paused',
+        'failed', 'build_verified', 'runtime_verified', 'acceptance_verified', 'artifact_verified', 'completed',
+        'capability_blocked', 'deleting']),
+    contractStatus: Object.freeze(['draft', 'pending_approval', 'approved', 'superseded', 'rejected']),
+    attemptStatus: Object.freeze(['running', 'completed', 'rejected', 'failed', 'aborted', 'stale_terminated', 'paused']),
+    repairStatus: Object.freeze(['open', 'resolved']),
+    repairSeverity: Object.freeze(['critical', 'high']),
+    repairOrigin: Object.freeze(['static_audit', 'worker_rejection', 'verification_blocker']),
+    chatRole: Object.freeze(['user', 'model']),
+    projectRole: Object.freeze(['owner', 'editor', 'viewer'])
+});
+
+const sqlList = values => values.map(value => `'${value}'`).join(', ');
+
+function assertValuesWithin(database, table, column, allowed) {
+    const unexpected = database.prepare(`SELECT DISTINCT ${column} AS value FROM ${table} WHERE ${column} IS NULL OR ${column} NOT IN (${sqlList(allowed)})`)
+        .all().map(row => String(row.value));
+    if (unexpected.length) throw new Error(`Migration 18: ${table}.${column} has values outside the canonical set: ${unexpected.slice(0, 10).join(', ')}`);
+}
+
+function snapshot(database, table, columns) {
+    return database.prepare(`SELECT ${columns.join(', ')} FROM ${table} ORDER BY rowid`).all().map(row => JSON.stringify(row));
+}
+
+/**
+ * SQLite's documented table-rebuild procedure: create the canonical table, copy, verify, drop the old
+ * table, rename, then restore its indexes and triggers. Columns in `preserved` must survive byte-for-byte.
+ */
+function rebuildTable(database, { table, createSql, columns, select = columns, preserved = columns }) {
+    const companions = database.prepare("SELECT sql FROM sqlite_master WHERE tbl_name = ? AND type IN ('index', 'trigger') AND sql IS NOT NULL ORDER BY type, name")
+        .all(table).map(row => row.sql);
+    const staging = `${table}__m18`;
+    const before = snapshot(database, table, preserved);
+    database.exec(createSql.replace('__TABLE__', staging));
+    database.exec(`INSERT INTO ${staging} (${columns.join(', ')}) SELECT ${select.join(', ')} FROM ${table} ORDER BY rowid`);
+    const after = snapshot(database, staging, preserved);
+    if (after.length !== before.length || after.some((row, index) => row !== before[index])) {
+        throw new Error(`Migration 18: rebuilding ${table} did not preserve its ${before.length} row(s).`);
+    }
+    database.exec(`DROP TABLE ${table}`);
+    database.exec(`ALTER TABLE ${staging} RENAME TO ${table}`);
+    for (const sql of companions) database.exec(sql);
+}
+
+function migrateCanonicalSchema(database) {
+    const values = MIGRATION_18_VALUES;
+    // 1. Fail closed on any value the canonical schema would reject, naming it.
+    assertValuesWithin(database, 'projects', 'status', values.projectStatus);
+    assertValuesWithin(database, 'project_contracts', 'status', values.contractStatus);
+    assertValuesWithin(database, 'workflow_attempts', 'status', values.attemptStatus);
+    assertValuesWithin(database, 'repair_issues', 'status', values.repairStatus);
+    assertValuesWithin(database, 'repair_issues', 'severity', values.repairSeverity);
+    assertValuesWithin(database, 'chat_history', 'role', values.chatRole);
+    assertValuesWithin(database, 'project_owners', 'role', values.projectRole);
+
+    // 2. Ownership has one source: project_owners. Carry any legacy owner_id over before dropping it.
+    for (const row of database.prepare(`SELECT p.id, p.owner_id, p.created_at FROM projects p
+        WHERE p.owner_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM project_owners po WHERE po.project_id = p.id AND po.user_id = p.owner_id)`).all()) {
+        if (!database.prepare('SELECT 1 FROM users WHERE id = ?').get(row.owner_id)) {
+            throw new Error(`Migration 18: project ${row.id} names a missing owner ${row.owner_id}.`);
+        }
+        database.prepare("INSERT INTO project_owners (project_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)")
+            .run(row.id, row.owner_id, row.created_at);
+    }
+
+    // 3. Repair issues carry their provenance explicitly. Static audit rows stored the workflow attempt
+    //    id in run_id; they keep it in attempt_id only, so run_id can reference verification_runs.
+    const originCase = `CASE
+        WHEN run_id IS NOT NULL AND run_id = attempt_id
+             AND EXISTS (SELECT 1 FROM workflow_attempts a WHERE a.id = repair_issues.run_id) THEN 'static_audit'
+        WHEN run_id IS NOT NULL
+             AND EXISTS (SELECT 1 FROM verification_runs v WHERE v.id = repair_issues.run_id AND v.contract_id = repair_issues.contract_id) THEN 'worker_rejection'
+        WHEN run_id IS NULL AND json_extract(detail_json, '$.kind') = 'verification_controller_blocker' THEN 'verification_blocker'
+    END`;
+    const unknownOrigin = database.prepare(`SELECT id FROM repair_issues WHERE (${originCase}) IS NULL`).all().map(row => row.id);
+    if (unknownOrigin.length) throw new Error(`Migration 18: repair issues with unknown provenance: ${unknownOrigin.slice(0, 10).join(', ')}`);
+
+    // 4. Unused tables: refuse to drop anything that holds data.
+    for (const table of ['requirement_element_links', 'contract_elements']) {
+        const count = database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
+        if (count) throw new Error(`Migration 18: ${table} is not empty (${count} rows); refusing to drop it.`);
+    }
+    database.exec('DROP TABLE requirement_element_links; DROP TABLE contract_elements;');
+
+    // 5. Canonical tables.
+    rebuildTable(database, {
+        table: 'projects',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (${sqlList(values.projectStatus)})),
+            plan TEXT,
+            is_pinned INTEGER DEFAULT 0,
+            workflow_state TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            revision INTEGER NOT NULL DEFAULT 1
+        )`,
+        columns: ['id', 'title', 'status', 'plan', 'is_pinned', 'workflow_state', 'created_at', 'revision']
+    });
+    rebuildTable(database, {
+        table: 'project_owners',
+        createSql: `CREATE TABLE __TABLE__ (
+            project_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'owner' CHECK(role IN (${sqlList(values.projectRole)})),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (project_id, user_id),
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )`,
+        columns: ['project_id', 'user_id', 'role', 'created_at']
+    });
+    rebuildTable(database, {
+        table: 'chat_history',
+        createSql: `CREATE TABLE __TABLE__ (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN (${sqlList(values.chatRole)})),
+            text_content TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            action_key TEXT,
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+        )`,
+        columns: ['id', 'project_id', 'role', 'text_content', 'created_at', 'action_key']
+    });
+    rebuildTable(database, {
+        table: 'workflow_attempts',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (${sqlList(values.attemptStatus)})),
+            lease_owner TEXT NOT NULL,
+            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            heartbeat_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            ended_at DATETIME,
+            error TEXT,
+            started_epoch INTEGER,
+            heartbeat_epoch INTEGER,
+            ended_epoch INTEGER,
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+        )`,
+        columns: ['id', 'project_id', 'status', 'lease_owner', 'started_at', 'heartbeat_at', 'ended_at', 'error',
+            'started_epoch', 'heartbeat_epoch', 'ended_epoch']
+    });
+    rebuildTable(database, {
+        table: 'project_contracts',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (${sqlList(values.contractStatus)})),
+            contract_json TEXT NOT NULL,
+            contract_hash TEXT NOT NULL,
+            source_message_id INTEGER,
+            supersedes_revision INTEGER,
+            approved_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(project_id, revision),
+            UNIQUE(project_id, id),
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(source_message_id) REFERENCES chat_history(id) ON DELETE SET NULL
+        )`,
+        columns: ['id', 'project_id', 'revision', 'status', 'contract_json', 'contract_hash', 'source_message_id',
+            'supersedes_revision', 'approved_at', 'created_at']
+    });
+    rebuildTable(database, {
+        table: 'requirements',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            contract_id TEXT NOT NULL,
+            stable_key TEXT NOT NULL,
+            statement TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            priority TEXT NOT NULL,
+            mandatory INTEGER DEFAULT 1,
+            source_message_id INTEGER,
+            status TEXT NOT NULL,
+            supersedes_requirement_id TEXT,
+            UNIQUE(contract_id, stable_key),
+            UNIQUE(contract_id, id),
+            FOREIGN KEY(contract_id) REFERENCES project_contracts(id) ON DELETE CASCADE,
+            FOREIGN KEY(source_message_id) REFERENCES chat_history(id) ON DELETE SET NULL,
+            FOREIGN KEY(supersedes_requirement_id) REFERENCES requirements(id) ON DELETE SET NULL
+        )`,
+        columns: ['id', 'contract_id', 'stable_key', 'statement', 'kind', 'priority', 'mandatory', 'source_message_id',
+            'status', 'supersedes_requirement_id']
+    });
+    const repairColumns = ['id', 'project_id', 'contract_id', 'run_id', 'requirement_id', 'fingerprint', 'severity',
+        'status', 'detail_json', 'created_at', 'resolved_at', 'attempt_id', 'lease_owner', 'origin'];
+    rebuildTable(database, {
+        table: 'repair_issues',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            contract_id TEXT NOT NULL,
+            run_id TEXT,
+            requirement_id TEXT,
+            fingerprint TEXT NOT NULL,
+            severity TEXT NOT NULL CHECK(severity IN (${sqlList(values.repairSeverity)})),
+            status TEXT NOT NULL CHECK(status IN (${sqlList(values.repairStatus)})),
+            detail_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME,
+            attempt_id TEXT,
+            lease_owner TEXT,
+            origin TEXT NOT NULL CHECK(origin IN (${sqlList(values.repairOrigin)})),
+            CHECK(origin <> 'static_audit' OR run_id IS NULL),
+            CHECK(origin <> 'worker_rejection' OR run_id IS NOT NULL),
+            FOREIGN KEY(project_id, contract_id) REFERENCES project_contracts(project_id, id) ON DELETE CASCADE,
+            FOREIGN KEY(contract_id, run_id) REFERENCES verification_runs(contract_id, id),
+            FOREIGN KEY(attempt_id) REFERENCES workflow_attempts(id) ON DELETE SET NULL
+        )`,
+        columns: repairColumns,
+        select: [...repairColumns.slice(0, 3), `CASE WHEN (${originCase}) = 'static_audit' THEN NULL ELSE run_id END`,
+            ...repairColumns.slice(4, 13), `(${originCase})`],
+        preserved: repairColumns.filter(column => !['run_id', 'origin'].includes(column))
+    });
+    rebuildTable(database, {
+        table: 'project_logs',
+        createSql: `CREATE TABLE __TABLE__ (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT NOT NULL,
+            agent TEXT,
+            action TEXT,
+            file TEXT,
+            message TEXT,
+            node_id TEXT,
+            parent_node_id TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            attempt_id TEXT,
+            lease_owner TEXT,
+            FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+            FOREIGN KEY (attempt_id) REFERENCES workflow_attempts (id) ON DELETE SET NULL
+        )`,
+        columns: ['id', 'project_id', 'agent', 'action', 'file', 'message', 'node_id', 'parent_node_id', 'created_at',
+            'attempt_id', 'lease_owner']
+    });
+    rebuildTable(database, {
+        table: 'task_checkpoints',
+        createSql: `CREATE TABLE __TABLE__ (
+            project_id TEXT NOT NULL,
+            task_id TEXT NOT NULL,
+            contract_id TEXT NOT NULL,
+            plan_hash TEXT NOT NULL,
+            task_spec_hash TEXT NOT NULL,
+            input_hash TEXT NOT NULL,
+            output_hash TEXT NOT NULL,
+            gate_version TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('completed', 'invalidated')),
+            requirement_ids TEXT NOT NULL DEFAULT '[]',
+            invalidation_reason TEXT,
+            revision INTEGER NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            invalidated_at DATETIME,
+            attempt_id TEXT,
+            lease_owner TEXT,
+            task_identity_version INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY(project_id, task_id, contract_id, plan_hash, task_spec_hash, input_hash, output_hash, gate_version),
+            FOREIGN KEY(project_id, contract_id) REFERENCES project_contracts(project_id, id) ON DELETE CASCADE,
+            FOREIGN KEY(attempt_id) REFERENCES workflow_attempts(id) ON DELETE SET NULL
+        )`,
+        columns: ['project_id', 'task_id', 'contract_id', 'plan_hash', 'task_spec_hash', 'input_hash', 'output_hash',
+            'gate_version', 'status', 'requirement_ids', 'invalidation_reason', 'revision', 'created_at', 'invalidated_at',
+            'attempt_id', 'lease_owner', 'task_identity_version']
+    });
+    // Receipts stay immutable: rows are copied as-is and the immutability triggers are restored.
+    rebuildTable(database, {
+        table: 'completion_receipts',
+        createSql: `CREATE TABLE __TABLE__ (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            contract_id TEXT NOT NULL,
+            contract_hash TEXT NOT NULL,
+            artifact_id TEXT NOT NULL,
+            artifact_hash TEXT NOT NULL,
+            run_id TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            mandatory_gate_digests TEXT NOT NULL,
+            previous_revision INTEGER NOT NULL,
+            next_revision INTEGER NOT NULL,
+            completed_at DATETIME NOT NULL,
+            attempt_id TEXT,
+            lease_owner TEXT,
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE RESTRICT,
+            FOREIGN KEY (project_id, contract_id) REFERENCES project_contracts(project_id, id) ON DELETE RESTRICT,
+            FOREIGN KEY (contract_id, artifact_id) REFERENCES artifacts(contract_id, id) ON DELETE RESTRICT,
+            FOREIGN KEY (contract_id, run_id) REFERENCES verification_runs(contract_id, id) ON DELETE RESTRICT,
+            FOREIGN KEY (attempt_id) REFERENCES workflow_attempts(id) ON DELETE SET NULL,
+            CHECK (next_revision = previous_revision + 1)
+        )`,
+        columns: ['id', 'project_id', 'contract_id', 'contract_hash', 'artifact_id', 'artifact_hash', 'run_id',
+            'policy_version', 'mandatory_gate_digests', 'previous_revision', 'next_revision', 'completed_at', 'attempt_id',
+            'lease_owner']
+    });
+}

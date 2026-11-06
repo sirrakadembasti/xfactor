@@ -54,8 +54,8 @@ export function resolveStaticAuditRepairIssues(database, projectId, contractId) 
         SET status = 'resolved', resolved_at = ?
         WHERE project_id = ? AND contract_id = ? AND status = 'open'
           AND requirement_id IS NULL
-          AND run_id IN (SELECT id FROM workflow_attempts WHERE project_id = ?)
-    `).run(new Date().toISOString(), projectId, contractId, projectId).changes;
+          AND origin = 'static_audit'
+    `).run(new Date().toISOString(), projectId, contractId).changes;
 }
 
 const defaultWorkflowLog = async () => {};

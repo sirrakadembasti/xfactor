@@ -23,8 +23,16 @@ export const WORKFLOW_STATUS = {
     REJECTED: 'rejected',
     FAILED: 'failed',
     ABORTED: 'aborted',
-    STALE_TERMINATED: 'stale_terminated'
+    STALE_TERMINATED: 'stale_terminated',
+    PAUSED: 'paused'
 };
+
+/**
+ * Transient marker written only by the project deletion protocol. It is persisted, so the schema
+ * accepts it, but it is not a lifecycle state: no transition leads into or out of it.
+ */
+export const PROJECT_DELETING_STATUS = 'deleting';
+export const PERSISTED_PROJECT_STATUSES = Object.freeze([...Object.values(PROJECT_STATUS), PROJECT_DELETING_STATUS]);
 
 export function canTransitionProject(fromStatus, toStatus) {
     if (fromStatus === toStatus) return true;

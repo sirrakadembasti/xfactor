@@ -300,7 +300,7 @@ export function reconcileStaleWorkflowAttempts({
         const updateProject = database.prepare(`
             UPDATE projects
             SET status = 'paused', revision = revision + 1
-            WHERE id = ? AND status IN ('implementing', 'running')
+            WHERE id = ? AND status = 'implementing'
         `);
         const insertChat = database.prepare(
             'INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)'
@@ -324,7 +324,7 @@ export function reconcileStaleWorkflowAttempts({
         const orphanedRunningProjects = database.prepare(`
             SELECT id
             FROM projects
-            WHERE status IN ('implementing', 'running')
+            WHERE status = 'implementing'
               AND id NOT IN (
                   SELECT project_id FROM workflow_attempts WHERE status = 'running'
               )

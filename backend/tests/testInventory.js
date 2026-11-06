@@ -9,6 +9,7 @@ test_reverification.js
 test_reverification_checkpoint_preservation.js
 test_requirement_coverage.js
 test_requirement_coverage_pipeline.js
+test_schema_canonical_constraints.js
 test_requirement_assertion_bindings.js
 test_requirement_assertion_verifier.js
 test_execution_progress.js

@@ -83,7 +83,8 @@ export function generateNextProjectId(title, { database = db, env = process.env 
 export function createProjectSync(input = {}, options = {}) {
     const rawInput = typeof input === 'string' ? { title: input } : (input || {});
     const title = rawInput.title || options.title;
-    const ownerUserId = (typeof input === 'object' && input?.ownerUserId) || options.ownerUserId || 'legacy-local-owner';
+    // No synthetic owner: without an explicit user the project is created unowned (only project_owners grants authority).
+    const ownerUserId = (typeof input === 'object' && input?.ownerUserId) || options.ownerUserId || null;
     const env = rawInput.env || options.env || process.env;
     const customId = rawInput.customId || rawInput.id || options.customId || options.id || null;
 
@@ -100,7 +101,7 @@ export function createProjectSync(input = {}, options = {}) {
     // 1. Önce dizin oluşturulur
     fsSync.mkdirSync(projectDir, { recursive: true });
 
-    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, owner_id, is_pinned, created_at) VALUES (?, ?, ?, NULL, ?, 0, ?)');
+    const insertProject = db.prepare('INSERT INTO projects (id, title, status, plan, is_pinned, created_at) VALUES (?, ?, ?, NULL, 0, ?)');
     const insertOwner = db.prepare('INSERT INTO project_owners (project_id, user_id, role, created_at) VALUES (?, ?, ?, ?)');
     const insertChat = db.prepare('INSERT INTO chat_history (project_id, role, text_content, created_at) VALUES (?, ?, ?, ?)');
 
@@ -108,12 +109,13 @@ export function createProjectSync(input = {}, options = {}) {
     let chatInfo;
     db.exec('BEGIN IMMEDIATE;');
     try {
-        insertProject.run(id, cleanTitle, 'planning', ownerUserId, nowIso);
+        insertProject.run(id, cleanTitle, 'planning', nowIso);
         if (ownerUserId) {
-            const userRow = db.prepare('SELECT id FROM users WHERE id = ?').get(ownerUserId);
-            if (userRow) {
-                insertOwner.run(id, ownerUserId, 'owner', nowIso);
+            // Ownership lives only in project_owners; an unknown owner is refused, never silently dropped.
+            if (!db.prepare('SELECT id FROM users WHERE id = ?').get(ownerUserId)) {
+                throw new Error('Proje sahibi olarak belirtilen kullanıcı bulunamadı.');
             }
+            insertOwner.run(id, ownerUserId, 'owner', nowIso);
         }
         chatInfo = insertChat.run(id, 'model', initialWelcomeMessage, nowIso);
         db.exec('COMMIT;');
@@ -127,7 +129,7 @@ export function createProjectSync(input = {}, options = {}) {
         id,
         title: cleanTitle,
         status: 'planning',
-        ownerId: ownerUserId,
+        ownerId: ownerUserId || null,
         isPinned: false,
         createdAt: nowIso,
         chatHistory: [
