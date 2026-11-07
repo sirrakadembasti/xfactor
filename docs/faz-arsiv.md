@@ -445,6 +445,8 @@ Canlı veritabanı önce `VACUUM INTO` ile yedeklendi. İki test kullanıcısı 
 
 Doğrulama: backend 177/177 süit, worker 205/205 test, yerel worker entegrasyonu 208/208, frontend 153/153; E2E 4 geçti, 1 atlandı. Zaman biçimi birleştirme kullanıcı kararıyla açık bırakıldı.
 
+7 Kasım'da [PR #5](https://github.com/sirrakadembasti/xfactor/pull/5), beş CI işinin hepsi yeşilken `main`'e alındı (merge `e348566`).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
