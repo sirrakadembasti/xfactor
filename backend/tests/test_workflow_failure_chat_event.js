@@ -35,10 +35,11 @@ try {
         VALUES (?, ?, 1, 'approved', ?, ?)`)
         .run(contractId, project.id, JSON.stringify(plan), 'test-hash');
     db.prepare("INSERT INTO workflow_attempts (id, project_id, status, lease_owner) VALUES ('attempt-static-old', ?, 'failed', 'old-owner')").run(project.id);
-    const addIssue = db.prepare(`INSERT INTO repair_issues (id, project_id, contract_id, run_id, fingerprint, severity, status, detail_json)
-        VALUES (?, ?, ?, ?, ?, 'critical', 'open', ?)`);
-    addIssue.run('static-repair-old', project.id, contractId, 'attempt-static-old', 'static-old', JSON.stringify({ issue: 'Old static issue' }));
-    addIssue.run('runtime-repair-old', project.id, contractId, 'verification-old', 'runtime-old', JSON.stringify({ issue: 'Runtime issue' }));
+    // Provenance is explicit: only static audit rows may be resolved by a later clean static audit.
+    const addIssue = db.prepare(`INSERT INTO repair_issues (id, project_id, contract_id, fingerprint, severity, status, detail_json, attempt_id, origin)
+        VALUES (?, ?, ?, ?, 'critical', 'open', ?, ?, ?)`);
+    addIssue.run('static-repair-old', project.id, contractId, 'static-old', JSON.stringify({ issue: 'Old static issue' }), 'attempt-static-old', 'static_audit');
+    addIssue.run('runtime-repair-old', project.id, contractId, 'runtime-old', JSON.stringify({ issue: 'Runtime issue' }), null, 'verification_blocker');
     assert.strictEqual(resolveStaticAuditRepairIssues(db, project.id, contractId), 1);
     assert.strictEqual(db.prepare("SELECT status FROM repair_issues WHERE id = 'static-repair-old'").get().status, 'resolved');
     assert.strictEqual(db.prepare("SELECT status FROM repair_issues WHERE id = 'runtime-repair-old'").get().status, 'open');

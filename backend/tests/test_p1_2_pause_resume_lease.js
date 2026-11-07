@@ -140,7 +140,7 @@ await runAsyncTest('5. reconcileStaleWorkflowAttempts should transition dead run
     // Set heartbeat back in time
     const oldTime = new Date(Date.now() - 60000).toISOString();
     db.prepare("UPDATE workflow_attempts SET heartbeat_epoch = NULL, heartbeat_at = ? WHERE id = ?").run(oldTime, lease.attempt.id);
-    db.prepare("UPDATE projects SET status = 'running' WHERE id = ?").run(project.id);
+    db.prepare("UPDATE projects SET status = 'implementing' WHERE id = ?").run(project.id);
 
     const reconciled = reconcileStaleWorkflowAttempts({ staleThresholdSeconds: 10 });
     assert.ok(reconciled.reconciledCount >= 1);

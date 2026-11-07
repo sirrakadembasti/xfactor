@@ -33,7 +33,7 @@ async function fixture(status) {
 await runAsyncTest('verification-only reaches a fresh worker without generation, source writes or clearing old blockers', async () => {
     const f = await fixture('implementing');
     try {
-        db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json) VALUES (?,?,?,?,'high','open',?)")
+        db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json,origin) VALUES (?,?,?,?,'high','open',?,'verification_blocker')")
             .run('repair-worker-reverify', f.project.id, f.contract.id, 'old-blocker', JSON.stringify({ kind: 'worker_verification_blocker', reason: 'old platform failure' }));
         const before = await fs.readdir(f.dir);
         let agentCalls = 0, preparations = 0;
@@ -58,7 +58,7 @@ await runAsyncTest('reverify keeps approved identity and pending draft; stale re
     const draftId = crypto.randomUUID();
     db.prepare("INSERT INTO project_contracts (id,project_id,revision,status,contract_json,contract_hash) VALUES (?,?,2,'pending_approval',?,?)")
         .run(draftId, f.project.id, JSON.stringify({ ...f.plan, summary: 'Unused draft' }), 'b'.repeat(64));
-    db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json) VALUES (?,?,?,?,'high','open',?)")
+    db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json,origin) VALUES (?,?,?,?,'high','open',?,'verification_blocker')")
         .run('repair-worker-route-veto', f.project.id, f.contract.id, 'route-blocker', JSON.stringify({ kind: 'worker_verification_blocker', reason: 'historical blocker' }));
     let dispatch = null;
     const app = express();
@@ -98,7 +98,7 @@ await runAsyncTest('fresh verification result is diagnostic only and never marks
     for (const passed of [false, true]) {
         const f = await fixture('implementing');
         try {
-            db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json) VALUES (?,?,?,?,'high','open',?)")
+            db.prepare("INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json,origin) VALUES (?,?,?,?,'high','open',?,'verification_blocker')")
                 .run(`repair-worker-result-${passed}`, f.project.id, f.contract.id, 'prior-blocker', JSON.stringify({ kind: 'worker_verification_blocker', reason: 'prior unresolved failure' }));
             const lease = acquireWorkflowLease(f.project.id, 'diagnostic-result');
             const packageBefore = await fs.readFile(path.join(f.dir, 'package.json'), 'utf8');

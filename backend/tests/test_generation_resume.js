@@ -527,9 +527,9 @@ await runAsyncTest('same-contract unmappable Tester veto stops before another Te
             db.prepare("UPDATE projects SET status='implementing', workflow_state=? WHERE id=?")
                 .run(JSON.stringify({ planHash: computePlanHash(plan), generationCompletion }), project.id);
             const owner = 'advisory-routing', lease = acquireWorkflowLease(project.id, owner);
-            db.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,run_id,fingerprint,severity,status,detail_json)
-                VALUES (?,?,?,?,?,'critical','open',?)`).run(`repair-${crypto.randomUUID()}`, project.id,
-                    sameContract ? contractId : oldId, lease.attempt.id, 'semantic-no-path', JSON.stringify({ issue: 'The required journey is incomplete; identify its file in a revision.' }));
+            db.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,run_id,fingerprint,severity,status,detail_json,attempt_id,origin)
+                VALUES (?,?,?,NULL,?,'critical','open',?,?,'static_audit')`).run(`repair-${crypto.randomUUID()}`, project.id,
+                    sameContract ? contractId : oldId, 'semantic-no-path', JSON.stringify({ issue: 'The required journey is incomplete; identify its file in a revision.' }), lease.attempt.id);
             const events = [];
             await executeProjectTasks(project.id, { publish(event) {
                 events.push(event);

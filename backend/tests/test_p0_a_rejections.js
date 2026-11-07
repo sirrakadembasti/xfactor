@@ -39,7 +39,7 @@ try {
                 frontend: { framework: 'react' },
                 backend: { framework: 'express' },
                 database: { engine: 'sqlite' }
-            }, 200);
+            }, null);
             approveContractRevision(project.id, revisionNumber);
             const contractId = db.prepare(`
                 SELECT id FROM project_contracts
@@ -49,8 +49,8 @@ try {
             const issueId = `issue-${Date.now()}`;
             db.prepare(`
                 INSERT INTO repair_issues (
-                    id, project_id, contract_id, fingerprint, severity, status
-                ) VALUES (?, ?, ?, 'syntax-error-App.jsx', 'critical', 'open')
+                    id, project_id, contract_id, fingerprint, severity, status, origin
+                ) VALUES (?, ?, ?, 'syntax-error-App.jsx', 'critical', 'open', 'static_audit')
             `).run(issueId, project.id, contractId);
 
             const openCount = db.prepare(`

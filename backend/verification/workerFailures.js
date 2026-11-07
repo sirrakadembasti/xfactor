@@ -119,8 +119,8 @@ export function recordWorkerRejection(context, { identity, terminalStatus, artif
     for (const detail of entries) {
         if (detail.checkId && !database.prepare('SELECT id FROM verification_checks WHERE id=? AND run_id=? AND contract_id=?').get(detail.checkId, identity.runId, context.contractId)) throw new Error('Rejection check provenance mismatch.');
         const id = `repair-worker-${digest([context.projectId, context.contractId, identity.runId, detail.fingerprint, detail.diagnostic?.line, detail.diagnostic?.column])}`;
-        database.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,run_id,fingerprint,severity,status,detail_json,attempt_id,lease_owner)
-            VALUES (?,?,?,?,?,'high','open',?,?,?) ON CONFLICT(id) DO NOTHING`).run(id, context.projectId, context.contractId,
+        database.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,run_id,fingerprint,severity,status,detail_json,attempt_id,lease_owner,origin)
+            VALUES (?,?,?,?,?,'high','open',?,?,?,'worker_rejection') ON CONFLICT(id) DO NOTHING`).run(id, context.projectId, context.contractId,
             identity.runId, detail.fingerprint, JSON.stringify(detail), context.attemptId ?? null, context.leaseOwner ?? null);
     }
 }
@@ -129,8 +129,8 @@ export function recordVerificationBlocker(context, { expectedIdentity, reason },
     const fingerprint = digest([context.contractId, context.contractHash, String(reason)]);
     const detail = { version: 1, kind: 'verification_controller_blocker', authenticatedWorker: false,
         contractHash: context.contractHash, expectedIdentity, reason: bounded(reason, 2048).text };
-    database.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json,attempt_id,lease_owner)
-        VALUES (?,?,?,?,'high','open',?,?,?) ON CONFLICT(id) DO NOTHING`).run(`repair-worker-${fingerprint}`, context.projectId,
+    database.prepare(`INSERT INTO repair_issues (id,project_id,contract_id,fingerprint,severity,status,detail_json,attempt_id,lease_owner,origin)
+        VALUES (?,?,?,?,'high','open',?,?,?,'verification_blocker') ON CONFLICT(id) DO NOTHING`).run(`repair-worker-${fingerprint}`, context.projectId,
         context.contractId, fingerprint, JSON.stringify(detail), context.attemptId ?? null, context.leaseOwner ?? null);
 }
 export function loadOpenWorkerRepairBatch({ projectId, contractId, contractHash }, database = db) {

@@ -34,7 +34,7 @@ const validPlan = {
 };
 
 function seedApprovedResumeContract(projectId) {
-    approveContractRevision(projectId, createContractRevision(projectId, validPlan, 'approved-resume-fixture'));
+    approveContractRevision(projectId, createContractRevision(projectId, validPlan, null));
 }
 
 const actionMessages = {
@@ -234,7 +234,7 @@ await runAsyncTest('action message append returns existing rows when either key 
 
 await runAsyncTest('approve appends exact canonical action pair and returns canonical state metadata', async () => {
     const project = await createProject({ title: 'Approve Action Route' });
-    createContractRevision(project.id, validPlan, 'approve-chat-message');
+    createContractRevision(project.id, validPlan, null);
     const pending = await readProjectState(project.id);
     pending.status = 'pending_approval';
     await writeProjectState(pending);
@@ -511,7 +511,7 @@ await runAsyncTest('verified download appends its canonical pair after evidence 
 await runAsyncTest('malformed action IDs are rejected before workflow mutation', async () => {
     for (const actionId of [' ', 'x'.repeat(129)]) {
         const project = await createProject({ title: `Malformed Action ${actionId.length}` });
-        createContractRevision(project.id, validPlan, `malformed-message-${actionId.length}`);
+        createContractRevision(project.id, validPlan, null);
         const pending = await readProjectState(project.id);
         pending.status = 'pending_approval';
         await writeProjectState(pending);
@@ -551,7 +551,7 @@ await runAsyncTest('invalid workflow transitions do not append action rows', asy
 
 await runAsyncTest('repeated approve and resume action requests are idempotent and append once', async () => {
     const approveProject = await createProject({ title: 'Repeated Approve Route' });
-    createContractRevision(approveProject.id, validPlan, 'approve-repeat-message');
+    createContractRevision(approveProject.id, validPlan, null);
     const pending = await readProjectState(approveProject.id);
     pending.status = 'pending_approval';
     await writeProjectState(pending);
@@ -607,7 +607,7 @@ await runAsyncTest('repeated approve and resume action requests are idempotent a
 });
 await runAsyncTest('concurrent approve requests elect one idempotent loser without duplicate audit rows', async () => {
     const project = await createProject({ title: 'Concurrent Approve Route' });
-    createContractRevision(project.id, validPlan, 'approve-concurrent-message');
+    createContractRevision(project.id, validPlan, null);
     const pending = await readProjectState(project.id);
     pending.status = 'pending_approval';
     await writeProjectState(pending);
@@ -658,7 +658,7 @@ await runAsyncTest('concurrent approve requests elect one idempotent loser witho
 
 await runAsyncTest('losing approve waits for winner publication before returning canonical state', async () => {
     const project = await createProject({ title: 'Barrier Approve Route' });
-    createContractRevision(project.id, validPlan, 'approve-barrier-message');
+    createContractRevision(project.id, validPlan, null);
     const pending = await readProjectState(project.id);
     pending.status = 'pending_approval';
     await writeProjectState(pending);
@@ -751,7 +751,7 @@ await runAsyncTest('workflow transitions and audit pairs roll back together on a
     `);
     try {
         const approveProject = await createProject({ title: 'Atomic Approve Route' });
-        createContractRevision(approveProject.id, validPlan, 'atomic-approve-message');
+        createContractRevision(approveProject.id, validPlan, null);
         const approveState = await readProjectState(approveProject.id);
         approveState.status = 'pending_approval';
         await writeProjectState(approveState);
@@ -862,7 +862,8 @@ await runAsyncTest('action message append rolls back the user row when the model
     );
 });
 
-assert.strictEqual(getSchemaVersion(), 17);
+const { MIGRATIONS } = await import('../db/migrations.js');
+assert.strictEqual(getSchemaVersion(), Math.max(...MIGRATIONS.map(migration => migration.version)));
 assert.ok(db.prepare('PRAGMA table_info(task_checkpoints)').all().some(column => column.name === 'task_identity_version' && column.notnull === 1 && column.dflt_value === '0'));
 assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='artifact_maintenance'").get());
 finish();

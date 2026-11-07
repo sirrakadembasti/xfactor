@@ -71,7 +71,7 @@ try {
             backend: { framework: 'express' },
             database: { engine: 'sqlite' }
         };
-        createContractRevision(project.id, validPlan, 'msg-approve-1');
+        createContractRevision(project.id, validPlan, null);
 
         const pending = await readProjectState(project.id);
         pending.status = 'pending_approval';
@@ -101,7 +101,7 @@ try {
         const project = await createProject({ title: 'Immediate approved HTTP resume' });
         const plan = { summary: 'React frontend', talimatname: '# React frontend', domains: [{ name: 'frontend', prefix: 'frontend' }],
             management: { needed: false, reason: 'Static HTTP fixture' } };
-        approveContractRevision(project.id, createContractRevision(project.id, plan, 'approved-http-resume'));
+        approveContractRevision(project.id, createContractRevision(project.id, plan, null));
         db.prepare("UPDATE projects SET status='implementing' WHERE id=?").run(project.id);
         const oldLease = acquireWorkflowLease(project.id, 'old-http-worker');
         abortProjectExecution(project.id, 'PAUSED'); // Pause arrived where no local controller was registered.
@@ -127,7 +127,7 @@ try {
             const project = await createProject({ title: `Unapproved HTTP resume ${draft}` });
             const plan = { summary: 'Unapproved React frontend', domains: [{ name: 'frontend', prefix: 'frontend' }],
                 management: { needed: false, reason: 'Static HTTP fixture' } };
-            if (draft === 'pending contract') createContractRevision(project.id, plan, 'pending-http-draft');
+            if (draft === 'pending contract') createContractRevision(project.id, plan, null);
             db.prepare("UPDATE projects SET status='paused',plan=? WHERE id=?").run(
                 draft === 'legacy plan' ? JSON.stringify(plan) : null, project.id);
             const before = db.prepare('SELECT * FROM projects WHERE id=?').get(project.id);

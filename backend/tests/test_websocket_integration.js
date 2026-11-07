@@ -336,7 +336,7 @@ try {
     await expectNoMessage(productionSocketB, () => runtime.wsHub.publish(productionEventA));
     assert.deepStrictEqual(await productionResponseA, productionEventA);
 
-    productionDb.prepare('UPDATE projects SET owner_id = NULL WHERE id = ?').run(projectA.body.id);
+    // project_owners is the only source of authority: removing the membership row revokes access.
     productionDb.prepare('DELETE FROM project_owners WHERE project_id = ? AND user_id = ?')
         .run(projectA.body.id, loginA.body.user.id);
     await expectNoMessage(productionSocketA, () => runtime.wsHub.publish({

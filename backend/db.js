@@ -89,9 +89,21 @@ export function runMigrations(targetDb = db) {
 
     for (const migration of MIGRATIONS) {
         if (!appliedVersions.has(migration.version)) {
+            // Table rebuilds must not run with enforcement on: dropping a parent table would
+            // cascade-delete its children. The pragma cannot change inside a transaction, so it is
+            // switched around it and every key is re-checked before the rebuild may commit.
+            const rebuildsTables = migration.disableForeignKeys === true;
+            if (rebuildsTables) targetDb.exec('PRAGMA foreign_keys = OFF;');
             targetDb.exec('BEGIN TRANSACTION;');
             try {
                 migration.up(targetDb);
+                if (rebuildsTables) {
+                    const violations = targetDb.prepare('PRAGMA foreign_key_check').all();
+                    if (violations.length) {
+                        const sample = violations.slice(0, 5).map(row => `${row.table}#${row.rowid}->${row.parent}`).join(', ');
+                        throw new Error(`Migration ${migration.name} would leave ${violations.length} foreign key violation(s): ${sample}`);
+                    }
+                }
                 targetDb.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)').run(
                     migration.version,
                     migration.name,
@@ -102,6 +114,8 @@ export function runMigrations(targetDb = db) {
             } catch (err) {
                 targetDb.exec('ROLLBACK;');
                 throw err;
+            } finally {
+                if (rebuildsTables) targetDb.exec('PRAGMA foreign_keys = ON;');
             }
         }
     }

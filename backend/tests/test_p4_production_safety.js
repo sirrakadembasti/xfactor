@@ -20,7 +20,7 @@ const workflowSource = await fs.readFile(new URL('../engine/workflow.js', import
 
 const projectId = 'p4-evidence-project';
 const contractId = 'p4-evidence-contract';
-db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P4 evidence', 'running')").run(projectId);
+db.prepare("INSERT INTO projects (id, title, status) VALUES (?, 'P4 evidence', 'implementing')").run(projectId);
 db.prepare("INSERT INTO project_contracts (id, project_id, revision, status, contract_json, contract_hash, approved_at) VALUES (?, ?, 1, 'approved', '{}', 'hash', CURRENT_TIMESTAMP)").run(contractId, projectId);
 
 

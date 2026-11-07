@@ -39,7 +39,7 @@ try {
             assert.strictEqual(invalidCheck.valid, false);
             assert.ok(invalidCheck.errors.some(error => error.includes('nuxt')));
 
-            const revision = createContractRevision(project.id, invalidPlan, 200);
+            const revision = createContractRevision(project.id, invalidPlan, null);
             const blockedProject = rejectContractForCapabilities({
                 projectId: project.id,
                 revision,

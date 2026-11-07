@@ -417,6 +417,34 @@ Aynı gün Faz 0 tamamlandı. Commit edilmemiş çalışma altı commit'e bölü
 
 Son koşuda beş CI işinin hepsi yeşil; `production-image` işi ilk kez çalıştı ve geçti.
 
+### Halka 34 — 6 Kasım: Faz 1 güvenlik sertleştirmesi
+
+[PR #4](https://github.com/sirrakadembasti/xfactor/pull/4) ile `main`'e alındı (merge `70882b9`). Değişiklikler:
+- Üretim, varsayılan `admin/xfactor` hesabını artık oluşturmuyor. Hiç yönetici yoksa ya da varsayılan parola kullanılıyorsa açılış durduruluyor. Geliştirme davranışı aynı.
+- `dev:docker` profilindeki sabit worker token'ı kaldırıldı; iki geliştirme profili de her koşuda rastgele token üretiyor.
+- Worker iş iptali, iş durumu okuması gibi `projectId` ile sınırlandı ve bütün worker yanıtları JSON olarak işaretlendi.
+
+Yerelde backend 176/176 süit, worker 205/205 test ve yerel worker entegrasyonu 208/208 test geçti. Beş CI işinin hepsi yeşil. Docker gerektiren üretim imajı kabulü yalnız CI'da çalıştı. Kullanıcı kararıyla asgari parola uzunluğu 6'da kaldı.
+
+### Halka 35 — 6 Kasım: Faz 2 şema bütünlüğü (migrasyon 18)
+
+Migrasyon 18, şemayı tek kanonik biçime taşıdı:
+- Proje yetkisi yalnız `project_owners`'tan okunuyor.
+- Durum ve rol alanları CHECK ile sınırlandı.
+- Attempt, koşu ve mesaj bağlantıları FK ile korunuyor.
+- Kullanılmayan iki tablo kaldırıldı.
+
+Tablo yeniden kurulumu için migrasyon koşucusu, FK denetimini işlem dışında kapatıp commit öncesi `foreign_key_check` ile doğrulayacak şekilde genişletildi.
+
+İnceleme sırasında üç gizli tutarsızlık bulundu ve kökten düzeltildi:
+- Statik denetim onarım kayıtları `run_id` alanına attempt kimliği yazıyordu. Yeni açık `origin` sütunuyla ayrıldılar.
+- Sahibi verilmeyen projelere sahte bir `legacy-local-owner` kullanıcısı yazılıyordu.
+- `running` proje durumu hiç var olmadığı hâlde sorgularda ölü dal olarak duruyordu.
+
+Canlı veritabanı önce `VACUUM INTO` ile yedeklendi. İki test kullanıcısı silindi, eski veri dosyaları yedek dizinine taşındı, ardından migrasyon uygulandı: satır sayıları aynı, 0 FK ihlali.
+
+Doğrulama: backend 177/177 süit, worker 205/205 test, yerel worker entegrasyonu 208/208, frontend 153/153; E2E 4 geçti, 1 atlandı. Zaman biçimi birleştirme kullanıcı kararıyla açık bırakıldı.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

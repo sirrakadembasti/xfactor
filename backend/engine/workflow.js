@@ -509,7 +509,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
 
     if (!state) return;
     const executionStatus = db.prepare('SELECT status FROM projects WHERE id=?').get(projectId)?.status;
-    if (!['implementing', 'running'].includes(executionStatus)) {
+    if (executionStatus !== 'implementing') {
         const error = new Error(`Workflow execution is not authorized from project status ${executionStatus || 'missing'}.`);
         error.code = 'WORKFLOW_EXECUTION_NOT_AUTHORIZED';
         if (attemptId) releaseWorkflowLease(attemptId, 'failed', { error: error.message, leaseOwner });
@@ -1202,8 +1202,8 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                 const pendingAdvisoryIssues = db.prepare(`SELECT id, detail_json FROM repair_issues
                     WHERE project_id = ? AND contract_id = ? AND status = 'open'
                       AND requirement_id IS NULL
-                      AND run_id IN (SELECT id FROM workflow_attempts WHERE project_id = ?)
-                    ORDER BY created_at, id`).all(projectId, approvedResumeContract.id, projectId);
+                      AND origin = 'static_audit'
+                    ORDER BY created_at, id`).all(projectId, approvedResumeContract.id);
                 await executeTesterAdvisoryRepairs({ projectDir, contractId: approvedResumeContract.id,
                     contractHash: approvedResumeContract.contract_hash, workflow: state.workflow,
                     repairIssues: pendingAdvisoryIssues, generatedProjectFiles, repairTargetFiles: [...repairTargetFiles],
@@ -1358,13 +1358,12 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
                                 INSERT INTO repair_issues (
                                     id, project_id, contract_id, run_id,
                                     fingerprint, severity, status, detail_json,
-                                    attempt_id, lease_owner
-                                ) VALUES (?, ?, ?, ?, ?, 'critical', 'open', ?, ?, ?)
+                                    attempt_id, lease_owner, origin
+                                ) VALUES (?, ?, ?, NULL, ?, 'critical', 'open', ?, ?, ?, 'static_audit')
                             `).run(
                                 issueId,
                                 projectId,
                                 latestContract.id,
-                                attemptId,
                                 fingerprint,
                                 JSON.stringify({ issue: issueText }),
                                 attemptId,

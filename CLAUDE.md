@@ -116,7 +116,19 @@ Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontg
   - Dashboard E2E ve Docker tarayıcı testlerinin hizalanması.
 
   Ayrıntılar röntgen raporunun Faz 0 bölümünde. Ara commit'ler tek başına test geçmeyebilir; tam süit `17bac2e` üzerinde geçer.
-- **Yol haritası sırası:** Faz 0 (zemin: commit ayrıştırma ve kırık testler) → Faz 1 (güvenlik: üretimde varsayılan admin, sabit dev token) → Faz 2 (şema: sahiplik tek kaynak, CHECK/FK, migrasyon 18+) → Faz 3 (API sözleşmesi) → Faz 4 (modül disiplini) → Faz 5 (stok-takip teslimi).
+- **Faz 1 kapandı (6 Kasım):** [PR #4](https://github.com/sirrakadembasti/xfactor/pull/4) `main`'e alındı (merge `70882b9`); beş CI işinin hepsi yeşildi. Yapılanlar:
+  - Üretim `admin/xfactor` hesabını oluşturmuyor. Hiç yönetici yoksa ya da bir yönetici varsayılan parolayı kullanıyorsa açılmıyor (`auth.js:assertProductionAdminCredentials`). Kullanıcı kararıyla asgari parola uzunluğu 6'da kaldı.
+  - İki geliştirme profili de her koşuda rastgele worker token'ı üretiyor.
+  - Worker iş iptali `projectId` kapsamlı; yanıtlar JSON.
+- **Faz 2 (6 Kasım, `faz-2/sema-butunlugu`, PR bekliyor):** Migrasyon 18 eklendi ve canlı DB'ye uygulandı (önce `VACUUM INTO` yedeği alındı: `backend/data/maintenance-backups/pre-migration-18-*`). Değişiklikler:
+  - Yetki yalnız `project_owners`'tan okunuyor; `owner_id` ve sahte `legacy-local-owner` kaldırıldı.
+  - Durum ve rol alanlarına CHECK eklendi.
+  - Attempt, koşu ve mesaj bağlantıları FK ile korunuyor.
+  - Onarım kayıtları açık `origin` taşıyor (statik denetim artık `run_id`'ye attempt yazmıyor).
+  - Ölü iki tablo kaldırıldı.
+
+  Zaman biçimi birleştirme (V-4) kullanıcı kararıyla kapsam dışı. Yeni kural: `repair_issues` yazan her kod `origin` vermek zorunda; yeni bir durum değeri eklenecekse yeni bir migrasyon gerekir (`MIGRATION_18_VALUES` ile kod sabitlerinin uyumunu `test_schema_canonical_constraints.js` denetler).
+- **Yol haritası sırası:** Faz 0 ✅ (zemin: commit ayrıştırma ve kırık testler) → Faz 1 ✅ (güvenlik: üretimde varsayılan admin, sabit dev token) → Faz 2 (şema: sahiplik tek kaynak, CHECK/FK, migrasyon 18+) → Faz 3 (API sözleşmesi) → Faz 4 (modül disiplini) → Faz 5 (stok-takip teslimi).
 - **stok-takip-1:** sözleşme 3 onaylı; sözleşme 4 (30 Ekim) hâlâ `pending_approval`. Bu taslak onaylanırsa tam DAG üretimi yeniden tetiklenebilir. Devam etmeden önce taslak için kullanıcı kararı al.
 
 ## 5a. Devralma — 4 Kasım 2026

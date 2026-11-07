@@ -395,11 +395,7 @@ export function getProjectRole(userId, projectId) {
         return null;
     }
 
-    const project = db.prepare('SELECT owner_id FROM projects WHERE id = ?').get(projectId);
-    if (project && project.owner_id === userId) {
-        return 'owner';
-    }
-
+    // project_owners is the single source of project authority.
     const row = db.prepare('SELECT role FROM project_owners WHERE project_id = ? AND user_id = ? LIMIT 1').get(projectId, userId);
     return row ? row.role : null;
 }
@@ -430,7 +426,11 @@ export function createProjectForUser(userId, input) {
 
 export function getUserProjects(userId) {
     return db.prepare(`
-        SELECT p.id, p.title, p.status, p.owner_id AS ownerId, p.is_pinned AS isPinned, p.created_at AS createdAt
+        SELECT p.id, p.title, p.status,
+            (SELECT owner.user_id FROM project_owners owner
+             WHERE owner.project_id = p.id AND owner.role = 'owner'
+             ORDER BY owner.created_at, owner.user_id LIMIT 1) AS ownerId,
+            p.is_pinned AS isPinned, p.created_at AS createdAt
         FROM projects p
         INNER JOIN project_owners po ON po.project_id = p.id
         WHERE po.user_id = ?
@@ -442,7 +442,9 @@ export function getUserProjects(userId) {
 }
 export function setProjectRole(projectId, userId, role) {
     const allowedRoles = new Set(['owner', 'editor', 'viewer']);
-    const safeRole = allowedRoles.has(role) ? role : 'viewer';
+    // Fail closed: an unknown role is a caller error, never a silent downgrade to viewer.
+    if (!allowedRoles.has(role)) throw new Error(`Geçersiz proje rolü: ${String(role)}`);
+    const safeRole = role;
     const existing = db.prepare('SELECT role FROM project_owners WHERE project_id = ? AND user_id = ?').get(projectId, userId);
 
     if (existing) {
