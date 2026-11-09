@@ -14,10 +14,11 @@ const { db } = await import('../db.js');
 isolated.registerDatabase(db);
 const { createProjectRouter } = await import('../routes/projectRoutes.js');
 const { redactSensitiveText, createCorrelatedContext, cleanupStaleLogs } = await import('../observability.js');
+const shapes = await import('../routes/observabilityShapes.js');
 const { getProjectRole, canViewProject, canEditProject } = await import('../auth.js');
 import { createTestHarness } from './testHarness.js';
 
-const { runAsyncTest, finish } = createTestHarness();
+const { runAsyncTest, runTest, finish } = createTestHarness();
 
 // seed users and memberships
 const ownerUserId = 'p3-user-owner';
@@ -136,6 +137,34 @@ function assertExactKeys(obj, expectedKeys, label) {
   assert.deepStrictEqual(actual, exp, `${label} keys mismatch: got ${actual.join(',')} expected ${exp.join(',')}`);
 }
 
+// The route tests above read the shared shapes; this snapshot is the single place a deliberate API
+// change must be acknowledged, so an accidental field change in the shapes module still fails here.
+runTest('P3.1 observability response shapes match the published API contract', () => {
+  assert.deepStrictEqual([...shapes.CONTRACT_SUMMARY_KEYS], ['id','revision','status','contract_hash','approved_at','created_at']);
+  assert.deepStrictEqual([...shapes.RUN_SUMMARY_KEYS], ['id','contract_id','status','policy_version','started_at','ended_at']);
+  assert.deepStrictEqual([...shapes.CHECK_SUMMARY_KEYS], ['id','gate_name','applicability','status','exit_code','reason','stdout_digest','stderr_digest','started_at','ended_at','timed_out']);
+  assert.deepStrictEqual([...shapes.CHECK_LOCAL_PROFILE_KEYS], ['executionProfile','osIsolation']);
+  assert.deepStrictEqual([...shapes.CHECK_LOG_KEYS], ['id','gate_name','stdout','stderr']);
+  assert.deepStrictEqual([...shapes.REPAIR_ISSUE_KEYS], ['id','contract_id','requirement_id','severity','status','resolved_at']);
+  assert.deepStrictEqual([...shapes.ARTIFACT_SUMMARY_KEYS], ['id','kind','sha256','size','status','verificationRunId']);
+});
+
+runTest('P3.1 check rows keep one shape for unreadable evidence and expose the local profile only when true', () => {
+  const base = { id: 'c', gate_name: 'api_contract', applicability: 'MANDATORY', status: 'PASS', exit_code: 0,
+    stdout_digest: 'a', stderr_digest: 'b', started_at: 't0', ended_at: 't1', timed_out: 0 };
+  for (const evidence_json of ['not json', null, '[1,2]', '{"reason":42}']) {
+    const row = shapes.projectCheckSummary({ ...base, evidence_json });
+    assertExactKeys(row, shapes.CHECK_SUMMARY_KEYS, `check(${evidence_json})`);
+    assert.strictEqual(row.reason, '');
+  }
+  const local = shapes.projectCheckSummary({ ...base, evidence_json: JSON.stringify({ reason: 'token=abc123secret ok', executionProfile: 'local-trusted', osIsolation: false }) });
+  assertExactKeys(local, [...shapes.CHECK_SUMMARY_KEYS, ...shapes.CHECK_LOCAL_PROFILE_KEYS], 'local check');
+  assert.ok(!local.reason.includes('abc123secret'), 'reason is redacted');
+  const isolated = shapes.projectCheckSummary({ ...base, evidence_json: JSON.stringify({ executionProfile: 'local-trusted', osIsolation: true }) });
+  assertExactKeys(isolated, shapes.CHECK_SUMMARY_KEYS, 'isolated check');
+  assert.strictEqual(shapes.projectCheckSummary({ ...base, evidence_json: JSON.stringify({ reason: 'x'.repeat(5000) }) }).reason.length, shapes.MAX_CHECK_REASON_LENGTH);
+});
+
 // =========================================================================
 // P3.1 Authorized Read-Only Evidence and Contract APIs
 // =========================================================================
@@ -159,7 +188,7 @@ await runAsyncTest('P3.1 contracts endpoint 200 with exact structure', async () 
   assert.ok(Array.isArray(body));
   assert.ok(body.length >= 2);
   for (const c of body) {
-    assertExactKeys(c, ['id','revision','status','contract_hash','approved_at','created_at'], 'contract');
+    assertExactKeys(c, shapes.CONTRACT_SUMMARY_KEYS, 'contract');
     assert.ok(typeof c.id === 'string');
     assert.ok(typeof c.revision === 'number');
   }
@@ -192,7 +221,7 @@ await runAsyncTest('P3.1 verification-runs list 401/403 and 200 with exact outer
   assertExactKeys(body, ['runs','nextCursor'], 'verification-runs outer');
   assert.ok(Array.isArray(body.runs));
   for (const r of body.runs) {
-    assertExactKeys(r, ['id','contract_id','status','policy_version','started_at','ended_at'], 'run');
+    assertExactKeys(r, shapes.RUN_SUMMARY_KEYS, 'run');
   }
   // deterministic ordering: started_at DESC, id ASC -> latest first (later), then tie sorted by id
   const idsOrdered = body.runs.map(r=>r.id);
@@ -262,10 +291,10 @@ await runAsyncTest('P3.1 verification run detail 401/403/200 exact keys and nest
   const { status, body } = await requestWithMocks(`/api/projects/${projId}/verification-runs/${runId1}`, { authed: true });
   assert.strictEqual(status, 200);
   assertExactKeys(body, ['run','checks'], 'detail outer');
-  assertExactKeys(body.run, ['id','contract_id','status','policy_version','started_at','ended_at'], 'detail run');
+  assertExactKeys(body.run, shapes.RUN_SUMMARY_KEYS, 'detail run');
   assert.ok(Array.isArray(body.checks));
   for (const ch of body.checks) {
-    assertExactKeys(ch, ['id','gate_name','applicability','status','exit_code','reason','stdout_digest','stderr_digest','started_at','ended_at','timed_out'], 'check');
+    assertExactKeys(ch, shapes.CHECK_SUMMARY_KEYS, 'check');
     assert.strictEqual(typeof ch.reason, 'string');
     assert.ok(ch.reason.length <= 4000);
   }
@@ -291,7 +320,7 @@ await runAsyncTest('P3.1 log endpoint 401/403/200 exact keys redacted and isolat
   assert.strictEqual(r403.status, 403);
   const { status, body } = await requestWithMocks(`/api/projects/${projId}/verification-runs/${runId1}/checks/${checkId1}/log`, { authed: true });
   assert.strictEqual(status, 200);
-  assertExactKeys(body, ['id','gate_name','stdout','stderr'], 'log');
+  assertExactKeys(body, shapes.CHECK_LOG_KEYS, 'log');
   assert.strictEqual(body.id, checkId1);
   assert.strictEqual(body.gate_name, 'api_contract');
   assert.ok(typeof body.stdout === 'string');
@@ -355,7 +384,7 @@ await runAsyncTest('P3.1 repair-issues endpoint 401/403/200 exact keys', async (
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body));
   for (const it of body) {
-    assertExactKeys(it, ['contract_id','id','requirement_id','resolved_at','severity','status'], 'repair');
+    assertExactKeys(it, shapes.REPAIR_ISSUE_KEYS, 'repair');
   }
 });
 
@@ -368,7 +397,7 @@ await runAsyncTest('P3.1 artifacts endpoint 401/403/200 exact keys', async () =>
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body));
   for (const a of body) {
-    assertExactKeys(a, ['id','kind','sha256','size','status','verificationRunId'], 'artifact');
+    assertExactKeys(a, shapes.ARTIFACT_SUMMARY_KEYS, 'artifact');
     assert.strictEqual('path' in a, false);
     assert.strictEqual('manifestJson' in a, false);
   }

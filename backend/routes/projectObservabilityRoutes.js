@@ -8,13 +8,20 @@ import { asyncHandler } from '../security.js';
 import { readExecutionProgress } from '../verification/executionProgress.js';
 import { readLatestAttemptObservation } from '../verification/attemptObservation.js';
 import {
-    redactSensitiveText,
     getGateMetrics,
     getStackMetrics,
     getTrendMetrics,
     getFailureMetrics
 } from '../observability.js';
 import { listArtifacts } from '../repositories/artifactRepository.js';
+import {
+    projectArtifactSummary,
+    projectCheckLog,
+    projectCheckSummary,
+    projectContractSummary,
+    projectRepairIssue,
+    projectRunSummary
+} from './observabilityShapes.js';
 
 function rejectRepeatedQuery(req) {
     for (const v of Object.values(req.query || {})) {
@@ -51,15 +58,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             SELECT id, revision, status, contract_hash, approved_at, created_at
             FROM project_contracts WHERE project_id = ? ORDER BY revision ASC
         `).all(req.params.id);
-        const result = rows.map(r => ({
-            id: r.id,
-            revision: r.revision,
-            status: r.status,
-            contract_hash: r.contract_hash,
-            approved_at: r.approved_at,
-            created_at: r.created_at
-        }));
-        res.json(result);
+        res.json(rows.map(projectContractSummary));
     }));
 
     router.get('/:id/verification-runs', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
@@ -129,15 +128,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             const last = slice[slice.length - 1];
             nextCursor = Buffer.from(JSON.stringify({ id: last.id, started_at: last.started_at })).toString('base64url');
         }
-        const runs = slice.map(r => ({
-            id: r.id,
-            contract_id: r.contract_id,
-            status: r.status,
-            policy_version: r.policy_version,
-            started_at: r.started_at,
-            ended_at: r.ended_at
-        }));
-        res.json({ runs, nextCursor });
+        res.json({ runs: slice.map(projectRunSummary), nextCursor });
     }));
 
     router.get('/:id/verification-runs/:runId', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
@@ -151,27 +142,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             SELECT id, gate_name, applicability, status, exit_code, stdout_digest, stderr_digest, started_at, ended_at, timed_out, evidence_json
             FROM verification_checks WHERE run_id = ? AND contract_id = ? ORDER BY started_at ASC, id ASC
         `).all(run.id, run.contract_id);
-        const mappedChecks = checks.map(c => ({
-            id: c.id,
-            gate_name: c.gate_name,
-            applicability: c.applicability,
-            status: c.status,
-            exit_code: c.exit_code,
-            stdout_digest: c.stdout_digest,
-            stderr_digest: c.stderr_digest,
-            started_at: c.started_at,
-            ended_at: c.ended_at,
-            timed_out: c.timed_out,
-            ...(() => {
-                try {
-                    const evidence = JSON.parse(c.evidence_json || '{}');
-                    const reason = typeof evidence.reason === 'string' ? redactSensitiveText(evidence.reason).slice(0, 4000) : '';
-                    return { reason, ...(evidence.executionProfile === 'local-trusted' && evidence.osIsolation === false
-                        ? { executionProfile: 'local-trusted', osIsolation: false } : {}) };
-                } catch { return {}; }
-            })()
-        }));
-        res.json({ run: { id: run.id, contract_id: run.contract_id, status: run.status, policy_version: run.policy_version, started_at: run.started_at, ended_at: run.ended_at }, checks: mappedChecks });
+        res.json({ run: projectRunSummary(run), checks: checks.map(projectCheckSummary) });
     }));
 
     router.get('/:id/verification-runs/:runId/checks/:checkId/log', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
@@ -184,21 +155,7 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             SELECT id, gate_name, evidence_json FROM verification_checks WHERE id = ? AND run_id = ? AND contract_id = ?
         `).get(req.params.checkId, run.id, run.contract_id);
         if (!check) return res.status(404).json({ error: 'Check not found' });
-        let stdout = '';
-        let stderr = '';
-        try {
-            const ev = check.evidence_json ? JSON.parse(check.evidence_json) : {};
-            if (ev.evidence && typeof ev.evidence === 'object') {
-                stdout = typeof ev.evidence.stdout === 'string' ? ev.evidence.stdout : '';
-                stderr = typeof ev.evidence.stderr === 'string' ? ev.evidence.stderr : '';
-                if (!stdout && typeof ev.stdout === 'string') stdout = ev.stdout;
-                if (!stderr && typeof ev.stderr === 'string') stderr = ev.stderr;
-            } else {
-                stdout = typeof ev.stdout === 'string' ? ev.stdout : '';
-                stderr = typeof ev.stderr === 'string' ? ev.stderr : '';
-            }
-        } catch { stdout = ''; stderr = ''; }
-        res.json({ id: check.id, gate_name: check.gate_name, stdout: redactSensitiveText(stdout), stderr: redactSensitiveText(stderr) });
+        res.json(projectCheckLog(check));
     }));
 
     router.get('/:id/repair-issues', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
@@ -207,28 +164,11 @@ export function registerProjectObservabilityRoutes(router, deps = {}) {
             SELECT id, contract_id, requirement_id, severity, status, resolved_at
             FROM repair_issues WHERE project_id = ? ORDER BY created_at DESC
         `).all(req.params.id);
-        const result = rows.map(r => ({
-            id: r.id,
-            contract_id: r.contract_id,
-            requirement_id: r.requirement_id,
-            severity: r.severity,
-            status: r.status,
-            resolved_at: r.resolved_at
-        }));
-        res.json(result);
+        res.json(rows.map(projectRepairIssue));
     }));
 
     router.get('/:id/artifacts', requireAuth, projectAccess('viewer'), asyncHandler(async (req, res) => {
-        const db = deps.db ?? defaultDb;
-        const result = listArtifacts({ projectId: req.params.id }).map(artifact => ({
-            id: artifact.id,
-            kind: artifact.kind,
-            sha256: artifact.sha256,
-            size: artifact.size,
-            status: artifact.status,
-            verificationRunId: artifact.verificationRunId
-        }));
-        res.json(result);
+        res.json(listArtifacts({ projectId: req.params.id }).map(projectArtifactSummary));
     }));
 
     // P3.2 Metrics APIs - read-only, scoped, finite
