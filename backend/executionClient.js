@@ -24,10 +24,23 @@ export function createExecutionClient(config = {}, { onProgress } = {}) {
     // Advisory observation cannot interrupt job polling or authorize acceptance.
     try { Promise.resolve(onProgress(observation)).catch(() => {}); } catch {}
   };
+  const configuredTimeout = Number(config.EXECUTION_WORKER_REQUEST_TIMEOUT_MS);
+  const requestTimeoutMs = Number.isInteger(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 60000;
+  // Every worker call is bounded: a worker that accepts the socket but never answers must not hang the
+  // backend. The caller's signal still aborts first; only our own deadline becomes WORKER_REQUEST_TIMEOUT.
   async function request(path, options = {}) {
-    const res = await fetch(`${workerUrl}${path}`, { ...options, headers: { Authorization: `Bearer ${workerToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
-    if (!res.ok) { let message = res.statusText; try { const body = await res.json(); if (body?.error) message = body.error; } catch {} throw new Error(`Worker error (${res.status}): ${message}`); }
-    return res.json();
+    const timeout = AbortSignal.timeout(requestTimeoutMs);
+    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+    try {
+      const res = await fetch(`${workerUrl}${path}`, { ...options, signal, headers: { Authorization: `Bearer ${workerToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
+      if (!res.ok) { let message = res.statusText; try { const body = await res.json(); if (body?.error) message = body.error; } catch {} throw new Error(`Worker error (${res.status}): ${message}`); }
+      return await res.json();
+    } catch (error) {
+      if (timeout.aborted && !options.signal?.aborted) {
+        throw Object.assign(new Error(`Worker request timed out after ${requestTimeoutMs} ms: ${path.split('?')[0]}`, { cause: error }), { code: 'WORKER_REQUEST_TIMEOUT' });
+      }
+      throw error;
+    }
   }
   async function submitAndPoll(input, operation, signal) {
     const job = identityOf(input, operation); if (!job.runId) throw new Error('caller-supplied runId is required');
@@ -51,7 +64,8 @@ export function createExecutionClient(config = {}, { onProgress } = {}) {
           firstTransportFailureAt = null;
         } catch (error) {
           if (signal?.aborted) await abort();
-          if (!(error instanceof TypeError) || !/fetch failed/i.test(error.message)) throw error;
+          const transient = (error instanceof TypeError && /fetch failed/i.test(error.message)) || error?.code === 'WORKER_REQUEST_TIMEOUT';
+          if (!transient) throw error;
           firstTransportFailureAt ??= Date.now();
           if (Date.now() >= Math.min(job.deadline || Infinity, firstTransportFailureAt + 60000)) throw error;
           await new Promise(resolve => setTimeout(resolve, 1000));
