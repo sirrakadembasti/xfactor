@@ -1,5 +1,11 @@
 import crypto from 'crypto';
 import { db } from './db.js';
+import { logError } from './observability.js';
+import { WORKFLOW_STATUS } from './engine/stateMachine.js';
+
+// stale_terminated is written only by restart reconciliation, never by a lease holder.
+const RELEASABLE_STATUSES = new Set(Object.values(WORKFLOW_STATUS)
+    .filter(status => ![WORKFLOW_STATUS.RUNNING, WORKFLOW_STATUS.STALE_TERMINATED].includes(status)));
 
 const activeLeases = new Map(); // projectId -> { attemptId, leaseOwner }
 const DEFAULT_HEARTBEAT_TTL_SECONDS = 30;
@@ -167,6 +173,11 @@ export function releaseWorkflowLease(attemptId, terminalStatus = 'completed', {
     database = db
 } = {}) {
     if (!attemptId || !leaseOwner) return false;
+    // A caller passing an unknown terminal status is a programming error: surface it instead of
+    // letting the schema CHECK reject the update silently and leave the attempt running.
+    if (!RELEASABLE_STATUSES.has(terminalStatus)) {
+        throw new Error(`Invalid workflow attempt terminal status: ${String(terminalStatus)}`);
+    }
 
     try {
         const attempt = database.prepare(
@@ -190,6 +201,9 @@ export function releaseWorkflowLease(attemptId, terminalStatus = 'completed', {
         }
         return result.changes > 0;
     } catch (err) {
+        // Release runs from finally blocks, so throwing would mask the original failure. The
+        // attempt stays recoverable by stale-heartbeat reconciliation; the failure is recorded.
+        logError('workflow.lease_release_failed', err, { attemptId, terminalStatus });
         return false;
     }
 }
