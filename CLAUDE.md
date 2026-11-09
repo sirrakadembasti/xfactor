@@ -128,6 +128,11 @@ Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontg
   - Ölü iki tablo kaldırıldı.
 
   Zaman biçimi birleştirme (V-4) kullanıcı kararıyla kapsam dışı. Yeni kural: `repair_issues` yazan her kod `origin` vermek zorunda; yeni bir durum değeri eklenecekse yeni bir migrasyon gerekir (`MIGRATION_18_VALUES` ile kod sabitlerinin uyumunu `test_schema_canonical_constraints.js` denetler).
+- **Faz 3 (7 Kasım, `faz-3/api-sozlesmesi`, PR bekliyor):**
+  - `releaseWorkflowLease` geçersiz terminal durumu reddediyor ve veritabanı hatalarını log'a yazıyor.
+  - `executionClient` her worker isteğini 60 sn ile sınırlıyor (`WORKER_REQUEST_TIMEOUT`).
+  - Gözlemlenebilirlik yanıt şekilleri `routes/observabilityShapes.js`'te tek kaynakta toplandı.
+  - İstemcisiz dokuz uç, kullanıcı kararıyla kılavuzda iç ve teşhis API'si olarak belgelendi.
 - **Yol haritası sırası:** Faz 0 ✅ (zemin: commit ayrıştırma ve kırık testler) → Faz 1 ✅ (güvenlik: üretimde varsayılan admin, sabit dev token) → Faz 2 ✅ (şema: sahiplik tek kaynak, CHECK/FK, migrasyon 18) → Faz 3 (API sözleşmesi) → Faz 4 (modül disiplini) → Faz 5 (stok-takip teslimi).
 - **stok-takip-1:** sözleşme 3 onaylı; sözleşme 4 (30 Ekim) hâlâ `pending_approval`. Bu taslak onaylanırsa tam DAG üretimi yeniden tetiklenebilir. Devam etmeden önce taslak için kullanıcı kararı al.
 

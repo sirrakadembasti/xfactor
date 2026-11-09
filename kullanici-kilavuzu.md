@@ -572,6 +572,26 @@ XFactor kullanıcı arayüzü React 18, TailwindCSS ve Vite üzerine inşa edilm
 | `x-agents/` | Platform Ajan Talimatları & Şablonlar | Orkestrasyon anayasası, altı rol talimatı ve görev/durum/rapor şablonları. Backend sistem istemlerini yalnız sabit ve izinli bu kaynaktan yükler. |
 | `docs/` | Geliştirme & İşletim Belgeleri | Operasyon kılavuzları, tasarım/uygulama planları ve inceleme raporları; ajan sistem istemi kaynağı değildir. |
 
+<a id="ic-ve-teshis-api"></a>
+
+### İç ve teşhis API'si
+
+Aşağıdaki uçlar arayüzde hiçbir ekrandan çağrılmaz. Çalışır durumdadırlar ve testlerle korunurlar; operatör teşhisi, betikler ya da ileride eklenecek ekranlar için ayrılmıştır. Hepsi oturum çerezi ister ve proje üyeliğiyle sınırlıdır; durum değiştiren uçlar ayrıca CSRF başlığı (`x-xfactor-csrf`) gerektirir. Yanıt şekilleri `backend/routes/observabilityShapes.js` içinde tanımlıdır.
+
+| Uç | Yetki | Ne döner |
+|---|---|---|
+| `GET /api/projects/:id/contracts` | viewer | Sözleşme revizyonları: kimlik, durum, özet ve tarih. |
+| `GET /api/projects/:id/repair-issues` | viewer | Onarım kayıtları: önem, durum ve çözülme zamanı. |
+| `GET /api/projects/:id/artifacts` | viewer | ZIP artefaktları: tür, SHA-256, boyut, durum ve doğrulama koşusu. |
+| `GET /api/projects/:id/metrics/gates` | viewer | Kapı bazında koşu, geçen, kalan, bloke sayıları ve ortalama süre. |
+| `GET /api/projects/:id/metrics/stacks` | viewer | Yığın bazında başarı oranı ve ortalama süre. |
+| `GET /api/projects/:id/metrics/trends` | viewer | Gün bazında koşu sayısı ve başarı oranı. |
+| `GET /api/projects/:id/metrics/failures` | viewer | Redakte edilmiş hata parmak izleri ve tekrar sayıları. |
+| `GET /api/projects/:id/requirements/:reqId/impact` | viewer | Bir gereksinimden etkilenen görevler, checkpoint'ler ve dosyalar. |
+| `POST /api/projects/:id/verify` | owner | Yalnız `implementation_finished` ya da `verification_pending` durumundaki projede doğrulama başlatır; diğer durumlarda 409 döner. |
+
+Arayüzün kullandığı uçlar `frontend/src/services/api.js` içindedir. Yukarıdaki listeye yeni bir ekran bağlanırsa uç bu tablodan çıkarılmalıdır.
+
 <a id="11-18-zorunlu-kalite-kapısı-ve-temiz-oda-doğrulama-sistemi-politika-20"></a>
 
 ## 11. Ana Kalite Kapıları ve Ek Zorunlu Kontroller (Politika 2.0)
