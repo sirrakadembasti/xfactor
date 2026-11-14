@@ -16,7 +16,12 @@ const { evaluateVerificationRun } = await import('../verification/qualityPolicy.
 const { completeVerifiedProject, assertVerifiedArtifactEvidence } = await import('../projectRepository.js');
 const artifactRepository = await import('../repositories/artifactRepository.js');
 const crypto = await import('crypto');
-const workflowSource = await fs.readFile(new URL('../engine/workflow.js', import.meta.url), 'utf8');
+// The workflow engine spans workflow.js, its helper module and the stage modules;
+// source guards must cover all of them so a moved stage cannot escape the check.
+const stageDir = new URL('../engine/stages/', import.meta.url);
+const workflowSourceFiles = [new URL('../engine/workflow.js', import.meta.url), new URL('../engine/workflowSupport.js', import.meta.url),
+    ...(await fs.readdir(stageDir)).filter(name => name.endsWith('.js')).sort().map(name => new URL(name, stageDir))];
+const workflowSource = (await Promise.all(workflowSourceFiles.map(file => fs.readFile(file, 'utf8')))).join('\n');
 
 const projectId = 'p4-evidence-project';
 const contractId = 'p4-evidence-contract';

@@ -816,7 +816,12 @@ await runAsyncTest("20. Multi-file code generator should safely write files and 
 });
 
 runTest("20b. Workflow must route generated file writes through safe path guard", () => {
-    const workflowSource = fs.readFileSync(path.join(projectRoot, 'backend', 'engine', 'workflow.js'), 'utf8');
+    // workflow.js delegates stages to engine/stages/; the guard covers every module of the engine.
+    const engineDir = path.join(projectRoot, 'backend', 'engine');
+    const stageDir = path.join(engineDir, 'stages');
+    const workflowSource = [path.join(engineDir, 'workflow.js'), path.join(engineDir, 'workflowSupport.js'),
+        ...fs.readdirSync(stageDir).filter(name => name.endsWith('.js')).sort().map(name => path.join(stageDir, name))]
+        .map(file => fs.readFileSync(file, 'utf8')).join('\n');
 
     assert.ok(
         /writeGeneratedFiles/.test(workflowSource),
