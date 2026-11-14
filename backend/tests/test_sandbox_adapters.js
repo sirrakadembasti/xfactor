@@ -55,7 +55,10 @@ await runAsyncTest('1. Sandbox runner should route execution to injected adapter
 
 await runAsyncTest('2. Sandbox runner should fail-closed with SANDBOX_UNAVAILABLE when no valid adapter is available', async () => {
     await assert.rejects(
-        executeInSandbox('node', ['-e', '0'], { adapter: null, workspace: 'test-workspace' }),
+        executeInSandbox('node', ['-e', '0'], {
+            adapter: new PortableSandboxAdapter('bubblewrap', { platform: () => 'unsupported-host' }),
+            workspace: 'test-workspace'
+        }),
         error => error.code === 'SANDBOX_UNAVAILABLE'
     );
 });
