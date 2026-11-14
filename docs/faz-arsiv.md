@@ -445,6 +445,20 @@ Canlı veritabanı önce `VACUUM INTO` ile yedeklendi. İki test kullanıcısı 
 
 Doğrulama: backend 177/177 süit, worker 205/205 test, yerel worker entegrasyonu 208/208, frontend 153/153; E2E 4 geçti, 1 atlandı. Zaman biçimi birleştirme kullanıcı kararıyla açık bırakıldı.
 
+7 Kasım'da [PR #5](https://github.com/sirrakadembasti/xfactor/pull/5), beş CI işinin hepsi yeşilken `main`'e alındı (merge `e348566`).
+
+### Halka 36 — 7 Kasım: Faz 3 API sözleşmesi
+
+Faz 3 dört maddeyle uygulandı:
+- Lease bırakma artık geçersiz terminal durumu açıkça reddediyor ve veritabanı hatalarını sessizce yutmuyor; bu, Faz 2'nin migrasyon 18 CHECK'leriyle ortaya çıkan bir riskti.
+- Worker istemcisinin her isteği varsayılan bir zaman aşımıyla sınırlandı.
+- Gözlemlenebilirlik yanıt şekilleri tek modülde toplandı ve bir sözleşme anlık görüntüsü testiyle korundu.
+- Arayüzün kullanmadığı dokuz uç, kullanıcı kararıyla iç ve teşhis API'si olarak belgelendi.
+
+README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında makinedeki dış yük bazı süitleri zaman aşımına uğrattı; aynı süitler yük azalınca geçti.
+
+14 Kasım'da CI'ın `ubuntu-26.04` imajına geçtiği görüldü. Bu imajda `bwrap` kurulu geldiği için "sandbox yok" varsayan iki test düştü. Testler, makineden bağımsız olarak kullanılamaz bir adapter verecek biçimde düzeltildi; ürün kodu değişmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

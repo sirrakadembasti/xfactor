@@ -12,6 +12,12 @@ import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { validateProjectBuild } from '../engine/buildValidator.js';
+import { PortableSandboxAdapter } from '../verification/adapters/portableSandbox.js';
+
+// The gate must fail closed whenever no isolation is available. Inject an adapter
+// that is unavailable on every host so the result does not depend on whether
+// the machine running the tests happens to have bubblewrap installed.
+const UNAVAILABLE_SANDBOX = new PortableSandboxAdapter('bubblewrap', { platform: () => 'unsupported-host' });
 
 const TEST_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'xfactor-build-sandbox-gate-'));
 
@@ -52,7 +58,7 @@ await runTest("A. Default (unsandboxed): framework_build blocked + passed=false 
     }, null, 2), 'utf8');
 
 
-    const result = await validateProjectBuild(dir, { title: 'Default Unsandboxed' }, {});
+    const result = await validateProjectBuild(dir, { title: 'Default Unsandboxed' }, {}, { adapter: UNAVAILABLE_SANDBOX });
 
     // 1) Fail-closed: toplam sonuç passed olmamalı.
     assert.strictEqual(result.passed, false, 'Sandbox runner yokken build gate fail-closed (passed=false) olmalı');
@@ -81,7 +87,7 @@ await runTest("A. Default (unsandboxed): framework_build blocked + passed=false 
         scripts: { build: 'node -e "process.exit(0)"' }
     }, null, 2), 'utf8');
 
-    const noNmResult = await validateProjectBuild(noNodeModulesDir, { title: 'No Node Modules' }, {});
+    const noNmResult = await validateProjectBuild(noNodeModulesDir, { title: 'No Node Modules' }, {}, { adapter: UNAVAILABLE_SANDBOX });
     const noNmBuildCheck = noNmResult.checks.find(c => c.name === 'framework_build');
     assert.ok(noNmBuildCheck, 'node_modules yokken framework_build check mevcut olmalı');
     assert.strictEqual(noNmBuildCheck.status, 'blocked', 'node_modules yokken framework_build blocked olmalı');
@@ -102,7 +108,7 @@ await runTest("B. XFACTOR_BUILD_SANDBOX=host: build remains blocked and host scr
         }
     }, null, 2), 'utf8');
 
-    const result = await validateProjectBuild(dir, { title: 'Host Flag Ignored' }, {});
+    const result = await validateProjectBuild(dir, { title: 'Host Flag Ignored' }, {}, { adapter: UNAVAILABLE_SANDBOX });
 
     assert.strictEqual(result.passed, false);
     const buildCheck = result.checks.find(c => c.name === 'framework_build');

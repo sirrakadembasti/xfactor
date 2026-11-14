@@ -46,6 +46,27 @@ await runAsyncTest('1. acquireWorkflowLease should create attempt, block duplica
     await deleteProject(project.id);
 });
 
+await runAsyncTest('1a. lease release rejects unknown terminal statuses instead of silently leaving the attempt running', async () => {
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { acquireWorkflowLease, releaseWorkflowLease } = await import('../workflowAttempts.js');
+    const { db } = await import('../db.js');
+    const project = await createProject({ title: 'Lease Release Status Test' });
+    try {
+        const lease = acquireWorkflowLease(project.id, 'release-status-owner');
+        assert.strictEqual(lease.acquired, true);
+        const status = () => db.prepare('SELECT status FROM workflow_attempts WHERE id = ?').get(lease.attempt.id).status;
+        for (const invalid of ['done', 'running', 'stale_terminated', null]) {
+            assert.throws(() => releaseWorkflowLease(lease.attempt.id, invalid, { leaseOwner: 'release-status-owner' }),
+                /Invalid workflow attempt terminal status/);
+            assert.strictEqual(status(), 'running', `${invalid} must not touch the attempt`);
+        }
+        assert.strictEqual(releaseWorkflowLease(lease.attempt.id, 'paused', { leaseOwner: 'release-status-owner' }), true);
+        assert.strictEqual(status(), 'paused');
+    } finally {
+        await deleteProject(project.id);
+    }
+});
+
 await runAsyncTest('2. reconcileStaleWorkflowAttempts should transition stale running attempts to stale_terminated and projects to paused', async () => {
     const { createProject, deleteProject, getProject } = await import('../projectRepository.js');
     const {

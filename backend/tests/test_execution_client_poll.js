@@ -58,3 +58,56 @@ test('execution client reports identity-checked advisory progress without forwar
         assert.equal(mismatched.length, 0);
     } finally { globalThis.fetch = originalFetch; }
 });
+
+test('worker requests are bounded even when the worker accepts the socket but never answers', async () => {
+    const http = await import('node:http');
+    const held = [];
+    const server = http.createServer((req, res) => { held.push(res); });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const url = `http://127.0.0.1:${server.address().port}`;
+    try {
+        const client = createExecutionClient({ EXECUTION_WORKER_URL: url, EXECUTION_WORKER_REQUEST_TIMEOUT_MS: 200 });
+        const started = Date.now();
+        await assert.rejects(client.getCapabilities(), error => error.code === 'WORKER_REQUEST_TIMEOUT'
+            && /timed out after 200 ms: \/readyz/.test(error.message));
+        assert.ok(Date.now() - started < 5000, 'timeout must fire near the configured bound');
+        await assert.rejects(client.cancelJob('hung-job', 'hung-project'), error => error.code === 'WORKER_REQUEST_TIMEOUT'
+            && !error.message.includes('hung-project'), 'timeout message must not echo query values');
+
+        const controller = new AbortController();
+        const callerAbort = client.getCapabilities({ signal: controller.signal });
+        controller.abort();
+        await assert.rejects(callerAbort, error => error.code !== 'WORKER_REQUEST_TIMEOUT',
+            'a caller abort is not reported as a worker timeout');
+    } finally {
+        for (const res of held) res.destroy();
+        server.closeAllConnections();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('a single unanswered status poll is retried like a transport failure', async () => {
+    const originalFetch = globalThis.fetch;
+    const job = { version: 1, jobId: 'hung-poll-job', projectId: 'hung-poll-project', contractId: 'hung-poll-contract',
+        contractHash: 'a'.repeat(64), revision: 1, artifactId: 'hung-poll-artifact', nonce: 'b'.repeat(64),
+        inputSha256: 'c'.repeat(64), runId: 'hung-poll-run', deadline: Date.now() + 10000, archiveBase64: 'eA==' };
+    let polls = 0;
+    globalThis.fetch = (url, options) => {
+        if (options?.method === 'POST') return Promise.resolve(new Response(JSON.stringify({ ...job, operation: 'verify_artifact', status: 'queued' })));
+        polls += 1;
+        // The first poll never answers; it only ends when the client's own deadline aborts it.
+        if (polls === 1) return new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true }));
+        return Promise.resolve(new Response(JSON.stringify({ ...job, operation: 'verify_artifact', status: 'completed',
+            result: { ...job, operation: 'verify_artifact', checks: [] } })));
+    };
+    // AbortSignal.timeout does not keep the process alive; a running backend's HTTP server does.
+    const keepAlive = setInterval(() => {}, 1000);
+    try {
+        const result = await createExecutionClient({ EXECUTION_WORKER_REQUEST_TIMEOUT_MS: 150 }).verifyArtifact(job);
+        assert.strictEqual(result.status, 'completed');
+        assert.strictEqual(polls, 2);
+    } finally {
+        clearInterval(keepAlive);
+        globalThis.fetch = originalFetch;
+    }
+});
