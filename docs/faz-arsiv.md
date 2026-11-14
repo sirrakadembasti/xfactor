@@ -459,6 +459,8 @@ README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında
 
 14 Kasım'da CI'ın `ubuntu-26.04` imajına geçtiği görüldü. Bu imajda `bwrap` kurulu geldiği için "sandbox yok" varsayan iki test düştü. Testler, makineden bağımsız olarak kullanılamaz bir adapter verecek biçimde düzeltildi; ürün kodu değişmedi.
 
+14 Kasım'da [PR #6](https://github.com/sirrakadembasti/xfactor/pull/6), beş CI işinin hepsi yeşilken `main`'e alındı (merge `ec299fe`).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
