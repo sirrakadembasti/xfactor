@@ -1767,7 +1767,7 @@
       "group": "tests",
       "file": "backend/tests/test_build_sandbox_gate.js",
       "description": "",
-      "val": 6.5,
+      "val": 7.5,
       "provenance": "ast"
     },
     {
@@ -3067,7 +3067,7 @@
       "group": "tests",
       "file": "backend/tests/test_sandbox_adapters.js",
       "description": "",
-      "val": 10.5,
+      "val": 11,
       "provenance": "ast"
     },
     {
@@ -3237,7 +3237,7 @@
       "group": "backend",
       "file": "backend/verification/adapters/portableSandbox.js",
       "description": "",
-      "val": 9.5,
+      "val": 10,
       "provenance": "ast"
     },
     {
@@ -15391,7 +15391,18 @@
       "line": 860
     },
     {
-      "id": "backend/tests/test_build_sandbox_gate.js#Function:runTest@25",
+      "id": "backend/tests/test_build_sandbox_gate.js#Method:UNAVAILABLE_SANDBOX.platform@20",
+      "label": "UNAVAILABLE_SANDBOX.platform",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_build_sandbox_gate.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 20
+    },
+    {
+      "id": "backend/tests/test_build_sandbox_gate.js#Function:runTest@31",
       "label": "runTest",
       "type": "Function",
       "group": "tests",
@@ -15399,7 +15410,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 25
+      "line": 31
     },
     {
       "id": "backend/tests/test_build_validator.js#Function:runTest@21",
@@ -24987,7 +24998,18 @@
       "line": 38
     },
     {
-      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.getCapabilities@66",
+      "id": "backend/tests/test_sandbox_adapters.js#Method:platform@59",
+      "label": "platform",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_sandbox_adapters.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 59
+    },
+    {
+      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.getCapabilities@69",
       "label": "adapter.getCapabilities",
       "type": "Method",
       "group": "tests",
@@ -24995,10 +25017,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 66
+      "line": 69
     },
     {
-      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.spawn@67",
+      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.spawn@70",
       "label": "adapter.spawn",
       "type": "Method",
       "group": "tests",
@@ -25006,10 +25028,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 67
+      "line": 70
     },
     {
-      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.killProcessTree@71",
+      "id": "backend/tests/test_sandbox_adapters.js#Method:adapter.killProcessTree@74",
       "label": "adapter.killProcessTree",
       "type": "Method",
       "group": "tests",
@@ -25017,10 +25039,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 71
+      "line": 74
     },
     {
-      "id": "backend/tests/test_sandbox_adapters.js#Method:getCapabilities@80",
+      "id": "backend/tests/test_sandbox_adapters.js#Method:getCapabilities@83",
       "label": "getCapabilities",
       "type": "Method",
       "group": "tests",
@@ -25028,10 +25050,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 80
+      "line": 83
     },
     {
-      "id": "backend/tests/test_sandbox_adapters.js#Method:execute@80",
+      "id": "backend/tests/test_sandbox_adapters.js#Method:execute@83",
       "label": "execute",
       "type": "Method",
       "group": "tests",
@@ -25039,7 +25061,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 80
+      "line": 83
     },
     {
       "id": "backend/tests/test_sandbox_security.js#Method:unavailableAdapter.isAvailable@43",
@@ -55916,12 +55938,32 @@
     },
     {
       "source": "backend/tests/test_build_sandbox_gate.js",
-      "target": "backend/tests/test_build_sandbox_gate.js#Function:runTest@25",
+      "target": "backend/verification/adapters/portableSandbox.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_build_sandbox_gate.js",
+        "line": 15
+      }
+    },
+    {
+      "source": "backend/tests/test_build_sandbox_gate.js",
+      "target": "backend/tests/test_build_sandbox_gate.js#Method:UNAVAILABLE_SANDBOX.platform@20",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_sandbox_gate.js",
-        "line": 25
+        "line": 20
+      }
+    },
+    {
+      "source": "backend/tests/test_build_sandbox_gate.js",
+      "target": "backend/tests/test_build_sandbox_gate.js#Function:runTest@31",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_build_sandbox_gate.js",
+        "line": 31
       }
     },
     {
@@ -73546,52 +73588,62 @@
     },
     {
       "source": "backend/tests/test_sandbox_adapters.js",
-      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.getCapabilities@66",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:platform@59",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 66
+        "line": 59
       }
     },
     {
       "source": "backend/tests/test_sandbox_adapters.js",
-      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.spawn@67",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.getCapabilities@69",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 67
+        "line": 69
       }
     },
     {
       "source": "backend/tests/test_sandbox_adapters.js",
-      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.killProcessTree@71",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.spawn@70",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 71
+        "line": 70
       }
     },
     {
       "source": "backend/tests/test_sandbox_adapters.js",
-      "target": "backend/tests/test_sandbox_adapters.js#Method:getCapabilities@80",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:adapter.killProcessTree@74",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 80
+        "line": 74
       }
     },
     {
       "source": "backend/tests/test_sandbox_adapters.js",
-      "target": "backend/tests/test_sandbox_adapters.js#Method:execute@80",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:getCapabilities@83",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 80
+        "line": 83
+      }
+    },
+    {
+      "source": "backend/tests/test_sandbox_adapters.js",
+      "target": "backend/tests/test_sandbox_adapters.js#Method:execute@83",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_sandbox_adapters.js",
+        "line": 83
       }
     },
     {
@@ -108396,12 +108448,12 @@
     },
     {
       "source": "backend/tests/test_build_sandbox_gate.js",
-      "target": "backend/tests/test_build_sandbox_gate.js#Function:runTest@25",
+      "target": "backend/tests/test_build_sandbox_gate.js#Function:runTest@31",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_sandbox_gate.js",
-        "line": 40
+        "line": 46
       }
     },
     {
@@ -108411,7 +108463,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_sandbox_gate.js",
-        "line": 41
+        "line": 47
       }
     },
     {
@@ -108421,7 +108473,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_sandbox_gate.js",
-        "line": 55
+        "line": 61
       }
     },
     {
@@ -108431,7 +108483,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_build_sandbox_gate.js",
-        "line": 93
+        "line": 99
       }
     },
     {
@@ -121121,7 +121173,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 73
+        "line": 76
       }
     },
     {
@@ -121131,7 +121183,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_sandbox_adapters.js",
-        "line": 75
+        "line": 78
       }
     },
     {
