@@ -258,6 +258,36 @@ await runAsyncTest('lease heartbeat thread keeps writing while the main event lo
     }
 });
 
+await runAsyncTest('a failed lease check logs why and where it was fenced', async () => {
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { db } = await import('../db.js');
+    const { acquireWorkflowLease, releaseWorkflowLease, assertWorkflowLease } = await import('../workflowAttempts.js');
+    const project = await createProject({ title: 'Lease Diagnostic Project' });
+    const owner = `lease-diagnostic-${crypto.randomUUID()}`;
+    const lease = acquireWorkflowLease(project.id, owner);
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = line => warnings.push(String(line));
+    try {
+        const stale = Date.now() - 45000;
+        db.prepare('UPDATE workflow_attempts SET heartbeat_epoch = ?, heartbeat_at = ? WHERE id = ?')
+            .run(stale, new Date(stale).toISOString(), lease.attempt.id);
+        assert.throws(() => assertWorkflowLease(lease.attempt.id, owner, { projectId: project.id }), error => error.code === 'WORKFLOW_LEASE_FENCED');
+    } finally {
+        console.warn = originalWarn;
+        releaseWorkflowLease(lease.attempt.id, 'aborted', { leaseOwner: owner });
+        await deleteProject(project.id);
+    }
+    const entry = warnings.map(line => { try { return JSON.parse(line); } catch { return null; } })
+        .find(item => item?.event === 'workflow.lease_check_failed');
+    assert.ok(entry, 'the fenced check is logged');
+    assert.equal(entry.attemptStatus, 'running');
+    assert.equal(entry.ownerMatches, true);
+    assert.ok(entry.heartbeatAgeMs >= 44000 && entry.heartbeatAgeMs < 60000, String(entry.heartbeatAgeMs));
+    assert.equal(entry.inTransaction, false);
+    assert.match(entry.caller, /test_workflow_attempts/);
+});
+
 await runAsyncTest('lease heartbeat falls back to the main-thread timer without a database file', async () => {
     const { startLeaseHeartbeat } = await import('../workflowAttempts.js');
     const lost = [];

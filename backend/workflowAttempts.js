@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Worker } from 'node:worker_threads';
 import { db, getDatabasePath } from './db.js';
-import { logError } from './observability.js';
+import { logError, logWarning, writeStructuredLog } from './observability.js';
 import { WORKFLOW_STATUS } from './engine/stateMachine.js';
 
 // stale_terminated is written only by restart reconciliation, never by a lease holder.
@@ -205,7 +205,15 @@ export function startLeaseHeartbeat({
     });
     let workerExited = false;
     worker.on('exit', () => { workerExited = true; });
-    worker.on('message', message => { if (message?.type === 'lost') signalLost(); });
+    worker.on('message', message => {
+        if (message?.type === 'lost') signalLost();
+        else if (message?.type === 'beat_failed') {
+            logWarning('workflow.heartbeat_write_failed', Object.assign(new Error(message.message), { code: message.code }),
+                { attemptId, at: message.at, waitedMs: message.waitedMs });
+        } else if (message?.type === 'beat_recovered') {
+            writeStructuredLog('warn', 'workflow.heartbeat_write_slow', { attemptId, failedForMs: message.failedForMs, writeMs: message.writeMs });
+        }
+    });
     worker.on('error', error => {
         if (stopped) return;
         logError('workflow.heartbeat_thread_failed', error, { attemptId });
@@ -293,9 +301,29 @@ export function assertWorkflowLease(attemptId, leaseOwner, options = {}) {
     if (!isWorkflowLeaseCurrent(attemptId, leaseOwner, options)) {
         const error = new Error('Workflow lease is stale or fenced by a newer owner.');
         error.code = 'WORKFLOW_LEASE_FENCED';
+        logLeaseCheckFailure(attemptId, leaseOwner, options, error);
         throw error;
     }
     return true;
+}
+
+// A fenced lease is either really lost (attempt ended, new owner) or only looks stale because
+// the heartbeat could not be written. Record which, and where the check ran, so it can be told.
+function logLeaseCheckFailure(attemptId, leaseOwner, { database = db, heartbeatTtlSeconds = DEFAULT_HEARTBEAT_TTL_SECONDS } = {}, error) {
+    try {
+        const row = attemptId ? database.prepare(`SELECT status, lease_owner, heartbeat_at, heartbeat_epoch
+            FROM workflow_attempts WHERE id = ?`).get(attemptId) : null;
+        const beat = row ? heartbeatValue(row) : null;
+        logWarning('workflow.lease_check_failed', error, {
+            attemptId,
+            attemptStatus: row?.status ?? null,
+            ownerMatches: row ? row.lease_owner === leaseOwner : null,
+            heartbeatAgeMs: Number.isFinite(beat) ? Date.now() - beat : null,
+            heartbeatTtlSeconds,
+            inTransaction: database.isTransaction === true,
+            caller: String(error.stack || '').split('\n').slice(2, 9).map(line => line.trim()).join(' <- ')
+        });
+    } catch {}
 }
 
 // Only synchronous filesystem commits belong here. Preparation/provider work

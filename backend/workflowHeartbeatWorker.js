@@ -14,14 +14,26 @@ const update = database.prepare(`
 `);
 
 let timer = null;
+let failingSince = null;
 function beat() {
     let changes;
+    const startedAt = Date.now();
     try {
-        const now = Date.now();
-        changes = update.run(new Date(now).toISOString(), now, attemptId, leaseOwner).changes;
-    } catch {
-        // A busy or briefly locked database is retried on the next beat; the TTL tolerates it.
+        changes = update.run(new Date(startedAt).toISOString(), startedAt, attemptId, leaseOwner).changes;
+    } catch (error) {
+        // A busy or briefly locked database is retried on the next beat; report the first
+        // failure of a streak so a blocked heartbeat is visible in the log.
+        if (failingSince === null) {
+            failingSince = startedAt;
+            parentPort.postMessage({ type: 'beat_failed', at: new Date(startedAt).toISOString(),
+                waitedMs: Date.now() - startedAt, code: error?.code ?? null, message: String(error?.message || error) });
+        }
         return;
+    }
+    const writeMs = Date.now() - startedAt;
+    if (failingSince !== null || writeMs > 2000) {
+        parentPort.postMessage({ type: 'beat_recovered', failedForMs: failingSince === null ? 0 : startedAt - failingSince, writeMs });
+        failingSince = null;
     }
     if (changes === 0) {
         // The attempt ended or another owner fenced it: the lease is gone for good.
