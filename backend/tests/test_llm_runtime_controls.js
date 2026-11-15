@@ -79,6 +79,10 @@ test('MiniMax Manager auto asks for the least thinking each model accepts; enabl
     assert.equal(Object.hasOwn(body, 'reasoning_effort'), false, 'non-Manager auto keeps the provider default');
     await generateLLMResponse(messages, { ...flash, thinking: 'enabled', purpose: 'manager' });
     assert.equal(Object.hasOwn(body, 'reasoning_effort'), false);
+    await generateLLMResponse(messages, { ...flash, googleThinkingLevel: 'low' });
+    assert.equal(body.reasoning_effort, 'low', 'a caller asking for low thinking (repair Coder) is honoured on MiniMax');
+    await generateLLMResponse(messages, { ...flash, thinking: 'enabled', googleThinkingLevel: 'low' });
+    assert.equal(Object.hasOwn(body, 'reasoning_effort'), false, 'an explicit profile choice wins');
 
     const m3 = { ...defaults, provider: 'minimax', model: 'MiniMax-M3', thinking: 'auto' };
     await generateLLMResponse(messages, { ...m3, purpose: 'manager' });
