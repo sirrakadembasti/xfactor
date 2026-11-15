@@ -13,6 +13,8 @@ const stop = message => { throw Object.assign(new Error(`Sınırlı onarım durd
     code: 'CONTROLLED_REPAIR_BLOCKED', status: 409
 }); };
 const CONTROLLED_CODER_CONTEXT_BYTES = 192 * 1024;
+// Repair Coder and independent reviews both get four minutes and request low thinking.
+export const CONTROLLED_REPAIR_LLM_TIMEOUT_MS = 240000;
 export function assertControlledPackagePolicy(before, after) {
     let original, proposed;
     try { original = JSON.parse(before); proposed = JSON.parse(after); } catch { stop('package.json geçerli JSON olmalı.'); }
@@ -100,7 +102,7 @@ export async function executeControlledRepairs({ projectDir, contract, workflow,
                 failures: context.checks.filter(check => target.checkIds.includes(check.id)) })
             + `\nCurrent target (${current ? 'existing' : 'new'}):\n${current?.content.toString('utf8') || ''}\n${projectContext}`;
         const result = await callAgent('coder', prompt, { taskId: `controlled-repair.${target.path}`, signal, onUsage, onDiagnostic, maxAttempts: 1,
-            maxOutputTokens: 32768, timeoutMs: 240000, googleThinkingLevel: 'low' });
+            maxOutputTokens: 32768, timeoutMs: CONTROLLED_REPAIR_LLM_TIMEOUT_MS, googleThinkingLevel: 'low' });
         assertCurrent();
         if (!Array.isArray(result?.files) || result.files.length !== 1 || result.files[0].path !== target.path
             || typeof result.files[0].content !== 'string' || !result.files[0].content.trim()) stop('Coder yalnız izinli tek dosyayı döndürmeli.');
@@ -155,7 +157,10 @@ export async function validateControlledRepairs({ session, projectDir, workflow,
             + (localeObservation ? '\nIndependently review the actual runtime snapshots above. Return uiLanguageObservationHash exactly as supplied and uiLanguageCatalogue:{language:"tr",reviewed:true,scopeDeclared:true,surfaces:[{route,role,state,labels:[{text,kind,anchor,context}],allowed:[{text,kind,anchor,context}]}]}. Declare every observed route/role/state and required visible Turkish UI text. Do not mark all observed strings Turkish. Technical usernames and role IDs may be allowed only at exact anchored technical-id occurrences; visible role/account labels need anchored role-display/account-display entries. Missing, unsupported, editable or shadow coverage must remain blocked. Only real independent review plus fresh browser execution may authorize locale acceptance.\n' : '\nNo authenticated runtime language inventory exists yet; do not invent a locale catalogue.\n')
             + `\nCurrent source context:\n${context}`;
         let result;
-        try { result = await callAgent(stage, prompt, { taskId: `controlled-repair.${stage}`, signal, onUsage, onDiagnostic, maxAttempts: 1 }); }
+        // Same budget as the repair Coder: the review reads the whole bounded context, and a
+        // reasoning-heavy default (MiniMax "max") outruns the profile's shorter timeout.
+        try { result = await callAgent(stage, prompt, { taskId: `controlled-repair.${stage}`, signal, onUsage, onDiagnostic, maxAttempts: 1,
+            timeoutMs: CONTROLLED_REPAIR_LLM_TIMEOUT_MS, googleThinkingLevel: 'low' }); }
         catch (error) { session.assertCurrent(); if (signal?.aborted) throw error; result = { approved: false, summary: 'Bağımsız inceleme sonucu alınamadı; yeni tanılama gerekli.' }; }
         session.assertCurrent();
         reservation.phase = result?.approved === true ? 'passed' : 'failed';

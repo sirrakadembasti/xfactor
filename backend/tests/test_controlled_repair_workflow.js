@@ -44,14 +44,16 @@ async function fixture(test) {
     } finally {await deleteProject(project.id);}
 }
 await runAsyncTest('controlled workflow uses the real fenced writer and fresh review/testing without scaffold, DAG or cache regeneration',()=>fixture(async f=>{
-    const calls=[];let preparations=0;
+    const calls=[],llmOptions=[];let preparations=0;
     await executeProjectTasks(f.project.id,null,f.lease.attempt.id,'controlled-fixture',{
         controlledRepairHash:f.proposal.planHash,
-        callAgent:async(role)=>{calls.push(role);if(role==='coder')return {files:[{path:'src/app.ts',content:'export const original = false;'}]};return {approved:true,summary:'Fresh fixture acceptance',issues:[]};},
+        callAgent:async(role,_prompt,options)=>{calls.push(role);llmOptions.push({role,timeoutMs:options?.timeoutMs,googleThinkingLevel:options?.googleThinkingLevel});if(role==='coder')return {files:[{path:'src/app.ts',content:'export const original = false;'}]};return {approved:true,summary:'Fresh fixture acceptance',issues:[]};},
         createExecutionClient:()=>({prepareDependencies:async()=>{assert.deepEqual(calls,['coder'],'reviews must wait for the final worker lock');preparations++;return {status:'completed',result:{packageLockBase64:Buffer.from('{"lockfileVersion":3,"packages":{}}').toString('base64')}};}}),
         verifyArtifactAndProject:async({options,complete})=>{assert.equal(complete,false);assert.ok(options.verificationPlan?.sourceHash);return {passed:false,completed:false,error:'fixture diagnostic boundary'};}
     });
     assert.deepEqual(calls,['coder','reviewer','tester']);assert.equal(preparations,1);
+    // Coder and both independent reviews get the same bounded budget and low-thinking request.
+    assert.deepEqual(llmOptions,['coder','reviewer','tester'].map(role=>({role,timeoutMs:240000,googleThinkingLevel:'low'})));
     assert.equal(await fs.readFile(path.join(f.dir,'src/app.ts'),'utf8'),'export const original = false;');
     assert.equal(await fs.readFile(path.join(f.dir,'keep.txt'),'utf8'),'Keep unrelated bytes');
     const saved=JSON.parse(db.prepare('SELECT workflow_state FROM projects WHERE id=?').get(f.project.id).workflow_state);
