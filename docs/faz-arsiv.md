@@ -517,7 +517,7 @@ Docker worker'a geçildi. Doğrulama hattında dört düzeltme yapıldı:
 
 En iyi koşu `39be2bde`: 83 PASS; uygulamanın 20 testinden 19'u geçti. Tek hata, Next.js'in React 18 uyarısını içeren `stderr`'i boş bekleyen testti. Sonraki üç minimax onarım turu geriledi; son koşu `cd49324b` 20 PASS'te kaldı.
 
-Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile CI'a gönderildi. `stok-takip-1` `paused` duruyor ve teslim edilmedi.
+Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile beş CI işinin hepsi yeşilken `main`'e alındı (merge `6e852a0`). `stok-takip-1` `paused` duruyor ve teslim edilmedi.
 
 ## 6. Kaynak kapsamı ve belirsizlikler
 
