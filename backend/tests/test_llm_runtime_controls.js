@@ -66,6 +66,32 @@ test('provider requests use the configured output budget', async () => {
   });
 });
 
+test('MiniMax Manager auto asks for the least thinking each model accepts; enabled keeps the default', async () => {
+  let body;
+  await withFetch(async (_url, init) => { body = JSON.parse(init.body); return ok(); }, async () => {
+    const flash = { ...defaults, provider: 'minimax', model: 'MiniMax-M3.1-Flash', thinking: 'auto' };
+    await generateLLMResponse(messages, { ...flash, purpose: 'manager' });
+    assert.equal(body.reasoning_effort, 'low', 'M3.1-Flash cannot disable thinking; low is its smallest effort');
+    assert.equal(Object.hasOwn(body, 'thinking'), false, 'thinking.type disabled returns 400 on M3.1-Flash');
+    await generateLLMResponse(messages, { ...flash, thinking: 'disabled' });
+    assert.equal(body.reasoning_effort, 'low');
+    await generateLLMResponse(messages, flash);
+    assert.equal(Object.hasOwn(body, 'reasoning_effort'), false, 'non-Manager auto keeps the provider default');
+    await generateLLMResponse(messages, { ...flash, thinking: 'enabled', purpose: 'manager' });
+    assert.equal(Object.hasOwn(body, 'reasoning_effort'), false);
+
+    const m3 = { ...defaults, provider: 'minimax', model: 'MiniMax-M3', thinking: 'auto' };
+    await generateLLMResponse(messages, { ...m3, purpose: 'manager' });
+    assert.deepEqual(body.thinking, { type: 'disabled' });
+    assert.equal(Object.hasOwn(body, 'reasoning_effort'), false);
+    await generateLLMResponse(messages, { ...m3, thinking: 'enabled', purpose: 'manager' });
+    assert.equal(Object.hasOwn(body, 'thinking'), false);
+
+    await generateLLMResponse(messages, { ...defaults, provider: 'deepseek', thinking: 'auto', purpose: 'manager' });
+    assert.equal(Object.hasOwn(body, 'reasoning_effort'), false, 'other OpenAI-compatible providers are unchanged');
+  });
+});
+
 test('MiMo Manager auto disables thinking while production auto preserves the provider default', async () => {
   let body;
   await withFetch(async (_url, options) => { body = JSON.parse(options.body); return ok(); }, async () => {
