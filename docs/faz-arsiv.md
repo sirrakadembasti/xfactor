@@ -499,7 +499,7 @@ Sözleşme 4, canlı veritabanının `VACUUM INTO` yedeği alındıktan sonra bu
 Sınırlı onarım turlarında `tests/test-helper.ts` ve `src/app.ts` onarıldı. En iyi koşu `cf9d06d6`: 67 PASS; derleme, lint, servisler, API ve tarayıcı geçti. Turlar şu platform hatalarını ortaya çıkardı:
 - Minimax'in varsayılan "max" düşünmesi Manager, onarım Coder'ı ve bağımsız inceleme çağrılarını süre ya da token sınırına takıyordu. Bu çağrılar artık düşük düşünme istiyor; inceleme Coder'la aynı 240 sn bütçeyi alıyor.
 - `npm test`, koşunun demo parolalarını almıyordu ve sandbox `PASSWORD` anahtarlarını siliyordu. Parolalar artık dar bir `ephemeralEnv` kanalıyla geçiyor.
-- Kalp atışı ana olay döngüsünde yazıldığı için disk yavaşladığında sağlıklı yürütmeler düşüyordu. Kalp atışı artık ayrı bir `worker_thread`'den yazılıyor.
+- Sağlıklı yürütmeler kilit kontrolünde düşürülüyordu (`execution_fenced`). Kalp atışı ayrı bir `worker_thread`'e taşındı, ama sorun bir olayda daha yaşandı: iş parçacığının yazımı veritabanı kilidinde bekletiliyordu. Kök neden henüz bulunmadı; tanılama logları (`workflow.lease_check_failed`, `workflow.heartbeat_write_*`) eklendi. Sonraki iki koşuda olay yaşanmadı.
 
 Açık kalanlar:
 - Yerel Windows worker'da testlerin `spawn('npm')` çağrısı ENOENT veriyor; XFactor bunu ortam engeli sayıyor.
