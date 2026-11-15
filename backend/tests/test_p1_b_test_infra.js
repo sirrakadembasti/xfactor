@@ -105,6 +105,22 @@ try {
         assert.equal(result.checks.find(check => check.name === 'test_script_presence')?.status, 'failed');
     });
 
+    await runAsyncTest('5b. the suite receives the run demo passwords through the ephemeral channel only', async () => {
+        let received;
+        const adapter = {
+            id: 'env-suite', getCapabilities: () => ({ available: true, isolation: true }),
+            async execute(request) { received = request.env; return { passed: true, exitCode: 0, stdout: 'TAP version 13\nok 1 - seeds demo users\n# tests 1\n# pass 1', stderr: '' }; }
+        };
+        const password = 'p'.repeat(32);
+        const result = await verifyTestInfrastructure('/workspace', {}, {
+            adapter, env: { DATABASE_URL: 'file:./dev.db', DB_PASSWORD: 'host-secret' },
+            ephemeralEnv: { XFACTOR_DEMO_PASSWORD_ADMIN: password },
+            files: [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test tests/*.test.js' } }) }]
+        });
+        assert.equal(result.passed, true);
+        assert.deepEqual(received, { DATABASE_URL: 'file:./dev.db', XFACTOR_DEMO_PASSWORD_ADMIN: password });
+    });
+
     await runAsyncTest('6. a runner that finds zero tests cannot pass', async () => {
         const adapter = {
             id: 'empty-suite', getCapabilities: () => ({ available: true, isolation: true }),

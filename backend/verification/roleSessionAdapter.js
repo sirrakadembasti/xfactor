@@ -55,6 +55,20 @@ function localUrl(baseUrl, path) {
     return new URL(path, baseUrl);
 }
 
+export const demoPasswordVariable = roleName => `XFACTOR_DEMO_PASSWORD_${String(roleName).toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+
+/**
+ * Environment for the application's own test suite in the same run: the generated tests seed and
+ * log in with the run's demo accounts, so they need the passwords the worker just created.
+ */
+export function demoPasswordEnv(management, passwords = {}) {
+    const env = {};
+    for (const role of management?.roles || []) {
+        if (typeof passwords[role?.name] === 'string') env[demoPasswordVariable(role.name)] = passwords[role.name];
+    }
+    return env;
+}
+
 function createDemoCredentials(management) {
     const roles = management?.roles;
     if (!Array.isArray(roles) || roles.length === 0) throw new Error('Management roles are required for demo setup.');
@@ -64,7 +78,7 @@ function createDemoCredentials(management) {
         if (typeof role?.name !== 'string' || !role.name.trim() || !role.demoUser?.username || passwords[role.name]) {
             throw new Error('Each management role requires a unique demo identity.');
         }
-        const variable = `XFACTOR_DEMO_PASSWORD_${role.name.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+        const variable = demoPasswordVariable(role.name);
         if (credentials[variable]) throw new Error('Management role names produce duplicate demo credential variables.');
         const password = randomBytes(24).toString('base64url');
         passwords[role.name] = password;

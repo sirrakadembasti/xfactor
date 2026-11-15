@@ -7,7 +7,7 @@ import { verifyBrowserJourney } from './browserVerifier.js';
 import { verifyTestInfrastructure } from './testInfrastructureVerifier.js';
 import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 import { randomBytes } from 'node:crypto';
-import { createRoleSessionAdapter, prepareManagementDemoUsers } from './roleSessionAdapter.js';
+import { createRoleSessionAdapter, prepareManagementDemoUsers, demoPasswordEnv } from './roleSessionAdapter.js';
 
 function inferRuntimeChecks(contract, service, files = [], services = []) {
     const baseUrl = service?.port ? `http://127.0.0.1:${service.port}` : null;
@@ -78,6 +78,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
     }
 
     let apiAdapter = options.adapter;
+    let demoPasswords = {};
     try {
         if (!manifest.passed) throw new Error('Service manifest validation failed; runtime startup refused.');
         const ports = services.map(([, value]) => Number(value?.port));
@@ -90,6 +91,7 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
                 }
                 const passwords = await prepareManagementDemoUsers(options.adapter, contract.management, runtimeEnv,
                     { signal: options.signal });
+                demoPasswords = passwords;
                 apiAdapter = createRoleSessionAdapter(options.adapter, runtimeChecks.api.baseUrl,
                     contract.management, passwords, { browserUrl: runtimeChecks.browser?.url || runtimeChecks.api.baseUrl });
                 checks.push({ name: 'management_demo_seed', status: 'passed',
@@ -164,7 +166,10 @@ export async function verifyProjectSmoke(projectDir, contract = {}, options = {}
             checks.push(...browser.checks);
             issues.push(...browser.issues);
         }
-        const tests = await verifyTestInfrastructure(projectDir, contract, common);
+        // The suite seeds and logs in with this run's demo accounts; their throwaway passwords
+        // pass the sandbox only through the explicit ephemeral channel, never the host env.
+        const tests = await verifyTestInfrastructure(projectDir, contract,
+            { ...common, ephemeralEnv: demoPasswordEnv(contract.management, demoPasswords) });
         checks.push(...tests.checks);
         issues.push(...tests.issues);
     } catch (error) {

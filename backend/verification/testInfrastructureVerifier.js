@@ -75,7 +75,8 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
             timeoutMs: options.timeoutMs || 60000,
             adapter: options.adapter,
             signal: options.signal,
-            env: options.env
+            env: options.env,
+            ...(options.ephemeralEnv ? { ephemeralEnv: options.ephemeralEnv } : {})
         });
 
         const testOutput = `${testRes.stdout || ''}\n${testRes.stderr || ''}`;
