@@ -63,9 +63,15 @@ function diagnosticFor({ agentRole, taskId, attempt, maxAttempts, startedAt, dis
     };
 }
 
+// The previous answer is sent back with the format correction only while it stays bounded.
+const FORMAT_RETRY_ECHO_CHARS = 60000;
+
 /**
  * Runs one agent task with bounded retries for transport failures only. Parsing
- * is inside the boundary so malformed output is recorded but never retried.
+ * is inside the boundary so malformed output is recorded and, by default, never
+ * retried. A caller may opt in to exactly one format correction with
+ * formatRetryMessage: the model then gets its own answer back with that message
+ * and one more chance to return the required structure.
  */
 export async function runLLMTaskWithRetry({
     agentRole,
@@ -80,6 +86,7 @@ export async function runLLMTaskWithRetry({
     maxOutputTokens,
     timeoutMs,
     googleThinkingLevel,
+    formatRetryMessage = null,
     onDiagnostic = async () => {}
 } = {}) {
     if (!agentRole) throw new Error('agentRole is required for an LLM task.');
@@ -88,17 +95,31 @@ export async function runLLMTaskWithRetry({
 
     const attempts = boundedAttemptCount(maxAttempts);
     const startedAt = Date.now();
+    const generateOptions = () => ({ signal, onUsage, maxTransportAttempts: 1,
+        ...(timeoutMs === undefined ? {} : { timeoutMs }),
+        ...(googleThinkingLevel === undefined ? {} : { googleThinkingLevel }),
+        ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }) });
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
         let phase = 'provider';
         try {
             // This boundary owns retries for agent tasks. An adapter must make
             // a single transport attempt rather than multiplying this budget.
-            const response = await generate(messages, { signal, onUsage, maxTransportAttempts: 1,
-                ...(timeoutMs === undefined ? {} : { timeoutMs }),
-                ...(googleThinkingLevel === undefined ? {} : { googleThinkingLevel }),
-                ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }) });
+            const response = await generate(messages, generateOptions());
             phase = 'validation';
-            const parsed = parseResponse(response);
+            let parsed;
+            try {
+                parsed = parseResponse(response);
+            } catch (formatError) {
+                if (typeof formatRetryMessage !== 'string' || !formatRetryMessage.trim() || signal?.aborted) throw formatError;
+                await onDiagnostic(diagnosticFor({ agentRole, taskId, attempt, maxAttempts: attempts, startedAt,
+                    disposition: 'format_retry', retry: true, error: formatError }));
+                const echo = typeof response === 'string' && response.length <= FORMAT_RETRY_ECHO_CHARS
+                    ? [{ role: 'assistant', content: response }] : [];
+                phase = 'provider';
+                const corrected = await generate([...messages, ...echo, { role: 'user', content: formatRetryMessage }], generateOptions());
+                phase = 'validation';
+                parsed = parseResponse(corrected);
+            }
             await onDiagnostic(diagnosticFor({
                 agentRole,
                 taskId,

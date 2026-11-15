@@ -15,6 +15,11 @@ const stop = message => { throw Object.assign(new Error(`Sınırlı onarım durd
 const CONTROLLED_CODER_CONTEXT_BYTES = 192 * 1024;
 // Repair Coder and independent reviews both get four minutes and request low thinking.
 export const CONTROLLED_REPAIR_LLM_TIMEOUT_MS = 240000;
+// Some models answer a one-file repair with a bare or fenced code block. The Coder gets one
+// chance to return its own answer in the required structure; the rules and checks stay the same.
+export const controlledCoderFormatRetry = path => `Önceki yanıtın istenen biçimde değildi ve hiçbir dosya yazılmadı. `
+    + `Yalnız şu JSON nesnesini döndür, başka metin veya kod çiti ekleme: {"files":[{"path":${JSON.stringify(path)},"content":"<dosyanın tam içeriği>"}]}. `
+    + `İçerik geçerli bir JSON dizesi olmalı; tırnak, ters eğik çizgi ve satır sonlarını kaçır. Kapsamı veya kuralları değiştirme.`;
 export function assertControlledPackagePolicy(before, after) {
     let original, proposed;
     try { original = JSON.parse(before); proposed = JSON.parse(after); } catch { stop('package.json geçerli JSON olmalı.'); }
@@ -102,7 +107,8 @@ export async function executeControlledRepairs({ projectDir, contract, workflow,
                 failures: context.checks.filter(check => target.checkIds.includes(check.id)) })
             + `\nCurrent target (${current ? 'existing' : 'new'}):\n${current?.content.toString('utf8') || ''}\n${projectContext}`;
         const result = await callAgent('coder', prompt, { taskId: `controlled-repair.${target.path}`, signal, onUsage, onDiagnostic, maxAttempts: 1,
-            maxOutputTokens: 32768, timeoutMs: CONTROLLED_REPAIR_LLM_TIMEOUT_MS, googleThinkingLevel: 'low' });
+            maxOutputTokens: 32768, timeoutMs: CONTROLLED_REPAIR_LLM_TIMEOUT_MS, googleThinkingLevel: 'low',
+            formatRetryMessage: controlledCoderFormatRetry(target.path) });
         assertCurrent();
         if (!Array.isArray(result?.files) || result.files.length !== 1 || result.files[0].path !== target.path
             || typeof result.files[0].content !== 'string' || !result.files[0].content.trim()) stop('Coder yalnız izinli tek dosyayı döndürmeli.');

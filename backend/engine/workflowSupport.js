@@ -377,7 +377,8 @@ export async function callAgentLLM(agentRole, userPrompt, {
     maxAttempts,
     maxOutputTokens,
     timeoutMs,
-    googleThinkingLevel
+    googleThinkingLevel,
+    formatRetryMessage
 } = {}) {
     const agent = getAgent(agentRole);
     return runLLMTaskWithRetry({
@@ -390,6 +391,7 @@ export async function callAgentLLM(agentRole, userPrompt, {
         maxOutputTokens,
         timeoutMs,
         googleThinkingLevel,
+        formatRetryMessage,
         messages: [
             { role: 'system', content: agent.systemPrompt },
             { role: 'user', content: userPrompt }
