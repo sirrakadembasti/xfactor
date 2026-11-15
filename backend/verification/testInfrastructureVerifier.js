@@ -72,8 +72,9 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     // 2. Sandboxed Test Suite Execution
     const isDocker = options.adapter?.id === 'docker-worker' || options.adapter?.getCapabilities?.().adapterId === 'docker-worker';
     const npmCmd = isDocker ? 'npm' : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
+    let testRes = null;
     try {
-        const testRes = await executeInSandbox(npmCmd, ['test'], {
+        testRes = await executeInSandbox(npmCmd, ['test'], {
             workspace: options.workspace || projectDir,
             timeoutMs: options.timeoutMs || TEST_SUITE_TIMEOUT_MS,
             adapter: options.adapter,
@@ -81,7 +82,23 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
             env: options.env,
             ...(options.ephemeralEnv ? { ephemeralEnv: options.ephemeralEnv } : {})
         });
+    } catch (err) {
+        // Adapters that reject on a non-zero exit still attach the command result. Keep the
+        // suite's own output so failing tests stay diagnosable; it can never count as a pass.
+        if (err?.code !== 'SANDBOX_UNAVAILABLE' && err?.result && typeof err.result === 'object'
+            && (typeof err.result.stdout === 'string' || typeof err.result.stderr === 'string')) {
+            testRes = { ...err.result, passed: false, failureMessage: err.message };
+        } else {
+            checks.push({
+                name: 'test_suite_execution',
+                status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
+                reason: `Test execution sandbox error: ${err.message}`
+            });
+            issues.push(`Test execution sandbox error: ${err.message}`);
+        }
+    }
 
+    if (testRes) {
         const testOutput = `${testRes.stdout || ''}\n${testRes.stderr || ''}`;
         const emptySuite = /(?:^\s*0\s+(?:passing|passed|tests?)\b|^\s*#\s*(?:tests|pass)\s+0\b)/im.test(testOutput);
         const executedTests = hasExecutedTests(testOutput, { testScript, files: options.files || [] });
@@ -113,17 +130,11 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
                 endedAt,
                 stdoutDigest: computeDigest(testRes.stdout),
                 stderrDigest: computeDigest(testRes.stderr),
-                reason: emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite execution failed: ${testRes.stderr || testRes.stdout}`
+                reason: testRes.timedOut ? `Test suite timed out: ${testRes.failureMessage || 'deadline exceeded'}`
+                    : emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite execution failed: ${testRes.stderr || testRes.stdout}`
             });
             issues.push(emptySuite || !executedTests ? 'Test runner did not prove that any test executed.' : `Test suite failed (exit ${testRes.exitCode}): ${testRes.stderr || testRes.stdout}`);
         }
-    } catch (err) {
-        checks.push({
-            name: 'test_suite_execution',
-            status: err.code === 'SANDBOX_UNAVAILABLE' ? 'blocked' : 'failed',
-            reason: `Test execution sandbox error: ${err.message}`
-        });
-        issues.push(`Test execution sandbox error: ${err.message}`);
     }
 
     const allPassed = checks.every(c => c.status === 'passed');

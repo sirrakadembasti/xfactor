@@ -121,6 +121,32 @@ try {
         assert.deepEqual(received, { DATABASE_URL: 'file:./dev.db', XFACTOR_DEMO_PASSWORD_ADMIN: password });
     });
 
+    await runAsyncTest('5d. a rejecting adapter keeps the failing suite output and never passes', async () => {
+        const stdout = 'TAP version 13\nok 1 - seeds demo users\nnot ok 2 - creates a product\n  error: expected 201, got 500\n# tests 2\n# pass 1\n# fail 1';
+        const adapter = {
+            id: 'docker-like', getCapabilities: () => ({ available: true, isolation: true }),
+            async execute() { throw Object.assign(new Error('Command failed with code 1: ...'), { result: { stdout, stderr: '', exitCode: 1, passed: false } }); }
+        };
+        const files = [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test tests/*.test.js' } }) }];
+        const result = await verifyTestInfrastructure('/workspace', {}, { adapter, files });
+        const check = result.checks.find(c => c.name === 'test_suite_execution');
+        assert.equal(result.passed, false);
+        assert.equal(check.status, 'failed');
+        assert.equal(check.exitCode, 1);
+        assert.match(check.stdout, /not ok 2 - creates a product/);
+        assert.match(check.stdout, /expected 201, got 500/);
+
+        const passingButRejected = { ...adapter, async execute() { throw Object.assign(new Error('Output exceeded fixed ceiling'), {
+            result: { stdout: 'TAP version 13\nok 1 - real\n# tests 1\n# pass 1', stderr: '', exitCode: 0, passed: false } }); } };
+        assert.equal((await verifyTestInfrastructure('/workspace', {}, { adapter: passingButRejected, files })).passed, false,
+            'a rejected command can never authorize a pass, even with passing TAP');
+
+        const noResult = { ...adapter, async execute() { throw new Error('spawn failed'); } };
+        const bare = (await verifyTestInfrastructure('/workspace', {}, { adapter: noResult, files })).checks.find(c => c.name === 'test_suite_execution');
+        assert.equal(bare.status, 'failed');
+        assert.match(bare.reason, /Test execution sandbox error: spawn failed/);
+    });
+
     await runAsyncTest('5c. the suite gets five minutes unless the caller sets its own limit', async () => {
         const seen = [];
         const adapter = {
