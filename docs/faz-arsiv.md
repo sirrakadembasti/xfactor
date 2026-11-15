@@ -478,6 +478,8 @@ Faz 5'e başlamadan önce `stok-takip-1`'in onay bekleyen sözleşme 4'ü onayl�
 
 Uygulamada bekleyen bir taslağı reddetmenin yolu yoktu; tek ret fonksiyonu projeyi `capability_blocked` durumuna kilitliyordu. Bu yüzden sahip yetkili `POST /api/projects/:id/contracts/:revision/reject` ucu (`routes/projectContractRoutes.js`) ve arayüzde **Taslağı Reddet** düğmesi eklendi. Proje yanıtı artık her durumda `pendingContract` alanını taşıyor; böylece duraklatılmış projelerde bekleyen taslak da görünüyor.
 
+Sözleşme 4, canlı veritabanının `VACUUM INTO` yedeği alındıktan sonra bu uçla, proje sahibinin kimliğiyle reddedildi. Sonuç: sözleşme 3 `approved`, sözleşme 4 `rejected`, proje `paused` (revizyonu değişmedi) ve sohbete ret kaydı düştü.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
