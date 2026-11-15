@@ -688,6 +688,26 @@ export default function App() {
     }
   };
 
+  const handleRejectDraft = async event => {
+    const draft = projectState?.pendingContract;
+    if (!activeProjectId || !draft) return;
+    const confirmed = window.confirm(`Sözleşme taslağı ${draft.revision} reddedilecek ve bir daha onaylanamayacak. `
+      + 'Onaylı sözleşme, kaynaklar ve üretim kayıtları değişmez. Devam edilsin mi?');
+    if (!confirmed) return;
+    rememberUiErrorTrigger(event);
+    const identity = captureRequest('reject-draft', activeProjectId);
+    try {
+      const data = await api.rejectContractDraft(activeProjectId, draft.revision, draft.id,
+        buildActionRequestOptions(createActionId('reject-draft')));
+      if (isCurrentRequest(identity)) {
+        setProjectState(data);
+        fetchProjects();
+      }
+    } catch (err) {
+      if (isCurrentRequest(identity)) setUiError('Taslak reddedilemedi: ' + err.message);
+    }
+  };
+
   const handleReverify = async event => {
     if (!activeProjectId || !projectState?.reverification?.available) return;
     rememberUiErrorTrigger(event);
@@ -989,6 +1009,7 @@ export default function App() {
                   setChatInput={setChatInput}
                   handleSendMessage={handleSendMessage}
                   handleApprove={handleApprove}
+                  handleRejectDraft={handleRejectDraft}
                   handleResume={handleResume}
                   handleReverify={handleReverify}
                   handlePrepareRepair={handlePrepareRepair}

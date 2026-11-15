@@ -6,6 +6,7 @@ testInventory.js
 testHarness.js
 test_manager_recovery_simulation.js
 test_reverification.js
+test_contract_draft_rejection.js
 test_reverification_checkpoint_preservation.js
 test_requirement_coverage.js
 test_requirement_coverage_pipeline.js

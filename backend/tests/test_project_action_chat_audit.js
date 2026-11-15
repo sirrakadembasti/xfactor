@@ -290,7 +290,8 @@ await runAsyncTest('resume and pause append exact canonical action pairs', async
     });
     assert.strictEqual(paused.status, 200, JSON.stringify(paused.body));
     const canonicalPause = getProject(pauseProject.id);
-    const { reverification, repairPreparation, repairSemanticReview, ...canonicalBody } = paused.body;
+    const { reverification, repairPreparation, repairSemanticReview, pendingContract, ...canonicalBody } = paused.body;
+    assert.strictEqual(pendingContract, null);
     assert.deepStrictEqual(reverification, { available: false, contractId: null, revision: null });
     assert.deepStrictEqual(repairPreparation, { available: false, contractId: null, revision: null, latestRunId: null });
     assert.deepStrictEqual(repairSemanticReview, {

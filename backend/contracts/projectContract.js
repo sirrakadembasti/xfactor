@@ -157,6 +157,31 @@ export function approveContractRevision(projectId, revision, { inTransaction = f
         throw error;
     }
 }
+/**
+ * Marks one pending draft as rejected so it can never be approved. The caller owns the
+ * transaction; approved revisions, checkpoints and generated sources are untouched.
+ */
+export function rejectPendingContractRevision({ projectId, contractId, revision }) {
+    const result = db.prepare(`
+        UPDATE project_contracts
+        SET status = 'rejected'
+        WHERE project_id = ? AND id = ? AND revision = ? AND status = 'pending_approval'
+    `).run(projectId, contractId, revision);
+    if (result.changes !== 1) {
+        throw Object.assign(new Error('Reddedilecek taslak artık onay beklemiyor veya değişmiş; sayfayı yenileyin.'), {
+            status: 409, code: 'CONTRACT_DRAFT_STALE'
+        });
+    }
+}
+
+export function getPendingContractRevision(projectId, database = db) {
+    return database.prepare(`
+        SELECT id, revision FROM project_contracts
+        WHERE project_id = ? AND status = 'pending_approval'
+        ORDER BY revision DESC LIMIT 1
+    `).get(projectId) || null;
+}
+
 export function getLatestRevision(projectId) {
     return db.prepare(`
         SELECT * FROM project_contracts

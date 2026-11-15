@@ -8,6 +8,7 @@ export default function ChatView({
   setChatInput,
   handleSendMessage,
   handleApprove,
+  handleRejectDraft,
   handleResume,
   handleReverify,
   handlePrepareRepair,
@@ -26,6 +27,7 @@ export default function ChatView({
   const lastMessageText = chatHistory[historyLength - 1]?.parts?.[0]?.text;
   const scopeIssues = projectState?.planScopeReview?.issues || [];
   const scopeBlocked = projectState?.planScopeReview?.valid === false;
+  const pendingDraft = projectState?.pendingContract || null;
   const repairProposal = projectState?.workflow?.controlledRepair?.proposal;
   const repairStale = projectState?.workflow?.controlledRepair?.stale === true;
 
@@ -121,12 +123,29 @@ export default function ChatView({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleApprove}
-            disabled={scopeBlocked}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm flex items-center gap-2 transition shrink-0 cursor-pointer"
-          >
-            <Play size={14} /> Planı Onayla ve Başlat
+          <div className="flex items-center gap-2 shrink-0">
+            {pendingDraft && handleRejectDraft && (
+              <button type="button" onClick={handleRejectDraft} disabled={isThinking}
+                className="px-3 py-2 rounded-lg border border-red-300 text-red-700 bg-white hover:bg-red-50 font-semibold text-xs disabled:opacity-50">
+                Taslağı Reddet
+              </button>
+            )}
+            <button
+              onClick={handleApprove}
+              disabled={scopeBlocked}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm flex items-center gap-2 transition shrink-0 cursor-pointer"
+            >
+              <Play size={14} /> Planı Onayla ve Başlat
+            </button>
+          </div>
+        </div>
+      )}
+      {pendingDraft && projectState?.status !== 'pending_approval' && handleRejectDraft && (
+        <div className="mx-6 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl shrink-0 text-xs flex items-center justify-between gap-3">
+          <p>Sözleşme taslağı {pendingDraft.revision} onay bekliyor. Proje onaylı sözleşmeyle duraklatıldı; taslak onaylanırsa görev önbelleği yenilenip kaynaklar yeniden üretilebilir.</p>
+          <button type="button" onClick={handleRejectDraft} disabled={isThinking}
+            className="px-3 py-2 rounded-lg border border-red-300 text-red-700 bg-white hover:bg-red-50 font-semibold shrink-0 disabled:opacity-50">
+            Taslağı Reddet
           </button>
         </div>
       )}

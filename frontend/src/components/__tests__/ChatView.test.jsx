@@ -23,6 +23,33 @@ describe('ChatView Component', () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
+  test('shows a waiting draft of a paused project with a reject action and no approval button', () => {
+    const rejectDraft = vi.fn();
+    const state = { ...defaultProjectState, status: 'paused', pendingContract: { id: 'contract-4', revision: 4 } };
+    const props = { projectState: state, handleRejectDraft: rejectDraft, chatInput: '', setChatInput: mockSetChatInput };
+    const { rerender } = render(<ChatView {...props} />);
+    expect(screen.getByText(/Sözleşme taslağı 4 onay bekliyor/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Planı Onayla ve Başlat/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Taslağı Reddet' }));
+    expect(rejectDraft).toHaveBeenCalledTimes(1);
+    rerender(<ChatView {...props} isThinking />);
+    expect(screen.getByRole('button', { name: 'Taslağı Reddet' })).toBeDisabled();
+    rerender(<ChatView {...props} projectState={{ ...state, pendingContract: null }} />);
+    expect(screen.queryByRole('button', { name: 'Taslağı Reddet' })).not.toBeInTheDocument();
+  });
+
+  test('offers reject next to approve on the pending approval card', () => {
+    const rejectDraft = vi.fn();
+    render(<ChatView projectState={{ ...defaultProjectState, status: 'pending_approval',
+      pendingContract: { id: 'contract-2', revision: 2 } }} handleApprove={mockHandleApprove}
+      handleRejectDraft={rejectDraft} chatInput="" setChatInput={mockSetChatInput} />);
+    expect(screen.getByRole('button', { name: /Planı Onayla ve Başlat/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Sözleşme taslağı 2 onay bekliyor/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Taslağı Reddet' }));
+    expect(rejectDraft).toHaveBeenCalledTimes(1);
+    expect(mockHandleApprove).not.toHaveBeenCalled();
+  });
+
   test('offers explicit review only for eligible patched repairs and disables it while busy', () => {
     const review = vi.fn();
     const state = { ...defaultProjectState, status: 'paused',

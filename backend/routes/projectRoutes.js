@@ -35,6 +35,8 @@ import { workflowCheckpointInventory, projectedCheckpointInventory, uniquelyOwns
 import { registerProjectObservabilityRoutes } from './projectObservabilityRoutes.js';
 import { checkpointTaskFilter, registerProjectTraceabilityRoutes } from './projectTraceabilityRoutes.js';
 import { registerProjectRepairRoutes, registerControlledRepairExecutionRoutes } from './projectRepairRoutes.js';
+import { registerProjectContractRoutes } from './projectContractRoutes.js';
+import { getPendingContractRevision } from '../contracts/projectContract.js';
 import { readControlledRepairContext, assertControlledRepairBaseline } from '../engine/controlledRepairContext.js';
 import { controlledRepairSourceHash } from '../engine/controlledRepairPlan.js';
 import { archiveControlledRepairLineage } from '../engine/controlledRepairLineage.js';
@@ -164,6 +166,8 @@ function withPlanScopeReview(state) {
     state = { ...state, repairSemanticReview: { available: Boolean(reviewReady && eligibility.eligible),
         planHash: eligibility.planHash, remainingReviews: eligibility.remainingReviews,
         reason: active ? 'Başka bir yürütme sürüyor.' : !reviewReady ? 'Aynı onaylı sözleşmede tamamlanmış üretim ve duraklatılmış süreç gerekli.' : eligibility.reason } };
+    // A draft can wait while the project is paused on its approved contract; expose it in every status.
+    state = { ...state, pendingContract: getPendingContractRevision(state.id) };
     if (state.status !== PROJECT_STATUS.PENDING_APPROVAL) return state;
     const pending = db.prepare("SELECT contract_json FROM project_contracts WHERE project_id=? AND status='pending_approval' ORDER BY revision DESC LIMIT 1").get(state.id);
     return { ...state, planScopeReview: compareApprovedScope(requiresScopePreservation(state) ? base : null, pending?.contract_json || state.plan) };
@@ -914,6 +918,9 @@ export function createProjectRouter({
         requireAuth, projectAccess, lifecycle, wsHub, projectExecutor, activeChatRequests,
         withPlanScopeReview, getActionId, appendWorkflowAction, respondIdempotentWorkflow,
         publicationTimeoutMs: APPROVAL_PUBLICATION_TIMEOUT_MS
+    });
+    registerProjectContractRoutes(router, {
+        requireAuth, projectAccess, wsHub, activeChatRequests, withPlanScopeReview, getActionId, appendWorkflowAction
     });
 
     router.post('/:id/verify', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
