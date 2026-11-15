@@ -494,6 +494,19 @@ Sözleşme 4, canlı veritabanının `VACUUM INTO` yedeği alındıktan sonra bu
 
 `buildRepairSourceFacts` artık bütçeyi şu sırayla dolduruyor: başarısız kontrol çıktısında adı geçen dosyalar (`failedCheckSourcePaths`), teşhis edilen testler, servis ve validasyonlar, yapılandırma, kontrolcüler, rotalar. Öneri süresi, profil süresi ile 240 saniyeden büyük olanı alıyor ve LLM katmanının 300 saniyelik sınırını geçmiyor (`repairProposalTimeoutMs`). Yeniden ölçümde yardımcı, dört servis ve dört validasyon istemde. İstemin boyutu değişmedi, çünkü bütçe aynı.
 
+### Halka 40 — 15 Kasım: stok-takip onarım turları ve platform düzeltmeleri
+
+Sınırlı onarım turlarında `tests/test-helper.ts` ve `src/app.ts` onarıldı. En iyi koşu `cf9d06d6`: 67 PASS; derleme, lint, servisler, API ve tarayıcı geçti. Turlar şu platform hatalarını ortaya çıkardı:
+- Minimax'in varsayılan "max" düşünmesi Manager, onarım Coder'ı ve bağımsız inceleme çağrılarını süre ya da token sınırına takıyordu. Bu çağrılar artık düşük düşünme istiyor; inceleme Coder'la aynı 240 sn bütçeyi alıyor.
+- `npm test`, koşunun demo parolalarını almıyordu ve sandbox `PASSWORD` anahtarlarını siliyordu. Parolalar artık dar bir `ephemeralEnv` kanalıyla geçiyor.
+- Kalp atışı ana olay döngüsünde yazıldığı için disk yavaşladığında sağlıklı yürütmeler düşüyordu. Kalp atışı artık ayrı bir `worker_thread`'den yazılıyor.
+
+Açık kalanlar:
+- Yerel Windows worker'da testlerin `spawn('npm')` çağrısı ENOENT veriyor; XFactor bunu ortam engeli sayıyor.
+- Docker koşularında npm `ECONNRESET` hatası görüldü.
+- Bağımsız inceleme, admin ürün oluşturma başarısı gözlenmediği için kabul etmedi.
+- Proje `paused` durumda duruyor, `GET /:id/logs` ise `paused` durumunda her çağrıda logları diskten yeniden kuruyor (yaklaşık 6,5 sn).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
