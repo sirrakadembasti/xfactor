@@ -480,6 +480,20 @@ Uygulamada bekleyen bir taslağı reddetmenin yolu yoktu; tek ret fonksiyonu pro
 
 Sözleşme 4, canlı veritabanının `VACUUM INTO` yedeği alındıktan sonra bu uçla, proje sahibinin kimliğiyle reddedildi. Sonuç: sözleşme 3 `approved`, sözleşme 4 `rejected`, proje `paused` (revizyonu değişmedi) ve sohbete ret kaydı düştü.
 
+### Halka 39 — 15 Kasım: Onarım önerisi bağlamı
+
+`stok-takip-1` için sınırlı onarım önerisi dört denemede de hazırlanamadı:
+- Gemini'de önce süre aşımı, sonra 503, sonra token kesilmesi.
+- Minimax'te 240 saniyelik süre aşımı.
+
+Önerinin istemi, gerçek verilerle ve LLM yerine saplama verilerek ölçüldü: yaklaşık 46.000 token. Asıl kusur bağlamın yanlış seçilmesiydi:
+- Tip hatasının olduğu `tests/test-helper.ts` hiç gönderilmiyordu, çünkü seçici yalnız `*.test.*`/`*.spec.*` dosyalarını test kabul ediyordu.
+- Yardımcının çağırdığı servis ve validasyon dosyaları bütçe dışında kalıyordu; bütçeyi öne alınan büyük rota dosyaları dolduruyordu.
+
+Önceki onarımın yanlış servis imzalı yardımcı üretmesinin nedeni de büyük olasılıkla buydu.
+
+`buildRepairSourceFacts` artık bütçeyi şu sırayla dolduruyor: başarısız kontrol çıktısında adı geçen dosyalar (`failedCheckSourcePaths`), teşhis edilen testler, servis ve validasyonlar, yapılandırma, kontrolcüler, rotalar. Öneri süresi, profil süresi ile 240 saniyeden büyük olanı alıyor ve LLM katmanının 300 saniyelik sınırını geçmiyor (`repairProposalTimeoutMs`). Yeniden ölçümde yardımcı, dört servis ve dört validasyon istemde. İstemin boyutu değişmedi, çünkü bütçe aynı.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

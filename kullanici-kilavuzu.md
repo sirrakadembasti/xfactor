@@ -761,6 +761,16 @@ Kalite Paneli canlı komut durumunu yaklaşık 5 saniyede bir, kalıcı koşu ve
 
 Duraklatılmış projede “Mevcut çalışmayı koruyan onarım önerisi hazırla” seçeneği, son kayıtlı kontrol sonuçlarına göre değişecek dosyaları listeler. Hazırlamak dosyaları değiştirmez. Kapsam bağlantısı eksik öneri başlatılamaz. Manager'a teknik komut yazmanız gerekmez; “Çalışmamı kaybetmeden kalan eksikleri gider” gibi günlük bir açıklama yeterlidir.
 
+Manager öneriyi yazarken mevcut kaynakların sınırlı bir bölümünü (yaklaşık 96 KiB) salt okunur bağlam olarak görür. Bütçe şu sırayla dolar:
+1. Başarısız ya da engellenmiş kontrollerin çıktısında adı geçen dosyalar. Örneğin bir tip hatasının işaret ettiği test yardımcısı, test dosyası olmasa da alınır.
+2. Teşhis edilen testler.
+3. Servisler ve validasyonlar.
+4. Yapılandırma, seed ve oturum dosyaları.
+5. Kontrolcüler.
+6. Rota dosyaları.
+
+Bütçeye sığmayan dosyalar adıyla listelenir ama içerikleri gönderilmez. `.env`, `.npmrc` ve kilit dosyaları hiçbir zaman bağlama girmez. Öneri çağrısı en az 4 dakika bekler. Etkin LLM profilinin süresi daha uzunsa o süre kullanılır, ama LLM katmanının sınırı olan 5 dakikayı geçmez.
+
 “Listelenen dosyaları onar ve yeniden kontrol et” yalnız listelenmiş hedefler üzerinde ayrı onarım başlatır; onaylı sözleşmeyi, tarihsel görevleri ve checkpoint'leri korur. Normal yeni plan onayından ayrıdır. Başarı önceden garanti edilmez. Birkaç dosya değiştikten sonra işlem durursa tamamlanan değişiklikler kayıtlı kalır; belirsiz veya kesilmiş model yanıtı dosyaya yazılmaz ve sessizce tekrar denenmez. Sonraki öneri güncel kaynak ve yeni kontrol sonucuna bağlanır; önceki onarımın geçmişi kaybolmaz.
 
 “Yalnız Yeniden Doğrula” mevcut dosyaları değiştirmeden yeni worker kontrolü yapar. Açık hataları onarmaz ve teslimi tek başına onaylamaz. Kaynaklar onarıldıktan sonra görünürse “Mevcut düzeltmeleri incele ve yeniden kontrol et” aynı kaynak için yeni bağımsız inceleme alır; yeni kod yazdırmaz. Ekranlardan toplanan dil gözlemleri, inceleme tamamlanmadan kabul kanıtı sayılmaz.
