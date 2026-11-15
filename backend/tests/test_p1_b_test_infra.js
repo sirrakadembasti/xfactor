@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { createTestHarness } from './testHarness.js';
-import { verifyTestInfrastructure } from '../verification/testInfrastructureVerifier.js';
+import { verifyTestInfrastructure, TEST_SUITE_TIMEOUT_MS } from '../verification/testInfrastructureVerifier.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 
@@ -119,6 +119,19 @@ try {
         });
         assert.equal(result.passed, true);
         assert.deepEqual(received, { DATABASE_URL: 'file:./dev.db', XFACTOR_DEMO_PASSWORD_ADMIN: password });
+    });
+
+    await runAsyncTest('5c. the suite gets five minutes unless the caller sets its own limit', async () => {
+        const seen = [];
+        const adapter = {
+            id: 'timeout-suite', getCapabilities: () => ({ available: true, isolation: true }),
+            async execute(request) { seen.push(request.timeoutMs); return { passed: true, exitCode: 0, stdout: 'TAP version 13\nok 1 - real behaviour\n# tests 1\n# pass 1', stderr: '' }; }
+        };
+        const files = [{ path: 'package.json', content: JSON.stringify({ scripts: { test: 'node --test tests/*.test.js' } }) }];
+        await verifyTestInfrastructure('/workspace', {}, { adapter, files });
+        await verifyTestInfrastructure('/workspace', {}, { adapter, files, timeoutMs: 45000 });
+        assert.deepEqual(seen, [TEST_SUITE_TIMEOUT_MS, 45000]);
+        assert.equal(TEST_SUITE_TIMEOUT_MS, 300000);
     });
 
     await runAsyncTest('6. a runner that finds zero tests cannot pass', async () => {

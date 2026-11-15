@@ -4,6 +4,9 @@ import crypto from 'crypto';
 import { executeInSandbox } from './sandboxRunner.js';
 
 const nativeNodeTest = /^(?:(?:npx|pnpm exec)\s+)?node(?:\.exe)?\s+(?:--import\s+tsx\s+)?--test(?:\s|$)/i;
+// Real suites seed a database, start HTTP servers and compile TypeScript on the fly; give them the
+// same five minutes as installation and build steps. The worker job keeps its own overall cap.
+export const TEST_SUITE_TIMEOUT_MS = 300000;
 
 function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
@@ -72,7 +75,7 @@ export async function verifyTestInfrastructure(projectDir, contract = {}, option
     try {
         const testRes = await executeInSandbox(npmCmd, ['test'], {
             workspace: options.workspace || projectDir,
-            timeoutMs: options.timeoutMs || 60000,
+            timeoutMs: options.timeoutMs || TEST_SUITE_TIMEOUT_MS,
             adapter: options.adapter,
             signal: options.signal,
             env: options.env,
