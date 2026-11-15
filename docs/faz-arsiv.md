@@ -470,6 +470,8 @@ README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında
 
 `agents/tester.js` ve `services/reconciliationService.js` kullanıcı kararıyla bu fazda bölünmedi.
 
+15 Kasım'da [PR #7](https://github.com/sirrakadembasti/xfactor/pull/7), beş CI işinin hepsi yeşilken `main`'e alındı (merge `c25e721`).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
