@@ -16,6 +16,9 @@ export function filterRuntimeEnvironment(raw = {}) {
     } else if (key === 'JWT_SECRET') {
       // spawnService supplies a fresh 256-bit test value, never a host secret.
       if (/^[a-f0-9]{64}$/.test(text)) env[key] = text;
+    } else if (/^XFACTOR_DEMO_PASSWORD_[A-Z0-9_]+$/.test(key)) {
+      // Throwaway demo passwords generated for this verification run (32 base64url chars).
+      if (/^[A-Za-z0-9_-]{32}$/.test(text)) env[key] = text;
     } else if (SAFE_ENV.test(key)) env[key] = text;
   }
   return env;

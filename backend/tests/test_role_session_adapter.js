@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { createRoleSessionAdapter, prepareManagementDemoUsers } from '../verification/roleSessionAdapter.js';
+import { createRoleSessionAdapter, prepareManagementDemoUsers, demoPasswordEnv, demoPasswordVariable } from '../verification/roleSessionAdapter.js';
 
 const records = [];
 const server = http.createServer(async (req, res) => {
@@ -67,6 +67,11 @@ try {
     assert.equal(JSON.parse(setupCalls[0].input).XFACTOR_DEMO_PASSWORD_MANAGER, passwords.manager);
     assert.ok(!JSON.stringify(setupCalls[0].args).includes(passwords.manager));
     assert.ok(!JSON.stringify(setupCalls[0].env).includes(passwords.manager));
+    // The application's own test suite receives the same run passwords under the seed's names.
+    const suiteEnv = demoPasswordEnv({ roles: [{ name: 'manager' }, { name: 'viewer' }, { name: 'missing' }] }, passwords);
+    assert.deepEqual(suiteEnv, { XFACTOR_DEMO_PASSWORD_MANAGER: passwords.manager, XFACTOR_DEMO_PASSWORD_VIEWER: passwords.viewer });
+    assert.match(passwords.manager, /^[A-Za-z0-9_-]{32}$/, 'run passwords match the sandbox ephemeral format');
+    assert.equal(demoPasswordVariable('warehouse-staff'), 'XFACTOR_DEMO_PASSWORD_WAREHOUSE_STAFF');
     const adapter = createRoleSessionAdapter(sandboxAdapter, baseUrl, {
         authentication: { apiLogin: { path: '/api/auth/login', identityField: 'username' } },
         roles: [

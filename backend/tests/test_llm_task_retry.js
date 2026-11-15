@@ -110,3 +110,25 @@ test('one agent task has one retry owner across real provider transports', async
         }
     } finally { globalThis.fetch = originalFetch; }
 });
+
+test('malformed output is retried once only when the caller opts in, with the answer echoed back', async () => {
+    const parse = text => { const value = JSON.parse(text); if (!Array.isArray(value.files)) throw new Error('no files'); return value; };
+    const seen = [], diagnostics = [];
+    const result = await runLLMTaskWithRetry({ agentRole: 'coder', maxAttempts: 1, messages: [{ role: 'user', content: 'repair' }],
+        formatRetryMessage: 'Return only JSON.', parseResponse: parse, onDiagnostic: async d => { diagnostics.push(d.disposition); },
+        generate: async messages => { seen.push(messages); return seen.length === 1 ? 'import x from "y";' : '{"files":[{"path":"a.ts","content":"ok"}]}'; } });
+    assert.deepEqual(result.files, [{ path: 'a.ts', content: 'ok' }]);
+    assert.equal(seen.length, 2);
+    assert.deepEqual(seen[1].slice(-2), [{ role: 'assistant', content: 'import x from "y";' }, { role: 'user', content: 'Return only JSON.' }]);
+    assert.deepEqual(diagnostics, ['format_retry', 'succeeded']);
+
+    let calls = 0;
+    await assert.rejects(runLLMTaskWithRetry({ agentRole: 'coder', maxAttempts: 1, messages: [], formatRetryMessage: 'Return only JSON.',
+        parseResponse: parse, generate: async () => { calls++; return 'still not json'; } }), SyntaxError);
+    assert.equal(calls, 2, 'exactly one format correction, then the failure stands');
+
+    calls = 0;
+    await assert.rejects(runLLMTaskWithRetry({ agentRole: 'coder', maxAttempts: 3, messages: [], parseResponse: parse,
+        generate: async () => { calls++; return 'not json'; } }), SyntaxError);
+    assert.equal(calls, 1, 'without the opt-in, malformed output is never retried');
+});

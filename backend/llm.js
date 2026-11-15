@@ -98,6 +98,23 @@ export function raceWithAbort(operationPromise, signal) {
     });
 }
 
+/**
+ * MiniMax thinks by default and spends thinking tokens from max_tokens. MiniMax-M3.1-Flash cannot
+ * disable thinking (thinking.type "disabled" and reasoning_effort "none" return 400) and defaults
+ * reasoning_effort to "max"; other MiniMax models accept thinking.type "disabled".
+ * Like MiMo, a Manager call on profile "auto" asks for the least thinking the model allows, so a
+ * large structured answer is not starved by reasoning. A caller that already asks Gemini for low
+ * thinking (the bounded repair Coder) gets the same reduction here. "enabled" keeps the default.
+ */
+export function minimaxReasoningControl(model, thinkingMode = 'auto', purpose, requestedLevel) {
+    const reduce = thinkingMode === 'disabled'
+        || (thinkingMode === 'auto' && (purpose === 'manager' || requestedLevel === 'low'));
+    if (!reduce) return {};
+    return /^MiniMax-M3\.1-Flash(?:$|[-.])/i.test(String(model || ''))
+        ? { reasoning_effort: 'low' }
+        : { thinking: { type: 'disabled' } };
+}
+
 export function getCurrentLLMProvider() {
     return createLLMProfileStore().getActive()?.provider || process.env.AI_PROVIDER || 'google';
 }
@@ -375,7 +392,8 @@ export async function generateLLMResponse(messages, options = {}) {
         ? (thinkingMode === 'auto' ? (options.purpose === 'manager' ? 'disabled' : null) : thinkingMode)
         : null;
     const requestBody = JSON.stringify({ model: aiModel, messages: messages, ...tokenLimit,
-        ...(['enabled', 'disabled'].includes(mimoThinking) ? { thinking: { type: mimoThinking } } : {}) });
+        ...(['enabled', 'disabled'].includes(mimoThinking) ? { thinking: { type: mimoThinking } } : {}),
+        ...(provider === 'minimax' ? minimaxReasoningControl(aiModel, thinkingMode, options.purpose, options.googleThinkingLevel) : {}) });
 
     let response;
     try {

@@ -164,6 +164,7 @@ describe('API request cancellation and identity handling', () => {
     await client.previewRebuild(projectId, []);
     await client.sendChatMessage(projectId, 'message');
     await client.approveProject(projectId);
+    await client.rejectContractDraft(projectId, 4, contractId);
     await client.pauseProject(projectId);
     await client.resumeProject(projectId);
     await client.updateProject(projectId, { title: 'renamed' });
@@ -181,6 +182,7 @@ describe('API request cancellation and identity handling', () => {
       'https://api.example.test/api/projects/project%2Fa%20b/rebuild-preview',
       'https://api.example.test/api/projects/project%2Fa%20b/chat',
       'https://api.example.test/api/projects/project%2Fa%20b/approve',
+      'https://api.example.test/api/projects/project%2Fa%20b/contracts/4/reject',
       'https://api.example.test/api/projects/project%2Fa%20b/pause',
       'https://api.example.test/api/projects/project%2Fa%20b/resume',
       'https://api.example.test/api/projects/project%2Fa%20b',

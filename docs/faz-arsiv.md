@@ -470,6 +470,55 @@ README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında
 
 `agents/tester.js` ve `services/reconciliationService.js` kullanıcı kararıyla bu fazda bölünmedi.
 
+15 Kasım'da [PR #7](https://github.com/sirrakadembasti/xfactor/pull/7), beş CI işinin hepsi yeşilken `main`'e alındı (merge `c25e721`).
+
+### Halka 38 — 15 Kasım: Faz 5 başlangıcı, sözleşme taslağı reddi
+
+Faz 5'e başlamadan önce `stok-takip-1`'in onay bekleyen sözleşme 4'ü onaylı sözleşme 3 ile karşılaştırıldı. Fark dar: REQ-10 (ayrık 3000/3001 portları) ve REQ-11 (`npm test` duman testi) eklenmiş, şartname somutlaştırılmış. Sonradan oluşturulan kullanıcıların parola güvenliği kuralı ise yalnız seed hesaplarına daralmış. Kullanıcı sözleşme 3 ile devam etmeye ve taslağı reddetmeye karar verdi.
+
+Uygulamada bekleyen bir taslağı reddetmenin yolu yoktu; tek ret fonksiyonu projeyi `capability_blocked` durumuna kilitliyordu. Bu yüzden sahip yetkili `POST /api/projects/:id/contracts/:revision/reject` ucu (`routes/projectContractRoutes.js`) ve arayüzde **Taslağı Reddet** düğmesi eklendi. Proje yanıtı artık her durumda `pendingContract` alanını taşıyor; böylece duraklatılmış projelerde bekleyen taslak da görünüyor.
+
+Sözleşme 4, canlı veritabanının `VACUUM INTO` yedeği alındıktan sonra bu uçla, proje sahibinin kimliğiyle reddedildi. Sonuç: sözleşme 3 `approved`, sözleşme 4 `rejected`, proje `paused` (revizyonu değişmedi) ve sohbete ret kaydı düştü.
+
+### Halka 39 — 15 Kasım: Onarım önerisi bağlamı
+
+`stok-takip-1` için sınırlı onarım önerisi dört denemede de hazırlanamadı:
+- Gemini'de önce süre aşımı, sonra 503, sonra token kesilmesi.
+- Minimax'te 240 saniyelik süre aşımı.
+
+Önerinin istemi, gerçek verilerle ve LLM yerine saplama verilerek ölçüldü: yaklaşık 46.000 token. Asıl kusur bağlamın yanlış seçilmesiydi:
+- Tip hatasının olduğu `tests/test-helper.ts` hiç gönderilmiyordu, çünkü seçici yalnız `*.test.*`/`*.spec.*` dosyalarını test kabul ediyordu.
+- Yardımcının çağırdığı servis ve validasyon dosyaları bütçe dışında kalıyordu; bütçeyi öne alınan büyük rota dosyaları dolduruyordu.
+
+Önceki onarımın yanlış servis imzalı yardımcı üretmesinin nedeni de büyük olasılıkla buydu.
+
+`buildRepairSourceFacts` artık bütçeyi şu sırayla dolduruyor: başarısız kontrol çıktısında adı geçen dosyalar (`failedCheckSourcePaths`), teşhis edilen testler, servis ve validasyonlar, yapılandırma, kontrolcüler, rotalar. Öneri süresi, profil süresi ile 240 saniyeden büyük olanı alıyor ve LLM katmanının 300 saniyelik sınırını geçmiyor (`repairProposalTimeoutMs`). Yeniden ölçümde yardımcı, dört servis ve dört validasyon istemde. İstemin boyutu değişmedi, çünkü bütçe aynı.
+
+### Halka 40 — 15 Kasım: stok-takip onarım turları ve platform düzeltmeleri
+
+Sınırlı onarım turlarında `tests/test-helper.ts` ve `src/app.ts` onarıldı. En iyi koşu `cf9d06d6`: 67 PASS; derleme, lint, servisler, API ve tarayıcı geçti. Turlar şu platform hatalarını ortaya çıkardı:
+- Minimax'in varsayılan "max" düşünmesi Manager, onarım Coder'ı ve bağımsız inceleme çağrılarını süre ya da token sınırına takıyordu. Bu çağrılar artık düşük düşünme istiyor; inceleme Coder'la aynı 240 sn bütçeyi alıyor.
+- `npm test`, koşunun demo parolalarını almıyordu ve sandbox `PASSWORD` anahtarlarını siliyordu. Parolalar artık dar bir `ephemeralEnv` kanalıyla geçiyor.
+- Sağlıklı yürütmeler kilit kontrolünde düşürülüyordu (`execution_fenced`). Kalp atışı ayrı bir `worker_thread`'e taşındı, ama sorun bir olayda daha yaşandı: iş parçacığının yazımı veritabanı kilidinde bekletiliyordu. Kök neden henüz bulunmadı; tanılama logları (`workflow.lease_check_failed`, `workflow.heartbeat_write_*`) eklendi. Sonraki iki koşuda olay yaşanmadı.
+
+Açık kalanlar:
+- Yerel Windows worker'da testlerin `spawn('npm')` çağrısı ENOENT veriyor; XFactor bunu ortam engeli sayıyor.
+- Docker koşularında npm `ECONNRESET` hatası görüldü.
+- Bağımsız inceleme, admin ürün oluşturma başarısı gözlenmediği için kabul etmedi.
+- Proje `paused` durumda duruyor, `GET /:id/logs` ise `paused` durumunda her çağrıda logları diskten yeniden kuruyor (yaklaşık 6,5 sn).
+
+### Halka 41 — 16 Kasım: Docker turları ve PR #8
+
+Docker worker'a geçildi. Doğrulama hattında dört düzeltme yapıldı:
+- Uygulamanın test süiti 5 dakika alıyor (`c35777c`).
+- Adaptör hata fırlattığında testin tam çıktısı korunuyor (`9bb0b5a`).
+- Başarısız TAP vakaları onarım önerisine gönderiliyor (`f9cee10`).
+- Coder'a bir kez biçim düzeltme hakkı verildi (`8c870fe`).
+
+En iyi koşu `39be2bde`: 83 PASS; uygulamanın 20 testinden 19'u geçti. Tek hata, Next.js'in React 18 uyarısını içeren `stderr`'i boş bekleyen testti. Sonraki üç minimax onarım turu geriledi; son koşu `cd49324b` 20 PASS'te kaldı.
+
+Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile CI'a gönderildi. `stok-takip-1` `paused` duruyor ve teslim edilmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

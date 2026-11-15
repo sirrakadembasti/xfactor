@@ -31,6 +31,12 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DEFAULT_DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'projects.db');
 
 export let db = null;
+let databaseFilePath = null;
+
+/** Absolute path of the open database file, or null for ':memory:' / a closed database. */
+export function getDatabasePath() {
+    return databaseFilePath;
+}
 
 function configureDatabase(database) {
     database.exec('PRAGMA busy_timeout = 5000;');
@@ -57,6 +63,7 @@ export function initializeDatabase({ path: databasePath = DEFAULT_DB_PATH } = {}
         throw error;
     }
     db = database;
+    databaseFilePath = databasePath === ':memory:' ? null : path.resolve(databasePath);
     return db;
 }
 
@@ -64,6 +71,7 @@ export function closeDatabase() {
     if (!db) return;
     const current = db;
     db = null;
+    databaseFilePath = null;
     current.close();
 }
 

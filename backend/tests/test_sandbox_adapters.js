@@ -63,6 +63,23 @@ await runAsyncTest('2. Sandbox runner should fail-closed with SANDBOX_UNAVAILABL
     );
 });
 
+await runAsyncTest('2b. Run-generated demo passwords pass only through the explicit ephemeral channel', async () => {
+    let received;
+    const adapter = { id: 'fixture', getCapabilities: () => ({ available: true, isolation: true }),
+        async execute(request) { received = request.env; return { passed: true, exitCode: 0, stdout: '', stderr: '' }; } };
+    const password = 'A'.repeat(31) + '_';
+    await executeInSandbox('npm', ['test'], { adapter, workspace: 'w',
+        env: { DATABASE_URL: 'file:./dev.db', XFACTOR_DEMO_PASSWORD_ADMIN: 'host-leak', DB_PASSWORD: 'host-secret' },
+        ephemeralEnv: { XFACTOR_DEMO_PASSWORD_ADMIN: password, XFACTOR_DEMO_PASSWORD_WAREHOUSE_STAFF: 'b'.repeat(32) } });
+    assert.deepStrictEqual(received, { DATABASE_URL: 'file:./dev.db', XFACTOR_DEMO_PASSWORD_ADMIN: password,
+        XFACTOR_DEMO_PASSWORD_WAREHOUSE_STAFF: 'b'.repeat(32) }, 'host PASSWORD keys stay scrubbed; only the ephemeral values arrive');
+    for (const bad of [{ DB_PASSWORD: 'x'.repeat(32) }, { XFACTOR_DEMO_PASSWORD_ADMIN: 'short' },
+        { XFACTOR_DEMO_PASSWORD_ADMIN: 'x'.repeat(31) + '!' }, { xfactor_demo_password_admin: 'x'.repeat(32) }, { XFACTOR_DEMO_PASSWORD_ADMIN: 42 }]) {
+        await assert.rejects(executeInSandbox('npm', ['test'], { adapter, workspace: 'w', ephemeralEnv: bad }),
+            error => error.code === 'SANDBOX_UNAVAILABLE', JSON.stringify(bad));
+    }
+});
+
 await runAsyncTest('3. Process services use adapter-provided sandbox lifecycle', async () => {
     const adapter = {
         id: 'fixture',

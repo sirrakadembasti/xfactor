@@ -317,6 +317,11 @@ export const createApiClient = (baseURL = DEFAULT_API_URL, defaultTimeoutMs = 15
         ...opts
       }),
 
+    rejectContractDraft: (id, revision, contractId, opts = {}) =>
+      request(`/projects/${encodePathSegment(id)}/contracts/${encodePathSegment(String(revision))}/reject`, {
+        method: 'POST', body: JSON.stringify({ contractId }), ...opts
+      }),
+
     reverifyProject: (id, contractId, opts = {}) =>
       request(`/projects/${encodePathSegment(id)}/reverify`, {
         method: 'POST', body: JSON.stringify({ contractId }), ...opts

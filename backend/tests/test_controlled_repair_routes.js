@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { Router } from 'express';
-import { registerProjectRepairRoutes, buildRepairSourceFacts } from '../routes/projectRepairRoutes.js';
+import { registerProjectRepairRoutes, buildRepairSourceFacts, failedCheckSourcePaths, repairProposalTimeoutMs, failingTapBlocks,
+    REPAIR_PROPOSAL_MIN_TIMEOUT_MS } from '../routes/projectRepairRoutes.js';
 import { inspectControlledRepairPlan } from '../engine/controlledRepairPlan.js';
 import { buildManagerChatContext, buildManagerChatSystemPrompt } from '../routes/projectRoutes.js';
 import { createTestHarness } from './testHarness.js';
@@ -110,6 +111,84 @@ await runAsyncTest('proposal source facts include bounded current runtime wiring
     assert.ok(facts.files.some(file => file.path === 'package.json' && file.omitted === true && file.content === undefined));
     assert.ok(facts.files.some(file => file.path === 'src/routes/product.routes.ts' && file.content?.endsWith('export const router = true;') && !file.omitted));
     assert.ok(!JSON.stringify(facts).includes('private-value'));assert.equal(facts.truncated,true);
+});
+await runAsyncTest('failing TAP subtests reach the proposal even when the excerpt drops the middle', async () => {
+    const tap = ['TAP version 13', '# Subtest: first', 'ok 1 - first', '  ---', '  ...', '# Subtest: build',
+        'not ok 2 - REQ-7 build succeeds', '  ---', "  error: |-", '    Expected values to be strictly equal:', "    + '⚠ React 18 support is deprecated'", "    - ''",
+        "  stack: |-", '    TestContext.<anonymous> (/workspace/tests/system.test.js:563:10)', '  ...',
+        '# Subtest: third', 'ok 3 - third', '1..3', '# tests 3', '# pass 2', '# fail 1'].join('\n');
+    const blocks = failingTapBlocks(tap);
+    assert.equal(blocks.length, 1);
+    assert.match(blocks[0], /^not ok 2 - REQ-7 build succeeds/);
+    assert.match(blocks[0], /React 18 support is deprecated/);
+    assert.match(blocks[0], /system\.test\.js:563/);
+    assert.doesNotMatch(blocks[0], /ok 3 - third/);
+    assert.deepEqual(failingTapBlocks('ok 1 - fine\n# pass 1'), []);
+    assert.deepEqual(failingTapBlocks(null), []);
+    const many = Array.from({ length: 20 }, (_, i) => `not ok ${i + 1} - t${i}\n  error: ${'x'.repeat(900)}`).join('\n');
+    const bounded = failingTapBlocks(many);
+    assert.ok(bounded.length >= 1 && bounded.join('').length <= 6000, 'the total stays bounded');
+
+    let supplied;
+    await exercise(async f => { assert.equal((await f.request()).status, 200); }, {
+        loadContext: async () => ({ ...fixture(), checks: [{ id: 'suite', run_id: 'r', contract_id: 'c', gate_name: 'test_suite_execution',
+            applicability: 'MANDATORY', status: 'FAIL', reason: 'Suite failed', stdout: 'x'.repeat(5000) + '\n' + tap + '\n' + 'y'.repeat(5000) }] }),
+        managerResponder: async messages => { supplied = messages; return JSON.stringify({ ...payload, targets: [{ ...payload.targets[0], checkIds: ['suite'] }] }); }
+    });
+    const suite = JSON.parse(supplied.find(message => message.role === 'user').content).checks.find(check => check.id === 'suite');
+    assert.doesNotMatch(suite.stdout, /not ok 2/, 'the head/tail excerpt alone would hide the failure');
+    assert.match(suite.failingTests[0], /system\.test\.js:563/);
+});
+
+await runAsyncTest('failed checks name only whole known source paths, never secrets or passing output', async () => {
+    const files = ['tests/test-helper.ts', 'src/app.ts', 'src/app.tsx', 'src/services/product.service.ts', '.env', 'tests/unused.ts']
+        .map(path => ({ path }));
+    const checks = [
+        { status: 'FAIL', stderr: "tests/test-helper.ts(68,54): error TS2345: Argument is not assignable.\nsrc/app.tsx(3,1): warning" },
+        { status: 'BLOCKED', reason: 'Missing value in /tmp/job-1/.env and C:\\work\\job\\src\\services\\product.service.ts' },
+        { status: 'PASS', stdout: 'tests/unused.ts passed' }
+    ];
+    assert.deepEqual(failedCheckSourcePaths(checks, files), ['tests/test-helper.ts', 'src/app.tsx']);
+    assert.deepEqual(failedCheckSourcePaths([{ status: 'FAIL', reason: 'see src/services/product.service.ts:12' }], files),
+        ['src/services/product.service.ts']);
+    assert.deepEqual(failedCheckSourcePaths([], files), []);
+});
+await runAsyncTest('source facts spend the budget on named failures and tested behaviour before routers', async () => {
+    const file = (path, bytes) => ({ path, content: Buffer.from(`// ${path}\n` + 'x'.repeat(bytes)) });
+    const files = [
+        file('src/routes/product.routes.ts', 3000),
+        file('src/routes/category.routes.ts', 3000),
+        file('src/controllers/product.controller.ts', 1000),
+        file('src/services/product.service.ts', 1000),
+        file('src/validations/product.validation.ts', 1000),
+        file('package.json', 200),
+        file('tests/test-helper.ts', 1500),
+        file('tests/unrelated-helper.ts', 100)
+    ];
+    const facts = buildRepairSourceFacts(files, 6000, [], ['tests/test-helper.ts']);
+    const included = facts.files.filter(entry => !entry.omitted).map(entry => entry.path);
+    assert.deepEqual(included.slice(0, 4), ['tests/test-helper.ts', 'src/services/product.service.ts',
+        'src/validations/product.validation.ts', 'package.json']);
+    assert.ok(included.includes('src/controllers/product.controller.ts'));
+    assert.ok(facts.files.some(entry => entry.path === 'src/routes/product.routes.ts' && entry.omitted), 'routers yield the remaining budget');
+    assert.ok(!facts.files.some(entry => entry.path === 'tests/unrelated-helper.ts'), 'an unnamed helper is not source context');
+    assert.equal(facts.truncated, true);
+    const unnamed = buildRepairSourceFacts(files, 6000, [], ['.env']);
+    assert.ok(!unnamed.files.some(entry => entry.path === 'tests/test-helper.ts'), 'a helper enters only when a failure names it');
+});
+await runAsyncTest('proposal waits at least four minutes, follows a longer profile and stays within the LLM limit', async () => {
+    assert.equal(repairProposalTimeoutMs(120000), REPAIR_PROPOSAL_MIN_TIMEOUT_MS);
+    assert.equal(repairProposalTimeoutMs(null), REPAIR_PROPOSAL_MIN_TIMEOUT_MS);
+    assert.equal(repairProposalTimeoutMs('not-a-number'), REPAIR_PROPOSAL_MIN_TIMEOUT_MS);
+    assert.equal(repairProposalTimeoutMs(280000), 280000);
+    assert.equal(repairProposalTimeoutMs(900000), 300000);
+    let options;
+    await exercise(async f => { assert.equal((await f.request()).status, 200); }, {
+        activeProfileTimeoutMs: () => 270000,
+        managerResponder: async (_messages, supplied) => { options = supplied; return JSON.stringify(payload); }
+    });
+    assert.equal(options.timeoutMs, 270000);
+    assert.equal(options.maxOutputTokens, 32768);
 });
 await runAsyncTest('model timeout is actionable and releases the request without publishing or changing sources', () => exercise(async f => {
     const response = await f.request(); const result = await response.json();

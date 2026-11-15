@@ -245,6 +245,9 @@ test('container exec carries a validated service port and per-run JWT secret wit
   } });
   assert.ok(args.includes('PORT=5000')); assert.ok(args.includes(`JWT_SECRET=${secret}`));
   assert.ok(!args.some(arg => arg.includes('/host/evil') || arg.includes('host-secret')));
+  const demo = 'D'.repeat(31) + '-';
+  assert.deepStrictEqual(runtime.filterRuntimeEnvironment({ XFACTOR_DEMO_PASSWORD_ADMIN: demo, XFACTOR_DEMO_PASSWORD_VIEWER: 'short',
+    DB_PASSWORD: 'x'.repeat(32), xfactor_demo_password_admin: demo }), { XFACTOR_DEMO_PASSWORD_ADMIN: demo });
   for (const port of ['0', '80', '65536', '3000;anything', '-1']) {
     const invalid = runtime.buildContainerExecArgs({ containerName: 'owned-container', command: 'node', env: { PORT: port, JWT_SECRET: 'host-secret' } });
     assert.ok(!invalid.some(arg => arg.startsWith('PORT=') || arg.startsWith('JWT_SECRET=')));

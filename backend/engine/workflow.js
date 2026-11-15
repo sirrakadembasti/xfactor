@@ -48,7 +48,7 @@ import { getCurrentLLMProvider } from '../llm.js';
 import { recordProjectTokenUsage } from '../projectTokenUsage.js';
 import { logError, logWarning, redactSensitiveText } from '../observability.js';
 import { workflowRecoveryAdvice } from './recoveryAdvice.js';
-import { updateAttemptHeartbeat, releaseWorkflowLease, assertWorkflowLease } from '../workflowAttempts.js';
+import { startLeaseHeartbeat, releaseWorkflowLease, assertWorkflowLease } from '../workflowAttempts.js';
 import { registerProjectAbortController, unregisterProjectAbortController } from './cancellation.js';
 import {
     getProjectDir,
@@ -183,19 +183,16 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         );
     };
 
-    let heartbeatTimer = null;
+    let leaseHeartbeat = null;
     let terminalStatus = 'aborted';
     let executionError = null;
     let controllerBoundary = null;
     let priorWorkerBlockers = false;
 
     if (attemptId) {
-        heartbeatTimer = setInterval(() => {
-            if (!updateAttemptHeartbeat(attemptId, effectiveLeaseOwner)
-                && !abortController.signal.aborted) {
-                abortController.abort('LEASE_LOST');
-            }
-        }, 5000);
+        leaseHeartbeat = startLeaseHeartbeat({ attemptId, leaseOwner: effectiveLeaseOwner, onLost: reason => {
+            if (!abortController.signal.aborted) abortController.abort(reason);
+        } });
     }
 
     try {
@@ -905,7 +902,7 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
             }
         }
     } finally {
-        clearInterval(heartbeatTimer);
+        await leaseHeartbeat?.stop();
         unregisterProjectAbortController(projectId, abortController);
         if (abortController.signal.aborted && abortController.signal.reason === 'PAUSED') {
             terminalStatus = 'paused';
