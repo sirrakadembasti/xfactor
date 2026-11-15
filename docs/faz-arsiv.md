@@ -507,6 +507,18 @@ Açık kalanlar:
 - Bağımsız inceleme, admin ürün oluşturma başarısı gözlenmediği için kabul etmedi.
 - Proje `paused` durumda duruyor, `GET /:id/logs` ise `paused` durumunda her çağrıda logları diskten yeniden kuruyor (yaklaşık 6,5 sn).
 
+### Halka 41 — 16 Kasım: Docker turları ve PR #8
+
+Docker worker'a geçildi. Doğrulama hattında dört düzeltme yapıldı:
+- Uygulamanın test süiti 5 dakika alıyor (`c35777c`).
+- Adaptör hata fırlattığında testin tam çıktısı korunuyor (`9bb0b5a`).
+- Başarısız TAP vakaları onarım önerisine gönderiliyor (`f9cee10`).
+- Coder'a bir kez biçim düzeltme hakkı verildi (`8c870fe`).
+
+En iyi koşu `39be2bde`: 83 PASS; uygulamanın 20 testinden 19'u geçti. Tek hata, Next.js'in React 18 uyarısını içeren `stderr`'i boş bekleyen testti. Sonraki üç minimax onarım turu geriledi; son koşu `cd49324b` 20 PASS'te kaldı.
+
+Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile CI'a gönderildi. `stok-takip-1` `paused` duruyor ve teslim edilmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

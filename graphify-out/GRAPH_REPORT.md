@@ -1,10 +1,10 @@
 # XFactor kaynak haritası
 
-Üretim tarihi: 2026-11-15T22:50:59.253Z
+Üretim tarihi: 2026-11-15T23:17:14.245Z
 
 - 461 kaynak ve belge dosyası
 - 3719 düğüm
-- 9860 ilişki
+- 9862 ilişki
 
 ## Düğüm türleri
 
@@ -12,13 +12,13 @@
 |---|---:|
 | Function | 1796 |
 | Method | 1215 |
-| SourceFile | 339 |
+| SourceFile | 337 |
 | EnvVar | 84 |
 | Package | 55 |
 | HttpRoute | 54 |
 | HttpRequest | 39 |
 | TestSuite | 32 |
-| BackendService | 29 |
+| BackendService | 31 |
 | Document | 23 |
 | EngineCore | 17 |
 | Class | 15 |
@@ -69,6 +69,8 @@
 | delegates_quality | 1 |
 | delegates_acceptance | 1 |
 | rejects_drafts | 1 |
+| holds_lease | 1 |
+| spawns_heartbeat_thread | 1 |
 | executes_migrations | 1 |
 | triggers_workflow | 1 |
 | reads_docs | 1 |

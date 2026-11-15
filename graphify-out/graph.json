@@ -217,7 +217,7 @@
       "group": "engine",
       "file": "backend/engine/workflow.js",
       "description": "Paralel DAG dalgalarını yürüten ana iş akışı komutanı",
-      "val": 49,
+      "val": 49.5,
       "provenance": "curated"
     },
     {
@@ -658,6 +658,26 @@
       "file": "backend/routes/projectContractRoutes.js",
       "description": "Bekleyen sözleşme taslağını onaylı sözleşmeye ve kaynaklara dokunmadan reddetme ucu",
       "val": 7,
+      "provenance": "curated"
+    },
+    {
+      "id": "backend/workflowAttempts.js",
+      "label": "workflowAttempts.js (Workflow Lease)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/workflowAttempts.js",
+      "description": "Proje başına tek yürütme kilidi, bayat kilit kurtarması ve kilit düşürme tanılaması",
+      "val": 34,
+      "provenance": "curated"
+    },
+    {
+      "id": "backend/workflowHeartbeatWorker.js",
+      "label": "workflowHeartbeatWorker.js (Lease Heartbeat Thread)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/workflowHeartbeatWorker.js",
+      "description": "Kalp atışını kendi SQLite bağlantısıyla ayrı iş parçacığından yazar; ana döngü takılmalarından etkilenmez",
+      "val": 3.5,
       "provenance": "curated"
     },
     {
@@ -3558,26 +3578,6 @@
       "file": "backend/verification/verificationContext.js",
       "description": "",
       "val": 7,
-      "provenance": "ast"
-    },
-    {
-      "id": "backend/workflowAttempts.js",
-      "label": "workflowAttempts.js",
-      "type": "SourceFile",
-      "group": "backend",
-      "file": "backend/workflowAttempts.js",
-      "description": "",
-      "val": 32.5,
-      "provenance": "ast"
-    },
-    {
-      "id": "backend/workflowHeartbeatWorker.js",
-      "label": "workflowHeartbeatWorker.js",
-      "type": "SourceFile",
-      "group": "backend",
-      "file": "backend/workflowHeartbeatWorker.js",
-      "description": "",
-      "val": 3,
       "provenance": "ast"
     },
     {
@@ -40657,6 +40657,18 @@
       "source": "backend/routes/projectContractRoutes.js",
       "target": "backend/contracts/projectContract.js",
       "label": "rejects_drafts",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/engine/workflow.js",
+      "target": "backend/workflowAttempts.js",
+      "label": "holds_lease",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/workflowAttempts.js",
+      "target": "backend/workflowHeartbeatWorker.js",
+      "label": "spawns_heartbeat_thread",
       "provenance": "curated"
     },
     {
@@ -108602,7 +108614,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 321
+        "line": 325
       }
     },
     {
@@ -108612,7 +108624,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 322
+        "line": 326
       }
     },
     {
@@ -108622,7 +108634,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 326
+        "line": 330
       }
     },
     {
@@ -108632,7 +108644,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 338
+        "line": 342
       }
     },
     {
@@ -108642,7 +108654,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 339
+        "line": 343
       }
     },
     {
@@ -108652,7 +108664,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 340
+        "line": 344
       }
     },
     {
@@ -108662,7 +108674,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 349
+        "line": 353
       }
     },
     {

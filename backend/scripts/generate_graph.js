@@ -179,6 +179,8 @@ async function extractCodeGraph() {
         { id: 'backend/routes/projectTraceabilityRoutes.js', label: 'routes/projectTraceabilityRoutes.js (Traceability & Artifacts)', desc: 'Gereksinim etki analizi, rebuild preview ve doğrulanmış artefakt indirme uç noktaları' },
         { id: 'backend/routes/projectRepairRoutes.js', label: 'routes/projectRepairRoutes.js (Controlled Repair)', desc: 'Sınırlı onarım önerisi, onarım başlatma, bağımsız inceleme ve yeniden doğrulama uç noktaları' },
         { id: 'backend/routes/projectContractRoutes.js', label: 'routes/projectContractRoutes.js (Contract Drafts)', desc: 'Bekleyen sözleşme taslağını onaylı sözleşmeye ve kaynaklara dokunmadan reddetme ucu' },
+        { id: 'backend/workflowAttempts.js', label: 'workflowAttempts.js (Workflow Lease)', desc: 'Proje başına tek yürütme kilidi, bayat kilit kurtarması ve kilit düşürme tanılaması' },
+        { id: 'backend/workflowHeartbeatWorker.js', label: 'workflowHeartbeatWorker.js (Lease Heartbeat Thread)', desc: 'Kalp atışını kendi SQLite bağlantısıyla ayrı iş parçacığından yazar; ana döngü takılmalarından etkilenmez' },
         { id: 'backend/db/migrations.js', label: 'db/migrations.js (Schema Migrations)', desc: 'Versiyonlu SQLite şema migrasyonları ve sütun varlık yardımcıları' }
     ];
 
@@ -192,6 +194,8 @@ async function extractCodeGraph() {
     addLink('backend/routes/projectRoutes.js', 'backend/routes/projectRepairRoutes.js', 'delegates_routes');
     addLink('backend/routes/projectRoutes.js', 'backend/routes/projectContractRoutes.js', 'delegates_routes');
     addLink('backend/routes/projectContractRoutes.js', 'backend/contracts/projectContract.js', 'rejects_drafts');
+    addLink('backend/engine/workflow.js', 'backend/workflowAttempts.js', 'holds_lease');
+    addLink('backend/workflowAttempts.js', 'backend/workflowHeartbeatWorker.js', 'spawns_heartbeat_thread');
     addLink('backend/routes/projectRoutes.js', 'backend/routes/projectTraceabilityRoutes.js', 'delegates_routes');
     addLink('backend/db.js', 'backend/db/migrations.js', 'executes_migrations');
     addLink('backend/routes/projectRoutes.js', 'backend/engine/workflow.js', 'triggers_workflow');
