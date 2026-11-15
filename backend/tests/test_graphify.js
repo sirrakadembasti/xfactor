@@ -131,11 +131,13 @@ try {
   const committedGraph = JSON.parse(await fs.readFile(
     path.join(import.meta.dirname, '../../graphify-out/graph.json'), 'utf8'
   ));
-  const workflowDagRelations = committedGraph.links
-    .filter(link => link.source === 'backend/engine/workflow.js' && link.target === 'backend/engine/dag.js')
+  const relations = (source, target) => committedGraph.links
+    .filter(link => link.source === source && link.target === target)
     .map(link => link.label);
-  assert(workflowDagRelations.includes('imports'));
-  assert(workflowDagRelations.includes('executes_waves'));
+  // workflow.js builds its DAG through workflowSupport.js, which imports dag.js.
+  assert(relations('backend/engine/workflow.js', 'backend/engine/dag.js').includes('executes_waves'));
+  assert(relations('backend/engine/workflow.js', 'backend/engine/workflowSupport.js').includes('imports'));
+  assert(relations('backend/engine/workflowSupport.js', 'backend/engine/dag.js').includes('imports'));
   console.log('Graphify source extraction: passed');
 } finally {
   await fs.rm(root, { recursive: true, force: true });

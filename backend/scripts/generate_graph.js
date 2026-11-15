@@ -116,6 +116,9 @@ async function extractCodeGraph() {
         { id: 'backend/engine/checkpointIdentity.js', label: 'checkpointIdentity.js (Scoped Ownership)', desc: 'Sözleşme/domain/takım/görev kimliği ve konservatif eski checkpoint aidiyeti' },
         { id: 'backend/engine/checkpointRepository.js', label: 'checkpointRepository.js (Durable Evidence)', desc: 'Sürümlü görev aidiyeti, sözleşme ve lease kontrollü checkpoint kalıcılığı' },
         { id: 'backend/engine/workerRepairs.js', label: 'workerRepairs.js (Bounded Owner Repair)', desc: 'Kalıcı çağrı bütçesi, tekil sahiplik ve kaynak CAS ile worker bulgusu onarımı; taze inceleme ve worker kanıtı gerekir' },
+        { id: 'backend/engine/workflowSupport.js', label: 'workflowSupport.js (Workflow Helpers)', desc: 'Plan özeti, domain sırası, DAG kurulumu, eşzamanlılık, olay kaydı, duraklatma ve ajan çağrısı yardımcıları; workflow.js yeniden dışa aktarır' },
+        { id: 'backend/engine/stages/qualityStage.js', label: 'qualityStage.js (Quality & Tester)', desc: 'Statik denetim, sınırlı onarımlar, worker Reviewer kabulü ve Tester raporu' },
+        { id: 'backend/engine/stages/acceptanceStage.js', label: 'acceptanceStage.js (Dependency Prep & Acceptance)', desc: 'Bağımlılık hazırlığı, artefakt yayını ve kanonik worker doğrulamasıyla kabul' },
         { id: 'backend/engine/stages/repairStage.js', label: 'repairStage.js (Targeted Repair)', desc: 'Statik deterministik denetim ve tester veto hedefli onarım döngüleri' },
         { id: 'backend/engine/stages/verificationStage.js', label: 'verificationStage.js (Verification Helpers)', desc: 'İzole bağımlılık hazırlığı ve paket kilidi doğrulama yardımcıları' },
         { id: 'backend/engine/templates/dockerTemplates.js', label: 'dockerTemplates.js (Container Scaffold)', desc: 'Next.js, Vite ve Express için çok aşamalı Dockerfile ve .dockerignore şablonları' },
@@ -138,6 +141,11 @@ async function extractCodeGraph() {
     addLink('backend/engine/workflow.js', 'backend/engine/workerRepairs.js', 'routes_bounded_owner_repairs');
     addLink('backend/engine/workflow.js', 'backend/engine/stages/repairStage.js', 'delegates_repair');
     addLink('backend/engine/workflow.js', 'backend/engine/stages/verificationStage.js', 'delegates_verification');
+    addLink('backend/engine/workflow.js', 'backend/engine/workflowSupport.js', 'uses_helpers');
+    addLink('backend/engine/workflow.js', 'backend/engine/stages/qualityStage.js', 'delegates_quality');
+    addLink('backend/engine/workflow.js', 'backend/engine/stages/acceptanceStage.js', 'delegates_acceptance');
+    addLink('backend/engine/stages/qualityStage.js', 'backend/engine/stages/repairStage.js', 'delegates_repair');
+    addLink('backend/engine/stages/acceptanceStage.js', 'backend/engine/stages/verificationStage.js', 'delegates_verification');
     addLink('backend/engine/codeGenerator.js', 'backend/engine/templates/dockerTemplates.js', 'uses_templates');
     addLink('backend/engine/codeGenerator.js', 'backend/engine/templates/prismaTemplates.js', 'uses_templates');
 
@@ -169,6 +177,7 @@ async function extractCodeGraph() {
         { id: 'scripts/dev.mjs', label: 'scripts/dev.mjs (Unified Dev Runner)', desc: 'Backend, frontend ve execution worker servislerini başlatan birleşik geliştirici koşucusu' },
         { id: 'backend/routes/projectObservabilityRoutes.js', label: 'routes/projectObservabilityRoutes.js (Observability)', desc: 'Sözleşmeler, doğrulama koşuları, kontrol logları ve metrik API uç noktaları' },
         { id: 'backend/routes/projectTraceabilityRoutes.js', label: 'routes/projectTraceabilityRoutes.js (Traceability & Artifacts)', desc: 'Gereksinim etki analizi, rebuild preview ve doğrulanmış artefakt indirme uç noktaları' },
+        { id: 'backend/routes/projectRepairRoutes.js', label: 'routes/projectRepairRoutes.js (Controlled Repair)', desc: 'Sınırlı onarım önerisi, onarım başlatma, bağımsız inceleme ve yeniden doğrulama uç noktaları' },
         { id: 'backend/db/migrations.js', label: 'db/migrations.js (Schema Migrations)', desc: 'Versiyonlu SQLite şema migrasyonları ve sütun varlık yardımcıları' }
     ];
 
@@ -179,6 +188,7 @@ async function extractCodeGraph() {
     addLink('backend/server.js', 'backend/routes/projectRoutes.js', 'mounts');
     addLink('backend/server.js', 'backend/routes/authRoutes.js', 'mounts');
     addLink('backend/routes/projectRoutes.js', 'backend/routes/projectObservabilityRoutes.js', 'delegates_routes');
+    addLink('backend/routes/projectRoutes.js', 'backend/routes/projectRepairRoutes.js', 'delegates_routes');
     addLink('backend/routes/projectRoutes.js', 'backend/routes/projectTraceabilityRoutes.js', 'delegates_routes');
     addLink('backend/db.js', 'backend/db/migrations.js', 'executes_migrations');
     addLink('backend/routes/projectRoutes.js', 'backend/engine/workflow.js', 'triggers_workflow');

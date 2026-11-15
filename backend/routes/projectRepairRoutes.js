@@ -5,6 +5,17 @@ import { PRODUCTION_LANGUAGE_POLICY } from '../agents/productionLanguagePolicy.j
 import { digest } from '../verification/workerFailures.js';
 import { classifyLLMError } from '../../llm-yonetimi/src/runtime.js';
 import { listRequirementAssertionCandidates } from '../contracts/requirementAssertionBindings.js';
+import { readProjectState, writeProjectState, getProjectDir, computePlanHash } from '../engine/index.js';
+import { resolveGenerationResume } from '../engine/resumeStage.js';
+import { normalizeManagerPlan } from '../agents/schemas.js';
+import { getProject } from '../projectRepository.js';
+import { acquireWorkflowLease, getActiveWorkflowAttempt, releaseWorkflowLease } from '../workflowAttempts.js';
+import { abortProjectExecution } from '../engine/cancellation.js';
+import { db } from '../db.js';
+import { PROJECT_STATUS } from '../engine/stateMachine.js';
+import { readControlledRepairContext, assertControlledRepairBaseline } from '../engine/controlledRepairContext.js';
+import { readWorkerSnapshotSync } from '../engine/workerRepairs.js';
+import { inspectControlledSemanticReviewEligibility } from '../engine/controlledSemanticAuthority.js';
 
 const SOURCE_FACT_PATHS = new Set(['package.json', 'service-manifest.json', 'next.config.js', 'next.config.mjs', 'next.config.ts',
     'prisma/schema.prisma', 'prisma/seed.ts', 'src/app.ts', 'src/server.ts', 'src/config/env.ts',
@@ -142,5 +153,234 @@ En fazla 12 hedef, her hedef tek dosya. Her başarısız zorunlu kontrolü ve me
             logError('repair.proposal_rejected', error, { projectId: id, requestId: req.requestId, status, code: error.code });
             res.status(status).json(buildErrorResponse(error, redactSensitiveText(error.message), req.requestId, error.code));
         } finally { activeRequests.delete(id); }
+    }));
+}
+
+// Controlled repair, independent review and reverification start generation work
+// under a workflow lease; the chat/approval routes stay in projectRoutes.js.
+export function registerControlledRepairExecutionRoutes(router, deps) {
+    const {
+        requireAuth, projectAccess, lifecycle, wsHub, projectExecutor, activeChatRequests,
+        withPlanScopeReview, getActionId, appendWorkflowAction, respondIdempotentWorkflow, publicationTimeoutMs
+    } = deps;
+    const controlledReviewPublications = new Map();
+
+    router.post('/:id/repair', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        lifecycle?.assertGenerationAllowed();
+        const state = await readProjectState(id), proposal = state?.workflow?.controlledRepair?.proposal;
+        if (!proposal || req.body?.proposalHash !== proposal.planHash || req.body?.contractId !== proposal.contractId) {
+            return res.status(409).json({ code: 'CONTROLLED_REPAIR_STALE', error: 'Onarım önerisi değişmiş; güncel öneriyi inceleyin.' });
+        }
+        const active = getActiveWorkflowAttempt(id);
+        if (active) {
+            if (String(active.lease_owner).startsWith('http-controlled-repair-')
+                && state.workflow.controlledRepair.authorizedAttemptId === active.id) return respondIdempotentWorkflow(res, id, active);
+            return res.status(409).json({ error: 'Başka bir yürütme sürüyor.' });
+        }
+        if (state.workflow.controlledRepair.phase !== 'proposed' || !proposal.ready
+            || !withPlanScopeReview(state).repairPreparation.available || activeChatRequests.has(id)) {
+            return res.status(409).json({ code: 'CONTROLLED_REPAIR_STALE', error: 'Bu öneri şu anda başlatılamaz; mevcut durum ve yeni doğrulama kayıtları incelenmeli.' });
+        }
+        const context = await readControlledRepairContext(id);
+        const inspected = inspectControlledRepairPlan({ summary: proposal.summary,
+            targets: proposal.targets.map(({ path, create, requirementIds, checkIds, instructions, referencePaths }) =>
+                ({ path, create, requirementIds, checkIds, instructions, referencePaths })) }, context);
+        if (inspected.planHash !== proposal.planHash) return res.status(409).json({ code: 'CONTROLLED_REPAIR_STALE', error: 'Onarımın kaynak veya kapsam kimliği değişti.' });
+        const leaseOwner = `http-controlled-repair-${req.user.id}`, lease = acquireWorkflowLease(id, leaseOwner);
+        if (!lease.acquired) return res.status(409).json({ error: 'Proje yürütme kilidi alınamadı.' });
+        try {
+            db.exec('BEGIN IMMEDIATE;');
+            const assertBaseline = () => {
+                if (activeChatRequests.has(id)) throw Object.assign(new Error('Manager sohbeti sürerken onarım başlatılamaz.'), { status: 409 });
+                assertControlledRepairBaseline(context);
+                if (controlledRepairSourceHash(readWorkerSnapshotSync(getProjectDir(id), { includeLockfile: true })) !== proposal.baselineSourceHash) {
+                    throw Object.assign(new Error('Onarım başlamadan kaynaklar değişti.'), { code: 'CONTROLLED_REPAIR_STALE', status: 409 });
+                }
+            };
+            assertBaseline();
+            state.workflow.controlledRepair.authorizedAttemptId = lease.attempt.id;
+            state.workflow.controlledRepair.authorizedAt = new Date().toISOString();
+            const options = { attemptId: lease.attempt.id, leaseOwner, inTransaction: true, onTransaction: assertBaseline };
+            if (state.status !== PROJECT_STATUS.PAUSED) { state.status = PROJECT_STATUS.PAUSED; await writeProjectState(id, state, options); }
+            state.status = PROJECT_STATUS.IMPLEMENTING;
+            await writeProjectState(id, state, options);
+            appendWorkflowAction(id, getActionId(req), {
+                userText: 'Mevcut çalışmayı koruyarak öneride listelenen dosyaları onar ve yeniden kontrol et.',
+                modelText: 'Yalnız incelenen onarım önerisindeki dosyalar değiştirilecek. Onaylı sözleşme, görevler ve üretim önbelleği korunuyor; yeni taslak onaylanmadı. Yeni kaynak incelemesi ve bağımsız doğrulama sonucu ayrıca değerlendirilecek.'
+            }, { inTransaction: true });
+            db.exec('COMMIT;');
+        } catch (error) {
+            try { db.exec('ROLLBACK;'); } catch {}
+            releaseWorkflowLease(lease.attempt.id, 'failed', { leaseOwner, error: error.message });
+            throw error;
+        }
+        const operation = lifecycle?.begin('generation', { cancel: () => abortProjectExecution(id, 'SHUTDOWN') });
+        projectExecutor(id, wsHub, lease.attempt.id, leaseOwner, { controlledRepairHash: proposal.planHash })
+            .catch(error => logError('workflow.controlled_repair_failed', error, { projectId: id, attemptId: lease.attempt.id }))
+            .finally(() => operation?.end());
+        res.json(withPlanScopeReview(getProject(id)));
+    }));
+
+    router.post('/:id/repair-review', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        lifecycle?.assertGenerationAllowed();
+        const stale = (message = 'İnceleme kaydı değişmiş; güncel durumu yeniden inceleyin.') => Object.assign(new Error(message), {
+            status: 409, code: 'CONTROLLED_REPAIR_REVIEW_STALE'
+        });
+        const readApproved = () => db.prepare("SELECT id,contract_hash,contract_json,revision FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(id);
+        const readLatest = contractId => ({
+            latestArtifact: db.prepare('SELECT id,sha256,verification_run_id FROM artifacts WHERE project_id=? AND contract_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1').get(id, contractId),
+            latestRun: db.prepare('SELECT id,status FROM verification_runs WHERE project_id=? AND contract_id=? ORDER BY started_at DESC,rowid DESC LIMIT 1').get(id, contractId)
+        });
+        const readSourceHash = () => {
+            try { return controlledRepairSourceHash(readWorkerSnapshotSync(getProjectDir(id), { includeLockfile: true })); }
+            catch (error) {
+                if (['ENOENT', 'ENOTDIR', 'EACCES', 'EPERM'].includes(error.code) || /^Worker repair requires Manager revision:/.test(error.message || '')) {
+                    throw stale('Güncel uygulama kaynakları güvenle doğrulanamadı; yeni tanılama gerekli.');
+                }
+                throw error;
+            }
+        };
+        let lease, leaseOwner, publication, transactionOpen = false;
+        try {
+            const state = await readProjectState(id);
+            if (!state) return res.status(404).json({ error: 'Proje bulunamadı.' });
+            const approved = readApproved(), ledger = state.workflow?.controlledRepair, proposal = ledger?.proposal;
+            if (!approved || !proposal || req.body?.contractId !== approved.id || proposal.contractId !== approved.id
+                || req.body?.proposalHash !== proposal.planHash) throw stale('Onaylı sözleşme veya onarım önerisi değişmiş; sayfayı yenileyin.');
+            if (activeChatRequests.has(id)) throw stale('Manager sohbeti sürerken bağımsız inceleme başlatılamaz.');
+            leaseOwner = `http-controlled-review-${req.user.id}`;
+            const authorizedActive = async attempt => {
+                if (attempt?.lease_owner !== leaseOwner) return null;
+                const publishing = controlledReviewPublications.get(attempt.id);
+                if (publishing) {
+                    let timer;
+                    const published = await Promise.race([publishing.promise, new Promise(resolve => { timer = setTimeout(() => resolve(false), publicationTimeoutMs); })]);
+                    clearTimeout(timer);
+                    if (!published) return null;
+                }
+                const current = getProject(id), currentApproved = readApproved(), currentActive = getActiveWorkflowAttempt(id);
+                return currentActive?.id === attempt.id && currentActive.lease_owner === leaseOwner
+                    && currentApproved?.id === approved.id && currentApproved.contract_hash === approved.contract_hash
+                    && current?.workflow?.controlledRepair?.authorizedAttemptId === attempt.id
+                    && current.workflow.controlledRepair.proposal?.contractId === approved.id
+                    && current.workflow.controlledRepair.proposal?.planHash === proposal.planHash ? currentActive : null;
+            };
+            const active = getActiveWorkflowAttempt(id);
+            if (active) {
+                const authorized = await authorizedActive(active);
+                if (authorized) return respondIdempotentWorkflow(res, id, authorized);
+                throw stale('Başka bir yürütme sürüyor.');
+            }
+            if (!['paused', 'verification_failed'].includes(state.status) || !withPlanScopeReview(state).reverification.available) {
+                throw stale('Aynı onaylı sözleşmede tamamlanmış üretim ve duraklatılmış süreç gerekli.');
+            }
+            const baseline = readLatest(approved.id), sourceHash = readSourceHash();
+            const eligibility = inspectControlledSemanticReviewEligibility({ workflow: state.workflow, ...baseline, currentSourceHash: sourceHash, contractId: approved.id });
+            if (!eligibility.eligible) throw stale(eligibility.reason);
+            lease = acquireWorkflowLease(id, leaseOwner);
+            if (!lease.acquired) {
+                const authorized = await authorizedActive(lease.attempt);
+                if (authorized) return respondIdempotentWorkflow(res, id, authorized);
+                throw stale('Proje yürütme kilidi alınamadı.');
+            }
+            publication = {};
+            publication.promise = new Promise(resolve => { publication.resolve = resolve; });
+            controlledReviewPublications.set(lease.attempt.id, publication);
+            await lifecycle?.afterWorkflowLeaseAcquired?.({ projectId: id, attemptId: lease.attempt.id });
+            db.exec('BEGIN IMMEDIATE;'); transactionOpen = true;
+            const assertBaseline = () => {
+                if (activeChatRequests.has(id)) throw stale('Manager sohbeti sürerken bağımsız inceleme başlatılamaz.');
+                const persisted = db.prepare('SELECT revision,status,workflow_state FROM projects WHERE id=?').get(id);
+                if (!persisted || persisted.revision !== state.revision || persisted.status !== state.status) throw stale('Proje durumu inceleme başlamadan değişti.');
+                const currentApproved = readApproved();
+                if (currentApproved?.id !== approved.id || currentApproved.contract_hash !== approved.contract_hash
+                    || currentApproved.revision !== approved.revision || currentApproved.contract_json !== approved.contract_json) throw stale('Onaylı sözleşme inceleme başlamadan değişti.');
+                let workflow;
+                try { workflow = JSON.parse(persisted.workflow_state || '{}'); } catch { throw stale(); }
+                if (workflow.controlledRepair?.proposal?.planHash !== proposal.planHash
+                    || workflow.controlledRepair.outputSourceHash !== sourceHash
+                    || !resolveGenerationResume(workflow.generationCompletion, currentApproved, computePlanHash(normalizeManagerPlan(JSON.parse(currentApproved.contract_json))))) throw stale('Aynı sözleşmeye ve kaynaklara bağlı tamamlanmış üretim kaydı değişti.');
+                const latest = readLatest(approved.id);
+                if (JSON.stringify(latest) !== JSON.stringify(baseline)) throw stale('En güncel worker tanılaması inceleme başlamadan değişti.');
+                const current = inspectControlledSemanticReviewEligibility({ workflow, ...latest, currentSourceHash: readSourceHash(), contractId: approved.id });
+                if (!current.eligible) throw stale(current.reason);
+            };
+            assertBaseline();
+            ledger.authorizedAttemptId = lease.attempt.id;
+            ledger.authorizedAt = new Date().toISOString();
+            const writeOptions = { attemptId: lease.attempt.id, leaseOwner, inTransaction: true, onTransaction: assertBaseline };
+            if (state.status !== PROJECT_STATUS.PAUSED) { state.status = PROJECT_STATUS.PAUSED; await writeProjectState(id, state, writeOptions); }
+            state.status = PROJECT_STATUS.IMPLEMENTING;
+            await writeProjectState(id, state, writeOptions);
+            appendWorkflowAction(id, getActionId(req), {
+                userText: 'Uygulanan sınırlı onarımı bağımsız incele ve mevcut kaynaklarla yeniden doğrula.',
+                modelText: 'Mevcut kaynaklar ve üretim kayıtları korunarak bağımsız inceleme başlıyor. Yeni taslak onaylanmadı; teslim kararı yeni kanıtlara bağlı.'
+            }, { inTransaction: true });
+            db.exec('COMMIT;'); transactionOpen = false;
+            publication.resolve(true); controlledReviewPublications.delete(lease.attempt.id);
+            const operation = lifecycle?.begin('generation', { cancel: () => abortProjectExecution(id, 'SHUTDOWN') });
+            Promise.resolve().then(() => projectExecutor(id, wsHub, lease.attempt.id, leaseOwner, {
+                controlledRepairHash: proposal.planHash, controlledRepairSemanticReview: true
+            })).catch(error => logError('workflow.controlled_semantic_review_failed', error, { projectId: id, attemptId: lease.attempt.id }))
+                .finally(() => operation?.end());
+            return res.json({ ...withPlanScopeReview(getProject(id)), attemptId: lease.attempt.id });
+        } catch (error) {
+            if (transactionOpen) { try { db.exec('ROLLBACK;'); } catch {} }
+            if (publication) { publication.resolve(false); controlledReviewPublications.delete(lease.attempt.id); }
+            if (lease?.acquired) releaseWorkflowLease(lease.attempt.id, 'failed', { leaseOwner, error: error.message });
+            if (error.status === 409 || error.code === 'WORKFLOW_LEASE_FENCED' || /^CAS Revision conflict/.test(error.message || '')) {
+                return res.status(409).json({ code: 'CONTROLLED_REPAIR_REVIEW_STALE', error: error.status === 409 ? error.message : 'Proje yürütme durumu değişti; güncel durumu inceleyin.' });
+            }
+            throw error;
+        }
+    }));
+
+    router.post('/:id/reverify', requireAuth, projectAccess('owner'), asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        lifecycle?.assertGenerationAllowed();
+        const state = await readProjectState(id);
+        if (!state) return res.status(404).json({ error: 'Proje bulunamadı.' });
+        const approved = db.prepare("SELECT id,contract_hash,revision FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(id);
+        if (!approved || req.body?.contractId !== approved.id) return res.status(409).json({
+            code: 'WORKFLOW_CONTRACT_CHANGED', error: 'Yeniden doğrulanacak onaylı sözleşme değişmiş; sayfayı yenileyin.'
+        });
+        const active = getActiveWorkflowAttempt(id);
+        if (active) {
+            if (String(active.lease_owner).startsWith('http-reverify-')) return respondIdempotentWorkflow(res, id, active);
+            return res.status(409).json({ error: 'Başka bir yürütme sürüyor.' });
+        }
+        if (!withPlanScopeReview(state).reverification.available) return res.status(409).json({
+            code: 'GENERATION_MARKER_REQUIRED', error: 'Aynı onaylı sözleşmede tamamlanmış üretim kaydı ve duraklatılmış süreç gereklidir.'
+        });
+        const leaseOwner = `http-reverify-${req.user.id}`;
+        const lease = acquireWorkflowLease(id, leaseOwner);
+        if (!lease.acquired) return res.status(409).json({ error: 'Proje yürütme kilidi alınamadı.' });
+        try {
+            db.exec('BEGIN IMMEDIATE;');
+            const current = db.prepare("SELECT id,contract_hash FROM project_contracts WHERE project_id=? AND status='approved' ORDER BY revision DESC LIMIT 1").get(id);
+            if (current?.id !== approved.id || current.contract_hash !== approved.contract_hash) throw new Error('Approved contract changed before reverification.');
+            if (state.status !== PROJECT_STATUS.PAUSED) {
+                state.status = PROJECT_STATUS.PAUSED;
+                await writeProjectState(id, state, { attemptId: lease.attempt.id, leaseOwner, inTransaction: true });
+            }
+            state.status = PROJECT_STATUS.IMPLEMENTING;
+            await writeProjectState(id, state, { attemptId: lease.attempt.id, leaseOwner, inTransaction: true });
+            appendWorkflowAction(id, getActionId(req), {
+                userText: `Onaylı sözleşme ${approved.revision} ile yalnız yeniden doğrula; mevcut üretimi koru.`,
+                modelText: 'Yeni taslak onaylanmadı. Kaynaklar, görevler ve checkpoint kayıtları değiştirilmeden yeni worker doğrulaması başlıyor. Bu tanılama işlemi tek başına teslimi onaylamaz.'
+            }, { inTransaction: true });
+            db.exec('COMMIT;');
+        } catch (error) {
+            try { db.exec('ROLLBACK;'); } catch {}
+            releaseWorkflowLease(lease.attempt.id, 'failed', { leaseOwner, error: error.message });
+            throw error;
+        }
+        const operation = lifecycle?.begin('generation', { cancel: () => abortProjectExecution(id, 'SHUTDOWN') });
+        projectExecutor(id, wsHub, lease.attempt.id, leaseOwner, { verificationOnly: true })
+            .catch(error => logError('workflow.reverification_failed', error, { projectId: id, attemptId: lease.attempt.id }))
+            .finally(() => operation?.end());
+        res.json({ ...withPlanScopeReview(getProject(id)), attemptId: lease.attempt.id });
     }));
 }
