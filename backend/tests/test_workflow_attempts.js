@@ -229,4 +229,46 @@ await runAsyncTest('8. unchanged dependency resume bypasses Manager and task rep
     await deleteProject(project.id);
 });
 
+await runAsyncTest('lease heartbeat thread keeps writing while the main event loop is blocked', async () => {
+    const { createProject, deleteProject } = await import('../projectRepository.js');
+    const { db } = await import('../db.js');
+    const { acquireWorkflowLease, releaseWorkflowLease, startLeaseHeartbeat } = await import('../workflowAttempts.js');
+    const project = await createProject({ title: 'Heartbeat Thread Project' });
+    const owner = `heartbeat-thread-${crypto.randomUUID()}`;
+    const lease = acquireWorkflowLease(project.id, owner);
+    const lost = [];
+    const heartbeat = startLeaseHeartbeat({ attemptId: lease.attempt.id, leaseOwner: owner, intervalMs: 100, onLost: reason => lost.push(reason) });
+    try {
+        assert.equal(heartbeat.mode, 'thread');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const blockedAt = Date.now();
+        while (Date.now() - blockedAt < 1500) { /* synchronous stall on the main thread */ }
+        const row = db.prepare('SELECT heartbeat_epoch FROM workflow_attempts WHERE id = ?').get(lease.attempt.id);
+        assert.ok(row.heartbeat_epoch >= blockedAt + 700,
+            `heartbeat must advance during the stall (blocked at ${blockedAt}, last beat ${row.heartbeat_epoch})`);
+        assert.deepEqual(lost, []);
+
+        releaseWorkflowLease(lease.attempt.id, 'completed', { leaseOwner: owner });
+        const deadline = Date.now() + 3000;
+        while (!lost.length && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
+        assert.deepEqual(lost, ['LEASE_LOST'], 'a released or fenced lease is reported exactly once');
+    } finally {
+        await heartbeat.stop();
+        await deleteProject(project.id);
+    }
+});
+
+await runAsyncTest('lease heartbeat falls back to the main-thread timer without a database file', async () => {
+    const { startLeaseHeartbeat } = await import('../workflowAttempts.js');
+    const lost = [];
+    const heartbeat = startLeaseHeartbeat({ attemptId: 'attempt-missing', leaseOwner: 'owner-missing', intervalMs: 50,
+        databasePath: null, onLost: reason => lost.push(reason) });
+    try {
+        assert.equal(heartbeat.mode, 'in-thread');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        assert.deepEqual(lost, ['LEASE_LOST'], 'an unknown attempt has no lease to keep');
+    } finally { await heartbeat.stop(); }
+    assert.equal(startLeaseHeartbeat({}).mode, 'none');
+});
+
 finish();

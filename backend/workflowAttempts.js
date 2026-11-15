@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { db } from './db.js';
+import { Worker } from 'node:worker_threads';
+import { db, getDatabasePath } from './db.js';
 import { logError } from './observability.js';
 import { WORKFLOW_STATUS } from './engine/stateMachine.js';
 
@@ -165,6 +166,69 @@ export function updateAttemptHeartbeat(attemptId, leaseOwner = null, { database 
     } catch (err) {
         return false;
     }
+}
+
+export const LEASE_HEARTBEAT_INTERVAL_MS = 5000;
+
+/**
+ * Keeps an attempt's lease alive while its workflow runs. The heartbeat is written from a
+ * worker thread with its own connection: synchronous stalls on the main event loop (slow disk,
+ * large sync work) no longer starve it past the 30 s TTL and fence a healthy attempt. onLost
+ * fires once when the lease is really gone (attempt ended or fenced). Without a file database
+ * (':memory:') or if the thread cannot run, the old main-thread timer is used.
+ */
+export function startLeaseHeartbeat({
+    attemptId,
+    leaseOwner,
+    onLost = () => {},
+    intervalMs = LEASE_HEARTBEAT_INTERVAL_MS,
+    databasePath = getDatabasePath()
+} = {}) {
+    if (!attemptId || !leaseOwner) return { mode: 'none', stop: async () => {} };
+    let stopped = false, lost = false, timer = null, worker = null;
+    const signalLost = () => {
+        if (stopped || lost) return;
+        lost = true;
+        onLost('LEASE_LOST');
+    };
+    const startInThread = () => {
+        timer = setInterval(() => {
+            if (!updateAttemptHeartbeat(attemptId, leaseOwner)) signalLost();
+        }, intervalMs);
+    };
+    if (!databasePath) {
+        startInThread();
+        return { mode: 'in-thread', stop: async () => { stopped = true; clearInterval(timer); } };
+    }
+    worker = new Worker(new URL('./workflowHeartbeatWorker.js', import.meta.url), {
+        workerData: { databasePath, attemptId, leaseOwner, intervalMs }
+    });
+    let workerExited = false;
+    worker.on('exit', () => { workerExited = true; });
+    worker.on('message', message => { if (message?.type === 'lost') signalLost(); });
+    worker.on('error', error => {
+        if (stopped) return;
+        logError('workflow.heartbeat_thread_failed', error, { attemptId });
+        if (!timer && !lost) startInThread();
+    });
+    return {
+        mode: 'thread',
+        stop: async () => {
+            if (stopped) return;
+            stopped = true;
+            clearInterval(timer);
+            // Ask the thread to close its connection and exit between beats; terminating it
+            // inside a native SQLite call can abort the whole process.
+            if (workerExited) return;
+            let timeoutHandle;
+            const exited = new Promise(resolve => worker.once('exit', () => resolve('exited')));
+            const timeout = new Promise(resolve => { timeoutHandle = setTimeout(resolve, 2000, 'timeout'); });
+            worker.postMessage({ type: 'stop' });
+            const outcome = await Promise.race([exited, timeout]);
+            clearTimeout(timeoutHandle);
+            if (outcome === 'timeout') await worker.terminate();
+        }
+    };
 }
 
 export function releaseWorkflowLease(attemptId, terminalStatus = 'completed', {
