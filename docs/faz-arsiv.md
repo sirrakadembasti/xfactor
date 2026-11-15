@@ -472,6 +472,12 @@ README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında
 
 15 Kasım'da [PR #7](https://github.com/sirrakadembasti/xfactor/pull/7), beş CI işinin hepsi yeşilken `main`'e alındı (merge `c25e721`).
 
+### Halka 38 — 15 Kasım: Faz 5 başlangıcı, sözleşme taslağı reddi
+
+Faz 5'e başlamadan önce `stok-takip-1`'in onay bekleyen sözleşme 4'ü onaylı sözleşme 3 ile karşılaştırıldı. Fark dar: REQ-10 (ayrık 3000/3001 portları) ve REQ-11 (`npm test` duman testi) eklenmiş, şartname somutlaştırılmış. Sonradan oluşturulan kullanıcıların parola güvenliği kuralı ise yalnız seed hesaplarına daralmış. Kullanıcı sözleşme 3 ile devam etmeye ve taslağı reddetmeye karar verdi.
+
+Uygulamada bekleyen bir taslağı reddetmenin yolu yoktu; tek ret fonksiyonu projeyi `capability_blocked` durumuna kilitliyordu. Bu yüzden sahip yetkili `POST /api/projects/:id/contracts/:revision/reject` ucu (`routes/projectContractRoutes.js`) ve arayüzde **Taslağı Reddet** düğmesi eklendi. Proje yanıtı artık her durumda `pendingContract` alanını taşıyor; böylece duraklatılmış projelerde bekleyen taslak da görünüyor.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

@@ -237,7 +237,7 @@
       "group": "engine",
       "file": "backend/engine/stateMachine.js",
       "description": "Proje durum makinesi, CAS geçişleri ve revizyon kilit yönetimi",
-      "val": 10.5,
+      "val": 11,
       "provenance": "curated"
     },
     {
@@ -397,7 +397,7 @@
       "group": "backend",
       "file": "backend/db.js",
       "description": "SQLite WAL modu, users, projects, logs ve workflow_state kalıcılığı",
-      "val": 69,
+      "val": 70,
       "provenance": "curated"
     },
     {
@@ -407,7 +407,7 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "Kanonik proje CRUD, atomik SQLite işlemleri, disk-varlık kontrolleri ve .trash izolasyonu",
-      "val": 61,
+      "val": 62,
       "provenance": "curated"
     },
     {
@@ -457,7 +457,7 @@
       "group": "backend",
       "file": "backend/security.js",
       "description": "Path traversal filtresi, sanitizasyon ve WS subprotocol token doğrulama",
-      "val": 21.5,
+      "val": 22,
       "provenance": "curated"
     },
     {
@@ -477,7 +477,7 @@
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "Proje CRUD, Chat, Onay ve Revizyon uç noktaları",
-      "val": 56.5,
+      "val": 58.5,
       "provenance": "curated"
     },
     {
@@ -497,7 +497,7 @@
       "group": "backend",
       "file": "backend/contracts/projectContract.js",
       "description": "Proje sözleşme doğrulama şemaları, gereksinimler ve tip denetimi",
-      "val": 14,
+      "val": 16.5,
       "provenance": "curated"
     },
     {
@@ -651,6 +651,16 @@
       "provenance": "curated"
     },
     {
+      "id": "backend/routes/projectContractRoutes.js",
+      "label": "routes/projectContractRoutes.js (Contract Drafts)",
+      "type": "BackendService",
+      "group": "backend",
+      "file": "backend/routes/projectContractRoutes.js",
+      "description": "Bekleyen sözleşme taslağını onaylı sözleşmeye ve kaynaklara dokunmadan reddetme ucu",
+      "val": 7,
+      "provenance": "curated"
+    },
+    {
       "id": "backend/db/migrations.js",
       "label": "db/migrations.js (Schema Migrations)",
       "type": "BackendService",
@@ -667,7 +677,7 @@
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "React 18 ana panel koordinatörü ve WebSocket canlı istemcisi",
-      "val": 29,
+      "val": 29.5,
       "provenance": "curated"
     },
     {
@@ -767,7 +777,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "HttpOnly server-session ve CSRF uyumlu API istemcisi",
-      "val": 30,
+      "val": 30.5,
       "provenance": "curated"
     },
     {
@@ -777,7 +787,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 96.5,
+      "val": 97,
       "provenance": "curated"
     },
     {
@@ -1347,7 +1357,7 @@
       "group": "engine",
       "file": "backend/engine/index.js",
       "description": "",
-      "val": 8.5,
+      "val": 9,
       "provenance": "ast"
     },
     {
@@ -1717,7 +1727,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 60,
+      "val": 60.5,
       "provenance": "ast"
     },
     {
@@ -1838,6 +1848,16 @@
       "file": "backend/tests/test_completion_atomic_hook.js",
       "description": "",
       "val": 6.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js",
+      "label": "test_contract_draft_rejection.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 14.5,
       "provenance": "ast"
     },
     {
@@ -3547,7 +3567,7 @@
       "group": "backend",
       "file": "backend/workflowAttempts.js",
       "description": "",
-      "val": 27.5,
+      "val": 28.5,
       "provenance": "ast"
     },
     {
@@ -6438,7 +6458,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 36.5,
+      "val": 37,
       "provenance": "ast"
     },
     {
@@ -6836,7 +6856,29 @@
       "line": 125
     },
     {
-      "id": "backend/contracts/projectContract.js#Function:getLatestRevision@160",
+      "id": "backend/contracts/projectContract.js#Function:rejectPendingContractRevision@164",
+      "label": "rejectPendingContractRevision",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/contracts/projectContract.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 164
+    },
+    {
+      "id": "backend/contracts/projectContract.js#Function:getPendingContractRevision@177",
+      "label": "getPendingContractRevision",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/contracts/projectContract.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 177
+    },
+    {
+      "id": "backend/contracts/projectContract.js#Function:getLatestRevision@185",
       "label": "getLatestRevision",
       "type": "Function",
       "group": "backend",
@@ -6844,10 +6886,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 160
+      "line": 185
     },
     {
-      "id": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@169",
+      "id": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@194",
       "label": "rejectContractForCapabilities",
       "type": "Function",
       "group": "backend",
@@ -6855,7 +6897,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 169
+      "line": 194
     },
     {
       "id": "backend/contracts/requirementAssertionBindings.js#Function:digest@21",
@@ -11884,7 +11926,7 @@
       "group": "packages",
       "file": null,
       "description": "express",
-      "val": 15.5,
+      "val": 16,
       "provenance": "ast"
     },
     {
@@ -12091,7 +12133,7 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "",
-      "val": 7.5,
+      "val": 8,
       "provenance": "ast",
       "line": 143
     },
@@ -12102,7 +12144,7 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "",
-      "val": 13.5,
+      "val": 14,
       "provenance": "ast",
       "line": 149
     },
@@ -12377,7 +12419,7 @@
       "group": "backend",
       "file": "backend/projectRepository.js",
       "description": "",
-      "val": 9.5,
+      "val": 10,
       "provenance": "ast",
       "line": 980
     },
@@ -12976,6 +13018,28 @@
       "line": 48
     },
     {
+      "id": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "label": "registerProjectContractRoutes",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/routes/projectContractRoutes.js",
+      "description": "",
+      "val": 5,
+      "provenance": "ast",
+      "line": 11
+    },
+    {
+      "id": "backend/routes/projectContractRoutes.js#Function:recordAction@44",
+      "label": "recordAction",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/routes/projectContractRoutes.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 44
+    },
+    {
       "id": "backend/routes/projectObservabilityRoutes.js#Function:rejectRepeatedQuery@26",
       "label": "rejectRepeatedQuery",
       "type": "Function",
@@ -13174,7 +13238,7 @@
       "line": 380
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:getActionId@50",
+      "id": "backend/routes/projectRoutes.js#Function:getActionId@52",
       "label": "getActionId",
       "type": "Function",
       "group": "backend",
@@ -13182,10 +13246,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 50
+      "line": 52
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "id": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "label": "appendWorkflowAction",
       "type": "Function",
       "group": "backend",
@@ -13193,10 +13257,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 63
+      "line": 65
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@70",
+      "id": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@72",
       "label": "respondIdempotentWorkflow",
       "type": "Function",
       "group": "backend",
@@ -13204,10 +13268,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 70
+      "line": 72
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@79",
+      "id": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@81",
       "label": "hasRecentActionPair",
       "type": "Function",
       "group": "backend",
@@ -13215,10 +13279,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 79
+      "line": 81
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
+      "id": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
       "label": "waitForApprovalPublication",
       "type": "Function",
       "group": "backend",
@@ -13226,10 +13290,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 93
+      "line": 95
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@106",
+      "id": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@108",
       "label": "isApprovalAttempt",
       "type": "Function",
       "group": "backend",
@@ -13237,10 +13301,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 106
+      "line": 108
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "id": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "recoveryRevisionRequired",
       "type": "Function",
       "group": "backend",
@@ -13248,10 +13312,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 110
+      "line": 112
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@117",
+      "id": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@119",
       "label": "requiresScopePreservation",
       "type": "Function",
       "group": "backend",
@@ -13259,21 +13323,21 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 117
+      "line": 119
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "id": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "label": "withPlanScopeReview",
       "type": "Function",
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "",
-      "val": 7.5,
+      "val": 8,
       "provenance": "ast",
-      "line": 125
+      "line": 127
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:readChatReport@172",
+      "id": "backend/routes/projectRoutes.js#Function:readChatReport@176",
       "label": "readChatReport",
       "type": "Function",
       "group": "backend",
@@ -13281,10 +13345,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 172
+      "line": 176
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:findFailedReports@193",
+      "id": "backend/routes/projectRoutes.js#Function:findFailedReports@197",
       "label": "findFailedReports",
       "type": "Function",
       "group": "backend",
@@ -13292,10 +13356,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 193
+      "line": 197
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@214",
+      "id": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@218",
       "label": "isProjectStatusQuestion",
       "type": "Function",
       "group": "backend",
@@ -13303,10 +13367,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 214
+      "line": 218
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "id": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "label": "buildProjectStatusAnswer",
       "type": "Function",
       "group": "backend",
@@ -13314,10 +13378,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 220
+      "line": 224
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "id": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "label": "buildManagerChatContext",
       "type": "Function",
       "group": "backend",
@@ -13325,10 +13389,10 @@
       "description": "",
       "val": 8,
       "provenance": "ast",
-      "line": 260
+      "line": 264
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:bounded@271",
+      "id": "backend/routes/projectRoutes.js#Function:bounded@275",
       "label": "bounded",
       "type": "Function",
       "group": "backend",
@@ -13336,10 +13400,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 271
+      "line": 275
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:stream@272",
+      "id": "backend/routes/projectRoutes.js#Function:stream@276",
       "label": "stream",
       "type": "Function",
       "group": "backend",
@@ -13347,10 +13411,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 272
+      "line": 276
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
+      "id": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
       "label": "buildManagerChatSystemPrompt",
       "type": "Function",
       "group": "backend",
@@ -13358,21 +13422,21 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 359
+      "line": 363
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "id": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "createProjectRouter",
       "type": "Function",
       "group": "backend",
       "file": "backend/routes/projectRoutes.js",
       "description": "",
-      "val": 37.5,
+      "val": 38.5,
       "provenance": "ast",
-      "line": 395
+      "line": 399
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:files.onReadError@498",
+      "id": "backend/routes/projectRoutes.js#Method:files.onReadError@502",
       "label": "files.onReadError",
       "type": "Method",
       "group": "backend",
@@ -13380,10 +13444,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 498
+      "line": 502
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:isBusy@537",
+      "id": "backend/routes/projectRoutes.js#Method:isBusy@541",
       "label": "isBusy",
       "type": "Method",
       "group": "backend",
@@ -13391,10 +13455,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 537
+      "line": 541
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onUsage@538",
+      "id": "backend/routes/projectRoutes.js#Method:onUsage@542",
       "label": "onUsage",
       "type": "Method",
       "group": "backend",
@@ -13402,10 +13466,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 538
+      "line": 542
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "id": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "label": "publishProposal",
       "type": "Method",
       "group": "backend",
@@ -13413,10 +13477,10 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 539
+      "line": 543
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -13424,10 +13488,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 552
+      "line": 556
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:approveFromChat@600",
+      "id": "backend/routes/projectRoutes.js#Function:approveFromChat@604",
       "label": "approveFromChat",
       "type": "Function",
       "group": "backend",
@@ -13435,10 +13499,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 600
+      "line": 604
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:readApprovedBase@608",
+      "id": "backend/routes/projectRoutes.js#Function:readApprovedBase@612",
       "label": "readApprovedBase",
       "type": "Function",
       "group": "backend",
@@ -13446,10 +13510,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 608
+      "line": 612
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onUsage@633",
+      "id": "backend/routes/projectRoutes.js#Method:onUsage@637",
       "label": "onUsage",
       "type": "Method",
       "group": "backend",
@@ -13457,10 +13521,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 633
+      "line": 637
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:correction.onUsage@653",
+      "id": "backend/routes/projectRoutes.js#Method:correction.onUsage@657",
       "label": "correction.onUsage",
       "type": "Method",
       "group": "backend",
@@ -13468,10 +13532,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 653
+      "line": 657
     },
     {
-      "id": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "id": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "label": "approveProject",
       "type": "Function",
       "group": "backend",
@@ -13479,10 +13543,10 @@
       "description": "",
       "val": 9,
       "provenance": "ast",
-      "line": 752
+      "line": 756
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@875",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@879",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -13490,10 +13554,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 875
+      "line": 879
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@894",
+      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@898",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -13501,10 +13565,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 894
+      "line": 898
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1033",
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1040",
       "label": "onTransaction",
       "type": "Method",
       "group": "backend",
@@ -13512,10 +13576,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1033
+      "line": 1040
     },
     {
-      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@1053",
+      "id": "backend/routes/projectRoutes.js#Method:operation.cancel@1060",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -13523,18 +13587,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1053
-    },
-    {
-      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1098",
-      "label": "onTransaction",
-      "type": "Method",
-      "group": "backend",
-      "file": "backend/routes/projectRoutes.js",
-      "description": "",
-      "val": 2,
-      "provenance": "ast",
-      "line": 1098
+      "line": 1060
     },
     {
       "id": "backend/routes/projectRoutes.js#Method:onTransaction@1105",
@@ -13546,6 +13599,17 @@
       "val": 2,
       "provenance": "ast",
       "line": 1105
+    },
+    {
+      "id": "backend/routes/projectRoutes.js#Method:onTransaction@1112",
+      "label": "onTransaction",
+      "type": "Method",
+      "group": "backend",
+      "file": "backend/routes/projectRoutes.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 1112
     },
     {
       "id": "backend/routes/projectTraceabilityRoutes.js#Function:defaultGetActionId@19",
@@ -14246,7 +14310,7 @@
       "group": "backend",
       "file": "backend/security.js",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
       "line": 283
     },
@@ -14880,7 +14944,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 58,
+      "val": 58.5,
       "provenance": "ast",
       "line": 1
     },
@@ -14929,7 +14993,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@218",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -14937,10 +15001,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 218
+      "line": 219
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@222",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -14948,10 +15012,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 222
+      "line": 223
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@227",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -14959,7 +15023,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 227
+      "line": 228
     },
     {
       "id": "package:assert",
@@ -15307,7 +15371,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 54.5,
+      "val": 55,
       "provenance": "ast"
     },
     {
@@ -15804,6 +15868,105 @@
       "val": 2,
       "provenance": "ast",
       "line": 16
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:insertContract@12",
+      "label": "insertContract",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 12
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:fixture@20",
+      "label": "fixture",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 20
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:withServer@28",
+      "label": "withServer",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 28
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Method:requireAuth@32",
+      "label": "requireAuth",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 32
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Method:projectAccess@33",
+      "label": "projectAccess",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 33
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Method:projectExecutor@34",
+      "label": "projectExecutor",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 34
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:reject@47",
+      "label": "reject",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 47
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:contractStatus@50",
+      "label": "contractStatus",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 50
+    },
+    {
+      "id": "backend/tests/test_contract_draft_rejection.js#Function:projectStatus@51",
+      "label": "projectStatus",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_contract_draft_rejection.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 51
     },
     {
       "id": "backend/tests/test_controlled_repair_acceptance.js#Function:fixture@10",
@@ -29244,7 +29407,7 @@
       "group": "backend",
       "file": "backend/workflowAttempts.js",
       "description": "",
-      "val": 7.5,
+      "val": 8,
       "provenance": "ast",
       "line": 59
     },
@@ -29255,7 +29418,7 @@
       "group": "backend",
       "file": "backend/workflowAttempts.js",
       "description": "",
-      "val": 7,
+      "val": 7.5,
       "provenance": "ast",
       "line": 86
     },
@@ -29277,7 +29440,7 @@
       "group": "backend",
       "file": "backend/workflowAttempts.js",
       "description": "",
-      "val": 5.5,
+      "val": 6,
       "provenance": "ast",
       "line": 170
     },
@@ -34218,7 +34381,7 @@
       "group": "frontend",
       "file": "frontend/src/App.jsx",
       "description": "",
-      "val": 6.5,
+      "val": 7,
       "provenance": "ast",
       "line": 25
     },
@@ -34399,8 +34562,8 @@
       "line": 667
     },
     {
-      "id": "frontend/src/App.jsx#Function:handleReverify@691",
-      "label": "handleReverify",
+      "id": "frontend/src/App.jsx#Function:handleRejectDraft@691",
+      "label": "handleRejectDraft",
       "type": "Function",
       "group": "frontend",
       "file": "frontend/src/App.jsx",
@@ -34410,7 +34573,18 @@
       "line": 691
     },
     {
-      "id": "frontend/src/App.jsx#Function:handlePrepareRepair@707",
+      "id": "frontend/src/App.jsx#Function:handleReverify@711",
+      "label": "handleReverify",
+      "type": "Function",
+      "group": "frontend",
+      "file": "frontend/src/App.jsx",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 711
+    },
+    {
+      "id": "frontend/src/App.jsx#Function:handlePrepareRepair@727",
       "label": "handlePrepareRepair",
       "type": "Function",
       "group": "frontend",
@@ -34418,10 +34592,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 707
+      "line": 727
     },
     {
-      "id": "frontend/src/App.jsx#Function:handleStartRepair@723",
+      "id": "frontend/src/App.jsx#Function:handleStartRepair@743",
       "label": "handleStartRepair",
       "type": "Function",
       "group": "frontend",
@@ -34429,10 +34603,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 723
+      "line": 743
     },
     {
-      "id": "frontend/src/App.jsx#Function:handleReviewRepair@737",
+      "id": "frontend/src/App.jsx#Function:handleReviewRepair@757",
       "label": "handleReviewRepair",
       "type": "Function",
       "group": "frontend",
@@ -34440,10 +34614,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 737
+      "line": 757
     },
     {
-      "id": "frontend/src/App.jsx#Function:isCurrentReview@745",
+      "id": "frontend/src/App.jsx#Function:isCurrentReview@765",
       "label": "isCurrentReview",
       "type": "Function",
       "group": "frontend",
@@ -34451,10 +34625,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 745
+      "line": 765
     },
     {
-      "id": "frontend/src/App.jsx#Function:handleResume@758",
+      "id": "frontend/src/App.jsx#Function:handleResume@778",
       "label": "handleResume",
       "type": "Function",
       "group": "frontend",
@@ -34462,10 +34636,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 758
+      "line": 778
     },
     {
-      "id": "frontend/src/App.jsx#Function:handlePause@776",
+      "id": "frontend/src/App.jsx#Function:handlePause@796",
       "label": "handlePause",
       "type": "Function",
       "group": "frontend",
@@ -34473,10 +34647,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 776
+      "line": 796
     },
     {
-      "id": "frontend/src/App.jsx#Function:getStatusBadge@793",
+      "id": "frontend/src/App.jsx#Function:getStatusBadge@813",
       "label": "getStatusBadge",
       "type": "Function",
       "group": "frontend",
@@ -34484,10 +34658,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 793
+      "line": 813
     },
     {
-      "id": "frontend/src/App.jsx#Function:getActionBadge@859",
+      "id": "frontend/src/App.jsx#Function:getActionBadge@879",
       "label": "getActionBadge",
       "type": "Function",
       "group": "frontend",
@@ -34495,7 +34669,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 859
+      "line": 879
     },
     {
       "id": "frontend/src/components/ChatView.jsx#Function:ChatView@5",
@@ -34509,7 +34683,7 @@
       "line": 5
     },
     {
-      "id": "frontend/src/components/ChatView.jsx#Function:handleCopy@45",
+      "id": "frontend/src/components/ChatView.jsx#Function:handleCopy@47",
       "label": "handleCopy",
       "type": "Function",
       "group": "frontend",
@@ -34517,10 +34691,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 45
+      "line": 47
     },
     {
-      "id": "frontend/src/components/ChatView.jsx#Function:handleKeyDown@56",
+      "id": "frontend/src/components/ChatView.jsx#Function:handleKeyDown@58",
       "label": "handleKeyDown",
       "type": "Function",
       "group": "frontend",
@@ -34528,7 +34702,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 56
+      "line": 58
     },
     {
       "id": "frontend/src/components/ConnectionStatus.jsx#Function:ConnectionStatus@21",
@@ -35930,7 +36104,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "",
-      "val": 11,
+      "val": 11.5,
       "provenance": "ast",
       "line": 133
     },
@@ -35974,7 +36148,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "",
-      "val": 7,
+      "val": 7.5,
       "provenance": "ast",
       "line": 154
     },
@@ -35996,7 +36170,7 @@
       "group": "frontend",
       "file": "frontend/src/services/api.js",
       "description": "",
-      "val": 15.5,
+      "val": 16,
       "provenance": "ast",
       "line": 166
     },
@@ -36210,8 +36384,8 @@
       "line": 314
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@320",
-      "label": "createApiClient.reverifyProject",
+      "id": "frontend/src/services/api.js#Method:createApiClient.rejectContractDraft@320",
+      "label": "createApiClient.rejectContractDraft",
       "type": "Method",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -36221,8 +36395,8 @@
       "line": 320
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@325",
-      "label": "createApiClient.prepareProjectRepair",
+      "id": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@325",
+      "label": "createApiClient.reverifyProject",
       "type": "Method",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -36232,8 +36406,8 @@
       "line": 325
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@330",
-      "label": "createApiClient.startProjectRepair",
+      "id": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@330",
+      "label": "createApiClient.prepareProjectRepair",
       "type": "Method",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -36243,8 +36417,8 @@
       "line": 330
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@335",
-      "label": "createApiClient.reviewProjectRepair",
+      "id": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@335",
+      "label": "createApiClient.startProjectRepair",
       "type": "Method",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -36254,8 +36428,8 @@
       "line": 335
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.resumeProject@340",
-      "label": "createApiClient.resumeProject",
+      "id": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@340",
+      "label": "createApiClient.reviewProjectRepair",
       "type": "Method",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -36265,7 +36439,18 @@
       "line": 340
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.updateProject@346",
+      "id": "frontend/src/services/api.js#Method:createApiClient.resumeProject@345",
+      "label": "createApiClient.resumeProject",
+      "type": "Method",
+      "group": "frontend",
+      "file": "frontend/src/services/api.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 345
+    },
+    {
+      "id": "frontend/src/services/api.js#Method:createApiClient.updateProject@351",
       "label": "createApiClient.updateProject",
       "type": "Method",
       "group": "frontend",
@@ -36273,10 +36458,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 346
+      "line": 351
     },
     {
-      "id": "frontend/src/services/api.js#Method:createApiClient.deleteProject@353",
+      "id": "frontend/src/services/api.js#Method:createApiClient.deleteProject@358",
       "label": "createApiClient.deleteProject",
       "type": "Method",
       "group": "frontend",
@@ -36284,7 +36469,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 353
+      "line": 358
     },
     {
       "id": "frontend/src/services/api.test.js#Method:fetchMock.json@36",
@@ -36331,7 +36516,7 @@
       "line": 144
     },
     {
-      "id": "frontend/src/services/api.test.js#Method:fetchMock.json@194",
+      "id": "frontend/src/services/api.test.js#Method:fetchMock.json@196",
       "label": "fetchMock.json",
       "type": "Method",
       "group": "tests",
@@ -36339,10 +36524,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 194
+      "line": 196
     },
     {
-      "id": "frontend/src/services/api.test.js#Method:fetchMock.json@220",
+      "id": "frontend/src/services/api.test.js#Method:fetchMock.json@222",
       "label": "fetchMock.json",
       "type": "Method",
       "group": "tests",
@@ -36350,10 +36535,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 220
+      "line": 222
     },
     {
-      "id": "frontend/src/services/api.test.js#Method:fetchMock.blob@221",
+      "id": "frontend/src/services/api.test.js#Method:fetchMock.blob@223",
       "label": "fetchMock.blob",
       "type": "Method",
       "group": "tests",
@@ -36361,7 +36546,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 221
+      "line": 223
     },
     {
       "id": "frontend/src/services/projectLogMonitor.test.js#Function:event@4",
@@ -38083,6 +38268,17 @@
       "line": 71
     },
     {
+      "id": "backend/routes/projectContractRoutes.js#route:POST /:id/contracts/:revision/reject@14",
+      "label": "POST /:id/contracts/:revision/reject",
+      "type": "HttpRoute",
+      "group": "backend",
+      "file": "backend/routes/projectContractRoutes.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 14
+    },
+    {
       "id": "backend/routes/projectObservabilityRoutes.js#route:GET /:id/execution-progress@43",
       "label": "GET /:id/execution-progress",
       "type": "HttpRoute",
@@ -38248,7 +38444,7 @@
       "line": 340
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /@407",
+      "id": "backend/routes/projectRoutes.js#route:GET /@411",
       "label": "GET /",
       "type": "HttpRoute",
       "group": "backend",
@@ -38256,10 +38452,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 407
+      "line": 411
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /@437",
+      "id": "backend/routes/projectRoutes.js#route:POST /@441",
       "label": "POST /",
       "type": "HttpRoute",
       "group": "backend",
@@ -38267,10 +38463,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 437
+      "line": 441
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /sync@453",
+      "id": "backend/routes/projectRoutes.js#route:POST /sync@457",
       "label": "POST /sync",
       "type": "HttpRoute",
       "group": "backend",
@@ -38278,10 +38474,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 453
+      "line": 457
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id@488",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id@492",
       "label": "GET /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -38289,10 +38485,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 488
+      "line": 492
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/files@495",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/files@499",
       "label": "GET /:id/files",
       "type": "HttpRoute",
       "group": "backend",
@@ -38300,10 +38496,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 495
+      "line": 499
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/logs@509",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/logs@513",
       "label": "GET /:id/logs",
       "type": "HttpRoute",
       "group": "backend",
@@ -38311,10 +38507,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 509
+      "line": 513
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/chat@572",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/chat@576",
       "label": "POST /:id/chat",
       "type": "HttpRoute",
       "group": "backend",
@@ -38322,10 +38518,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 572
+      "line": 576
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/approve@751",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/approve@755",
       "label": "POST /:id/approve",
       "type": "HttpRoute",
       "group": "backend",
@@ -38333,10 +38529,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 751
+      "line": 755
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/verify@919",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/verify@926",
       "label": "POST /:id/verify",
       "type": "HttpRoute",
       "group": "backend",
@@ -38344,10 +38540,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 919
+      "line": 926
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@939",
+      "id": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@946",
       "label": "GET /:id/verification-summary",
       "type": "HttpRoute",
       "group": "backend",
@@ -38355,10 +38551,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 939
+      "line": 946
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/resume@969",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/resume@976",
       "label": "POST /:id/resume",
       "type": "HttpRoute",
       "group": "backend",
@@ -38366,10 +38562,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 969
+      "line": 976
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:POST /:id/pause@1074",
+      "id": "backend/routes/projectRoutes.js#route:POST /:id/pause@1081",
       "label": "POST /:id/pause",
       "type": "HttpRoute",
       "group": "backend",
@@ -38377,10 +38573,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1074
+      "line": 1081
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:PATCH /:id@1132",
+      "id": "backend/routes/projectRoutes.js#route:PATCH /:id@1139",
       "label": "PATCH /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -38388,10 +38584,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1132
+      "line": 1139
     },
     {
-      "id": "backend/routes/projectRoutes.js#route:DELETE /:id@1163",
+      "id": "backend/routes/projectRoutes.js#route:DELETE /:id@1170",
       "label": "DELETE /:id",
       "type": "HttpRoute",
       "group": "backend",
@@ -38399,7 +38595,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 1163
+      "line": 1170
     },
     {
       "id": "backend/routes/projectTraceabilityRoutes.js#route:GET /:id/requirements/:reqId/impact@66",
@@ -39330,8 +39526,8 @@
       "line": 315
     },
     {
-      "id": "frontend/src/services/api.js#request:POST /projects/:id/reverify@321",
-      "label": "POST /projects/:id/reverify",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/contracts/:value/reject@321",
+      "label": "POST /projects/:id/contracts/:value/reject",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -39341,8 +39537,8 @@
       "line": 321
     },
     {
-      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@326",
-      "label": "POST /projects/:id/repair-proposal",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/reverify@326",
+      "label": "POST /projects/:id/reverify",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -39352,8 +39548,8 @@
       "line": 326
     },
     {
-      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair@331",
-      "label": "POST /projects/:id/repair",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@331",
+      "label": "POST /projects/:id/repair-proposal",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -39363,8 +39559,8 @@
       "line": 331
     },
     {
-      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@336",
-      "label": "POST /projects/:id/repair-review",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair@336",
+      "label": "POST /projects/:id/repair",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -39374,8 +39570,8 @@
       "line": 336
     },
     {
-      "id": "frontend/src/services/api.js#request:POST /projects/:id/resume@341",
-      "label": "POST /projects/:id/resume",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@341",
+      "label": "POST /projects/:id/repair-review",
       "type": "HttpRequest",
       "group": "frontend",
       "file": "frontend/src/services/api.js",
@@ -39385,7 +39581,18 @@
       "line": 341
     },
     {
-      "id": "frontend/src/services/api.js#request:PATCH /projects/:id@347",
+      "id": "frontend/src/services/api.js#request:POST /projects/:id/resume@346",
+      "label": "POST /projects/:id/resume",
+      "type": "HttpRequest",
+      "group": "frontend",
+      "file": "frontend/src/services/api.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 346
+    },
+    {
+      "id": "frontend/src/services/api.js#request:PATCH /projects/:id@352",
       "label": "PATCH /projects/:id",
       "type": "HttpRequest",
       "group": "frontend",
@@ -39393,10 +39600,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 347
+      "line": 352
     },
     {
-      "id": "frontend/src/services/api.js#request:DELETE /projects/:id@354",
+      "id": "frontend/src/services/api.js#request:DELETE /projects/:id@359",
       "label": "DELETE /projects/:id",
       "type": "HttpRequest",
       "group": "frontend",
@@ -39404,7 +39611,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 354
+      "line": 359
     },
     {
       "id": "env:LLM_ADMIN_USER",
@@ -39948,6 +40155,18 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
+      "target": "backend/routes/projectContractRoutes.js",
+      "label": "delegates_routes",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/contracts/projectContract.js",
+      "label": "rejects_drafts",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
       "target": "backend/routes/projectTraceabilityRoutes.js",
       "label": "delegates_routes",
       "provenance": "curated"
@@ -40363,6 +40582,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_reverification.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_contract_draft_rejection.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -43908,22 +44133,42 @@
     },
     {
       "source": "backend/contracts/projectContract.js",
-      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@160",
+      "target": "backend/contracts/projectContract.js#Function:rejectPendingContractRevision@164",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/contracts/projectContract.js",
-        "line": 160
+        "line": 164
       }
     },
     {
       "source": "backend/contracts/projectContract.js",
-      "target": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@169",
+      "target": "backend/contracts/projectContract.js#Function:getPendingContractRevision@177",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/contracts/projectContract.js",
-        "line": 169
+        "line": 177
+      }
+    },
+    {
+      "source": "backend/contracts/projectContract.js",
+      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@185",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/contracts/projectContract.js",
+        "line": 185
+      }
+    },
+    {
+      "source": "backend/contracts/projectContract.js",
+      "target": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@194",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/contracts/projectContract.js",
+        "line": 194
       }
     },
     {
@@ -52387,6 +52632,96 @@
       }
     },
     {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/security.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/db.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/engine/index.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/projectRepository.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/workflowAttempts.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/engine/stateMachine.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/contracts/projectContract.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 7
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 11
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js",
+      "target": "backend/routes/projectContractRoutes.js#Function:recordAction@44",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 44
+      }
+    },
+    {
       "source": "backend/routes/projectObservabilityRoutes.js",
       "target": "backend/db.js",
       "label": "imports",
@@ -53148,7 +53483,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/controlledRepairContext.js",
+      "target": "backend/routes/projectContractRoutes.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53158,7 +53493,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/controlledRepairPlan.js",
+      "target": "backend/contracts/projectContract.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53168,7 +53503,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/controlledRepairLineage.js",
+      "target": "backend/engine/controlledRepairContext.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53178,7 +53513,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/workerRepairs.js",
+      "target": "backend/engine/controlledRepairPlan.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53188,7 +53523,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/controlledRepairPresentation.js",
+      "target": "backend/engine/controlledRepairLineage.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53198,7 +53533,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/engine/controlledSemanticAuthority.js",
+      "target": "backend/engine/workerRepairs.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -53208,342 +53543,352 @@
     },
     {
       "source": "backend/routes/projectRoutes.js",
+      "target": "backend/engine/controlledRepairPresentation.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 44
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/engine/controlledSemanticAuthority.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 45
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
       "target": "backend/routes/artifactDownloadAuthorization.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 49
+        "line": 51
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:getActionId@50",
+      "target": "backend/routes/projectRoutes.js#Function:getActionId@52",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 50
+        "line": 52
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 63
+        "line": 65
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@70",
+      "target": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@72",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 70
+        "line": 72
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@79",
+      "target": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@81",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 79
+        "line": 81
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
+      "target": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 93
+        "line": 95
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@106",
+      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@108",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 106
+        "line": 108
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 110
+        "line": 112
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@117",
+      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@119",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 117
+        "line": 119
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 125
+        "line": 127
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:readChatReport@172",
+      "target": "backend/routes/projectRoutes.js#Function:readChatReport@176",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 172
+        "line": 176
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:findFailedReports@193",
+      "target": "backend/routes/projectRoutes.js#Function:findFailedReports@197",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 193
+        "line": 197
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@214",
+      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@218",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 214
+        "line": 218
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 220
+        "line": 224
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 260
+        "line": 264
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:bounded@271",
+      "target": "backend/routes/projectRoutes.js#Function:bounded@275",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 271
+        "line": 275
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:stream@272",
+      "target": "backend/routes/projectRoutes.js#Function:stream@276",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 272
+        "line": 276
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 359
+        "line": 363
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 395
+        "line": 399
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:files.onReadError@498",
+      "target": "backend/routes/projectRoutes.js#Method:files.onReadError@502",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 498
+        "line": 502
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:isBusy@537",
+      "target": "backend/routes/projectRoutes.js#Method:isBusy@541",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 537
+        "line": 541
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onUsage@538",
+      "target": "backend/routes/projectRoutes.js#Method:onUsage@542",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 538
+        "line": 542
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "target": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 539
+        "line": 543
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 552
+        "line": 556
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:approveFromChat@600",
+      "target": "backend/routes/projectRoutes.js#Function:approveFromChat@604",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 600
+        "line": 604
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:readApprovedBase@608",
+      "target": "backend/routes/projectRoutes.js#Function:readApprovedBase@612",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 608
+        "line": 612
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onUsage@633",
+      "target": "backend/routes/projectRoutes.js#Method:onUsage@637",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 633
+        "line": 637
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:correction.onUsage@653",
+      "target": "backend/routes/projectRoutes.js#Method:correction.onUsage@657",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 653
+        "line": 657
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "target": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 752
+        "line": 756
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@875",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@879",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 875
+        "line": 879
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@894",
+      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@898",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 894
+        "line": 898
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1033",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1040",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1033
+        "line": 1040
       }
     },
     {
       "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@1053",
+      "target": "backend/routes/projectRoutes.js#Method:operation.cancel@1060",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1053
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js",
-      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1098",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 1098
+        "line": 1060
       }
     },
     {
@@ -53554,6 +53899,16 @@
       "location": {
         "file": "backend/routes/projectRoutes.js",
         "line": 1105
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js",
+      "target": "backend/routes/projectRoutes.js#Method:onTransaction@1112",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1112
       }
     },
     {
@@ -55538,32 +55893,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@218",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 218
+        "line": 219
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@222",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 222
+        "line": 223
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@227",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 227
+        "line": 228
       }
     },
     {
@@ -57194,6 +57549,176 @@
       "location": {
         "file": "backend/tests/test_concurrency_pool.js",
         "line": 16
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "package:node:crypto",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "package:express",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/db.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/projectRepository.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/workflowAttempts.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/routes/projectRoutes.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 7
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/testHarness.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 8
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:insertContract@12",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 12
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:fixture@20",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 20
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:withServer@28",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 28
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Method:requireAuth@32",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 32
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Method:projectAccess@33",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 33
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Method:projectExecutor@34",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 34
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:reject@47",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 47
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:contractStatus@50",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 50
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:projectStatus@51",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 51
       }
     },
     {
@@ -88028,7 +88553,7 @@
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handleReverify@691",
+      "target": "frontend/src/App.jsx#Function:handleRejectDraft@691",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -88038,82 +88563,92 @@
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handlePrepareRepair@707",
+      "target": "frontend/src/App.jsx#Function:handleReverify@711",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 707
+        "line": 711
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handleStartRepair@723",
+      "target": "frontend/src/App.jsx#Function:handlePrepareRepair@727",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 723
+        "line": 727
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handleReviewRepair@737",
+      "target": "frontend/src/App.jsx#Function:handleStartRepair@743",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 737
+        "line": 743
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:isCurrentReview@745",
+      "target": "frontend/src/App.jsx#Function:handleReviewRepair@757",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 745
+        "line": 757
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handleResume@758",
+      "target": "frontend/src/App.jsx#Function:isCurrentReview@765",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 758
+        "line": 765
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:handlePause@776",
+      "target": "frontend/src/App.jsx#Function:handleResume@778",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 776
+        "line": 778
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:getStatusBadge@793",
+      "target": "frontend/src/App.jsx#Function:handlePause@796",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 793
+        "line": 796
       }
     },
     {
       "source": "frontend/src/App.jsx",
-      "target": "frontend/src/App.jsx#Function:getActionBadge@859",
+      "target": "frontend/src/App.jsx#Function:getStatusBadge@813",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 859
+        "line": 813
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/App.jsx#Function:getActionBadge@879",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 879
       }
     },
     {
@@ -88158,22 +88693,22 @@
     },
     {
       "source": "frontend/src/components/ChatView.jsx",
-      "target": "frontend/src/components/ChatView.jsx#Function:handleCopy@45",
+      "target": "frontend/src/components/ChatView.jsx#Function:handleCopy@47",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/ChatView.jsx",
-        "line": 45
+        "line": 47
       }
     },
     {
       "source": "frontend/src/components/ChatView.jsx",
-      "target": "frontend/src/components/ChatView.jsx#Function:handleKeyDown@56",
+      "target": "frontend/src/components/ChatView.jsx#Function:handleKeyDown@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/ChatView.jsx",
-        "line": 56
+        "line": 58
       }
     },
     {
@@ -90528,7 +91063,7 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@320",
+      "target": "frontend/src/services/api.js#Method:createApiClient.rejectContractDraft@320",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -90538,7 +91073,7 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@325",
+      "target": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@325",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -90548,7 +91083,7 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@330",
+      "target": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@330",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -90558,7 +91093,7 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@335",
+      "target": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@335",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -90568,7 +91103,7 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.resumeProject@340",
+      "target": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@340",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -90578,22 +91113,32 @@
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.updateProject@346",
+      "target": "frontend/src/services/api.js#Method:createApiClient.resumeProject@345",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 346
+        "line": 345
       }
     },
     {
       "source": "frontend/src/services/api.js",
-      "target": "frontend/src/services/api.js#Method:createApiClient.deleteProject@353",
+      "target": "frontend/src/services/api.js#Method:createApiClient.updateProject@351",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 353
+        "line": 351
+      }
+    },
+    {
+      "source": "frontend/src/services/api.js",
+      "target": "frontend/src/services/api.js#Method:createApiClient.deleteProject@358",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/services/api.js",
+        "line": 358
       }
     },
     {
@@ -90658,32 +91203,32 @@
     },
     {
       "source": "frontend/src/services/api.test.js",
-      "target": "frontend/src/services/api.test.js#Method:fetchMock.json@194",
+      "target": "frontend/src/services/api.test.js#Method:fetchMock.json@196",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.test.js",
-        "line": 194
+        "line": 196
       }
     },
     {
       "source": "frontend/src/services/api.test.js",
-      "target": "frontend/src/services/api.test.js#Method:fetchMock.json@220",
+      "target": "frontend/src/services/api.test.js#Method:fetchMock.json@222",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.test.js",
-        "line": 220
+        "line": 222
       }
     },
     {
       "source": "frontend/src/services/api.test.js",
-      "target": "frontend/src/services/api.test.js#Method:fetchMock.blob@221",
+      "target": "frontend/src/services/api.test.js#Method:fetchMock.blob@223",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.test.js",
-        "line": 221
+        "line": 223
       }
     },
     {
@@ -95607,13 +96152,13 @@
       }
     },
     {
-      "source": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@169",
+      "source": "backend/contracts/projectContract.js#Function:rejectContractForCapabilities@194",
       "target": "backend/engine/stateMachine.js#Function:canTransitionProject@37",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/contracts/projectContract.js",
-        "line": 194
+        "line": 219
       }
     },
     {
@@ -104407,6 +104952,66 @@
       }
     },
     {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/routes/projectContractRoutes.js#route:POST /:id/contracts/:revision/reject@14",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 14
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/security.js#Function:asyncHandler@283",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 14
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 27
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/contracts/projectContract.js#Function:rejectPendingContractRevision@164",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 35
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/routes/projectContractRoutes.js#Function:recordAction@44",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 50
+      }
+    },
+    {
+      "source": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "target": "backend/projectRepository.js#Function:getProject@149",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectContractRoutes.js",
+        "line": 67
+      }
+    },
+    {
       "source": "backend/routes/projectObservabilityRoutes.js#Function:registerProjectObservabilityRoutes@40",
       "target": "backend/routes/projectObservabilityRoutes.js#route:GET /:id/execution-progress@43",
       "label": "registers_route",
@@ -105177,58 +105782,38 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "source": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "target": "backend/projectRepository.js#Function:appendProjectActionMessages@639",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 63
+        "line": 65
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@70",
-      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@72",
+      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 71
+        "line": 73
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@70",
+      "source": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@72",
       "target": "backend/projectRepository.js#Function:getProject@149",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 71
+        "line": 73
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
+      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 97
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
-      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@106",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 98
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
-      "target": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@79",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105237,188 +105822,198 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
+      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@108",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 100
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
+      "target": "backend/routes/projectRoutes.js#Function:hasRecentActionPair@81",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 101
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "target": "backend/engine/recoveryAdvice.js#Function:requiresManagerRevision@2",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 111
+        "line": 113
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@136",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 114
+        "line": 116
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/engine/controlledRepairPresentation.js#Function:presentControlledRepair@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 135
+        "line": 137
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 142
+        "line": 144
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
-      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
+      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 146
+        "line": 148
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/engine/resumeStage.js#Function:resolveGenerationResume@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 149
+        "line": 151
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/agents/schemas.js#Function:normalizeManagerPlan@255",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 149
+        "line": 151
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/engine/controlledSemanticAuthority.js#Function:inspectControlledSemanticReviewEligibility@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 161
+        "line": 163
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
+      "target": "backend/contracts/projectContract.js#Function:getPendingContractRevision@177",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 170
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "target": "backend/routes/managerPlanScope.js#Function:compareApprovedScope@5",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 169
+        "line": 173
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
-      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@117",
+      "source": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
+      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@119",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 169
+        "line": 173
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:findFailedReports@193",
-      "target": "backend/routes/projectRoutes.js#Function:readChatReport@172",
+      "source": "backend/routes/projectRoutes.js#Function:findFailedReports@197",
+      "target": "backend/routes/projectRoutes.js#Function:readChatReport@176",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 204
+        "line": 208
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "target": "backend/routes/managerStatusAnswer.js#Function:buildRecordedVerificationAnswer@3",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 237
+        "line": 241
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "target": "backend/engine/recoveryAdvice.js#Function:workflowRecoveryAdvice@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 242
+        "line": 246
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
-      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
+      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 242
+        "line": 246
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:bounded@271",
+      "source": "backend/routes/projectRoutes.js#Function:bounded@275",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 271
+        "line": 275
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:stream@272",
+      "source": "backend/routes/projectRoutes.js#Function:stream@276",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 273
+        "line": 277
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "target": "backend/observability.js#Function:redactSensitiveValue@70",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 284
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 286
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:bounded@271",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105427,68 +106022,68 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:stream@272",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 289
+        "line": 290
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:bounded@275",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 292
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:stream@276",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 293
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 305
+        "line": 309
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "target": "backend/engine/controlledRepairPresentation.js#Function:presentControlledRepair@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 311
+        "line": 315
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 333
+        "line": 337
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:readChatReport@172",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 334
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/db.js#Function:getProjectLogs@208",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 335
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
-      "target": "backend/routes/projectRoutes.js#Function:findFailedReports@193",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:readChatReport@176",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105497,39 +106092,39 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/db.js#Function:getProjectLogs@208",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 339
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "target": "backend/routes/projectRoutes.js#Function:findFailedReports@197",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 342
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
       "target": "backend/agents/agentLoader.js#Function:loadAgentSystemPrompt@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 360
+        "line": 364
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:GET /@407",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:GET /@411",
       "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 407
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/projectRepository.js#Function:getAllProjects@262",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 410
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/auth.js#Function:getUserProjects@427",
-      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
@@ -105537,68 +106132,78 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/projectRepository.js#Function:getAllProjects@262",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 428
+        "line": 414
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /@437",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/auth.js#Function:getUserProjects@427",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 415
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 432
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /@441",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 437
+        "line": 441
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js#Function:createProject@143",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 440
+        "line": 444
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /sync@453",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /sync@457",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 453
+        "line": 457
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:getActionId@50",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:getActionId@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 458
+        "line": 462
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js#Function:syncProjectsWithDisk@1080",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 459
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/auth.js#Function:canViewProject@407",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105607,259 +106212,259 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/auth.js#Function:canViewProject@407",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 467
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js#Function:appendProjectActionMessages@639",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 474
+        "line": 478
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id@488",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id@492",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 488
+        "line": 492
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/security.js#Function:asyncHandler@283",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 488
+        "line": 492
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@495",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@499",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 495
+        "line": 499
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectFileReader.js#Function:readProjectFiles@19",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 497
+        "line": 501
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:files.onReadError@498",
+      "source": "backend/routes/projectRoutes.js#Method:files.onReadError@502",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 498
+        "line": 502
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@509",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@513",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 509
+        "line": 513
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/db.js#Function:getProjectLogs@208",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 514
+        "line": 518
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 524
+        "line": 528
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 535
+        "line": 539
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:isBusy@537",
+      "source": "backend/routes/projectRoutes.js#Method:isBusy@541",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 537
+        "line": 541
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onUsage@538",
+      "source": "backend/routes/projectRoutes.js#Method:onUsage@542",
       "target": "backend/projectTokenUsage.js#Function:recordProjectTokenUsage@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 538
+        "line": 542
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onUsage@538",
+      "source": "backend/routes/projectRoutes.js#Method:onUsage@542",
       "target": "backend/llm.js#Function:getCurrentLLMProvider@101",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 538
+        "line": 542
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "target": "backend/engine/controlledRepairPresentation.js#Function:presentControlledRepair@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 545
+        "line": 549
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "target": "backend/engine/controlledRepairLineage.js#Function:archiveControlledRepairLineage@115",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 548
+        "line": 552
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 550
+        "line": 554
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "target": "backend/engine/controlledRepairContext.js#Function:assertControlledRepairBaseline@19",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 553
+        "line": 557
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 557
+        "line": 561
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 557
+        "line": 561
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@552",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@556",
       "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 557
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
         "line": 561
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
-      "target": "backend/routes/projectRoutes.js#Function:getActionId@50",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 561
+        "line": 565
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
-      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@125",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
+      "target": "backend/routes/projectRoutes.js#Function:getActionId@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 569
+        "line": 565
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:publishProposal@539",
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
+      "target": "backend/routes/projectRoutes.js#Function:withPlanScopeReview@127",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 573
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Method:publishProposal@543",
       "target": "backend/projectRepository.js#Function:getProject@149",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 569
+        "line": 573
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@572",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@576",
       "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 572
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/security.js#Function:validateChatPayload@142",
-      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
@@ -105867,58 +106472,38 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/security.js#Function:validateChatPayload@142",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 580
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 593
+        "line": 597
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/routes/managerChatPlan.js#Function:isManagerApproval@4",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 599
+        "line": 603
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveFromChat@600",
-      "target": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 601
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@106",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 604
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 604
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:approveFromChat@600",
+      "source": "backend/routes/projectRoutes.js#Function:approveFromChat@604",
+      "target": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105927,8 +106512,28 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:readApprovedBase@608",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@108",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 608
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 608
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:approveFromChat@604",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105937,28 +106542,8 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@117",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 610
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 611
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:readApprovedBase@612",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105967,68 +106552,68 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@119",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 614
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 615
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 617
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/routes/managerChatPlan.js#Function:inspectManagerPlan@49",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 627
+        "line": 631
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@214",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@218",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 630
+        "line": 634
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 630
+        "line": 634
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onUsage@633",
+      "source": "backend/routes/projectRoutes.js#Method:onUsage@637",
       "target": "backend/projectTokenUsage.js#Function:recordProjectTokenUsage@15",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 634
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:onUsage@633",
-      "target": "backend/llm.js#Function:getCurrentLLMProvider@101",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 634
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:onUsage@633",
-      "target": "backend/observability.js#Function:logWarning@117",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 635
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/managerPlanScope.js#Function:enforceApprovedScope@56",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106037,28 +106622,48 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Method:onUsage@637",
+      "target": "backend/llm.js#Function:getCurrentLLMProvider@101",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 638
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Method:onUsage@637",
+      "target": "backend/observability.js#Function:logWarning@117",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 639
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/managerPlanScope.js#Function:enforceApprovedScope@56",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 642
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 640
+        "line": 644
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/routes/managerChatPlan.js#Function:canRepairManagerFixtures@81",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 648
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/managerChatPlan.js#Function:buildManagerPlanRepairRequest@86",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106067,129 +106672,119 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@653",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/managerChatPlan.js#Function:buildManagerPlanRepairRequest@86",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 656
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@657",
       "target": "backend/projectTokenUsage.js#Function:recordProjectTokenUsage@15",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 654
+        "line": 658
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@653",
+      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@657",
       "target": "backend/llm.js#Function:getCurrentLLMProvider@101",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 654
+        "line": 658
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@653",
+      "source": "backend/routes/projectRoutes.js#Method:correction.onUsage@657",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 655
+        "line": 659
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/routes/managerChatPlan.js#Function:applyManagerPlanCorrection@114",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 657
+        "line": 661
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "llm-yonetimi/src/runtime.js#Function:classifyLLMError@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 662
+        "line": 666
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/db.js#Function:saveProjectLog@171",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 664
+        "line": 668
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/engine/stateMachine.js#Function:isRevisableProjectStatus@125",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 704
+        "line": 708
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 709
+        "line": 713
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/contracts/projectContract.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 711
+        "line": 715
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@110",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 733
+        "line": 737
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@751",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@755",
       "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 751
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#route:POST /:id/approve@751",
-      "target": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "label": "handles",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 751
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/routes/projectRoutes.js#Function:getActionId@50",
-      "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
@@ -106197,8 +106792,18 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
+      "source": "backend/routes/projectRoutes.js#route:POST /:id/approve@755",
+      "target": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "label": "handles",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 755
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/routes/projectRoutes.js#Function:getActionId@52",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106207,18 +106812,18 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@59",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 760
+        "line": 763
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@106",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/auth.js#Function:canTransitionProjectStatus@389",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106227,108 +106832,108 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@93",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/routes/projectRoutes.js#Function:isApprovalAttempt@108",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 765
+        "line": 768
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@70",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/routes/projectRoutes.js#Function:waitForApprovalPublication@95",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 767
+        "line": 769
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/routes/projectRoutes.js#Function:respondIdempotentWorkflow@72",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 771
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/contracts/projectContract.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 784
+        "line": 788
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/routes/managerPlanScope.js#Function:compareApprovedScope@5",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 811
+        "line": 815
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@117",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
+      "target": "backend/routes/projectRoutes.js#Function:requiresScopePreservation@119",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 811
+        "line": 815
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@86",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 834
+        "line": 838
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@875",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@879",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 875
+        "line": 879
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/workflowAttempts.js#Function:releaseWorkflowLease@170",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 886
+        "line": 890
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/projectRepository.js#Function:getProject@149",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 892
+        "line": 896
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@894",
+      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@898",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 894
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:approveProject@752",
-      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106337,178 +106942,188 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@161",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 913
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/verify@919",
-      "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 919
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@939",
-      "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 939
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/verification/reportGenerator.js#Function:buildCompletionReport@145",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 952
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/observability.js#Function:redactSensitiveValue@70",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 957
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectObservabilityRoutes.js#Function:registerProjectObservabilityRoutes@40",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 966
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectTraceabilityRoutes.js#Function:registerProjectTraceabilityRoutes@59",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 967
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@969",
-      "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 969
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/engine/recoveryAdvice.js#Function:workflowRecoveryAdvice@6",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 984
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@86",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 996
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/projectRepository.js#Function:getProject@149",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 999
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1033",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 1033
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/workflowAttempts.js#Function:releaseWorkflowLease@170",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 1044
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@1053",
-      "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 1053
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:approveProject@756",
       "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1058
+        "line": 902
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1074",
-      "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRoutes.js",
-        "line": 1074
-      }
-    },
-    {
-      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1098",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@161",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1098
+        "line": 917
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectContractRoutes.js#Function:registerProjectContractRoutes@11",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 922
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/verify@926",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 926
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@946",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 946
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/verification/reportGenerator.js#Function:buildCompletionReport@145",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 959
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/observability.js#Function:redactSensitiveValue@70",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 964
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectObservabilityRoutes.js#Function:registerProjectObservabilityRoutes@40",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 973
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectTraceabilityRoutes.js#Function:registerProjectTraceabilityRoutes@59",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 974
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@976",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 976
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/engine/recoveryAdvice.js#Function:workflowRecoveryAdvice@6",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 991
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@86",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1003
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/projectRepository.js#Function:getProject@149",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1006
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1040",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1040
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/workflowAttempts.js#Function:releaseWorkflowLease@170",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1051
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Method:operation.cancel@1060",
+      "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1060
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/observability.js#Function:logError@113",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1065
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1081",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1081
       }
     },
     {
       "source": "backend/routes/projectRoutes.js#Method:onTransaction@1105",
-      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@63",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106517,63 +107132,73 @@
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Method:onTransaction@1112",
+      "target": "backend/routes/projectRoutes.js#Function:appendWorkflowAction@65",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRoutes.js",
+        "line": 1112
+      }
+    },
+    {
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1121
+        "line": 1128
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1132",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1139",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1132
+        "line": 1139
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/security.js#Function:validateProjectTitle@179",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1137
+        "line": 1144
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js#Function:updateProject@274",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1143
+        "line": 1150
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
-      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1163",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1170",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1163
+        "line": 1170
       }
     },
     {
-      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "target": "backend/projectRepository.js#Function:deleteProject@980",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRoutes.js",
-        "line": 1166
+        "line": 1173
       }
     },
     {
@@ -106913,7 +107538,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 318
+        "line": 321
       }
     },
     {
@@ -106923,17 +107548,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 319
+        "line": 322
       }
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@218",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 323
+        "line": 326
       }
     },
     {
@@ -106943,7 +107568,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 335
+        "line": 338
       }
     },
     {
@@ -106953,7 +107578,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 336
+        "line": 339
       }
     },
     {
@@ -106963,7 +107588,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 337
+        "line": 340
       }
     },
     {
@@ -106973,7 +107598,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/scripts/generate_graph.js",
-        "line": 346
+        "line": 349
       }
     },
     {
@@ -107668,7 +108293,7 @@
     },
     {
       "source": "backend/server.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -108737,13 +109362,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@227",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@222",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 228
+        "line": 229
       }
     },
     {
@@ -109707,6 +110332,126 @@
       }
     },
     {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/testHarness.js#Function:createTestHarness@1",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 10
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js#Function:fixture@20",
+      "target": "backend/projectRepository.js#Function:createProject@143",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 21
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js#Function:fixture@20",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:insertContract@12",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 22
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js#Function:withServer@28",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 31
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:fixture@20",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 54
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:withServer@28",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 56
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:reject@47",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 60
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:contractStatus@50",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 65
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/tests/test_contract_draft_rejection.js#Function:projectStatus@51",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 67
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/projectRepository.js#Function:deleteProject@980",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 80
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@86",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 111
+      }
+    },
+    {
+      "source": "backend/tests/test_contract_draft_rejection.js",
+      "target": "backend/workflowAttempts.js#Function:releaseWorkflowLease@170",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_contract_draft_rejection.js",
+        "line": 117
+      }
+    },
+    {
       "source": "backend/tests/test_controlled_repair_acceptance.js#Function:fixture@10",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
@@ -110288,7 +111033,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110298,7 +111043,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110528,7 +111273,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_workflow.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -111768,7 +112513,7 @@
     },
     {
       "source": "backend/tests/test_docs_agent_sync.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@359",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatSystemPrompt@363",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112058,7 +112803,7 @@
     },
     {
       "source": "backend/tests/test_execution_progress.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113198,7 +113943,7 @@
     },
     {
       "source": "backend/tests/test_manager_chat_failures.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113268,7 +114013,7 @@
     },
     {
       "source": "backend/tests/test_manager_chat_failures.js",
-      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@160",
+      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@185",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113568,7 +114313,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js",
-      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@160",
+      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@185",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113608,7 +114353,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@260",
+      "target": "backend/routes/projectRoutes.js#Function:buildManagerChatContext@264",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113628,7 +114373,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js",
-      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@220",
+      "target": "backend/routes/projectRoutes.js#Function:buildProjectStatusAnswer@224",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113648,7 +114393,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js",
-      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@214",
+      "target": "backend/routes/projectRoutes.js#Function:isProjectStatusQuestion@218",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113658,7 +114403,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113698,7 +114443,7 @@
     },
     {
       "source": "backend/tests/test_manager_recovery_simulation.js#Function:createScopeFixture@256",
-      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@160",
+      "target": "backend/contracts/projectContract.js#Function:getLatestRevision@185",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -116418,7 +117163,7 @@
     },
     {
       "source": "backend/tests/test_p2_completion_report.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -119678,7 +120423,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@227",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -119688,7 +120433,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@222",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -120343,7 +121088,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 311
+        "line": 312
       }
     },
     {
@@ -120353,7 +121098,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 346
+        "line": 347
       }
     },
     {
@@ -120363,7 +121108,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 421
+        "line": 422
       }
     },
     {
@@ -120373,7 +121118,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_action_chat_audit.js",
-        "line": 865
+        "line": 866
       }
     },
     {
@@ -121498,7 +122243,7 @@
     },
     {
       "source": "backend/tests/test_reverification.js",
-      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@395",
+      "target": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121758,7 +122503,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@218",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -121768,7 +122513,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@65",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@227",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -131687,88 +132432,68 @@
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleReverify@691",
+      "source": "frontend/src/App.jsx#Function:handleRejectDraft@691",
       "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 697
+        "line": 701
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleReverify@691",
+      "source": "frontend/src/App.jsx#Function:handleRejectDraft@691",
       "target": "frontend/src/App.jsx#Function:createActionId@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 697
+        "line": 701
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handlePrepareRepair@707",
+      "source": "frontend/src/App.jsx#Function:handleReverify@711",
       "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 714
+        "line": 717
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handlePrepareRepair@707",
+      "source": "frontend/src/App.jsx#Function:handleReverify@711",
       "target": "frontend/src/App.jsx#Function:createActionId@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 714
+        "line": 717
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleStartRepair@723",
+      "source": "frontend/src/App.jsx#Function:handlePrepareRepair@727",
       "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 730
+        "line": 734
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleStartRepair@723",
+      "source": "frontend/src/App.jsx#Function:handlePrepareRepair@727",
       "target": "frontend/src/App.jsx#Function:createActionId@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 730
+        "line": 734
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleReviewRepair@737",
+      "source": "frontend/src/App.jsx#Function:handleStartRepair@743",
       "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "frontend/src/App.jsx",
-        "line": 749
-      }
-    },
-    {
-      "source": "frontend/src/App.jsx#Function:handleReviewRepair@737",
-      "target": "frontend/src/App.jsx#Function:createActionId@25",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "frontend/src/App.jsx",
-        "line": 749
-      }
-    },
-    {
-      "source": "frontend/src/App.jsx#Function:handleReviewRepair@737",
-      "target": "frontend/src/App.jsx#Function:isCurrentReview@745",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -131777,43 +132502,83 @@
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handleResume@758",
-      "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "frontend/src/App.jsx",
-        "line": 765
-      }
-    },
-    {
-      "source": "frontend/src/App.jsx#Function:handleResume@758",
+      "source": "frontend/src/App.jsx#Function:handleStartRepair@743",
       "target": "frontend/src/App.jsx#Function:createActionId@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 765
+        "line": 750
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handlePause@776",
+      "source": "frontend/src/App.jsx#Function:handleReviewRepair@757",
       "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 783
+        "line": 769
       }
     },
     {
-      "source": "frontend/src/App.jsx#Function:handlePause@776",
+      "source": "frontend/src/App.jsx#Function:handleReviewRepair@757",
       "target": "frontend/src/App.jsx#Function:createActionId@25",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/App.jsx",
-        "line": 783
+        "line": 769
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx#Function:handleReviewRepair@757",
+      "target": "frontend/src/App.jsx#Function:isCurrentReview@765",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 770
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx#Function:handleResume@778",
+      "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 785
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx#Function:handleResume@778",
+      "target": "frontend/src/App.jsx#Function:createActionId@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 785
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx#Function:handlePause@796",
+      "target": "frontend/src/services/api.js#Function:buildActionRequestOptions@154",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 803
+      }
+    },
+    {
+      "source": "frontend/src/App.jsx#Function:handlePause@796",
+      "target": "frontend/src/App.jsx#Function:createActionId@25",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/App.jsx",
+        "line": 803
       }
     },
     {
@@ -131823,7 +132588,7 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/ChatView.jsx",
-        "line": 180
+        "line": 199
       }
     },
     {
@@ -131833,17 +132598,17 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/ChatView.jsx",
-        "line": 185
+        "line": 204
       }
     },
     {
       "source": "frontend/src/components/ChatView.jsx#Function:ChatView@5",
-      "target": "frontend/src/components/ChatView.jsx#Function:handleCopy@45",
+      "target": "frontend/src/components/ChatView.jsx#Function:handleCopy@47",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/components/ChatView.jsx",
-        "line": 272
+        "line": 291
       }
     },
     {
@@ -132697,7 +133462,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@320",
+      "source": "frontend/src/services/api.js#Method:createApiClient.rejectContractDraft@320",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
@@ -132707,8 +133472,8 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@320",
-      "target": "frontend/src/services/api.js#request:POST /projects/:id/reverify@321",
+      "source": "frontend/src/services/api.js#Method:createApiClient.rejectContractDraft@320",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/contracts/:value/reject@321",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -132717,7 +133482,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@320",
+      "source": "frontend/src/services/api.js#Method:createApiClient.rejectContractDraft@320",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
@@ -132727,7 +133492,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@325",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@325",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
@@ -132737,8 +133502,8 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@325",
-      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@326",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@325",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/reverify@326",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -132747,7 +133512,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@325",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reverifyProject@325",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
@@ -132757,7 +133522,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@330",
+      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@330",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
@@ -132767,8 +133532,8 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@330",
-      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair@331",
+      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@330",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@331",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -132777,7 +133542,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@330",
+      "source": "frontend/src/services/api.js#Method:createApiClient.prepareProjectRepair@330",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
@@ -132787,7 +133552,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@335",
+      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@335",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
@@ -132797,8 +133562,8 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@335",
-      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@336",
+      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@335",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair@336",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -132807,7 +133572,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@335",
+      "source": "frontend/src/services/api.js#Method:createApiClient.startProjectRepair@335",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
@@ -132817,7 +133582,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@340",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@340",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
@@ -132827,8 +133592,8 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@340",
-      "target": "frontend/src/services/api.js#request:POST /projects/:id/resume@341",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@340",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@341",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
@@ -132837,7 +133602,7 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@340",
+      "source": "frontend/src/services/api.js#Method:createApiClient.reviewProjectRepair@340",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
@@ -132847,63 +133612,93 @@
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@346",
+      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@345",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 347
+        "line": 346
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@346",
-      "target": "frontend/src/services/api.js#request:PATCH /projects/:id@347",
+      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@345",
+      "target": "frontend/src/services/api.js#request:POST /projects/:id/resume@346",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 347
+        "line": 346
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@346",
+      "source": "frontend/src/services/api.js#Method:createApiClient.resumeProject@345",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 347
+        "line": 346
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@353",
+      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@351",
       "target": "frontend/src/services/api.js#Function:request@166",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 354
+        "line": 352
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@353",
-      "target": "frontend/src/services/api.js#request:DELETE /projects/:id@354",
+      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@351",
+      "target": "frontend/src/services/api.js#request:PATCH /projects/:id@352",
       "label": "sends_request",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 354
+        "line": 352
       }
     },
     {
-      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@353",
+      "source": "frontend/src/services/api.js#Method:createApiClient.updateProject@351",
       "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 354
+        "line": 352
+      }
+    },
+    {
+      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@358",
+      "target": "frontend/src/services/api.js#Function:request@166",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/services/api.js",
+        "line": 359
+      }
+    },
+    {
+      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@358",
+      "target": "frontend/src/services/api.js#request:DELETE /projects/:id@359",
+      "label": "sends_request",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/services/api.js",
+        "line": 359
+      }
+    },
+    {
+      "source": "frontend/src/services/api.js#Method:createApiClient.deleteProject@358",
+      "target": "frontend/src/services/api.js#Function:encodePathSegment@133",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "frontend/src/services/api.js",
+        "line": 359
       }
     },
     {
@@ -132913,7 +133708,7 @@
       "provenance": "ast",
       "location": {
         "file": "frontend/src/services/api.js",
-        "line": 361
+        "line": 366
       }
     },
     {
@@ -135324,31 +136119,31 @@
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects@244",
-      "target": "backend/routes/projectRoutes.js#route:GET /@407",
+      "target": "backend/routes/projectRoutes.js#route:GET /@411",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id@245",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id@488",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id@492",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects@247",
-      "target": "backend/routes/projectRoutes.js#route:POST /@437",
+      "target": "backend/routes/projectRoutes.js#route:POST /@441",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/files@254",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@495",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/files@499",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/logs@255",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@509",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/logs@513",
       "label": "requests_route",
       "provenance": "inferred"
     },
@@ -135378,7 +136173,7 @@
     },
     {
       "source": "frontend/src/services/api.js#request:GET /projects/:id/verification-summary@273",
-      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@939",
+      "target": "backend/routes/projectRoutes.js#route:GET /:id/verification-summary@946",
       "label": "requests_route",
       "provenance": "inferred"
     },
@@ -135390,67 +136185,73 @@
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/sync@289",
-      "target": "backend/routes/projectRoutes.js#route:POST /sync@453",
+      "target": "backend/routes/projectRoutes.js#route:POST /sync@457",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/chat@300",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@572",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/chat@576",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/approve@310",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@751",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/approve@755",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/pause@315",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1074",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/pause@1081",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:POST /projects/:id/reverify@321",
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/contracts/:value/reject@321",
+      "target": "backend/routes/projectContractRoutes.js#route:POST /:id/contracts/:revision/reject@14",
+      "label": "requests_route",
+      "provenance": "inferred"
+    },
+    {
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/reverify@326",
       "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@340",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@326",
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@331",
       "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@50",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair@331",
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair@336",
       "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@168",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@336",
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@341",
       "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@225",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:POST /projects/:id/resume@341",
-      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@969",
+      "source": "frontend/src/services/api.js#request:POST /projects/:id/resume@346",
+      "target": "backend/routes/projectRoutes.js#route:POST /:id/resume@976",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:PATCH /projects/:id@347",
-      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1132",
+      "source": "frontend/src/services/api.js#request:PATCH /projects/:id@352",
+      "target": "backend/routes/projectRoutes.js#route:PATCH /:id@1139",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
-      "source": "frontend/src/services/api.js#request:DELETE /projects/:id@354",
-      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1163",
+      "source": "frontend/src/services/api.js#request:DELETE /projects/:id@359",
+      "target": "backend/routes/projectRoutes.js#route:DELETE /:id@1170",
       "label": "requests_route",
       "provenance": "inferred"
     },
