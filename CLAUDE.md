@@ -142,7 +142,11 @@ Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontg
     - Kalp atışı artık kendi SQLite bağlantısı olan bir `worker_thread`'den yazılıyor (`startLeaseHeartbeat`, `backend/workflowHeartbeatWorker.js`, `d6eeb75`). Bu, ana döngü takılmalarına karşı koruyor ama sorunu çözmedi: 19:04'teki olayda iş parçacığının yazımı ana iş parçacığı kilidi düşürdükten 0,5 sn sonra gerçekleşti. Yani yazım veritabanı kilidinde bekletiliyordu.
     - Tanılama logları eklendi (`80584ce`): `workflow.lease_check_failed` (kalp atışı yaşı, açık işlem, çağıran yığın) ve `workflow.heartbeat_write_failed` / `heartbeat_write_slow`.
     - Sonraki iki koşuda olay yaşanmadı; yalnız 3,2 sn'lik yavaş bir yazım görüldü. Olay tekrarlarsa bu loglar nedeni gösterecek.
-  - **Açık:** Yerel Windows worker'da testlerin `spawn('npm')` çağrısı ENOENT veriyor (ortam engeli). Docker'daki son dört koşunun üçü temiz kurulumda düştü (iki kez npm `ECONNRESET`, bir kez zaman aşımı); bir koşuda da worker eksik kanıt döndü. Bağımsız inceleme kabul etmedi: admin ürün oluşturma başarısı gözlenmedi. Kalan inceleme hakkı 1. Proje `paused`.
+  - **16 Kasım Docker turları:** Test süresi 5 dk'ya çıktı (`c35777c`). Docker'da test çıktısı artık korunuyor (`9bb0b5a`). Başarısız TAP testleri öneriye taşınıyor (`f9cee10`). Coder'a bir kez biçim düzeltme hakkı verildi (`8c870fe`).
+    - En iyi Docker koşusu `39be2bde`: 83 PASS; 20 testin 19'u geçti. Tek hata, `system.test.js:563`'teki test: Next.js'in React 18 uyarısını içeren `stderr`'i boş bekliyordu.
+    - Sonraki üç minimax onarım turu geriledi. Önce `test-helper.ts:98`'de stok hareketi tip hatası geri geldi. Ardından geniş bir öneri yeni `tests/browser-fixture.mjs`'i sözdizimi hatalı yazdı.
+    - Son koşu `cd49324b`: 20 PASS. Kaynaklarda bu hatalı dosyalar duruyor.
+  - **Açık:** Bu modelle sınırlı onarım döngüsü güvenilir değil; daha güçlü bir modelle ve dar bir öneriyle sürdürülmeli. Hedefler: `browser-fixture.mjs` sözdizimi, `test-helper.ts` tip hatası ve REQ-7 `stderr` beklentisi. Yerel Windows worker'da `spawn('npm')` ENOENT veriyor. Docker'da npm ağ hataları zaman zaman yaşanıyor. Kalan inceleme hakkı 1. Proje `paused`.
 
 ## 5a. Devralma — 4 Kasım 2026
 
