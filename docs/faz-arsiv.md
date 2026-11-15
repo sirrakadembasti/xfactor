@@ -461,6 +461,15 @@ README'deki Kalite Paneli anlatımı koda göre düzeltildi. Testler sırasında
 
 14 Kasım'da [PR #6](https://github.com/sirrakadembasti/xfactor/pull/6), beş CI işinin hepsi yeşilken `main`'e alındı (merge `ec299fe`).
 
+### Halka 37 — 14–15 Kasım: Faz 4 modül disiplini
+
+- Onarım, bağımsız inceleme ve yeniden doğrulama rotaları `projectRepairRoutes.js`'e taşındı.
+- `workflow.js`'in yardımcıları `workflowSupport.js`'e; kalite/Tester ve kabul aşamaları `stages/qualityStage.js` ile `stages/acceptanceStage.js`'e ayrıldı. `workflow.js` 1.834 satırdan 920'ye indi.
+- `executionClient.js` backend stiline getirildi.
+- Kaynak metni denetleyen güvenlik testleri yeni aşama modüllerini de kapsayacak şekilde genişletildi.
+
+`agents/tester.js` ve `services/reconciliationService.js` kullanıcı kararıyla bu fazda bölünmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
