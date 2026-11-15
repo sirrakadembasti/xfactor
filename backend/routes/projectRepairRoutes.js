@@ -46,6 +46,30 @@ function sourceFactRank(path, failurePaths, testPaths) {
     if (/^src\/controllers\//.test(path)) return 4;
     return 5;
 }
+/**
+ * The failing subtests of a TAP report with their error detail. A suite's output is long and its
+ * failures sit in the middle, where the head/tail excerpt drops them; the proposal needs them.
+ */
+export function failingTapBlocks(output, { perTestChars = 1500, totalChars = 6000 } = {}) {
+    if (typeof output !== 'string' || !/^\s*not ok \d+ - /m.test(output)) return [];
+    const blocks = [];
+    let total = 0;
+    const lines = output.split('\n');
+    for (let index = 0; index < lines.length; index++) {
+        if (!/^not ok \d+ - /.test(lines[index])) continue;
+        const block = [lines[index]];
+        for (let next = index + 1; next < lines.length; next++) {
+            if (/^(?:not ok|ok) \d+ - |^# Subtest: |^\d+\.\.\d+/.test(lines[next])) break;
+            block.push(lines[next]);
+        }
+        const text = block.join('\n').slice(0, perTestChars);
+        if (total + text.length > totalChars) break;
+        blocks.push(text);
+        total += text.length;
+    }
+    return blocks;
+}
+
 /** Paths of known project files that a failed or blocked check names in its own output. */
 export function failedCheckSourcePaths(checks = [], files = []) {
     const text = checks.filter(check => ['FAIL', 'BLOCKED'].includes(check.status))
@@ -140,9 +164,11 @@ En fazla 12 hedef, her hedef tek dosya. Her başarısız zorunlu kontrolü ve me
                     checks: context.checks.filter(c => ['FAIL', 'BLOCKED'].includes(c.status)).map(c => {
                         const excerpt = (value, limit) => typeof value !== 'string' ? '' : value.length <= limit ? value
                             : `${value.slice(0, Math.floor(limit / 3))}\n[excerpt]\n${value.slice(-Math.floor(2 * limit / 3))}`;
+                        const failingTests = failingTapBlocks([c.stdout, c.stderr].filter(value => typeof value === 'string').join('\n'));
                         return { id: c.id, gate_name: c.gate_name, status: c.status, applicability: c.applicability,
                             reason: excerpt(c.reason, 600), stdout: excerpt(c.stdout, c.gate_name === 'lint' ? 6000 : 600),
-                            stderr: excerpt(c.stderr, c.gate_name === 'service_spawn' ? 3000 : 600) };
+                            stderr: excerpt(c.stderr, c.gate_name === 'service_spawn' ? 3000 : 600),
+                            ...(failingTests.length ? { failingTests } : {}) };
                     }),
                     successfulChecks: context.checks.filter(c => c.status === 'PASS')
                         .map(c => ({id:c.id,gate:c.gate_name,status:c.status,reason:c.reason || ''})),
