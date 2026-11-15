@@ -5,6 +5,7 @@ import { PRODUCTION_LANGUAGE_POLICY } from '../agents/productionLanguagePolicy.j
 import { digest } from '../verification/workerFailures.js';
 import { classifyLLMError } from '../../llm-yonetimi/src/runtime.js';
 import { listRequirementAssertionCandidates } from '../contracts/requirementAssertionBindings.js';
+import { createLLMProfileStore } from '../llm-auth/llm.js';
 import { readProjectState, writeProjectState, getProjectDir, computePlanHash } from '../engine/index.js';
 import { resolveGenerationResume } from '../engine/resumeStage.js';
 import { normalizeManagerPlan } from '../agents/schemas.js';
@@ -17,16 +18,56 @@ import { readControlledRepairContext, assertControlledRepairBaseline } from '../
 import { readWorkerSnapshotSync } from '../engine/workerRepairs.js';
 import { inspectControlledSemanticReviewEligibility } from '../engine/controlledSemanticAuthority.js';
 
+// The proposal reads a large bounded context, so it never waits less than four minutes. A longer
+// active profile budget wins, up to the 300 s that generateLLMResponse accepts.
+export const REPAIR_PROPOSAL_MIN_TIMEOUT_MS = 240000;
+const LLM_MAX_TIMEOUT_MS = 300000;
+export function repairProposalTimeoutMs(profileTimeoutMs) {
+    const profile = Number(profileTimeoutMs);
+    return Math.min(LLM_MAX_TIMEOUT_MS, Math.max(REPAIR_PROPOSAL_MIN_TIMEOUT_MS, Number.isInteger(profile) && profile > 0 ? profile : 0));
+}
+function activeProfileTimeoutMs() {
+    try { return createLLMProfileStore().getActive()?.timeoutMs ?? null; } catch { return null; }
+}
+
 const SOURCE_FACT_PATHS = new Set(['package.json', 'service-manifest.json', 'next.config.js', 'next.config.mjs', 'next.config.ts',
     'prisma/schema.prisma', 'prisma/seed.ts', 'src/app.ts', 'src/server.ts', 'src/config/env.ts',
     'src/app/layout.tsx', 'src/contexts/auth-context.tsx', 'src/lib/api-client.ts', 'src/lib/auth.ts', 'src/routes/index.ts', 'src/routes/auth.routes.ts']);
-export function buildRepairSourceFacts(files, budget = 196608, diagnosedTestPaths = []) {
+const SOURCE_FACT_MODULE = /^src\/(?:services|validations|routes|controllers)\/[^/]+\.[cm]?[jt]s$/;
+const BLOCKED_SOURCE_FACT = /(?:^|\/)(?:\.env(?:\..*)?|\.npmrc|package-lock\.json|npm-shrinkwrap\.json)$/i;
+// Lower rank enters the bounded budget first. Files a failed check names come first: they are
+// what the repair must change. Behaviour modules a test calls come before the large routers,
+// whose wiring rarely explains a type or assertion failure.
+function sourceFactRank(path, failurePaths, testPaths) {
+    if (failurePaths.has(path)) return 0;
+    if (testPaths.has(path)) return 1;
+    if (/^src\/(?:services|validations)\//.test(path)) return 2;
+    if (SOURCE_FACT_PATHS.has(path) && !/^src\/routes\//.test(path)) return 3;
+    if (/^src\/controllers\//.test(path)) return 4;
+    return 5;
+}
+/** Paths of known project files that a failed or blocked check names in its own output. */
+export function failedCheckSourcePaths(checks = [], files = []) {
+    const text = checks.filter(check => ['FAIL', 'BLOCKED'].includes(check.status))
+        .map(check => [check.reason, check.stdout, check.stderr].filter(value => typeof value === 'string').join('\n')).join('\n');
+    if (!text) return [];
+    // A path counts only as a whole token: "tests/test-helper.ts(68,54)" names the helper,
+    // while "src/app.ts" inside "src/app.tsx" does not name src/app.ts.
+    const namedIn = path => {
+        const escaped = path.replace(/[.*+?^$|()[\]{}\\]/g, '\\$&');
+        return new RegExp('(?:^|[\\s\'"(/\\\\])' + escaped + '(?=[\\s\'"():,]|$)', 'm').test(text);
+    };
+    return files.map(file => file.path).filter(path => !BLOCKED_SOURCE_FACT.test(path) && namedIn(path));
+}
+export function buildRepairSourceFacts(files, budget = 196608, diagnosedTestPaths = [], failurePaths = []) {
     const facts = []; let totalBytes = 0, truncated = false;
     const testPaths = new Set(diagnosedTestPaths.filter(path => typeof path === 'string'
         && /(?:^|\/)(?:tests?|__tests__)(?:\/|$)/i.test(path) && /\.(?:test|spec)\.[cm]?[jt]sx?$/i.test(path)));
-    const prioritizedFiles = testPaths.size ? [...files].sort((a, b) => Number(testPaths.has(b.path)) - Number(testPaths.has(a.path))) : files;
+    const named = new Set(failurePaths.filter(path => typeof path === 'string' && !BLOCKED_SOURCE_FACT.test(path)));
+    const prioritizedFiles = files.map((file, index) => ({ file, index, rank: sourceFactRank(file.path, named, testPaths) }))
+        .sort((a, b) => a.rank - b.rank || a.index - b.index).map(entry => entry.file);
     for (const file of prioritizedFiles) {
-        if (!testPaths.has(file.path) && !SOURCE_FACT_PATHS.has(file.path) && !/^src\/(?:services|validations|routes|controllers)\/[^/]+\.[cm]?[jt]s$/.test(file.path)) continue;
+        if (!named.has(file.path) && !testPaths.has(file.path) && !SOURCE_FACT_PATHS.has(file.path) && !SOURCE_FACT_MODULE.test(file.path)) continue;
         const bytes = Buffer.from(file.content), sourceSha256 = digest(bytes);
         if (bytes.length > 32768 || totalBytes + bytes.length > budget) {
             facts.push({ path: file.path, sourceSha256, omitted: true }); truncated = true; continue;
@@ -111,7 +152,8 @@ En fazla 12 hedef, her hedef tek dosya. Her başarısız zorunlu kontrolü ve me
                     unprojectedMandatoryRequirements: JSON.parse(context.contract.contract_json).requirements
                         .filter(r => r.mandatory !== false && !context.projectedRequirementIds.includes(r.id))
                         .map(({ id, statement }) => ({ id, statement })),
-                    sourceFacts: buildRepairSourceFacts(context.files.slice().sort((a,b) => Number(b.path.includes('/routes/')) - Number(a.path.includes('/routes/'))), 98304, diagnosedTestPaths),
+                    sourceFacts: buildRepairSourceFacts(context.files, 98304, diagnosedTestPaths,
+                        failedCheckSourcePaths(context.checks, context.files)),
                     testSubjectReferences: context.files.filter(file => /(?:^|\/)(?:services|validations|controllers)\/.*\.[cm]?[jt]s$|(?:^|\/)(?:seed|auth)\.[cm]?[jt]s$/.test(file.path)).map(file=>file.path),
                     files: context.files.map(({ path, sha256 }) => ({ path, sha256 }))
                 })) },
@@ -128,7 +170,7 @@ En fazla 12 hedef, her hedef tek dosya. Her başarısız zorunlu kontrolü ve me
             response = await managerResponder([
                 { role: 'system', content: messages.filter(message => message.role === 'system').map(message => message.content).join('\n\n') + '\nrequiredLintRepairPaths listesindeki her dosya kendi onarım hedefi olmalıdır.' },
                 ...messages.filter(message => message.role !== 'system')
-            ], { purpose: 'manager', timeoutMs: 240000, maxOutputTokens: 32768, onUsage: deps.onUsage ? usage => deps.onUsage(id, usage) : undefined });
+            ], { purpose: 'manager', timeoutMs: repairProposalTimeoutMs((deps.activeProfileTimeoutMs ?? activeProfileTimeoutMs)()), maxOutputTokens: 32768, onUsage: deps.onUsage ? usage => deps.onUsage(id, usage) : undefined });
             } catch (cause) {
                 const failure = classifyLLMError(cause);
                 logError('repair.proposal_provider_failed', Object.assign(new Error(failure.error), { code: failure.code }), {
