@@ -544,6 +544,14 @@ Koşu dizisi: 83 → 77 → 19 → 21 → 80 → 21 → 82 (sonda bir tip hatas�
 - `artifactVerifier.js`: yeni koşu oluşturulurken aynı sözleşmenin açık altyapı kayıtları çözülür (açık kayıt teslimi bloke ettiği için gerekli). `acceptanceStage.js`: başarısız koşunun hata metni altyapı nedenini taşır, `Worker repair requires Manager revision:` öneki kullanılmaz.
 - Yeni `origin` değeri eklenmedi; şema değişmedi. Testler: `test_infrastructure_failure_classification.js` (yeni) ve `test_worker_repairs.js` (altyapı hattı).
 
+### Halka 44 — 17 Kasım: test çıktısı kanıtında baş ve kuyruk (Y4)
+
+B-4: Worker ilk 1 MiB'ı, backend ilk 16 KB'ı tutuyordu; TAP çıktısının sonundaki `not ok` blokları ve özet kayboluyordu (`76dccdd0`'daki iki tarayıcı testi gibi). `faz-6/y4-test-cikti-kuyrugu` dalında:
+- `execution/outputRetention.js`: ilk yarı sabit, son yarı halka tampon. İşaret (`…[kesildi: N bayt]…`) bayt bütçesinin dışında, yalnız metne eklenir.
+- `execution/runtime.js:captureChildOutput` (Docker) ve `execution/localProcesses.js` (yerel) bu tamponu kullanır. `stdout/stderrBytes`, `*Sha256` (tüm akış), `*Truncated` anlamı ve kesilmiş çıktının `passed: false` sayılması aynen kaldı.
+- `backend/verification/workerFailures.js:bounded`: sınır içindeyse olduğu gibi; aşarsa baş + işaret + kuyruk, toplam sınırı aşmaz (işaret sınıra dahil). Redaksiyon kesmeden önce uygulanmaya devam ediyor. Yanıt şekli değişmedi.
+- Testler: `test_worker_check_log_tail.js` (yeni), `execution/tests/runtime.test.js` ve `localProcesses.test.js` (eski "yalnız baş" beklentileri baş+kuyruğa güncellendi, kuyruk testleri eklendi).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

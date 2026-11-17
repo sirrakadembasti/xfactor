@@ -130,6 +130,8 @@ Duraklatılmış projede **Mevcut çalışmayı koruyan onarım önerisi hazırl
 
 **Geçici ağ/registry hatası:** Worker'da `npm ci` geçici bir registry hatasıyla (502/503/504, `ECONNRESET`, `ETIMEDOUT`, `EAI_AGAIN`, `ENOTFOUND`) düşerse komut bir kez yeniden denenir. Yine düşerse `clean_install` altyapı sınıflı BLOCKED olur; PASS üretilmez. Bu kayıt Manager revizyonu istemez, **Devam Ettir** ve **Yalnız Yeniden Doğrula** açık kalır ve sonraki koşu başlarken çözülür. `ERESOLVE`, `ETARGET`, `E404`, `EINTEGRITY` değişmeden başarısız sayılır.
 
+**Uzun test çıktısı:** Hem Worker (1 MiB) hem de backend (kontrol başına 16 KB) çıktının yalnız başını değil, ilk yarısı ile son yarısını tutar; araya `…[kesildi: N bayt]…` işareti girer. Hata özeti ve `not ok` blokları genellikle sondadır. SHA-256 özeti tüm akışı kapsamaya devam eder ve kesilmiş çıktı yine `passed: false` sayılır; yani kesilmiş çıktı tam kanıt değildir.
+
 **Onarım önerisinin bağlamı:**
 - Manager kaynakları sınırlı bir bütçeyle görür; bütçe önce başarısız kontrollerde adı geçen dosyalara, sonra test edilen servis ve validasyonlara ayrılır.
 - Başarısız test vakaları (`not ok` blokları, hata ve yığınıyla) öneriye ayrıca gönderilir; uzun çıktının ortasında kalsalar da görünürler.

@@ -10,10 +10,16 @@ export function safeWorkerPath(value) {
     return normalized && !/[:\x00-\x1f]/.test(normalized) && !normalized.startsWith('/')
         && !normalized.split('/').some(part => !part || part === '.' || part === '..') ? normalized : null;
 }
+const TRUNCATION_MARKER_BUDGET = 48;
 function bounded(value, limit) {
     const text = redactSensitiveText(String(value ?? '').replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '').replace(/\r\n?/g, '\n'));
     const bytes = Buffer.from(text);
-    return { text: bytes.subarray(0, limit).toString('utf8'), truncated: bytes.length > limit };
+    if (bytes.length <= limit) return { text, truncated: false };
+    // Failure summaries sit at the end of long output: keep head and tail, marker included in the limit.
+    const keep = limit - TRUNCATION_MARKER_BUDGET;
+    if (keep < TRUNCATION_MARKER_BUDGET) return { text: bytes.subarray(0, limit).toString('utf8'), truncated: true };
+    const headBytes = Math.ceil(keep / 2), tailBytes = keep - headBytes;
+    return { text: `${bytes.subarray(0, headBytes).toString('utf8')}\n…[kesildi: ${bytes.length - keep} bayt]…\n${bytes.subarray(bytes.length - tailBytes).toString('utf8')}`, truncated: true };
 }
 export function normalizeWorkerCheckLog(check, { maxStreamBytes = 16384, maxReasonBytes = 2048 } = {}) {
     const stdout = bounded(check.stdout, maxStreamBytes), stderr = bounded(check.stderr, maxStreamBytes);

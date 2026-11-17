@@ -547,7 +547,7 @@
       "group": "backend",
       "file": "backend/verification/workerFailures.js",
       "description": "Sınırlandırılmış, sırları temizlenmiş worker diagnostic ve kalıcı ret kaydı; belirsiz/altyapı bulguları otomatik onarımı durdurur",
-      "val": 23.5,
+      "val": 24,
       "provenance": "curated"
     },
     {
@@ -807,7 +807,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 99.5,
+      "val": 100,
       "provenance": "curated"
     },
     {
@@ -1757,7 +1757,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 61,
+      "val": 61.5,
       "provenance": "ast"
     },
     {
@@ -3281,6 +3281,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/tests/test_worker_check_log_tail.js",
+      "label": "test_worker_check_log_tail.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_worker_check_log_tail.js",
+      "description": "",
+      "val": 4.5,
+      "provenance": "ast"
+    },
+    {
       "id": "backend/tests/test_worker_repairs.js",
       "label": "test_worker_repairs.js",
       "type": "SourceFile",
@@ -3757,7 +3767,7 @@
       "group": "backend",
       "file": "execution/localProcesses.js",
       "description": "",
-      "val": 13,
+      "val": 13.5,
       "provenance": "ast"
     },
     {
@@ -3768,6 +3778,16 @@
       "file": "execution/localRuntime.js",
       "description": "",
       "val": 15.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "execution/outputRetention.js",
+      "label": "outputRetention.js",
+      "type": "SourceFile",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 5.5,
       "provenance": "ast"
     },
     {
@@ -3797,7 +3817,7 @@
       "group": "backend",
       "file": "execution/runtime.js",
       "description": "",
-      "val": 30,
+      "val": 30.5,
       "provenance": "ast"
     },
     {
@@ -3957,7 +3977,7 @@
       "group": "tests",
       "file": "execution/tests/localProcesses.test.js",
       "description": "",
-      "val": 16,
+      "val": 17,
       "provenance": "ast"
     },
     {
@@ -4067,7 +4087,7 @@
       "group": "tests",
       "file": "execution/tests/runtime.test.js",
       "description": "",
-      "val": 13.5,
+      "val": 14.5,
       "provenance": "ast"
     },
     {
@@ -15323,7 +15343,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 59,
+      "val": 59.5,
       "provenance": "ast",
       "line": 1
     },
@@ -15372,7 +15392,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@221",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15380,10 +15400,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 221
+      "line": 222
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@225",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15391,10 +15411,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 225
+      "line": 226
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@230",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -15402,7 +15422,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 230
+      "line": 231
     },
     {
       "id": "package:assert",
@@ -15750,7 +15770,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 56.5,
+      "val": 57,
       "provenance": "ast"
     },
     {
@@ -30154,7 +30174,7 @@
       "line": 7
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:bounded@13",
+      "id": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "bounded",
       "type": "Function",
       "group": "backend",
@@ -30162,32 +30182,32 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 13
+      "line": 14
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@18",
+      "id": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
       "label": "normalizeWorkerCheckLog",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/verification/workerFailures.js",
+      "description": "",
+      "val": 3.5,
+      "provenance": "ast",
+      "line": 24
+    },
+    {
+      "id": "backend/verification/workerFailures.js#Function:redactObservedEvidence@30",
+      "label": "redactObservedEvidence",
       "type": "Function",
       "group": "backend",
       "file": "backend/verification/workerFailures.js",
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 18
+      "line": 30
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:redactObservedEvidence@24",
-      "label": "redactObservedEvidence",
-      "type": "Function",
-      "group": "backend",
-      "file": "backend/verification/workerFailures.js",
-      "description": "",
-      "val": 2.5,
-      "provenance": "ast",
-      "line": 24
-    },
-    {
-      "id": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@36",
+      "id": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@42",
       "label": "retainSemanticEvidence",
       "type": "Function",
       "group": "backend",
@@ -30195,10 +30215,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 36
+      "line": 42
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:copy@38",
+      "id": "backend/verification/workerFailures.js#Function:copy@44",
       "label": "copy",
       "type": "Function",
       "group": "backend",
@@ -30206,10 +30226,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 38
+      "line": 44
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@56",
+      "id": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
       "label": "parseTypecheckDiagnostics",
       "type": "Function",
       "group": "backend",
@@ -30217,10 +30237,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 56
+      "line": 62
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:stop@57",
+      "id": "backend/verification/workerFailures.js#Function:stop@63",
       "label": "stop",
       "type": "Function",
       "group": "backend",
@@ -30228,10 +30248,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 57
+      "line": 63
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
+      "id": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
       "label": "summarizeWorkerRejection",
       "type": "Function",
       "group": "backend",
@@ -30239,10 +30259,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 82
+      "line": 88
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:recordWorkerRejection@124",
+      "id": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
       "label": "recordWorkerRejection",
       "type": "Function",
       "group": "backend",
@@ -30250,10 +30270,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 124
+      "line": 130
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "id": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "label": "recordVerificationBlocker",
       "type": "Function",
       "group": "backend",
@@ -30261,10 +30281,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 145
+      "line": 151
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "id": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "label": "loadOpenWorkerRepairBatch",
       "type": "Function",
       "group": "backend",
@@ -30272,7 +30292,7 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 154
+      "line": 160
     },
     {
       "id": "backend/websocketHub.js#Function:sendJson@9",
@@ -31274,7 +31294,7 @@
       "line": 5
     },
     {
-      "id": "execution/localProcesses.js#Function:annotateSpawnFailure@13",
+      "id": "execution/localProcesses.js#Function:annotateSpawnFailure@14",
       "label": "annotateSpawnFailure",
       "type": "Function",
       "group": "backend",
@@ -31282,10 +31302,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 13
+      "line": 14
     },
     {
-      "id": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "id": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "label": "createLocalProcessManager",
       "type": "Function",
       "group": "backend",
@@ -31293,22 +31313,11 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 28
+      "line": 29
     },
     {
-      "id": "execution/localProcesses.js#Function:shellQuote@42",
+      "id": "execution/localProcesses.js#Function:shellQuote@43",
       "label": "shellQuote",
-      "type": "Function",
-      "group": "backend",
-      "file": "execution/localProcesses.js",
-      "description": "",
-      "val": 2,
-      "provenance": "ast",
-      "line": 42
-    },
-    {
-      "id": "execution/localProcesses.js#Function:batchQuote@43",
-      "label": "batchQuote",
       "type": "Function",
       "group": "backend",
       "file": "execution/localProcesses.js",
@@ -31318,19 +31327,19 @@
       "line": 43
     },
     {
-      "id": "execution/localProcesses.js#Function:progress@63",
-      "label": "progress",
+      "id": "execution/localProcesses.js#Function:batchQuote@44",
+      "label": "batchQuote",
       "type": "Function",
       "group": "backend",
       "file": "execution/localProcesses.js",
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 63
+      "line": 44
     },
     {
-      "id": "execution/localProcesses.js#Function:check@64",
-      "label": "check",
+      "id": "execution/localProcesses.js#Function:progress@64",
+      "label": "progress",
       "type": "Function",
       "group": "backend",
       "file": "execution/localProcesses.js",
@@ -31340,7 +31349,18 @@
       "line": 64
     },
     {
-      "id": "execution/localProcesses.js#Function:request@69",
+      "id": "execution/localProcesses.js#Function:check@65",
+      "label": "check",
+      "type": "Function",
+      "group": "backend",
+      "file": "execution/localProcesses.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 65
+    },
+    {
+      "id": "execution/localProcesses.js#Function:request@70",
       "label": "request",
       "type": "Function",
       "group": "backend",
@@ -31348,10 +31368,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 69
+      "line": 70
     },
     {
-      "id": "execution/localProcesses.js#Function:cwdFor@77",
+      "id": "execution/localProcesses.js#Function:cwdFor@78",
       "label": "cwdFor",
       "type": "Function",
       "group": "backend",
@@ -31359,10 +31379,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 77
+      "line": 78
     },
     {
-      "id": "execution/localProcesses.js#Function:inside@83",
+      "id": "execution/localProcesses.js#Function:inside@84",
       "label": "inside",
       "type": "Function",
       "group": "backend",
@@ -31370,10 +31390,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 83
+      "line": 84
     },
     {
-      "id": "execution/localProcesses.js#Function:terminate@89",
+      "id": "execution/localProcesses.js#Function:terminate@90",
       "label": "terminate",
       "type": "Function",
       "group": "backend",
@@ -31381,21 +31401,21 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 89
+      "line": 90
     },
     {
-      "id": "execution/localProcesses.js#Function:start@93",
+      "id": "execution/localProcesses.js#Function:start@94",
       "label": "start",
       "type": "Function",
       "group": "backend",
       "file": "execution/localProcesses.js",
       "description": "",
-      "val": 6.5,
+      "val": 7,
       "provenance": "ast",
-      "line": 93
+      "line": 94
     },
     {
-      "id": "execution/localProcesses.js#Function:abort@117",
+      "id": "execution/localProcesses.js#Function:abort@118",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -31403,10 +31423,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 117
+      "line": 118
     },
     {
-      "id": "execution/localProcesses.js#Method:execute@150",
+      "id": "execution/localProcesses.js#Method:execute@151",
       "label": "execute",
       "type": "Method",
       "group": "backend",
@@ -31414,22 +31434,11 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 150
+      "line": 151
     },
     {
-      "id": "execution/localProcesses.js#Method:spawn@156",
+      "id": "execution/localProcesses.js#Method:spawn@157",
       "label": "spawn",
-      "type": "Method",
-      "group": "backend",
-      "file": "execution/localProcesses.js",
-      "description": "",
-      "val": 2,
-      "provenance": "ast",
-      "line": 156
-    },
-    {
-      "id": "execution/localProcesses.js#Method:kill@157",
-      "label": "kill",
       "type": "Method",
       "group": "backend",
       "file": "execution/localProcesses.js",
@@ -31439,7 +31448,18 @@
       "line": 157
     },
     {
-      "id": "execution/localProcesses.js#Method:dispose@161",
+      "id": "execution/localProcesses.js#Method:kill@158",
+      "label": "kill",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/localProcesses.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 158
+    },
+    {
+      "id": "execution/localProcesses.js#Method:dispose@162",
       "label": "dispose",
       "type": "Method",
       "group": "backend",
@@ -31447,7 +31467,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 161
+      "line": 162
     },
     {
       "id": "execution/localRuntime.js#Function:consent@15",
@@ -31593,6 +31613,61 @@
       "line": 103
     },
     {
+      "id": "execution/outputRetention.js#Function:truncationMarker@4",
+      "label": "truncationMarker",
+      "type": "Function",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 4
+    },
+    {
+      "id": "execution/outputRetention.js#Function:createOutputRetainer@6",
+      "label": "createOutputRetainer",
+      "type": "Function",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 6
+    },
+    {
+      "id": "execution/outputRetention.js#Method:push@12",
+      "label": "push",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 12
+    },
+    {
+      "id": "execution/outputRetention.js#Method:text@28",
+      "label": "text",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 28
+    },
+    {
+      "id": "execution/outputRetention.js#Method:truncated@32",
+      "label": "truncated",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/outputRetention.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 32
+    },
+    {
       "id": "execution/protocol.js#Function:validId@7",
       "label": "validId",
       "type": "Function",
@@ -31734,7 +31809,7 @@
       "line": 138
     },
     {
-      "id": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "id": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "filterRuntimeEnvironment",
       "type": "Function",
       "group": "backend",
@@ -31742,10 +31817,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 10
+      "line": 11
     },
     {
-      "id": "execution/runtime.js#Function:getIsolationArgs@26",
+      "id": "execution/runtime.js#Function:getIsolationArgs@27",
       "label": "getIsolationArgs",
       "type": "Function",
       "group": "backend",
@@ -31753,10 +31828,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 26
+      "line": 27
     },
     {
-      "id": "execution/runtime.js#Function:safeId@57",
+      "id": "execution/runtime.js#Function:safeId@58",
       "label": "safeId",
       "type": "Function",
       "group": "backend",
@@ -31764,10 +31839,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 57
+      "line": 58
     },
     {
-      "id": "execution/runtime.js#Function:resourceNames@62",
+      "id": "execution/runtime.js#Function:resourceNames@63",
       "label": "resourceNames",
       "type": "Function",
       "group": "backend",
@@ -31775,10 +31850,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 62
+      "line": 63
     },
     {
-      "id": "execution/runtime.js#Function:abortError@67",
+      "id": "execution/runtime.js#Function:abortError@68",
       "label": "abortError",
       "type": "Function",
       "group": "backend",
@@ -31786,10 +31861,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 67
+      "line": 68
     },
     {
-      "id": "execution/runtime.js#Function:docker@68",
+      "id": "execution/runtime.js#Function:docker@69",
       "label": "docker",
       "type": "Function",
       "group": "backend",
@@ -31797,10 +31872,10 @@
       "description": "",
       "val": 6,
       "provenance": "ast",
-      "line": 68
+      "line": 69
     },
     {
-      "id": "execution/runtime.js#Function:finish@76",
+      "id": "execution/runtime.js#Function:finish@77",
       "label": "finish",
       "type": "Function",
       "group": "backend",
@@ -31808,10 +31883,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 76
+      "line": 77
     },
     {
-      "id": "execution/runtime.js#Function:abort@77",
+      "id": "execution/runtime.js#Function:abort@78",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -31819,10 +31894,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 77
+      "line": 78
     },
     {
-      "id": "execution/runtime.js#Function:probeRuntimeReadiness@85",
+      "id": "execution/runtime.js#Function:probeRuntimeReadiness@86",
       "label": "probeRuntimeReadiness",
       "type": "Function",
       "group": "backend",
@@ -31830,10 +31905,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 85
+      "line": 86
     },
     {
-      "id": "execution/runtime.js#Function:commandTimeoutMs@101",
+      "id": "execution/runtime.js#Function:commandTimeoutMs@102",
       "label": "commandTimeoutMs",
       "type": "Function",
       "group": "backend",
@@ -31841,10 +31916,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 101
+      "line": 102
     },
     {
-      "id": "execution/runtime.js#Function:buildContainerExecArgs@107",
+      "id": "execution/runtime.js#Function:buildContainerExecArgs@108",
       "label": "buildContainerExecArgs",
       "type": "Function",
       "group": "backend",
@@ -31852,10 +31927,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 107
+      "line": 108
     },
     {
-      "id": "execution/runtime.js#Function:ownedContainerExists@115",
+      "id": "execution/runtime.js#Function:ownedContainerExists@116",
       "label": "ownedContainerExists",
       "type": "Function",
       "group": "backend",
@@ -31863,10 +31938,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 115
+      "line": 116
     },
     {
-      "id": "execution/runtime.js#Function:cleanupContainer@120",
+      "id": "execution/runtime.js#Function:cleanupContainer@121",
       "label": "cleanupContainer",
       "type": "Function",
       "group": "backend",
@@ -31874,10 +31949,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 120
+      "line": 121
     },
     {
-      "id": "execution/runtime.js#Function:disconnectInstallNetwork@127",
+      "id": "execution/runtime.js#Function:disconnectInstallNetwork@128",
       "label": "disconnectInstallNetwork",
       "type": "Function",
       "group": "backend",
@@ -31885,10 +31960,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 127
+      "line": 128
     },
     {
-      "id": "execution/runtime.js#Function:dependencySpecAllowed@131",
+      "id": "execution/runtime.js#Function:dependencySpecAllowed@132",
       "label": "dependencySpecAllowed",
       "type": "Function",
       "group": "backend",
@@ -31896,10 +31971,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 131
+      "line": 132
     },
     {
-      "id": "execution/runtime.js#Function:walkDependencyValues@137",
+      "id": "execution/runtime.js#Function:walkDependencyValues@138",
       "label": "walkDependencyValues",
       "type": "Function",
       "group": "backend",
@@ -31907,10 +31982,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 137
+      "line": 138
     },
     {
-      "id": "execution/runtime.js#Function:validateDependencySources@149",
+      "id": "execution/runtime.js#Function:validateDependencySources@150",
       "label": "validateDependencySources",
       "type": "Function",
       "group": "backend",
@@ -31918,10 +31993,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 149
+      "line": 150
     },
     {
-      "id": "execution/runtime.js#Function:inspect@159",
+      "id": "execution/runtime.js#Function:inspect@160",
       "label": "inspect",
       "type": "Function",
       "group": "backend",
@@ -31929,10 +32004,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 159
+      "line": 160
     },
     {
-      "id": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "id": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "validateWorkspacePath",
       "type": "Function",
       "group": "backend",
@@ -31940,10 +32015,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 173
+      "line": 174
     },
     {
-      "id": "execution/runtime.js#Function:validateOwnedPath@181",
+      "id": "execution/runtime.js#Function:validateOwnedPath@182",
       "label": "validateOwnedPath",
       "type": "Function",
       "group": "backend",
@@ -31951,10 +32026,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 181
+      "line": 182
     },
     {
-      "id": "execution/runtime.js#Function:cleanupOwned@186",
+      "id": "execution/runtime.js#Function:cleanupOwned@187",
       "label": "cleanupOwned",
       "type": "Function",
       "group": "backend",
@@ -31962,10 +32037,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 186
+      "line": 187
     },
     {
-      "id": "execution/runtime.js#Function:validateWorkspacePaths@193",
+      "id": "execution/runtime.js#Function:validateWorkspacePaths@194",
       "label": "validateWorkspacePaths",
       "type": "Function",
       "group": "backend",
@@ -31973,10 +32048,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 193
+      "line": 194
     },
     {
-      "id": "execution/runtime.js#Function:waitForReadiness@195",
+      "id": "execution/runtime.js#Function:waitForReadiness@196",
       "label": "waitForReadiness",
       "type": "Function",
       "group": "backend",
@@ -31984,10 +32059,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 195
+      "line": 196
     },
     {
-      "id": "execution/runtime.js#Function:abort@195",
+      "id": "execution/runtime.js#Function:abort@196",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -31995,21 +32070,21 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 195
+      "line": 196
     },
     {
-      "id": "execution/runtime.js#Function:captureChildOutput@196",
+      "id": "execution/runtime.js#Function:captureChildOutput@197",
       "label": "captureChildOutput",
       "type": "Function",
       "group": "backend",
       "file": "execution/runtime.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast",
-      "line": 196
+      "line": 197
     },
     {
-      "id": "execution/runtime.js#Function:snapshot@209",
+      "id": "execution/runtime.js#Function:snapshot@208",
       "label": "snapshot",
       "type": "Function",
       "group": "backend",
@@ -32017,10 +32092,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 209
+      "line": 208
     },
     {
-      "id": "execution/runtime.js#Function:sandboxCwd@217",
+      "id": "execution/runtime.js#Function:sandboxCwd@216",
       "label": "sandboxCwd",
       "type": "Function",
       "group": "backend",
@@ -32028,10 +32103,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 217
+      "line": 216
     },
     {
-      "id": "execution/runtime.js#Function:validateJobPaths@223",
+      "id": "execution/runtime.js#Function:validateJobPaths@222",
       "label": "validateJobPaths",
       "type": "Function",
       "group": "backend",
@@ -32039,10 +32114,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 223
+      "line": 222
     },
     {
-      "id": "execution/runtime.js#Function:executeJob@237",
+      "id": "execution/runtime.js#Function:executeJob@236",
       "label": "executeJob",
       "type": "Function",
       "group": "backend",
@@ -32050,10 +32125,10 @@
       "description": "",
       "val": 9.5,
       "provenance": "ast",
-      "line": 237
+      "line": 236
     },
     {
-      "id": "execution/runtime.js#Function:opts@268",
+      "id": "execution/runtime.js#Function:opts@267",
       "label": "opts",
       "type": "Function",
       "group": "backend",
@@ -32061,10 +32136,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 268
+      "line": 267
     },
     {
-      "id": "execution/runtime.js#Function:checkPaths@280",
+      "id": "execution/runtime.js#Function:checkPaths@279",
       "label": "checkPaths",
       "type": "Function",
       "group": "backend",
@@ -32072,10 +32147,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 280
+      "line": 279
     },
     {
-      "id": "execution/runtime.js#Function:disconnectInstallNetworkHelper@285",
+      "id": "execution/runtime.js#Function:disconnectInstallNetworkHelper@284",
       "label": "disconnectInstallNetworkHelper",
       "type": "Function",
       "group": "backend",
@@ -32083,10 +32158,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 285
+      "line": 284
     },
     {
-      "id": "execution/runtime.js#Method:adapter.interact@295",
+      "id": "execution/runtime.js#Method:adapter.interact@294",
       "label": "adapter.interact",
       "type": "Method",
       "group": "backend",
@@ -32094,10 +32169,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 295
+      "line": 294
     },
     {
-      "id": "execution/runtime.js#Method:adapter.getCapabilities@301",
+      "id": "execution/runtime.js#Method:adapter.getCapabilities@300",
       "label": "adapter.getCapabilities",
       "type": "Method",
       "group": "backend",
@@ -32105,10 +32180,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 301
+      "line": 300
     },
     {
-      "id": "execution/runtime.js#Method:adapter.execute@302",
+      "id": "execution/runtime.js#Method:adapter.execute@301",
       "label": "adapter.execute",
       "type": "Method",
       "group": "backend",
@@ -32116,10 +32191,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 302
+      "line": 301
     },
     {
-      "id": "execution/runtime.js#Function:finish@334",
+      "id": "execution/runtime.js#Function:finish@333",
       "label": "finish",
       "type": "Function",
       "group": "backend",
@@ -32127,10 +32202,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 334
+      "line": 333
     },
     {
-      "id": "execution/runtime.js#Function:abort@338",
+      "id": "execution/runtime.js#Function:abort@337",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -32138,10 +32213,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 338
+      "line": 337
     },
     {
-      "id": "execution/runtime.js#Method:adapter.writeFile@359",
+      "id": "execution/runtime.js#Method:adapter.writeFile@358",
       "label": "adapter.writeFile",
       "type": "Method",
       "group": "backend",
@@ -32149,10 +32224,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 359
+      "line": 358
     },
     {
-      "id": "execution/runtime.js#Function:abort@365",
+      "id": "execution/runtime.js#Function:abort@364",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -32160,10 +32235,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 365
+      "line": 364
     },
     {
-      "id": "execution/runtime.js#Method:adapter.spawn@376",
+      "id": "execution/runtime.js#Method:adapter.spawn@375",
       "label": "adapter.spawn",
       "type": "Method",
       "group": "backend",
@@ -32171,10 +32246,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 376
+      "line": 375
     },
     {
-      "id": "execution/runtime.js#Function:cleanup@397",
+      "id": "execution/runtime.js#Function:cleanup@396",
       "label": "cleanup",
       "type": "Function",
       "group": "backend",
@@ -32182,10 +32257,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 397
+      "line": 396
     },
     {
-      "id": "execution/runtime.js#Function:abort@398",
+      "id": "execution/runtime.js#Function:abort@397",
       "label": "abort",
       "type": "Function",
       "group": "backend",
@@ -32193,10 +32268,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 398
+      "line": 397
     },
     {
-      "id": "execution/runtime.js#Method:adapter.kill@405",
+      "id": "execution/runtime.js#Method:adapter.kill@404",
       "label": "adapter.kill",
       "type": "Method",
       "group": "backend",
@@ -32204,10 +32279,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 405
+      "line": 404
     },
     {
-      "id": "execution/runtime.js#Function:done@410",
+      "id": "execution/runtime.js#Function:done@409",
       "label": "done",
       "type": "Function",
       "group": "backend",
@@ -32215,10 +32290,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 410
+      "line": 409
     },
     {
-      "id": "execution/runtime.js#Method:adapter.killProcessTree@416",
+      "id": "execution/runtime.js#Method:adapter.killProcessTree@415",
       "label": "adapter.killProcessTree",
       "type": "Method",
       "group": "backend",
@@ -32226,7 +32301,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 416
+      "line": 415
     },
     {
       "id": "execution/runtimeSelector.js#Function:selectedRuntime@3",
@@ -34297,7 +34372,7 @@
       "line": 80
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Function:setup@15",
+      "id": "execution/tests/localProcesses.test.js#Function:setup@16",
       "label": "setup",
       "type": "Function",
       "group": "tests",
@@ -34305,10 +34380,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 15
+      "line": 16
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:onResource@79",
+      "id": "execution/tests/localProcesses.test.js#Method:onResource@80",
       "label": "onResource",
       "type": "Method",
       "group": "tests",
@@ -34316,10 +34391,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 79
+      "line": 80
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:onResource@102",
+      "id": "execution/tests/localProcesses.test.js#Method:onResource@103",
       "label": "onResource",
       "type": "Method",
       "group": "tests",
@@ -34327,10 +34402,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 102
+      "line": 103
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:onResource@108",
+      "id": "execution/tests/localProcesses.test.js#Method:onResource@109",
       "label": "onResource",
       "type": "Method",
       "group": "tests",
@@ -34338,10 +34413,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 108
+      "line": 109
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:onProgress@120",
+      "id": "execution/tests/localProcesses.test.js#Method:onProgress@121",
       "label": "onProgress",
       "type": "Method",
       "group": "tests",
@@ -34349,10 +34424,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 120
+      "line": 121
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Function:inventoryRun@163",
+      "id": "execution/tests/localProcesses.test.js#Function:inventoryRun@164",
       "label": "inventoryRun",
       "type": "Function",
       "group": "tests",
@@ -34360,10 +34435,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 163
+      "line": 164
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Function:captured@165",
+      "id": "execution/tests/localProcesses.test.js#Function:captured@166",
       "label": "captured",
       "type": "Function",
       "group": "tests",
@@ -34371,10 +34446,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 165
+      "line": 166
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:adapter.readFile@167",
+      "id": "execution/tests/localProcesses.test.js#Method:adapter.readFile@168",
       "label": "adapter.readFile",
       "type": "Method",
       "group": "tests",
@@ -34382,10 +34457,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 167
+      "line": 168
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:readme@169",
+      "id": "execution/tests/localProcesses.test.js#Method:readme@170",
       "label": "readme",
       "type": "Method",
       "group": "tests",
@@ -34393,10 +34468,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 169
+      "line": 170
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:execute@208",
+      "id": "execution/tests/localProcesses.test.js#Method:execute@209",
       "label": "execute",
       "type": "Method",
       "group": "tests",
@@ -34404,10 +34479,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 208
+      "line": 209
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Function:response@214",
+      "id": "execution/tests/localProcesses.test.js#Function:response@215",
       "label": "response",
       "type": "Function",
       "group": "tests",
@@ -34415,10 +34490,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 214
+      "line": 215
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:execute@217",
+      "id": "execution/tests/localProcesses.test.js#Method:execute@218",
       "label": "execute",
       "type": "Method",
       "group": "tests",
@@ -34426,10 +34501,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 217
+      "line": 218
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:execute@220",
+      "id": "execution/tests/localProcesses.test.js#Method:execute@221",
       "label": "execute",
       "type": "Method",
       "group": "tests",
@@ -34437,10 +34512,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 220
+      "line": 221
     },
     {
-      "id": "execution/tests/localProcesses.test.js#Method:execute@225",
+      "id": "execution/tests/localProcesses.test.js#Method:execute@226",
       "label": "execute",
       "type": "Method",
       "group": "tests",
@@ -34448,7 +34523,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 225
+      "line": 226
     },
     {
       "id": "execution/tests/localProfile.test.js#Method:adapter.getCapabilities@6",
@@ -35011,7 +35086,7 @@
       "line": 264
     },
     {
-      "id": "execution/tests/runtime.test.js#Function:fakeChild@11",
+      "id": "execution/tests/runtime.test.js#Function:fakeChild@12",
       "label": "fakeChild",
       "type": "Function",
       "group": "tests",
@@ -35019,10 +35094,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 11
+      "line": 12
     },
     {
-      "id": "execution/tests/runtime.test.js#Method:result.onProgress@74",
+      "id": "execution/tests/runtime.test.js#Method:result.onProgress@75",
       "label": "result.onProgress",
       "type": "Method",
       "group": "tests",
@@ -35030,10 +35105,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 74
+      "line": 75
     },
     {
-      "id": "execution/tests/runtime.test.js#Method:result.onProgress@109",
+      "id": "execution/tests/runtime.test.js#Method:result.onProgress@110",
       "label": "result.onProgress",
       "type": "Method",
       "group": "tests",
@@ -35041,10 +35116,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 109
+      "line": 110
     },
     {
-      "id": "execution/tests/runtime.test.js#Method:result.onResource@127",
+      "id": "execution/tests/runtime.test.js#Method:result.onResource@128",
       "label": "result.onResource",
       "type": "Method",
       "group": "tests",
@@ -35052,10 +35127,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 127
+      "line": 128
     },
     {
-      "id": "execution/tests/runtime.test.js#Method:proxy.resolve@211",
+      "id": "execution/tests/runtime.test.js#Method:proxy.resolve@212",
       "label": "proxy.resolve",
       "type": "Method",
       "group": "tests",
@@ -35063,10 +35138,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 211
+      "line": 212
     },
     {
-      "id": "execution/tests/runtime.test.js#Method:proxy.connector@211",
+      "id": "execution/tests/runtime.test.js#Method:proxy.connector@212",
       "label": "proxy.connector",
       "type": "Method",
       "group": "tests",
@@ -35074,7 +35149,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 211
+      "line": 212
     },
     {
       "id": "execution/tests/runtimeReadiness.test.js#Method:now@8",
@@ -42716,6 +42791,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_infrastructure_failure_classification.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_worker_check_log_tail.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -57501,32 +57582,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@221",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 221
+        "line": 222
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@225",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 225
+        "line": 226
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@230",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 230
+        "line": 231
       }
     },
     {
@@ -78340,6 +78421,36 @@
       }
     },
     {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "backend/tests/testHarness.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "backend/verification/workerFailures.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 3
+      }
+    },
+    {
       "source": "backend/tests/test_worker_repairs.js",
       "target": "package:node:assert",
       "label": "imports_package",
@@ -83231,27 +83342,17 @@
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:bounded@13",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 13
+        "line": 14
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@18",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/verification/workerFailures.js",
-        "line": 18
-      }
-    },
-    {
-      "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:redactObservedEvidence@24",
+      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -83261,82 +83362,92 @@
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@36",
+      "target": "backend/verification/workerFailures.js#Function:redactObservedEvidence@30",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 36
+        "line": 30
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:copy@38",
+      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@42",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 38
+        "line": 42
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@56",
+      "target": "backend/verification/workerFailures.js#Function:copy@44",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 56
+        "line": 44
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:stop@57",
+      "target": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 57
+        "line": 62
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
+      "target": "backend/verification/workerFailures.js#Function:stop@63",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 82
+        "line": 63
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@124",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 124
+        "line": 88
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 145
+        "line": 130
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 154
+        "line": 151
+      }
+    },
+    {
+      "source": "backend/verification/workerFailures.js",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/workerFailures.js",
+        "line": 160
       }
     },
     {
@@ -84681,37 +84792,37 @@
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:annotateSpawnFailure@13",
-      "label": "contains",
+      "target": "execution/outputRetention.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 13
+        "line": 8
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "target": "execution/localProcesses.js#Function:annotateSpawnFailure@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 28
+        "line": 14
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:shellQuote@42",
+      "target": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 42
+        "line": 29
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:batchQuote@43",
+      "target": "execution/localProcesses.js#Function:shellQuote@43",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -84721,17 +84832,17 @@
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:progress@63",
+      "target": "execution/localProcesses.js#Function:batchQuote@44",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 63
+        "line": 44
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:check@64",
+      "target": "execution/localProcesses.js#Function:progress@64",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -84741,87 +84852,87 @@
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:request@69",
+      "target": "execution/localProcesses.js#Function:check@65",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 69
+        "line": 65
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:cwdFor@77",
+      "target": "execution/localProcesses.js#Function:request@70",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 77
+        "line": 70
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:inside@83",
+      "target": "execution/localProcesses.js#Function:cwdFor@78",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 83
+        "line": 78
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:terminate@89",
+      "target": "execution/localProcesses.js#Function:inside@84",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 89
+        "line": 84
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:start@93",
+      "target": "execution/localProcesses.js#Function:terminate@90",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 93
+        "line": 90
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Function:abort@117",
+      "target": "execution/localProcesses.js#Function:start@94",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 117
+        "line": 94
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Method:execute@150",
+      "target": "execution/localProcesses.js#Function:abort@118",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 150
+        "line": 118
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Method:spawn@156",
+      "target": "execution/localProcesses.js#Method:execute@151",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 156
+        "line": 151
       }
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Method:kill@157",
+      "target": "execution/localProcesses.js#Method:spawn@157",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -84831,12 +84942,22 @@
     },
     {
       "source": "execution/localProcesses.js",
-      "target": "execution/localProcesses.js#Method:dispose@161",
+      "target": "execution/localProcesses.js#Method:kill@158",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 161
+        "line": 158
+      }
+    },
+    {
+      "source": "execution/localProcesses.js",
+      "target": "execution/localProcesses.js#Method:dispose@162",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/localProcesses.js",
+        "line": 162
       }
     },
     {
@@ -85090,6 +85211,56 @@
       }
     },
     {
+      "source": "execution/outputRetention.js",
+      "target": "execution/outputRetention.js#Function:truncationMarker@4",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "execution/outputRetention.js",
+      "target": "execution/outputRetention.js#Function:createOutputRetainer@6",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "execution/outputRetention.js",
+      "target": "execution/outputRetention.js#Method:push@12",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 12
+      }
+    },
+    {
+      "source": "execution/outputRetention.js",
+      "target": "execution/outputRetention.js#Method:text@28",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 28
+      }
+    },
+    {
+      "source": "execution/outputRetention.js",
+      "target": "execution/outputRetention.js#Method:truncated@32",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 32
+      }
+    },
+    {
       "source": "execution/protocol.js",
       "target": "package:node:crypto",
       "label": "imports_package",
@@ -85331,67 +85502,67 @@
     },
     {
       "source": "execution/runtime.js",
+      "target": "execution/outputRetention.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "execution/runtime.js",
       "target": "execution/limits.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 8
+        "line": 9
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 10
+        "line": 11
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:getIsolationArgs@26",
+      "target": "execution/runtime.js#Function:getIsolationArgs@27",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 26
+        "line": 27
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:safeId@57",
+      "target": "execution/runtime.js#Function:safeId@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 57
+        "line": 58
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:resourceNames@62",
+      "target": "execution/runtime.js#Function:resourceNames@63",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 62
+        "line": 63
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abortError@67",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/runtime.js",
-        "line": 67
-      }
-    },
-    {
-      "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:docker@68",
+      "target": "execution/runtime.js#Function:abortError@68",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85401,17 +85572,17 @@
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:finish@76",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 76
+        "line": 69
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abort@77",
+      "target": "execution/runtime.js#Function:finish@77",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85421,167 +85592,157 @@
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:probeRuntimeReadiness@85",
+      "target": "execution/runtime.js#Function:abort@78",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 85
+        "line": 78
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:commandTimeoutMs@101",
+      "target": "execution/runtime.js#Function:probeRuntimeReadiness@86",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 101
+        "line": 86
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:buildContainerExecArgs@107",
+      "target": "execution/runtime.js#Function:commandTimeoutMs@102",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 107
+        "line": 102
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:ownedContainerExists@115",
+      "target": "execution/runtime.js#Function:buildContainerExecArgs@108",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 115
+        "line": 108
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:cleanupContainer@120",
+      "target": "execution/runtime.js#Function:ownedContainerExists@116",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 120
+        "line": 116
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:disconnectInstallNetwork@127",
+      "target": "execution/runtime.js#Function:cleanupContainer@121",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 127
+        "line": 121
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:dependencySpecAllowed@131",
+      "target": "execution/runtime.js#Function:disconnectInstallNetwork@128",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 131
+        "line": 128
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:walkDependencyValues@137",
+      "target": "execution/runtime.js#Function:dependencySpecAllowed@132",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 137
+        "line": 132
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:validateDependencySources@149",
+      "target": "execution/runtime.js#Function:walkDependencyValues@138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 149
+        "line": 138
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:inspect@159",
+      "target": "execution/runtime.js#Function:validateDependencySources@150",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 159
+        "line": 150
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "target": "execution/runtime.js#Function:inspect@160",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 173
+        "line": 160
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:validateOwnedPath@181",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 181
+        "line": 174
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:cleanupOwned@186",
+      "target": "execution/runtime.js#Function:validateOwnedPath@182",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 186
+        "line": 182
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:validateWorkspacePaths@193",
+      "target": "execution/runtime.js#Function:cleanupOwned@187",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 193
+        "line": 187
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:waitForReadiness@195",
+      "target": "execution/runtime.js#Function:validateWorkspacePaths@194",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 195
+        "line": 194
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abort@195",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/runtime.js",
-        "line": 195
-      }
-    },
-    {
-      "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:captureChildOutput@196",
+      "target": "execution/runtime.js#Function:waitForReadiness@196",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85591,87 +85752,117 @@
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:snapshot@209",
+      "target": "execution/runtime.js#Function:abort@196",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 209
+        "line": 196
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:sandboxCwd@217",
+      "target": "execution/runtime.js#Function:captureChildOutput@197",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 217
+        "line": 197
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:validateJobPaths@223",
+      "target": "execution/runtime.js#Function:snapshot@208",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 223
+        "line": 208
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:executeJob@237",
+      "target": "execution/runtime.js#Function:sandboxCwd@216",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 237
+        "line": 216
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:opts@268",
+      "target": "execution/runtime.js#Function:validateJobPaths@222",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 268
+        "line": 222
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:checkPaths@280",
+      "target": "execution/runtime.js#Function:executeJob@236",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 280
+        "line": 236
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:disconnectInstallNetworkHelper@285",
+      "target": "execution/runtime.js#Function:opts@267",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 285
+        "line": 267
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.interact@295",
+      "target": "execution/runtime.js#Function:checkPaths@279",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 295
+        "line": 279
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.getCapabilities@301",
+      "target": "execution/runtime.js#Function:disconnectInstallNetworkHelper@284",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 284
+      }
+    },
+    {
+      "source": "execution/runtime.js",
+      "target": "execution/runtime.js#Method:adapter.interact@294",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 294
+      }
+    },
+    {
+      "source": "execution/runtime.js",
+      "target": "execution/runtime.js#Method:adapter.getCapabilities@300",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 300
+      }
+    },
+    {
+      "source": "execution/runtime.js",
+      "target": "execution/runtime.js#Method:adapter.execute@301",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85681,67 +85872,67 @@
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.execute@302",
+      "target": "execution/runtime.js#Function:finish@333",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 302
+        "line": 333
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:finish@334",
+      "target": "execution/runtime.js#Function:abort@337",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 334
+        "line": 337
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abort@338",
+      "target": "execution/runtime.js#Method:adapter.writeFile@358",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 338
+        "line": 358
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.writeFile@359",
+      "target": "execution/runtime.js#Function:abort@364",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 359
+        "line": 364
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abort@365",
+      "target": "execution/runtime.js#Method:adapter.spawn@375",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 365
+        "line": 375
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.spawn@376",
+      "target": "execution/runtime.js#Function:cleanup@396",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 376
+        "line": 396
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:cleanup@397",
+      "target": "execution/runtime.js#Function:abort@397",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85751,42 +85942,32 @@
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:abort@398",
+      "target": "execution/runtime.js#Method:adapter.kill@404",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 398
+        "line": 404
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.kill@405",
+      "target": "execution/runtime.js#Function:done@409",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 405
+        "line": 409
       }
     },
     {
       "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Function:done@410",
+      "target": "execution/runtime.js#Method:adapter.killProcessTree@415",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 410
-      }
-    },
-    {
-      "source": "execution/runtime.js",
-      "target": "execution/runtime.js#Method:adapter.killProcessTree@416",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/runtime.js",
-        "line": 416
+        "line": 415
       }
     },
     {
@@ -88581,7 +88762,7 @@
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "backend/verification/runChecks.js",
+      "target": "execution/outputRetention.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -88591,7 +88772,7 @@
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "backend/artifactLimits.js",
+      "target": "backend/verification/runChecks.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -88601,142 +88782,152 @@
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:setup@15",
-      "label": "contains",
+      "target": "backend/artifactLimits.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 15
+        "line": 11
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:onResource@79",
+      "target": "execution/tests/localProcesses.test.js#Function:setup@16",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 79
+        "line": 16
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:onResource@102",
+      "target": "execution/tests/localProcesses.test.js#Method:onResource@80",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 102
+        "line": 80
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:onResource@108",
+      "target": "execution/tests/localProcesses.test.js#Method:onResource@103",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 108
+        "line": 103
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:onProgress@120",
+      "target": "execution/tests/localProcesses.test.js#Method:onResource@109",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 120
+        "line": 109
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:inventoryRun@163",
+      "target": "execution/tests/localProcesses.test.js#Method:onProgress@121",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 163
+        "line": 121
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:captured@165",
+      "target": "execution/tests/localProcesses.test.js#Function:inventoryRun@164",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 165
+        "line": 164
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:adapter.readFile@167",
+      "target": "execution/tests/localProcesses.test.js#Function:captured@166",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 167
+        "line": 166
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:readme@169",
+      "target": "execution/tests/localProcesses.test.js#Method:adapter.readFile@168",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 169
+        "line": 168
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:execute@208",
+      "target": "execution/tests/localProcesses.test.js#Method:readme@170",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 208
+        "line": 170
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:response@214",
+      "target": "execution/tests/localProcesses.test.js#Method:execute@209",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 214
+        "line": 209
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:execute@217",
+      "target": "execution/tests/localProcesses.test.js#Function:response@215",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 217
+        "line": 215
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:execute@220",
+      "target": "execution/tests/localProcesses.test.js#Method:execute@218",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 220
+        "line": 218
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Method:execute@225",
+      "target": "execution/tests/localProcesses.test.js#Method:execute@221",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 225
+        "line": 221
+      }
+    },
+    {
+      "source": "execution/tests/localProcesses.test.js",
+      "target": "execution/tests/localProcesses.test.js#Method:execute@226",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/localProcesses.test.js",
+        "line": 226
       }
     },
     {
@@ -89871,7 +90062,7 @@
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js",
+      "target": "execution/outputRetention.js",
       "label": "imports",
       "provenance": "ast",
       "location": {
@@ -89881,62 +90072,72 @@
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Function:fakeChild@11",
-      "label": "contains",
+      "target": "execution/runtime.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 11
+        "line": 9
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Method:result.onProgress@74",
+      "target": "execution/tests/runtime.test.js#Function:fakeChild@12",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 74
+        "line": 12
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Method:result.onProgress@109",
+      "target": "execution/tests/runtime.test.js#Method:result.onProgress@75",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 109
+        "line": 75
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Method:result.onResource@127",
+      "target": "execution/tests/runtime.test.js#Method:result.onProgress@110",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 127
+        "line": 110
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Method:proxy.resolve@211",
+      "target": "execution/tests/runtime.test.js#Method:result.onResource@128",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 211
+        "line": 128
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Method:proxy.connector@211",
+      "target": "execution/tests/runtime.test.js#Method:proxy.resolve@212",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 211
+        "line": 212
+      }
+    },
+    {
+      "source": "execution/tests/runtime.test.js",
+      "target": "execution/tests/runtime.test.js#Method:proxy.connector@212",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/runtime.test.js",
+        "line": 212
       }
     },
     {
@@ -103461,7 +103662,7 @@
     },
     {
       "source": "backend/engine/stages/acceptanceStage.js#Function:runAcceptanceStage@33",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -104311,7 +104512,7 @@
     },
     {
       "source": "backend/engine/workerRepairs.js#Function:resolveWorkerRepairIssues@225",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -104561,7 +104762,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@117",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105371,7 +105572,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@117",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -108921,7 +109122,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110621,7 +110822,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@221",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112430,13 +112631,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@230",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@225",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 231
+        "line": 232
       }
     },
     {
@@ -116841,7 +117042,7 @@
     },
     {
       "source": "backend/tests/test_infrastructure_failure_classification.js",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -123691,7 +123892,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@230",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -123701,7 +123902,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@225",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -125791,7 +125992,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@221",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -125811,7 +126012,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@80",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@230",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -126311,7 +126512,7 @@
     },
     {
       "source": "backend/tests/test_semantic_proof_retention.js",
-      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@36",
+      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@42",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -127577,6 +127778,36 @@
       "location": {
         "file": "backend/tests/test_websocket_integration.js",
         "line": 302
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "backend/tests/testHarness.js#Function:createTestHarness@1",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 11
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_check_log_tail.js",
+      "target": "backend/verification/workerFailures.js#Function:redactObservedEvidence@30",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_check_log_tail.js",
+        "line": 38
       }
     },
     {
@@ -129411,7 +129642,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@18",
+      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129421,7 +129652,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@36",
+      "target": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@42",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129431,7 +129662,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:redactObservedEvidence@24",
+      "target": "backend/verification/workerFailures.js#Function:redactObservedEvidence@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129501,7 +129732,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@124",
+      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129511,7 +129742,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129521,7 +129752,7 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -131720,173 +131951,173 @@
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:bounded@13",
+      "source": "backend/verification/workerFailures.js#Function:bounded@14",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 14
+        "line": 15
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@18",
-      "target": "backend/verification/workerFailures.js#Function:bounded@13",
+      "source": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 19
+        "line": 25
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:redactObservedEvidence@24",
-      "target": "backend/verification/workerFailures.js#Function:bounded@13",
+      "source": "backend/verification/workerFailures.js#Function:redactObservedEvidence@30",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 26
+        "line": 32
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:copy@38",
+      "source": "backend/verification/workerFailures.js#Function:copy@44",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 42
+        "line": 48
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@36",
-      "target": "backend/verification/workerFailures.js#Function:copy@38",
+      "source": "backend/verification/workerFailures.js#Function:retainSemanticEvidence@42",
+      "target": "backend/verification/workerFailures.js#Function:copy@44",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 52
+        "line": 58
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@56",
-      "target": "backend/verification/workerFailures.js#Function:stop@57",
+      "source": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
+      "target": "backend/verification/workerFailures.js#Function:stop@63",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 61
+        "line": 67
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@56",
+      "source": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
       "target": "backend/verification/workerFailures.js#Function:safeWorkerPath@7",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 75
+        "line": 81
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
-      "target": "backend/verification/workerFailures.js#Function:bounded@13",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 90
+        "line": 96
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
-      "target": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@56",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 95
+        "line": 101
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
-      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@18",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 95
+        "line": 101
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@82",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 100
+        "line": 106
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@124",
+      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
       "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 125
+        "line": 131
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@124",
+      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 134
+        "line": 140
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 146
+        "line": 152
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 147
+        "line": 153
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@145",
-      "target": "backend/verification/workerFailures.js#Function:bounded@13",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 149
+        "line": 155
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@154",
+      "source": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 175
+        "line": 181
       }
     },
     {
@@ -133180,88 +133411,68 @@
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "source": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "target": "execution/windowsProcessHost.js#Function:ensureWindowsProcessHost@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 31
+        "line": 32
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:createLocalProcessManager@28",
-      "target": "execution/localProcesses.js#Function:batchQuote@43",
+      "source": "execution/localProcesses.js#Function:createLocalProcessManager@29",
+      "target": "execution/localProcesses.js#Function:batchQuote@44",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 46
+        "line": 47
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:createLocalProcessManager@28",
-      "target": "execution/localProcesses.js#Function:shellQuote@42",
+      "source": "execution/localProcesses.js#Function:createLocalProcessManager@29",
+      "target": "execution/localProcesses.js#Function:shellQuote@43",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 46
+        "line": 47
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "source": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "target": "env:SystemRoot",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 52
+        "line": 53
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:cwdFor@77",
-      "target": "execution/localProcesses.js#Function:inside@83",
+      "source": "execution/localProcesses.js#Function:cwdFor@78",
+      "target": "execution/localProcesses.js#Function:inside@84",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 84
+        "line": 85
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
+      "source": "execution/localProcesses.js#Function:start@94",
       "target": "execution/commandDiagnostics.js#Function:describeCommand@53",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 94
-      }
-    },
-    {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:request@69",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/localProcesses.js",
         "line": 95
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:check@64",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/localProcesses.js",
-        "line": 95
-      }
-    },
-    {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:cwdFor@77",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:request@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -133270,93 +133481,123 @@
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:annotateSpawnFailure@13",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:check@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 106
+        "line": 96
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:progress@63",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:cwdFor@78",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 108
+        "line": 97
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:terminate@89",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:annotateSpawnFailure@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 114
+        "line": 107
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:abort@117",
-      "target": "execution/localProcesses.js#Function:terminate@89",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:progress@64",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 117
+        "line": 109
       }
     },
     {
-      "source": "execution/localProcesses.js#Function:start@93",
-      "target": "execution/localProcesses.js#Function:abort@117",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/outputRetention.js#Function:createOutputRetainer@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 142
+        "line": 110
       }
     },
     {
-      "source": "execution/localProcesses.js#Method:execute@150",
-      "target": "execution/localProcesses.js#Function:start@93",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:terminate@90",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 151
+        "line": 115
       }
     },
     {
-      "source": "execution/localProcesses.js#Method:spawn@156",
-      "target": "execution/localProcesses.js#Function:start@93",
+      "source": "execution/localProcesses.js#Function:abort@118",
+      "target": "execution/localProcesses.js#Function:terminate@90",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 156
+        "line": 118
       }
     },
     {
-      "source": "execution/localProcesses.js#Method:kill@157",
-      "target": "execution/localProcesses.js#Function:terminate@89",
+      "source": "execution/localProcesses.js#Function:start@94",
+      "target": "execution/localProcesses.js#Function:abort@118",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 159
+        "line": 143
       }
     },
     {
-      "source": "execution/localProcesses.js#Method:dispose@161",
-      "target": "execution/localProcesses.js#Function:terminate@89",
+      "source": "execution/localProcesses.js#Method:execute@151",
+      "target": "execution/localProcesses.js#Function:start@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/localProcesses.js",
-        "line": 163
+        "line": 152
+      }
+    },
+    {
+      "source": "execution/localProcesses.js#Method:spawn@157",
+      "target": "execution/localProcesses.js#Function:start@94",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/localProcesses.js",
+        "line": 157
+      }
+    },
+    {
+      "source": "execution/localProcesses.js#Method:kill@158",
+      "target": "execution/localProcesses.js#Function:terminate@90",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/localProcesses.js",
+        "line": 160
+      }
+    },
+    {
+      "source": "execution/localProcesses.js#Method:dispose@162",
+      "target": "execution/localProcesses.js#Function:terminate@90",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/localProcesses.js",
+        "line": 164
       }
     },
     {
@@ -133471,7 +133712,7 @@
     },
     {
       "source": "execution/localRuntime.js#Function:executeLocalJob@60",
-      "target": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "target": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -133521,7 +133762,7 @@
     },
     {
       "source": "execution/localRuntime.js#Method:adapter.extractArchive@97",
-      "target": "execution/runtime.js#Function:validateDependencySources@149",
+      "target": "execution/runtime.js#Function:validateDependencySources@150",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -133551,7 +133792,7 @@
     },
     {
       "source": "execution/localRuntime.js#Function:executeLocalJob@60",
-      "target": "execution/runtime.js#Function:validateDependencySources@149",
+      "target": "execution/runtime.js#Function:validateDependencySources@150",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -133597,6 +133838,16 @@
       "location": {
         "file": "execution/localRuntime.js",
         "line": 127
+      }
+    },
+    {
+      "source": "execution/outputRetention.js#Method:text@28",
+      "target": "execution/outputRetention.js#Function:truncationMarker@4",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/outputRetention.js",
+        "line": 30
       }
     },
     {
@@ -133680,328 +133931,348 @@
       }
     },
     {
-      "source": "execution/runtime.js#Function:resourceNames@62",
-      "target": "execution/runtime.js#Function:safeId@57",
+      "source": "execution/runtime.js#Function:resourceNames@63",
+      "target": "execution/runtime.js#Function:safeId@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 63
+        "line": 64
       }
     },
     {
-      "source": "execution/runtime.js#Function:docker@68",
-      "target": "execution/runtime.js#Function:abortError@67",
+      "source": "execution/runtime.js#Function:docker@69",
+      "target": "execution/runtime.js#Function:abortError@68",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 70
+        "line": 71
       }
     },
     {
-      "source": "execution/runtime.js#Function:abort@77",
-      "target": "execution/runtime.js#Function:abortError@67",
+      "source": "execution/runtime.js#Function:abort@78",
+      "target": "execution/runtime.js#Function:abortError@68",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 77
+        "line": 78
       }
     },
     {
-      "source": "execution/runtime.js#Function:buildContainerExecArgs@107",
-      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "source": "execution/runtime.js#Function:buildContainerExecArgs@108",
+      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 110
+        "line": 111
       }
     },
     {
-      "source": "execution/runtime.js#Function:ownedContainerExists@115",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:ownedContainerExists@116",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 117
+        "line": 118
       }
     },
     {
-      "source": "execution/runtime.js#Function:cleanupContainer@120",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:cleanupContainer@121",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 122
+        "line": 123
       }
     },
     {
-      "source": "execution/runtime.js#Function:disconnectInstallNetwork@127",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:disconnectInstallNetwork@128",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 128
+        "line": 129
       }
     },
     {
-      "source": "execution/runtime.js#Function:walkDependencyValues@137",
-      "target": "execution/runtime.js#Function:dependencySpecAllowed@131",
+      "source": "execution/runtime.js#Function:walkDependencyValues@138",
+      "target": "execution/runtime.js#Function:dependencySpecAllowed@132",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 141
+        "line": 142
       }
     },
     {
-      "source": "execution/runtime.js#Function:validateDependencySources@149",
-      "target": "execution/runtime.js#Function:walkDependencyValues@137",
+      "source": "execution/runtime.js#Function:validateDependencySources@150",
+      "target": "execution/runtime.js#Function:walkDependencyValues@138",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 153
+        "line": 154
       }
     },
     {
-      "source": "execution/runtime.js#Function:inspect@159",
-      "target": "execution/runtime.js#Function:walkDependencyValues@137",
+      "source": "execution/runtime.js#Function:inspect@160",
+      "target": "execution/runtime.js#Function:walkDependencyValues@138",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 165
+        "line": 166
       }
     },
     {
-      "source": "execution/runtime.js#Function:validateDependencySources@149",
-      "target": "execution/runtime.js#Function:inspect@159",
+      "source": "execution/runtime.js#Function:validateDependencySources@150",
+      "target": "execution/runtime.js#Function:inspect@160",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 167
+        "line": 168
       }
     },
     {
-      "source": "execution/runtime.js#Function:validateOwnedPath@181",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "source": "execution/runtime.js#Function:validateOwnedPath@182",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 184
+        "line": 185
       }
     },
     {
-      "source": "execution/runtime.js#Function:cleanupOwned@186",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:cleanupOwned@187",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 190
+        "line": 191
       }
     },
     {
-      "source": "execution/runtime.js#Function:validateWorkspacePaths@193",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "source": "execution/runtime.js#Function:validateWorkspacePaths@194",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 193
+        "line": 194
       }
     },
     {
-      "source": "execution/runtime.js#Function:waitForReadiness@195",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:waitForReadiness@196",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 195
+        "line": 196
       }
     },
     {
-      "source": "execution/runtime.js#Function:captureChildOutput@196",
-      "target": "execution/runtime.js#Function:snapshot@209",
+      "source": "execution/runtime.js#Function:captureChildOutput@197",
+      "target": "execution/outputRetention.js#Function:createOutputRetainer@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 214
+        "line": 198
       }
     },
     {
-      "source": "execution/runtime.js#Function:sandboxCwd@217",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "source": "execution/runtime.js#Function:captureChildOutput@197",
+      "target": "execution/runtime.js#Function:snapshot@208",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 219
+        "line": 213
       }
     },
     {
-      "source": "execution/runtime.js#Function:validateJobPaths@223",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "source": "execution/runtime.js#Function:sandboxCwd@216",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 232
+        "line": 218
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:validateDependencySources@149",
+      "source": "execution/runtime.js#Function:validateJobPaths@222",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 249
+        "line": 231
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:resourceNames@62",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:validateDependencySources@150",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 260
+        "line": 248
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:validateJobPaths@223",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:resourceNames@63",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 267
+        "line": 259
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:validateJobPaths@222",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 266
+      }
+    },
+    {
+      "source": "execution/runtime.js#Function:executeJob@236",
       "target": "execution/commandDiagnostics.js#Function:createCommandReporter@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 269
+        "line": 268
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 272
+        "line": 271
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:opts@268",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:opts@267",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 272
+        "line": 271
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:getIsolationArgs@26",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:getIsolationArgs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 274
+        "line": 273
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:waitForReadiness@195",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:waitForReadiness@196",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 279
+        "line": 278
       }
     },
     {
-      "source": "execution/runtime.js#Function:checkPaths@280",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:checkPaths@279",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 282
+        "line": 281
       }
     },
     {
-      "source": "execution/runtime.js#Function:checkPaths@280",
-      "target": "execution/runtime.js#Function:opts@268",
+      "source": "execution/runtime.js#Function:checkPaths@279",
+      "target": "execution/runtime.js#Function:opts@267",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 282
+        "line": 281
       }
     },
     {
-      "source": "execution/runtime.js#Function:disconnectInstallNetworkHelper@285",
-      "target": "execution/runtime.js#Function:docker@68",
+      "source": "execution/runtime.js#Function:disconnectInstallNetworkHelper@284",
+      "target": "execution/runtime.js#Function:docker@69",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 288
+        "line": 287
       }
     },
     {
-      "source": "execution/runtime.js#Function:disconnectInstallNetworkHelper@285",
-      "target": "execution/runtime.js#Function:opts@268",
+      "source": "execution/runtime.js#Function:disconnectInstallNetworkHelper@284",
+      "target": "execution/runtime.js#Function:opts@267",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 288
+        "line": 287
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.interact@295",
-      "target": "execution/runtime.js#Method:adapter.execute@302",
+      "source": "execution/runtime.js#Method:adapter.interact@294",
+      "target": "execution/runtime.js#Method:adapter.execute@301",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 296
+        "line": 295
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.execute@302",
-      "target": "execution/runtime.js#Function:checkPaths@280",
+      "source": "execution/runtime.js#Method:adapter.execute@301",
+      "target": "execution/runtime.js#Function:checkPaths@279",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 312
+        "line": 311
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.execute@302",
-      "target": "execution/runtime.js#Function:sandboxCwd@217",
+      "source": "execution/runtime.js#Method:adapter.execute@301",
+      "target": "execution/runtime.js#Function:sandboxCwd@216",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 313
+      }
+    },
+    {
+      "source": "execution/runtime.js#Method:adapter.execute@301",
+      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134010,138 +134281,138 @@
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.execute@302",
-      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "source": "execution/runtime.js#Method:adapter.execute@301",
+      "target": "execution/runtime.js#Function:commandTimeoutMs@102",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 315
+        "line": 326
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.execute@302",
-      "target": "execution/runtime.js#Function:commandTimeoutMs@101",
+      "source": "execution/runtime.js#Method:adapter.execute@301",
+      "target": "execution/runtime.js#Function:captureChildOutput@197",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 327
+        "line": 335
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.execute@302",
-      "target": "execution/runtime.js#Function:captureChildOutput@196",
+      "source": "execution/runtime.js#Method:adapter.writeFile@358",
+      "target": "execution/runtime.js#Function:checkPaths@279",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 336
+        "line": 359
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.writeFile@359",
-      "target": "execution/runtime.js#Function:checkPaths@280",
+      "source": "execution/runtime.js#Method:adapter.spawn@375",
+      "target": "execution/runtime.js#Function:sandboxCwd@216",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 360
+        "line": 382
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.spawn@376",
-      "target": "execution/runtime.js#Function:sandboxCwd@217",
+      "source": "execution/runtime.js#Method:adapter.spawn@375",
+      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 383
+        "line": 382
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.spawn@376",
-      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "source": "execution/runtime.js#Method:adapter.spawn@375",
+      "target": "execution/runtime.js#Function:buildContainerExecArgs@108",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 383
+        "line": 388
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.spawn@376",
-      "target": "execution/runtime.js#Function:buildContainerExecArgs@107",
+      "source": "execution/runtime.js#Function:abort@397",
+      "target": "execution/runtime.js#Function:cleanup@396",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 389
+        "line": 397
       }
     },
     {
-      "source": "execution/runtime.js#Function:abort@398",
-      "target": "execution/runtime.js#Function:cleanup@397",
+      "source": "execution/runtime.js#Method:adapter.spawn@375",
+      "target": "execution/runtime.js#Function:cleanup@396",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 398
+        "line": 400
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.spawn@376",
-      "target": "execution/runtime.js#Function:cleanup@397",
+      "source": "execution/runtime.js#Method:adapter.kill@404",
+      "target": "execution/runtime.js#Function:done@409",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 401
+        "line": 411
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.kill@405",
-      "target": "execution/runtime.js#Function:done@410",
+      "source": "execution/runtime.js#Method:adapter.killProcessTree@415",
+      "target": "execution/runtime.js#Method:adapter.kill@404",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 412
+        "line": 415
       }
     },
     {
-      "source": "execution/runtime.js#Method:adapter.killProcessTree@416",
-      "target": "execution/runtime.js#Method:adapter.kill@405",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/runtime.js",
-        "line": 416
-      }
-    },
-    {
-      "source": "execution/runtime.js#Function:executeJob@237",
+      "source": "execution/runtime.js#Function:executeJob@236",
       "target": "execution/jobExecutor.js#Function:prepareDependencies@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 419
+        "line": 418
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:disconnectInstallNetworkHelper@285",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:disconnectInstallNetworkHelper@284",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 421
+        "line": 420
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
+      "source": "execution/runtime.js#Function:executeJob@236",
       "target": "execution/jobExecutor.js#Function:executeTypecheckJob@149",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/runtime.js",
+        "line": 425
+      }
+    },
+    {
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/jobExecutor.js#Function:executeVerificationJob@143",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134150,23 +134421,13 @@
       }
     },
     {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/jobExecutor.js#Function:executeVerificationJob@143",
+      "source": "execution/runtime.js#Function:executeJob@236",
+      "target": "execution/runtime.js#Function:cleanupOwned@187",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/runtime.js",
-        "line": 427
-      }
-    },
-    {
-      "source": "execution/runtime.js#Function:executeJob@237",
-      "target": "execution/runtime.js#Function:cleanupOwned@186",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/runtime.js",
-        "line": 436
+        "line": 435
       }
     },
     {
@@ -134201,7 +134462,7 @@
     },
     {
       "source": "execution/runtimeSelector.js#Function:executeJob@8",
-      "target": "execution/runtime.js#Function:executeJob@237",
+      "target": "execution/runtime.js#Function:executeJob@236",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134231,7 +134492,7 @@
     },
     {
       "source": "execution/runtimeSelector.js#Function:probeRuntimeReadiness@9",
-      "target": "execution/runtime.js#Function:probeRuntimeReadiness@85",
+      "target": "execution/runtime.js#Function:probeRuntimeReadiness@86",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134561,7 +134822,7 @@
     },
     {
       "source": "execution/tests/deadlineCancellation.test.js",
-      "target": "execution/runtime.js#Function:commandTimeoutMs@101",
+      "target": "execution/runtime.js#Function:commandTimeoutMs@102",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134850,23 +135111,23 @@
       }
     },
     {
-      "source": "execution/tests/localProcesses.test.js#Function:setup@15",
-      "target": "execution/localProcesses.js#Function:createLocalProcessManager@28",
+      "source": "execution/tests/localProcesses.test.js#Function:setup@16",
+      "target": "execution/localProcesses.js#Function:createLocalProcessManager@29",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 22
+        "line": 23
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:setup@15",
+      "target": "execution/tests/localProcesses.test.js#Function:setup@16",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 27
+        "line": 28
       }
     },
     {
@@ -134876,7 +135137,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 32
+        "line": 33
       }
     },
     {
@@ -134886,7 +135147,17 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 32
+        "line": 33
+      }
+    },
+    {
+      "source": "execution/tests/localProcesses.test.js",
+      "target": "execution/outputRetention.js#Function:truncationMarker@4",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/localProcesses.test.js",
+        "line": 73
       }
     },
     {
@@ -134896,7 +135167,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 136
+        "line": 137
       }
     },
     {
@@ -134906,57 +135177,57 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 137
+        "line": 138
       }
     },
     {
-      "source": "execution/tests/localProcesses.test.js#Function:inventoryRun@163",
+      "source": "execution/tests/localProcesses.test.js#Function:inventoryRun@164",
       "target": "backend/verification/runChecks.js#Function:runVerificationChecks@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 168
+        "line": 169
       }
     },
     {
       "source": "execution/tests/localProcesses.test.js",
-      "target": "execution/tests/localProcesses.test.js#Function:inventoryRun@163",
+      "target": "execution/tests/localProcesses.test.js#Function:inventoryRun@164",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 185
+        "line": 186
       }
     },
     {
-      "source": "execution/tests/localProcesses.test.js#Method:execute@217",
-      "target": "execution/tests/localProcesses.test.js#Function:response@214",
+      "source": "execution/tests/localProcesses.test.js#Method:execute@218",
+      "target": "execution/tests/localProcesses.test.js#Function:response@215",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 217
+        "line": 218
       }
     },
     {
-      "source": "execution/tests/localProcesses.test.js#Method:execute@220",
-      "target": "execution/tests/localProcesses.test.js#Function:response@214",
+      "source": "execution/tests/localProcesses.test.js#Method:execute@221",
+      "target": "execution/tests/localProcesses.test.js#Function:response@215",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 222
+        "line": 223
       }
     },
     {
-      "source": "execution/tests/localProcesses.test.js#Method:execute@225",
-      "target": "execution/tests/localProcesses.test.js#Function:response@214",
+      "source": "execution/tests/localProcesses.test.js#Method:execute@226",
+      "target": "execution/tests/localProcesses.test.js#Function:response@215",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/localProcesses.test.js",
-        "line": 227
+        "line": 228
       }
     },
     {
@@ -135281,7 +135552,7 @@
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/runtime.js#Function:getIsolationArgs@26",
+      "target": "execution/runtime.js#Function:getIsolationArgs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -135301,7 +135572,7 @@
     },
     {
       "source": "execution/tests/runtime.integration.test.js",
-      "target": "execution/runtime.js#Function:executeJob@237",
+      "target": "execution/runtime.js#Function:executeJob@236",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -135351,37 +135622,27 @@
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/tests/runtime.test.js#Function:fakeChild@11",
+      "target": "execution/tests/runtime.test.js#Function:fakeChild@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 30
+        "line": 31
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:executeJob@237",
+      "target": "execution/runtime.js#Function:executeJob@236",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 67
+        "line": 68
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:cleanupContainer@120",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/tests/runtime.test.js",
-        "line": 131
-      }
-    },
-    {
-      "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:validateOwnedPath@181",
+      "target": "execution/runtime.js#Function:cleanupContainer@121",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -135391,22 +135652,42 @@
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:captureChildOutput@196",
+      "target": "execution/runtime.js#Function:validateOwnedPath@182",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 160
+        "line": 133
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:validateDependencySources@149",
+      "target": "execution/runtime.js#Function:captureChildOutput@197",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 197
+        "line": 161
+      }
+    },
+    {
+      "source": "execution/tests/runtime.test.js",
+      "target": "execution/outputRetention.js#Function:truncationMarker@4",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/runtime.test.js",
+        "line": 164
+      }
+    },
+    {
+      "source": "execution/tests/runtime.test.js",
+      "target": "execution/runtime.js#Function:validateDependencySources@150",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/runtime.test.js",
+        "line": 198
       }
     },
     {
@@ -135416,7 +135697,7 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 204
+        "line": 205
       }
     },
     {
@@ -135426,42 +135707,42 @@
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 211
+        "line": 212
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:buildContainerExecArgs@107",
+      "target": "execution/runtime.js#Function:buildContainerExecArgs@108",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 221
+        "line": 222
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@10",
+      "target": "execution/runtime.js#Function:filterRuntimeEnvironment@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 241
+        "line": 242
       }
     },
     {
       "source": "execution/tests/runtime.test.js",
-      "target": "execution/runtime.js#Function:validateWorkspacePath@173",
+      "target": "execution/runtime.js#Function:validateWorkspacePath@174",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/tests/runtime.test.js",
-        "line": 258
+        "line": 259
       }
     },
     {
       "source": "execution/tests/runtimeReadiness.test.js",
-      "target": "execution/runtime.js#Function:probeRuntimeReadiness@85",
+      "target": "execution/runtime.js#Function:probeRuntimeReadiness@86",
       "label": "calls",
       "provenance": "ast",
       "location": {
