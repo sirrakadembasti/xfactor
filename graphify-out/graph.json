@@ -417,7 +417,7 @@
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "Disk ve SQLite arasında çift yönlü senkronizasyon, eksik klasör tespiti ve otomatik proje kaydı",
-      "val": 18.5,
+      "val": 20.5,
       "provenance": "curated"
     },
     {
@@ -807,7 +807,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 100,
+      "val": 100.5,
       "provenance": "curated"
     },
     {
@@ -1567,7 +1567,7 @@
       "group": "backend",
       "file": "backend/repositories/artifactRepository.js",
       "description": "",
-      "val": 15.5,
+      "val": 16.5,
       "provenance": "ast"
     },
     {
@@ -1757,7 +1757,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 61.5,
+      "val": 62,
       "provenance": "ast"
     },
     {
@@ -3241,6 +3241,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/tests/test_transaction_await_boundary.js",
+      "label": "test_transaction_await_boundary.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_transaction_await_boundary.js",
+      "description": "",
+      "val": 6.5,
+      "provenance": "ast"
+    },
+    {
       "id": "backend/tests/test_ui_language_binding.js",
       "label": "test_ui_language_binding.js",
       "type": "SourceFile",
@@ -4720,7 +4730,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 46,
+      "val": 46.5,
       "provenance": "ast"
     },
     {
@@ -4730,7 +4740,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 50.5,
+      "val": 51,
       "provenance": "ast"
     },
     {
@@ -4740,7 +4750,7 @@
       "group": "packages",
       "file": null,
       "description": "node:url",
-      "val": 19.5,
+      "val": 20,
       "provenance": "ast"
     },
     {
@@ -10173,7 +10183,7 @@
       "group": "engine",
       "file": "backend/engine/protocolIO.js",
       "description": "",
-      "val": 5.5,
+      "val": 6,
       "provenance": "ast",
       "line": 104
     },
@@ -12812,7 +12822,7 @@
       "line": 35
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:withArtifactTransaction@3",
+      "id": "backend/repositories/artifactRepository.js#Function:withArtifactTransaction@4",
       "label": "withArtifactTransaction",
       "type": "Function",
       "group": "backend",
@@ -12820,10 +12830,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 3
+      "line": 4
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@15",
+      "id": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@20",
       "label": "mapArtifactRow",
       "type": "Function",
       "group": "backend",
@@ -12831,10 +12841,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 15
+      "line": 20
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:createArtifact@33",
+      "id": "backend/repositories/artifactRepository.js#Function:createArtifact@38",
       "label": "createArtifact",
       "type": "Function",
       "group": "backend",
@@ -12842,10 +12852,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 33
+      "line": 38
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@66",
+      "id": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@71",
       "label": "updateArtifactStatus",
       "type": "Function",
       "group": "backend",
@@ -12853,10 +12863,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 66
+      "line": 71
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "id": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "getArtifact",
       "type": "Function",
       "group": "backend",
@@ -12864,10 +12874,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 89
+      "line": 94
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:addArtifactFile@97",
+      "id": "backend/repositories/artifactRepository.js#Function:addArtifactFile@102",
       "label": "addArtifactFile",
       "type": "Function",
       "group": "backend",
@@ -12875,10 +12885,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 97
+      "line": 102
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:getArtifactFiles@115",
+      "id": "backend/repositories/artifactRepository.js#Function:getArtifactFiles@120",
       "label": "getArtifactFiles",
       "type": "Function",
       "group": "backend",
@@ -12886,10 +12896,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 115
+      "line": 120
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:listArtifacts@124",
+      "id": "backend/repositories/artifactRepository.js#Function:listArtifacts@129",
       "label": "listArtifacts",
       "type": "Function",
       "group": "backend",
@@ -12897,10 +12907,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 124
+      "line": 129
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@133",
+      "id": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@138",
       "label": "getLatestVerifiedArtifact",
       "type": "Function",
       "group": "backend",
@@ -12908,10 +12918,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 133
+      "line": 138
     },
     {
-      "id": "backend/repositories/artifactRepository.js#Function:supersedeArtifacts@152",
+      "id": "backend/repositories/artifactRepository.js#Function:supersedeArtifacts@157",
       "label": "supersedeArtifacts",
       "type": "Function",
       "group": "backend",
@@ -12919,7 +12929,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 152
+      "line": 157
     },
     {
       "id": "backend/repositories/verificationRepository.js#Function:createRun@3",
@@ -15007,18 +15017,18 @@
       "line": 190
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:resolveDb@9",
+      "id": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "resolveDb",
       "type": "Function",
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "",
-      "val": 5,
+      "val": 5.5,
       "provenance": "ast",
-      "line": 9
+      "line": 10
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@13",
+      "id": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@14",
       "label": "restoreTaskTargetsFromProtocol",
       "type": "Function",
       "group": "backend",
@@ -15026,10 +15036,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 13
+      "line": 14
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:makeArtifactDeps@35",
+      "id": "backend/services/reconciliationService.js#Function:makeArtifactDeps@36",
       "label": "makeArtifactDeps",
       "type": "Function",
       "group": "backend",
@@ -15037,10 +15047,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 35
+      "line": 36
     },
     {
-      "id": "backend/services/reconciliationService.js#Method:createArtifact@40",
+      "id": "backend/services/reconciliationService.js#Method:createArtifact@41",
       "label": "createArtifact",
       "type": "Method",
       "group": "backend",
@@ -15048,10 +15058,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 40
+      "line": 41
     },
     {
-      "id": "backend/services/reconciliationService.js#Method:addArtifactFile@47",
+      "id": "backend/services/reconciliationService.js#Method:addArtifactFile@48",
       "label": "addArtifactFile",
       "type": "Method",
       "group": "backend",
@@ -15059,10 +15069,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 47
+      "line": 48
     },
     {
-      "id": "backend/services/reconciliationService.js#Method:withArtifactTransaction@54",
+      "id": "backend/services/reconciliationService.js#Method:withArtifactTransaction@55",
       "label": "withArtifactTransaction",
       "type": "Method",
       "group": "backend",
@@ -15070,10 +15080,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 54
+      "line": 55
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "id": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "label": "readProjectTitleFromDisk",
       "type": "Function",
       "group": "backend",
@@ -15081,10 +15091,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 67
+      "line": 58
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "id": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "label": "detectProjectStatusFromDisk",
       "type": "Function",
       "group": "backend",
@@ -15092,21 +15102,43 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 116
+      "line": 107
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
       "label": "rehydrateProjectStateFromDisk",
       "type": "Function",
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "",
-      "val": 8.5,
+      "val": 3.5,
       "provenance": "ast",
-      "line": 157
+      "line": 148
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@233",
+      "id": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "label": "recoverCompletedProjectArtifact",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/services/reconciliationService.js",
+      "description": "",
+      "val": 4.5,
+      "provenance": "ast",
+      "line": 155
+    },
+    {
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "label": "rehydrateProjectStateFromDiskSync",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/services/reconciliationService.js",
+      "description": "",
+      "val": 6.5,
+      "provenance": "ast",
+      "line": 173
+    },
+    {
+      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@249",
       "label": "findAllTodoFiles",
       "type": "Function",
       "group": "backend",
@@ -15114,10 +15146,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 233
+      "line": 249
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "label": "rehydrateProjectChatHistoryFromDisk",
       "type": "Function",
       "group": "backend",
@@ -15125,21 +15157,32 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 588
+      "line": 593
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
       "label": "rehydrateProjectLogsFromDisk",
       "type": "Function",
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "",
-      "val": 6.5,
+      "val": 4,
       "provenance": "ast",
-      "line": 704
+      "line": 709
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@784",
+      "id": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "label": "rehydrateProjectLogsFromDiskSync",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/services/reconciliationService.js",
+      "description": "",
+      "val": 6,
+      "provenance": "ast",
+      "line": 729
+    },
+    {
+      "id": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@801",
       "label": "extractTitleFromGorev",
       "type": "Function",
       "group": "backend",
@@ -15147,10 +15190,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 784
+      "line": 801
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:extractReviewResult@803",
+      "id": "backend/services/reconciliationService.js#Function:extractReviewResult@820",
       "label": "extractReviewResult",
       "type": "Function",
       "group": "backend",
@@ -15158,10 +15201,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 803
+      "line": 820
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@816",
+      "id": "backend/services/reconciliationService.js#Function:findAllTodoFiles@833",
       "label": "findAllTodoFiles",
       "type": "Function",
       "group": "backend",
@@ -15169,10 +15212,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 816
+      "line": 833
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:taskNode@838",
+      "id": "backend/services/reconciliationService.js#Function:taskNode@855",
       "label": "taskNode",
       "type": "Function",
       "group": "backend",
@@ -15180,10 +15223,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 838
+      "line": 855
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
+      "id": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
       "label": "scanForTaskDirs",
       "type": "Function",
       "group": "backend",
@@ -15191,29 +15234,29 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 888
+      "line": 905
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
+      "id": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
       "label": "autoRegisterDiscoveredProjects",
       "type": "Function",
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast",
-      "line": 1033
+      "line": 1050
     },
     {
-      "id": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "id": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
       "label": "reconcileProjectsWithDisk",
       "type": "Function",
       "group": "backend",
       "file": "backend/services/reconciliationService.js",
       "description": "",
-      "val": 6,
+      "val": 6.5,
       "provenance": "ast",
-      "line": 1128
+      "line": 1148
     },
     {
       "id": "backend/sessionAuth.js#Function:cookieAttributes@8",
@@ -15343,7 +15386,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 59.5,
+      "val": 60,
       "provenance": "ast",
       "line": 1
     },
@@ -15392,7 +15435,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@223",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15400,10 +15443,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 222
+      "line": 223
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@227",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15411,10 +15454,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 226
+      "line": 227
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@232",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -15422,7 +15465,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 231
+      "line": 232
     },
     {
       "id": "package:assert",
@@ -15770,7 +15813,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 57,
+      "val": 57.5,
       "provenance": "ast"
     },
     {
@@ -26567,6 +26610,28 @@
       "val": 1.5,
       "provenance": "ast",
       "line": 8
+    },
+    {
+      "id": "backend/tests/test_transaction_await_boundary.js#Function:sourceFiles@28",
+      "label": "sourceFiles",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_transaction_await_boundary.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 28
+    },
+    {
+      "id": "backend/tests/test_transaction_await_boundary.js#Function:findAwaitsInsideTransactions@37",
+      "label": "findAwaitsInsideTransactions",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_transaction_await_boundary.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 37
     },
     {
       "id": "backend/tests/test_tur2_edge_cases.js#Function:test@29",
@@ -42802,6 +42867,12 @@
     },
     {
       "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_transaction_await_boundary.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_runtime_verification.js",
       "label": "runs",
       "provenance": "curated"
@@ -53662,102 +53733,102 @@
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:withArtifactTransaction@3",
+      "target": "backend/repositories/artifactRepository.js#Function:withArtifactTransaction@4",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 3
+        "line": 4
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@15",
+      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@20",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 15
+        "line": 20
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:createArtifact@33",
+      "target": "backend/repositories/artifactRepository.js#Function:createArtifact@38",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 33
+        "line": 38
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@66",
+      "target": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@71",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 66
+        "line": 71
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 89
+        "line": 94
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:addArtifactFile@97",
+      "target": "backend/repositories/artifactRepository.js#Function:addArtifactFile@102",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 97
+        "line": 102
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifactFiles@115",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifactFiles@120",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 115
+        "line": 120
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:listArtifacts@124",
+      "target": "backend/repositories/artifactRepository.js#Function:listArtifacts@129",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 124
+        "line": 129
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@133",
+      "target": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 133
+        "line": 138
       }
     },
     {
       "source": "backend/repositories/artifactRepository.js",
-      "target": "backend/repositories/artifactRepository.js#Function:supersedeArtifacts@152",
+      "target": "backend/repositories/artifactRepository.js#Function:supersedeArtifacts@157",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 152
+        "line": 157
       }
     },
     {
@@ -57142,192 +57213,232 @@
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
-      "label": "contains",
+      "target": "backend/repositories/artifactRepository.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 9
+        "line": 8
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@13",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 13
+        "line": 10
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:makeArtifactDeps@35",
+      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 35
+        "line": 14
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Method:createArtifact@40",
+      "target": "backend/services/reconciliationService.js#Function:makeArtifactDeps@36",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 40
+        "line": 36
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Method:addArtifactFile@47",
+      "target": "backend/services/reconciliationService.js#Method:createArtifact@41",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 47
+        "line": 41
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Method:withArtifactTransaction@54",
+      "target": "backend/services/reconciliationService.js#Method:addArtifactFile@48",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 54
+        "line": 48
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "target": "backend/services/reconciliationService.js#Method:withArtifactTransaction@55",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 67
+        "line": 55
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 116
+        "line": 58
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 157
+        "line": 107
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@233",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 233
+        "line": 148
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
+      "target": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 588
+        "line": 155
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 704
+        "line": 173
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@784",
+      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@249",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 784
+        "line": 249
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@803",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 803
+        "line": 593
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@816",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 816
+        "line": 709
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:taskNode@838",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 838
+        "line": 729
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@801",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 888
+        "line": 801
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@820",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1033
+        "line": 820
       }
     },
     {
       "source": "backend/services/reconciliationService.js",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "target": "backend/services/reconciliationService.js#Function:findAllTodoFiles@833",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1128
+        "line": 833
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js",
+      "target": "backend/services/reconciliationService.js#Function:taskNode@855",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 855
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js",
+      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 905
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1050
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1148
       }
     },
     {
@@ -57582,32 +57693,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@223",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 222
+        "line": 223
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@227",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 226
+        "line": 227
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@232",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 231
+        "line": 232
       }
     },
     {
@@ -77888,6 +77999,76 @@
       "location": {
         "file": "backend/tests/test_traceability_matrix.js",
         "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "package:node:url",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/tests/testHarness.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/tests/test_transaction_await_boundary.js#Function:sourceFiles@28",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 28
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/tests/test_transaction_await_boundary.js#Function:findAwaitsInsideTransactions@37",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 37
       }
     },
     {
@@ -106982,7 +107163,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:getProject@149",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107002,7 +107183,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:getProject@149",
-      "target": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@133",
+      "target": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@138",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107092,7 +107273,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:assertVerifiedArtifactRunEvidence@413",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107572,7 +107753,7 @@
     },
     {
       "source": "backend/projectRepository.js#Function:syncProjectsWithDisk@1080",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107601,43 +107782,43 @@
       }
     },
     {
-      "source": "backend/repositories/artifactRepository.js#Function:createArtifact@33",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "source": "backend/repositories/artifactRepository.js#Function:createArtifact@38",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 54
+        "line": 59
       }
     },
     {
-      "source": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@66",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "source": "backend/repositories/artifactRepository.js#Function:updateArtifactStatus@71",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 73
+        "line": 78
       }
     },
     {
-      "source": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
-      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@15",
+      "source": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
+      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@20",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 90
+        "line": 95
       }
     },
     {
-      "source": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@133",
-      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@15",
+      "source": "backend/repositories/artifactRepository.js#Function:getLatestVerifiedArtifact@138",
+      "target": "backend/repositories/artifactRepository.js#Function:mapArtifactRow@20",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/repositories/artifactRepository.js",
-        "line": 135
+        "line": 140
       }
     },
     {
@@ -108272,7 +108453,7 @@
     },
     {
       "source": "backend/routes/projectObservabilityRoutes.js#Function:registerProjectObservabilityRoutes@40",
-      "target": "backend/repositories/artifactRepository.js#Function:listArtifacts@124",
+      "target": "backend/repositories/artifactRepository.js#Function:listArtifacts@129",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110822,7 +111003,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@223",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112061,78 +112242,118 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:resolveDb@9",
+      "source": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "target": "backend/db.js#Function:initializeDatabase@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 10
+        "line": 11
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@13",
+      "source": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@14",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 14
+        "line": 15
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:makeArtifactDeps@35",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
+      "source": "backend/services/reconciliationService.js#Function:makeArtifactDeps@36",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 36
+        "line": 37
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "source": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 68
+        "line": 59
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "source": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 117
+        "line": 108
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 149
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
+      "target": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 150
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "target": "backend/artifactInventory.js#Function:collectArtifactFiles@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 157
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "target": "backend/services/reconciliationService.js#Function:makeArtifactDeps@36",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 159
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "target": "backend/utils/archive.js#Function:createProjectZip@82",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 160
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 158
+        "line": 174
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 163
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112141,88 +112362,58 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@13",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 371
+        "line": 195
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 381
+        "line": 387
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/artifactInventory.js#Function:collectArtifactFiles@14",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 557
+        "line": 397
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:makeArtifactDeps@35",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 559
+        "line": 577
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/utils/archive.js#Function:createProjectZip@82",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 560
+        "line": 578
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 573
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 574
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 589
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112231,38 +112422,38 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
-      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 630
+        "line": 599
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
-      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
+      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 631
+        "line": 635
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
+      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 636
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 705
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112271,8 +112462,8 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -112281,223 +112472,283 @@
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 721
+        "line": 720
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:taskNode@838",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 860
+        "line": 726
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@784",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 867
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@803",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 869
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
-      "target": "backend/services/reconciliationService.js#Function:taskNode@838",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 897
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
-      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@784",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 902
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
-      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@803",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 904
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
-      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@888",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 923
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 1034
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/services/reconciliationService.js",
-        "line": 1035
-      }
-    },
-    {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1036
+        "line": 730
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1060
+        "line": 735
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@67",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1091
+        "line": 738
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@116",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:taskNode@855",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1092
+        "line": 877
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@801",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1097
+        "line": 884
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
-      "target": "backend/services/reconciliationService.js#Function:resolveDb@9",
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@820",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1129
+        "line": 886
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
+      "target": "backend/services/reconciliationService.js#Function:taskNode@855",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 914
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
+      "target": "backend/services/reconciliationService.js#Function:extractTitleFromGorev@801",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 919
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
+      "target": "backend/services/reconciliationService.js#Function:extractReviewResult@820",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 921
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDiskSync@729",
+      "target": "backend/services/reconciliationService.js#Function:scanForTaskDirs@905",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 940
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1051
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
       "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1130
+        "line": 1052
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
       "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1131
+        "line": 1053
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
       "target": "backend/projectPaths.js#Function:isValidProjectId@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1168
+        "line": 1077
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "target": "backend/services/reconciliationService.js#Function:readProjectTitleFromDisk@58",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1177
+        "line": 1109
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "target": "backend/services/reconciliationService.js#Function:detectProjectStatusFromDisk@107",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1212
+        "line": 1110
       }
     },
     {
-      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1115
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "target": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1138
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/services/reconciliationService.js#Function:resolveDb@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1149
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/projectPaths.js#Function:getProjectsRoot@17",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1150
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/engine/protocolIO.js#Function:createProtocolRecoveryReader@104",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1151
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/projectPaths.js#Function:isValidProjectId@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1188
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1197
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDiskSync@173",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1233
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
+      "target": "backend/services/reconciliationService.js#Function:recoverCompletedProjectArtifact@155",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/services/reconciliationService.js",
+        "line": 1244
+      }
+    },
+    {
+      "source": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
       "target": "backend/services/artifactLifecycle.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/services/reconciliationService.js",
-        "line": 1223
+        "line": 1246
       }
     },
     {
@@ -112631,13 +112882,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@232",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@227",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 232
+        "line": 233
       }
     },
     {
@@ -123892,7 +124143,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@232",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -123902,7 +124153,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@226",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@227",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124672,7 +124923,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1128",
+      "target": "backend/services/reconciliationService.js#Function:reconcileProjectsWithDisk@1148",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124682,7 +124933,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@157",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectStateFromDisk@148",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124692,7 +124943,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@13",
+      "target": "backend/services/reconciliationService.js#Function:restoreTaskTargetsFromProtocol@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124702,7 +124953,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@704",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectLogsFromDisk@709",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124712,7 +124963,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1033",
+      "target": "backend/services/reconciliationService.js#Function:autoRegisterDiscoveredProjects@1050",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124722,7 +124973,7 @@
     },
     {
       "source": "backend/tests/test_project_state_rehydration.js",
-      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@588",
+      "target": "backend/services/reconciliationService.js#Function:rehydrateProjectChatHistoryFromDisk@593",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -124757,7 +125008,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_project_state_rehydration.js",
-        "line": 530
+        "line": 552
       }
     },
     {
@@ -125992,7 +126243,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@222",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@223",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -126012,7 +126263,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@80",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@231",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@232",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -127308,6 +127559,46 @@
       "location": {
         "file": "backend/tests/test_traceability_matrix.js",
         "line": 67
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/tests/testHarness.js#Function:createTestHarness@1",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 7
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js#Function:findAwaitsInsideTransactions@37",
+      "target": "backend/tests/test_transaction_await_boundary.js#Function:sourceFiles@28",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 39
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/tests/test_transaction_await_boundary.js#Function:findAwaitsInsideTransactions@37",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 58
+      }
+    },
+    {
+      "source": "backend/tests/test_transaction_await_boundary.js",
+      "target": "backend/repositories/artifactRepository.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_transaction_await_boundary.js",
+        "line": 75
       }
     },
     {
@@ -131812,7 +132103,7 @@
     },
     {
       "source": "backend/verification/verificationCli.js#Function:verifyArtifactAndProject@63",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -131882,7 +132173,7 @@
     },
     {
       "source": "backend/verification/verificationCli.js",
-      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@89",
+      "target": "backend/repositories/artifactRepository.js#Function:getArtifact@94",
       "label": "calls",
       "provenance": "ast",
       "location": {

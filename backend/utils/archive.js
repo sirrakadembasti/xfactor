@@ -102,7 +102,10 @@ export async function createProjectZip(
     await fs.mkdir(artifactsDir, { recursive: true });
     try {
         await fs.writeFile(tempArtifactPath, zipBuffer, { flag: 'wx' });
-        const result = await withArtifactTransaction(async () => {
+        // Rename first, outside the transaction: real disk I/O must not hold the shared
+        // connection's write lock. A failed insert removes the final file in the catch below.
+        await fs.rename(tempArtifactPath, finalArtifactPath);
+        const result = await withArtifactTransaction(() => {
             createArtifact({
                 id: artifactId, projectId, contractId, kind: 'zip',
                 path: finalArtifactPath, sha256: zipHash, size: zipSize,
@@ -114,7 +117,6 @@ export async function createProjectZip(
                     sha256: file.sha256, size: file.size
                 });
             }
-            await fs.rename(tempArtifactPath, finalArtifactPath);
             return { id: artifactId, sha256: zipHash, path: finalArtifactPath, size: zipSize, manifest };
         }, db);
         return result;

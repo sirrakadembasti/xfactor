@@ -5,6 +5,7 @@ import { db, initializeDatabase } from '../db.js';
 import { getProjectsRoot, isValidProjectId } from '../projectPaths.js';
 import { collectArtifactFiles } from '../artifactInventory.js';
 import { createProjectZip } from '../utils/archive.js';
+import { withArtifactTransaction } from '../repositories/artifactRepository.js';
 
 function resolveDb(database) {
     return database || db || initializeDatabase();
@@ -51,17 +52,7 @@ function makeArtifactDeps(database) {
                 ) VALUES (?, ?, ?, ?, ?)
             `).run(contractId, artifactId, path, sha256, size);
         },
-        withArtifactTransaction: async (work) => {
-            database.exec('BEGIN IMMEDIATE;');
-            try {
-                const res = await work();
-                database.exec('COMMIT;');
-                return res;
-            } catch (err) {
-                try { database.exec('ROLLBACK;'); } catch {}
-                throw err;
-            }
-        }
+        withArtifactTransaction: (work) => withArtifactTransaction(work, database)
     };
 }
 function readProjectTitleFromDisk(dirPath, defaultTitle) {
@@ -154,7 +145,32 @@ function detectProjectStatusFromDisk(dirPath) {
 /**
  * Rehydrates full project plan, workflow_state, and status from disk protocol files.
  */
-export async function rehydrateProjectStateFromDisk(projectDir, { projectId = null, database = null } = {}) {
+export async function rehydrateProjectStateFromDisk(projectDir, options = {}) {
+    const { artifactRecovery, ...result } = rehydrateProjectStateFromDiskSync(projectDir, options);
+    if (artifactRecovery) await recoverCompletedProjectArtifact(artifactRecovery);
+    return result;
+}
+
+// Artifact ZIP recovery does real file I/O, so it must never run inside a database transaction.
+async function recoverCompletedProjectArtifact({ projectDir, projectId, contractId, database }) {
+    try {
+        const files = await collectArtifactFiles(projectDir);
+        if (files && files.length > 0) {
+            const deps = makeArtifactDeps(database);
+            const zipResult = await createProjectZip(projectId, contractId, files, undefined, deps);
+            database.prepare(`
+                UPDATE artifacts
+                SET status = 'built'
+                WHERE id = ? AND project_id = ? AND contract_id = ? AND status = 'draft'
+            `).run(zipResult.id, projectId, contractId);
+        }
+    } catch (err) {
+        console.error(`Artifact creation failed during rehydration for ${projectId}:`, err);
+    }
+}
+
+// Synchronous: reads protocol files and writes rows only, so callers may hold a transaction.
+function rehydrateProjectStateFromDiskSync(projectDir, { projectId = null, database = null } = {}) {
     const disk = createProtocolRecoveryReader(projectDir);
     if (!projectDir || !disk.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
@@ -546,39 +562,28 @@ export async function rehydrateProjectStateFromDisk(projectDir, { projectId = nu
         contractRow = { id: contractId, status: contractStatus };
     }
 
-    // 7. Unverified ZIP artifact recovery for completed projects
+    // 7. Unverified ZIP artifact recovery for completed projects (performed by the caller, outside transactions)
+    let artifactRecovery = null;
     if (finalStatus === 'completed' || diskStatus === 'completed') {
         const existingArtifact = database.prepare(
             'SELECT id, sha256 FROM artifacts WHERE project_id = ? AND status IN (\'built\', \'verified\') LIMIT 1'
         ).get(pId);
 
         if (!existingArtifact) {
-            try {
-                const files = await collectArtifactFiles(projectDir);
-                if (files && files.length > 0) {
-                    const deps = makeArtifactDeps(database);
-                    const zipResult = await createProjectZip(pId, contractRow.id, files, undefined, deps);
-                    database.prepare(`
-                        UPDATE artifacts
-                        SET status = 'built'
-                        WHERE id = ? AND project_id = ? AND contract_id = ? AND status = 'draft'
-                    `).run(zipResult.id, pId, contractRow.id);
-                }
-            } catch (err) {
-                console.error(`Artifact creation failed during rehydration for ${pId}:`, err);
-            }
+            artifactRecovery = { projectDir, projectId: pId, contractId: contractRow.id, database };
         }
     }
 
     rehydrateProjectChatHistoryFromDisk(projectDir, { projectId: pId, database });
-    await rehydrateProjectLogsFromDisk(projectDir, { projectId: pId, database });
+    rehydrateProjectLogsFromDiskSync(projectDir, { projectId: pId, database });
 
     return {
         success: true,
         plan,
         workflow,
         status: finalStatus,
-        tasksCount: tasks.length
+        tasksCount: tasks.length,
+        artifactRecovery
     };
 }
 
@@ -701,14 +706,14 @@ export function rehydrateProjectChatHistoryFromDisk(projectDir, { projectId = nu
 /**
  * Rehydrates project_logs from disk protocol files (manager/DURUM.md, director DURUM.md, task GOREV.md/TODO.md/RAPOR.md, root RAPOR.md).
  */
-export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = null, database = null, force = false } = {}) {
+export async function rehydrateProjectLogsFromDisk(projectDir, options = {}) {
     const disk = createProtocolRecoveryReader(projectDir);
     if (!projectDir || !disk.existsSync(projectDir)) {
         return { success: false, error: 'Directory does not exist' };
     }
 
-    database = resolveDb(database);
-    const pId = projectId || path.basename(projectDir);
+    const database = resolveDb(options.database ?? null);
+    const pId = options.projectId || path.basename(projectDir);
 
     const existingProj = database.prepare('SELECT id FROM projects WHERE id = ?').get(pId);
     if (!existingProj) {
@@ -718,6 +723,18 @@ export async function rehydrateProjectLogsFromDisk(projectDir, { projectId = nul
             return { success: true, rehydrated: true, count: checkRow.cnt };
         }
     }
+    return rehydrateProjectLogsFromDiskSync(projectDir, { ...options, database });
+}
+
+function rehydrateProjectLogsFromDiskSync(projectDir, { projectId = null, database = null, force = false } = {}) {
+    const disk = createProtocolRecoveryReader(projectDir);
+    if (!projectDir || !disk.existsSync(projectDir)) {
+        return { success: false, error: 'Directory does not exist' };
+    }
+
+    database = resolveDb(database);
+    const pId = projectId || path.basename(projectDir);
+
     const diskStatus = detectProjectStatusFromDisk(projectDir);
     let currentStatus = null;
     try {
@@ -1083,6 +1100,7 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
         }
     } catch {}
 
+    const artifactRecoveries = [];
     database.exec('BEGIN IMMEDIATE;');
     try {
         for (const diskId of validDiskDirs) {
@@ -1094,7 +1112,8 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
                 if (insertOwnerStmt && adminUser) {
                     insertOwnerStmt.run(diskId, adminUser.id, nowIso);
                 }
-                await rehydrateProjectStateFromDisk(dirPath, { projectId: diskId, database });
+                const { artifactRecovery } = rehydrateProjectStateFromDiskSync(dirPath, { projectId: diskId, database });
+                if (artifactRecovery) artifactRecoveries.push(artifactRecovery);
                 const welcomeText = status === 'completed'
                     ? `Merhaba Boss! "${title}" projesi tamamlanmış ve tüm dosyaları hazırdır. Proje üzerinde yeni bir revizyon yapmak, değişiklik istemek veya soru sormak için buradan bana iletebilirsiniz.`
                     : `Merhaba Boss! "${title}" projesi için ben Manager (Kıdemli Mimar). Bu uygulamada tam olarak hangi özellikleri istiyorsun? Beyin fırtınasına başlayalım.`;
@@ -1116,6 +1135,7 @@ export async function autoRegisterDiscoveredProjects({ env = process.env, projec
         try { database.exec('ROLLBACK;'); } catch {}
         throw error;
     }
+    for (const recovery of artifactRecoveries) await recoverCompletedProjectArtifact(recovery);
 
     return { success: true, registered };
 }
@@ -1200,6 +1220,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
     let updatedCount = 0;
     const missingOnDisk = [];
 
+    const artifactRecoveries = [];
     database.exec('BEGIN IMMEDIATE;');
     try {
         for (const proj of dbProjectsWithState) {
@@ -1209,7 +1230,8 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
             } else {
                 if (!proj.workflow_state || proj.workflow_state === 'null'
                     || (!proj.has_contract && (!proj.plan || proj.plan === 'null'))) {
-                    await rehydrateProjectStateFromDisk(expectedDir, { projectId: proj.id, database });
+                    const { artifactRecovery } = rehydrateProjectStateFromDiskSync(expectedDir, { projectId: proj.id, database });
+                    if (artifactRecovery) artifactRecoveries.push(artifactRecovery);
                     updatedCount += 1;
                 }
             }
@@ -1219,6 +1241,7 @@ export async function reconcileProjectsWithDisk({ env = process.env, projectsRoo
         try { database.exec('ROLLBACK;'); } catch {}
         throw error;
     }
+    for (const recovery of artifactRecoveries) await recoverCompletedProjectArtifact(recovery);
 
     const { auditArtifacts, recoverArtifactMaintenance } = await import('./artifactLifecycle.js');
     const artifactEnv = { ...env, PROJECTS_ROOT: root };

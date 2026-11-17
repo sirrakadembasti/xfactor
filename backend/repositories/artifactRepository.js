@@ -1,9 +1,14 @@
 import { db } from '../db.js';
 
-export async function withArtifactTransaction(work, database = db) {
+// Synchronous on purpose: the shared connection must never stay inside a transaction across an await.
+export function withArtifactTransaction(work, database = db) {
     database.exec('BEGIN IMMEDIATE;');
     try {
-        const result = await work();
+        const result = work();
+        if (result && typeof result.then === 'function') {
+            Promise.resolve(result).catch(() => {});
+            throw new Error('Artifact transaction callback must be synchronous.');
+        }
         database.exec('COMMIT;');
         return result;
     } catch (error) {

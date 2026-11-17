@@ -162,6 +162,7 @@ test_runner.js
 test_runner_failure_reasons.js
 test_infrastructure_failure_classification.js
 test_worker_check_log_tail.js
+test_transaction_await_boundary.js
 test_runtime_verification.js
 test_sandbox_adapters.js
 test_sandbox_security.js

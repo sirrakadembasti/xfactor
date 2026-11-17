@@ -552,6 +552,15 @@ B-4: Worker ilk 1 MiB'ı, backend ilk 16 KB'ı tutuyordu; TAP çıktısının so
 - `backend/verification/workerFailures.js:bounded`: sınır içindeyse olduğu gibi; aşarsa baş + işaret + kuyruk, toplam sınırı aşmaz (işaret sınıra dahil). Redaksiyon kesmeden önce uygulanmaya devam ediyor. Yanıt şekli değişmedi.
 - Testler: `test_worker_check_log_tail.js` (yeni), `execution/tests/runtime.test.js` ve `localProcesses.test.js` (eski "yalnız baş" beklentileri baş+kuyruğa güncellendi, kuyruk testleri eklendi).
 
+### Halka 45 — 17 Kasım: transaction içinde `await` kalmadı (Y2)
+
+B-2: backend tek paylaşılan `node:sqlite` bağlantısı kullanıyor; `BEGIN IMMEDIATE` açıkken gerçek disk I/O `await`'i olay döngüsünü başka isteklere açıyor, kalp atışı iş parçacığının yazımını da kilitte bekletebiliyordu. `faz-6/y2-transaction-await` dalında:
+- `repositories/artifactRepository.js:withArtifactTransaction` senkron oldu; `work()` bir `Promise` döndürürse transaction geri alınır ve `Artifact transaction callback must be synchronous.` hatası verilir.
+- `utils/archive.js:createProjectZip`: ZIP önce `fs.rename` ile son konuma taşınıyor (transaction dışında), sonra `createArtifact` ve `addArtifactFile` kayıtları senkron transaction'da yazılıyor. Kayıt başarısız olursa mevcut `catch` son dosyayı siliyor.
+- `services/reconciliationService.js`: kopya transaction kaldırıldı, paylaşılan senkron yardımcı kullanılıyor. `rehydrateProjectStateFromDisk` ve `rehydrateProjectLogsFromDisk` senkron çekirdeğe (`...Sync`) ve ince `async` sarmalayıcıya bölündü; dışa aktarımlar ve davranış aynı. Tamamlanmış projenin ZIP kurtarması (gerçek dosya I/O) artık `recoverCompletedProjectArtifact` ile **transaction commit edildikten sonra** yapılıyor (`autoRegisterDiscoveredProjects` ve `reconcileProjectsWithDisk`).
+- **Düzeltilen gizli hata:** ZIP kurtarması eskiden bu iki döngünün açık transaction'ı içinde çalışıyordu; içerdeki ikinci `BEGIN IMMEDIATE` hata verip yutuluyordu. Bu yüzden otomatik kayıt/senkron sırasında tamamlanmış projeler için artefakt hiç oluşmuyordu. Yeni test eski kodda kırmızıydı.
+- `test_transaction_await_boundary.js` statik koruma: `backend/` altında `BEGIN` ile `COMMIT` arasında `await` arar; izin listesi yalnız `writeProjectState` çağrılarıdır (`saveProjectState` içinde gerçek I/O yok, yalnız mikro-görev boşluğu). Yol haritasındaki isteğe bağlı 6. adım (senkron `saveProjectStateInTransaction`) yapılmadı; bu satırlar izin listesinde duruyor.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
