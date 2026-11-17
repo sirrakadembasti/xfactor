@@ -579,6 +579,10 @@ B-5: `execution/jobStore.js` her komut olayında bütün iş dosyasını (~7,9 M
 - **Çökme kurtarma değişmedi:** `running` iş yeniden yüklenince `failed_interrupted` olur. Birleştirilmiş son olaylar çökmede en fazla bir saniyelik tanılama kaybedebilir; kabul kanıtı değildir.
 - Testler: `execution/tests/jobStoreLightweight.test.js` (yeni, 7 test) ve mevcut `jobStoreRecovery.test.js` (değişmedi, geçiyor).
 
+### Halka 48 — 18 Kasım: belgeler koda hizalandı (Y8)
+
+`faz-6/y8-belgeler` dalında B-8 çelişkileri kapatıldı. `README.md` kalp atışı cümlesi "ana döngü takılmalarına karşı korur; veritabanı kilidi kaynaklı düşmeler hâlâ izleniyor" olarak düzeltildi ve yeni `db.transaction_slow` / `workflow.state_large` logları eklendi. README'deki "17 Kasım durumu" ve `CLAUDE.md §5`, `76dccdd0`'dan sonraki koşuları gösteriyor. Canlı veritabanı yalnız salt okunur okundu (18 Kasım): 14:59–15:45 UTC arasında `88674954`, `019ab6fd` ve `21f4e53d` koşuları `failed` kapanmış; ikisi 4 PASS / 9 BLOCKED (altı zorunlu kapı "machine evidence eksik" veya "semantik kanıt yok"), biri kontrol kaydı olmadan. Nedenleri incelenmedi. `stok-takip-1` için 99 açık onarım kaydı var (4 `verification_blocker`, 95 `worker_rejection`). Kullanıcı kılavuzu uzun çıktının baş + kuyruk tutulduğunu anlatıyor. Yol haritasının §6 tablosunda biten görevler karmalarıyla işaretlendi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

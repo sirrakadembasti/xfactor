@@ -291,7 +291,7 @@ Tüm üretim görevleri tamamlandıktan sonra motor `generationCompletion` aşam
 
 #### Worker reddinden sonra onarım veya revizyon
 
-Kalite Paneli'nde başarısız koşunun nedenini ve kaydedilmiş kontrol logunu inceleyin. **Devam Ettir**, yalnız normal tamamlanmış derleyicinin tam TypeScript ürün bulgularını, reddedilen kaynakla eşleşen ve tek sahibi belli olan dosya için otomatik onarıma yönlendirir. Coder yalnız o dosyayı değiştirebilir; ardından taze kaynak denetimi, Reviewer ve Tester kabulü ile yeni bağımsız worker kanıtı gerekir. Patch'in yazılması veya modelin “başarılı” demesi indirme yetkisi vermez.
+Kalite Paneli'nde başarısız koşunun nedenini ve kaydedilmiş kontrol logunu inceleyin. Uzun komut çıktısı (ör. test süiti) kayıtta kesilirse çıktının ilk ve son yarısı tutulur, araya `…[kesildi: N bayt]…` işareti girer; hata özeti genellikle sondadır. Kesilmiş çıktı tam kanıt sayılmaz. **Devam Ettir**, yalnız normal tamamlanmış derleyicinin tam TypeScript ürün bulgularını, reddedilen kaynakla eşleşen ve tek sahibi belli olan dosya için otomatik onarıma yönlendirir. Coder yalnız o dosyayı değiştirebilir; ardından taze kaynak denetimi, Reviewer ve Tester kabulü ile yeni bağımsız worker kanıtı gerekir. Patch'in yazılması veya modelin “başarılı” demesi indirme yetkisi vermez.
 
 Onarım çağrıları başlamadan kalıcı olarak rezerve edilir. Dosya sahibi/hedef başına en fazla iki değişen girdi denemesi vardır; aynı kaynakta tüketilmiş veya sonucu belirsiz çağrı yeniden ücretli denemeye çevrilmez. Kaynakla bağlı başarılı incelemeler ve tamamlanmış yeni worker kanıtı kaydedilmişse kurtarma bunları yeniden çağrı yapmadan kullanabilir.
 

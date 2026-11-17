@@ -407,19 +407,21 @@ Sınırlı onarım tur sonrası doğrulama kötüleşse de (ör. 83 → 20 PASS)
 
 ## 6. Yol haritası: genel bakış
 
+**İlerleme (18 Kasım):** Y0, Y1, Y2, Y3a, Y4, Y7 ve Y8 bitti; değişiklikler `faz-6/*` dal zincirinde, `main`'e alınmadı. Y5, Y6, Y9 ve Y3b açık. Karmalar `git log faz-6/y8-belgeler` ile doğrulanabilir.
+
 **Sıra:** Y0 → Y1 → (Y2, Y4, Y7 paralel olabilir) → Y3 → Y5. Y6, Y8, Y9 kullanıcı kararına bağlı.
 
 | ID | Başlık | Önem | Bağımlılık | Onay | Tahmini kapsam |
 |---|---|---|---|---|---|
-| Y0 | Zemin: commit edilmemiş işi doğrula, test koşucusu zaman aşımını ayırsın | 🟡 | — | Commit 🔒 | 1 dosya + test |
-| Y1 | Altyapı hatasını ayır, `npm ci`'yi bir kez yeniden dene, Devam Ettir'i açık tut | 🔴 | Y0 | Şema yok; commit 🔒 | 4–6 dosya + testler |
-| Y2 | `await` içeren transaction'ları kaldır, statik koruma testi | 🟠 | Y0 | commit 🔒 | 3 dosya + test |
-| Y3 | Kilit hatasını ölç; gerekirse lineage'i tabloya taşı | 🟠 | Y2 | Y3b 🔒 migrasyon 19 | Y3a: 3 dosya |
-| Y4 | Test çıktısında baş + kuyruk | 🟡 | Y0 | commit 🔒 | 2–3 dosya + test |
+| Y0 ✅ 17.11 `80b16e6`, `e64fa54` | Zemin: commit edilmemiş işi doğrula, test koşucusu zaman aşımını ayırsın | 🟡 | — | Commit 🔒 | 1 dosya + test |
+| Y1 ✅ 17.11 `2d8a59f` | Altyapı hatasını ayır, `npm ci`'yi bir kez yeniden dene, Devam Ettir'i açık tut | 🔴 | Y0 | Şema yok; commit 🔒 | 4–6 dosya + testler |
+| Y2 ✅ 17.11 `6f2529c` | `await` içeren transaction'ları kaldır, statik koruma testi | 🟠 | Y0 | commit 🔒 | 3 dosya + test |
+| Y3a ✅ 17.11 `a5f2792`; Y3b açık | Kilit hatasını ölç; gerekirse lineage'i tabloya taşı | 🟠 | Y2 | Y3b 🔒 migrasyon 19 | Y3a: 3 dosya |
+| Y4 ✅ 17.11 `a345413` | Test çıktısında baş + kuyruk | 🟡 | Y0 | commit 🔒 | 2–3 dosya + test |
 | Y5 | `stok-takip-1` teslimi | 🟠 ürün | Y1, Y4 (Y2, Y3a önerilir) | Her koşu 🔒 | Kod yok, operasyon |
 | Y6 | Bayat kayıtlar ve takılı projeler | 🟡 | — | 🔒 veri | Operasyon |
-| Y7 | Worker iş deposunu hafiflet | 🟡 | — | commit 🔒 | 1 dosya + test |
-| Y8 | Belgeleri koda hizala | 🟡 | Her görevden sonra | — | Belgeler |
+| Y7 ✅ 17.11 `e87e1fb` | Worker iş deposunu hafiflet | 🟡 | — | commit 🔒 | 1 dosya + test |
+| Y8 ✅ 18.11 `faz-6/y8-belgeler` | Belgeleri koda hizala | 🟡 | Her görevden sonra | — | Belgeler |
 | Y9 | Gerileyen onarımı geri alma | 🟡 | Y5 deneyimi | 🔒 ürün kararı | Tasarıma bağlı |
 
 ---
