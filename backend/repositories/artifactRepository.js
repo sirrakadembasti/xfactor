@@ -1,7 +1,11 @@
-import { db } from '../db.js';
+import { db, measureTransaction } from '../db.js';
 
 // Synchronous on purpose: the shared connection must never stay inside a transaction across an await.
 export function withArtifactTransaction(work, database = db) {
+    return measureTransaction('artifactTransaction', () => runArtifactTransaction(work, database));
+}
+
+function runArtifactTransaction(work, database) {
     database.exec('BEGIN IMMEDIATE;');
     try {
         const result = work();

@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db, measureTransaction } from '../db.js';
 import { assertWorkflowLease } from '../workflowAttempts.js';
 
 const ELIGIBLE_STATUSES = new Set(['implementing', 'implementation_finished', 'verification_pending',
@@ -28,6 +28,10 @@ export function assertVerificationContext(context, database = db) {
 }
 
 export function commitVerificationContext(context, write, database = db) {
+    return measureTransaction('commitVerificationContext', () => commitContext(context, write, database));
+}
+
+function commitContext(context, write, database) {
     database.exec('BEGIN IMMEDIATE;');
     try {
         assertVerificationContext(context, database);

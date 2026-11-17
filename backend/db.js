@@ -19,6 +19,7 @@ import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { assertWorkflowLease } from './workflowAttempts.js';
 import { MIGRATIONS, columnExists } from './db/migrations.js';
+import { writeStructuredLog } from './observability.js';
 
 export { assertWorkflowLease } from './workflowAttempts.js';
 export { MIGRATIONS, columnExists } from './db/migrations.js';
@@ -176,7 +177,28 @@ export function formatDBDate(dateVal) {
 }
 
 
+const SLOW_TRANSACTION_MS = 1000;
+// Measures a function that runs a complete BEGIN..COMMIT/ROLLBACK block on the shared connection.
+// It never opens a transaction itself. A long hold keeps the write lock from the lease heartbeat
+// thread, so slow holds are logged with the caller to find who keeps the lock.
+export function measureTransaction(label, fn, { now = () => performance.now(), sink = null, thresholdMs = SLOW_TRANSACTION_MS } = {}) {
+    const startedAt = now();
+    try {
+        return fn();
+    } finally {
+        const ms = Math.round(now() - startedAt);
+        if (ms > thresholdMs) {
+            const caller = new Error().stack.split('\n').slice(2, 7).map(frame => frame.trim());
+            writeStructuredLog('warn', 'db.transaction_slow', { label, ms, caller }, sink);
+        }
+    }
+}
+
 export function saveProjectLog(logData, leaseOptions = null) {
+    return measureTransaction('saveProjectLog', () => writeProjectLog(logData, leaseOptions));
+}
+
+function writeProjectLog(logData, leaseOptions = null) {
     const options = leaseOptions || (
         logData?.attemptId || logData?.leaseOwner
             ? { attemptId: logData.attemptId, leaseOwner: logData.leaseOwner }

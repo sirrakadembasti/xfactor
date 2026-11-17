@@ -561,6 +561,15 @@ B-2: backend tek paylaşılan `node:sqlite` bağlantısı kullanıyor; `BEGIN IM
 - **Düzeltilen gizli hata:** ZIP kurtarması eskiden bu iki döngünün açık transaction'ı içinde çalışıyordu; içerdeki ikinci `BEGIN IMMEDIATE` hata verip yutuluyordu. Bu yüzden otomatik kayıt/senkron sırasında tamamlanmış projeler için artefakt hiç oluşmuyordu. Yeni test eski kodda kırmızıydı.
 - `test_transaction_await_boundary.js` statik koruma: `backend/` altında `BEGIN` ile `COMMIT` arasında `await` arar; izin listesi yalnız `writeProjectState` çağrılarıdır (`saveProjectState` içinde gerçek I/O yok, yalnız mikro-görev boşluğu). Yol haritasındaki isteğe bağlı 6. adım (senkron `saveProjectStateInTransaction`) yapılmadı; bu satırlar izin listesinde duruyor.
 
+### Halka 46 — 17 Kasım: kilit hatası ölçümü (Y3a)
+
+B-3 (`workflow.execution_fenced`) kök nedeni hâlâ ölçülmedi; bu halka yalnız ölçüm ekler, davranışı değiştirmez. `faz-6/y3a-kilit-olcumu` dalında:
+- `db.js:measureTransaction(label, fn, { now, sink, thresholdMs })`: tam bir `BEGIN…COMMIT` bloğunu çalıştıran senkron fonksiyonu sarar, kendisi transaction açmaz. Süre 1.000 ms'yi aşarsa `db.transaction_slow` uyarısı yazar: `{ label, ms, caller }` (`caller`: yığının 5 çerçevesi). Hata fırlasa da ölçer ve hatayı yeniden fırlatır.
+- Sarılan noktalar: `saveProjectState` (`projectRepository.js`), `commitWorkflowSource` (`workflowAttempts.js`), `commitVerificationContext`, `saveProjectLog` ve artefakt transaction'ı. Artefakt noktası yol haritasındaki `utils/archive.js` yerine `repositories/artifactRepository.js:withArtifactTransaction`'dır (Y2'den sonra `createProjectZip` ve uzlaştırma aynı yardımcıyı kullanıyor). Her biri mevcut gövdeyi değiştirmeden sarmalayıcıyla ölçülür; `saveProjectState` hâlâ `Promise` döndürür.
+- `projectRepository.js:noteLargeWorkflowState`: `workflow_state` 256 KB'ı aşarsa proje başına süreç ömründe bir kez `workflow.state_large` yazar: `{ projectId, bytes, topKeys }` (en büyük üç üst düzey anahtar ve baytları).
+- Her iki log da stdout/stderr'e gider. **Bulgu için** bir sonraki gerçek koşunun terminal çıktısı gerekir (`db.transaction_slow`, `workflow.state_large`, `workflow.lease_check_failed`, `workflow.heartbeat_write_slow`). Çıktı alınmadan Y3b (lineage tablosu, migrasyon 19) kararı verilmez.
+- Testler: `test_db_transaction_measurement.js` (sahte saatle yavaş/hızlı/hatalı transaction, `state_large` eşiği ve tekrar yazmama, beş noktanın sarıldığı, gerçek `saveProjectState` ile `state_large`).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
