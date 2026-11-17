@@ -807,7 +807,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 97,
+      "val": 99,
       "provenance": "curated"
     },
     {
@@ -1337,7 +1337,7 @@
       "group": "engine",
       "file": "backend/engine/controlledRepairs.js",
       "description": "",
-      "val": 15.5,
+      "val": 16,
       "provenance": "ast"
     },
     {
@@ -1947,7 +1947,7 @@
       "group": "tests",
       "file": "backend/tests/test_controlled_repair_routes.js",
       "description": "",
-      "val": 32,
+      "val": 33.5,
       "provenance": "ast"
     },
     {
@@ -1967,7 +1967,7 @@
       "group": "tests",
       "file": "backend/tests/test_controlled_repairs.js",
       "description": "",
-      "val": 21.5,
+      "val": 22.5,
       "provenance": "ast"
     },
     {
@@ -3141,6 +3141,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/tests/test_runner_failure_reasons.js",
+      "label": "test_runner_failure_reasons.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_runner_failure_reasons.js",
+      "description": "",
+      "val": 5,
+      "provenance": "ast"
+    },
+    {
       "id": "backend/tests/test_sandbox_adapters.js",
       "label": "test_sandbox_adapters.js",
       "type": "SourceFile",
@@ -3626,6 +3636,16 @@
       "type": "Document",
       "group": "docs",
       "file": "docs/superpowers/plans/2026-11-02-xfactor-skills-integration.md",
+      "description": "",
+      "val": 1,
+      "provenance": "ast"
+    },
+    {
+      "id": "docs/yol-haritasi-2026-11-17.md",
+      "label": "yol-haritasi-2026-11-17.md",
+      "type": "Document",
+      "group": "docs",
+      "file": "docs/yol-haritasi-2026-11-17.md",
       "description": "",
       "val": 1,
       "provenance": "ast"
@@ -4670,7 +4690,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 45,
+      "val": 45.5,
       "provenance": "ast"
     },
     {
@@ -4680,7 +4700,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 49.5,
+      "val": 50,
       "provenance": "ast"
     },
     {
@@ -9144,12 +9164,23 @@
       "group": "engine",
       "file": "backend/engine/controlledRepairs.js",
       "description": "",
-      "val": 3,
+      "val": 3.5,
       "provenance": "ast",
       "line": 33
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@44",
+      "id": "backend/engine/controlledRepairs.js#Function:controlledRepairBatchGrowth@48",
+      "label": "controlledRepairBatchGrowth",
+      "type": "Function",
+      "group": "engine",
+      "file": "backend/engine/controlledRepairs.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 48
+    },
+    {
+      "id": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@55",
       "label": "controlledRepairContextBase",
       "type": "Function",
       "group": "engine",
@@ -9157,10 +9188,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 44
+      "line": 55
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
+      "id": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
       "label": "correctTypecheckErrors",
       "type": "Function",
       "group": "engine",
@@ -9168,10 +9199,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 52
+      "line": 63
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@85",
+      "id": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@96",
       "label": "controlledCoderFormatRetry",
       "type": "Function",
       "group": "engine",
@@ -9179,10 +9210,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 85
+      "line": 96
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "id": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "label": "assertControlledPackagePolicy",
       "type": "Function",
       "group": "engine",
@@ -9190,10 +9221,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 88
+      "line": 99
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:canonical@95",
+      "id": "backend/engine/controlledRepairs.js#Function:canonical@106",
       "label": "canonical",
       "type": "Function",
       "group": "engine",
@@ -9201,10 +9232,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 95
+      "line": 106
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "id": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
       "label": "executeControlledRepairs",
       "type": "Function",
       "group": "engine",
@@ -9212,10 +9243,10 @@
       "description": "",
       "val": 8.5,
       "provenance": "ast",
-      "line": 115
+      "line": 126
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
+      "id": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "label": "assertCurrent",
       "type": "Function",
       "group": "engine",
@@ -9223,10 +9254,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 136
+      "line": 147
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:callCoder@170",
+      "id": "backend/engine/controlledRepairs.js#Function:callCoder@181",
       "label": "callCoder",
       "type": "Function",
       "group": "engine",
@@ -9234,10 +9265,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 170
+      "line": 181
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "id": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "label": "validateControlledRepairs",
       "type": "Function",
       "group": "engine",
@@ -9245,10 +9276,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 229
+      "line": 240
     },
     {
-      "id": "backend/engine/controlledRepairs.js#Function:validBinding@268",
+      "id": "backend/engine/controlledRepairs.js#Function:validBinding@279",
       "label": "validBinding",
       "type": "Function",
       "group": "engine",
@@ -9256,7 +9287,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 268
+      "line": 279
     },
     {
       "id": "backend/engine/controlledSemanticAuthority.js#Function:inspectControlledSemanticReviewEligibility@6",
@@ -11826,7 +11857,7 @@
       "group": "packages",
       "file": null,
       "description": "node:os",
-      "val": 25.5,
+      "val": 26,
       "provenance": "ast"
     },
     {
@@ -13312,7 +13343,7 @@
       "line": 40
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@26",
+      "id": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@27",
       "label": "repairProposalTimeoutMs",
       "type": "Function",
       "group": "backend",
@@ -13320,10 +13351,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 26
+      "line": 27
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@33",
+      "id": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@34",
       "label": "repairProposalCorrectionMessage",
       "type": "Function",
       "group": "backend",
@@ -13331,10 +13362,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 33
+      "line": 34
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@37",
+      "id": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@38",
       "label": "activeProfileTimeoutMs",
       "type": "Function",
       "group": "backend",
@@ -13342,10 +13373,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 37
+      "line": 38
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@49",
+      "id": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@50",
       "label": "sourceFactRank",
       "type": "Function",
       "group": "backend",
@@ -13353,10 +13384,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 49
+      "line": 50
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@61",
+      "id": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@62",
       "label": "failingTapBlocks",
       "type": "Function",
       "group": "backend",
@@ -13364,10 +13395,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 61
+      "line": 62
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@82",
+      "id": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@83",
       "label": "failedCheckSourcePaths",
       "type": "Function",
       "group": "backend",
@@ -13375,10 +13406,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 82
+      "line": 83
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:namedIn@88",
+      "id": "backend/routes/projectRepairRoutes.js#Function:namedIn@89",
       "label": "namedIn",
       "type": "Function",
       "group": "backend",
@@ -13386,10 +13417,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 88
+      "line": 89
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
+      "id": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "label": "buildRepairSourceFacts",
       "type": "Function",
       "group": "backend",
@@ -13397,10 +13428,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 94
+      "line": 95
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:reject@113",
+      "id": "backend/routes/projectRepairRoutes.js#Function:reject@114",
       "label": "reject",
       "type": "Function",
       "group": "backend",
@@ -13408,10 +13439,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 113
+      "line": 114
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:parseProposal@116",
+      "id": "backend/routes/projectRepairRoutes.js#Function:parseProposal@117",
       "label": "parseProposal",
       "type": "Function",
       "group": "backend",
@@ -13419,21 +13450,21 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 116
+      "line": 117
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "id": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "label": "registerProjectRepairRoutes",
       "type": "Function",
       "group": "backend",
       "file": "backend/routes/projectRepairRoutes.js",
       "description": "",
-      "val": 13.5,
+      "val": 14,
       "provenance": "ast",
-      "line": 121
+      "line": 122
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
+      "id": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
       "label": "callManager",
       "type": "Function",
       "group": "backend",
@@ -13441,10 +13472,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 156
+      "line": 157
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:excerpt@187",
+      "id": "backend/routes/projectRepairRoutes.js#Function:excerpt@188",
       "label": "excerpt",
       "type": "Function",
       "group": "backend",
@@ -13452,10 +13483,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 187
+      "line": 188
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "id": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "label": "registerControlledRepairExecutionRoutes",
       "type": "Function",
       "group": "backend",
@@ -13463,10 +13494,10 @@
       "description": "",
       "val": 10.5,
       "provenance": "ast",
-      "line": 281
+      "line": 285
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@314",
+      "id": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@318",
       "label": "assertBaseline",
       "type": "Function",
       "group": "backend",
@@ -13474,10 +13505,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 314
+      "line": 318
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@338",
+      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@342",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -13485,10 +13516,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 338
+      "line": 342
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:stale@348",
+      "id": "backend/routes/projectRepairRoutes.js#Function:stale@352",
       "label": "stale",
       "type": "Function",
       "group": "backend",
@@ -13496,10 +13527,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 348
+      "line": 352
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:readApproved@351",
+      "id": "backend/routes/projectRepairRoutes.js#Function:readApproved@355",
       "label": "readApproved",
       "type": "Function",
       "group": "backend",
@@ -13507,10 +13538,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 351
+      "line": 355
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:readLatest@352",
+      "id": "backend/routes/projectRepairRoutes.js#Function:readLatest@356",
       "label": "readLatest",
       "type": "Function",
       "group": "backend",
@@ -13518,10 +13549,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 352
+      "line": 356
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
+      "id": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
       "label": "readSourceHash",
       "type": "Function",
       "group": "backend",
@@ -13529,10 +13560,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 356
+      "line": 360
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
+      "id": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
       "label": "authorizedActive",
       "type": "Function",
       "group": "backend",
@@ -13540,10 +13571,10 @@
       "description": "",
       "val": 3.5,
       "provenance": "ast",
-      "line": 374
+      "line": 378
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
+      "id": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
       "label": "assertBaseline",
       "type": "Function",
       "group": "backend",
@@ -13551,10 +13582,10 @@
       "description": "",
       "val": 5,
       "provenance": "ast",
-      "line": 413
+      "line": 417
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@443",
+      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@447",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -13562,10 +13593,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 443
+      "line": 447
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@500",
+      "id": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@504",
       "label": "operation.cancel",
       "type": "Method",
       "group": "backend",
@@ -13573,7 +13604,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 500
+      "line": 504
     },
     {
       "id": "backend/routes/projectRoutes.js#Function:getActionId@52",
@@ -15331,7 +15362,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@220",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15339,10 +15370,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 219
+      "line": 220
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@224",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15350,10 +15381,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 223
+      "line": 224
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@229",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -15361,7 +15392,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 228
+      "line": 229
     },
     {
       "id": "package:assert",
@@ -15709,7 +15740,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 55.5,
+      "val": 56,
       "provenance": "ast"
     },
     {
@@ -16758,18 +16789,7 @@
       "line": 71
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@82",
-      "label": "managerResponder",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_controlled_repair_routes.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 82
-    },
-    {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@95",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@83",
       "label": "contextOverflow",
       "type": "Method",
       "group": "tests",
@@ -16777,7 +16797,29 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 95
+      "line": 83
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:contextBase@83",
+      "label": "contextBase",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 83
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@84",
+      "label": "managerResponder",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 84
     },
     {
       "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@96",
@@ -16791,7 +16833,29 @@
       "line": 96
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:publishProposal@103",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@109",
+      "label": "contextOverflow",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 109
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@110",
+      "label": "managerResponder",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 110
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:publishProposal@117",
       "label": "publishProposal",
       "type": "Method",
       "group": "tests",
@@ -16799,10 +16863,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 103
+      "line": 117
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@110",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@124",
       "label": "projectAccess",
       "type": "Method",
       "group": "tests",
@@ -16810,33 +16874,11 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 110
+      "line": 124
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@110",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@124",
       "label": "loadContext",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_controlled_repair_routes.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 110
-    },
-    {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@117",
-      "label": "loadContext",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_controlled_repair_routes.js",
-      "description": "",
-      "val": 2,
-      "provenance": "ast",
-      "line": 117
-    },
-    {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@124",
-      "label": "managerResponder",
       "type": "Method",
       "group": "tests",
       "file": "backend/tests/test_controlled_repair_routes.js",
@@ -16846,7 +16888,7 @@
       "line": 124
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@183",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@131",
       "label": "loadContext",
       "type": "Method",
       "group": "tests",
@@ -16854,10 +16896,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 183
+      "line": 131
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@185",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@138",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16865,10 +16907,32 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 185
+      "line": 138
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Function:file@206",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@197",
+      "label": "loadContext",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 197
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@199",
+      "label": "managerResponder",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repair_routes.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 199
+    },
+    {
+      "id": "backend/tests/test_controlled_repair_routes.js#Function:file@220",
       "label": "file",
       "type": "Function",
       "group": "tests",
@@ -16876,10 +16940,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 206
+      "line": 220
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:activeProfileTimeoutMs@236",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:activeProfileTimeoutMs@250",
       "label": "activeProfileTimeoutMs",
       "type": "Method",
       "group": "tests",
@@ -16887,10 +16951,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 236
+      "line": 250
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@237",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@251",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16898,10 +16962,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 237
+      "line": 251
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@249",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@263",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16909,10 +16973,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 249
+      "line": 263
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@258",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@272",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16920,10 +16984,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 258
+      "line": 272
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@274",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@288",
       "label": "loadContext",
       "type": "Method",
       "group": "tests",
@@ -16931,10 +16995,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 274
+      "line": 288
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@274",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@288",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16942,10 +17006,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 274
+      "line": 288
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:readState@285",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:readState@299",
       "label": "readState",
       "type": "Method",
       "group": "tests",
@@ -16953,10 +17017,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 285
+      "line": 299
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@286",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@300",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16964,10 +17028,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 286
+      "line": 300
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:readState@295",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:readState@309",
       "label": "readState",
       "type": "Method",
       "group": "tests",
@@ -16975,10 +17039,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 295
+      "line": 309
     },
     {
-      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@296",
+      "id": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@310",
       "label": "managerResponder",
       "type": "Method",
       "group": "tests",
@@ -16986,7 +17050,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 296
+      "line": 310
     },
     {
       "id": "backend/tests/test_controlled_repair_workflow.js#Function:fixture@20",
@@ -17440,7 +17504,7 @@
       "line": 186
     },
     {
-      "id": "backend/tests/test_controlled_repairs.js#Function:buildContext@197",
+      "id": "backend/tests/test_controlled_repairs.js#Function:buildContext@198",
       "label": "buildContext",
       "type": "Function",
       "group": "tests",
@@ -17448,7 +17512,18 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 197
+      "line": 198
+    },
+    {
+      "id": "backend/tests/test_controlled_repairs.js#Function:buildContext@215",
+      "label": "buildContext",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_controlled_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 215
     },
     {
       "id": "backend/tests/test_controlled_review_action.js#Function:sha@23",
@@ -25799,23 +25874,45 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "",
-      "val": 2.5,
+      "val": 3,
       "provenance": "ast",
       "line": 23
     },
     {
-      "id": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "id": "backend/tests/test_runner.js#Function:formatFailedSuites@67",
+      "label": "formatFailedSuites",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_runner.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 67
+    },
+    {
+      "id": "backend/tests/test_runner.js#Function:describe@68",
+      "label": "describe",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_runner.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 68
+    },
+    {
+      "id": "backend/tests/test_runner.js#Function:runAllTests@80",
       "label": "runAllTests",
       "type": "Function",
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "",
-      "val": 5.5,
+      "val": 6,
       "provenance": "ast",
-      "line": 65
+      "line": 80
     },
     {
-      "id": "backend/tests/test_runner.js#Function:runWorker@89",
+      "id": "backend/tests/test_runner.js#Function:runWorker@104",
       "label": "runWorker",
       "type": "Function",
       "group": "tests",
@@ -25823,10 +25920,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 89
+      "line": 104
     },
     {
-      "id": "backend/tests/test_runner.js#Function:main@137",
+      "id": "backend/tests/test_runner.js#Function:main@154",
       "label": "main",
       "type": "Function",
       "group": "tests",
@@ -25834,7 +25931,7 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 137
+      "line": 154
     },
     {
       "id": "backend/tests/test_runtime_verification.js#Function:test@30",
@@ -39354,7 +39451,7 @@
       "line": 196
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@123",
+      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@124",
       "label": "POST /:id/repair-proposal",
       "type": "HttpRoute",
       "group": "backend",
@@ -39362,10 +39459,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 123
+      "line": 124
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@288",
+      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@292",
       "label": "POST /:id/repair",
       "type": "HttpRoute",
       "group": "backend",
@@ -39373,10 +39470,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 288
+      "line": 292
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@345",
+      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@349",
       "label": "POST /:id/repair-review",
       "type": "HttpRoute",
       "group": "backend",
@@ -39384,10 +39481,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 345
+      "line": 349
     },
     {
-      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@460",
+      "id": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@464",
       "label": "POST /:id/reverify",
       "type": "HttpRoute",
       "group": "backend",
@@ -39395,7 +39492,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 460
+      "line": 464
     },
     {
       "id": "backend/routes/projectRoutes.js#route:GET /@411",
@@ -42454,6 +42551,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_quality_policy_integration.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runner_failure_reasons.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -47999,102 +48102,112 @@
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@44",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairBatchGrowth@48",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 44
+        "line": 48
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@55",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 52
+        "line": 55
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@85",
+      "target": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 85
+        "line": 63
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 88
+        "line": 96
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:canonical@95",
+      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 95
+        "line": 99
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "target": "backend/engine/controlledRepairs.js#Function:canonical@106",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 115
+        "line": 106
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
+      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 136
+        "line": 126
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:callCoder@170",
+      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 170
+        "line": 147
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "target": "backend/engine/controlledRepairs.js#Function:callCoder@181",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 229
+        "line": 181
       }
     },
     {
       "source": "backend/engine/controlledRepairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:validBinding@268",
+      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 268
+        "line": 240
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js",
+      "target": "backend/engine/controlledRepairs.js#Function:validBinding@279",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 279
       }
     },
     {
@@ -54239,187 +54352,167 @@
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@26",
+      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@27",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 26
+        "line": 27
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@33",
+      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@34",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 33
+        "line": 34
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@37",
+      "target": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@38",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 37
+        "line": 38
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@49",
+      "target": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@50",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 49
+        "line": 50
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@61",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@62",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 61
+        "line": 62
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@82",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@83",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 82
+        "line": 83
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:namedIn@88",
+      "target": "backend/routes/projectRepairRoutes.js#Function:namedIn@89",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 88
+        "line": 89
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
+      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 94
+        "line": 95
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:reject@113",
+      "target": "backend/routes/projectRepairRoutes.js#Function:reject@114",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 113
+        "line": 114
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:parseProposal@116",
+      "target": "backend/routes/projectRepairRoutes.js#Function:parseProposal@117",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 116
+        "line": 117
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 121
+        "line": 122
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
+      "target": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 156
+        "line": 157
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:excerpt@187",
+      "target": "backend/routes/projectRepairRoutes.js#Function:excerpt@188",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 187
+        "line": 188
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 281
+        "line": 285
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@314",
+      "target": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@318",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 314
+        "line": 318
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@338",
+      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@342",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 338
+        "line": 342
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:stale@348",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 348
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@351",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 351
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@352",
+      "target": "backend/routes/projectRepairRoutes.js#Function:stale@352",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -54429,7 +54522,17 @@
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@355",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 355
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@356",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -54439,42 +54542,52 @@
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 374
+        "line": 360
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
+      "target": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 413
+        "line": 378
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@443",
+      "target": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 443
+        "line": 417
       }
     },
     {
       "source": "backend/routes/projectRepairRoutes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@500",
+      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@447",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 500
+        "line": 447
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js",
+      "target": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@504",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 504
       }
     },
     {
@@ -57219,32 +57332,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@220",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 219
+        "line": 220
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@224",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 223
+        "line": 224
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@229",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 228
+        "line": 229
       }
     },
     {
@@ -59799,22 +59912,32 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@82",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@83",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 82
+        "line": 83
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@95",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:contextBase@83",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 95
+        "line": 83
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repair_routes.js",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@84",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repair_routes.js",
+        "line": 84
       }
     },
     {
@@ -59829,27 +59952,17 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:publishProposal@103",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:contextOverflow@109",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 103
+        "line": 109
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@110",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 110
-      }
-    },
-    {
-      "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@110",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@110",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -59859,7 +59972,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@117",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:publishProposal@117",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -59869,7 +59982,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@124",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@124",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -59879,132 +59992,162 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@183",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@124",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 183
+        "line": 124
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@185",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@131",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 185
+        "line": 131
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Function:file@206",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 206
+        "line": 138
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:activeProfileTimeoutMs@236",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@197",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 236
+        "line": 197
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@237",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@199",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 237
+        "line": 199
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@249",
+      "target": "backend/tests/test_controlled_repair_routes.js#Function:file@220",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 249
+        "line": 220
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@258",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:activeProfileTimeoutMs@250",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 258
+        "line": 250
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@274",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@251",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 274
+        "line": 251
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@274",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@263",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 274
+        "line": 263
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:readState@285",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@272",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 285
+        "line": 272
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@286",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@288",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 286
+        "line": 288
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:readState@295",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@288",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 295
+        "line": 288
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@296",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:readState@299",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 296
+        "line": 299
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repair_routes.js",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@300",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repair_routes.js",
+        "line": 300
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repair_routes.js",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:readState@309",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repair_routes.js",
+        "line": 309
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repair_routes.js",
+      "target": "backend/tests/test_controlled_repair_routes.js#Method:managerResponder@310",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repair_routes.js",
+        "line": 310
       }
     },
     {
@@ -60659,12 +60802,22 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js",
-      "target": "backend/tests/test_controlled_repairs.js#Function:buildContext@197",
+      "target": "backend/tests/test_controlled_repairs.js#Function:buildContext@198",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repairs.js",
-        "line": 197
+        "line": 198
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repairs.js",
+      "target": "backend/tests/test_controlled_repairs.js#Function:buildContext@215",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repairs.js",
+        "line": 215
       }
     },
     {
@@ -76119,32 +76272,102 @@
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "target": "backend/tests/test_runner.js#Function:formatFailedSuites@67",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 65
+        "line": 67
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:runWorker@89",
+      "target": "backend/tests/test_runner.js#Function:describe@68",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 89
+        "line": 68
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:main@137",
+      "target": "backend/tests/test_runner.js#Function:runAllTests@80",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 137
+        "line": 80
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runner.js#Function:runWorker@104",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 104
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_runner.js#Function:main@154",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 154
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "package:node:os",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "backend/tests/test_runner.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 5
       }
     },
     {
@@ -101098,28 +101321,18 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
-      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
+      "source": "backend/engine/controlledRepairs.js#Function:controlledRepairContextOverflow@33",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairBatchGrowth@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 57
+        "line": 39
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
-      "target": "backend/engine/controlledRepairs.js#Function:callCoder@170",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 66
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledSourceSyntaxError@18",
+      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
+      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101128,68 +101341,58 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
+      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
+      "target": "backend/engine/controlledRepairs.js#Function:callCoder@181",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 77
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledSourceSyntaxError@18",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 79
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 69
+        "line": 80
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "source": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "target": "backend/engine/controlledRepairs.js#Function:stop@13",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 90
+        "line": 101
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
-      "target": "backend/engine/controlledRepairs.js#Function:canonical@95",
+      "source": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
+      "target": "backend/engine/controlledRepairs.js#Function:canonical@106",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 97
+        "line": 108
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
       "target": "backend/engine/controlledRepairs.js#Function:stop@13",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 120
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 122
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 123
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairPlan.js#Function:inspectControlledRepairPlan@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101198,38 +101401,28 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
-      "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 138
+        "line": 133
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
-      "target": "backend/engine/controlledRepairs.js#Function:stop@13",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 138
+        "line": 134
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 140
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextOverflow@33",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairPlan.js#Function:inspectControlledRepairPlan@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101238,78 +101431,108 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/verification/workerFailures.js#Function:digest@6",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 156
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "source": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 156
+        "line": 149
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:callCoder@170",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@85",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 173
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:callCoder@170",
-      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@136",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/engine/controlledRepairs.js",
-        "line": 174
-      }
-    },
-    {
-      "source": "backend/engine/controlledRepairs.js#Function:callCoder@170",
+      "source": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "target": "backend/engine/controlledRepairs.js#Function:stop@13",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 176
+        "line": 149
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:callCoder@170",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 180
+        "line": 151
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextOverflow@33",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 183
+        "line": 153
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledSourceSyntaxError@18",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/verification/workerFailures.js#Function:digest@6",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 167
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 167
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:callCoder@181",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledCoderFormatRetry@96",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 184
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:callCoder@181",
+      "target": "backend/engine/controlledRepairs.js#Function:assertCurrent@147",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 185
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:callCoder@181",
+      "target": "backend/engine/controlledRepairs.js#Function:stop@13",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 187
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:callCoder@181",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 191
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101318,18 +101541,18 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
-      "target": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@52",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledSourceSyntaxError@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 222
+        "line": 205
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
-      "target": "backend/engine/controlledRepairs.js#Function:stop@13",
+      "source": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
+      "target": "backend/engine/controlledRepairs.js#Function:correctTypecheckErrors@63",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -101338,23 +101561,33 @@
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
+      "target": "backend/engine/controlledRepairs.js#Function:stop@13",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/engine/controlledRepairs.js",
+        "line": 244
+      }
+    },
+    {
+      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 235
+        "line": 246
       }
     },
     {
-      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "source": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "target": "backend/contracts/requirementAssertionBindings.js#Function:listRequirementAssertionCandidates@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/engine/controlledRepairs.js",
-        "line": 240
+        "line": 251
       }
     },
     {
@@ -102809,7 +103042,7 @@
     },
     {
       "source": "backend/engine/stages/acceptanceStage.js#Function:runAcceptanceStage@32",
-      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -104009,7 +104242,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@117",
-      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107558,158 +107791,148 @@
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@37",
+      "source": "backend/routes/projectRepairRoutes.js#Function:activeProfileTimeoutMs@38",
       "target": "backend/llm-auth/llm.js#Function:createLLMProfileStore@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 38
+        "line": 39
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@82",
-      "target": "backend/routes/projectRepairRoutes.js#Function:namedIn@88",
+      "source": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@83",
+      "target": "backend/routes/projectRepairRoutes.js#Function:namedIn@89",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 92
+        "line": 93
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
-      "target": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@49",
+      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
+      "target": "backend/routes/projectRepairRoutes.js#Function:sourceFactRank@50",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 99
+        "line": 100
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
+      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 103
+        "line": 104
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
+      "source": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 107
+        "line": 108
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:parseProposal@116",
-      "target": "backend/routes/projectRepairRoutes.js#Function:reject@113",
+      "source": "backend/routes/projectRepairRoutes.js#Function:parseProposal@117",
+      "target": "backend/routes/projectRepairRoutes.js#Function:reject@114",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 117
+        "line": 118
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@123",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@124",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 123
+        "line": 124
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/security.js#Function:asyncHandler@283",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 123
+        "line": 124
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:reject@113",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:reject@114",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 125
+        "line": 126
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/contracts/requirementAssertionBindings.js#Function:listRequirementAssertionCandidates@93",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 141
+        "line": 142
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/engine/controlledRepairPlan.js#Function:protectedSuccessfulRepairPaths@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 143
+        "line": 144
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 147
+        "line": 148
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/engine/controlledRepairPlan.js#Function:inspectControlledRepairPlan@65",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 152
+        "line": 153
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
-      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@26",
+      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
+      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 159
+        "line": 160
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
+      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
       "target": "llm-yonetimi/src/runtime.js#Function:classifyLLMError@14",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 162
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
-      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107718,58 +107941,58 @@
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
+      "target": "backend/observability.js#Function:logError@113",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 164
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/observability.js#Function:redactSensitiveValue@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 176
+        "line": 177
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/engine/controlledRepairPlan.js#Function:requiredLintRepairPaths@54",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 185
+        "line": 186
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@61",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 189
+        "line": 190
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:excerpt@187",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:excerpt@188",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 191
+        "line": 192
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 203
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@82",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107778,148 +108001,158 @@
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:callManager@156",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@83",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 222
+        "line": 205
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:parseProposal@116",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:callManager@157",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 228
+        "line": 223
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:parseProposal@117",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 229
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextOverflow@33",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 231
+        "line": 232
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@44",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@55",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 235
+        "line": 236
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairBatchGrowth@48",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 242
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/observability.js#Function:logWarning@117",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 253
+        "line": 257
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
-      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@33",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
+      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalCorrectionMessage@34",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 255
+        "line": 259
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 269
+        "line": 273
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/observability.js#Function:buildErrorResponse@121",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 274
+        "line": 278
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "target": "backend/observability.js#Function:redactSensitiveText@32",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 274
+        "line": 278
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@288",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@292",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 288
+        "line": 292
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/security.js#Function:asyncHandler@283",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 288
+        "line": 292
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@60",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 295
+        "line": 299
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/engine/controlledRepairContext.js#Function:readControlledRepairContext@30",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 305
+        "line": 309
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/engine/controlledRepairPlan.js#Function:inspectControlledRepairPlan@65",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 306
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@87",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107928,68 +108161,58 @@
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@314",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/workflowAttempts.js#Function:acquireWorkflowLease@87",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 314
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@318",
       "target": "backend/engine/controlledRepairContext.js#Function:assertControlledRepairBaseline@19",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 316
+        "line": 320
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@314",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@318",
       "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 317
+        "line": 321
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@314",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@318",
       "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 317
+        "line": 321
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/workflowAttempts.js#Function:releaseWorkflowLease@242",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 335
+        "line": 339
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@338",
+      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@342",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 338
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/observability.js#Function:logError@113",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 340
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/projectRepository.js#Function:getProject@149",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -107998,233 +108221,253 @@
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@345",
-      "label": "registers_route",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 345
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
-      "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/observability.js#Function:logError@113",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 357
+        "line": 344
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
-      "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 357
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
-      "target": "backend/routes/projectRepairRoutes.js#Function:stale@348",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 360
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@351",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 369
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#Function:stale@348",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/routes/projectRepairRoutes.js",
-        "line": 371
-      }
-    },
-    {
-      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/projectRepository.js#Function:getProject@149",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 383
+        "line": 346
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@351",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@349",
+      "label": "registers_route",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 349
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
+      "target": "backend/engine/controlledRepairPlan.js#Function:controlledRepairSourceHash@12",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 383
+        "line": 361
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
+      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
+      "target": "backend/engine/workerRepairs.js#Function:readWorkerSnapshotSync@28",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 361
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
+      "target": "backend/routes/projectRepairRoutes.js#Function:stale@352",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 364
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@355",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 373
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#Function:stale@352",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 375
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
+      "target": "backend/projectRepository.js#Function:getProject@149",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 387
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@355",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/routes/projectRepairRoutes.js",
+        "line": 387
+      }
+    },
+    {
+      "source": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
       "target": "backend/workflowAttempts.js#Function:getActiveWorkflowAttempt@60",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 383
+        "line": 387
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@374",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#Function:authorizedActive@378",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 392
+        "line": 396
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@352",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@356",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 399
+        "line": 403
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 399
+        "line": 403
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "target": "backend/engine/controlledSemanticAuthority.js#Function:inspectControlledSemanticReviewEligibility@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 400
+        "line": 404
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
-      "target": "backend/routes/projectRepairRoutes.js#Function:stale@348",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
+      "target": "backend/routes/projectRepairRoutes.js#Function:stale@352",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 414
+        "line": 418
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@351",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readApproved@355",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 417
+        "line": 421
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
       "target": "backend/engine/resumeStage.js#Function:resolveGenerationResume@27",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 424
+        "line": 428
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
       "target": "backend/agents/schemas.js#Function:normalizeManagerPlan@255",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 424
+        "line": 428
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@352",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readLatest@356",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 425
+        "line": 429
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
       "target": "backend/engine/controlledSemanticAuthority.js#Function:inspectControlledSemanticReviewEligibility@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 427
+        "line": 431
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@413",
-      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@356",
+      "source": "backend/routes/projectRepairRoutes.js#Function:assertBaseline@417",
+      "target": "backend/routes/projectRepairRoutes.js#Function:readSourceHash@360",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 427
+        "line": 431
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@443",
+      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@447",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 443
+        "line": 447
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@460",
+      "source": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@464",
       "label": "registers_route",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 460
+        "line": 464
       }
     },
     {
-      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@500",
+      "source": "backend/routes/projectRepairRoutes.js#Method:operation.cancel@504",
       "target": "backend/engine/cancellation.js#Function:abortProjectExecution@18",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/routes/projectRepairRoutes.js",
-        "line": 500
+        "line": 504
       }
     },
     {
@@ -108759,7 +109002,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -109399,7 +109642,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:createProjectRouter@399",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@281",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerControlledRepairExecutionRoutes@285",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -109999,7 +110242,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@220",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -111808,13 +112051,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@229",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@224",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 229
+        "line": 230
       }
     },
     {
@@ -113439,7 +113682,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js#Function:exercise@19",
-      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@121",
+      "target": "backend/routes/projectRepairRoutes.js#Function:registerProjectRepairRoutes@122",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113478,23 +113721,23 @@
       }
     },
     {
-      "source": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@110",
+      "source": "backend/tests/test_controlled_repair_routes.js#Method:projectAccess@124",
       "target": "backend/tests/test_controlled_repair_routes.js#Method:res.status@34",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 110
+        "line": 124
       }
     },
     {
-      "source": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@117",
+      "source": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@131",
       "target": "backend/tests/test_controlled_repair_routes.js#Function:fixture@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 118
+        "line": 132
       }
     },
     {
@@ -113504,7 +113747,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 136
+        "line": 150
       }
     },
     {
@@ -113514,32 +113757,22 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 139
+        "line": 153
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@94",
+      "target": "backend/routes/projectRepairRoutes.js#Function:buildRepairSourceFacts@95",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 152
+        "line": 166
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@61",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 169
-      }
-    },
-    {
-      "source": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@183",
-      "target": "backend/tests/test_controlled_repair_routes.js#Function:fixture@11",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failingTapBlocks@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113548,33 +113781,43 @@
       }
     },
     {
-      "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@82",
+      "source": "backend/tests/test_controlled_repair_routes.js#Method:loadContext@197",
+      "target": "backend/tests/test_controlled_repair_routes.js#Function:fixture@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 200
+        "line": 197
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/tests/test_controlled_repair_routes.js#Function:file@206",
+      "target": "backend/routes/projectRepairRoutes.js#Function:failedCheckSourcePaths@83",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 208
+        "line": 214
       }
     },
     {
       "source": "backend/tests/test_controlled_repair_routes.js",
-      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@26",
+      "target": "backend/tests/test_controlled_repair_routes.js#Function:file@220",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 229
+        "line": 222
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repair_routes.js",
+      "target": "backend/routes/projectRepairRoutes.js#Function:repairProposalTimeoutMs@27",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repair_routes.js",
+        "line": 243
       }
     },
     {
@@ -113584,7 +113827,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repair_routes.js",
-        "line": 277
+        "line": 291
       }
     },
     {
@@ -113839,7 +114082,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113889,7 +114132,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@115",
+      "target": "backend/engine/controlledRepairs.js#Function:executeControlledRepairs@126",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113939,7 +114182,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113949,7 +114192,7 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js#Function:check@175",
-      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@88",
+      "target": "backend/engine/controlledRepairs.js#Function:assertControlledPackagePolicy@99",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113989,12 +114232,22 @@
     },
     {
       "source": "backend/tests/test_controlled_repairs.js",
-      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@44",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairBatchGrowth@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_controlled_repairs.js",
-        "line": 198
+        "line": 204
+      }
+    },
+    {
+      "source": "backend/tests/test_controlled_repairs.js",
+      "target": "backend/engine/controlledRepairs.js#Function:controlledRepairContextBase@55",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_controlled_repairs.js",
+        "line": 216
       }
     },
     {
@@ -114389,7 +114642,7 @@
     },
     {
       "source": "backend/tests/test_controlled_semantic_plan.js",
-      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@229",
+      "target": "backend/engine/controlledRepairs.js#Function:validateControlledRepairs@240",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -122979,7 +123232,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@229",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -122989,7 +123242,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@223",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@224",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -125079,7 +125332,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@219",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@220",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -125088,113 +125341,153 @@
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@228",
+      "source": "backend/tests/test_runner.js#Function:formatFailedSuites@67",
+      "target": "backend/tests/test_runner.js#Function:describe@68",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 66
+        "line": 73
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@229",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 81
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
       "target": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 67
+        "line": 82
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
       "target": "env:XFACTOR_TEST_CONCURRENCY",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 78
+        "line": 93
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
       "target": "backend/db.js#Function:initializeDatabase@48",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 83
+        "line": 98
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
       "target": "backend/db.js#Function:checkpointWAL@143",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 84
+        "line": 99
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
       "target": "backend/db.js#Function:closeDatabase@70",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 86
+        "line": 101
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runWorker@89",
+      "source": "backend/tests/test_runner.js#Function:runWorker@104",
       "target": "backend/tests/test_runner.js#Function:runTestFile@23",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 100
+        "line": 115
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runWorker@89",
+      "source": "backend/tests/test_runner.js#Function:runWorker@104",
       "target": "env:P8_REQUIRE_DOCKER_LIMITS",
       "label": "reads_env",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 117
+        "line": 132
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:runAllTests@65",
-      "target": "backend/tests/test_runner.js#Function:runWorker@89",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
+      "target": "backend/tests/test_runner.js#Function:runWorker@104",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 123
+        "line": 138
       }
     },
     {
-      "source": "backend/tests/test_runner.js#Function:main@137",
-      "target": "backend/tests/test_runner.js#Function:runAllTests@65",
+      "source": "backend/tests/test_runner.js#Function:runAllTests@80",
+      "target": "backend/tests/test_runner.js#Function:formatFailedSuites@67",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 139
+        "line": 147
+      }
+    },
+    {
+      "source": "backend/tests/test_runner.js#Function:main@154",
+      "target": "backend/tests/test_runner.js#Function:runAllTests@80",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner.js",
+        "line": 156
       }
     },
     {
       "source": "backend/tests/test_runner.js",
-      "target": "backend/tests/test_runner.js#Function:main@137",
+      "target": "backend/tests/test_runner.js#Function:main@154",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_runner.js",
-        "line": 148
+        "line": 165
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "backend/tests/test_runner.js#Function:runTestFile@23",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 14
+      }
+    },
+    {
+      "source": "backend/tests/test_runner_failure_reasons.js",
+      "target": "backend/tests/test_runner.js#Function:formatFailedSuites@67",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_runner_failure_reasons.js",
+        "line": 27
       }
     },
     {
@@ -139101,25 +139394,25 @@
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/reverify@326",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@460",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/reverify@464",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-proposal@331",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@123",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-proposal@124",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/repair@336",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@288",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair@292",
       "label": "requests_route",
       "provenance": "inferred"
     },
     {
       "source": "frontend/src/services/api.js#request:POST /projects/:id/repair-review@341",
-      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@345",
+      "target": "backend/routes/projectRepairRoutes.js#route:POST /:id/repair-review@349",
       "label": "requests_route",
       "provenance": "inferred"
     },

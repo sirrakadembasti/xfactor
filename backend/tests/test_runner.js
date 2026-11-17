@@ -20,9 +20,9 @@ function selectedTestFiles() {
     return override.split(',').map(file => file.trim()).filter(Boolean);
 }
 
-export function runTestFile(file, env, timeoutMs = 120000) {
+export function runTestFile(file, env, timeoutMs = 120000, testsDir = __dirname) {
     return new Promise((resolve) => {
-        const filePath = path.join(__dirname, file);
+        const filePath = path.join(testsDir, file);
         let settled = false;
         let proc;
         try {
@@ -34,7 +34,7 @@ export function runTestFile(file, env, timeoutMs = 120000) {
                 env: { ...process.env, ...env }
             });
         } catch (error) {
-            resolve({ file, passed: false, error: `STARTUP_ERROR: ${error.message}` });
+            resolve({ file, passed: false, reason: 'startup', error: `STARTUP_ERROR: ${error.message}` });
             return;
         }
 
@@ -43,7 +43,7 @@ export function runTestFile(file, env, timeoutMs = 120000) {
             settled = true;
             console.error(`\n[TIMEOUT] Test suite timed out (${timeoutMs / 1000}s): ${file}`);
             try { proc.kill('SIGKILL'); } catch {}
-            resolve({ file, passed: false, error: 'TIMEOUT' });
+            resolve({ file, passed: false, reason: 'timeout', error: 'TIMEOUT' });
         }, timeoutMs);
 
         proc.on('error', (error) => {
@@ -51,15 +51,30 @@ export function runTestFile(file, env, timeoutMs = 120000) {
             settled = true;
             clearTimeout(timer);
             console.error(`\n[ERROR] Test suite failed to start (${file}): ${error.message}`);
-            resolve({ file, passed: false, error: `STARTUP_ERROR: ${error.message}` });
+            resolve({ file, passed: false, reason: 'startup', error: `STARTUP_ERROR: ${error.message}` });
         });
         proc.on('close', (code, signal) => {
             if (settled) return;
             settled = true;
             clearTimeout(timer);
-            resolve({ file, passed: code === 0, exitCode: code, signal });
+            resolve(code === 0
+                ? { file, passed: true, exitCode: code, signal }
+                : { file, passed: false, reason: 'exit', exitCode: code, signal });
         });
     });
+}
+
+export function formatFailedSuites(failed, timeoutMs = 120000) {
+    const describe = (result) => {
+        if (result.reason === 'timeout') return `timeout ${timeoutMs / 1000}s`;
+        if (result.reason === 'startup') return 'startup';
+        return `exit ${result.exitCode ?? result.signal ?? 'unknown'}`;
+    };
+    const line = `Failed suites: ${failed.map(result => `${result.file} (${describe(result)})`).join(', ')}`;
+    const warning = failed.some(result => result.reason === 'timeout')
+        ? 'Zaman aşımı yük kaynaklı olabilir; bu süitleri tek başına yeniden koşun.'
+        : null;
+    return { line, warning };
 }
 
 export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000, concurrency } = {}) {
@@ -129,7 +144,9 @@ export async function runAllTests({ testsDir = __dirname, timeoutMs = 120000, co
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\nTest summary: ${results.length - failed.length} suites passed, ${failed.length} failed (${duration}s)`);
     if (failed.length) {
-        console.error(`Failed suites: ${failed.map(result => result.file).join(', ')}`);
+        const summary = formatFailedSuites(failed, timeoutMs);
+        console.error(summary.line);
+        if (summary.warning) console.error(summary.warning);
     }
     return { results, failed, duration };
 }

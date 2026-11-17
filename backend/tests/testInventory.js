@@ -159,6 +159,7 @@ test_scaffold_dependency_scan.js
 test_quiz_runtime_remediation.js
 test_quality_policy_integration.js
 test_runner.js
+test_runner_failure_reasons.js
 test_runtime_verification.js
 test_sandbox_adapters.js
 test_sandbox_security.js
