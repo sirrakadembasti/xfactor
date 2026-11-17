@@ -350,6 +350,8 @@ Ek B'deki betik bu listeyi yeniden üretir.
 2. **Dev `workflow_state`:** `stok-takip-1` için ~576 KB, bunun ~531 KB'ı `controlledRepair.lineage`, ~30 KB'ı `dependencyInputs`. `saveProjectState` (`projectRepository.js`, ~705-834) her çağrıda JSON'un tamamını yeniden yazıyor; proje revizyonu 845.
 3. WAL dosyası 5,5 MB (checkpoint baskısı).
 
+**Bulgu (18 Kasım, `c3657cb6` koşusu):** Kök neden büyük olasılıkla diskte. Proje bir 5400 devirli sabit diskte (`F:`), boşta tek bir fsync'li `COMMIT` p50 66 ms; koşu sırasında kanıt transaction'ı 28,6 sn, kalp atışı yazımları 2–14 sn sürdü. Ayrıntı: faz arşivi Halka 50. Aşağıdaki aday listesi bu bulguyla birlikte okunmalı.
+
 Tanılama logları (`workflow.lease_check_failed`, `workflow.heartbeat_write_failed`, `workflow.heartbeat_write_slow`) **stdout/stderr'e** yazılıyor (§2.2). Kalıcı dosya yok; olay sırasında terminal çıktısı saklanmazsa kaybolur.
 
 ### B-4 🟡 Test çıktısı kanıtı yalnız baştan tutuluyor (doğrulandı)

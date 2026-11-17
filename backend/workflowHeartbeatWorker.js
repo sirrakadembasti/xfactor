@@ -2,11 +2,10 @@
 // synchronous stall on the main event loop (slow disk, large sync work) cannot make a healthy
 // attempt look stale. The thread dies with the process, so crash recovery is unchanged.
 import { parentPort, workerData } from 'node:worker_threads';
-import { DatabaseSync } from 'node:sqlite';
+import { openHeartbeatDatabase } from './workflowHeartbeatConnection.js';
 
 const { databasePath, attemptId, leaseOwner, intervalMs } = workerData;
-const database = new DatabaseSync(databasePath);
-database.exec('PRAGMA busy_timeout = 5000;');
+const database = openHeartbeatDatabase(databasePath);
 const update = database.prepare(`
     UPDATE workflow_attempts
     SET heartbeat_at = ?, heartbeat_epoch = ?

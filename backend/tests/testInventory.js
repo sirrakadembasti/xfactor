@@ -164,6 +164,7 @@ test_infrastructure_failure_classification.js
 test_worker_check_log_tail.js
 test_transaction_await_boundary.js
 test_db_transaction_measurement.js
+test_heartbeat_connection.js
 test_runtime_verification.js
 test_sandbox_adapters.js
 test_sandbox_security.js

@@ -591,6 +591,15 @@ Y1'den sonra canlı veritabanı, `stok-takip-1` için 17 Kasım 15:20 ve 15:42 U
 - Testler: `test_infrastructure_failure_classification.js` (tanıma ve özet) ve `test_worker_repairs.js` (Docker zaman aşımı tek altyapı kaydı olur, Resume vetosu yok; tanınmayan iş hatası eski sıkı kaydı korur).
 - Kapsam dışı: backend'in worker'a giden isteğin 60 sn'de zaman aşımına uğraması (`Worker request timed out`, `88674954`). Bu bir denetleyici hatasıdır ve mevcut testler onun kalıcı bloklayıcı olmasını bilerek bekler.
 
+### Halka 50 — 18 Kasım: kilit hatasının ölçümü ve kalp atışı bağlantısı (Y3a bulgusu)
+
+Y3a logları ilk gerçek koşuda (`c3657cb6`, 17 Kasım 21:52–22:04 UTC) şunları gösterdi: `workflow.state_large` 592.664 bayt (%93'ü `controlledRepair`), `db.transaction_slow` ile kanıt kaydını yazan `commitVerificationContext` 28,6 sn (lease süresi 30 sn), ve 2–14 sn süren on iki kalp atışı yazımı. `lease_check_failed` oluşmadı. İncelemede:
+- Transaction içindeki CPU işi ihmal edilebilir (gerçek worker sonucunda `normalizeWorkerCheckLog` toplam 7 ms, `redactSensitiveText` 1 MiB'ta 13–39 ms) ve tablolar küçük (`verification_checks` 4.395 satır).
+- Proje `F:` üzerinde ve bu bir Seagate ST500LT012 (5400 devir, 2,5" sabit disk); `C:` SATA SSD. Boşta, aynı küçük `COMMIT` `synchronous=FULL` ile F:'de p50 66 ms / p95 202 ms / en kötü 505 ms, C:'de 0,9 ms. Uygulamanın ayarıyla (`NORMAL`, WAL) 590 KB durum yazımı F:'de her 7–11 yazımda bir 20–60 ms'lik checkpoint sıçraması veriyor, C:'de vermiyor. Docker aynı diske yazarken bu fsync'ler saniyelere çıkıyor. Bu, kök nedenin disk fsync/checkpoint gecikmesi olduğunun güçlü ama dolaylı kanıtıdır; 28 sn'lik anın checkpoint olduğu doğrudan görülmedi.
+- Kalp atışı bağlantısı `workflowHeartbeatWorker.js`'te `PRAGMA synchronous` ayarlamıyordu. Taze bir `node:sqlite` bağlantısı `synchronous=FULL` ve `wal_autocheckpoint=1000` ile açılır (ana bağlantı `NORMAL`), yani her 5 sn'lik atış WAL'ı fsync ediyor ve bazı atışlar checkpoint'e takılıyordu.
+
+`faz-6/y3c-kanit-transaction` dalında `workflowHeartbeatConnection.js:openHeartbeatDatabase`: `busy_timeout=5000`, `synchronous=NORMAL` ve `wal_autocheckpoint=0`. Checkpoint'i ana bağlantı yapmaya devam eder. Test: `test_heartbeat_connection.js`. Bu disk gecikmesini gidermez; veritabanını SSD'ye taşımak (`DB_PATH`) ve Y3b ayrı kararlardır.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

@@ -677,7 +677,7 @@
       "group": "backend",
       "file": "backend/workflowHeartbeatWorker.js",
       "description": "Kalp atışını kendi SQLite bağlantısıyla ayrı iş parçacığından yazar; ana döngü takılmalarından etkilenmez",
-      "val": 3.5,
+      "val": 4,
       "provenance": "curated"
     },
     {
@@ -807,7 +807,7 @@
       "group": "tests",
       "file": "backend/tests/test_runner.js",
       "description": "npm test master koşucusu",
-      "val": 101,
+      "val": 101.5,
       "provenance": "curated"
     },
     {
@@ -1757,7 +1757,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 62.5,
+      "val": 63,
       "provenance": "ast"
     },
     {
@@ -2108,6 +2108,16 @@
       "file": "backend/tests/test_graphify.js",
       "description": "",
       "val": 8,
+      "provenance": "ast"
+    },
+    {
+      "id": "backend/tests/test_heartbeat_connection.js",
+      "label": "test_heartbeat_connection.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "backend/tests/test_heartbeat_connection.js",
+      "description": "",
+      "val": 7,
       "provenance": "ast"
     },
     {
@@ -3641,6 +3651,16 @@
       "provenance": "ast"
     },
     {
+      "id": "backend/workflowHeartbeatConnection.js",
+      "label": "workflowHeartbeatConnection.js",
+      "type": "SourceFile",
+      "group": "backend",
+      "file": "backend/workflowHeartbeatConnection.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast"
+    },
+    {
       "id": "docs/rontgen-2026-11-05.md",
       "label": "rontgen-2026-11-05.md",
       "type": "Document",
@@ -4750,7 +4770,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 47.5,
+      "val": 48,
       "provenance": "ast"
     },
     {
@@ -4760,7 +4780,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 52,
+      "val": 52.5,
       "provenance": "ast"
     },
     {
@@ -6578,7 +6598,7 @@
       "group": "packages",
       "file": null,
       "description": "node:sqlite",
-      "val": 9.5,
+      "val": 10,
       "provenance": "ast"
     },
     {
@@ -11939,7 +11959,7 @@
       "group": "packages",
       "file": null,
       "description": "node:os",
-      "val": 27,
+      "val": 27.5,
       "provenance": "ast"
     },
     {
@@ -15461,7 +15481,7 @@
       "group": "tests",
       "file": "backend/tests/testHarness.js",
       "description": "",
-      "val": 60.5,
+      "val": 61,
       "provenance": "ast",
       "line": 1
     },
@@ -15510,7 +15530,7 @@
       "line": 37
     },
     {
-      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@224",
+      "id": "backend/tests/testInventory.js#Function:getRunnableTestFiles@225",
       "label": "getRunnableTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15518,10 +15538,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 224
+      "line": 225
     },
     {
-      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@228",
+      "id": "backend/tests/testInventory.js#Function:discoverTestFiles@229",
       "label": "discoverTestFiles",
       "type": "Function",
       "group": "tests",
@@ -15529,10 +15549,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 228
+      "line": 229
     },
     {
-      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@233",
+      "id": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@234",
       "label": "assertCompleteTestInventory",
       "type": "Function",
       "group": "tests",
@@ -15540,7 +15560,7 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 233
+      "line": 234
     },
     {
       "id": "package:assert",
@@ -15888,7 +15908,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 58.5,
+      "val": 59,
       "provenance": "ast"
     },
     {
@@ -19023,6 +19043,17 @@
       "val": 5.5,
       "provenance": "ast",
       "line": 56
+    },
+    {
+      "id": "backend/tests/test_heartbeat_connection.js#Function:pragma@10",
+      "label": "pragma",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_heartbeat_connection.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 10
     },
     {
       "id": "package:net",
@@ -30908,7 +30939,18 @@
       "line": 384
     },
     {
-      "id": "backend/workflowHeartbeatWorker.js#Function:beat@18",
+      "id": "backend/workflowHeartbeatConnection.js#Function:openHeartbeatDatabase@9",
+      "label": "openHeartbeatDatabase",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/workflowHeartbeatConnection.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 9
+    },
+    {
+      "id": "backend/workflowHeartbeatWorker.js#Function:beat@17",
       "label": "beat",
       "type": "Function",
       "group": "backend",
@@ -30916,7 +30958,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 18
+      "line": 17
     },
     {
       "id": "package:@playwright/test",
@@ -43169,6 +43211,12 @@
     {
       "source": "backend/tests/test_runner.js",
       "target": "backend/tests/test_db_transaction_measurement.js",
+      "label": "runs",
+      "provenance": "curated"
+    },
+    {
+      "source": "backend/tests/test_runner.js",
+      "target": "backend/tests/test_heartbeat_connection.js",
       "label": "runs",
       "provenance": "curated"
     },
@@ -58064,32 +58112,32 @@
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@224",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@225",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 224
+        "line": 225
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@228",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@229",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 228
+        "line": 229
       }
     },
     {
       "source": "backend/tests/testInventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@233",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@234",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 233
+        "line": 234
       }
     },
     {
@@ -64300,6 +64348,86 @@
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
         "line": 56
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "package:node:os",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "package:node:sqlite",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/tests/testHarness.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/workflowHeartbeatConnection.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 7
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/tests/test_heartbeat_connection.js#Function:pragma@10",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 10
       }
     },
     {
@@ -84563,6 +84691,26 @@
       }
     },
     {
+      "source": "backend/workflowHeartbeatConnection.js",
+      "target": "package:node:sqlite",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/workflowHeartbeatConnection.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "backend/workflowHeartbeatConnection.js",
+      "target": "backend/workflowHeartbeatConnection.js#Function:openHeartbeatDatabase@9",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/workflowHeartbeatConnection.js",
+        "line": 9
+      }
+    },
+    {
       "source": "backend/workflowHeartbeatWorker.js",
       "target": "package:node:worker_threads",
       "label": "imports_package",
@@ -84574,8 +84722,8 @@
     },
     {
       "source": "backend/workflowHeartbeatWorker.js",
-      "target": "package:node:sqlite",
-      "label": "imports_package",
+      "target": "backend/workflowHeartbeatConnection.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "backend/workflowHeartbeatWorker.js",
@@ -84584,12 +84732,12 @@
     },
     {
       "source": "backend/workflowHeartbeatWorker.js",
-      "target": "backend/workflowHeartbeatWorker.js#Function:beat@18",
+      "target": "backend/workflowHeartbeatWorker.js#Function:beat@17",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/workflowHeartbeatWorker.js",
-        "line": 18
+        "line": 17
       }
     },
     {
@@ -111824,7 +111972,7 @@
     },
     {
       "source": "backend/scripts/generate_graph.js#Function:extractCodeGraph@19",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@224",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@225",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -113703,13 +113851,13 @@
       }
     },
     {
-      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@233",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@228",
+      "source": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@234",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@229",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/testInventory.js",
-        "line": 234
+        "line": 235
       }
     },
     {
@@ -117990,6 +118138,36 @@
       "location": {
         "file": "backend/tests/test_health_and_lifecycle.js",
         "line": 194
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/tests/testHarness.js#Function:createTestHarness@1",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 9
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/tests/test_heartbeat_connection.js#Function:pragma@10",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 21
+      }
+    },
+    {
+      "source": "backend/tests/test_heartbeat_connection.js",
+      "target": "backend/workflowHeartbeatConnection.js#Function:openHeartbeatDatabase@9",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_heartbeat_connection.js",
+        "line": 25
       }
     },
     {
@@ -125074,7 +125252,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@233",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@234",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -125084,7 +125262,7 @@
     },
     {
       "source": "backend/tests/test_p9_runner_inventory.js",
-      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@228",
+      "target": "backend/tests/testInventory.js#Function:discoverTestFiles@229",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -127174,7 +127352,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:selectedTestFiles@17",
-      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@224",
+      "target": "backend/tests/testInventory.js#Function:getRunnableTestFiles@225",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -127194,7 +127372,7 @@
     },
     {
       "source": "backend/tests/test_runner.js#Function:runAllTests@80",
-      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@233",
+      "target": "backend/tests/testInventory.js#Function:assertCompleteTestInventory@234",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -133844,12 +134022,22 @@
     },
     {
       "source": "backend/workflowHeartbeatWorker.js",
-      "target": "backend/workflowHeartbeatWorker.js#Function:beat@18",
+      "target": "backend/workflowHeartbeatConnection.js#Function:openHeartbeatDatabase@9",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/workflowHeartbeatWorker.js",
-        "line": 46
+        "line": 8
+      }
+    },
+    {
+      "source": "backend/workflowHeartbeatWorker.js",
+      "target": "backend/workflowHeartbeatWorker.js#Function:beat@17",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/workflowHeartbeatWorker.js",
+        "line": 45
       }
     },
     {
