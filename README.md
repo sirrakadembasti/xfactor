@@ -128,6 +128,8 @@ Next.js projelerinde `public/` dizini boş veya yoksa üretilen Dockerfile derle
 
 Duraklatılmış projede **Mevcut çalışmayı koruyan onarım önerisi hazırla**, güncel Worker kanıtına göre dosya hedeflerini listeler. **Listelenen dosyaları onar ve yeniden kontrol et** ayrı bir eylemdir. **Mevcut düzeltmeleri incele ve yeniden kontrol et** kullanılabiliyorsa aynı kaynaklar üzerinde bağımsız inceleme alır. Kalite Paneli canlı Worker komutlarını ve kalıcı doğrulama geçmişini ayrı gösterir. [Kullanım adımları](kullanici-kilavuzu.md#mevcut-çalışmayı-koruyarak-sınırlı-onarım).
 
+**Geçici ağ/registry hatası:** Worker'da `npm ci` geçici bir registry hatasıyla (502/503/504, `ECONNRESET`, `ETIMEDOUT`, `EAI_AGAIN`, `ENOTFOUND`) düşerse komut bir kez yeniden denenir. Yine düşerse `clean_install` altyapı sınıflı BLOCKED olur; PASS üretilmez. Bu kayıt Manager revizyonu istemez, **Devam Ettir** ve **Yalnız Yeniden Doğrula** açık kalır ve sonraki koşu başlarken çözülür. `ERESOLVE`, `ETARGET`, `E404`, `EINTEGRITY` değişmeden başarısız sayılır.
+
 **Onarım önerisinin bağlamı:**
 - Manager kaynakları sınırlı bir bütçeyle görür; bütçe önce başarısız kontrollerde adı geçen dosyalara, sonra test edilen servis ve validasyonlara ayrılır.
 - Başarısız test vakaları (`not ok` blokları, hata ve yığınıyla) öneriye ayrıca gönderilir; uzun çıktının ortasında kalsalar da görünürler.

@@ -535,6 +535,15 @@ Koşu dizisi: 83 → 77 → 19 → 21 → 80 → 21 → 82 (sonda bir tip hatas�
 
 17 Kasım'daki onarım turu (plan `0ac94194`, altı hedef) beş dosyayı yazdıktan sonra altıncı hedefte "Onarım bağlamı eksik." ile durdu. `tests/browser-journey.test.js`, aynı turda yeni oluşturulan `tests/repair-fixture.ts`'i referans alıyordu. Öneri anındaki ölçüm yalnız var olan dosyaları saydığı için bağlam yaklaşık 186 KB görünmüştü; dosya yazıldıktan sonra 196,5 KB'a çıktı. Düzeltme: öneri ölçümü, ölçülen hedeften önce yazılacak ve onun bağlamına giren her dosya için 16 KB pay ayırıyor (`controlledRepairBatchGrowth`, `CONTROLLED_BATCH_FILE_RESERVE_BYTES`). Ret ayrıntısı bu payı ve henüz olmayan dosyaları adıyla bildiriyor. Aynı ölçüm onarım başlarken de uygulanıyor.
 
+### Halka 43 — 17 Kasım: altyapı hatası kaynak hatası sayılmıyor (Y1)
+
+`docs/yol-haritasi-2026-11-17.md` B-1: bir `npm ci` 502'si `clean_install` FAIL ve 10 BLOCKED kapı üretmiş, bunlar açık `worker_rejection` kaydı olup Devam Ettir'i "Manager revizyonu gerekir" ile kapatmıştı (`stok-takip-1`'de 92 açık kayıt). `faz-6/y1-altyapi-hatasi` dalında:
+- `packageVerifier.js:isTransientRegistryFailure`: `E502/E503/E504`, `ECONNRESET`, `ETIMEDOUT`, `EAI_AGAIN`, `ENOTFOUND`, `socket hang up` geçici sayılır; `ERESOLVE`, `ETARGET`, `E404`, `EINTEGRITY` varsa sayılmaz.
+- `clean_install`: geçici hatada komut kalan süre içinde **bir kez** yeniden denenir (iptalde ve zaman aşımında denenmez). İlk denemenin özeti `evidence.retries`'a yazılır. İkinci deneme de geçici hatayla biterse kontrol `blocked` olur ve `evidence.classification = 'infrastructure'` taşır; PASS üretilmez.
+- `workerFailures.js`: sınıf worker kanıtından okunur. Yalnız altyapı blocker'ı varsa (ürün bulgusu ve başka blocker yok) kayıt `classification: 'infrastructure'` yazılır; aşağı akış BLOCKED kapılar sonuç sayılır. Karışık durumda eski `ambiguous` davranışı korunur. `loadOpenWorkerRepairBatch` bu kayıtları `issues`'a koymaz, `infrastructureIssues` olarak ayrı döndürür; böylece `recoveryRevisionRequired` ve `priorWorkerBlockers` tetiklenmez.
+- `artifactVerifier.js`: yeni koşu oluşturulurken aynı sözleşmenin açık altyapı kayıtları çözülür (açık kayıt teslimi bloke ettiği için gerekli). `acceptanceStage.js`: başarısız koşunun hata metni altyapı nedenini taşır, `Worker repair requires Manager revision:` öneki kullanılmaz.
+- Yeni `origin` değeri eklenmedi; şema değişmedi. Testler: `test_infrastructure_failure_classification.js` (yeni) ve `test_worker_repairs.js` (altyapı hattı).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

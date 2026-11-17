@@ -88,7 +88,7 @@ await runAsyncTest('source snapshot rejects external edits and additions before 
     assert.throws(() => assertWorkerSourceSnapshot([{ path: 'src/price.ts', content: 'manual' }], expected), /revision|source/i);
     assert.throws(() => assertWorkerSourceSnapshot([...files, { path: 'added.ts', content: 'new' }], expected), /revision|source/i);
 });
-async function fixture() {
+async function fixture(options = {}) {
     const fs = await import('node:fs/promises'), path = await import('node:path');
     const { createProject, getProjectDir } = await import('../projectRepository.js');
     const { db } = await import('../db.js');
@@ -133,7 +133,11 @@ async function fixture() {
         startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), stdoutDigest: digest(''), stderrDigest: digest(''),
         requirementIds, evidence: { reason: 'isolated fake independent worker' } }));
     const check = (await producer(false, { stdout: `${diagnostic} password=worker-secret-sentinel` })).checks.find(check => check.name === 'typecheck');
-    const checks = passingChecks().map(item => item.name === 'typecheck' ? { ...check, requirementIds } : item);
+    const checks = options.infrastructure
+        ? passingChecks().map(item => item.name === 'clean_install' ? { ...item, status: 'BLOCKED', exitCode: 1,
+            reason: 'Bağımlılık kurulumu ağ/registry hatası nedeniyle tamamlanamadı (E502).',
+            evidence: { classification: 'infrastructure', retries: [{ exitCode: 1, reason: 'retried once' }] } } : item)
+        : passingChecks().map(item => item.name === 'typecheck' ? { ...check, requirementIds } : item);
     const rejected = await verifyArtifact({ projectId: project.id, contractId: contract.id, artifactId: artifact.id }, {
         runId: identity.runId, activeJob: identity, archiveBase64: (await fs.readFile(artifact.path)).toString('base64'),
         attemptId: lease.attempt.id, leaseOwner: owner,
@@ -142,7 +146,7 @@ async function fixture() {
     const sourceFence = { projectId: project.id, contractId: contract.id, contractHash: contract.contract_hash, contractRevision: 1,
         attemptId: lease.attempt.id, leaseOwner: owner };
     const batch = loadOpenWorkerRepairBatch({ projectId: project.id, contractId: contract.id, contractHash: contract.contract_hash });
-    assert.equal(batch.issues.length, 1);
+    assert.equal(batch.issues.length + batch.infrastructureIssues.length, 1);
     return { project, projectDir, contract, workflow, sourceFence, batch, db, fs, path, identity, artifact, passingChecks,
         persistWorkflow: async () => db.prepare('UPDATE projects SET workflow_state=? WHERE id=?').run(JSON.stringify(workflow), project.id) };
 }
@@ -181,6 +185,35 @@ await runAsyncTest('normal Resume routes real rejected compiler findings and com
         // Verified delivery history is immutable, even in tests; the isolated
         // runner owns and removes this entire temporary database afterwards.
         if (f.db.prepare('SELECT status FROM projects WHERE id=?').get(f.project.id)?.status !== 'completed') await deleteProject(f.project.id);
+    }
+});
+await runAsyncTest('registry outage is recorded as infrastructure, keeps Resume open and is resolved by the next run', async () => {
+    const f = await fixture({ infrastructure: true });
+    const { executeProjectTasks } = await import('../engine/workflow.js');
+    try {
+        assert.equal(f.batch.issues.length, 0);
+        assert.equal(f.batch.infrastructureIssues.length, 1);
+        const issue = f.batch.infrastructureIssues[0];
+        assert.equal(issue.origin, 'worker_rejection');
+        assert.equal(issue.detail.classification, 'infrastructure');
+        assert.match(issue.detail.reason, /clean_install: .*E502/);
+        // Exact predicate behind POST /resume's MANAGER_REVISION_REQUIRED veto.
+        assert.equal(f.batch.issues.some(item => item.detail.kind !== 'worker_product_failure'), false);
+        await executeProjectTasks(f.project.id, null, f.sourceFence.attemptId, f.sourceFence.leaseOwner, {
+            callAgent: async role => {
+                assert.ok(['reviewer', 'tester'].includes(role), `No source rewrite expected, got ${role}`);
+                return { approved: true, summary: 'Fresh static review', issues: [] };
+            },
+            createExecutionClient: () => ({ prepareDependencies: async () => ({ status: 'completed', result: { packageLockBase64: Buffer.from('{}').toString('base64') } }),
+                verifyArtifact: async identity => {
+                    assert.equal(f.db.prepare('SELECT status FROM repair_issues WHERE id=?').get(issue.id).status, 'resolved');
+                    return { ...identity, status: 'completed', result: { ...identity, checks: f.passingChecks() } };
+                } })
+        });
+        const project = f.db.prepare('SELECT * FROM projects WHERE id=?').get(f.project.id);
+        assert.equal(project.status, 'completed', project.last_error);
+    } finally {
+        if (f.db.prepare('SELECT status FROM projects WHERE id=?').get(f.project.id)?.status !== 'completed') await (await import('../projectRepository.js')).deleteProject(f.project.id);
     }
 });
 async function runHelper(f, callAgent, changes = {}) {

@@ -261,6 +261,10 @@ export async function verifyArtifact(
                 id: runId, projectId, contractId, status: 'queued',
                 policyVersion: options.policyVersion || ACTIVE_POLICY_VERSION
             });
+            // A fresh run supersedes earlier registry/network outages; a new failure opens a new record.
+            database.prepare(`UPDATE repair_issues SET status='resolved', resolved_at=CURRENT_TIMESTAMP
+                WHERE project_id=? AND contract_id=? AND status='open' AND origin='worker_rejection'
+                AND json_extract(detail_json,'$.classification')='infrastructure'`).run(projectId, contractId);
         });
         runCreated = true;
         runLeaseTransaction(database, assertLease, () => {
