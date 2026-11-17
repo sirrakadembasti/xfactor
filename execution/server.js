@@ -111,7 +111,7 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
         try {
           const runtime = await probeRuntime();
           res.writeHead(200);
-          return res.end(JSON.stringify({ ...runtime, supportedTypes: ['prepare_dependencies', 'verify_artifact'], executionCapacity: true }));
+          return res.end(JSON.stringify({ ...runtime, supportedTypes: ['prepare_dependencies', 'verify_artifact', 'typecheck_artifact'], executionCapacity: true }));
         } catch (error) {
           // Never include runtime messages, stacks, paths, or arbitrary error properties.
           const phase = ['docker_info', 'image_inspect', 'tool_resolution', 'browser_launch', 'renderer_context', 'renderer_page', 'renderer_content', 'renderer_evaluate', 'browser_close'].includes(error?.readinessPhase) ? error.readinessPhase : 'unknown';
@@ -157,7 +157,7 @@ export function createWorkerServer({ config, store, executeJob, responseDelayMs 
           return res.end(JSON.stringify({ error: 'Invalid JSON' }));
         }
 
-        if (input && input.operation === 'verify_artifact' && typeof input.inputSha256 === 'string' && typeof input.archiveBase64 === 'string') {
+        if (input && ['verify_artifact', 'typecheck_artifact'].includes(input.operation) && typeof input.inputSha256 === 'string' && typeof input.archiveBase64 === 'string') {
           const computedHash = crypto.createHash('sha256').update(Buffer.from(input.archiveBase64, 'base64')).digest('hex');
           if (computedHash !== input.inputSha256) {
             res.writeHead(400);

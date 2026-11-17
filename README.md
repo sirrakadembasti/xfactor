@@ -137,7 +137,9 @@ Duraklatılmış projede **Mevcut çalışmayı koruyan onarım önerisi hazırl
 - Süre sınırı 5 dakikadır.
 - Docker'da başarısız testin tam çıktısı saklanır.
 
-**16 Kasım 2026 durumu:** Stok-takip, sözleşme 3 altında `paused`; sözleşme 4 taslağı reddedildi. Docker'daki en iyi koşu (`39be2bde`) 83 PASS'e ulaştı ve uygulamanın 20 testinden 19'u geçti. Sonraki sınırlı onarım turları bu durumu geriletti. Ayrıntı ve sonraki adımlar: [röntgen raporu](docs/rontgen-2026-11-05.md) ve [faz arşivi](docs/faz-arsiv.md).
+**Sınırlı onarımda orta seviye model desteği:** Kurala uymayan öneri, ret nedenleriyle modele en çok iki kez geri gönderilir. Coder çıktısı yazılmadan ayrıştırılır. TypeScript projelerinde inceleme öncesi worker'daki `typecheck_artifact` sondası (`tsc --noEmit`) hataları Coder'a bir kez geri verir; sonda kanıt üretmez. Uzun onarım geçmişi doğrulanmış bir kontrol noktasında toplanır.
+
+**17 Kasım 2026 durumu:** Stok-takip, sözleşme 3 altında `paused`; sözleşme 4 taslağı reddedildi. Son Docker koşusu (`76dccdd0`) 83 PASS, 4 FAIL, 3 BLOCKED: servisler, smoke ve tarayıcı kapıları geçti. Uygulamanın test süitinde iki tarayıcı testi kalıyor; engelli üç kontrol son bağımsız incelemeyi bekliyor. Ayrıntı ve sonraki adımlar: [röntgen raporu](docs/rontgen-2026-11-05.md) ve [faz arşivi](docs/faz-arsiv.md).
 
 #### Log izleme ve kalıcı checkpoint
 

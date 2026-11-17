@@ -519,6 +519,20 @@ En iyi koşu `39be2bde`: 83 PASS; uygulamanın 20 testinden 19'u geçti. Tek hat
 
 Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile beş CI işinin hepsi yeşilken `main`'e alındı (merge `6e852a0`). `stok-takip-1` `paused` duruyor ve teslim edilmedi.
 
+### Halka 42 — 16–17 Kasım: orta seviye modelle onarım döngüsü
+
+Kullanıcı kararı: XFactor, orta seviye bir modelle (MiniMax profili) de ürün çıkarabilmeli. Ret nedenleri modele geri verilmeli, kurallar gevşetilmemeli. `faz-5/stok-takip-onarim` dalında şu düzeltmeler yapıldı:
+- **Öneri düzeltme turları:** Kurala uymayan öneri, kesin ret nedeniyle Manager'a en çok iki kez geri gönderiliyor (`REPAIR_PROPOSAL_CORRECTION_ROUNDS`). Önceki turların ret nedenleri de mesajda yer alıyor; böylece model iki kural arasında gidip gelmiyor. Davranış referansı ret mesajı ilgili yolu adıyla veriyor.
+- **Bağlam bütçesi ayrıntısı:** Bir hedefin referansları Coder bağlamını (192 KB) aşarsa model, hedef ve otomatik eklenen dosyaların gerçek bayt boyutunu, kalan yeri ve önerdiği referansların boyutunu görüyor.
+- **Sözdizimi denetimi:** Coder'ın JS/TS çıktısı `@babel/parser` ile ayrıştırılıyor. Ayrıştırılamayan çıktı modele hata satırıyla bir kez geri gönderiliyor; ikinci hatada onarım duruyor ve dosya yazılmıyor. Daha önce kaynakta kalan bir `\n` dizisi bütün koşuyu derleme hatasına düşürmüştü.
+- **Değişmeyen hedef:** Coder bir hedefi aynen döndürürse deneme `unchanged` olarak kaydediliyor ve onarım sürüyor. Hiçbir hedef değişmediyse onarım duruyor.
+- **Tip denetimi sondası:** İncelemeden önce worker'da yeni `typecheck_artifact` işi çalışıyor: kayıtlı kilit dosyasıyla kurulum, varsa `prisma generate`, ardından `tsc --noEmit` (`runTypecheckProbe`, `controlledTypeProbe.js`). Hatası olan her değişmiş hedef, hata satırlarıyla bir kez daha Coder'a gidiyor. Sonda yalnız yol göstericidir: doğrulama koşusu, kontrol ya da kabul kanıtı üretmez. Kullanılamazsa adım loglanıp atlanıyor.
+- **Fikstür kanıtı:** API fikstürü kayıt oluşturamazsa kanıt; HTTP durumunu, sözleşme alanlarını ve yanıttaki `error`/`message`/`errors`/`details` alanlarını taşıyor.
+- **Onarım geçmişi kontrol noktası:** Geçmiş 32 kayda ulaşınca en eski 16 kayıt doğrulanıp tek bir kontrol noktasında toplanıyor (`compactLineage`). Kontrol noktası; özet hash, katlanan kayıtların köken kimlikleri ve sonraki plan bağını taşıyor. Yalnız ilk kayıt olabilir ve köken satırları hâlâ eşleşmeli. Geçmiş doğrulanamazsa öneri 500 yerine 409 (`CONTROLLED_REPAIR_LINEAGE_BLOCKED`) ile reddediliyor. Bu işten önce canlı DB'nin yedeği alındı (`backend/data/maintenance-backups/pre-lineage-checkpoint-20261116T175857Z.db`).
+- **Eski bağımlılık kökeni:** Güncel `package.json` ile artık eşleşmeyen bir hazırlık kaydı, geçmiş zincirini geçersiz saymıyor; ilgili kayıt açık kalıyor.
+
+Koşu dizisi: 83 → 77 → 19 → 21 → 80 → 21 → 82 (sonda bir tip hatası yakaladı) → süre aşımı → `76dccdd0`: 83 PASS, 4 FAIL, 3 BLOCKED. Bu son koşuda servisler, smoke ve üç tarayıcı kapısı ilk kez birlikte geçti. Kalan gerçek hata uygulamanın test süitinde: iki tarayıcı testi "Promise resolution is still pending" ile bitiyor. Gereksinim, dil ve izlenebilirlik kontrolleri son bağımsız incelemeyi bekliyor (bir hak kaldı). Test çıktısı kanıtı baştan yaklaşık 16 KB'ta kesiliyor; sondaki hook hatası kaybolabiliyor.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

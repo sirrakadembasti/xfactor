@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolveTools, localChromiumLaunchOptions } from '../scripts/local-worker-tools.mjs';
 import { authorizeLocalExecutionAdapter } from '../backend/verification/sandboxRunner.js';
-import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
+import { executeVerificationJob, executeTypecheckJob, prepareDependencies } from './jobExecutor.js';
 import { validateDependencySources } from './runtime.js';
 import { createLocalProcessManager } from './localProcesses.js';
 import { extractLocalArchive } from './localArchive.js';
@@ -63,7 +63,7 @@ export async function executeLocalJob(job, options = {}) {
   const failed = error => ({ status: 'failed', error: error.message, result: { passed: false, runtime: profile, reason: error.message, runId: job?.runId } });
   try {
     if (!consent(options)) throw new Error('Local execution requires explicit operator consent.');
-    if (!job?.runId || !['prepare_dependencies', 'verify_artifact'].includes(job.operation)) throw new Error('Unsupported worker operation or missing runId.');
+    if (!job?.runId || !['prepare_dependencies', 'verify_artifact', 'typecheck_artifact'].includes(job.operation)) throw new Error('Unsupported worker operation or missing runId.');
     if (job.workspace || job.verificationWorkspace) throw new Error('Host workspace paths are not accepted.');
     if (signal?.aborted) throw new Error('Cancelled by user');
     if (!Number.isFinite(job.deadline) || job.deadline <= Date.now()) throw new Error('Job deadline exceeded');
@@ -117,7 +117,9 @@ export async function executeLocalJob(job, options = {}) {
       result = await prepareDependencies({ packageJsonBytes: bytes, adapter, signal, runId: job.runId });
     } else {
       // Inventory is independently read from extracted bytes; supplied inventories cannot override it.
-      result = await executeVerificationJob({ job: { ...job, files: null }, adapter, signal, onPhaseComplete: options.onPhaseComplete });
+      result = job.operation === 'typecheck_artifact'
+        ? await executeTypecheckJob({ job: { ...job, files: null }, adapter, signal })
+        : await executeVerificationJob({ job: { ...job, files: null }, adapter, signal, onPhaseComplete: options.onPhaseComplete });
     }
     result.runtime = { ...profile, versions: tools.versions };
     for (const check of result.checks || []) check.evidence = { ...check.evidence, ...profile };

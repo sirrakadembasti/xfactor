@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { registerProjectRepairRoutes, buildRepairSourceFacts, failedCheckSourcePaths, repairProposalTimeoutMs, failingTapBlocks,
-    REPAIR_PROPOSAL_MIN_TIMEOUT_MS } from '../routes/projectRepairRoutes.js';
+    REPAIR_PROPOSAL_MIN_TIMEOUT_MS, REPAIR_PROPOSAL_CORRECTION_ROUNDS } from '../routes/projectRepairRoutes.js';
 import { inspectControlledRepairPlan } from '../engine/controlledRepairPlan.js';
 import { buildManagerChatContext, buildManagerChatSystemPrompt } from '../routes/projectRoutes.js';
 import { createTestHarness } from './testHarness.js';
@@ -24,6 +24,8 @@ async function exercise(test, overrides = {}) {
         loadContext: async () => structuredClone(context), readState: async () => structuredClone(state),
         isBusy: () => false, activeRequests, managerResponder: async () => { calls++; return JSON.stringify(payload); },
         publishProposal: async value => { published.push(value); return { ...state, workflow: { ...state.workflow, controlledRepair: value.proposal } }; },
+        contextOverflow: async () => [],
+        contextBase: async path => ({ bytes: 196000, paths: [path, 'package.json'] }),
         ...overrides };
     const router = Router(); registerProjectRepairRoutes(router, deps);
     // Exercise the real router/middleware in process: no socket capability is needed.
@@ -53,6 +55,53 @@ await runAsyncTest('a promise in prose is not a repair plan and is never publish
 await runAsyncTest('source changes during the model request discard the proposal', () => exercise(async f => {
     const pending = f.request(); const response = await pending; assert.equal(response.status, 409); assert.equal(f.published.length, 0);
 }, { loadContext: (() => { let reads = 0; return async () => { const c = fixture(); if (++reads > 1) c.files[0].sha256 = 'b'.repeat(64); return c; }; })() }));
+let supplied, conversations = [];
+await runAsyncTest('a target whose context exceeds the Coder budget is rejected after bounded corrections and never published', () => exercise(async f => {
+    const response = await f.request(); const body = await response.json();
+    assert.equal(response.status, 400); assert.equal(body.code, 'CONTROLLED_REPAIR_PLAN_INVALID');
+    assert.match(body.error, /src\/app\.ts/); assert.equal(f.published.length, 0); assert.equal(f.activeRequests.size, 0);
+    assert.deepEqual(supplied.files, [{ path: 'src/app.ts', sha256: hash, bytes: Buffer.byteLength('current source') }]);
+    assert.equal(conversations.length, 1 + REPAIR_PROPOSAL_CORRECTION_ROUNDS);
+    const correction = conversations.at(-1).at(-1);
+    assert.equal(correction.role, 'user'); assert.match(correction.content, /Coder bağlam sınırını/);
+    // The model sees what the Coder context really holds: the automatic baseline and the room left for references.
+    assert.match(correction.content, /src\/app\.ts: hedef ve otomatik eklenen proje dosyaları \(src\/app\.ts, package\.json\) zaten 196000 bayt/);
+    assert.match(correction.content, /yaklaşık 608 bayt kalıyor/);
+}, { contextOverflow: async targets => targets.map(target => target.path),
+    managerResponder: async messages => { conversations.push(messages); supplied = JSON.parse(messages.find(m => m.role === 'user').content); return JSON.stringify(payload); } }));
+await runAsyncTest('a rejected plan goes back to the model with its reason and its corrected plan is published', () => {
+    const answers = [JSON.stringify({ ...payload, targets: [{ ...payload.targets[0], checkIds: [] }] }), JSON.stringify(payload)];
+    conversations = [];
+    return exercise(async f => {
+        const response = await f.request(); assert.equal(response.status, 200, await response.clone().text());
+        assert.equal(f.published.length, 1); assert.equal(conversations.length, 2);
+        const [system, user, previous, correction] = conversations[1];
+        assert.equal(system.role, 'system'); assert.equal(user.role, 'user');
+        assert.deepEqual(previous, { role: 'assistant', content: answers[0] });
+        assert.match(correction.content, /src\/app\.ts checkIds: boş/);
+    }, { managerResponder: async messages => { conversations.push(messages); return answers[conversations.length - 1]; } });
+});
+await runAsyncTest('a later correction keeps the earlier rejection reasons so the model does not trade one violation for another', () => {
+    const answers = [JSON.stringify({ ...payload, targets: [{ ...payload.targets[0], checkIds: [] }] }), JSON.stringify(payload), JSON.stringify(payload)];
+    let overflowChecks = 0;
+    conversations = [];
+    return exercise(async f => {
+        const response = await f.request(); assert.equal(response.status, 200, await response.clone().text());
+        assert.equal(f.published.length, 1); assert.equal(conversations.length, 3);
+        const first = conversations[1].at(-1).content, second = conversations[2].at(-1).content;
+        assert.doesNotMatch(first, /Önceki turların ret nedenleri/);
+        assert.match(second, /Coder bağlam sınırını/); assert.match(second, /referanslar için yaklaşık \d+ bayt kalıyor/);
+        assert.match(second, /Önceki turların ret nedenleri de hâlâ geçerli.*\(1\).*src\/app\.ts checkIds: boş/);
+    }, { contextOverflow: async targets => (++overflowChecks === 1 ? targets.map(target => target.path) : []),
+        managerResponder: async messages => { conversations.push(messages); return answers[conversations.length - 1]; } });
+});
+await runAsyncTest('an unverifiable repair history is a clear 409 and the proposal is not saved', () => exercise(async f => {
+    const response = await f.request(); const body = await response.json();
+    assert.equal(response.status, 409); assert.equal(body.code, 'CONTROLLED_REPAIR_LINEAGE_BLOCKED');
+    assert.match(body.error, /^Onarım geçmişi doğrulanamadığı için öneri kaydedilmedi; kaynaklar değişmedi\./);
+    assert.equal(f.activeRequests.size, 0);
+}, { publishProposal: async () => { throw Object.assign(new Error('Controlled repair lineage blocked: history entry changed before compaction'),
+    { code: 'CONTROLLED_REPAIR_LINEAGE_BLOCKED' }); } }));
 await runAsyncTest('a chat already in progress blocks the proposal request', () => exercise(async f => {
     f.activeRequests.add('p'); assert.equal((await f.request()).status, 409); assert.equal(f.calls, 0);
 }));

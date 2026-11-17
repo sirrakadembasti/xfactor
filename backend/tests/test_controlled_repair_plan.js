@@ -42,6 +42,14 @@ runTest('repair proposal pins the same approved contract, failed artifact and ex
     assert.equal(plan.planHash, inspectControlledRepairPlan(f.payload, f.context).planHash);
     assert.deepEqual(f, before);
 });
+runTest('rejection reasons name the target, the wrong ids and the valid failing checks so a model can correct them', () => {
+    assert.throws(() => inspect(f => { f.payload.targets[0].checkIds = ['cors-check', 'old-check']; }),
+        error => error.code === 'CONTROLLED_REPAIR_PLAN_INVALID' && error.message.includes('src/app.ts: old-check')
+            && error.message.includes('Geçerli kimlikler: cors-check, test-check.'));
+    assert.throws(() => inspect(f => { f.payload.targets[0].requirementIds = ['REQ-9']; }), /src\/app\.ts: REQ-9/);
+    assert.throws(() => inspect(f => { f.payload.targets[0].checkIds = []; }), /src\/app\.ts checkIds: boş/);
+    assert.throws(() => inspect(f => { f.payload.targets[1].referencePaths = ['package.json']; }), /\(tests\/app\.test\.js\)\. Test dışı bir uygulama kaynağı/);
+});
 runTest('changing exact repair instructions changes the approval hash', () => {
     assert.notEqual(inspect().planHash, inspect(f => { f.payload.targets[0].instructions += ' Günlükleri koru.'; }).planHash);
 });

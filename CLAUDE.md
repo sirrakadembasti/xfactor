@@ -146,7 +146,9 @@ Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontg
     - En iyi Docker koşusu `39be2bde`: 83 PASS; 20 testin 19'u geçti. Tek hata, `system.test.js:563`'teki test: Next.js'in React 18 uyarısını içeren `stderr`'i boş bekliyordu.
     - Sonraki üç minimax onarım turu geriledi. Önce `test-helper.ts:98`'de stok hareketi tip hatası geri geldi. Ardından geniş bir öneri yeni `tests/browser-fixture.mjs`'i sözdizimi hatalı yazdı.
     - Son koşu `cd49324b`: 20 PASS. Kaynaklarda bu hatalı dosyalar duruyor.
-  - **Açık:** Bu modelle sınırlı onarım döngüsü güvenilir değil; daha güçlü bir modelle ve dar bir öneriyle sürdürülmeli. Hedefler: `browser-fixture.mjs` sözdizimi, `test-helper.ts` tip hatası ve REQ-7 `stderr` beklentisi. Yerel Windows worker'da `spawn('npm')` ENOENT veriyor. Docker'da npm ağ hataları zaman zaman yaşanıyor. Kalan inceleme hakkı 1. Proje `paused`.
+- **Faz 5, 2. bölüm (16–17 Kasım, `faz-5/stok-takip-onarim`):** Kullanıcı kararı: orta seviye model (MiniMax) de ürün çıkarabilmeli; ret nedenleri modele verilir, kurallar gevşetilmez. Eklenenler: öneri düzeltme turları (önceki ret nedenleriyle), bağlam boyutu ayrıntısı, Coder çıktısının sözdizimi denetimi, değişmeyen hedef kaydı, worker'da `typecheck_artifact` sondası (yalnız yol gösterici, kanıt değil), fikstür hata ayrıntısı, onarım geçmişi kontrol noktası (`compactLineage`, öncesinde DB yedeği `pre-lineage-checkpoint-*`). Ayrıntı: faz arşivi Halka 42.
+  - **Son koşu `76dccdd0`:** 83 PASS, 4 FAIL, 3 BLOCKED. Servisler, smoke ve tarayıcı kapıları geçti. Kalan: uygulama test süitinde iki tarayıcı testi ("Promise resolution is still pending"); gereksinim/dil/izlenebilirlik son bağımsız incelemeyi bekliyor (kalan hak 1). Test çıktısı kanıtı baştan ~16 KB'ta kesiliyor; sondaki hatayı görmek için kuyruğu da tutmak olası bir platform düzeltmesi.
+  - **Açık:** Yerel Windows worker'da `spawn('npm')` ENOENT veriyor. Docker'da npm ağ hataları zaman zaman yaşanıyor. Proje `paused`. Sonraki adım: test süiti için yeni öneri ve onarım turu, ardından son inceleme.
 
 ## 5a. Devralma — 4 Kasım 2026
 

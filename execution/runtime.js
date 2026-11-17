@@ -1,7 +1,7 @@
 import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
+import { executeVerificationJob, executeTypecheckJob, prepareDependencies } from './jobExecutor.js';
 import { createCommandReporter } from './commandDiagnostics.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
@@ -235,7 +235,7 @@ async function validateJobPaths(job) {
   return paths;
 }
 export async function executeJob(job, { signal, onResource, onProgress, onPhaseComplete } = {}) {
-  if (!job || !['prepare_dependencies', 'verify_artifact'].includes(job.operation)) {
+  if (!job || !['prepare_dependencies', 'verify_artifact', 'typecheck_artifact'].includes(job.operation)) {
     return { status: 'failed', error: 'Unsupported worker operation' };
   }
   if (job.verificationWorkspace || job.workspace) {
@@ -251,7 +251,7 @@ export async function executeJob(job, { signal, onResource, onProgress, onPhaseC
       return { status: 'failed', error: error.message };
     }
   }
-  if (job.operation === 'verify_artifact') {
+  if (job.operation === 'verify_artifact' || job.operation === 'typecheck_artifact') {
     if (typeof job.archiveBase64 !== 'string' || job.archiveBase64.length > Math.ceil((24 * 1024 * 1024) * 4 / 3) + 4) return { status: 'failed', error: 'Archive exceeds input limit.' };
     const archive = Buffer.from(job.archiveBase64, 'base64');
     if (!archive.length || archive.length > 24 * 1024 * 1024) return { status: 'failed', error: 'Archive exceeds input limit.' };
@@ -422,7 +422,9 @@ export async function executeJob(job, { signal, onResource, onProgress, onPhaseC
       }
       return { status: 'success', result: prepared };
     }
-    const verification = await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {}, onPhaseComplete });
+    const verification = job.operation === 'typecheck_artifact'
+      ? await executeTypecheckJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {} })
+      : await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {}, onPhaseComplete });
     if (job.disconnectInstallNetworkAfterInstall) {
       await disconnectInstallNetworkHelper();
     }

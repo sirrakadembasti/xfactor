@@ -146,8 +146,66 @@ test('new full reviewed worker reservation admits only authenticated ancestor is
  }finally{f.database.close();}
 });
 test('history cap never silently drops old authority',()=>{
- const f=fixture();try{f.database.exec('BEGIN');assert.throws(()=>archiveControlledRepairLineage(f.database,
-  {previousLedger:{...f.prior,lineage:Array(CONTROLLED_LINEAGE_LIMIT).fill({})},nextProposal:f.next,currentSource:f.partial}),/budget/);f.database.exec('ROLLBACK');}finally{f.database.close();}
+ const f=fixture();try{f.database.exec('BEGIN');
+  // A full history is compacted only after every folded entry authenticates; forged entries stop it.
+  assert.throws(()=>archiveControlledRepairLineage(f.database,
+   {previousLedger:{...f.prior,lineage:Array(CONTROLLED_LINEAGE_LIMIT).fill({})},nextProposal:f.next,currentSource:f.partial}),/compaction/);
+  assert.throws(()=>archiveControlledRepairLineage(f.database,
+   {previousLedger:{...f.prior,lineage:Array(CONTROLLED_LINEAGE_LIMIT+1).fill({})},nextProposal:f.next,currentSource:f.partial}),/budget/);
+  f.database.exec('ROLLBACK');}finally{f.database.close();}
+});
+// Registers the failed origin run whose artifact holds exactly this source.
+function registerRun(database,p,source){
+ database.prepare('INSERT INTO artifacts VALUES (?,?,?,?,?)').run(p.baselineArtifactId,'p','c',p.baselineRunId,p.baselineArtifactSha256);
+ database.prepare('INSERT INTO verification_runs VALUES (?,?,?,?)').run(p.baselineRunId,'p','c','failed');
+ for(const file of source)database.prepare('INSERT INTO artifact_files VALUES (?,?,?,?)').run(p.baselineArtifactId,'c',file.path,file.sha256);
+ database.prepare('INSERT INTO verification_checks VALUES (?,?,?,?,?,?,?,?,?)').run('check-'+p.baselineRunId,'c',p.baselineRunId,'lint','FAIL','MANDATORY','start','end','{}');
+}
+test('a later package repair leaves an old dependency-input issue open without invalidating the rest of the history',()=>{
+ const f=fixture();try{
+  const inputSha256=files.find(file=>file.path==='package.json').sha256;
+  const expectedIdentity={operation:'prepare_dependencies',projectId:'p',contractId:'c',contractHash:context.contractHash,inputSha256,runId:'preparation',jobId:'prep-job',nonce:'prep-nonce'};
+  f.database.prepare('INSERT INTO repair_issues VALUES (?,?,?,?,?,?)').run('prepare-timeout','p','c',null,'open',
+   JSON.stringify({version:1,kind:'verification_controller_blocker',authenticatedWorker:false,contractHash:context.contractHash,expectedIdentity}));
+  f.database.exec('BEGIN');const first=archiveControlledRepairLineage(f.database,{previousLedger:f.prior,nextProposal:f.next,currentSource:f.partial});f.database.exec('COMMIT');
+  assert.deepEqual(first[0].preparationOrigins.map(origin=>origin.id),['prepare-timeout']);
+  registerRun(f.database,f.next,f.partial);
+  const packageRepair=proposal('package',f.final,[{path:'package.json',sourceSha256:inputSha256,checkIds:['check-run-package']}]);
+  registerRun(f.database,packageRepair,f.final);
+  f.database.exec('BEGIN');const lineage=archiveControlledRepairLineage(f.database,{previousLedger:{...f.ledger,lineage:first},nextProposal:packageRepair,currentSource:f.final});f.database.exec('COMMIT');
+  const repaired=f.final.map(file=>file.path==='package.json'?{...file,sha256:digest('new-package')}:file);
+  const ledger={phase:'patched',proposal:packageRepair,baseline:f.final,lineage,outputSourceHash:hash(repaired),
+   attempts:[{phase:'patched',target:'package.json',planHash:packageRepair.planHash,outputSha256:digest('new-package')}]};
+  assert.deepEqual(readAuthenticatedControlledLineageIssueIds(f.database,{context,ledger,currentSource:repaired}),['blocker','product']);
+ }finally{f.database.close();}
+});
+test('a long repair history folds its oldest entries into an authenticated checkpoint and keeps their closure authority',()=>{
+ const f=fixture();try{
+  registerRun(f.database,f.next,f.partial);
+  let ledger=f.ledger,source=f.final,maxLength=0;
+  for(let step=1;step<=50;step++){
+   const p=proposal('step'+step,source,[{path:'source0.ts',sourceSha256:source.find(file=>file.path==='source0.ts').sha256,checkIds:['check-run-step'+step]}]);
+   registerRun(f.database,p,source);
+   f.database.exec('BEGIN');const lineage=archiveControlledRepairLineage(f.database,{previousLedger:ledger,nextProposal:p,currentSource:source});f.database.exec('COMMIT');
+   const output=source.map(file=>file.path==='source0.ts'?{...file,sha256:digest('step'+step)}:file);
+   ledger={phase:'patched',proposal:p,baseline:source,lineage,outputSourceHash:hash(output),
+    attempts:[{phase:'patched',target:'source0.ts',planHash:p.planHash,outputSha256:digest('step'+step)}]};
+   source=output;maxLength=Math.max(maxLength,lineage.length);
+  }
+  assert.ok(maxLength<=CONTROLLED_LINEAGE_LIMIT);
+  const [checkpoint]=ledger.lineage;
+  assert.equal(checkpoint.kind,'checkpoint');assert.ok(ledger.lineage.slice(1).every(entry=>entry.kind===undefined));
+  assert.equal(checkpoint.compactedEntries+ledger.lineage.length-1,51);
+  assert.deepEqual(checkpoint.origins.map(origin=>origin.id),['blocker','product']);
+  assert.deepEqual(readAuthenticatedControlledLineageIssueIds(f.database,{context,ledger,currentSource:source}),['blocker','product']);
+  // Folded evidence still binds the exact rows, and the checkpoint itself cannot be edited or moved.
+  const forged=structuredClone(ledger);forged.lineage[0].origins.push({kind:'controller-recorded-baseline',id:'unrelated',runId:'run-old',detailHash:digest('x')});
+  assert.throws(()=>readAuthenticatedControlledLineageIssueIds(f.database,{context,ledger:forged,currentSource:source}),/changed/);
+  const moved=structuredClone(ledger);moved.lineage.push(moved.lineage.shift());
+  assert.throws(()=>readAuthenticatedControlledLineageIssueIds(f.database,{context,ledger:moved,currentSource:source}),/checkpoint must be the first/);
+  f.database.exec("UPDATE repair_issues SET detail_json='{}' WHERE id='blocker'");
+  assert.throws(()=>readAuthenticatedControlledLineageIssueIds(f.database,{context,ledger,currentSource:source}),/origin|evidence/);
+ }finally{f.database.close();}
 });
 
 test('repeated identical partial-source diagnostics pin only exact blockers, including a zero-check controller timeout',()=>{

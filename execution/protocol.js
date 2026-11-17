@@ -17,7 +17,7 @@ export function validateJob(input, now = Date.now()) {
   for (const key of Object.keys(input)) if (!allowed.has(key)) return { valid: false, reason: `Unsupported field: ${key}` };
   const { version, jobId, operation, projectId, contractId, contractHash, revision, artifactId, packageJsonBase64, archiveBase64, archiveSha256, contract, deadline, nonce, inputSha256, runId } = input;
   if (version !== 1 || !validId(jobId, 100)) return { valid: false, reason: version !== 1 ? 'Invalid version' : 'Invalid jobId' };
-  if (!['prepare_dependencies','verify_artifact'].includes(operation)) return { valid: false, reason: 'Invalid operation' };
+  if (!['prepare_dependencies','verify_artifact','typecheck_artifact'].includes(operation)) return { valid: false, reason: 'Invalid operation' };
   if (!validId(projectId) || !validId(contractId) || !validId(artifactId) || !validId(runId)) return { valid: false, reason: 'Invalid identity' };
   if (typeof contractHash !== 'string' || !HEX64.test(contractHash)) return { valid: false, reason: 'Invalid contractHash' };
   if (!Number.isSafeInteger(revision) || revision < 1) return { valid: false, reason: 'Invalid revision' };

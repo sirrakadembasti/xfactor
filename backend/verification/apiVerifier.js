@@ -109,12 +109,17 @@ export async function prepareAPIFixture({ fixture = {}, management, apiBaseUrl, 
     if (steps.length && typeof roleRequest !== 'function') throw new Error('Fixture setup requires an authenticated role adapter.');
     const ids = new Map();
     for (const step of steps) {
-        const response = await roleRequest({ url: new URL(step.createPath, apiBaseUrl).href, method: 'POST', role: step.role,
-            data: renderBody(step.createBody, nonce, null, parentId, ids, now) });
+        const data = renderBody(step.createBody, nonce, null, parentId, ids, now);
+        const response = await roleRequest({ url: new URL(step.createPath, apiBaseUrl).href, method: 'POST', role: step.role, data });
         const id = response.data?.id ?? response.data?.data?.id;
         if (!(response.statusCode >= 200 && response.statusCode < 300)
             || !((typeof id === 'string' && id.length > 0 && id.length <= 256) || (typeof id === 'number' && Number.isFinite(id)))) {
-            throw new Error(`Fixture setup failed to create ${step.name} with an actual ID.`);
+            // A repair needs the application's own answer: which status, which declared fields were sent, what it rejected.
+            const answer = ['error', 'message', 'errors', 'details'].filter(key => response.data?.[key] !== undefined)
+                .map(key => (typeof response.data[key] === 'string' ? response.data[key] : JSON.stringify(response.data[key]))).join(' | ');
+            const detail = answer ? `; response: ${answer.replace(/\s+/g, ' ').slice(0, 400)}` : '';
+            throw new Error(`Fixture setup failed to create ${step.name} with an actual ID (POST ${step.createPath} HTTP ${response.statusCode}; `
+                + `contract fields: ${Object.keys(data).join(', ')}${detail}).`);
         }
         ids.set(step.name, id);
     }

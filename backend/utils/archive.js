@@ -31,13 +31,8 @@ function canonicalPath(value) {
     return normalized;
 }
 
-export async function createProjectZip(
-    projectId,
-    contractId,
-    files,
-    artifactsDir = getArtifactsRoot(),
-    deps = {}
-) {
+// In-memory archive with the same canonical paths and limits as a published artifact; nothing is stored.
+export async function buildProjectArchive(files) {
     if (!Array.isArray(files)) throw new Error('Artifact files must be an array.');
     const zip = new JSZip();
     const manifest = [];
@@ -81,6 +76,17 @@ export async function createProjectZip(
         maxFileBytes: ARTIFACT_LIMITS.maxFileBytes,
         maxRatio: ARTIFACT_LIMITS.maxCompressionRatio
     }, { readContent: false });
+    return { zipBuffer, manifest };
+}
+
+export async function createProjectZip(
+    projectId,
+    contractId,
+    files,
+    artifactsDir = getArtifactsRoot(),
+    deps = {}
+) {
+    const { zipBuffer, manifest } = await buildProjectArchive(files);
     const needsDefaults = !deps.createArtifact || !deps.addArtifactFile || !deps.withArtifactTransaction;
     const loaded = needsDefaults ? await loadArchiveDefaults() : {};
     const db = deps.db || loaded.db;

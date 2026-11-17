@@ -9,6 +9,7 @@ import { evaluateRequirementCoverage } from './requirementCoverage.js';
 import { normalizeAssertionInventoryFile } from '../contracts/requirementAssertionBindings.js';
 import { computeAssertionSourceHash } from '../contracts/requirementAssertionBindings.js';
 import { verifyReviewedRequirementAssertions } from './requirementAssertionVerifier.js';
+import { executeInSandbox } from './sandboxRunner.js';
 
 // Base64 expands content by 4/3; the remaining budget covers JSON/path metadata.
 // This is independent of retained diagnostic stdout and never raises that limit.
@@ -214,3 +215,32 @@ export async function runVerificationChecks({ workspace = '/workspace', contract
 }
 
 export const runWorkerChecks = runVerificationChecks;
+
+const TYPECHECK_PROBE_OUTPUT_BYTES = 64 * 1024;
+// Advisory compiler feedback for a repair Coder: the same clean install, Prisma client and
+// `tsc --noEmit` as the build gate, nothing else. It is never verification evidence.
+export async function runTypecheckProbe({ workspace = '/workspace', contract = {}, adapter, signal, env = {}, runId = null, files = null } = {}) {
+    const inventory = await collectFiles(adapter, files, workspace);
+    const has = name => inventory.some(file => file.path === name);
+    const result = (fields) => ({ runId, probe: 'typecheck', checks: [], ...fields });
+    if (!has('tsconfig.json')) return result({ passed: true, status: 'skipped', reason: 'No tsconfig.json.' });
+    const options = { adapter, signal, env, workspace, files: inventory };
+    const dependency = await verifyDependencies(workspace, contract, options);
+    if (dependency.passed === false) return result({ passed: false, status: 'blocked', stage: 'dependencies',
+        reason: (dependency.checks || []).filter(check => check.status !== 'passed').map(check => `${check.name}: ${check.reason || check.status}`).join('; ').slice(0, 2000) });
+    const isDocker = adapter?.id === 'docker-worker' || adapter?.getCapabilities?.().adapterId === 'docker-worker';
+    const npx = isDocker ? 'npx' : (process.platform === 'win32' ? 'npx.cmd' : 'npx');
+    const run = async (args, timeoutMs) => {
+        try { return await executeInSandbox(npx, args, { workspace, timeoutMs, adapter, signal, env: { DATABASE_URL: 'file:./dev.db', ...env } }); }
+        catch (error) { if (!error.result || signal?.aborted) throw error; return error.result; }
+    };
+    if (has('prisma/schema.prisma')) {
+        const generated = await run(['prisma', 'generate'], 120000);
+        if (generated.exitCode !== 0) return result({ passed: false, status: 'blocked', stage: 'prisma_generate',
+            reason: String(generated.stderr || generated.stdout || '').slice(0, 2000) });
+    }
+    const tsc = await run(['tsc', '--noEmit'], 180000);
+    const output = String(`${tsc.stdout || ''}\n${tsc.stderr || ''}`).trim().slice(0, TYPECHECK_PROBE_OUTPUT_BYTES);
+    return result({ passed: tsc.exitCode === 0 && !tsc.timedOut, status: tsc.exitCode === 0 && !tsc.timedOut ? 'passed' : 'failed',
+        stage: 'typecheck', exitCode: tsc.exitCode ?? null, timedOut: tsc.timedOut === true, output });
+}
