@@ -533,6 +533,8 @@ Kullanıcı kararı: XFactor, orta seviye bir modelle (MiniMax profili) de ürü
 
 Koşu dizisi: 83 → 77 → 19 → 21 → 80 → 21 → 82 (sonda bir tip hatası yakaladı) → süre aşımı → `76dccdd0`: 83 PASS, 4 FAIL, 3 BLOCKED. Bu son koşuda servisler, smoke ve üç tarayıcı kapısı ilk kez birlikte geçti. Kalan gerçek hata uygulamanın test süitinde: iki tarayıcı testi "Promise resolution is still pending" ile bitiyor. Gereksinim, dil ve izlenebilirlik kontrolleri son bağımsız incelemeyi bekliyor (bir hak kaldı). Test çıktısı kanıtı baştan yaklaşık 16 KB'ta kesiliyor; sondaki hook hatası kaybolabiliyor.
 
+17 Kasım'daki onarım turu (plan `0ac94194`, altı hedef) beş dosyayı yazdıktan sonra altıncı hedefte "Onarım bağlamı eksik." ile durdu. `tests/browser-journey.test.js`, aynı turda yeni oluşturulan `tests/repair-fixture.ts`'i referans alıyordu. Öneri anındaki ölçüm yalnız var olan dosyaları saydığı için bağlam yaklaşık 186 KB görünmüştü; dosya yazıldıktan sonra 196,5 KB'a çıktı. Düzeltme: öneri ölçümü, ölçülen hedeften önce yazılacak ve onun bağlamına giren her dosya için 16 KB pay ayırıyor (`controlledRepairBatchGrowth`, `CONTROLLED_BATCH_FILE_RESERVE_BYTES`). Ret ayrıntısı bu payı ve henüz olmayan dosyaları adıyla bildiriyor. Aynı ölçüm onarım başlarken de uygulanıyor.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

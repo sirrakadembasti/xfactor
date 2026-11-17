@@ -17,7 +17,8 @@ import { PROJECT_STATUS } from '../engine/stateMachine.js';
 import { readControlledRepairContext, assertControlledRepairBaseline } from '../engine/controlledRepairContext.js';
 import { readWorkerSnapshotSync } from '../engine/workerRepairs.js';
 import { inspectControlledSemanticReviewEligibility } from '../engine/controlledSemanticAuthority.js';
-import { controlledRepairContextBase, controlledRepairContextOverflow, CONTROLLED_CODER_CONTEXT_BYTES } from '../engine/controlledRepairs.js';
+import { controlledRepairContextBase, controlledRepairContextOverflow, controlledRepairBatchGrowth, CONTROLLED_CODER_CONTEXT_BYTES,
+    CONTROLLED_BATCH_FILE_RESERVE_BYTES } from '../engine/controlledRepairs.js';
 
 // The proposal reads a large bounded context, so it never waits less than four minutes. A longer
 // active profile budget wins, up to the 300 s that generateLLMResponse accepts.
@@ -238,10 +239,13 @@ En fazla 12 hedef, her hedef tek dosya. Her başarısız zorunlu kontrolü ve me
                             const base = await measureBase(target.path);
                             const refs = target.referencePaths.filter(path => !base.paths.includes(path));
                             const total = refs.reduce((sum, path) => sum + (sizes.get(path) ?? 0), 0);
+                            const growth = controlledRepairBatchGrowth(proposal.targets, proposal.targets.indexOf(target), base.paths);
                             details.push(`${target.path}: hedef ve otomatik eklenen proje dosyaları (${base.paths.join(', ')}) zaten ${base.bytes} bayt; `
-                                + `referanslar için yaklaşık ${Math.max(0, CONTROLLED_CODER_CONTEXT_BYTES - base.bytes)} bayt kalıyor. `
-                                + `Önerdiğin ek referanslar ${total} bayt: ${refs.map(path => `${path} ${sizes.get(path) ?? 0} bayt`).join(', ')}. `
-                                + 'Otomatik eklenen dosyaları referans göstermek ek yer tutmaz; test hedefinin davranış referansı için bunlardan sınanan bir uygulama modülünü seçebilirsin. Büyük ek referansları çıkar');
+                                + (growth.paths.length ? `bu turda bu hedeften önce yazılacak ${growth.paths.join(', ')} bu bağlama girdiği için dosya başına ${CONTROLLED_BATCH_FILE_RESERVE_BYTES} bayt büyüme payı ayrıldı (${growth.bytes} bayt); ` : '')
+                                + `referanslar için yaklaşık ${Math.max(0, CONTROLLED_CODER_CONTEXT_BYTES - base.bytes - growth.bytes)} bayt kalıyor. `
+                                + `Önerdiğin ek referanslar ${total} bayt: ${refs.map(path => `${path} ${sizes.has(path) ? `${sizes.get(path)} bayt` : 'henüz yok'}`).join(', ')}. `
+                                + 'Otomatik eklenen dosyaları referans göstermek ek yer tutmaz; test hedefinin davranış referansı için bunlardan sınanan bir uygulama modülünü seçebilirsin. Büyük ek referansları çıkar'
+                                + (growth.paths.length ? ' ya da aynı turda yazılacak dosyaları bu hedefin referanslarından çıkar' : ''));
                         }
                         const detail = details.join('; ');
                         throw Object.assign(new Error(`Onarım hedefinin dosya ve salt okunur referansları Coder bağlam sınırını (${CONTROLLED_CODER_CONTEXT_BYTES / 1024} KB) aşıyor: ${overflow.join(', ')}. Daha az referansla yeniden öneri isteyin.`), {

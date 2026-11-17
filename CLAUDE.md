@@ -105,6 +105,8 @@ foreach ($f in 'CLAUDE.md','README.md','kullanici-kilavuzu.md','docs/faz-arsiv.m
 
 ## 5. Devralma — 5 Kasım 2026 röntgeni
 
+**17 Kasım mimari incelemesi ve sıradaki işler:** [docs/yol-haritasi-2026-11-17.md](docs/yol-haritasi-2026-11-17.md). Y1–Y9 görevleri, bulgular (B-1: npm 502 gibi altyapı hataları kaynak hatası sayılıyor) ve canlı veri özeti orada.
+
 Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontgen-2026-11-05.md) dosyasındadır. Oturuma başlamadan önce şu dört noktayı bil:
 
 - **Faz 0 kapandı (5 Kasım):** 29 Ekim'den bu yana commit edilmemiş çalışma, [PR #3](https://github.com/sirrakadembasti/xfactor/pull/3) ile `main`'e alındı (merge `17bac2e`). Beş CI işinin hepsi yeşil: üç işletim sisteminde `local-worker`, `test` (backend, frontend, E2E, Docker worker) ve `production-image`. Bu, 29 Ekim'den beri ilk tamamen yeşil CI. PR sırasında düzeltilenler:
@@ -148,6 +150,7 @@ Güncel durum, bulgular ve yol haritası [docs/rontgen-2026-11-05.md](docs/rontg
     - Son koşu `cd49324b`: 20 PASS. Kaynaklarda bu hatalı dosyalar duruyor.
 - **Faz 5, 2. bölüm (16–17 Kasım, `faz-5/stok-takip-onarim`):** Kullanıcı kararı: orta seviye model (MiniMax) de ürün çıkarabilmeli; ret nedenleri modele verilir, kurallar gevşetilmez. Eklenenler: öneri düzeltme turları (önceki ret nedenleriyle), bağlam boyutu ayrıntısı, Coder çıktısının sözdizimi denetimi, değişmeyen hedef kaydı, worker'da `typecheck_artifact` sondası (yalnız yol gösterici, kanıt değil), fikstür hata ayrıntısı, onarım geçmişi kontrol noktası (`compactLineage`, öncesinde DB yedeği `pre-lineage-checkpoint-*`). Ayrıntı: faz arşivi Halka 42.
   - **Son koşu `76dccdd0`:** 83 PASS, 4 FAIL, 3 BLOCKED. Servisler, smoke ve tarayıcı kapıları geçti. Kalan: uygulama test süitinde iki tarayıcı testi ("Promise resolution is still pending"); gereksinim/dil/izlenebilirlik son bağımsız incelemeyi bekliyor (kalan hak 1). Test çıktısı kanıtı baştan ~16 KB'ta kesiliyor; sondaki hatayı görmek için kuyruğu da tutmak olası bir platform düzeltmesi.
+  - **17 Kasım turu (plan `0ac94194`):** Beş hedef yazıldı (Prisma `minQuantity`, ürün servisi/validasyonu, `tests/repair-fixture.ts`, `tests/requirements-repair.test.js`), altıncıda (`tests/browser-journey.test.js`) bağlam aşımıyla durdu. Bu kaynaklar henüz doğrulanmadı. Neden: aynı turda oluşturulan dosya öneri ölçümüne girmiyordu; artık önceki hedefler için 16 KB pay ayrılıyor (`controlledRepairBatchGrowth`).
   - **Açık:** Yerel Windows worker'da `spawn('npm')` ENOENT veriyor. Docker'da npm ağ hataları zaman zaman yaşanıyor. Proje `paused`. Sonraki adım: test süiti için yeni öneri ve onarım turu, ardından son inceleme.
 
 ## 5a. Devralma — 4 Kasım 2026

@@ -32,13 +32,24 @@ export function controlledSourceSyntaxError(path, content) {
 /** Targets whose file and read-only references do not fit whole into the repair Coder context. */
 export async function controlledRepairContextOverflow({ projectDir, files, targets, buildContext = buildCoderProjectContext }) {
     const overflow = [];
-    for (const target of targets) {
+    for (const [index, target] of targets.entries()) {
         const existingRefs = target.referencePaths.filter(path => files.some(file => file.path === path));
         const text = await buildContext({ projectDir, files, dependencyTargetFiles: existingRefs, targetFiles: [target.path],
             maxBytes: CONTROLLED_CODER_CONTEXT_BYTES, includeOptionalExports: false });
-        if (text.includes('OMITTED CONTEXT') || existingRefs.some(path => !text.includes(`File: ${path} (`))) overflow.push(target.path);
+        const growth = controlledRepairBatchGrowth(targets, index, [...text.matchAll(/File: (\S+) \(/g)].map(match => match[1]));
+        if (text.includes('OMITTED CONTEXT') || existingRefs.some(path => !text.includes(`File: ${path} (`))
+            || Buffer.byteLength(text) + growth.bytes > CONTROLLED_CODER_CONTEXT_BYTES) overflow.push(target.path);
     }
     return overflow;
+}
+// Targets are written in plan order, so an earlier target's file reaches a later target's context only after it is
+// created or rewritten; its final size is unknown when the plan is measured. Each such file gets fixed growth room.
+export const CONTROLLED_BATCH_FILE_RESERVE_BYTES = 16 * 1024;
+export function controlledRepairBatchGrowth(targets, index, contextPaths) {
+    const target = targets[index];
+    const paths = targets.slice(0, index).map(item => item.path)
+        .filter(path => target.referencePaths.includes(path) || contextPaths.includes(path));
+    return { paths, bytes: paths.length * CONTROLLED_BATCH_FILE_RESERVE_BYTES };
 }
 // The Coder context always carries the target and its baseline project files; only the rest is left for references.
 export async function controlledRepairContextBase({ projectDir, files, path, buildContext = buildCoderProjectContext }) {

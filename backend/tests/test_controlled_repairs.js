@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { executeControlledRepairs, assertControlledPackagePolicy, validateControlledRepairs, controlledRepairContextOverflow, controlledRepairContextBase, controlledSourceSyntaxError,
+import { executeControlledRepairs, assertControlledPackagePolicy, validateControlledRepairs, controlledRepairContextOverflow, controlledRepairContextBase, controlledRepairBatchGrowth, CONTROLLED_BATCH_FILE_RESERVE_BYTES, controlledSourceSyntaxError,
     CONTROLLED_CODER_CONTEXT_BYTES } from '../engine/controlledRepairs.js';
 import { inspectControlledRepairPlan, controlledRepairSourceHash } from '../engine/controlledRepairPlan.js';
 import { parseTypecheckErrors } from '../engine/controlledTypeProbe.js';
@@ -191,6 +191,24 @@ await runAsyncTest('context overflow names each target whose references do not f
         {path:'tests/b.test.js',referencePaths:['src/small.ts','src/big.tsx','tests/new-fixture.mjs']}]});
     assert.deepEqual(overflow,['tests/b.test.js']);
     assert.deepEqual(budgets,[CONTROLLED_CODER_CONTEXT_BYTES,CONTROLLED_CODER_CONTEXT_BYTES]);
+});
+await runAsyncTest('a file an earlier target of the same batch writes gets growth room in a later target context',async()=>{
+    const files=[{path:'tests/journey.test.js'},{path:'src/page.tsx'},{path:'src/service.ts'}];
+    const near=CONTROLLED_CODER_CONTEXT_BYTES-CONTROLLED_BATCH_FILE_RESERVE_BYTES+1;
+    const buildContext=async({dependencyTargetFiles,targetFiles})=>{
+        const head=[...targetFiles,...dependencyTargetFiles,'src/service.ts'].map(path=>`File: ${path} (1 KB)`).join('\n');
+        return head+'x'.repeat(Math.max(0,near-Buffer.byteLength(head)));};
+    // The new fixture does not exist when the plan is measured; it is written before the journey test.
+    const fixtureFirst=[{path:'tests/fixture.ts',referencePaths:[]},{path:'tests/journey.test.js',referencePaths:['src/page.tsx','tests/fixture.ts']}];
+    assert.deepEqual(await controlledRepairContextOverflow({projectDir:'unused',files,buildContext,targets:fixtureFirst}),['tests/journey.test.js']);
+    assert.deepEqual(controlledRepairBatchGrowth(fixtureFirst,1,['tests/journey.test.js','src/page.tsx']),
+        {paths:['tests/fixture.ts'],bytes:CONTROLLED_BATCH_FILE_RESERVE_BYTES});
+    // An automatically included file rewritten earlier in the batch counts as well.
+    const serviceFirst=[{path:'src/service.ts',referencePaths:[]},{path:'tests/journey.test.js',referencePaths:['src/page.tsx']}];
+    assert.deepEqual(await controlledRepairContextOverflow({projectDir:'unused',files,buildContext,targets:serviceFirst}),['tests/journey.test.js']);
+    // Later targets are written after this one and leave its context unchanged.
+    const journeyFirst=[{path:'tests/journey.test.js',referencePaths:['src/page.tsx']},{path:'src/service.ts',referencePaths:[]}];
+    assert.deepEqual(await controlledRepairContextOverflow({projectDir:'unused',files,buildContext,targets:journeyFirst}),[]);
 });
 await runAsyncTest('the context base measures the target with its automatic project files and no references',async()=>{
     const calls=[];

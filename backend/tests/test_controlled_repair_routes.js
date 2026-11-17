@@ -66,9 +66,23 @@ await runAsyncTest('a target whose context exceeds the Coder budget is rejected 
     assert.equal(correction.role, 'user'); assert.match(correction.content, /Coder bağlam sınırını/);
     // The model sees what the Coder context really holds: the automatic baseline and the room left for references.
     assert.match(correction.content, /src\/app\.ts: hedef ve otomatik eklenen proje dosyaları \(src\/app\.ts, package\.json\) zaten 196000 bayt/);
-    assert.match(correction.content, /yaklaşık 608 bayt kalıyor/);
+    assert.match(correction.content, /yaklaşık 608 bayt kalıyor/); assert.doesNotMatch(correction.content, /büyüme payı/);
 }, { contextOverflow: async targets => targets.map(target => target.path),
     managerResponder: async messages => { conversations.push(messages); supplied = JSON.parse(messages.find(m => m.role === 'user').content); return JSON.stringify(payload); } }));
+await runAsyncTest('a reference to a file an earlier target writes is reported with its growth room', () => {
+    const batch = { ...payload, targets: [{ ...payload.targets[0], path: 'src/fixture.ts', create: true },
+        { ...payload.targets[0], referencePaths: ['src/fixture.ts'] }] };
+    conversations = [];
+    return exercise(async f => {
+        const response = await f.request(); assert.equal(response.status, 400, await response.clone().text());
+        const correction = conversations.at(-1).at(-1).content;
+        assert.match(correction, /src\/app\.ts: hedef .* zaten 150000 bayt; bu turda bu hedeften önce yazılacak src\/fixture\.ts bu bağlama girdiği için dosya başına 16384 bayt büyüme payı ayrıldı \(16384 bayt\); referanslar için yaklaşık 30224 bayt kalıyor/);
+        assert.match(correction, /src\/fixture\.ts henüz yok/);
+        assert.match(correction, /aynı turda yazılacak dosyaları bu hedefin referanslarından çıkar/);
+        assert.doesNotMatch(correction, /src\/fixture\.ts: hedef/);
+    }, { contextOverflow: async targets => [targets[1].path], contextBase: async path => ({ bytes: 150000, paths: [path, 'package.json'] }),
+        managerResponder: async messages => { conversations.push(messages); return JSON.stringify(batch); } });
+});
 await runAsyncTest('a rejected plan goes back to the model with its reason and its corrected plan is published', () => {
     const answers = [JSON.stringify({ ...payload, targets: [{ ...payload.targets[0], checkIds: [] }] }), JSON.stringify(payload)];
     conversations = [];
