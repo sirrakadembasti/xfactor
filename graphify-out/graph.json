@@ -547,7 +547,7 @@
       "group": "backend",
       "file": "backend/verification/workerFailures.js",
       "description": "Sınırlandırılmış, sırları temizlenmiş worker diagnostic ve kalıcı ret kaydı; belirsiz/altyapı bulguları otomatik onarımı durdurur",
-      "val": 24,
+      "val": 25,
       "provenance": "curated"
     },
     {
@@ -2117,7 +2117,7 @@
       "group": "tests",
       "file": "backend/tests/test_infrastructure_failure_classification.js",
       "description": "",
-      "val": 11.5,
+      "val": 12.5,
       "provenance": "ast"
     },
     {
@@ -3317,7 +3317,7 @@
       "group": "tests",
       "file": "backend/tests/test_worker_repairs.js",
       "description": "",
-      "val": 39.5,
+      "val": 40,
       "provenance": "ast"
     },
     {
@@ -27116,7 +27116,7 @@
       "line": 91
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:passingChecks@132",
+      "id": "backend/tests/test_worker_repairs.js#Function:passingChecks@133",
       "label": "passingChecks",
       "type": "Function",
       "group": "tests",
@@ -27124,21 +27124,32 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 132
+      "line": 133
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:rejected.verifyArtifact@144",
+      "id": "backend/tests/test_worker_repairs.js#Function:jobResult@142",
+      "label": "jobResult",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 142
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Method:rejected.verifyArtifact@146",
       "label": "rejected.verifyArtifact",
       "type": "Method",
       "group": "tests",
       "file": "backend/tests/test_worker_repairs.js",
       "description": "",
-      "val": 1.5,
+      "val": 2,
       "provenance": "ast",
-      "line": 144
+      "line": 146
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:persistWorkflow@151",
+      "id": "backend/tests/test_worker_repairs.js#Method:persistWorkflow@154",
       "label": "persistWorkflow",
       "type": "Method",
       "group": "tests",
@@ -27146,10 +27157,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 151
+      "line": 154
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@160",
+      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@163",
       "label": "callAgent",
       "type": "Method",
       "group": "tests",
@@ -27157,10 +27168,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 160
+      "line": 163
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@170",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@173",
       "label": "createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27168,10 +27179,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 170
+      "line": 173
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@170",
+      "id": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@173",
       "label": "prepareDependencies",
       "type": "Method",
       "group": "tests",
@@ -27179,10 +27190,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 170
+      "line": 173
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@171",
+      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@174",
       "label": "verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -27190,99 +27201,11 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 171
+      "line": 174
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@203",
+      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@232",
       "label": "callAgent",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 203
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@207",
-      "label": "createExecutionClient",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 207
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@207",
-      "label": "prepareDependencies",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 207
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@208",
-      "label": "verifyArtifact",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 208
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Function:runHelper@219",
-      "label": "runHelper",
-      "type": "Function",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 2.5,
-      "provenance": "ast",
-      "line": 219
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Function:resumeFixture@223",
-      "label": "resumeFixture",
-      "type": "Function",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 3,
-      "provenance": "ast",
-      "line": 223
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
-      "label": "fakeClient",
-      "type": "Function",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 5.5,
-      "provenance": "ast",
-      "line": 231
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Method:fakeClient.prepareDependencies@231",
-      "label": "fakeClient.prepareDependencies",
-      "type": "Method",
-      "group": "tests",
-      "file": "backend/tests/test_worker_repairs.js",
-      "description": "",
-      "val": 1.5,
-      "provenance": "ast",
-      "line": 231
-    },
-    {
-      "id": "backend/tests/test_worker_repairs.js#Method:fakeClient.verifyArtifact@232",
-      "label": "fakeClient.verifyArtifact",
       "type": "Method",
       "group": "tests",
       "file": "backend/tests/test_worker_repairs.js",
@@ -27292,9 +27215,9 @@
       "line": 232
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:agent@236",
-      "label": "agent",
-      "type": "Function",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@236",
+      "label": "createExecutionClient",
+      "type": "Method",
       "group": "tests",
       "file": "backend/tests/test_worker_repairs.js",
       "description": "",
@@ -27303,7 +27226,95 @@
       "line": 236
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:mutate@252",
+      "id": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@236",
+      "label": "prepareDependencies",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 236
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@237",
+      "label": "verifyArtifact",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 237
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Function:runHelper@248",
+      "label": "runHelper",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 248
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Function:resumeFixture@252",
+      "label": "resumeFixture",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 252
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
+      "label": "fakeClient",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 5.5,
+      "provenance": "ast",
+      "line": 260
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Method:fakeClient.prepareDependencies@260",
+      "label": "fakeClient.prepareDependencies",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 260
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Method:fakeClient.verifyArtifact@261",
+      "label": "fakeClient.verifyArtifact",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 261
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Function:agent@265",
+      "label": "agent",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_worker_repairs.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 265
+    },
+    {
+      "id": "backend/tests/test_worker_repairs.js#Function:mutate@281",
       "label": "mutate",
       "type": "Function",
       "group": "tests",
@@ -27311,10 +27322,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 252
+      "line": 281
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.callAgent@289",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.callAgent@318",
       "label": "services.callAgent",
       "type": "Method",
       "group": "tests",
@@ -27322,10 +27333,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 289
+      "line": 318
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@292",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@321",
       "label": "services.createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27333,10 +27344,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 292
+      "line": 321
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifact@292",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifact@321",
       "label": "services.verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -27344,10 +27355,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 292
+      "line": 321
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:callAgent@304",
+      "id": "backend/tests/test_worker_repairs.js#Function:callAgent@333",
       "label": "callAgent",
       "type": "Function",
       "group": "tests",
@@ -27355,10 +27366,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 304
+      "line": 333
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@307",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@336",
       "label": "createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27366,10 +27377,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 307
+      "line": 336
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@308",
+      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@337",
       "label": "verifyArtifactAndProject",
       "type": "Method",
       "group": "tests",
@@ -27377,10 +27388,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 308
+      "line": 337
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@314",
+      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@343",
       "label": "callAgent",
       "type": "Method",
       "group": "tests",
@@ -27388,10 +27399,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 314
+      "line": 343
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@315",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@344",
       "label": "createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27399,10 +27410,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 315
+      "line": 344
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@315",
+      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@344",
       "label": "verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -27410,10 +27421,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 315
+      "line": 344
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:requireAuth@328",
+      "id": "backend/tests/test_worker_repairs.js#Method:requireAuth@357",
       "label": "requireAuth",
       "type": "Method",
       "group": "tests",
@@ -27421,10 +27432,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 328
+      "line": 357
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:projectAccess@329",
+      "id": "backend/tests/test_worker_repairs.js#Method:projectAccess@358",
       "label": "projectAccess",
       "type": "Method",
       "group": "tests",
@@ -27432,10 +27443,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 329
+      "line": 358
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:broadcast@329",
+      "id": "backend/tests/test_worker_repairs.js#Method:broadcast@358",
       "label": "broadcast",
       "type": "Method",
       "group": "tests",
@@ -27443,10 +27454,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 329
+      "line": 358
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.loadRecordedDependencyLock@344",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.loadRecordedDependencyLock@373",
       "label": "services.loadRecordedDependencyLock",
       "type": "Method",
       "group": "tests",
@@ -27454,10 +27465,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 344
+      "line": 373
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.callAgent@345",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.callAgent@374",
       "label": "services.callAgent",
       "type": "Method",
       "group": "tests",
@@ -27465,10 +27476,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 345
+      "line": 374
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@346",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@375",
       "label": "services.createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27476,10 +27487,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 346
+      "line": 375
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@346",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@375",
       "label": "services.prepareDependencies",
       "type": "Method",
       "group": "tests",
@@ -27487,10 +27498,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 346
+      "line": 375
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@350",
+      "id": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@379",
       "label": "services.verifyArtifactAndProject",
       "type": "Method",
       "group": "tests",
@@ -27498,10 +27509,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 350
+      "line": 379
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@367",
+      "id": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@396",
       "label": "rejectCurrent",
       "type": "Function",
       "group": "tests",
@@ -27509,10 +27520,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 367
+      "line": 396
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:rejectCurrent.verifyArtifact@375",
+      "id": "backend/tests/test_worker_repairs.js#Method:rejectCurrent.verifyArtifact@404",
       "label": "rejectCurrent.verifyArtifact",
       "type": "Method",
       "group": "tests",
@@ -27520,10 +27531,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 375
+      "line": 404
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:call@379",
+      "id": "backend/tests/test_worker_repairs.js#Function:call@408",
       "label": "call",
       "type": "Function",
       "group": "tests",
@@ -27531,10 +27542,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 379
+      "line": 408
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:generate@391",
+      "id": "backend/tests/test_worker_repairs.js#Method:generate@420",
       "label": "generate",
       "type": "Method",
       "group": "tests",
@@ -27542,10 +27553,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 391
+      "line": 420
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@405",
+      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@434",
       "label": "callAgent",
       "type": "Method",
       "group": "tests",
@@ -27553,10 +27564,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 405
+      "line": 434
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@405",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@434",
       "label": "createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27564,10 +27575,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 405
+      "line": 434
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:publish@421",
+      "id": "backend/tests/test_worker_repairs.js#Method:publish@450",
       "label": "publish",
       "type": "Method",
       "group": "tests",
@@ -27575,10 +27586,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 421
+      "line": 450
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@422",
+      "id": "backend/tests/test_worker_repairs.js#Method:callAgent@451",
       "label": "callAgent",
       "type": "Method",
       "group": "tests",
@@ -27586,10 +27597,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 422
+      "line": 451
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@423",
+      "id": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@452",
       "label": "createExecutionClient",
       "type": "Method",
       "group": "tests",
@@ -27597,10 +27608,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 423
+      "line": 452
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@423",
+      "id": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@452",
       "label": "verifyArtifactAndProject",
       "type": "Method",
       "group": "tests",
@@ -27608,10 +27619,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 423
+      "line": 452
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Function:digest@432",
+      "id": "backend/tests/test_worker_repairs.js#Function:digest@461",
       "label": "digest",
       "type": "Function",
       "group": "tests",
@@ -27619,10 +27630,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 432
+      "line": 461
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:repairResult.persistWorkflow@444",
+      "id": "backend/tests/test_worker_repairs.js#Method:repairResult.persistWorkflow@473",
       "label": "repairResult.persistWorkflow",
       "type": "Method",
       "group": "tests",
@@ -27630,10 +27641,10 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 444
+      "line": 473
     },
     {
-      "id": "backend/tests/test_worker_repairs.js#Method:repairResult.callAgent@445",
+      "id": "backend/tests/test_worker_repairs.js#Method:repairResult.callAgent@474",
       "label": "repairResult.callAgent",
       "type": "Method",
       "group": "tests",
@@ -27641,7 +27652,7 @@
       "description": "",
       "val": 1.5,
       "provenance": "ast",
-      "line": 445
+      "line": 474
     },
     {
       "id": "backend/tests/test_workflow_attempts.js#Function:status@57",
@@ -28408,7 +28419,7 @@
       "group": "backend",
       "file": "backend/verification/artifactVerifier.js",
       "description": "",
-      "val": 20.5,
+      "val": 21.5,
       "provenance": "ast",
       "line": 118
     },
@@ -30408,7 +30419,7 @@
       "group": "backend",
       "file": "backend/verification/workerFailures.js",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
       "line": 14
     },
@@ -30479,7 +30490,29 @@
       "line": 63
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "id": "backend/verification/workerFailures.js#Function:isWorkerInfrastructureError@90",
+      "label": "isWorkerInfrastructureError",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/verification/workerFailures.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 90
+    },
+    {
+      "id": "backend/verification/workerFailures.js#Function:workerInfrastructureMessage@93",
+      "label": "workerInfrastructureMessage",
+      "type": "Function",
+      "group": "backend",
+      "file": "backend/verification/workerFailures.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 93
+    },
+    {
+      "id": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "label": "summarizeWorkerRejection",
       "type": "Function",
       "group": "backend",
@@ -30487,10 +30520,10 @@
       "description": "",
       "val": 4.5,
       "provenance": "ast",
-      "line": 88
+      "line": 96
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
+      "id": "backend/verification/workerFailures.js#Function:recordWorkerRejection@138",
       "label": "recordWorkerRejection",
       "type": "Function",
       "group": "backend",
@@ -30498,10 +30531,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 130
+      "line": 138
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "id": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "label": "recordVerificationBlocker",
       "type": "Function",
       "group": "backend",
@@ -30509,10 +30542,10 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 151
+      "line": 159
     },
     {
-      "id": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "id": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "label": "loadOpenWorkerRepairBatch",
       "type": "Function",
       "group": "backend",
@@ -30520,7 +30553,7 @@
       "description": "",
       "val": 4,
       "provenance": "ast",
-      "line": 160
+      "line": 168
     },
     {
       "id": "backend/websocketHub.js#Function:sendJson@9",
@@ -79201,157 +79234,87 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:passingChecks@132",
+      "target": "backend/tests/test_worker_repairs.js#Function:passingChecks@133",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 132
+        "line": 133
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:rejected.verifyArtifact@144",
+      "target": "backend/tests/test_worker_repairs.js#Function:jobResult@142",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 144
+        "line": 142
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:persistWorkflow@151",
+      "target": "backend/tests/test_worker_repairs.js#Method:rejected.verifyArtifact@146",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 151
+        "line": 146
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@160",
+      "target": "backend/tests/test_worker_repairs.js#Method:persistWorkflow@154",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 160
+        "line": 154
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@170",
+      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@163",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 170
+        "line": 163
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@170",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@173",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 170
+        "line": 173
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@171",
+      "target": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@173",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 171
+        "line": 173
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@203",
+      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@174",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 203
+        "line": 174
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@207",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 207
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@207",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 207
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@208",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 208
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:runHelper@219",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 219
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:resumeFixture@223",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 223
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 231
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:fakeClient.prepareDependencies@231",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 231
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:fakeClient.verifyArtifact@232",
+      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@232",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79361,7 +79324,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:agent@236",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@236",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79371,7 +79334,37 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:mutate@252",
+      "target": "backend/tests/test_worker_repairs.js#Method:prepareDependencies@236",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 236
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@237",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 237
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Function:runHelper@248",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 248
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Function:resumeFixture@252",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79381,127 +79374,127 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.callAgent@289",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 289
+        "line": 260
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@292",
+      "target": "backend/tests/test_worker_repairs.js#Method:fakeClient.prepareDependencies@260",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 292
+        "line": 260
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifact@292",
+      "target": "backend/tests/test_worker_repairs.js#Method:fakeClient.verifyArtifact@261",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 292
+        "line": 261
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:callAgent@304",
+      "target": "backend/tests/test_worker_repairs.js#Function:agent@265",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 304
+        "line": 265
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@307",
+      "target": "backend/tests/test_worker_repairs.js#Function:mutate@281",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 307
+        "line": 281
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@308",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.callAgent@318",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 308
+        "line": 318
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@314",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@321",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 314
+        "line": 321
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@315",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifact@321",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 315
+        "line": 321
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@315",
+      "target": "backend/tests/test_worker_repairs.js#Function:callAgent@333",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 315
+        "line": 333
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:requireAuth@328",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@336",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 328
+        "line": 336
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:projectAccess@329",
+      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@337",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 329
+        "line": 337
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:broadcast@329",
+      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@343",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 329
+        "line": 343
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.loadRecordedDependencyLock@344",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@344",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79511,57 +79504,67 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.callAgent@345",
+      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@344",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 345
+        "line": 344
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@346",
+      "target": "backend/tests/test_worker_repairs.js#Method:requireAuth@357",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 346
+        "line": 357
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@346",
+      "target": "backend/tests/test_worker_repairs.js#Method:projectAccess@358",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 346
+        "line": 358
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@350",
+      "target": "backend/tests/test_worker_repairs.js#Method:broadcast@358",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 350
+        "line": 358
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@367",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.loadRecordedDependencyLock@373",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 367
+        "line": 373
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:rejectCurrent.verifyArtifact@375",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.callAgent@374",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 374
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@375",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79571,7 +79574,17 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:call@379",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@375",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 375
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@379",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -79581,102 +79594,132 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:generate@391",
+      "target": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@396",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 391
+        "line": 396
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@405",
+      "target": "backend/tests/test_worker_repairs.js#Method:rejectCurrent.verifyArtifact@404",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 405
+        "line": 404
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@405",
+      "target": "backend/tests/test_worker_repairs.js#Function:call@408",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 405
+        "line": 408
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:publish@421",
+      "target": "backend/tests/test_worker_repairs.js#Method:generate@420",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 421
+        "line": 420
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@422",
+      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@434",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 422
+        "line": 434
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@423",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@434",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 423
+        "line": 434
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@423",
+      "target": "backend/tests/test_worker_repairs.js#Method:publish@450",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 423
+        "line": 450
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:digest@432",
+      "target": "backend/tests/test_worker_repairs.js#Method:callAgent@451",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 432
+        "line": 451
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:repairResult.persistWorkflow@444",
+      "target": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@452",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 444
+        "line": 452
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Method:repairResult.callAgent@445",
+      "target": "backend/tests/test_worker_repairs.js#Method:verifyArtifactAndProject@452",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 445
+        "line": 452
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Function:digest@461",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 461
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Method:repairResult.persistWorkflow@473",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 473
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Method:repairResult.callAgent@474",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 474
       }
     },
     {
@@ -84081,42 +84124,62 @@
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:isWorkerInfrastructureError@90",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 88
+        "line": 90
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
+      "target": "backend/verification/workerFailures.js#Function:workerInfrastructureMessage@93",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 130
+        "line": 93
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 151
+        "line": 96
       }
     },
     {
       "source": "backend/verification/workerFailures.js",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@138",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 160
+        "line": 138
+      }
+    },
+    {
+      "source": "backend/verification/workerFailures.js",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/workerFailures.js",
+        "line": 159
+      }
+    },
+    {
+      "source": "backend/verification/workerFailures.js",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/workerFailures.js",
+        "line": 168
       }
     },
     {
@@ -104541,7 +104604,7 @@
     },
     {
       "source": "backend/engine/stages/acceptanceStage.js#Function:runAcceptanceStage@33",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105391,7 +105454,7 @@
     },
     {
       "source": "backend/engine/workerRepairs.js#Function:resolveWorkerRepairIssues@225",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -105641,7 +105704,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@117",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -106451,7 +106514,7 @@
     },
     {
       "source": "backend/engine/workflow.js#Function:executeProjectTasks@117",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -110061,7 +110124,7 @@
     },
     {
       "source": "backend/routes/projectRoutes.js#Function:recoveryRevisionRequired@112",
-      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "target": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -118141,12 +118204,32 @@
     },
     {
       "source": "backend/tests/test_infrastructure_failure_classification.js",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_infrastructure_failure_classification.js",
         "line": 86
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/verification/workerFailures.js#Function:isWorkerInfrastructureError@90",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 102
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/verification/workerFailures.js#Function:workerInfrastructureMessage@93",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 108
       }
     },
     {
@@ -129026,7 +129109,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 93
+        "line": 94
       }
     },
     {
@@ -129036,7 +129119,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 94
+        "line": 95
       }
     },
     {
@@ -129046,22 +129129,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 95
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/engine/workflow.js",
-      "label": "dynamic_imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
         "line": 96
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/workflowAttempts.js",
+      "target": "backend/engine/workflow.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129071,7 +129144,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/contracts/taskProjection.js",
+      "target": "backend/workflowAttempts.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129081,7 +129154,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/artifactInventory.js",
+      "target": "backend/contracts/taskProjection.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129091,7 +129164,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/utils/archive.js",
+      "target": "backend/artifactInventory.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129101,7 +129174,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/verification/artifactVerifier.js",
+      "target": "backend/utils/archive.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129111,7 +129184,7 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/verification/workerFailures.js",
+      "target": "backend/verification/artifactVerifier.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129121,12 +129194,22 @@
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/tests/test_worker_repairs.js#Function:digest@432",
+      "target": "backend/verification/workerFailures.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 103
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
+      "target": "backend/tests/test_worker_repairs.js#Function:digest@461",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 107
+        "line": 108
       }
     },
     {
@@ -129136,17 +129219,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 130
+        "line": 131
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Function:passingChecks@132",
-      "target": "backend/tests/test_worker_repairs.js#Function:digest@432",
+      "source": "backend/tests/test_worker_repairs.js#Function:passingChecks@133",
+      "target": "backend/tests/test_worker_repairs.js#Function:digest@461",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 133
+        "line": 134
       }
     },
     {
@@ -129156,17 +129239,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 135
+        "line": 136
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js#Function:fixture@91",
-      "target": "backend/tests/test_worker_repairs.js#Function:passingChecks@132",
+      "target": "backend/tests/test_worker_repairs.js#Function:passingChecks@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 137
+        "line": 138
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js#Method:rejected.verifyArtifact@146",
+      "target": "backend/tests/test_worker_repairs.js#Function:jobResult@142",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 146
       }
     },
     {
@@ -129176,7 +129269,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 154
+        "line": 157
       }
     },
     {
@@ -129186,7 +129279,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 155
+        "line": 158
       }
     },
     {
@@ -129196,52 +129289,12 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 156
+        "line": 159
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Function:runHelper@219",
+      "source": "backend/tests/test_worker_repairs.js#Function:runHelper@248",
       "target": "backend/engine/workerRepairs.js",
-      "label": "dynamic_imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 220
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js#Function:resumeFixture@223",
-      "target": "backend/engine/workflow.js",
-      "label": "dynamic_imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 224
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js#Function:resumeFixture@223",
-      "target": "backend/workflowAttempts.js",
-      "label": "dynamic_imports",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 225
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:runHelper@219",
-      "label": "calls",
-      "provenance": "ast",
-      "location": {
-        "file": "backend/tests/test_worker_repairs.js",
-        "line": 241
-      }
-    },
-    {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/workflowAttempts.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
@@ -129250,18 +129303,48 @@
       }
     },
     {
+      "source": "backend/tests/test_worker_repairs.js#Function:resumeFixture@252",
+      "target": "backend/engine/workflow.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 253
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js#Function:resumeFixture@252",
+      "target": "backend/workflowAttempts.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 254
+      }
+    },
+    {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:mutate@252",
+      "target": "backend/tests/test_worker_repairs.js#Function:runHelper@248",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 263
+        "line": 270
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@292",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/workflowAttempts.js",
+      "label": "dynamic_imports",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 278
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Function:mutate@281",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -129270,13 +129353,23 @@
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:resumeFixture@223",
+      "source": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@321",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 295
+        "line": 321
+      }
+    },
+    {
+      "source": "backend/tests/test_worker_repairs.js",
+      "target": "backend/tests/test_worker_repairs.js#Function:resumeFixture@252",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_worker_repairs.js",
+        "line": 324
       }
     },
     {
@@ -129286,37 +129379,37 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 305
+        "line": 334
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@307",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@336",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 307
+        "line": 336
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@315",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@344",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 315
+        "line": 344
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@315",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:verifyArtifact@344",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 315
+        "line": 344
       }
     },
     {
@@ -129326,37 +129419,37 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 325
+        "line": 354
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@346",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:services.createExecutionClient@375",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 346
+        "line": 375
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@346",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:services.prepareDependencies@375",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 348
+        "line": 377
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@350",
+      "source": "backend/tests/test_worker_repairs.js#Method:services.verifyArtifactAndProject@379",
       "target": "backend/verification/artifactVerifier.js",
       "label": "dynamic_imports",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 351
+        "line": 380
       }
     },
     {
@@ -129366,7 +129459,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 363
+        "line": 392
       }
     },
     {
@@ -129376,27 +129469,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 364
+        "line": 393
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@367",
+      "source": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@396",
       "target": "backend/tests/test_worker_repairs.js#Function:producer@8",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 372
+        "line": 401
       }
     },
     {
       "source": "backend/tests/test_worker_repairs.js",
-      "target": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@367",
+      "target": "backend/tests/test_worker_repairs.js#Function:rejectCurrent@396",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 380
+        "line": 409
       }
     },
     {
@@ -129406,27 +129499,27 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 388
+        "line": 417
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@405",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@434",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 405
+        "line": 434
       }
     },
     {
-      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@423",
-      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@231",
+      "source": "backend/tests/test_worker_repairs.js#Method:createExecutionClient@452",
+      "target": "backend/tests/test_worker_repairs.js#Function:fakeClient@260",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_worker_repairs.js",
-        "line": 423
+        "line": 452
       }
     },
     {
@@ -130681,12 +130774,32 @@
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
+      "target": "backend/verification/workerFailures.js#Function:isWorkerInfrastructureError@90",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 346
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
+      "target": "backend/verification/workerFailures.js#Function:workerInfrastructureMessage@93",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/artifactVerifier.js",
+        "line": 347
+      }
+    },
+    {
+      "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
       "target": "backend/verification/qualityPolicy.js#Function:combineRuntimeGate@508",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 351
+        "line": 356
       }
     },
     {
@@ -130696,7 +130809,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 370
+        "line": 375
       }
     },
     {
@@ -130706,7 +130819,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 371
+        "line": 376
       }
     },
     {
@@ -130716,7 +130829,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 372
+        "line": 377
       }
     },
     {
@@ -130726,7 +130839,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 373
+        "line": 378
       }
     },
     {
@@ -130736,7 +130849,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 376
+        "line": 381
       }
     },
     {
@@ -130746,7 +130859,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 383
+        "line": 388
       }
     },
     {
@@ -130756,7 +130869,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 386
+        "line": 391
       }
     },
     {
@@ -130766,7 +130879,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 404
+        "line": 409
       }
     },
     {
@@ -130776,7 +130889,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 439
+        "line": 444
       }
     },
     {
@@ -130786,7 +130899,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 459
+        "line": 464
       }
     },
     {
@@ -130796,7 +130909,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 461
+        "line": 466
       }
     },
     {
@@ -130806,7 +130919,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 461
+        "line": 466
       }
     },
     {
@@ -130816,7 +130929,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 509
+        "line": 514
       }
     },
     {
@@ -130826,7 +130939,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 529
+        "line": 534
       }
     },
     {
@@ -130836,7 +130949,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 533
+        "line": 538
       }
     },
     {
@@ -130846,7 +130959,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 536
+        "line": 541
       }
     },
     {
@@ -130856,7 +130969,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 536
+        "line": 541
       }
     },
     {
@@ -130866,37 +130979,37 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 550
+        "line": 555
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
+      "target": "backend/verification/workerFailures.js#Function:recordWorkerRejection@138",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 558
+        "line": 563
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 560
+        "line": 565
       }
     },
     {
       "source": "backend/verification/artifactVerifier.js#Function:verifyArtifact@118",
-      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "target": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/artifactVerifier.js",
-        "line": 594
+        "line": 600
       }
     },
     {
@@ -133180,103 +133293,113 @@
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "source": "backend/verification/workerFailures.js#Function:workerInfrastructureMessage@93",
       "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 96
+        "line": 94
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
+      "target": "backend/verification/workerFailures.js#Function:bounded@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/verification/workerFailures.js",
+        "line": 104
+      }
+    },
+    {
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "target": "backend/verification/workerFailures.js#Function:parseTypecheckDiagnostics@62",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 101
+        "line": 109
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "target": "backend/verification/workerFailures.js#Function:normalizeWorkerCheckLog@24",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 101
+        "line": 109
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@88",
+      "source": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 106
+        "line": 114
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
+      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@138",
       "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 131
+        "line": 139
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@130",
+      "source": "backend/verification/workerFailures.js#Function:recordWorkerRejection@138",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 140
+        "line": 148
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "target": "backend/verification/verificationContext.js#Function:assertVerificationContext@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 152
+        "line": 160
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 153
+        "line": 161
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@151",
+      "source": "backend/verification/workerFailures.js#Function:recordVerificationBlocker@159",
       "target": "backend/verification/workerFailures.js#Function:bounded@14",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 155
+        "line": 163
       }
     },
     {
-      "source": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@160",
+      "source": "backend/verification/workerFailures.js#Function:loadOpenWorkerRepairBatch@168",
       "target": "backend/verification/workerFailures.js#Function:digest@6",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/workerFailures.js",
-        "line": 181
+        "line": 189
       }
     },
     {

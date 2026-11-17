@@ -85,11 +85,19 @@ export function parseTypecheckDiagnostics({ check, log, artifactPaths }) {
     }
     return findings.length ? { classification: 'product', findings } : stop('No exact source compiler diagnostics.');
 }
-export function summarizeWorkerRejection({ identity, terminalStatus, rawChecks, records, artifactManifest, acceptanceBlockers = [] }) {
-    const findings = [], blockers = [...acceptanceBlockers], infrastructureBlockers = [];
+// A worker job that failed because Docker hung or was unreachable ran no verification command; it says nothing about the source.
+const WORKER_INFRASTRUCTURE_ERROR = /^Docker operation timed out$|failed to connect to the docker API|Cannot connect to the Docker daemon/i;
+export function isWorkerInfrastructureError(error) {
+    return typeof error === 'string' && WORKER_INFRASTRUCTURE_ERROR.test(error.trim());
+}
+export function workerInfrastructureMessage(error) {
+    return `Worker altyapı hatası nedeniyle doğrulama tamamlanamadı (${bounded(error, 160).text.trim()}). Kaynaklar değiştirilmedi; Devam Ettir veya Yalnız Yeniden Doğrula ile yeniden deneyin.`;
+}
+export function summarizeWorkerRejection({ identity, terminalStatus, rawChecks, records, artifactManifest, acceptanceBlockers = [], infrastructureFailure = null }) {
+    const findings = [], blockers = [...acceptanceBlockers], infrastructureBlockers = infrastructureFailure ? [infrastructureFailure] : [];
     if (!['failed', 'completed'].includes(terminalStatus)) blockers.push(`Worker terminal status ${terminalStatus}.`);
     const manifest = new Map(artifactManifest.map(file => [file.path, file]));
-    const infrastructureReported = rawChecks.some(check => check.evidence?.classification === 'infrastructure');
+    const infrastructureReported = Boolean(infrastructureFailure) || rawChecks.some(check => check.evidence?.classification === 'infrastructure');
     for (const check of rawChecks) {
         if (['passed', 'PASS', 'skipped', 'NOT_APPLICABLE'].includes(check.status)) continue;
         if (check.evidence?.classification === 'infrastructure') {

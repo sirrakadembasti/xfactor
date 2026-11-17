@@ -583,6 +583,14 @@ B-5: `execution/jobStore.js` her komut olayında bütün iş dosyasını (~7,9 M
 
 `faz-6/y8-belgeler` dalında B-8 çelişkileri kapatıldı. `README.md` kalp atışı cümlesi "ana döngü takılmalarına karşı korur; veritabanı kilidi kaynaklı düşmeler hâlâ izleniyor" olarak düzeltildi ve yeni `db.transaction_slow` / `workflow.state_large` logları eklendi. README'deki "17 Kasım durumu" ve `CLAUDE.md §5`, `76dccdd0`'dan sonraki koşuları gösteriyor. Canlı veritabanı yalnız salt okunur okundu (18 Kasım): 14:59–15:45 UTC arasında `88674954`, `019ab6fd` ve `21f4e53d` koşuları `failed` kapanmış; ikisi 4 PASS / 9 BLOCKED (altı zorunlu kapı "machine evidence eksik" veya "semantik kanıt yok"), biri kontrol kaydı olmadan. Nedenleri incelenmedi. `stok-takip-1` için 99 açık onarım kaydı var (4 `verification_blocker`, 95 `worker_rejection`). Kullanıcı kılavuzu uzun çıktının baş + kuyruk tutulduğunu anlatıyor. Yol haritasının §6 tablosunda biten görevler karmalarıyla işaretlendi.
 
+### Halka 49 — 18 Kasım: Docker kesintisi altyapı hatası sayılıyor (Y1b)
+
+Y1'den sonra canlı veritabanı, `stok-takip-1` için 17 Kasım 15:20 ve 15:42 UTC koşularının (`019ab6fd`, `21f4e53d`) `Docker operation timed out` ile kapandığını gösterdi: worker hiçbir komut çalıştırmadan düşmüş, backend ise dokuz zorunlu kapıyı "kanıt yok" BLOCKED yazıp açık `worker_rejection` kaydı ve "Manager revizyonu" öneki üretmişti. `faz-6/y1b-worker-altyapi` dalında:
+- `workerFailures.js:isWorkerInfrastructureError` yalnız `Docker operation timed out`, `failed to connect to the docker API` ve `Cannot connect to the Docker daemon` metinlerini tanır. `Deadline exceeded during execution`, `Command timed out`, `Output exceeded fixed ceiling` vb. tanınmaz ve eski sıkı davranışı korur.
+- `artifactVerifier.js`: terminal durum `failed`, worker hiç kontrol döndürmemiş ve iş hatası tanınan metinse `infrastructureFailure` üretilir. Bu durumda `managementError` ve "base gate set missing" kabul engelleri, kesintinin sonucu olduğu için düşürülür; bilinmeyen zorunlu kapı gibi gerçek anomaliler ve FAIL kapılar engel olarak kalır. Çıktı hatası Türkçe altyapı mesajıdır ve tek bir `classification: 'infrastructure'` kaydı yazılır (Y1 ile aynı kayıt türü, yeni `origin` yok, şema değişmedi).
+- Testler: `test_infrastructure_failure_classification.js` (tanıma ve özet) ve `test_worker_repairs.js` (Docker zaman aşımı tek altyapı kaydı olur, Resume vetosu yok; tanınmayan iş hatası eski sıkı kaydı korur).
+- Kapsam dışı: backend'in worker'a giden isteğin 60 sn'de zaman aşımına uğraması (`Worker request timed out`, `88674954`). Bu bir denetleyici hatasıdır ve mevcut testler onun kalıcı bloklayıcı olmasını bilerek bekler.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

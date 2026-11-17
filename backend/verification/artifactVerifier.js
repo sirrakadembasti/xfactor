@@ -8,7 +8,7 @@ import { ARTIFACT_LIMITS } from '../artifactLimits.js';
 import { inspectZipEntries } from './safeExtractor.js';
 import { assertVerificationContext, commitVerificationContext } from './verificationContext.js';
 import { db as globalDatabase } from '../db.js';
-import { normalizeWorkerCheckLog, redactObservedEvidence, retainSemanticEvidence, summarizeWorkerRejection, recordWorkerRejection, recordVerificationBlocker } from './workerFailures.js';
+import { normalizeWorkerCheckLog, redactObservedEvidence, retainSemanticEvidence, summarizeWorkerRejection, recordWorkerRejection, recordVerificationBlocker, isWorkerInfrastructureError, workerInfrastructureMessage } from './workerFailures.js';
 import { verifyDomainCompliance } from '../contracts/domainPolicy.js';
 import { verifyPlaceholders } from './placeholderVerifier.js';
 import { verifyContamination } from './contaminationVerifier.js';
@@ -340,6 +340,11 @@ export async function verifyArtifact(
                 }
             }
         }
+        // Docker hung or was unreachable before any command ran: no worker evidence exists, so the
+        // missing gates are consequences of the outage rather than findings about the source.
+        const workerJobError = [workerResult.error, result.error].find(value => typeof value === 'string' && value) || '';
+        const infrastructureFailure = result.status === 'failed' && rawWorkerChecks.length === 0 && isWorkerInfrastructureError(workerJobError)
+            ? workerInfrastructureMessage(workerJobError) : null;
         const workerCheckIds = new Set(workerChecks.map(check => check.id));
         const additionalChecks = [];
 
@@ -560,7 +565,8 @@ export async function verifyArtifact(
                     artifact, summary: summarizeWorkerRejection({
                         identity: expected, terminalStatus: result.status,
                         rawChecks: workerChecks, records, artifactManifest: persistedFiles,
-                        acceptanceBlockers: [managementError, !uniqueBaseGates && 'Mandatory base gate set is missing or duplicated.',
+                        infrastructureFailure,
+                        acceptanceBlockers: [!infrastructureFailure && managementError, !infrastructureFailure && !uniqueBaseGates && 'Mandatory base gate set is missing or duplicated.',
                             unknownMandatory && 'Worker returned an unknown mandatory gate.'].filter(Boolean)
                     })
                 }, database);
@@ -582,7 +588,7 @@ export async function verifyArtifact(
             status: passed ? 'verified' : 'failed',
             passed,
             runId,
-            error: passed ? null : (result.error || managementError || (!uniqueBaseGates ? 'Mandatory base gate set is missing or duplicated.' : null)
+            error: passed ? null : (infrastructureFailure || result.error || managementError || (!uniqueBaseGates ? 'Mandatory base gate set is missing or duplicated.' : null)
                 || (unknownMandatory ? 'Worker returned an unknown mandatory gate.' : null) || `Worker status: ${result.status}`)
         };
     } catch (error) {

@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createTestHarness } from './testHarness.js';
 import { verifyDependencies, isTransientRegistryFailure } from '../verification/packageVerifier.js';
-import { summarizeWorkerRejection } from '../verification/workerFailures.js';
+import { summarizeWorkerRejection, isWorkerInfrastructureError, workerInfrastructureMessage } from '../verification/workerFailures.js';
 
 const { runAsyncTest, finish } = createTestHarness();
 const E502 = 'npm error code E502\nnpm error 502 Bad Gateway - GET http://proxy/x';
@@ -93,6 +93,40 @@ await runAsyncTest('worker rejection summary separates infrastructure-only from 
     const failedGate = summarizeWorkerRejection({ ...base, records: [...base.records, { gateName: 'smoke_gate', status: 'FAIL' }] });
     assert.deepEqual(failedGate.infrastructureBlockers, []);
     assert.ok(failedGate.blockers.some(item => /Additional unrepairable gate smoke_gate: FAIL/.test(item)));
+});
+
+await runAsyncTest('only an unreachable or hung Docker is a worker infrastructure error', () => {
+    for (const text of ['Docker operation timed out',
+        'failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running',
+        'Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?']) {
+        assert.equal(isWorkerInfrastructureError(text), true, text);
+    }
+    for (const text of ['Deadline exceeded during execution', 'Job deadline exceeded', 'Command timed out', 'Output exceeded fixed ceiling',
+        'Worker interrupted during execution', 'Worker returned an invalid result.', 'Cancelled by user', '', undefined, 'Docker build failed: syntax error']) {
+        assert.equal(isWorkerInfrastructureError(text), false, String(text));
+    }
+    assert.match(workerInfrastructureMessage('Docker operation timed out'), /^Worker altyapı hatası nedeniyle doğrulama tamamlanamadı \(Docker operation timed out\)\. Kaynaklar değiştirilmedi; Devam Ettir veya Yalnız Yeniden Doğrula/);
+    assert.ok(!workerInfrastructureMessage('password=sentinel-private-value Docker operation timed out').includes('sentinel-private-value'));
+});
+
+await runAsyncTest('a worker-level infrastructure failure makes the consequence gates part of the outage, not blockers', () => {
+    const identity = { contractId: 'c', contractHash: 'h' };
+    const message = workerInfrastructureMessage('Docker operation timed out');
+    const base = { identity, terminalStatus: 'failed', artifactManifest: [], infrastructureFailure: message,
+        rawChecks: [{ id: 'sem', name: 'requirement_assertions', status: 'blocked', reason: 'Worker omitted required controlled semantic evidence.' }],
+        records: [{ gateName: 'requirement_assertions', status: 'BLOCKED' }, { gateName: 'smoke_gate', status: 'BLOCKED' }] };
+    const pure = summarizeWorkerRejection(base);
+    assert.deepEqual(pure.blockers, []);
+    assert.deepEqual(pure.infrastructureBlockers, [message]);
+    const withAnomaly = summarizeWorkerRejection({ ...base, acceptanceBlockers: ['Worker returned an unknown mandatory gate.'] });
+    assert.deepEqual(withAnomaly.infrastructureBlockers, []);
+    assert.ok(withAnomaly.blockers.includes('Worker returned an unknown mandatory gate.'));
+    const failedGate = summarizeWorkerRejection({ ...base, records: [...base.records, { gateName: 'security_baseline', status: 'FAIL' }] });
+    assert.deepEqual(failedGate.infrastructureBlockers, []);
+    assert.ok(failedGate.blockers.some(item => /Additional unrepairable gate security_baseline: FAIL/.test(item)));
+    // Without an infrastructure failure the same input keeps today's strict handling.
+    const strict = summarizeWorkerRejection({ ...base, infrastructureFailure: null });
+    assert.ok(strict.blockers.length > 0);
 });
 
 await fs.rm(workspace, { recursive: true, force: true }).catch(() => {});
