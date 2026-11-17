@@ -1,9 +1,24 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { sanitizeCommandEvent, sanitizePhaseDiagnostic } from './commandDiagnostics.js';
 
 const identityOf = job => Object.fromEntries(['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId']
   .map(key => [key, job[key]]));
+const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled', 'failed_timeout', 'failed_interrupted'];
+const SAVE_COALESCE_MS = 1000;
+const bulkInputOf = job => job.archiveBase64 ?? job.packageJsonBase64;
+const digestOf = value => createHash('sha256').update(String(value ?? '')).digest('hex');
+// A finished job keeps its identity, result and an input digest; the multi-megabyte
+// payload is only needed while the job can still run.
+function dropBulkInputs(job) {
+  const source = bulkInputOf(job);
+  if (source === undefined) return false;
+  job.inputDigest = digestOf(source);
+  delete job.archiveBase64;
+  delete job.packageJsonBase64;
+  return true;
+}
 function failureDiagnostics(job, status, result) {
   if (!job.diagnostics || !['failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(status)) return result;
   return { ...result, diagnostics: { phases: structuredClone(job.diagnostics.phases || []), commands: job.diagnostics.commands.slice(-64).map(command => ({ ...command,
@@ -11,11 +26,14 @@ function failureDiagnostics(job, status, result) {
 }
 
 export class JobStore {
-  constructor(dbPath = ':memory:') {
+  constructor(dbPath = ':memory:', { saveCoalesceMs = SAVE_COALESCE_MS } = {}) {
     this.dbPath = dbPath;
     this.isMemory = dbPath === ':memory:';
+    this.saveCoalesceMs = saveCoalesceMs;
+    this.saveTimer = null;
+    this.lastDiagnosticSaveAt = 0;
     this.jobs = new Map();
-    
+
     if (!this.isMemory) {
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       if (fs.existsSync(dbPath)) {
@@ -31,10 +49,11 @@ export class JobStore {
               if (job.diagnostics) job.result = { ...failureDiagnostics(job, job.status, { error: 'Worker interrupted during execution' }), ...identityOf(job) };
               delete job.diagnosticsLease;
               recovered = true;
-            } else if (['completed', 'failed', 'cancelled', 'failed_timeout', 'failed_interrupted'].includes(job.status) && !Number.isFinite(job.completedAt)) {
+            } else if (TERMINAL_STATUSES.includes(job.status) && !Number.isFinite(job.completedAt)) {
               job.completedAt = Date.now();
               recovered = true;
             }
+            if (TERMINAL_STATUSES.includes(job.status) && dropBulkInputs(job)) recovered = true;
             this.jobs.set(jobId, job);
           }
           if (recovered) this._save();
@@ -45,7 +64,25 @@ export class JobStore {
     }
   }
 
+  // Diagnostic events arrive per command; rewriting the whole file for each one blocks the
+  // event loop. The first event of a quiet period is written at once so a crash still keeps it;
+  // later ones within the interval share one trailing write. Terminal transitions, begin and
+  // close always write immediately.
+  _saveSoon() {
+    if (this.isMemory || this.saveTimer) return;
+    const wait = this.saveCoalesceMs - (Date.now() - this.lastDiagnosticSaveAt);
+    if (wait <= 0) { this._saveDiagnostics(); return; }
+    this.saveTimer = setTimeout(() => this._saveDiagnostics(), wait);
+    this.saveTimer.unref?.();
+  }
+
+  _saveDiagnostics() {
+    this._save();
+    this.lastDiagnosticSaveAt = Date.now();
+  }
+
   _save() {
+    if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
     if (this.isMemory) return;
     const tmp = this.dbPath + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(Object.fromEntries(this.jobs)));
@@ -64,9 +101,12 @@ export class JobStore {
     const identity = ['version', 'jobId', 'operation', 'projectId', 'contractId', 'contractHash', 'revision', 'artifactId', 'nonce', 'inputSha256', 'runId'];
     if (this.jobs.has(job.jobId)) {
       const existing = this.jobs.get(job.jobId);
+      // Finished jobs no longer hold their payload; compare the digest recorded when it was dropped.
+      const sameInput = existing.inputDigest !== undefined
+        ? existing.inputDigest === digestOf(bulkInputOf(job))
+        : existing.packageJsonBase64 === job.packageJsonBase64 && existing.archiveBase64 === job.archiveBase64;
       const sameIdentity = identity.every(key => existing[key] === job[key])
-        && existing.packageJsonBase64 === job.packageJsonBase64
-        && existing.archiveBase64 === job.archiveBase64
+        && sameInput
         && JSON.stringify(existing.contract) === JSON.stringify(job.contract);
       if (!sameIdentity) throw new Error('Duplicate jobId with different input');
       return 'exists';
@@ -98,9 +138,10 @@ export class JobStore {
     if (result) {
       job.result = { ...result, ...identityOf(job) };
     }
-    if (toStatus === 'completed' || toStatus === 'failed' || toStatus === 'cancelled' || toStatus === 'failed_timeout' || toStatus === 'failed_interrupted') {
+    if (TERMINAL_STATUSES.includes(toStatus)) {
       job.completedAt = Date.now();
       delete job.diagnosticsLease;
+      dropBulkInputs(job);
     }
     this._save();
     return true;
@@ -130,7 +171,7 @@ export class JobStore {
       if (!existing || existing.endedAt !== undefined || safe.endedAt < existing.startedAt) return false;
       Object.assign(existing, safe);
     }
-    this._save();
+    this._saveSoon();
     return true;
   }
 
@@ -144,7 +185,7 @@ export class JobStore {
     while (safe.checks.length && Buffer.byteLength(JSON.stringify([...phases, safe])) > 512 * 1024) {
       safe.checks.pop(); safe.truncated = true;
     }
-    phases.push(safe); this._save(); return true;
+    phases.push(safe); this._saveSoon(); return true;
   }
   
 
@@ -156,5 +197,7 @@ export class JobStore {
     if (deleted) this._save();
   }
 
-  close() {}
+  close() {
+    if (this.saveTimer) this._save();
+  }
 }

@@ -3747,7 +3747,7 @@
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
-      "val": 14,
+      "val": 17.5,
       "provenance": "ast"
     },
     {
@@ -3958,6 +3958,16 @@
       "file": "execution/tests/jobStatusProjection.test.js",
       "description": "",
       "val": 4.5,
+      "provenance": "ast"
+    },
+    {
+      "id": "execution/tests/jobStoreLightweight.test.js",
+      "label": "jobStoreLightweight.test.js",
+      "type": "SourceFile",
+      "group": "tests",
+      "file": "execution/tests/jobStoreLightweight.test.js",
+      "description": "",
+      "val": 7,
       "provenance": "ast"
     },
     {
@@ -4740,7 +4750,7 @@
       "group": "packages",
       "file": null,
       "description": "node:fs",
-      "val": 47,
+      "val": 47.5,
       "provenance": "ast"
     },
     {
@@ -4750,7 +4760,7 @@
       "group": "packages",
       "file": null,
       "description": "node:path",
-      "val": 51.5,
+      "val": 52,
       "provenance": "ast"
     },
     {
@@ -6558,7 +6568,7 @@
       "group": "packages",
       "file": null,
       "description": "node:crypto",
-      "val": 38,
+      "val": 38.5,
       "provenance": "ast"
     },
     {
@@ -11929,7 +11939,7 @@
       "group": "packages",
       "file": null,
       "description": "node:os",
-      "val": 26.5,
+      "val": 27,
       "provenance": "ast"
     },
     {
@@ -15868,7 +15878,7 @@
       "group": "packages",
       "file": null,
       "description": "node:test",
-      "val": 32,
+      "val": 32.5,
       "provenance": "ast"
     },
     {
@@ -15878,7 +15888,7 @@
       "group": "packages",
       "file": null,
       "description": "node:assert/strict",
-      "val": 58,
+      "val": 58.5,
       "provenance": "ast"
     },
     {
@@ -31260,7 +31270,7 @@
       "line": 149
     },
     {
-      "id": "execution/jobStore.js#Function:identityOf@5",
+      "id": "execution/jobStore.js#Function:identityOf@6",
       "label": "identityOf",
       "type": "Function",
       "group": "backend",
@@ -31268,34 +31278,34 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 5
+      "line": 6
     },
     {
-      "id": "execution/jobStore.js#Function:failureDiagnostics@7",
-      "label": "failureDiagnostics",
+      "id": "execution/jobStore.js#Function:bulkInputOf@10",
+      "label": "bulkInputOf",
       "type": "Function",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 7
+      "line": 10
     },
     {
-      "id": "execution/jobStore.js#Class:JobStore@13",
-      "label": "JobStore",
-      "type": "Class",
+      "id": "execution/jobStore.js#Function:digestOf@11",
+      "label": "digestOf",
+      "type": "Function",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
-      "val": 7.5,
+      "val": 2.5,
       "provenance": "ast",
-      "line": 13
+      "line": 11
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.constructor@14",
-      "label": "JobStore.constructor",
-      "type": "Method",
+      "id": "execution/jobStore.js#Function:dropBulkInputs@14",
+      "label": "dropBulkInputs",
+      "type": "Function",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
@@ -31304,7 +31314,62 @@
       "line": 14
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore._save@48",
+      "id": "execution/jobStore.js#Function:failureDiagnostics@22",
+      "label": "failureDiagnostics",
+      "type": "Function",
+      "group": "backend",
+      "file": "execution/jobStore.js",
+      "description": "",
+      "val": 2.5,
+      "provenance": "ast",
+      "line": 22
+    },
+    {
+      "id": "execution/jobStore.js#Class:JobStore@28",
+      "label": "JobStore",
+      "type": "Class",
+      "group": "backend",
+      "file": "execution/jobStore.js",
+      "description": "",
+      "val": 8.5,
+      "provenance": "ast",
+      "line": 28
+    },
+    {
+      "id": "execution/jobStore.js#Method:JobStore.constructor@29",
+      "label": "JobStore.constructor",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/jobStore.js",
+      "description": "",
+      "val": 4,
+      "provenance": "ast",
+      "line": 29
+    },
+    {
+      "id": "execution/jobStore.js#Method:JobStore._saveSoon@71",
+      "label": "JobStore._saveSoon",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/jobStore.js",
+      "description": "",
+      "val": 3.5,
+      "provenance": "ast",
+      "line": 71
+    },
+    {
+      "id": "execution/jobStore.js#Method:JobStore._saveDiagnostics@79",
+      "label": "JobStore._saveDiagnostics",
+      "type": "Method",
+      "group": "backend",
+      "file": "execution/jobStore.js",
+      "description": "",
+      "val": 3,
+      "provenance": "ast",
+      "line": 79
+    },
+    {
+      "id": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "JobStore._save",
       "type": "Method",
       "group": "backend",
@@ -31312,21 +31377,21 @@
       "description": "",
       "val": 5.5,
       "provenance": "ast",
-      "line": 48
+      "line": 84
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.insertJob@55",
+      "id": "execution/jobStore.js#Method:JobStore.insertJob@92",
       "label": "JobStore.insertJob",
       "type": "Method",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
-      "val": 3,
+      "val": 4,
       "provenance": "ast",
-      "line": 55
+      "line": 92
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.getNextPendingJob@82",
+      "id": "execution/jobStore.js#Method:JobStore.getNextPendingJob@122",
       "label": "JobStore.getNextPendingJob",
       "type": "Method",
       "group": "backend",
@@ -31334,10 +31399,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 82
+      "line": 122
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.getJob@87",
+      "id": "execution/jobStore.js#Method:JobStore.getJob@127",
       "label": "JobStore.getJob",
       "type": "Method",
       "group": "backend",
@@ -31345,21 +31410,21 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 87
+      "line": 127
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
+      "id": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
       "label": "JobStore.updateJobStatus",
       "type": "Method",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
-      "val": 4,
+      "val": 4.5,
       "provenance": "ast",
-      "line": 93
+      "line": 133
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.beginDiagnostics@109",
+      "id": "execution/jobStore.js#Method:JobStore.beginDiagnostics@150",
       "label": "JobStore.beginDiagnostics",
       "type": "Method",
       "group": "backend",
@@ -31367,10 +31432,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 109
+      "line": 150
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@118",
+      "id": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@159",
       "label": "JobStore.recordCommandDiagnostic",
       "type": "Method",
       "group": "backend",
@@ -31378,10 +31443,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 118
+      "line": 159
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@137",
+      "id": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@178",
       "label": "JobStore.recordPhaseDiagnostic",
       "type": "Method",
       "group": "backend",
@@ -31389,10 +31454,10 @@
       "description": "",
       "val": 3,
       "provenance": "ast",
-      "line": 137
+      "line": 178
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.hasJob@151",
+      "id": "execution/jobStore.js#Method:JobStore.hasJob@192",
       "label": "JobStore.hasJob",
       "type": "Method",
       "group": "backend",
@@ -31400,10 +31465,10 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 151
+      "line": 192
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.deleteJob@154",
+      "id": "execution/jobStore.js#Method:JobStore.deleteJob@195",
       "label": "JobStore.deleteJob",
       "type": "Method",
       "group": "backend",
@@ -31411,18 +31476,18 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 154
+      "line": 195
     },
     {
-      "id": "execution/jobStore.js#Method:JobStore.close@159",
+      "id": "execution/jobStore.js#Method:JobStore.close@200",
       "label": "JobStore.close",
       "type": "Method",
       "group": "backend",
       "file": "execution/jobStore.js",
       "description": "",
-      "val": 2,
+      "val": 2.5,
       "provenance": "ast",
-      "line": 159
+      "line": 200
     },
     {
       "id": "package:node:zlib",
@@ -34555,6 +34620,39 @@
       "val": 1.5,
       "provenance": "ast",
       "line": 56
+    },
+    {
+      "id": "execution/tests/jobStoreLightweight.test.js#Function:makeJob@11",
+      "label": "makeJob",
+      "type": "Function",
+      "group": "tests",
+      "file": "execution/tests/jobStoreLightweight.test.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 11
+    },
+    {
+      "id": "execution/tests/jobStoreLightweight.test.js#Function:withStore@13",
+      "label": "withStore",
+      "type": "Function",
+      "group": "tests",
+      "file": "execution/tests/jobStoreLightweight.test.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 13
+    },
+    {
+      "id": "execution/tests/jobStoreLightweight.test.js#Function:commandsOnDisk@93",
+      "label": "commandsOnDisk",
+      "type": "Function",
+      "group": "tests",
+      "file": "execution/tests/jobStoreLightweight.test.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 93
     },
     {
       "id": "execution/tests/jobStoreRecovery.test.js#Function:start@56",
@@ -84913,8 +85011,8 @@
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/commandDiagnostics.js",
-      "label": "imports",
+      "target": "package:node:crypto",
+      "label": "imports_package",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
@@ -84923,37 +85021,47 @@
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Function:identityOf@5",
-      "label": "contains",
+      "target": "execution/commandDiagnostics.js",
+      "label": "imports",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 5
+        "line": 4
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Function:failureDiagnostics@7",
+      "target": "execution/jobStore.js#Function:identityOf@6",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 7
+        "line": 6
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Class:JobStore@13",
+      "target": "execution/jobStore.js#Function:bulkInputOf@10",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 13
+        "line": 10
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.constructor@14",
+      "target": "execution/jobStore.js#Function:digestOf@11",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 11
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Function:dropBulkInputs@14",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -84962,218 +85070,208 @@
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.constructor@14",
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Function:failureDiagnostics@22",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 14
+        "line": 22
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "target": "execution/jobStore.js#Class:JobStore@28",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 48
-      }
-    },
-    {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 48
+        "line": 28
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.insertJob@55",
+      "target": "execution/jobStore.js#Method:JobStore.constructor@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 55
+        "line": 29
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.insertJob@55",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.constructor@29",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 55
-      }
-    },
-    {
-      "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.getNextPendingJob@82",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 82
-      }
-    },
-    {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.getNextPendingJob@82",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 82
+        "line": 29
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.getJob@87",
+      "target": "execution/jobStore.js#Method:JobStore._saveSoon@71",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 87
+        "line": 71
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.getJob@87",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore._saveSoon@71",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 87
-      }
-    },
-    {
-      "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 93
-      }
-    },
-    {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 93
+        "line": 71
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.beginDiagnostics@109",
+      "target": "execution/jobStore.js#Method:JobStore._saveDiagnostics@79",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 109
+        "line": 79
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.beginDiagnostics@109",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore._saveDiagnostics@79",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 109
-      }
-    },
-    {
-      "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@118",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 118
-      }
-    },
-    {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@118",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 118
+        "line": 79
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@137",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 137
+        "line": 84
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@137",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 137
-      }
-    },
-    {
-      "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.hasJob@151",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 151
-      }
-    },
-    {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.hasJob@151",
-      "label": "contains",
-      "provenance": "ast",
-      "location": {
-        "file": "execution/jobStore.js",
-        "line": 151
+        "line": 84
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.deleteJob@154",
+      "target": "execution/jobStore.js#Method:JobStore.insertJob@92",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 154
+        "line": 92
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.deleteJob@154",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.insertJob@92",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 154
+        "line": 92
       }
     },
     {
       "source": "execution/jobStore.js",
-      "target": "execution/jobStore.js#Method:JobStore.close@159",
+      "target": "execution/jobStore.js#Method:JobStore.getNextPendingJob@122",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 122
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.getNextPendingJob@122",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 122
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.getJob@127",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 127
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.getJob@127",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 127
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 133
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 133
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.beginDiagnostics@150",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 150
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.beginDiagnostics@150",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 150
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@159",
       "label": "contains",
       "provenance": "ast",
       "location": {
@@ -85182,13 +85280,93 @@
       }
     },
     {
-      "source": "execution/jobStore.js#Class:JobStore@13",
-      "target": "execution/jobStore.js#Method:JobStore.close@159",
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@159",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
         "line": 159
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@178",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 178
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@178",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 178
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.hasJob@192",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 192
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.hasJob@192",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 192
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.deleteJob@195",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 195
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.deleteJob@195",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 195
+      }
+    },
+    {
+      "source": "execution/jobStore.js",
+      "target": "execution/jobStore.js#Method:JobStore.close@200",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 200
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Class:JobStore@28",
+      "target": "execution/jobStore.js#Method:JobStore.close@200",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 200
       }
     },
     {
@@ -89029,6 +89207,96 @@
       "location": {
         "file": "execution/tests/jobStatusProjection.test.js",
         "line": 56
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "package:node:test",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 1
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "package:node:assert",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 2
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "package:node:fs",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 3
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "package:node:os",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 4
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "package:node:path",
+      "label": "imports_package",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 5
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/jobStore.js",
+      "label": "imports",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 6
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:makeJob@11",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 11
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:withStore@13",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 13
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:commandsOnDisk@93",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 93
       }
     },
     {
@@ -134032,38 +134300,58 @@
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.constructor@14",
-      "target": "execution/jobStore.js#Function:failureDiagnostics@7",
+      "source": "execution/jobStore.js#Function:dropBulkInputs@14",
+      "target": "execution/jobStore.js#Function:bulkInputOf@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 31
+        "line": 15
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.constructor@14",
-      "target": "execution/jobStore.js#Function:identityOf@5",
+      "source": "execution/jobStore.js#Function:dropBulkInputs@14",
+      "target": "execution/jobStore.js#Function:digestOf@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 31
+        "line": 17
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.constructor@14",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.constructor@29",
+      "target": "execution/jobStore.js#Function:failureDiagnostics@22",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 40
+        "line": 49
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.insertJob@55",
-      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
+      "source": "execution/jobStore.js#Method:JobStore.constructor@29",
+      "target": "execution/jobStore.js#Function:identityOf@6",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 49
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.constructor@29",
+      "target": "execution/jobStore.js#Function:dropBulkInputs@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 56
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.constructor@29",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "calls",
       "provenance": "ast",
       "location": {
@@ -134072,103 +134360,173 @@
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.insertJob@55",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore._saveSoon@71",
+      "target": "execution/jobStore.js#Method:JobStore._saveDiagnostics@79",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 78
+        "line": 74
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
-      "target": "execution/jobStore.js#Function:failureDiagnostics@7",
+      "source": "execution/jobStore.js#Method:JobStore._saveDiagnostics@79",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 97
+        "line": 80
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
-      "target": "execution/jobStore.js#Function:identityOf@5",
+      "source": "execution/jobStore.js#Method:JobStore.insertJob@92",
+      "target": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 99
+        "line": 96
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@93",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.insertJob@92",
+      "target": "execution/jobStore.js#Function:digestOf@11",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 105
+        "line": 106
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.beginDiagnostics@109",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.insertJob@92",
+      "target": "execution/jobStore.js#Function:bulkInputOf@10",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 114
+        "line": 106
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@118",
+      "source": "execution/jobStore.js#Method:JobStore.insertJob@92",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 118
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "target": "execution/jobStore.js#Function:failureDiagnostics@22",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 137
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "target": "execution/jobStore.js#Function:identityOf@6",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 139
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "target": "execution/jobStore.js#Function:dropBulkInputs@14",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 144
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.updateJobStatus@133",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 146
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.beginDiagnostics@150",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 155
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@159",
       "target": "execution/commandDiagnostics.js#Function:sanitizeCommandEvent@77",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 121
+        "line": 162
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@118",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.recordCommandDiagnostic@159",
+      "target": "execution/jobStore.js#Method:JobStore._saveSoon@71",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 133
+        "line": 174
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@137",
+      "source": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@178",
       "target": "execution/commandDiagnostics.js#Function:sanitizePhaseDiagnostic@8",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 140
+        "line": 181
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@137",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.recordPhaseDiagnostic@178",
+      "target": "execution/jobStore.js#Method:JobStore._saveSoon@71",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 147
+        "line": 188
       }
     },
     {
-      "source": "execution/jobStore.js#Method:JobStore.deleteJob@154",
-      "target": "execution/jobStore.js#Method:JobStore._save@48",
+      "source": "execution/jobStore.js#Method:JobStore.deleteJob@195",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "execution/jobStore.js",
-        "line": 156
+        "line": 197
+      }
+    },
+    {
+      "source": "execution/jobStore.js#Method:JobStore.close@200",
+      "target": "execution/jobStore.js#Method:JobStore._save@84",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/jobStore.js",
+        "line": 201
       }
     },
     {
@@ -135909,6 +136267,36 @@
       "location": {
         "file": "execution/tests/jobStatusProjection.test.js",
         "line": 25
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:makeJob@11",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 21
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:withStore@13",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 37
+      }
+    },
+    {
+      "source": "execution/tests/jobStoreLightweight.test.js",
+      "target": "execution/tests/jobStoreLightweight.test.js#Function:commandsOnDisk@93",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "execution/tests/jobStoreLightweight.test.js",
+        "line": 94
       }
     },
     {

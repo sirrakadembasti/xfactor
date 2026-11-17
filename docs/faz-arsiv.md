@@ -570,6 +570,15 @@ B-3 (`workflow.execution_fenced`) kök nedeni hâlâ ölçülmedi; bu halka yaln
 - Her iki log da stdout/stderr'e gider. **Bulgu için** bir sonraki gerçek koşunun terminal çıktısı gerekir (`db.transaction_slow`, `workflow.state_large`, `workflow.lease_check_failed`, `workflow.heartbeat_write_slow`). Çıktı alınmadan Y3b (lineage tablosu, migrasyon 19) kararı verilmez.
 - Testler: `test_db_transaction_measurement.js` (sahte saatle yavaş/hızlı/hatalı transaction, `state_large` eşiği ve tekrar yazmama, beş noktanın sarıldığı, gerçek `saveProjectState` ile `state_large`).
 
+### Halka 47 — 17 Kasım: Worker iş deposu hafifledi (Y7)
+
+B-5: `execution/jobStore.js` her komut olayında bütün iş dosyasını (~7,9 MB, 24 saat boyunca `archiveBase64`/`packageJsonBase64` dahil) senkron yeniden yazıyor ve olay döngüsünü bloke ediyordu. `faz-6/y7-worker-is-deposu` dalında:
+- **Terminal işte yük silinir:** `completed`, `failed`, `cancelled`, `failed_timeout` ve `failed_interrupted` durumuna geçen işin `archiveBase64`/`packageJsonBase64` alanları silinir; kimlik alanları, sonuç ve `inputSha256` kalır. Dosya yüklenirken eski kayıtlardaki yükler de silinir (bir kez yeniden yazılır). Yürütücü işin kopyasıyla çalıştığı için çalışan iş etkilenmez.
+- **Tekrar gönderim:** Silinen yükün yerine `inputDigest` (yükün SHA-256'sı) saklanır. Terminal bir işe aynı kimlik ve aynı girdiyle yeniden `insertJob` `exists` döner; farklı `inputSha256`, nonce, sözleşme ya da aynı iddia edilen özetle farklı bayt `Duplicate jobId with different input` hatası verir. Yol haritası yalnız `inputSha256` karşılaştırmasını öneriyordu; `prepare_dependencies` için bu özet paket baytlarına sunucuda bağlanmadığından, baytların özetini de karşılaştırmak mevcut tam karşılaştırma garantisini korur.
+- **Tanılama yazımı birleşir:** Komut ve faz olayları en çok 1 sn'de bir yazılır (`saveCoalesceMs`). Sessiz bir dönemdeki ilk olay hemen yazılır (çökmede kaybolmaz; mevcut kurtarma testi bunu gerektirir), aynı aralıktaki sonrakiler tek bir sonda yazımda birleşir. `beginDiagnostics`, `insertJob`, terminal geçiş ve `close()` hemen yazar; `close()` bekleyen yazımı temizleyip son kez yazar. Yüz olaylık bir seri en çok iki yazım üretir.
+- **Çökme kurtarma değişmedi:** `running` iş yeniden yüklenince `failed_interrupted` olur. Birleştirilmiş son olaylar çökmede en fazla bir saniyelik tanılama kaybedebilir; kabul kanıtı değildir.
+- Testler: `execution/tests/jobStoreLightweight.test.js` (yeni, 7 test) ve mevcut `jobStoreRecovery.test.js` (değişmedi, geçiyor).
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
