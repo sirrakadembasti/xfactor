@@ -98,6 +98,8 @@ npm run dev
 * **Terminal 1 (Backend):** `cd backend && npm run dev` *(Backend hazır: http://127.0.0.1:8000)*
 * **Terminal 2 (Frontend):** `cd frontend && npm run dev` *(Web Arayüzü: http://127.0.0.1:5173)*
 * **Terminal 3 (Execution Worker):** yerel kullanımda [paket kılavuzundaki](kullanici-kilavuzu.md#yerel-worker-paketi) launcher ve backend URL/token bağlantısını kullanın *(İç servis: http://127.0.0.1:8099)*. Normal `npm run dev` Docker olmadan yerel worker'ı başlatır; `npm run dev:local` aynı akışın açık adıdır. Docker profili yalnız `npm run dev:docker` ile seçilir. Doğrudan `node execution/server.js` düşük seviyeli sunucu komutudur ve ayrı runtime/token yapılandırması gerektirir.
+
+**Veritabanı konumu (`DB_PATH`):** SQLite dosyası varsayılan olarak `backend/data/projects.db`'dir. Proje yavaş bir sabit diskteyse (ölçülen örnek: 5400 devirli diskte tek bir fsync 66 ms, SSD'de 0,9 ms; bkz. faz arşivi Halka 50) veritabanını SSD'de tutmak için sunucuyu `DB_PATH` ile başlatın, örneğin PowerShell'de `$env:DB_PATH='C:\Users\<kullanıcı>\xfactor-data\projects.db'; npm run dev:docker`. Değişkeni `backend/.env` dosyasına yazmak yetmez: `db.js` modül yüklenirken okur ve `dotenv` ondan sonra çalışır. **`DB_PATH` olmadan başlatılan sunucu varsayılan (eski) dosyayı açar.**
 ### 3. Kullanmaya Başlayın
 1. Tarayıcınızda `http://127.0.0.1:5173` adresini açın.
 2. README'deki varsayılan bilgileri (`admin` / `xfactor`) giriş alanlarına yazıp **`Giriş Yap`** butonuna tıklayın.

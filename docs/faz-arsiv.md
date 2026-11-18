@@ -600,6 +600,14 @@ Y3a logları ilk gerçek koşuda (`c3657cb6`, 17 Kasım 21:52–22:04 UTC) şunl
 
 `faz-6/y3c-kanit-transaction` dalında `workflowHeartbeatConnection.js:openHeartbeatDatabase`: `busy_timeout=5000`, `synchronous=NORMAL` ve `wal_autocheckpoint=0`. Checkpoint'i ana bağlantı yapmaya devam eder. Test: `test_heartbeat_connection.js`. Bu disk gecikmesini gidermez; veritabanını SSD'ye taşımak (`DB_PATH`) ve Y3b ayrı kararlardır.
 
+### Halka 51 — 18 Kasım: canlı veritabanı SSD'ye taşındı
+
+Halka 50'deki bulgu üzerine kullanıcı onayıyla canlı veritabanı `F:` (5400 devirli sabit disk) yerine `C:\Users\ahmet\xfactor-data\projects.db`'ye (SATA SSD) taşındı. Sunucu `DB_PATH` ortam değişkeniyle başlatılıyor.
+- **Sıra:** dev süreçleri durduruldu (çalışan girişim yoktu); kaynak yalnız salt okunur bağlantıyla okundu; hedef `VACUUM INTO` ile üretildi; özgün dosyalar (`projects.db`, `-wal`, `-shm`) `backend/data/maintenance-backups/pre-db-move-20261117T232851Z/` altına düz dosya kopyasıyla yedeklendi.
+- **Doğrulama:** hem hedef hem yedek için `PRAGMA integrity_check` = ok, `foreign_key_check` = 0, 25 tablonun satır sayıları kaynakla aynı (toplam 15.396), şema sürümü 18, `stok-takip-1` revizyon 865 ve `paused`. Yeniden başlatılan sunucuda `/readyz` 200, giriş ve proje okuması çalıştı; WAL/SHM dosyaları `C:` altında oluştu, `F:` dosyaları değişmedi.
+- **Sürpriz:** ilk deneme kaynağa `VACUUM INTO` ile yedek yazarken 300 sn'de bitmedi (13 MB'ta kesildi; eksik yedek dizini silindi). Hedef `C:` olduğu hâlde `VACUUM INTO` yine 200 sn sürdü, düz dosya kopyası ise 2 sn: yavaşlık yazmada değil, `F:` diskinden sayfa sayfa rastgele okumadaydı.
+- **Dikkat:** `DB_PATH` olmadan başlatılan sunucu `backend/data/projects.db`'yi (artık bayat) açar. `backend/.env`'e yazmak işe yaramaz çünkü `db.js` `DEFAULT_DB_PATH`'i modül yüklenirken okur, `dotenv` sonra çalışır. Eski dosyalar silinmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 
