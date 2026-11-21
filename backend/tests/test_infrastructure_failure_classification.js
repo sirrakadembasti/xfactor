@@ -68,6 +68,35 @@ await runAsyncTest('real dependency errors are neither retried nor reclassified'
     }
 });
 
+await runAsyncTest('an adapter that throws on a non-zero exit gets the same retry and classification', async () => {
+    const thrown = text => Object.assign(new Error(`Command failed with code 1: ${text}`), { result: { passed: false, exitCode: 1, stdout: '', stderr: '' } });
+    const adapter = results => { const calls = []; return { calls, adapter: { id: 'throwing', isAvailable: () => true, execute: async request => {
+        calls.push(request);
+        const next = results[Math.min(calls.length - 1, results.length - 1)];
+        if (next instanceof Error) throw next;
+        return next;
+    } } }; };
+    const retried = adapter([thrown(E502), success]);
+    const passed = cleanInstall(await verifyDependencies(workspace, {}, { files, adapter: retried.adapter }));
+    assert.equal(retried.calls.length, 2);
+    assert.equal(passed.status, 'passed');
+    const outage = adapter([thrown('npm error code E504'), thrown('npm error code E504')]);
+    const blocked = cleanInstall(await verifyDependencies(workspace, {}, { files, adapter: outage.adapter }));
+    assert.equal(outage.calls.length, 2);
+    assert.equal(blocked.status, 'blocked');
+    assert.equal(blocked.evidence.classification, 'infrastructure');
+    const real = adapter([thrown('npm error code ERESOLVE'), success]);
+    const failed = cleanInstall(await verifyDependencies(workspace, {}, { files, adapter: real.adapter }));
+    assert.equal(real.calls.length, 1);
+    assert.equal(failed.status, 'failed');
+    assert.equal(failed.evidence, undefined);
+    const hung = adapter([Object.assign(new Error('Command timed out'), { result: { timedOut: true } })]);
+    const timedOut = cleanInstall(await verifyDependencies(workspace, {}, { files, adapter: hung.adapter }));
+    assert.equal(hung.calls.length, 1);
+    assert.equal(timedOut.status, 'failed');
+    assert.equal(timedOut.timedOut, true);
+});
+
 await runAsyncTest('an aborted verification is not retried', async () => {
     const controller = new AbortController();
     controller.abort();

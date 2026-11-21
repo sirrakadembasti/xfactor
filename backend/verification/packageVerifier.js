@@ -249,13 +249,29 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
         try {
             const installTimeoutMs = options.timeoutMs || 900000;
             const installDeadline = Date.now() + installTimeoutMs;
-            const runInstall = timeoutMs => executeInSandbox(npmCmd, installArgs, {
-                workspace: projectDir,
-                timeoutMs,
-                adapter: options.adapter,
-                signal: options.signal,
-                env: options.env
-            });
+            // The Docker adapter throws on a non-zero exit instead of returning a failed result;
+            // fold that into a result so retry and infrastructure classification apply to it too.
+            const runInstall = async timeoutMs => {
+                try {
+                    return await executeInSandbox(npmCmd, installArgs, {
+                        workspace: projectDir,
+                        timeoutMs,
+                        adapter: options.adapter,
+                        signal: options.signal,
+                        env: options.env
+                    });
+                } catch (err) {
+                    if (err.code === 'SANDBOX_UNAVAILABLE' || err.result?.timedOut === true || options.signal?.aborted) throw err;
+                    return {
+                        ...(err.result || {}),
+                        passed: false,
+                        timedOut: err.result?.timedOut === true,
+                        exitCode: err.exitCode ?? err.result?.exitCode ?? 1,
+                        stdout: err.stdout ?? err.result?.stdout ?? '',
+                        stderr: err.stderr || err.result?.stderr || err.message || ''
+                    };
+                }
+            };
             const failureText = res => `${res.stderr || ''}\n${res.stdout || ''}`;
             let installRes = await runInstall(installTimeoutMs);
             const retries = [];
