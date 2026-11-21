@@ -2127,7 +2127,7 @@
       "group": "tests",
       "file": "backend/tests/test_infrastructure_failure_classification.js",
       "description": "",
-      "val": 12.5,
+      "val": 16,
       "provenance": "ast"
     },
     {
@@ -19341,6 +19341,50 @@
       "line": 28
     },
     {
+      "id": "backend/tests/test_infrastructure_failure_classification.js#Function:thrown@72",
+      "label": "thrown",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_infrastructure_failure_classification.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 72
+    },
+    {
+      "id": "backend/tests/test_infrastructure_failure_classification.js#Function:adapter@73",
+      "label": "adapter",
+      "type": "Function",
+      "group": "tests",
+      "file": "backend/tests/test_infrastructure_failure_classification.js",
+      "description": "",
+      "val": 2,
+      "provenance": "ast",
+      "line": 73
+    },
+    {
+      "id": "backend/tests/test_infrastructure_failure_classification.js#Method:adapter.isAvailable@73",
+      "label": "adapter.isAvailable",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_infrastructure_failure_classification.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 73
+    },
+    {
+      "id": "backend/tests/test_infrastructure_failure_classification.js#Method:adapter.execute@73",
+      "label": "adapter.execute",
+      "type": "Method",
+      "group": "tests",
+      "file": "backend/tests/test_infrastructure_failure_classification.js",
+      "description": "",
+      "val": 1.5,
+      "provenance": "ast",
+      "line": 73
+    },
+    {
       "id": "backend/tests/test_isolated_storage_roots.js#Function:restore@12",
       "label": "restore",
       "type": "Function",
@@ -28943,7 +28987,7 @@
       "group": "backend",
       "file": "backend/verification/packageVerifier.js",
       "description": "",
-      "val": 8,
+      "val": 8.5,
       "provenance": "ast",
       "line": 189
     },
@@ -28959,7 +29003,7 @@
       "line": 194
     },
     {
-      "id": "backend/verification/packageVerifier.js#Function:runInstall@252",
+      "id": "backend/verification/packageVerifier.js#Function:runInstall@254",
       "label": "runInstall",
       "type": "Function",
       "group": "backend",
@@ -28967,10 +29011,10 @@
       "description": "",
       "val": 2.5,
       "provenance": "ast",
-      "line": 252
+      "line": 254
     },
     {
-      "id": "backend/verification/packageVerifier.js#Function:failureText@259",
+      "id": "backend/verification/packageVerifier.js#Function:failureText@275",
       "label": "failureText",
       "type": "Function",
       "group": "backend",
@@ -28978,7 +29022,7 @@
       "description": "",
       "val": 2,
       "provenance": "ast",
-      "line": 259
+      "line": 275
     },
     {
       "id": "backend/verification/placeholderVerifier.js#Function:isStaticLiteralExpression@11",
@@ -64831,6 +64875,46 @@
       }
     },
     {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Function:thrown@72",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 72
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Function:adapter@73",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 73
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Method:adapter.isAvailable@73",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 73
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Method:adapter.execute@73",
+      "label": "contains",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 73
+      }
+    },
+    {
       "source": "backend/tests/test_isolated_storage_roots.js",
       "target": "package:node:assert",
       "label": "imports_package",
@@ -82052,22 +82136,22 @@
     },
     {
       "source": "backend/verification/packageVerifier.js",
-      "target": "backend/verification/packageVerifier.js#Function:runInstall@252",
+      "target": "backend/verification/packageVerifier.js#Function:runInstall@254",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 252
+        "line": 254
       }
     },
     {
       "source": "backend/verification/packageVerifier.js",
-      "target": "backend/verification/packageVerifier.js#Function:failureText@259",
+      "target": "backend/verification/packageVerifier.js#Function:failureText@275",
       "label": "contains",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 259
+        "line": 275
       }
     },
     {
@@ -118382,12 +118466,42 @@
     },
     {
       "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Function:adapter@73",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 79
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/tests/test_infrastructure_failure_classification.js#Function:thrown@72",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 79
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
+      "target": "backend/verification/packageVerifier.js#Function:verifyDependencies@189",
+      "label": "calls",
+      "provenance": "ast",
+      "location": {
+        "file": "backend/tests/test_infrastructure_failure_classification.js",
+        "line": 80
+      }
+    },
+    {
+      "source": "backend/tests/test_infrastructure_failure_classification.js",
       "target": "backend/verification/workerFailures.js#Function:summarizeWorkerRejection@96",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_infrastructure_failure_classification.js",
-        "line": 86
+        "line": 115
       }
     },
     {
@@ -118397,7 +118511,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_infrastructure_failure_classification.js",
-        "line": 102
+        "line": 131
       }
     },
     {
@@ -118407,7 +118521,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/tests/test_infrastructure_failure_classification.js",
-        "line": 108
+        "line": 137
       }
     },
     {
@@ -131691,23 +131805,23 @@
       }
     },
     {
-      "source": "backend/verification/packageVerifier.js#Function:runInstall@252",
+      "source": "backend/verification/packageVerifier.js#Function:runInstall@254",
       "target": "backend/verification/sandboxRunner.js#Function:executeInSandbox@120",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 252
+        "line": 256
       }
     },
     {
       "source": "backend/verification/packageVerifier.js#Function:verifyDependencies@189",
-      "target": "backend/verification/packageVerifier.js#Function:runInstall@252",
+      "target": "backend/verification/packageVerifier.js#Function:runInstall@254",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 260
+        "line": 276
       }
     },
     {
@@ -131717,17 +131831,17 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 263
+        "line": 279
       }
     },
     {
       "source": "backend/verification/packageVerifier.js#Function:verifyDependencies@189",
-      "target": "backend/verification/packageVerifier.js#Function:failureText@259",
+      "target": "backend/verification/packageVerifier.js#Function:failureText@275",
       "label": "calls",
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 263
+        "line": 279
       }
     },
     {
@@ -131737,7 +131851,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 266
+        "line": 282
       }
     },
     {
@@ -131747,7 +131861,7 @@
       "provenance": "ast",
       "location": {
         "file": "backend/verification/packageVerifier.js",
-        "line": 279
+        "line": 295
       }
     },
     {
