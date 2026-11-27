@@ -22,6 +22,7 @@ import { fingerprintArtifactFiles } from '../resumeStage.js';
 import { ARTIFACT_LIMITS } from '../../artifactLimits.js';
 import { validateRuntimeConfig } from '../../config.js';
 import { reserveWorkerValidation, snapshotHash } from '../workerRepairs.js';
+import { loadOpenWorkerRepairBatch } from '../../verification/workerFailures.js';
 import { extractPreparedLockfile } from './verificationStage.js';
 import { isExecutionActive, checkPause } from '../workflowSupport.js';
 
@@ -256,6 +257,12 @@ export async function runAcceptanceStage(ctx, outcome) {
         });
         outcome.controllerBoundary = null;
         controlledSession?.assertCurrent();
+        if (!completion.completed) {
+            // A registry/network outage is reported as such; it carries no Manager-revision veto.
+            const infrastructure = loadOpenWorkerRepairBatch({ projectId, contractId: latestContract.id, contractHash })
+                .infrastructureIssues.filter(issue => issue.run_id === runId);
+            if (infrastructure.length) completion.error = infrastructure.map(issue => issue.detail.reason).join('; ');
+        }
         if (verificationOnly && !completion.completed) {
             if (fingerprintArtifactFiles(await collectArtifactFiles(projectDir)) !== verificationSourceHash) {
                 throw new Error('Yeniden doğrulama sırasında kaynak envanteri değişti; sonuç mevcut kaynakların kabulü sayılamaz.');

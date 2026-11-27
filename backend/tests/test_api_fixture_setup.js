@@ -51,6 +51,16 @@ test('fixture setup fails closed for unresolved/forward references, oversized se
     }
 });
 
+test('a rejected fixture names the status, the contract fields sent and the application answer so a repair can find the cause', async () => {
+    await assert.rejects(prepare({ setup: [step()] }, async () => ({ statusCode: 400,
+        data: { success: false, error: 'Doğrulama hatası', message: 'Kategori zorunludur',
+            details: [{ field: 'categoryId', message: 'Kategori zorunludur' }] } })), error =>
+        error.message.includes('Fixture setup failed to create room with an actual ID (POST /api/rooms HTTP 400; contract fields: roomNumber; ')
+        && error.message.includes('response: Doğrulama hatası | Kategori zorunludur | [{"field":"categoryId","message":"Kategori zorunludur"}]'));
+    await assert.rejects(prepare({ setup: [step()] }, async () => ({ statusCode: 201, data: {} })),
+        /HTTP 201; contract fields: roomNumber\)\.$/);
+});
+
 test('main create and retention setup use captured IDs while negative probes and retention readback remain enforced', async () => {
     const calls = [];
     let parent;

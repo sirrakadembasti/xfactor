@@ -5,6 +5,7 @@ import { mkdir, realpath, writeFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { ensureWindowsProcessHost, isWindows } from './windowsProcessHost.js';
 import { describeCommand } from './commandDiagnostics.js';
+import { createOutputRetainer } from './outputRetention.js';
 
 const RETAIN_BYTES = 1024 * 1024;
 const HARD_BYTES = 8 * RETAIN_BYTES;
@@ -106,11 +107,11 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
     catch (error) { throw annotateSpawnFailure(error, host || tools.node, actualArgs, cwd, env); }
     const record = { child, closedDone: false, failure: null, commandId: ++commandSequence, timedOut: false }; tracked.add(record);
     progress({ state: 'started', commandId: record.commandId, ...description, startedAt: Date.now() });
-    const output = { stdout: [], stderr: [] }; const retained = { stdout: 0, stderr: 0 }; const sizes = { stdout: 0, stderr: 0 };
+    const output = { stdout: createOutputRetainer(RETAIN_BYTES), stderr: createOutputRetainer(RETAIN_BYTES) }; const sizes = { stdout: 0, stderr: 0 };
     const hashes = { stdout: createHash('sha256'), stderr: createHash('sha256') };
     for (const stream of ['stdout', 'stderr']) child[stream].on('data', chunk => {
       const bytes = Buffer.from(chunk); sizes[stream] += bytes.length; hashes[stream].update(bytes);
-      if (capture && retained[stream] < RETAIN_BYTES) { const keep = bytes.subarray(0, RETAIN_BYTES - retained[stream]); output[stream].push(keep); retained[stream] += keep.length; }
+      if (capture) output[stream].push(bytes);
       if (sizes.stdout + sizes.stderr > HARD_BYTES) { record.failure ||= new Error('Process output exceeded hard ceiling'); terminate(record); }
     });
     let timer;
@@ -126,7 +127,7 @@ export async function createLocalProcessManager({ tools, workspace, deadline = D
       child.once('close', (exitCode, exitSignal) => {
         record.closedDone = true; tracked.delete(record); clearTimeout(timer);
         for (const item of signals) item.removeEventListener('abort', abort);
-        const result = { exitCode, code: exitCode, signal: exitSignal, stdout: Buffer.concat(output.stdout).toString(), stderr: Buffer.concat(output.stderr).toString(), stdoutBytes: sizes.stdout, stderrBytes: sizes.stderr, stdoutTruncated: sizes.stdout > RETAIN_BYTES, stderrTruncated: sizes.stderr > RETAIN_BYTES, stdoutSha256: hashes.stdout.digest('hex'), stderrSha256: hashes.stderr.digest('hex') };
+        const result = { exitCode, code: exitCode, signal: exitSignal, stdout: output.stdout.text(), stderr: output.stderr.text(), stdoutBytes: sizes.stdout, stderrBytes: sizes.stderr, stdoutTruncated: sizes.stdout > RETAIN_BYTES, stderrTruncated: sizes.stderr > RETAIN_BYTES, stdoutSha256: hashes.stdout.digest('hex'), stderrSha256: hashes.stderr.digest('hex') };
         result.timedOut = record.timedOut;
         result.cancelled = signals.some(item => item.aborted);
         result.executionFailed = Boolean(record.failure);

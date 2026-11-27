@@ -9,6 +9,13 @@ import { ACTIVE_POLICY_VERSION } from './policyVersion.js';
 function computeDigest(text) {
     return crypto.createHash('sha256').update(String(text ?? '')).digest('hex');
 }
+const TRANSIENT_REGISTRY_PATTERN = /\b(E50[234]|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|socket hang up)\b/i;
+const REAL_DEPENDENCY_ERROR_PATTERN = /\b(ERESOLVE|ETARGET|E404|EINTEGRITY)\b/i;
+// Only a transport/registry outage is retried; a real dependency error never is.
+export function isTransientRegistryFailure(text) {
+    const value = String(text ?? '');
+    return TRANSIENT_REGISTRY_PATTERN.test(value) && !REAL_DEPENDENCY_ERROR_PATTERN.test(value);
+}
 function streamEvidence(result = {}) {
     return Object.fromEntries(['stdoutBytes', 'stderrBytes', 'stdoutTruncated', 'stderrTruncated'].filter(key => result[key] !== undefined).map(key => [key, result[key]]));
 }
@@ -240,16 +247,51 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
         const installArgs = ['ci', '--ignore-scripts', '--no-audit', '--no-fund'];
         const installStartedAt = new Date().toISOString();
         try {
-            const installRes = await executeInSandbox(npmCmd, installArgs, {
-                workspace: projectDir,
-                timeoutMs: options.timeoutMs || 900000,
-                adapter: options.adapter,
-                signal: options.signal,
-                env: options.env
-            });
+            const installTimeoutMs = options.timeoutMs || 900000;
+            const installDeadline = Date.now() + installTimeoutMs;
+            // The Docker adapter throws on a non-zero exit instead of returning a failed result;
+            // fold that into a result so retry and infrastructure classification apply to it too.
+            const runInstall = async timeoutMs => {
+                try {
+                    return await executeInSandbox(npmCmd, installArgs, {
+                        workspace: projectDir,
+                        timeoutMs,
+                        adapter: options.adapter,
+                        signal: options.signal,
+                        env: options.env
+                    });
+                } catch (err) {
+                    if (err.code === 'SANDBOX_UNAVAILABLE' || err.result?.timedOut === true || options.signal?.aborted) throw err;
+                    return {
+                        ...(err.result || {}),
+                        passed: false,
+                        timedOut: err.result?.timedOut === true,
+                        exitCode: err.exitCode ?? err.result?.exitCode ?? 1,
+                        stdout: err.stdout ?? err.result?.stdout ?? '',
+                        stderr: err.stderr || err.result?.stderr || err.message || ''
+                    };
+                }
+            };
+            const failureText = res => `${res.stderr || ''}\n${res.stdout || ''}`;
+            let installRes = await runInstall(installTimeoutMs);
+            const retries = [];
+            if (!installRes.passed && !installRes.timedOut && !options.signal?.aborted
+                && isTransientRegistryFailure(failureText(installRes)) && installDeadline - Date.now() > 0) {
+                retries.push({
+                    exitCode: installRes.exitCode ?? 1,
+                    stdoutDigest: installRes.stdoutDigest || installRes.stdoutSha256 || computeDigest(installRes.stdout),
+                    stderrDigest: installRes.stderrDigest || installRes.stderrSha256 || computeDigest(installRes.stderr),
+                    reason: 'Geçici registry hatası nedeniyle bir kez yeniden denendi.'
+                });
+                installRes = await runInstall(installDeadline - Date.now());
+            }
+            const infrastructure = !installRes.passed && !installRes.timedOut && retries.length === 1
+                && isTransientRegistryFailure(failureText(installRes));
+            const registryCode = infrastructure ? (failureText(installRes).match(TRANSIENT_REGISTRY_PATTERN)?.[1] || 'registry') : null;
             checks.push(observedCheck(installStartedAt, {
                 name: 'clean_install',
-                status: installRes.passed ? 'passed' : 'failed',
+                status: installRes.passed ? 'passed' : (infrastructure ? 'blocked' : 'failed'),
+                ...(retries.length ? { evidence: { retries, ...(infrastructure ? { classification: 'infrastructure' } : {}) } } : {}),
                 ...streamEvidence(installRes),
                 command: `${npmCmd} ${installArgs.join(' ')}`,
                 exitCode: installRes.exitCode ?? (installRes.passed ? 0 : 1),
@@ -258,7 +300,9 @@ export async function verifyDependencies(projectDir, contract = {}, options = {}
                 stdoutDigest: installRes.stdoutDigest || installRes.stdoutSha256 || computeDigest(installRes.stdout),
                 stderrDigest: installRes.stderrDigest || installRes.stderrSha256 || computeDigest(installRes.stderr),
                 timedOut: installRes.timedOut === true,
-                reason: installRes.passed ? 'Clean npm ci install succeeded in sandbox.' : `Clean install failed in sandbox: ${installRes.stderr || installRes.stdout}`
+                reason: installRes.passed ? `Clean npm ci install succeeded in sandbox.${retries.length ? ' 1 geçici registry hatasından sonra yeniden denendi.' : ''}`
+                    : infrastructure ? `Bağımlılık kurulumu ağ/registry hatası nedeniyle tamamlanamadı (${registryCode}). Kaynaklar değiştirilmedi; Devam Ettir veya Yalnız Yeniden Doğrula ile yeniden deneyin.`
+                        : `Clean install failed in sandbox: ${installRes.stderr || installRes.stdout}`
             }));
         } catch (err) {
             checks.push(observedCheck(installStartedAt, {

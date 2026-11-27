@@ -178,6 +178,8 @@ export function createExecutionClient(config = {}, { onProgress } = {}) {
     return {
         prepareDependencies: (job, { signal } = {}) => submitAndPoll(job, 'prepare_dependencies', signal),
         verifyArtifact: (job, { signal } = {}) => submitAndPoll(job, 'verify_artifact', signal),
+        // Advisory compiler feedback for repair; its result never becomes verification evidence.
+        typecheckArtifact: (job, { signal } = {}) => submitAndPoll(job, 'typecheck_artifact', signal),
         getCapabilities: ({ signal } = {}) => request('/readyz', { signal }),
         cancelJob: (jobId, projectId) => request(jobPath(jobId, projectId), { method: 'DELETE' })
     };

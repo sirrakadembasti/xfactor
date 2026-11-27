@@ -6,6 +6,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { createLocalProcessManager } from '../localProcesses.js';
+import { truncationMarker } from '../outputRetention.js';
 import { runVerificationChecks } from '../../backend/verification/runChecks.js';
 import { ARTIFACT_LIMITS } from '../../backend/artifactLimits.js';
 
@@ -65,11 +66,11 @@ test('nested npm scripts resolve the pinned CLI without host npm shims', async t
   assert.equal(result.exitCode, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout).argv, ['nested-marker']);
 });
-test('retained output is bounded while digest covers complete stream', async t => {
+test('retained output keeps head and tail while digest covers complete stream', async t => {
   const { manager } = await setup(t);
   const size = 1100000;
   const result = await manager.execute('node', ['-e', `process.stdout.write('a'.repeat(${size}));`]);
-  assert.equal(Buffer.byteLength(result.stdout), 1024 * 1024);
+  assert.equal(Buffer.byteLength(result.stdout), 1024 * 1024 + Buffer.byteLength(truncationMarker(size - 1024 * 1024)));
   assert.equal(result.stdoutSha256, createHash('sha256').update('a'.repeat(size)).digest('hex'));
   assert.equal(result.stdoutTruncated, true); assert.equal(result.passed, false);
 });
@@ -226,4 +227,13 @@ test('inventory transport rejects oversized metadata, corrupted file bytes and t
     commands++;
     return commands === 1 ? response(metadata) : { exitCode: 0, stdout: Buffer.from('{}').toString('base64') };
   } }), /inventory.*digest/i);
+});
+
+test('local process output keeps the trailing failure summary of long output', async t => {
+  const { manager } = await setup(t);
+  const result = await manager.execute('node', ['-e', "process.stdout.write('first-line\\n'+'ok\\n'.repeat(500000)+'not ok 19 - stok azaltma\\n');"]);
+  assert.equal(result.stdoutTruncated, true); assert.equal(result.passed, false);
+  assert.match(result.stdout, /^first-line/);
+  assert.match(result.stdout, /not ok 19 - stok azaltma\n$/);
+  assert.ok(result.stdout.includes('…[kesildi:'));
 });

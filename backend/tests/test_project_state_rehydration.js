@@ -389,6 +389,28 @@ try {
 
         await fs.rm(tmpDir, { recursive: true, force: true });
     });
+    await runAsyncTest('6b. auto-registering a completed project recovers its artifact only after the transaction commits', async () => {
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'autoregister-artifact-test-'));
+        const completedId = `proj-auto-art-${Date.now()}`;
+        const completedDir = path.join(tmpDir, completedId);
+        await fs.mkdir(path.join(completedDir, 'manager'), { recursive: true });
+        await fs.writeFile(path.join(completedDir, 'DURUM.md'), '# DURUM\nDurum: TAMAMLANDI\n', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'package.json'), JSON.stringify({ name: 'auto-app', version: '1.0.0' }), 'utf8');
+        await fs.writeFile(path.join(completedDir, 'index.js'), 'console.log("auto");', 'utf8');
+        await fs.writeFile(path.join(completedDir, 'manager', 'TALIMATNAME.md'), '# Plan\nDetay', 'utf8');
+
+        const result = await autoRegisterDiscoveredProjects({ env: { ...process.env, PROJECTS_ROOT: tmpDir }, projectsRoot: tmpDir, database });
+        assert.strictEqual(result.success, true);
+        assert.ok(result.registered.some(item => item.id === completedId));
+        // The ZIP is created by a separate synchronous transaction, never nested inside the registration one.
+        const artifactRow = database.prepare('SELECT * FROM artifacts WHERE project_id = ?').get(completedId);
+        assert.ok(artifactRow, 'artifact must be recovered for a registered completed project');
+        assert.strictEqual(artifactRow.status, 'built');
+        assert.strictEqual(fsSync.existsSync(artifactRow.path), true);
+        database.exec('BEGIN IMMEDIATE;'); database.exec('COMMIT;');
+
+        await fs.rm(tmpDir, { recursive: true, force: true });
+    });
     await runAsyncTest('7. rehydrateProjectLogsFromDisk does NOT emit fake task finish logs for pending_approval project', async () => {
         const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rehydrate-pending-logs-test-'));
         const pendingId = `proj-logs-pending-${Date.now()}`;

@@ -3,7 +3,8 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import os from 'os';
-import { db, dbEvents, formatDBDate } from './db.js';
+import { db, dbEvents, formatDBDate, measureTransaction } from './db.js';
+import { writeStructuredLog } from './observability.js';
 import { assertWorkflowLease } from './workflowAttempts.js';
 import { validateProjectTitle } from './security.js';
 import { isValidProjectStatus } from './auth.js';
@@ -702,7 +703,28 @@ export function appendProjectActionMessages(projectId, {
         throw error;
 }
 }
-export async function saveProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
+export function saveProjectState(...args) {
+    return measureTransaction('saveProjectState', () => persistProjectState(...args));
+}
+
+const LARGE_WORKFLOW_STATE_BYTES = 256 * 1024;
+const largeWorkflowStateReported = new Set();
+// One log per project per process: the state is rewritten whole on every save, so a large one is a lock-hold candidate.
+export function noteLargeWorkflowState(projectId, workflowStr, { sink = null } = {}) {
+    if (typeof workflowStr !== 'string' || largeWorkflowStateReported.has(projectId)) return;
+    const bytes = Buffer.byteLength(workflowStr);
+    if (bytes <= LARGE_WORKFLOW_STATE_BYTES) return;
+    largeWorkflowStateReported.add(projectId);
+    let topKeys = [];
+    try {
+        topKeys = Object.entries(JSON.parse(workflowStr))
+            .map(([key, value]) => ({ key, bytes: Buffer.byteLength(JSON.stringify(value) ?? '') }))
+            .sort((a, b) => b.bytes - a.bytes).slice(0, 3);
+    } catch {}
+    writeStructuredLog('warn', 'workflow.state_large', { projectId, bytes, topKeys }, sink);
+}
+
+async function persistProjectState(stateOrId, stateOrEnv = process.env, maybeEnv = process.env) {
     const state = (typeof stateOrId === 'object' && stateOrId !== null) ? stateOrId : stateOrEnv;
     const options = [stateOrId, stateOrEnv, maybeEnv].find(candidate => candidate
         && typeof candidate === 'object'
@@ -733,6 +755,7 @@ export async function saveProjectState(stateOrId, stateOrEnv = process.env, mayb
         }
     }
     const workflowStr = state.workflow ? JSON.stringify(state.workflow) : null;
+    noteLargeWorkflowState(state.id, workflowStr);
     const expectedRevision = Number(state.revision || 1);
     const nextRevision = expectedRevision + 1;
     const insertChat = db.prepare(

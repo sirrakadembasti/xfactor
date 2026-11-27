@@ -10,10 +10,16 @@ export function safeWorkerPath(value) {
     return normalized && !/[:\x00-\x1f]/.test(normalized) && !normalized.startsWith('/')
         && !normalized.split('/').some(part => !part || part === '.' || part === '..') ? normalized : null;
 }
+const TRUNCATION_MARKER_BUDGET = 48;
 function bounded(value, limit) {
     const text = redactSensitiveText(String(value ?? '').replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '').replace(/\r\n?/g, '\n'));
     const bytes = Buffer.from(text);
-    return { text: bytes.subarray(0, limit).toString('utf8'), truncated: bytes.length > limit };
+    if (bytes.length <= limit) return { text, truncated: false };
+    // Failure summaries sit at the end of long output: keep head and tail, marker included in the limit.
+    const keep = limit - TRUNCATION_MARKER_BUDGET;
+    if (keep < TRUNCATION_MARKER_BUDGET) return { text: bytes.subarray(0, limit).toString('utf8'), truncated: true };
+    const headBytes = Math.ceil(keep / 2), tailBytes = keep - headBytes;
+    return { text: `${bytes.subarray(0, headBytes).toString('utf8')}\n…[kesildi: ${bytes.length - keep} bayt]…\n${bytes.subarray(bytes.length - tailBytes).toString('utf8')}`, truncated: true };
 }
 export function normalizeWorkerCheckLog(check, { maxStreamBytes = 16384, maxReasonBytes = 2048 } = {}) {
     const stdout = bounded(check.stdout, maxStreamBytes), stderr = bounded(check.stderr, maxStreamBytes);
@@ -79,21 +85,40 @@ export function parseTypecheckDiagnostics({ check, log, artifactPaths }) {
     }
     return findings.length ? { classification: 'product', findings } : stop('No exact source compiler diagnostics.');
 }
-export function summarizeWorkerRejection({ identity, terminalStatus, rawChecks, records, artifactManifest, acceptanceBlockers = [] }) {
-    const findings = [], blockers = [...acceptanceBlockers];
+// A worker job that failed because Docker hung or was unreachable ran no verification command; it says nothing about the source.
+const WORKER_INFRASTRUCTURE_ERROR = /^Docker operation timed out$|failed to connect to the docker API|Cannot connect to the Docker daemon/i;
+export function isWorkerInfrastructureError(error) {
+    return typeof error === 'string' && WORKER_INFRASTRUCTURE_ERROR.test(error.trim());
+}
+export function workerInfrastructureMessage(error) {
+    return `Worker altyapı hatası nedeniyle doğrulama tamamlanamadı (${bounded(error, 160).text.trim()}). Kaynaklar değiştirilmedi; Devam Ettir veya Yalnız Yeniden Doğrula ile yeniden deneyin.`;
+}
+export function summarizeWorkerRejection({ identity, terminalStatus, rawChecks, records, artifactManifest, acceptanceBlockers = [], infrastructureFailure = null }) {
+    const findings = [], blockers = [...acceptanceBlockers], infrastructureBlockers = infrastructureFailure ? [infrastructureFailure] : [];
     if (!['failed', 'completed'].includes(terminalStatus)) blockers.push(`Worker terminal status ${terminalStatus}.`);
     const manifest = new Map(artifactManifest.map(file => [file.path, file]));
+    const infrastructureReported = Boolean(infrastructureFailure) || rawChecks.some(check => check.evidence?.classification === 'infrastructure');
     for (const check of rawChecks) {
         if (['passed', 'PASS', 'skipped', 'NOT_APPLICABLE'].includes(check.status)) continue;
+        if (check.evidence?.classification === 'infrastructure') {
+            infrastructureBlockers.push(`${check.gateName || check.name}: ${bounded(check.reason, 512).text}`);
+            continue;
+        }
+        // Gates downstream of a blocked infrastructure gate are blocked by it, not by the product.
+        if (infrastructureReported && /^blocked$/i.test(check.status)) continue;
         const parsed = parseTypecheckDiagnostics({ check, log: normalizeWorkerCheckLog(check), artifactPaths: [...manifest.keys()] });
+        if (parsed.classification === 'infrastructure') { infrastructureBlockers.push(`${check.gateName || check.name}: ${parsed.blockerReason}`); continue; }
         if (parsed.classification !== 'product') { blockers.push(parsed.blockerReason); continue; }
         for (const finding of parsed.findings) findings.push({ ...finding, checkId: check.id,
             sourceSha256: manifest.get(finding.filePath).sha256,
             fingerprint: digest([identity.contractId, identity.contractHash, 'typecheck', finding.filePath, finding.diagnostic.code, finding.diagnostic.message]) });
     }
-    if (!findings.length) blockers.push('No safely routable product findings.');
+    if (!findings.length && !infrastructureBlockers.length) blockers.push('No safely routable product findings.');
     for (const record of records || []) {
         if (!['FAIL', 'BLOCKED'].includes(record.status) || record.gateName === 'typecheck') continue;
+        // An infrastructure outage blocks the infrastructure gate itself and every
+        // gate that depends on it; those BLOCKED rows are consequences, not findings.
+        if (infrastructureBlockers.length && record.status === 'BLOCKED') continue;
         // Derived traceability is blocked by the known failed product gate;
         // missing runtime/other gate evidence is a separate unsafe failure.
         if (record.gateName === 'requirement_traceability' && record.status === 'BLOCKED'
@@ -101,7 +126,12 @@ export function summarizeWorkerRejection({ identity, terminalStatus, rawChecks, 
         blockers.push(`Additional unrepairable gate ${record.gateName}: ${record.status}.`);
     }
     if (findings.length > 64 || new Set(findings.map(item => item.filePath)).size > 8) blockers.push('Repair batch budget exceeded.');
-    return { findings, blockers: [...new Set(blockers)], batchFingerprint: digest(findings.map(item => item.fingerprint).sort()) };
+    // Infrastructure is recorded as its own class only when nothing else is wrong;
+    // any product finding or other blocker keeps the established ambiguous handling.
+    const mixed = findings.length > 0 || blockers.length > 0;
+    if (mixed) blockers.push(...infrastructureBlockers);
+    return { findings, blockers: [...new Set(blockers)], infrastructureBlockers: mixed ? [] : [...new Set(infrastructureBlockers)],
+        batchFingerprint: digest(findings.map(item => item.fingerprint).sort()) };
 }
 
 // Caller holds the verification-context transaction that rejects the artifact.
@@ -116,6 +146,8 @@ export function recordWorkerRejection(context, { identity, terminalStatus, artif
     const entries = summary.findings.map(finding => ({ ...common, ...finding, kind: 'worker_product_failure', classification: 'product', gateName: 'typecheck' }));
     if (summary.blockers.length) entries.push({ ...common, kind: 'worker_verification_blocker', classification: 'ambiguous',
         reason: summary.blockers.join('; '), fingerprint: digest(summary.blockers) });
+    else if (summary.infrastructureBlockers?.length) entries.push({ ...common, kind: 'worker_verification_blocker', classification: 'infrastructure',
+        reason: summary.infrastructureBlockers.join('; '), fingerprint: digest(['infrastructure', ...summary.infrastructureBlockers]) });
     for (const detail of entries) {
         if (detail.checkId && !database.prepare('SELECT id FROM verification_checks WHERE id=? AND run_id=? AND contract_id=?').get(detail.checkId, identity.runId, context.contractId)) throw new Error('Rejection check provenance mismatch.');
         const id = `repair-worker-${digest([context.projectId, context.contractId, identity.runId, detail.fingerprint, detail.diagnostic?.line, detail.diagnostic?.column])}`;
@@ -134,7 +166,7 @@ export function recordVerificationBlocker(context, { expectedIdentity, reason },
         context.contractId, fingerprint, JSON.stringify(detail), context.attemptId ?? null, context.leaseOwner ?? null);
 }
 export function loadOpenWorkerRepairBatch({ projectId, contractId, contractHash }, database = db) {
-    const issues = [];
+    const issues = [], infrastructureIssues = [];
     for (const row of database.prepare("SELECT * FROM repair_issues WHERE project_id=? AND contract_id=? AND status='open' ORDER BY created_at,id").all(projectId, contractId)) {
         let detail; try { detail = JSON.parse(row.detail_json); } catch {}
         if (!['worker_product_failure', 'worker_verification_blocker', 'verification_controller_blocker'].includes(detail?.kind)) {
@@ -150,7 +182,9 @@ export function loadOpenWorkerRepairBatch({ projectId, contractId, contractHash 
             valid &&= Boolean(artifact && run?.status === 'failed' && artifact.sha256 === detail.artifactSha256 && artifact.verification_run_id === row.run_id);
             if (detail.kind === 'worker_product_failure') valid &&= Boolean(database.prepare("SELECT id FROM verification_checks WHERE id=? AND contract_id=? AND run_id=? AND status='FAIL'").get(detail.checkId, contractId, row.run_id));
         } else valid &&= detail.kind === 'verification_controller_blocker';
-        issues.push({ ...row, detail: valid ? detail : { kind: 'worker_verification_blocker', reason: 'Malformed worker repair provenance.' } });
+        const entry = { ...row, detail: valid ? detail : { kind: 'worker_verification_blocker', reason: 'Malformed worker repair provenance.' } };
+        // Validated infrastructure outages never need a Manager revision or a source repair.
+        (valid && detail.classification === 'infrastructure' ? infrastructureIssues : issues).push(entry);
     }
-    return { issues, batchFingerprint: digest([...new Set(issues.map(row => row.fingerprint))].sort()) };
+    return { issues, infrastructureIssues, batchFingerprint: digest([...new Set(issues.map(row => row.fingerprint))].sort()) };
 }

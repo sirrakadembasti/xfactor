@@ -3,7 +3,7 @@ import { controlledRepairSourceHash as hash } from './controlledRepairPlan.js';
 import { evidencePayload } from '../verification/artifactEvidencePolicy.js';
 export const CONTROLLED_LINEAGE_LIMIT = 32;
 const HASH=/^[a-f0-9]{64}$/;
-const need=(value,reason)=>{if(!value)throw Error('Controlled repair lineage blocked: '+reason);};
+const need=(value,reason)=>{if(!value)throw Object.assign(Error('Controlled repair lineage blocked: '+reason),{code:'CONTROLLED_REPAIR_LINEAGE_BLOCKED'});};
 const snapshot=files=>{
  need(Array.isArray(files)&&files.length>0&&files.length<=4096,'bounded snapshot required');
  const result=files.map(({path,sha256})=>({path,sha256})).sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
@@ -110,6 +110,40 @@ function preparationIdentity(issue,c,source){
   &&r?.operation==='prepare_dependencies'&&r.projectId===c.projectId&&r.contractId===c.contractId&&r.contractHash===c.contractHash
   &&r.jobId&&r.nonce&&r.runId&&HASH.test(packageHash||'')&&r.inputSha256===packageHash?r:null;
 }
+// Entries compacted at once when the history is full; the newer half stays in full.
+export const CONTROLLED_LINEAGE_COMPACT_COUNT = 16;
+const CHECKPOINT_KINDS=['controller-recorded-baseline','controller-recorded-same-source-diagnostic','controller-recorded-dependency-input'];
+const isCheckpoint=entry=>entry?.kind==='checkpoint';
+// A full history is never truncated. Its oldest entries are first authenticated in full
+// against the database, exactly as acceptance would, and then folded into one checkpoint
+// that keeps every authenticated origin (id, run and evidence digest) and the link to the
+// next entry. Acceptance re-reads each origin row; nothing unauthenticated enters it.
+function compactLineage(db,history,{context,currentSource}){
+ const count=Math.min(CONTROLLED_LINEAGE_COMPACT_COUNT+(isCheckpoint(history[0])?1:0),history.length-1);
+ const folded=history.slice(0,count),rest=history.slice(count);
+ const authenticate=entry=>authenticateLineageEntry(db,context,currentSource,entry);
+ for(let i=0;i<folded.length;i++){
+  const entry=folded[i],next=folded[i+1]||rest[0],{entryHash,...body}=entry;
+  need(digest(body)===entryHash&&entry.nextPlanHash===next.proposal.planHash
+   &&entry.nextBaselineSourceHash===next.proposal.baselineSourceHash,'history entry changed before compaction');
+  if(!isCheckpoint(entry))need(hash(reconstructControlledRepairOutput(entry,context))===next.proposal.baselineSourceHash,'missing source/proposal link');
+  need(authenticate(entry)===true,'origin evidence changed or unauthenticated before compaction');
+ }
+ const origins=new Map();
+ for(const entry of folded){
+  const rows=isCheckpoint(entry)?entry.origins:[...entry.origins,...(entry.preparationOrigins||[]),
+   ...(entry.diagnostics||[]).flatMap(group=>group.origins)];
+  for(const origin of rows)origins.set(`${origin.kind}:${origin.id}`,{kind:origin.kind,id:origin.id,runId:origin.runId??null,detailHash:origin.detailHash});
+ }
+ need(origins.size<=1024,'checkpoint origin budget exhausted');
+ const last=folded.at(-1),previous=isCheckpoint(folded[0])?folded[0]:null;
+ const checkpoint={version:1,kind:'checkpoint',
+  compactedEntries:(previous?.compactedEntries||0)+folded.length-(previous?1:0),
+  compactedHash:digest(folded.map(entry=>entry.entryHash)),
+  origins:[...origins.values()].sort((a,b)=>a.kind<b.kind?-1:a.kind>b.kind?1:String(a.id)<String(b.id)?-1:1),
+  nextPlanHash:last.nextPlanHash,nextBaselineSourceHash:last.nextBaselineSourceHash};
+ return [{...checkpoint,entryHash:digest(checkpoint)},...rest];
+}
 // Called within publication transaction after acquiring the source fence.
 // Flat history is never silently truncated. It cannot resolve an issue.
 export function archiveControlledRepairLineage(db,{previousLedger,nextProposal,currentSource}){
@@ -117,8 +151,12 @@ export function archiveControlledRepairLineage(db,{previousLedger,nextProposal,c
  if(previousLedger.phase==='proposed'&&!(previousLedger.attempts||[]).length&&!(previousLedger.lineage||[]).length)return [];
  need((db.isTransaction??db.inTransaction)===true,'publication transaction required');
  const context=contextFor(nextProposal);assertProposal(nextProposal,context);
- const history=structuredClone(previousLedger.lineage||[]);
- need(Array.isArray(history)&&history.length<CONTROLLED_LINEAGE_LIMIT,`proposal history budget exhausted (limit ${CONTROLLED_LINEAGE_LIMIT})`);
+ let history=structuredClone(previousLedger.lineage||[]);
+ need(Array.isArray(history)&&history.length<=CONTROLLED_LINEAGE_LIMIT,`proposal history budget exhausted (limit ${CONTROLLED_LINEAGE_LIMIT})`);
+ if(history.length>=CONTROLLED_LINEAGE_LIMIT){
+  // The open ledger is the entry after the newest archived one; its proposal closes the last link.
+  history=compactLineage(db,[...history,{proposal:previousLedger.proposal}],{context,currentSource}).slice(0,-1);
+ }
  const prior=structuredClone(previousLedger);
  if(!prior.baseline&&!(prior.attempts||[]).some(a=>a.phase==='patched'))prior.baseline=snapshot(currentSource);
  const output=reconstructControlledRepairOutput(prior,context);
@@ -151,11 +189,12 @@ export function inspectControlledRepairLineage({ledger,currentSource,context,aut
  const output=reconstructControlledRepairOutput(ledger,context);
  need(hash(output)===hash(snapshot(currentSource))&&hash(output)===ledger.outputSourceHash,'final source changed');
  const ids=new Set();
+ need(history.every((entry,i)=>!isCheckpoint(entry)||i===0),'checkpoint must be the first history entry');
  for(let i=0;i<history.length;i++){
   const entry=history[i],next=history[i+1]||ledger,{entryHash,...body}=entry;
-  need(entry.version===1&&digest(body)===entryHash&&Array.isArray(entry.origins)&&entry.origins.length<=256,'history entry changed');
-  const reconstructed=reconstructControlledRepairOutput(entry,context);
-  need(entry.nextPlanHash===next.proposal.planHash&&entry.nextBaselineSourceHash===next.proposal.baselineSourceHash&&hash(reconstructed)===next.proposal.baselineSourceHash
+  need(entry.version===1&&digest(body)===entryHash&&Array.isArray(entry.origins)&&entry.origins.length<=(isCheckpoint(entry)?1024:256),'history entry changed');
+  need(entry.nextPlanHash===next.proposal.planHash&&entry.nextBaselineSourceHash===next.proposal.baselineSourceHash
+   &&(isCheckpoint(entry)||hash(reconstructControlledRepairOutput(entry,context))===next.proposal.baselineSourceHash)
    &&hash(snapshot(next.baseline))===next.proposal.baselineSourceHash,'missing source/proposal link');
   need(authenticateEntry(entry)===true,'origin evidence changed or unauthenticated');
   for(const origin of entry.origins)ids.add(origin.id);
@@ -167,7 +206,24 @@ export function inspectControlledRepairLineage({ledger,currentSource,context,aut
 // Exact closure candidates only: canonical acceptance must still authenticate
 // current fresh full worker PASS and semantic proof before atomic close/receipt.
 export function readAuthenticatedControlledLineageIssueIds(db,{context,ledger,currentSource}){
- return inspectControlledRepairLineage({context,ledger,currentSource,authenticateEntry:entry=>{
+ const ids=inspectControlledRepairLineage({context,ledger,currentSource,authenticateEntry:entry=>authenticateLineageEntry(db,context,currentSource,entry)});
+ // A dependency input closes only while the current package manifest is still that input. A later
+ // package repair leaves such an issue open; it does not invalidate the rest of the history.
+ const preparationIds=new Set((ledger.lineage||[]).flatMap(entry=>isCheckpoint(entry)
+  ?entry.origins.filter(origin=>origin.kind==='controller-recorded-dependency-input'):entry.preparationOrigins||[]).map(origin=>origin.id));
+ return ids.filter(id=>!preparationIds.has(id)||preparationIdentity(
+  db.prepare('SELECT * FROM repair_issues WHERE id=? AND project_id=? AND contract_id=?').get(id,context.projectId,context.contractId),context,currentSource));
+}
+// A checkpoint origin was authenticated in full when it was folded. Each row must still be the same evidence.
+function authenticateCheckpoint(db,context,_currentSource,entry){
+ return entry.origins.every(origin=>{
+  const issue=db.prepare('SELECT * FROM repair_issues WHERE id=? AND project_id=? AND contract_id=?').get(origin.id,context.projectId,context.contractId);
+  return CHECKPOINT_KINDS.includes(origin.kind)&&issue&&['open','resolved'].includes(issue.status)
+   &&(origin.runId===null||issue.run_id===origin.runId)&&digest(evidencePayload(issue.detail_json))===origin.detailHash;
+ });
+}
+function authenticateLineageEntry(db,context,currentSource,entry){
+  if(isCheckpoint(entry))return authenticateCheckpoint(db,context,currentSource,entry);
   const {checks,anchor}=readBaseline(db,entry.proposal,context,entry.baseline);
   if(digest(anchor)!==digest(entry.anchor))return false;
   const baselineValid=entry.origins.every(origin=>{
@@ -180,8 +236,7 @@ export function readAuthenticatedControlledLineageIssueIds(db,{context,ledger,cu
   if(!Array.isArray(preparations)||preparations.length>256||!preparations.every(origin=>{
    const issue=db.prepare('SELECT * FROM repair_issues WHERE id=? AND project_id=? AND contract_id=?').get(origin.id,context.projectId,context.contractId);
    return origin.kind==='controller-recorded-dependency-input'&&issue&&['open','resolved'].includes(issue.status)
-    &&digest(evidencePayload(issue.detail_json))===origin.detailHash&&preparationIdentity(issue,context,entry.baseline)
-    &&preparationIdentity(issue,context,currentSource);
+    &&digest(evidencePayload(issue.detail_json))===origin.detailHash&&preparationIdentity(issue,context,entry.baseline);
   }))return false;
   const output=reconstructControlledRepairOutput(entry,context),diagnostics=entry.diagnostics||[];
   if(!Array.isArray(diagnostics)||diagnostics.length>16)return false;
@@ -198,5 +253,4 @@ export function readAuthenticatedControlledLineageIssueIds(db,{context,ledger,cu
      &&(evidencePayload(issue.detail_json).authenticatedWorker!==true||checks.some(row=>['FAIL','BLOCKED'].includes(row.status)));
    });
   });
- }});
 }

@@ -517,7 +517,108 @@ Docker worker'a geçildi. Doğrulama hattında dört düzeltme yapıldı:
 
 En iyi koşu `39be2bde`: 83 PASS; uygulamanın 20 testinden 19'u geçti. Tek hata, Next.js'in React 18 uyarısını içeren `stderr`'i boş bekleyen testti. Sonraki üç minimax onarım turu geriledi; son koşu `cd49324b` 20 PASS'te kaldı.
 
-Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile CI'a gönderildi. `stok-takip-1` `paused` duruyor ve teslim edilmedi.
+Platform düzeltmeleri [PR #8](https://github.com/sirrakadembasti/xfactor/pull/8) ile beş CI işinin hepsi yeşilken `main`'e alındı (merge `6e852a0`). `stok-takip-1` `paused` duruyor ve teslim edilmedi.
+
+### Halka 42 — 16–17 Kasım: orta seviye modelle onarım döngüsü
+
+Kullanıcı kararı: XFactor, orta seviye bir modelle (MiniMax profili) de ürün çıkarabilmeli. Ret nedenleri modele geri verilmeli, kurallar gevşetilmemeli. `faz-5/stok-takip-onarim` dalında şu düzeltmeler yapıldı:
+- **Öneri düzeltme turları:** Kurala uymayan öneri, kesin ret nedeniyle Manager'a en çok iki kez geri gönderiliyor (`REPAIR_PROPOSAL_CORRECTION_ROUNDS`). Önceki turların ret nedenleri de mesajda yer alıyor; böylece model iki kural arasında gidip gelmiyor. Davranış referansı ret mesajı ilgili yolu adıyla veriyor.
+- **Bağlam bütçesi ayrıntısı:** Bir hedefin referansları Coder bağlamını (192 KB) aşarsa model, hedef ve otomatik eklenen dosyaların gerçek bayt boyutunu, kalan yeri ve önerdiği referansların boyutunu görüyor.
+- **Sözdizimi denetimi:** Coder'ın JS/TS çıktısı `@babel/parser` ile ayrıştırılıyor. Ayrıştırılamayan çıktı modele hata satırıyla bir kez geri gönderiliyor; ikinci hatada onarım duruyor ve dosya yazılmıyor. Daha önce kaynakta kalan bir `\n` dizisi bütün koşuyu derleme hatasına düşürmüştü.
+- **Değişmeyen hedef:** Coder bir hedefi aynen döndürürse deneme `unchanged` olarak kaydediliyor ve onarım sürüyor. Hiçbir hedef değişmediyse onarım duruyor.
+- **Tip denetimi sondası:** İncelemeden önce worker'da yeni `typecheck_artifact` işi çalışıyor: kayıtlı kilit dosyasıyla kurulum, varsa `prisma generate`, ardından `tsc --noEmit` (`runTypecheckProbe`, `controlledTypeProbe.js`). Hatası olan her değişmiş hedef, hata satırlarıyla bir kez daha Coder'a gidiyor. Sonda yalnız yol göstericidir: doğrulama koşusu, kontrol ya da kabul kanıtı üretmez. Kullanılamazsa adım loglanıp atlanıyor.
+- **Fikstür kanıtı:** API fikstürü kayıt oluşturamazsa kanıt; HTTP durumunu, sözleşme alanlarını ve yanıttaki `error`/`message`/`errors`/`details` alanlarını taşıyor.
+- **Onarım geçmişi kontrol noktası:** Geçmiş 32 kayda ulaşınca en eski 16 kayıt doğrulanıp tek bir kontrol noktasında toplanıyor (`compactLineage`). Kontrol noktası; özet hash, katlanan kayıtların köken kimlikleri ve sonraki plan bağını taşıyor. Yalnız ilk kayıt olabilir ve köken satırları hâlâ eşleşmeli. Geçmiş doğrulanamazsa öneri 500 yerine 409 (`CONTROLLED_REPAIR_LINEAGE_BLOCKED`) ile reddediliyor. Bu işten önce canlı DB'nin yedeği alındı (`backend/data/maintenance-backups/pre-lineage-checkpoint-20261116T175857Z.db`).
+- **Eski bağımlılık kökeni:** Güncel `package.json` ile artık eşleşmeyen bir hazırlık kaydı, geçmiş zincirini geçersiz saymıyor; ilgili kayıt açık kalıyor.
+
+Koşu dizisi: 83 → 77 → 19 → 21 → 80 → 21 → 82 (sonda bir tip hatası yakaladı) → süre aşımı → `76dccdd0`: 83 PASS, 4 FAIL, 3 BLOCKED. Bu son koşuda servisler, smoke ve üç tarayıcı kapısı ilk kez birlikte geçti. Kalan gerçek hata uygulamanın test süitinde: iki tarayıcı testi "Promise resolution is still pending" ile bitiyor. Gereksinim, dil ve izlenebilirlik kontrolleri son bağımsız incelemeyi bekliyor (bir hak kaldı). Test çıktısı kanıtı baştan yaklaşık 16 KB'ta kesiliyor; sondaki hook hatası kaybolabiliyor.
+
+17 Kasım'daki onarım turu (plan `0ac94194`, altı hedef) beş dosyayı yazdıktan sonra altıncı hedefte "Onarım bağlamı eksik." ile durdu. `tests/browser-journey.test.js`, aynı turda yeni oluşturulan `tests/repair-fixture.ts`'i referans alıyordu. Öneri anındaki ölçüm yalnız var olan dosyaları saydığı için bağlam yaklaşık 186 KB görünmüştü; dosya yazıldıktan sonra 196,5 KB'a çıktı. Düzeltme: öneri ölçümü, ölçülen hedeften önce yazılacak ve onun bağlamına giren her dosya için 16 KB pay ayırıyor (`controlledRepairBatchGrowth`, `CONTROLLED_BATCH_FILE_RESERVE_BYTES`). Ret ayrıntısı bu payı ve henüz olmayan dosyaları adıyla bildiriyor. Aynı ölçüm onarım başlarken de uygulanıyor.
+
+### Halka 43 — 17 Kasım: altyapı hatası kaynak hatası sayılmıyor (Y1)
+
+`docs/yol-haritasi-2026-11-17.md` B-1: bir `npm ci` 502'si `clean_install` FAIL ve 10 BLOCKED kapı üretmiş, bunlar açık `worker_rejection` kaydı olup Devam Ettir'i "Manager revizyonu gerekir" ile kapatmıştı (`stok-takip-1`'de 92 açık kayıt). `faz-6/y1-altyapi-hatasi` dalında:
+- `packageVerifier.js:isTransientRegistryFailure`: `E502/E503/E504`, `ECONNRESET`, `ETIMEDOUT`, `EAI_AGAIN`, `ENOTFOUND`, `socket hang up` geçici sayılır; `ERESOLVE`, `ETARGET`, `E404`, `EINTEGRITY` varsa sayılmaz.
+- `clean_install`: geçici hatada komut kalan süre içinde **bir kez** yeniden denenir (iptalde ve zaman aşımında denenmez). İlk denemenin özeti `evidence.retries`'a yazılır. İkinci deneme de geçici hatayla biterse kontrol `blocked` olur ve `evidence.classification = 'infrastructure'` taşır; PASS üretilmez.
+- `workerFailures.js`: sınıf worker kanıtından okunur. Yalnız altyapı blocker'ı varsa (ürün bulgusu ve başka blocker yok) kayıt `classification: 'infrastructure'` yazılır; aşağı akış BLOCKED kapılar sonuç sayılır. Karışık durumda eski `ambiguous` davranışı korunur. `loadOpenWorkerRepairBatch` bu kayıtları `issues`'a koymaz, `infrastructureIssues` olarak ayrı döndürür; böylece `recoveryRevisionRequired` ve `priorWorkerBlockers` tetiklenmez.
+- `artifactVerifier.js`: yeni koşu oluşturulurken aynı sözleşmenin açık altyapı kayıtları çözülür (açık kayıt teslimi bloke ettiği için gerekli). `acceptanceStage.js`: başarısız koşunun hata metni altyapı nedenini taşır, `Worker repair requires Manager revision:` öneki kullanılmaz.
+- Yeni `origin` değeri eklenmedi; şema değişmedi. Testler: `test_infrastructure_failure_classification.js` (yeni) ve `test_worker_repairs.js` (altyapı hattı).
+
+### Halka 44 — 17 Kasım: test çıktısı kanıtında baş ve kuyruk (Y4)
+
+B-4: Worker ilk 1 MiB'ı, backend ilk 16 KB'ı tutuyordu; TAP çıktısının sonundaki `not ok` blokları ve özet kayboluyordu (`76dccdd0`'daki iki tarayıcı testi gibi). `faz-6/y4-test-cikti-kuyrugu` dalında:
+- `execution/outputRetention.js`: ilk yarı sabit, son yarı halka tampon. İşaret (`…[kesildi: N bayt]…`) bayt bütçesinin dışında, yalnız metne eklenir.
+- `execution/runtime.js:captureChildOutput` (Docker) ve `execution/localProcesses.js` (yerel) bu tamponu kullanır. `stdout/stderrBytes`, `*Sha256` (tüm akış), `*Truncated` anlamı ve kesilmiş çıktının `passed: false` sayılması aynen kaldı.
+- `backend/verification/workerFailures.js:bounded`: sınır içindeyse olduğu gibi; aşarsa baş + işaret + kuyruk, toplam sınırı aşmaz (işaret sınıra dahil). Redaksiyon kesmeden önce uygulanmaya devam ediyor. Yanıt şekli değişmedi.
+- Testler: `test_worker_check_log_tail.js` (yeni), `execution/tests/runtime.test.js` ve `localProcesses.test.js` (eski "yalnız baş" beklentileri baş+kuyruğa güncellendi, kuyruk testleri eklendi).
+
+### Halka 45 — 17 Kasım: transaction içinde `await` kalmadı (Y2)
+
+B-2: backend tek paylaşılan `node:sqlite` bağlantısı kullanıyor; `BEGIN IMMEDIATE` açıkken gerçek disk I/O `await`'i olay döngüsünü başka isteklere açıyor, kalp atışı iş parçacığının yazımını da kilitte bekletebiliyordu. `faz-6/y2-transaction-await` dalında:
+- `repositories/artifactRepository.js:withArtifactTransaction` senkron oldu; `work()` bir `Promise` döndürürse transaction geri alınır ve `Artifact transaction callback must be synchronous.` hatası verilir.
+- `utils/archive.js:createProjectZip`: ZIP önce `fs.rename` ile son konuma taşınıyor (transaction dışında), sonra `createArtifact` ve `addArtifactFile` kayıtları senkron transaction'da yazılıyor. Kayıt başarısız olursa mevcut `catch` son dosyayı siliyor.
+- `services/reconciliationService.js`: kopya transaction kaldırıldı, paylaşılan senkron yardımcı kullanılıyor. `rehydrateProjectStateFromDisk` ve `rehydrateProjectLogsFromDisk` senkron çekirdeğe (`...Sync`) ve ince `async` sarmalayıcıya bölündü; dışa aktarımlar ve davranış aynı. Tamamlanmış projenin ZIP kurtarması (gerçek dosya I/O) artık `recoverCompletedProjectArtifact` ile **transaction commit edildikten sonra** yapılıyor (`autoRegisterDiscoveredProjects` ve `reconcileProjectsWithDisk`).
+- **Düzeltilen gizli hata:** ZIP kurtarması eskiden bu iki döngünün açık transaction'ı içinde çalışıyordu; içerdeki ikinci `BEGIN IMMEDIATE` hata verip yutuluyordu. Bu yüzden otomatik kayıt/senkron sırasında tamamlanmış projeler için artefakt hiç oluşmuyordu. Yeni test eski kodda kırmızıydı.
+- `test_transaction_await_boundary.js` statik koruma: `backend/` altında `BEGIN` ile `COMMIT` arasında `await` arar; izin listesi yalnız `writeProjectState` çağrılarıdır (`saveProjectState` içinde gerçek I/O yok, yalnız mikro-görev boşluğu). Yol haritasındaki isteğe bağlı 6. adım (senkron `saveProjectStateInTransaction`) yapılmadı; bu satırlar izin listesinde duruyor.
+
+### Halka 46 — 17 Kasım: kilit hatası ölçümü (Y3a)
+
+B-3 (`workflow.execution_fenced`) kök nedeni hâlâ ölçülmedi; bu halka yalnız ölçüm ekler, davranışı değiştirmez. `faz-6/y3a-kilit-olcumu` dalında:
+- `db.js:measureTransaction(label, fn, { now, sink, thresholdMs })`: tam bir `BEGIN…COMMIT` bloğunu çalıştıran senkron fonksiyonu sarar, kendisi transaction açmaz. Süre 1.000 ms'yi aşarsa `db.transaction_slow` uyarısı yazar: `{ label, ms, caller }` (`caller`: yığının 5 çerçevesi). Hata fırlasa da ölçer ve hatayı yeniden fırlatır.
+- Sarılan noktalar: `saveProjectState` (`projectRepository.js`), `commitWorkflowSource` (`workflowAttempts.js`), `commitVerificationContext`, `saveProjectLog` ve artefakt transaction'ı. Artefakt noktası yol haritasındaki `utils/archive.js` yerine `repositories/artifactRepository.js:withArtifactTransaction`'dır (Y2'den sonra `createProjectZip` ve uzlaştırma aynı yardımcıyı kullanıyor). Her biri mevcut gövdeyi değiştirmeden sarmalayıcıyla ölçülür; `saveProjectState` hâlâ `Promise` döndürür.
+- `projectRepository.js:noteLargeWorkflowState`: `workflow_state` 256 KB'ı aşarsa proje başına süreç ömründe bir kez `workflow.state_large` yazar: `{ projectId, bytes, topKeys }` (en büyük üç üst düzey anahtar ve baytları).
+- Her iki log da stdout/stderr'e gider. **Bulgu için** bir sonraki gerçek koşunun terminal çıktısı gerekir (`db.transaction_slow`, `workflow.state_large`, `workflow.lease_check_failed`, `workflow.heartbeat_write_slow`). Çıktı alınmadan Y3b (lineage tablosu, migrasyon 19) kararı verilmez.
+- Testler: `test_db_transaction_measurement.js` (sahte saatle yavaş/hızlı/hatalı transaction, `state_large` eşiği ve tekrar yazmama, beş noktanın sarıldığı, gerçek `saveProjectState` ile `state_large`).
+
+### Halka 47 — 17 Kasım: Worker iş deposu hafifledi (Y7)
+
+B-5: `execution/jobStore.js` her komut olayında bütün iş dosyasını (~7,9 MB, 24 saat boyunca `archiveBase64`/`packageJsonBase64` dahil) senkron yeniden yazıyor ve olay döngüsünü bloke ediyordu. `faz-6/y7-worker-is-deposu` dalında:
+- **Terminal işte yük silinir:** `completed`, `failed`, `cancelled`, `failed_timeout` ve `failed_interrupted` durumuna geçen işin `archiveBase64`/`packageJsonBase64` alanları silinir; kimlik alanları, sonuç ve `inputSha256` kalır. Dosya yüklenirken eski kayıtlardaki yükler de silinir (bir kez yeniden yazılır). Yürütücü işin kopyasıyla çalıştığı için çalışan iş etkilenmez.
+- **Tekrar gönderim:** Silinen yükün yerine `inputDigest` (yükün SHA-256'sı) saklanır. Terminal bir işe aynı kimlik ve aynı girdiyle yeniden `insertJob` `exists` döner; farklı `inputSha256`, nonce, sözleşme ya da aynı iddia edilen özetle farklı bayt `Duplicate jobId with different input` hatası verir. Yol haritası yalnız `inputSha256` karşılaştırmasını öneriyordu; `prepare_dependencies` için bu özet paket baytlarına sunucuda bağlanmadığından, baytların özetini de karşılaştırmak mevcut tam karşılaştırma garantisini korur.
+- **Tanılama yazımı birleşir:** Komut ve faz olayları en çok 1 sn'de bir yazılır (`saveCoalesceMs`). Sessiz bir dönemdeki ilk olay hemen yazılır (çökmede kaybolmaz; mevcut kurtarma testi bunu gerektirir), aynı aralıktaki sonrakiler tek bir sonda yazımda birleşir. `beginDiagnostics`, `insertJob`, terminal geçiş ve `close()` hemen yazar; `close()` bekleyen yazımı temizleyip son kez yazar. Yüz olaylık bir seri en çok iki yazım üretir.
+- **Çökme kurtarma değişmedi:** `running` iş yeniden yüklenince `failed_interrupted` olur. Birleştirilmiş son olaylar çökmede en fazla bir saniyelik tanılama kaybedebilir; kabul kanıtı değildir.
+- Testler: `execution/tests/jobStoreLightweight.test.js` (yeni, 7 test) ve mevcut `jobStoreRecovery.test.js` (değişmedi, geçiyor).
+
+### Halka 48 — 18 Kasım: belgeler koda hizalandı (Y8)
+
+`faz-6/y8-belgeler` dalında B-8 çelişkileri kapatıldı. `README.md` kalp atışı cümlesi "ana döngü takılmalarına karşı korur; veritabanı kilidi kaynaklı düşmeler hâlâ izleniyor" olarak düzeltildi ve yeni `db.transaction_slow` / `workflow.state_large` logları eklendi. README'deki "17 Kasım durumu" ve `CLAUDE.md §5`, `76dccdd0`'dan sonraki koşuları gösteriyor. Canlı veritabanı yalnız salt okunur okundu (18 Kasım): 14:59–15:45 UTC arasında `88674954`, `019ab6fd` ve `21f4e53d` koşuları `failed` kapanmış; ikisi 4 PASS / 9 BLOCKED (altı zorunlu kapı "machine evidence eksik" veya "semantik kanıt yok"), biri kontrol kaydı olmadan. Nedenleri incelenmedi. `stok-takip-1` için 99 açık onarım kaydı var (4 `verification_blocker`, 95 `worker_rejection`). Kullanıcı kılavuzu uzun çıktının baş + kuyruk tutulduğunu anlatıyor. Yol haritasının §6 tablosunda biten görevler karmalarıyla işaretlendi.
+
+### Halka 49 — 18 Kasım: Docker kesintisi altyapı hatası sayılıyor (Y1b)
+
+Y1'den sonra canlı veritabanı, `stok-takip-1` için 17 Kasım 15:20 ve 15:42 UTC koşularının (`019ab6fd`, `21f4e53d`) `Docker operation timed out` ile kapandığını gösterdi: worker hiçbir komut çalıştırmadan düşmüş, backend ise dokuz zorunlu kapıyı "kanıt yok" BLOCKED yazıp açık `worker_rejection` kaydı ve "Manager revizyonu" öneki üretmişti. `faz-6/y1b-worker-altyapi` dalında:
+- `workerFailures.js:isWorkerInfrastructureError` yalnız `Docker operation timed out`, `failed to connect to the docker API` ve `Cannot connect to the Docker daemon` metinlerini tanır. `Deadline exceeded during execution`, `Command timed out`, `Output exceeded fixed ceiling` vb. tanınmaz ve eski sıkı davranışı korur.
+- `artifactVerifier.js`: terminal durum `failed`, worker hiç kontrol döndürmemiş ve iş hatası tanınan metinse `infrastructureFailure` üretilir. Bu durumda `managementError` ve "base gate set missing" kabul engelleri, kesintinin sonucu olduğu için düşürülür; bilinmeyen zorunlu kapı gibi gerçek anomaliler ve FAIL kapılar engel olarak kalır. Çıktı hatası Türkçe altyapı mesajıdır ve tek bir `classification: 'infrastructure'` kaydı yazılır (Y1 ile aynı kayıt türü, yeni `origin` yok, şema değişmedi).
+- Testler: `test_infrastructure_failure_classification.js` (tanıma ve özet) ve `test_worker_repairs.js` (Docker zaman aşımı tek altyapı kaydı olur, Resume vetosu yok; tanınmayan iş hatası eski sıkı kaydı korur).
+- Kapsam dışı: backend'in worker'a giden isteğin 60 sn'de zaman aşımına uğraması (`Worker request timed out`, `88674954`). Bu bir denetleyici hatasıdır ve mevcut testler onun kalıcı bloklayıcı olmasını bilerek bekler.
+
+### Halka 50 — 18 Kasım: kilit hatasının ölçümü ve kalp atışı bağlantısı (Y3a bulgusu)
+
+Y3a logları ilk gerçek koşuda (`c3657cb6`, 17 Kasım 21:52–22:04 UTC) şunları gösterdi: `workflow.state_large` 592.664 bayt (%93'ü `controlledRepair`), `db.transaction_slow` ile kanıt kaydını yazan `commitVerificationContext` 28,6 sn (lease süresi 30 sn), ve 2–14 sn süren on iki kalp atışı yazımı. `lease_check_failed` oluşmadı. İncelemede:
+- Transaction içindeki CPU işi ihmal edilebilir (gerçek worker sonucunda `normalizeWorkerCheckLog` toplam 7 ms, `redactSensitiveText` 1 MiB'ta 13–39 ms) ve tablolar küçük (`verification_checks` 4.395 satır).
+- Proje `F:` üzerinde ve bu bir Seagate ST500LT012 (5400 devir, 2,5" sabit disk); `C:` SATA SSD. Boşta, aynı küçük `COMMIT` `synchronous=FULL` ile F:'de p50 66 ms / p95 202 ms / en kötü 505 ms, C:'de 0,9 ms. Uygulamanın ayarıyla (`NORMAL`, WAL) 590 KB durum yazımı F:'de her 7–11 yazımda bir 20–60 ms'lik checkpoint sıçraması veriyor, C:'de vermiyor. Docker aynı diske yazarken bu fsync'ler saniyelere çıkıyor. Bu, kök nedenin disk fsync/checkpoint gecikmesi olduğunun güçlü ama dolaylı kanıtıdır; 28 sn'lik anın checkpoint olduğu doğrudan görülmedi.
+- Kalp atışı bağlantısı `workflowHeartbeatWorker.js`'te `PRAGMA synchronous` ayarlamıyordu. Taze bir `node:sqlite` bağlantısı `synchronous=FULL` ve `wal_autocheckpoint=1000` ile açılır (ana bağlantı `NORMAL`), yani her 5 sn'lik atış WAL'ı fsync ediyor ve bazı atışlar checkpoint'e takılıyordu.
+
+`faz-6/y3c-kanit-transaction` dalında `workflowHeartbeatConnection.js:openHeartbeatDatabase`: `busy_timeout=5000`, `synchronous=NORMAL` ve `wal_autocheckpoint=0`. Checkpoint'i ana bağlantı yapmaya devam eder. Test: `test_heartbeat_connection.js`. Bu disk gecikmesini gidermez; veritabanını SSD'ye taşımak (`DB_PATH`) ve Y3b ayrı kararlardır.
+
+### Halka 51 — 18 Kasım: canlı veritabanı SSD'ye taşındı
+
+Halka 50'deki bulgu üzerine kullanıcı onayıyla canlı veritabanı `F:` (5400 devirli sabit disk) yerine `C:\Users\ahmet\xfactor-data\projects.db`'ye (SATA SSD) taşındı. Sunucu `DB_PATH` ortam değişkeniyle başlatılıyor.
+- **Sıra:** dev süreçleri durduruldu (çalışan girişim yoktu); kaynak yalnız salt okunur bağlantıyla okundu; hedef `VACUUM INTO` ile üretildi; özgün dosyalar (`projects.db`, `-wal`, `-shm`) `backend/data/maintenance-backups/pre-db-move-20261117T232851Z/` altına düz dosya kopyasıyla yedeklendi.
+- **Doğrulama:** hem hedef hem yedek için `PRAGMA integrity_check` = ok, `foreign_key_check` = 0, 25 tablonun satır sayıları kaynakla aynı (toplam 15.396), şema sürümü 18, `stok-takip-1` revizyon 865 ve `paused`. Yeniden başlatılan sunucuda `/readyz` 200, giriş ve proje okuması çalıştı; WAL/SHM dosyaları `C:` altında oluştu, `F:` dosyaları değişmedi.
+- **Sürpriz:** ilk deneme kaynağa `VACUUM INTO` ile yedek yazarken 300 sn'de bitmedi (13 MB'ta kesildi; eksik yedek dizini silindi). Hedef `C:` olduğu hâlde `VACUUM INTO` yine 200 sn sürdü, düz dosya kopyası ise 2 sn: yavaşlık yazmada değil, `F:` diskinden sayfa sayfa rastgele okumadaydı.
+- **Dikkat:** `DB_PATH` olmadan başlatılan sunucu `backend/data/projects.db`'yi (artık bayat) açar. `backend/.env`'e yazmak işe yaramaz çünkü `db.js` `DEFAULT_DB_PATH`'i modül yüklenirken okur, `dotenv` sonra çalışır. Eski dosyalar silinmedi.
+
+### Halka 52 — 19–21 Kasım: onarım denemeleri ve Docker kurulum yeniden denemesi
+
+19 Kasım'da `stok-takip-1` için yedi hedefli onarım önerisi (plan `2e302b63…`) uygulandı. Ardından yapılan doğrulama ve altı yeniden doğrulamanın hiçbiri kaynağı sınayamadı; onarımın etkisi bilinmiyor (canlı DB'de 20 Kasım 06:23 UTC'deki son koşuya kadar tüm koşular `failed`):
+- `e27dca79`, `ccb9aab0`, `5db5530c`: `clean_install` 15 dakikalık sınıra takıldı (8 PASS, 1 FAIL, 11 BLOCKED).
+- `ae77f5b7`, `1689a42a`: `Docker operation timed out`; altyapı kesintisi sayıldı (4 PASS, 9 BLOCKED).
+- `abb434d4`: `npm ci` `E504` aldı; Docker yolunda yeniden deneme çalışmadı.
+- Ölçüm: ana makinede registry erişimi ~3 KB/sn (17 Kasım'da ~10 kat hızlıydı), boş RAM ~1 GB, `docker info` 43 sn'ye kadar yavaşladı. Neden (ağ mı, Docker/WSL belleği mi) kesinleşmedi.
+
+**Düzeltme (`440ad57`):** Docker adaptörü sıfırdan farklı çıkışta sonuç döndürmek yerine hata fırlatıyordu; bu yüzden Y1'in tek seferlik yeniden denemesi ve altyapı sınıflandırması bu yolda hiç çalışmıyordu. `packageVerifier.js` artık fırlatılan hatayı (zaman aşımı ve `SANDBOX_UNAVAILABLE` hariç) başarısız sonuca çevirir. Test: `test_infrastructure_failure_classification.js`. 15 dakikalık kurulum zaman aşımı yeniden denenmez ve kaynak hatası sayılır; bu sınır değişmedi (kullanıcı kararı bekliyor).
+
+**Durum (27 Kasım):** `stok-takip-1` sözleşme 3 altında `paused`, revizyon 920; açık kayıtlar 102 `worker_rejection` + 4 `verification_blocker`. Servisler çalışmıyor. Yerel Windows worker'da `spawn('npm')` ENOENT bildirimi hâlâ yeniden üretilmedi.
 
 ## 6. Kaynak kapsamı ve belirsizlikler
 

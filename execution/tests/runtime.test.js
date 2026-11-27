@@ -5,6 +5,7 @@ import http from 'node:http';
 import EventEmitter from 'node:events';
 import { createHash } from 'node:crypto';
 import { createProxy, isSafeIP } from '../registryProxy.js';
+import { truncationMarker } from '../outputRetention.js';
 import { captureChildOutput, cleanupContainer, executeJob, ownedContainerExists, validateDependencySources, validateWorkspacePath, validateOwnedPath } from '../runtime.js';
 import * as runtime from '../runtime.js';
 
@@ -156,15 +157,15 @@ test('worker runtime finite protocol and security constraints', async (t) => {
   } finally { spawnMock.mock.restore(); }
 });
 
-test('child output capture retains bounded bytes and full digests', async () => {
+test('child output capture retains head and tail with full digests', async () => {
   const proc = fakeChild(); const captured = captureChildOutput(proc, { maxBytes: 4 });
   const stdout = Buffer.from('abcdefgh'); const stderr = Buffer.from('xyz');
   proc.stdout.emit('data', stdout); proc.stderr.emit('data', stderr);
-  const snapshot=captured.snapshot();assert.equal(snapshot.stdout,'abcd');assert.equal(snapshot.stderr,'xyz');
+  const snapshot=captured.snapshot();assert.equal(snapshot.stdout,`ab${truncationMarker(4)}gh`);assert.equal(snapshot.stderr,'xyz');
   assert.equal(snapshot.stdoutSha256,createHash('sha256').update(stdout).digest('hex'));
   proc.emit('close', 0);
   const result = await captured;
-  assert.equal(result.stdout, 'abcd'); assert.equal(result.stdoutBytes, 8); assert.equal(result.stdoutTruncated, true);
+  assert.equal(result.stdout, `ab${truncationMarker(4)}gh`); assert.equal(result.stdoutBytes, 8); assert.equal(result.stdoutTruncated, true);
   assert.equal(result.stdoutSha256, createHash('sha256').update(stdout).digest('hex'));
   assert.equal(result.stderr, 'xyz'); assert.equal(result.stderrTruncated, false);
 });
@@ -260,3 +261,18 @@ test('workspace paths reject host and traversal forms', () => {
 });
 
 test('workspace path checks are delegated to the container', () => { assert.equal(validateOwnedPath('owned/file'), '/workspace/owned/file'); });
+
+test('child output capture keeps the trailing failure summary of long output', async () => {
+  const proc = fakeChild(); const captured = captureChildOutput(proc, { maxBytes: 64 });
+  const middle = 'ok 1 - passes\n'.repeat(200);
+  const text = `TAP version 13\n${middle}not ok 19 - stok azaltma\n  error: 'Promise resolution is still pending'\n`;
+  for (let offset = 0; offset < text.length; offset += 37) proc.stdout.emit('data', Buffer.from(text.slice(offset, offset + 37)));
+  proc.emit('close', 1);
+  const result = await captured;
+  assert.equal(result.stdoutTruncated, true);
+  assert.equal(result.stdoutBytes, Buffer.byteLength(text));
+  assert.match(result.stdout, /^TAP version 13/);
+  assert.match(result.stdout, /still pending'\n$/);
+  assert.ok(result.stdout.includes('…[kesildi:'));
+  assert.equal(result.stdoutSha256, createHash('sha256').update(text).digest('hex'));
+});

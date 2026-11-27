@@ -1,8 +1,9 @@
 import cp from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { executeVerificationJob, prepareDependencies } from './jobExecutor.js';
+import { executeVerificationJob, executeTypecheckJob, prepareDependencies } from './jobExecutor.js';
 import { createCommandReporter } from './commandDiagnostics.js';
+import { createOutputRetainer } from './outputRetention.js';
 const OUTPUT_CEILING = 1024 * 1024;
 const IMAGE_NAME = 'xfactor-worker-runtime';
 import { MAX_JOB_MS, DOCKER_READINESS_PROBE_MS } from './limits.js';
@@ -194,20 +195,18 @@ export function validateWorkspacePaths(paths) { if (paths == null) return []; if
 
 async function waitForReadiness(name, deadline, signal) { while (Date.now() < deadline) { if (signal?.aborted) throw new Error('Cancelled by user'); try { const { stdout, stderr } = await docker(['logs', name], { signal, deadline, timeout: 1000 }); if (`${stdout}${stderr}`.includes('READY')) return; } catch (e) { if (signal?.aborted || Date.now() >= deadline) throw e; } await new Promise((resolve, reject) => { const ms = Math.min(200, Math.max(1, deadline - Date.now())); const timer = setTimeout(resolve, ms); const abort = () => { clearTimeout(timer); reject(new Error('Cancelled by user')); }; signal?.addEventListener('abort', abort, { once: true }); }); } throw new Error('Container readiness probe timed out'); }
 export function captureChildOutput(proc, { maxBytes = OUTPUT_CEILING } = {}) {
-  const out = [], err = [], oh = createHash('sha256'), eh = createHash('sha256');
+  const out = createOutputRetainer(maxBytes), err = createOutputRetainer(maxBytes), oh = createHash('sha256'), eh = createHash('sha256');
   let ob = 0, eb = 0;
   proc.stdout?.on('data', chunk => {
     const bytes = Buffer.from(chunk); ob += bytes.length; oh.update(bytes);
-    const kept = Math.max(0, maxBytes - out.reduce((n, item) => n + item.length, 0));
-    if (kept) out.push(bytes.subarray(0, kept));
+    out.push(bytes);
   });
   proc.stderr?.on('data', chunk => {
     const bytes = Buffer.from(chunk); eb += bytes.length; eh.update(bytes);
-    const kept = Math.max(0, maxBytes - err.reduce((n, item) => n + item.length, 0));
-    if (kept) err.push(bytes.subarray(0, kept));
+    err.push(bytes);
   });
   const snapshot=()=>({
-    stdout: Buffer.concat(out).toString(), stderr: Buffer.concat(err).toString(),
+    stdout: out.text(), stderr: err.text(),
     stdoutBytes: ob, stderrBytes: eb, stdoutTruncated: ob > maxBytes, stderrTruncated: eb > maxBytes,
     stdoutSha256: oh.copy().digest('hex'), stderrSha256: eh.copy().digest('hex'),
   });
@@ -235,7 +234,7 @@ async function validateJobPaths(job) {
   return paths;
 }
 export async function executeJob(job, { signal, onResource, onProgress, onPhaseComplete } = {}) {
-  if (!job || !['prepare_dependencies', 'verify_artifact'].includes(job.operation)) {
+  if (!job || !['prepare_dependencies', 'verify_artifact', 'typecheck_artifact'].includes(job.operation)) {
     return { status: 'failed', error: 'Unsupported worker operation' };
   }
   if (job.verificationWorkspace || job.workspace) {
@@ -251,7 +250,7 @@ export async function executeJob(job, { signal, onResource, onProgress, onPhaseC
       return { status: 'failed', error: error.message };
     }
   }
-  if (job.operation === 'verify_artifact') {
+  if (job.operation === 'verify_artifact' || job.operation === 'typecheck_artifact') {
     if (typeof job.archiveBase64 !== 'string' || job.archiveBase64.length > Math.ceil((24 * 1024 * 1024) * 4 / 3) + 4) return { status: 'failed', error: 'Archive exceeds input limit.' };
     const archive = Buffer.from(job.archiveBase64, 'base64');
     if (!archive.length || archive.length > 24 * 1024 * 1024) return { status: 'failed', error: 'Archive exceeds input limit.' };
@@ -422,7 +421,9 @@ export async function executeJob(job, { signal, onResource, onProgress, onPhaseC
       }
       return { status: 'success', result: prepared };
     }
-    const verification = await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {}, onPhaseComplete });
+    const verification = job.operation === 'typecheck_artifact'
+      ? await executeTypecheckJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {} })
+      : await executeVerificationJob({ job, workspace: '/workspace', adapter, signal, env: job.env || {}, onPhaseComplete });
     if (job.disconnectInstallNetworkAfterInstall) {
       await disconnectInstallNetworkHelper();
     }

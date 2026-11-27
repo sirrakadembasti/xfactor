@@ -1,4 +1,7 @@
 import { executeControlledRepairs } from './controlledRepairs.js';
+import { runControlledTypeProbe } from './controlledTypeProbe.js';
+import { loadRecordedDependencyLock } from '../verification/dependencyLockReuse.js';
+import { validateRuntimeConfig } from '../config.js';
 import { controlledRepairSourceHash } from './controlledRepairPlan.js';
 import { inspectControlledSemanticReviewEligibility } from './controlledSemanticAuthority.js';
 /**
@@ -239,9 +242,22 @@ export async function executeProjectTasks(projectId, wsHub = null, attemptId = n
         let resumeFiles = null;
         if (controlledRepair && !controlledSemanticReview) {
             await workflowLogEvent(wsHub, projectId, 'Manager', 'start', '', 'Mevcut çalışmada yalnız onarım önerisinde listelenen dosyalar düzeltiliyor; normal üretim aşamaları çalışmayacak.', 'controlled-repair');
+            const typeProbe = async ({ files }) => {
+                const packageJson = files.find(file => file.path === 'package.json');
+                const recorded = packageJson && await loadRecordedDependencyLock({ projectId, contractId: approvedResumeContract.id, packageJsonBytes: packageJson.content });
+                if (!recorded) return null;
+                await workflowLogEvent(wsHub, projectId, 'System', 'start', '', 'Onarılan kaynaklar incelemeden önce TypeScript derleyicisiyle sınanıyor.', 'controlled-repair');
+                return runControlledTypeProbe({ client: executionClientFactory(validateRuntimeConfig(process.env)), files, lockBytes: recorded.bytes,
+                    projectId, contract: approvedResumeContract, signal: abortController.signal });
+            };
+            const onTypeProbe = summary => workflowLogEvent(wsHub, projectId, 'System', summary.status === 'failed' ? 'error' : 'finish', '',
+                summary.status === 'failed'
+                    ? `TypeScript derleyicisi hata buldu; hedeflerde düzeltme isteniyor: ${summary.targets.join(', ') || 'yok'}.${summary.otherFiles?.length ? ` Hedef dışı dosyalarda da hata var: ${summary.otherFiles.join(', ')}.` : ''}`
+                    : summary.status === 'passed' ? 'TypeScript derleyicisi onarılan kaynaklarda hata bulmadı.'
+                        : `TypeScript ön denetimi yapılamadı; tam doğrulama yine çalışacak.${summary.reason ? ` (${summary.reason})` : ''}`, 'controlled-repair');
             controlledSession = await executeControlledRepairs({ projectDir, contract: { ...approvedResumeContract, status: 'approved' },
                 workflow: state.workflow, sourceFence, persistWorkflow: () => workflowWriteState(projectId, state), callAgent,
-                signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic });
+                signal: abortController.signal, onUsage: recordTokenUsage, onDiagnostic: recordLLMDiagnostic, services: { typeProbe, onTypeProbe } });
             controlledSession.assertCurrent();
         }
         if (verificationOnly) {

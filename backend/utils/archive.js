@@ -31,13 +31,8 @@ function canonicalPath(value) {
     return normalized;
 }
 
-export async function createProjectZip(
-    projectId,
-    contractId,
-    files,
-    artifactsDir = getArtifactsRoot(),
-    deps = {}
-) {
+// In-memory archive with the same canonical paths and limits as a published artifact; nothing is stored.
+export async function buildProjectArchive(files) {
     if (!Array.isArray(files)) throw new Error('Artifact files must be an array.');
     const zip = new JSZip();
     const manifest = [];
@@ -81,6 +76,17 @@ export async function createProjectZip(
         maxFileBytes: ARTIFACT_LIMITS.maxFileBytes,
         maxRatio: ARTIFACT_LIMITS.maxCompressionRatio
     }, { readContent: false });
+    return { zipBuffer, manifest };
+}
+
+export async function createProjectZip(
+    projectId,
+    contractId,
+    files,
+    artifactsDir = getArtifactsRoot(),
+    deps = {}
+) {
+    const { zipBuffer, manifest } = await buildProjectArchive(files);
     const needsDefaults = !deps.createArtifact || !deps.addArtifactFile || !deps.withArtifactTransaction;
     const loaded = needsDefaults ? await loadArchiveDefaults() : {};
     const db = deps.db || loaded.db;
@@ -96,7 +102,10 @@ export async function createProjectZip(
     await fs.mkdir(artifactsDir, { recursive: true });
     try {
         await fs.writeFile(tempArtifactPath, zipBuffer, { flag: 'wx' });
-        const result = await withArtifactTransaction(async () => {
+        // Rename first, outside the transaction: real disk I/O must not hold the shared
+        // connection's write lock. A failed insert removes the final file in the catch below.
+        await fs.rename(tempArtifactPath, finalArtifactPath);
+        const result = await withArtifactTransaction(() => {
             createArtifact({
                 id: artifactId, projectId, contractId, kind: 'zip',
                 path: finalArtifactPath, sha256: zipHash, size: zipSize,
@@ -108,7 +117,6 @@ export async function createProjectZip(
                     sha256: file.sha256, size: file.size
                 });
             }
-            await fs.rename(tempArtifactPath, finalArtifactPath);
             return { id: artifactId, sha256: zipHash, path: finalArtifactPath, size: zipSize, manifest };
         }, db);
         return result;

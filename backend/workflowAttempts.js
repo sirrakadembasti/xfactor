@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Worker } from 'node:worker_threads';
-import { db, getDatabasePath } from './db.js';
+import { db, getDatabasePath, measureTransaction } from './db.js';
 import { logError, logWarning, writeStructuredLog } from './observability.js';
 import { WORKFLOW_STATUS } from './engine/stateMachine.js';
 
@@ -330,6 +330,10 @@ function logLeaseCheckFailure(attemptId, leaseOwner, { database = db, heartbeatT
 // must finish before BEGIN so the shared connection never spans an await.
 export function commitWorkflowSource(fence, commit) {
     if (!fence) return commit(); // Standalone, non-workflow generation utilities.
+    return measureTransaction('commitWorkflowSource', () => commitFencedWorkflowSource(fence, commit));
+}
+
+function commitFencedWorkflowSource(fence, commit) {
     const database = databaseFor(fence);
     database.exec('BEGIN IMMEDIATE;');
     try {

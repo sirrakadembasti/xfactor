@@ -24,10 +24,12 @@ function text(value, limit) {
     if (typeof value !== 'string' || !value.trim() || value.length > limit) fail('Onarım açıklaması eksik veya sınırı aşıyor.');
     return value.trim();
 }
-function strings(value, limit, required = true) {
-    if (!Array.isArray(value) || value.length > limit || (required && !value.length)
-        || value.some(item => typeof item !== 'string' || !item || item.length > 300)
-        || new Set(value).size !== value.length) fail('Geçersiz onarım bağlantı listesi.');
+function strings(value, limit, required = true, label = 'liste') {
+    const reason = !Array.isArray(value) ? 'dizi değil' : value.length > limit ? `en fazla ${limit} öğe`
+        : required && !value.length ? 'boş'
+        : value.some(item => typeof item !== 'string' || !item || item.length > 300) ? 'geçersiz öğe'
+        : new Set(value).size !== value.length ? 'yinelenen öğe' : null;
+    if (reason) fail(`Geçersiz onarım bağlantı listesi (${label}: ${reason}).`);
     return [...value].sort();
 }
 function canonicalPath(value) {
@@ -106,7 +108,7 @@ export function inspectControlledRepairPlan(payload, context) {
     const behaviorReferences = new Set([...files.keys()].filter(value => /\.[cm]?[jt]sx?$/i.test(value)
         && !isTestPath(value) && !/\.d\.ts$|(?:^|\/)(?:[^/]*\.config\.[^/]+|scripts\/)/i.test(value)));
     const targetAliases = new Set(), knownReferences = new Set(files.keys()), coveredChecks = new Set();
-    const coveredRequirements = new Set(strings(context.projectedRequirementIds || [], 1024, false));
+    const coveredRequirements = new Set(strings(context.projectedRequirementIds || [], 1024, false, 'projectedRequirementIds'));
     if ([...coveredRequirements].some(id => !requirementIds.has(id))) fail('Görev kapsamı onaylı gereksinimlerle eşleşmiyor.');
     const targets = payload.targets.map(target => {
         record(target, ['path', 'create', 'requirementIds', 'checkIds', 'instructions', 'referencePaths']);
@@ -115,14 +117,18 @@ export function inspectControlledRepairPlan(payload, context) {
         if (targetAliases.has(alias) || typeof target.create !== 'boolean'
             || (target.create ? aliases.has(alias) : !files.has(path))) fail('Hedef yeni/mevcut kaynakla eşleşmiyor veya yineleniyor.');
         targetAliases.add(alias);
-        const requirements = strings(target.requirementIds, 128);
-        if (requirements.some(id => !requirementIds.has(id))) fail('Hedef onaylı kapsam dışındaki bir gereksinimi kullanıyor.');
-        const checkIds = strings(target.checkIds, 128);
-        if (checkIds.some(id => !['FAIL', 'BLOCKED'].includes(checks.get(id)?.status))) fail('Hedef güncel başarısız kontrole bağlı değil.');
-        const references = strings(target.referencePaths, 32, false).map(file => sourcePath(file));
+        const requirements = strings(target.requirementIds, 128, true, `${path} requirementIds`);
+        const outOfScope = requirements.filter(id => !requirementIds.has(id));
+        if (outOfScope.length) fail(`Hedef onaylı kapsam dışındaki bir gereksinimi kullanıyor (${path}: ${outOfScope.join(', ')}).`);
+        const checkIds = strings(target.checkIds, 128, true, `${path} checkIds`);
+        const notFailing = checkIds.filter(id => !['FAIL', 'BLOCKED'].includes(checks.get(id)?.status));
+        if (notFailing.length) fail(`Hedef güncel başarısız kontrole bağlı değil (${path}: ${notFailing.join(', ')}). Geçerli kimlikler: `
+            + `${[...checks.values()].filter(check => ['FAIL', 'BLOCKED'].includes(check.status)).map(check => check.id).join(', ')}.`);
+        const references = strings(target.referencePaths, 32, false, `${path} referencePaths`).map(file => sourcePath(file));
         if (references.some(file => !knownReferences.has(file))) fail('Salt okunur referans eksik veya henüz oluşturulmamış.');
         const hasBehaviorReference = references.some(file => behaviorReferences.has(file));
-        if (isTestPath(path) && !hasBehaviorReference) fail('Gerçek davranış testi hedefi sınanacak uygulama modülünü salt okunur referans olarak belirtmeli; paket veya şema metni yeterli değildir.');
+        if (isTestPath(path) && !hasBehaviorReference) fail(`Gerçek davranış testi hedefi sınanacak uygulama modülünü salt okunur referans olarak belirtmeli; paket veya şema metni yeterli değildir (${path}). `
+            + 'Test dışı bir uygulama kaynağı (.js/.ts/.tsx) ya da daha önce bu kuralı karşılamış bir test hedefi gerekir; tests/ altındaki yardımcılar tek başına sayılmaz.');
         for (const id of requirements) coveredRequirements.add(id);
         for (const id of checkIds) coveredChecks.add(id);
         knownReferences.add(path);
