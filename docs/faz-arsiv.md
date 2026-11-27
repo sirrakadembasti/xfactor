@@ -608,6 +608,18 @@ Halka 50'deki bulgu üzerine kullanıcı onayıyla canlı veritabanı `F:` (5400
 - **Sürpriz:** ilk deneme kaynağa `VACUUM INTO` ile yedek yazarken 300 sn'de bitmedi (13 MB'ta kesildi; eksik yedek dizini silindi). Hedef `C:` olduğu hâlde `VACUUM INTO` yine 200 sn sürdü, düz dosya kopyası ise 2 sn: yavaşlık yazmada değil, `F:` diskinden sayfa sayfa rastgele okumadaydı.
 - **Dikkat:** `DB_PATH` olmadan başlatılan sunucu `backend/data/projects.db`'yi (artık bayat) açar. `backend/.env`'e yazmak işe yaramaz çünkü `db.js` `DEFAULT_DB_PATH`'i modül yüklenirken okur, `dotenv` sonra çalışır. Eski dosyalar silinmedi.
 
+### Halka 52 — 19–21 Kasım: onarım denemeleri ve Docker kurulum yeniden denemesi
+
+19 Kasım'da `stok-takip-1` için yedi hedefli onarım önerisi (plan `2e302b63…`) uygulandı. Ardından yapılan doğrulama ve altı yeniden doğrulamanın hiçbiri kaynağı sınayamadı; onarımın etkisi bilinmiyor (canlı DB'de 20 Kasım 06:23 UTC'deki son koşuya kadar tüm koşular `failed`):
+- `e27dca79`, `ccb9aab0`, `5db5530c`: `clean_install` 15 dakikalık sınıra takıldı (8 PASS, 1 FAIL, 11 BLOCKED).
+- `ae77f5b7`, `1689a42a`: `Docker operation timed out`; altyapı kesintisi sayıldı (4 PASS, 9 BLOCKED).
+- `abb434d4`: `npm ci` `E504` aldı; Docker yolunda yeniden deneme çalışmadı.
+- Ölçüm: ana makinede registry erişimi ~3 KB/sn (17 Kasım'da ~10 kat hızlıydı), boş RAM ~1 GB, `docker info` 43 sn'ye kadar yavaşladı. Neden (ağ mı, Docker/WSL belleği mi) kesinleşmedi.
+
+**Düzeltme (`440ad57`):** Docker adaptörü sıfırdan farklı çıkışta sonuç döndürmek yerine hata fırlatıyordu; bu yüzden Y1'in tek seferlik yeniden denemesi ve altyapı sınıflandırması bu yolda hiç çalışmıyordu. `packageVerifier.js` artık fırlatılan hatayı (zaman aşımı ve `SANDBOX_UNAVAILABLE` hariç) başarısız sonuca çevirir. Test: `test_infrastructure_failure_classification.js`. 15 dakikalık kurulum zaman aşımı yeniden denenmez ve kaynak hatası sayılır; bu sınır değişmedi (kullanıcı kararı bekliyor).
+
+**Durum (27 Kasım):** `stok-takip-1` sözleşme 3 altında `paused`, revizyon 920; açık kayıtlar 102 `worker_rejection` + 4 `verification_blocker`. Servisler çalışmıyor. Yerel Windows worker'da `spawn('npm')` ENOENT bildirimi hâlâ yeniden üretilmedi.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

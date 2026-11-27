@@ -417,8 +417,9 @@ Sınırlı onarım tur sonrası doğrulama kötüleşse de (ör. 83 → 20 PASS)
 |---|---|---|---|---|---|
 | Y0 ✅ 17.11 `80b16e6`, `e64fa54` | Zemin: commit edilmemiş işi doğrula, test koşucusu zaman aşımını ayırsın | 🟡 | — | Commit 🔒 | 1 dosya + test |
 | Y1 ✅ 17.11 `2d8a59f` | Altyapı hatasını ayır, `npm ci`'yi bir kez yeniden dene, Devam Ettir'i açık tut | 🔴 | Y0 | Şema yok; commit 🔒 | 4–6 dosya + testler |
+| Y1b ✅ 18.11 `7dd842d` (+ Docker kurulum yeniden denemesi `440ad57`, 21.11) | Docker kesintisini ve Docker yolunda fırlatılan kurulum hatasını altyapı say | 🟠 | Y1 | Şema yok | 2–3 dosya + test |
 | Y2 ✅ 17.11 `6f2529c` | `await` içeren transaction'ları kaldır, statik koruma testi | 🟠 | Y0 | commit 🔒 | 3 dosya + test |
-| Y3a ✅ 17.11 `a5f2792`; Y3b açık | Kilit hatasını ölç; gerekirse lineage'i tabloya taşı | 🟠 | Y2 | Y3b 🔒 migrasyon 19 | Y3a: 3 dosya |
+| Y3a ✅ 17.11 `a5f2792`; Y3c ✅ 18.11 `fb30290` (kalp atışı bağlantısı); Y3b açık | Kilit hatasını ölç; gerekirse lineage'i tabloya taşı | 🟠 | Y2 | Y3b 🔒 migrasyon 19 | Y3a: 3 dosya |
 | Y4 ✅ 17.11 `a345413` | Test çıktısında baş + kuyruk | 🟡 | Y0 | commit 🔒 | 2–3 dosya + test |
 | Y5 | `stok-takip-1` teslimi | 🟠 ürün | Y1, Y4 (Y2, Y3a önerilir) | Her koşu 🔒 | Kod yok, operasyon |
 | Y6 | Bayat kayıtlar ve takılı projeler | 🟡 | — | 🔒 veri | Operasyon |
