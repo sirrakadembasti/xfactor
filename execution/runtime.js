@@ -24,6 +24,9 @@ export function filterRuntimeEnvironment(raw = {}) {
   }
   return env;
 }
+// Operator-owned named volume mounted only into the registry proxy (never into job containers).
+export const REGISTRY_CACHE_VOLUME = 'xfactor-registry-cache';
+
 export function getIsolationArgs(job = {}) {
   const isFullApp = (Array.isArray(job?.contract?.domains) && job.contract.domains.length > 0) || job?.memory === '4g';
   if (isFullApp) {
@@ -271,7 +274,7 @@ export async function executeJob(job, { signal, onResource, onProgress, onPhaseC
     await docker(['network','create','--internal','--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,names.install], opts());
     proxy = names.proxy;
     const isolationArgs = getIsolationArgs(job);
-    await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128,onObservation:event=>console.log(JSON.stringify({kind:'registry_request',...event}))})})"], opts());
+    await docker(['run','-d','--rm','--entrypoint','node','--network',names.install,'--name',proxy,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,'-v',`${REGISTRY_CACHE_VOLUME}:/cache`,IMAGE_NAME,'-e',"import('/opt/proxy/registryProxy.js').then(async ({createProxy})=>{await createProxy({host:'0.0.0.0',port:3128,cacheDirectory:'/cache',onObservation:event=>console.log(JSON.stringify({kind:'registry_request',...event}))})})"], opts());
     await docker(['network','connect','bridge',proxy], opts()); const inspected = await docker(['inspect','--format',`{{(index .NetworkSettings.Networks "${names.install}").IPAddress}}`,proxy], opts()); proxyAddress = inspected.stdout.trim(); if (!proxyAddress) throw new Error('Registry proxy did not receive an install-network address'); onResource?.({ type:'proxy', name:proxy, network:names.install });
     const net = names.install;
     const runArgs = ['run','-d','--rm','--name',names.container,'--label','xfactor.owner=execution','--label',`xfactor.job=${names.job}`,...isolationArgs,'--network',net,IMAGE_NAME,'serve'];
