@@ -18,6 +18,8 @@ COPY entrypoint.js /opt/worker/entrypoint.js
 RUN chown -R worker:worker /opt/worker && chmod +x /opt/worker/entrypoint.js
 COPY registryProxy.js /opt/proxy/registryProxy.js
 RUN chown -R worker:worker /opt/proxy
+# Registry proxy tarball cache (named volume mount point; a new volume inherits this ownership).
+RUN mkdir -p /cache && chown worker:worker /cache
 
 USER worker
 WORKDIR /workspace
