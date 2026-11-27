@@ -620,6 +620,10 @@ Halka 50'deki bulgu üzerine kullanıcı onayıyla canlı veritabanı `F:` (5400
 
 **Durum (27 Kasım):** `stok-takip-1` sözleşme 3 altında `paused`, revizyon 920; açık kayıtlar 102 `worker_rejection` + 4 `verification_blocker`. Servisler çalışmıyor. Yerel Windows worker'daki `spawn('npm')` ENOENT 27 Kasım'da yeniden üretildi (bkz. yol haritası B-10): kabuksuz `spawn` Windows'ta yalnız `.exe`/`.com` çözer, worker PATH'inde yalnız `npm.cmd` var.
 
+### Halka 53 — 27 Kasım: üretilen testlerde taşınabilir alt süreç çağrısı (B-10, çözüm B)
+
+Yerel Windows worker'daki `spawn('npm')` ENOENT'in nedeni üretilen uygulamanın testleriydi (Halka 52 sonrası bulgu; yol haritası B-10). `x-agents/coder.md` kural 11 eklendi: test ve betikler `npm`, `npx`, `tsx`, `prisma` komutlarını kabuksuz `spawn`/`execFile` ile veya `shell: true` ile çağırmaz; Node'u `process.execPath`, npm'i `process.env.npm_execpath` ile çalıştırır. `test_docs_agent_sync.js` bu talimatın varlığını denetler. Statik denetim eklenmedi: bu yalnız model talimatıdır, zorlayıcı bir kapı değildir; mevcut `stok-takip-1` testleri değişmedi (elle düzenlenmez, ancak sınırlı onarımla). Etkisi bir sonraki üretim/onarım turunda gözlenecek.
+
 ## 6. Kaynak kapsamı ve belirsizlikler
 
 

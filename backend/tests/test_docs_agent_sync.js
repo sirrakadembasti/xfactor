@@ -130,6 +130,7 @@ check("8. System prompts must contain requirementIds and targetFiles constraints
 
     const coderDoc = fs.readFileSync(path.join(AGENT_DOCS_DIR, 'coder.md'), 'utf8');
     assert.ok(coderDoc.includes('targetFiles') || coderDoc.includes('allowlist') || coderDoc.includes('hedef dosya'), "coder.md targetFiles sınırı talimatı içermeli");
+    assert.ok(coderDoc.includes('npm_execpath') && coderDoc.includes('process.execPath'), "coder.md kabuksuz spawn('npm') yerine process.execPath ve npm_execpath talimatı içermeli");
 });
 
 console.log("\n==================================================");
