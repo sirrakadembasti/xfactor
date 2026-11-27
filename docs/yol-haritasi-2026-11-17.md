@@ -303,7 +303,7 @@ XFactor'ın **kabul tarafı güçlü, üretim ve onarım tarafı zayıf.**
 | Sınırlı onarımla toparlanma | ⚠️ Mekanizma var, yakınsamıyor (koşu dizisi 83 → 77 → 19 → 21 → 80 → 21 → 82 → … → 20 PASS) | B-9 |
 | Orta seviye modelle (MiniMax) ürün | ❌ Henüz kanıtlanmadı | `stok-takip-1` |
 | "Kalp atışı … sağlıklı yürütmeyi düşürmez" (README:30) | ⚠️ Fazla güçlü; kök neden açık | B-3 |
-| Docker'sız yerel worker (Windows) | ⚠️ `spawn('npm')` ENOENT bildirilmiş, yeniden üretilmedi | B-10 |
+| Docker'sız yerel worker (Windows) | ⚠️ `spawn('npm')` ENOENT yeniden üretildi (27.11); neden B-10'da | B-10 |
 | Üretilen projeye Dockerfile | ✅ Şablon var. Her ZIP'in Docker build'i doğrulanmıyor (README de söylüyor) | README:185 |
 
 ---
@@ -395,7 +395,7 @@ Sınırlı onarım tur sonrası doğrulama kötüleşse de (ör. 83 → 20 PASS)
 
 ### B-10 ⚪ Doğrulanmamış açık konular
 
-- Yerel Windows worker'da `spawn('npm')` ENOENT (`CLAUDE.md §5`). `execution/localProcesses.js` npm'i kendi araç yolundan çağırıyor (~44-105). Hata büyük olasılıkla üretilen uygulamanın `service-manifest.json` komutundan geliyor, ama yeniden üretilmedi.
+- Yerel Windows worker'da `spawn('npm')` ENOENT (`CLAUDE.md §5`). `execution/localProcesses.js` npm'i kendi araç yolundan çağırıyor (~44-105). **27 Kasım bulgusu:** hata `service-manifest.json`'dan değil, üretilen uygulamanın kendi testlerinden geliyor (`stok-takip-1`: `tests/browser-journey.test.js` `execFile('npm', …)`/`spawn('npm', …)`, `tests/requirements.test.js` `runCommand('npm', …)`). Koşu `96ee3f60` kanıtı: `test_suite_execution` `spawn npm ENOENT`; `8f6ef366`: Prisma seed `spawn tsx ENOENT`. Yeniden üretim: Windows'ta PATH'e yalnız `npm.cmd` konunca `spawn('npm')` `shell:false` ile ENOENT, `shell:true` ile çalışır (aynı `tsx` için). Yani worker'ın `localProcesses.js` yolu doğru çalışıyor; sorun üretilen testlerin Windows'ta taşınabilir olmaması (kullanıcının Windows'unda da aynı testler düşer). Docker (Linux) profili etkilenmez; `stok-takip-1`'in Docker koşularının engeli bu değil, ağ/zaman aşımıdır.
 - Docker koşularında aralıklı npm ağ hataları (B-1 ailesi).
 
 ### B-11 ⚪ Küçük notlar

@@ -618,7 +618,7 @@ Halka 50'deki bulgu üzerine kullanıcı onayıyla canlı veritabanı `F:` (5400
 
 **Düzeltme (`440ad57`):** Docker adaptörü sıfırdan farklı çıkışta sonuç döndürmek yerine hata fırlatıyordu; bu yüzden Y1'in tek seferlik yeniden denemesi ve altyapı sınıflandırması bu yolda hiç çalışmıyordu. `packageVerifier.js` artık fırlatılan hatayı (zaman aşımı ve `SANDBOX_UNAVAILABLE` hariç) başarısız sonuca çevirir. Test: `test_infrastructure_failure_classification.js`. 15 dakikalık kurulum zaman aşımı yeniden denenmez ve kaynak hatası sayılır; bu sınır değişmedi (kullanıcı kararı bekliyor).
 
-**Durum (27 Kasım):** `stok-takip-1` sözleşme 3 altında `paused`, revizyon 920; açık kayıtlar 102 `worker_rejection` + 4 `verification_blocker`. Servisler çalışmıyor. Yerel Windows worker'da `spawn('npm')` ENOENT bildirimi hâlâ yeniden üretilmedi.
+**Durum (27 Kasım):** `stok-takip-1` sözleşme 3 altında `paused`, revizyon 920; açık kayıtlar 102 `worker_rejection` + 4 `verification_blocker`. Servisler çalışmıyor. Yerel Windows worker'daki `spawn('npm')` ENOENT 27 Kasım'da yeniden üretildi (bkz. yol haritası B-10): kabuksuz `spawn` Windows'ta yalnız `.exe`/`.com` çözer, worker PATH'inde yalnız `npm.cmd` var.
 
 ## 6. Kaynak kapsamı ve belirsizlikler
 
